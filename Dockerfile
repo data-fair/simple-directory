@@ -3,12 +3,15 @@ MAINTAINER "contact@koumoul.com"
 
 ENV NODE_ENV production
 WORKDIR /webapp
+ADD webpack.config.js /webapp/webpack.config.js
+ADD .babelrc /webapp/.babelrc
+
 ADD package.json /webapp/package.json
 ADD package-lock.json /webapp/package-lock.json
-RUN npm install --production
 
 # Adding UI files
 ADD public /webapp/public
+RUN npm install && npm run build && npm prune
 
 # Adding server files
 ADD server /webapp/server
