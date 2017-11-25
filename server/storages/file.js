@@ -10,6 +10,9 @@ module.exports = async function(params) {
     getUserById: async function(id) {
       return users.find(user => user.id === id)
     },
+    getUsersByIds: async function(ids) {
+      return users.filter(user => ids.find(id => user.id === id))
+    },
     getUserByEmail: async function(email) {
       return users.find(user => user.email === email)
     },
