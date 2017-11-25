@@ -12,6 +12,7 @@ let router = express.Router()
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
 router.post('/passwordless', async(req, res, next) => {
+  if (!req.body || !req.body.email) return res.sendStatus(400)
   const user = await req.app.get('storage').getUserByEmail(req.body.email)
   if (!user) return res.sendStatus(404)
   const organizations = await req.app.get('storage').getUserOrganizations(user.id)
@@ -31,6 +32,7 @@ router.post('/passwordless', async(req, res, next) => {
     // res.redirect(req.query.redirect + token)
     res.send(req.query.redirect + token)
   } else {
+    res.cookie('id_token', token)
     res.send(token)
   }
 })
@@ -61,7 +63,7 @@ router.post('/exchange', (req, res, next) => {
       keyid: config.kid
     })
     res.cookie('id_token', token)
-    res.status(201).send(token)
+    res.send(token)
   })
 })
 
