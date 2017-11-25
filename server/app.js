@@ -31,8 +31,8 @@ app.get('/api/api-docs.json', (req, res) => {
 })
 
 app.use('/api/auth', require('./auth'))
-app.use('/api/v1/users', require('./users'))
-app.get('/api/v1/organizations', require('./organizations'))
+app.use('/api/users', require('./users'))
+app.get('/api/organizations', require('./organizations'))
 
 // Static routing
 const oneWeek = process.env.NODE_ENV === 'development' ? 0 : 7 * 24 * 60 * 60
