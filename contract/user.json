@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "email"],
+  "properties": {
+    "id": {
+      "description": "The unique id of the user",
+      "type": "string"
+    },
+    "email": {
+      "description": "The main email of the user",
+      "type": "string"
+    },
+    "firstName": {
+      "description": "First name of the user",
+      "type": "string"
+    },
+    "lastName": {
+      "description": "Family name of the user",
+      "type": "string"
+    }
+  }
+}

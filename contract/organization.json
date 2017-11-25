@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name"],
+  "properties": {
+    "id": {
+      "description": "The unique id of the organization",
+      "type": "string"
+    },
+    "name": {
+      "description": "Name of the organization",
+      "type": "string"
+    },
+    "description": {
+      "description": "Description of the organization",
+      "type": "string"
+    },
+    "members": {
+      "description": "The members of the organization",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "role"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifier of the account for this member"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "user"],
+            "description": "Rôle for this member in this organization"
+          }
+        }
+      }
+    }
+  }
+}

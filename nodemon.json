@@ -1,0 +1,5 @@
+{
+  "verbose": true,
+  "ext": "js json pug",
+  "watch": ["server/", "config/", "package.json", "contract/", "public/bundles/webpack-assets.json"]
+}
