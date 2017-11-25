@@ -1,7 +1,6 @@
 FROM node:8.9.1-alpine
 MAINTAINER "contact@koumoul.com"
 
-ENV NODE_ENV production
 WORKDIR /webapp
 ADD webpack.config.js /webapp/webpack.config.js
 ADD .babelrc /webapp/.babelrc
@@ -11,7 +10,8 @@ ADD package-lock.json /webapp/package-lock.json
 
 # Adding UI files
 ADD public /webapp/public
-RUN npm install && npm run build && npm prune
+RUN npm install && npm run build && npm prune --production
+ENV NODE_ENV production
 
 # Adding server files
 ADD server /webapp/server
