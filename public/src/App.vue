@@ -6,6 +6,9 @@
     <router-link to="/" style="color:white;">
       <md-button>Home</md-button>
     </router-link>
+    <router-link to="/login" style="color:white;">
+      <md-button>Login</md-button>
+    </router-link>
     <router-link to="/api-doc" style="color:white;">
       <md-button>API documentation</md-button>
     </router-link>
