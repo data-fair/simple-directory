@@ -10,8 +10,16 @@ module.exports = async function(params) {
     getUserById: async function(id) {
       return users.find(user => user.id === id)
     },
-    getUsersByIds: async function(ids) {
-      return users.filter(user => ids.find(id => user.id === id))
+    findUsers: async function(params) {
+      params = params || []
+      let filteredUsers = users
+      if (params.ids) {
+        filteredUsers = filteredUsers.filter(user => (params.ids).find(id => user.id === id))
+      }
+      return {
+        results: filteredUsers,
+        count: filteredUsers.length
+      }
     },
     getUserByEmail: async function(email) {
       return users.find(user => user.email === email)
@@ -19,8 +27,19 @@ module.exports = async function(params) {
     getUserOrganizations: async function(userId) {
       return organizations.filter(organization => organization.members.find(member => member.id === userId))
     },
-    getOrganizationsByIds: async function(ids) {
-      return organizations.filter(organization => ids.find(id => organization.id === id))
+    findOrganizations: async function(params) {
+      params = params || []
+      let filteredOrganizations = organizations
+      if (params.ids) {
+        filteredOrganizations = filteredOrganizations.filter(organization => (params.ids).find(id => organization.id === id))
+      }
+      if (params['has-user']) {
+        filteredOrganizations = filteredOrganizations.filter(organization => organization.members.find(member => member.id === params['has-user']))
+      }
+      return {
+        results: filteredOrganizations,
+        count: filteredOrganizations.length
+      }
     }
   }
 }

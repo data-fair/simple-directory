@@ -1,20 +1,18 @@
 const express = require('express')
-const jwtMiddleware = require('./jwt').jwtMiddleware
+const jwt = require('./jwt')
 
 let router = express.Router()
 
 // Get the list of organizations
-router.get('', jwtMiddleware, async function(req, res, next) {
-  let organizations = []
-  if (!req.query || req.query['is-member'] === 'true') {
-    organizations = await req.app.get('storage').getUserOrganizations(req.user.id)
-  } else if (req.query['ids']) {
-    organizations = await req.app.get('storage').getOrganizationsByIds(req.query['ids'].split(','))
+router.get('', jwt.optionalJwtMiddleware, async function(req, res, next) {
+  let params = {}
+  if (req.query) {
+    if (req.query['ids']) params.ids = req.query['ids'].split(',')
+    if (req.query['is-member'] && req.user) params['has-user'] = req.user.id
   }
-  res.json({
-    results: organizations,
-    count: organizations.length
-  })
+  const organizations = req.user ? await req.app.get('storage').findOrganizations(params) : {results: [], count: 0}
+  organizations.results = organizations.results.map(user => ({id: user.id, name: user.firstName + ' ' + user.lastName}))
+  res.json(organizations)
 })
 
 module.exports = router

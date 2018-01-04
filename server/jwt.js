@@ -10,3 +10,11 @@ module.exports.jwtMiddleware = expressJWT({
     return (req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop())
   }
 })
+
+module.exports.optionalJwtMiddleware = expressJWT({
+  secret: publicKey,
+  credentialsRequired: false,
+  getToken: function (req) {
+    return (req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop())
+  }
+})

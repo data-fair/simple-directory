@@ -5,7 +5,11 @@
   "main": "server/app.js",
   "scripts": {
     "build": "webpack",
-    "dev": "NODE_ENV=development webpack --watch & browser-sync start --config bs-config.js & NODE_ENV=development nodemon server/app.js"
+    "dev": "NODE_ENV=development webpack --watch & browser-sync start --config bs-config.js & NODE_ENV=development nodemon server/app.js",
+    "lint": "eslint .",
+    "test": "nyc ava --timeout=5000 -v test/*.js",
+    "coveralls": "nyc report --reporter=text-lcov | coveralls",
+    "report": "nyc report --reporter=html"
   },
   "repository": {
     "type": "git",
@@ -19,6 +23,8 @@
   "homepage": "https://github.com/koumoul-dev/simple-directory#readme",
   "devDependencies": {
     "assets-webpack-plugin": "^3.5.1",
+    "ava": "^0.24.0",
+    "axios": "^0.17.1",
     "babel-core": "^6.25.0",
     "babel-eslint": "^7.2.3",
     "babel-loader": "^7.1.0",
@@ -27,6 +33,7 @@
     "babel-preset-es2017": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "browser-sync": "^2.18.12",
+    "coveralls": "^3.0.0",
     "css-loader": "^0.28.4",
     "eslint": "^4.11.0",
     "eslint-config-standard": "^10.2.1",
@@ -36,6 +43,7 @@
     "eslint-plugin-standard": "^3.0.1",
     "file-loader": "^0.11.2",
     "nodemon": "^1.11.0",
+    "nyc": "^11.3.0",
     "style-loader": "^0.18.2",
     "vue": "^2.5.6",
     "vue-loader": "^12.2.1",
