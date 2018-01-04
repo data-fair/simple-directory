@@ -16,6 +16,8 @@ test('Get organization list when authenticated', async t => {
   t.is(res.data.count, 6)
   res = await ax.get('/api/organizations?is-member=true')
   t.is(res.data.count, 2)
+  res = await ax.get('/api/organizations?q=li')
+  t.is(res.data.count, 2)
 })
 
 test('Get organization roles', async t => {

@@ -16,6 +16,10 @@ module.exports = async function(params) {
       if (params.ids) {
         filteredUsers = filteredUsers.filter(user => (params.ids).find(id => user.id === id))
       }
+      if (params.q) {
+        const lq = params.q.toLowerCase()
+        filteredUsers = filteredUsers.filter(user => user.firstName.toLowerCase().indexOf(lq) >= 0 || user.lastName.toLowerCase().indexOf(lq) >= 0)
+      }
       return {
         results: filteredUsers,
         count: filteredUsers.length
@@ -35,6 +39,10 @@ module.exports = async function(params) {
       }
       if (params['has-user']) {
         filteredOrganizations = filteredOrganizations.filter(organization => organization.members.find(member => member.id === params['has-user']))
+      }
+      if (params.q) {
+        const lq = params.q.toLowerCase()
+        filteredOrganizations = filteredOrganizations.filter(organization => organization.name.toLowerCase().indexOf(lq) >= 0)
       }
       return {
         results: filteredOrganizations,

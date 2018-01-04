@@ -16,6 +16,13 @@ test('Get user list when authenticated', async t => {
   t.is(res.data.count, 10)
 })
 
+test('Get filter user list when authenticated', async t => {
+  const ax = await testUtils.axios(__filename, 'dmeadus0@answers.com')
+  const res = await ax.get('/api/users?q=Al')
+  t.is(res.status, 200)
+  t.is(res.data.count, 2)
+})
+
 test('Get user info when not authenticated', async t => {
   const ax = await testUtils.axios(__filename)
   try {
