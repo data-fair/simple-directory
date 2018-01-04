@@ -1,6 +1,9 @@
 # Simple directory
 This service aims to provide easy access to user and organizations structures and authentication mechanism using Json Web tokens.
 
+[![Build Status](https://travis-ci.org/koumoul-dev/simple-directory.svg?branch=master)](https://travis-ci.org/koumoul-dev/simple-directory)
+[![Coverage Status](https://coveralls.io/repos/github/koumoul-dev/simple-directory/badge.svg?branch=master)](https://coveralls.io/github/koumoul-dev/simple-directory?branch=master)
+
 ## Development environment
 This project uses the following stack : Mongo, Express, VueJS, NodeJS. The primary language used is javascript with the ES7 syntax.
 You should use linters and beautifiers compliants with the ES7 syntax in your editor.
