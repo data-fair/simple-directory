@@ -40,6 +40,10 @@ module.exports = async function(params) {
         results: filteredOrganizations,
         count: filteredOrganizations.length
       }
+    },
+    getOrganizationRoles: async function(id) {
+      const orgas = organizations.find(organization => organization.id === id)
+      return orgas.members.map(m => m.role).filter((role, i, self) => self.indexOf(role) === i)
     }
   }
 }

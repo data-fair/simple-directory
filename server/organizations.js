@@ -15,4 +15,12 @@ router.get('', jwt.optionalJwtMiddleware, async function(req, res, next) {
   res.json(organizations)
 })
 
+// Get the list of organization roles
+router.get('/:organizationId/roles', jwt.jwtMiddleware, async function(req, res, next) {
+  const userOrganizations = await req.app.get('storage').getUserOrganizations(req.user.id)
+  if (!userOrganizations.find(organization => organization.id === req.params.organizationId)) return res.sendStatus(403)
+  const roles = await req.app.get('storage').getOrganizationRoles(req.params.organizationId)
+  res.json(roles)
+})
+
 module.exports = router
