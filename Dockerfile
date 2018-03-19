@@ -23,4 +23,4 @@ ADD README.md /webapp/README.md
 VOLUME /webapp/data
 EXPOSE 8080
 
-CMD ["node", "server/app.js"]
+CMD ["node", "server"]
