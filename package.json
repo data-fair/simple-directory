@@ -5,7 +5,8 @@
   "main": "server/app.js",
   "scripts": {
     "build": "webpack",
-    "dev": "NODE_ENV=development webpack --watch & browser-sync start --config bs-config.js & NODE_ENV=development nodemon server/app.js",
+    "dev": "NODE_ENV=development webpack --watch & browser-sync start --config bs-config.js & NODE_ENV=development nodemon server",
+    "start": "node server",
     "lint": "eslint .",
     "test": "nyc ava --timeout=5000 -v test/*.js",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
@@ -59,6 +60,7 @@
     "config": "^1.28.1",
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.4",
+    "event-to-promise": "^0.8.0",
     "express": "^4.16.2",
     "express-jwt": "^5.3.0",
     "json-web-key": "^0.3.0",

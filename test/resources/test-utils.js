@@ -15,9 +15,13 @@ exports.prepare = (testFile) => {
   const config = require('config')
 
   let app
-  test.cb.before('run app', t => {
+  test.before('run app', async t => {
     app = require('../../server/app.js')
-    app.on('listening', t.end)
+    await app.run()
+  })
+
+  test.after('stop app', async t => {
+    await app.stop()
   })
 
   return [test, config]

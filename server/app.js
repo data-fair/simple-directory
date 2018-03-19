@@ -5,9 +5,13 @@ const cors = require('cors')
 const bodyParser = require('body-parser')
 const fs = require('fs')
 const path = require('path')
+const http = require('http')
+const eventToPromise = require('event-to-promise')
 const storages = require('./storages')
 
-let app = module.exports = express()
+const app = express()
+const server = http.createServer(app)
+
 app.use(cors())
 app.use(cookieParser())
 app.use(bodyParser.json({
@@ -68,17 +72,14 @@ app.use((err, req, res, next) => {
   next(err)
 })
 
-storages.init().then(storage => {
+exports.run = async() => {
+  const storage = await storages.init()
   app.set('storage', storage)
-  app.listen(config.port, (err) => {
-    if (err) {
-      console.log('Could not run server : ', err.stack)
-      throw err
-    }
-    console.log('Listening on http://localhost:%s', config.port)
-    // Emit this event for the test suite
-    app.emit('listening')
-  })
-}, err => {
-  console.log('Could not run server : ', err.stack)
-})
+  server.listen(config.port)
+  await eventToPromise(server, 'listening')
+}
+
+exports.stop = async() => {
+  server.close()
+  await eventToPromise(server, 'close')
+}
