@@ -18,6 +18,10 @@
     "lastName": {
       "description": "Family name of the user",
       "type": "string"
+    },
+    "isAdmin": {
+      "description": "Is this user a global admin (independant of organizations)",
+      "type": "boolean"
     }
   }
 }
