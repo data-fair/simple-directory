@@ -26,7 +26,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
       role: organization.members.find(m => m.id === user.id).role
     }))
   }
-  if (user.idAdmin) payload.isAdmin = true
+  if (user.isAdmin) payload.isAdmin = true
   const token = jwt.sign(payload, privateKey, {
     algorithm: 'RS256',
     expiresIn: config.jwt.expiresIn,
