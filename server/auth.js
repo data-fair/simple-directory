@@ -18,14 +18,16 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   const user = await req.app.get('storage').getUserByEmail(req.body.email)
   if (!user) return res.sendStatus(404)
   const organizations = await req.app.get('storage').getUserOrganizations(user.id)
-  const token = jwt.sign({
+  const payload = {
     id: user.id,
     email: req.body.email,
     organizations: organizations.map(organization => ({
       id: organization.id,
       role: organization.members.find(m => m.id === user.id).role
     }))
-  }, privateKey, {
+  }
+  if (user.idAdmin) payload.isAdmin = true
+  const token = jwt.sign(payload, privateKey, {
     algorithm: 'RS256',
     expiresIn: config.jwt.expiresIn,
     keyid: config.kid
