@@ -21,6 +21,8 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   const payload = {
     id: user.id,
     email: req.body.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
     organizations: organizations.map(organization => ({
       id: organization.id,
       role: organization.members.find(m => m.id === user.id).role
