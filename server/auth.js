@@ -9,6 +9,12 @@ const config = require('config')
 const privateKey = fs.readFileSync(path.join(__dirname, '..', config.secret.private))
 const publicKey = fs.readFileSync(path.join(__dirname, '..', config.secret.public))
 
+const mapOrganization = (user) => (organization) => ({
+  id: organization.id,
+  role: organization.members.find(m => m.id === user.id).role,
+  name: organization.name
+})
+
 let router = express.Router()
 
 // Either find or create an user based on an email address then send a mail with a link and a token
@@ -23,10 +29,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     email: req.body.email,
     firstName: user.firstName,
     lastName: user.lastName,
-    organizations: organizations.map(organization => ({
-      id: organization.id,
-      role: organization.members.find(m => m.id === user.id).role
-    }))
+    organizations: organizations.map(mapOrganization(user))
   }
   if (user.isAdmin) payload.isAdmin = true
   const token = jwt.sign(payload, privateKey, {
@@ -60,10 +63,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
 
   // User may have new organizations since last renew
   const organizations = await req.app.get('storage').getUserOrganizations(decoded.id)
-  decoded.organizations = organizations.map(organization => ({
-    id: organization.id,
-    role: organization.members.find(m => m.id === decoded.id).role
-  }))
+  decoded.organizations = organizations.map(mapOrganization(decoded))
 
   const token = jwt.sign(decoded, privateKey, {
     algorithm: 'RS256',
