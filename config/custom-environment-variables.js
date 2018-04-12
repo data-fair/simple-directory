@@ -5,12 +5,8 @@ module.exports = {
     expiresIn: 'JWT_LIFETIME'
   },
   webhooks: {
-    updateUserNames: {
-      __name: 'USERNAMES_WEBHOOKS',
-      __format: 'json'
-    },
-    updateOrganizationNames: {
-      __name: 'ORGNAMES_WEBHOOKS',
+    updateEntityNames: {
+      __name: 'NAMES_WEBHOOKS',
       __format: 'json'
     }
   }

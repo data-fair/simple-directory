@@ -25,7 +25,6 @@ module.exports = {
     }
   },
   webhooks: {
-    updateUserNames: [],
-    updateOrganizationNames: []
+    updateEntityNames: []
   }
 }
