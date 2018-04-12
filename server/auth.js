@@ -17,6 +17,12 @@ const mapOrganization = (user) => (organization) => ({
 
 let router = express.Router()
 
+function userName(user) {
+  if (user.name) return user.name
+  if (user.firstName || user.lastName) return ((user.firstName || '') + ' ' + (user.lastName || '')).trim()
+  if (user.email) return user.email.split('@').shift().split('.').map(str => str[0].toUpperCase() + str.slice(1)).join(' ')
+}
+
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
 router.post('/passwordless', asyncWrap(async (req, res, next) => {
@@ -27,8 +33,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   const payload = {
     id: user.id,
     email: req.body.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
+    name: userName(user),
     organizations: organizations.map(mapOrganization(user))
   }
   if (user.isAdmin) payload.isAdmin = true
