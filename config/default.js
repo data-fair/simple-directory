@@ -23,5 +23,9 @@ module.exports = {
       url: 'https://koumoul.com',
       email: 'support@koumoul.com'
     }
+  },
+  webhooks: {
+    updateUserNames: [],
+    updateOrganizationNames: []
   }
 }

@@ -4,6 +4,7 @@ const express = require('express')
 const jwt = require('jsonwebtoken')
 const util = require('util')
 const asyncWrap = require('./utils/async-wrap')
+const userName = require('./utils/user-name')
 
 const config = require('config')
 const privateKey = fs.readFileSync(path.join(__dirname, '..', config.secret.private))
@@ -16,12 +17,6 @@ const mapOrganization = (user) => (organization) => ({
 })
 
 let router = express.Router()
-
-function userName(user) {
-  if (user.name) return user.name
-  if (user.firstName || user.lastName) return ((user.firstName || '') + ' ' + (user.lastName || '')).trim()
-  if (user.email) return user.email.split('@').shift().split('.').map(str => str[0].toUpperCase() + str.slice(1)).join(' ')
-}
 
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.

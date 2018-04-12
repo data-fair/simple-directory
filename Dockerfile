@@ -14,6 +14,7 @@ RUN npm install && npm run build && npm prune --production
 ENV NODE_ENV production
 
 # Adding server files
+ADD scripts /webapp/scripts
 ADD server /webapp/server
 ADD contract /webapp/contract
 ADD resources /webapp/resources
