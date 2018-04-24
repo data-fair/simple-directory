@@ -9,5 +9,10 @@ module.exports = {
       __name: 'NAMES_WEBHOOKS',
       __format: 'json'
     }
+  },
+  brand: {
+    logo: 'BRAND_LOGO',
+    title: 'BRAND_TITLE',
+    description: 'BRAND_DESCRIPTION'
   }
 }

@@ -5,16 +5,19 @@ This service aims to provide easy access to user and organizations structures an
 [![Coverage Status](https://coveralls.io/repos/github/koumoul-dev/simple-directory/badge.svg?branch=master)](https://coveralls.io/github/koumoul-dev/simple-directory?branch=master)
 
 ## Development environment
+
 This project uses the following stack : Mongo, Express, VueJS, NodeJS. The primary language used is javascript with the ES7 syntax.
 You should use linters and beautifiers compliants with the ES7 syntax in your editor.
 
 Install dependencies and run bundler:
+
 ```
 npm install
 npm run build
 ```
 
-Run a development server with nodemon, webpack and browser-sync all watching, bundling, hot-reloading, etc:
+Run a development server:
+
 ```
 npm run dev
 ```
@@ -27,7 +30,6 @@ openssl genpkey -algorithm RSA -out ./resources/default.key -pkeyopt rsa_keygen_
 openssl rsa -in ./resources/default.key -outform PEM -pubout -out  ./resources/default.key.pub
 ```
 
-
 ## Design
 
-The application applies the material design recommendations and uses vue and vue-material
+The application applies the material design recommendations and uses vue and vuetify
