@@ -8,9 +8,11 @@
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "report": "nyc report --reporter=html",
     "lint": "eslint --ext js,vue --ignore-path .gitignore .",
-    "dev": "NODE_ENV=development nodemon server",
-    "build": "nuxt build",
-    "start": "node server"
+    "dev": "ln -sf ${PWD}/doc/pages/ public/pages/doc && NODE_ENV=development nodemon server",
+    "build": "ln -sf ${PWD}/doc/pages/ public/pages/doc && nuxt build",
+    "start": "node server",
+    "doc": "nuxt generate --config-file ${PWD}/doc/nuxt.config.js",
+    "deploy-doc": "push-dir --dir=doc-dist --branch=gh-pages --cleanup"
   },
   "repository": {
     "type": "git",
@@ -35,7 +37,8 @@
     "eslint-plugin-standard": "^3.0.1",
     "eslint-plugin-vue": "^4.3.0",
     "nodemon": "^1.17.3",
-    "nyc": "^11.3.0"
+    "nyc": "^11.3.0",
+    "push-dir": "^0.4.1"
   },
   "dependencies": {
     "@nuxtjs/axios": "^5.1.1",

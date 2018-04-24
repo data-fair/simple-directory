@@ -2,3 +2,5 @@
 /.nyc_output
 /coverage
 /.nuxt
+/doc-dist
+/public/pages/doc

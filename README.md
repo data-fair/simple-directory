@@ -33,3 +33,9 @@ openssl rsa -in ./resources/default.key -outform PEM -pubout -out  ./resources/d
 ## Design
 
 The application applies the material design recommendations and uses vue and vuetify
+
+## Embedded documentation
+
+Documentation is maintained in ./doc as a small separate nuxt project. Its content is built and pushed on gitlab-pages by the Travis build.
+
+The pages are also linked to the main nuxt project, so that any Simple Directory instance embeds its full documentation.
