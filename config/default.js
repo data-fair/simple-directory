@@ -39,10 +39,7 @@ module.exports = {
       error: 'FF5252', // red.accent2
       info: '#2196F3', // blue.base
       success: '#4CAF50', // green.base
-      warning: '#FFC107', // amber.base
-      // other colors
-      logo1: '#2196F3',
-      logo2: '#BBDEFB'
+      warning: '#FFC107' // amber.base
     }
   }
 }
