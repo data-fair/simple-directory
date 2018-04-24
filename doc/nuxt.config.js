@@ -1,4 +1,6 @@
 const config = require('config')
+const fr = require('../i18n/fr')
+const en = require('../i18n/en')
 
 module.exports = {
   srcDir: 'doc/',
@@ -8,6 +10,17 @@ module.exports = {
   plugins: [{src: '~plugins/vuetify'}],
   router: {base: '/simple-directory/'},
   env: {brand: config.brand},
+  modules: [['nuxt-i18n', {
+    locales: [
+      { code: 'fr' },
+      { code: 'en' }
+    ],
+    defaultLocale: 'fr',
+    vueI18n: {
+      fallbackLocale: 'fr',
+      messages: {fr, en}
+    }
+  }]],
   head: {
     title: 'Simple Directory',
     meta: [

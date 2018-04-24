@@ -31,5 +31,5 @@ after_success:
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
   - docker build -f Dockerfile -t $REPO:$TAG .
   - docker push $REPO
-  - npm run doc
+  - npm run build-doc
   - npm run deploy-doc

@@ -4,6 +4,7 @@
       <v-layout align-center>
         <v-flex>
           <h3 class="display-3">Welcome to simple-directory !</h3>
+          <v-btn color="primary">text</v-btn>
         </v-flex>
       </v-layout>
     </v-container>
