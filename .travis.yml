@@ -33,8 +33,10 @@ after_success:
   - docker build -f Dockerfile -t $REPO:$TAG .
   - docker push $REPO
   - npm run build-doc
-
-deploy:
-  provider: pages
-  local-dir: doc-dist
-  github-token: $GITHUB_TOKEN
+  - git config --global user.email "nobody@nobody.org"
+  - git config --global user.name "Travis CI"
+  - cd doc-dist
+  - git init
+  - git add .
+  - git commit -m "Deploy to Github Pages"
+  - git push --force --quiet "https://${GITHUB_TOKEN}@github.com/koumoul-dev/simple-directory.git"
