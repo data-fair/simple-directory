@@ -12,7 +12,7 @@
     "build": "ln -nsf ${PWD}/doc/pages/doc public/pages/doc && nuxt build",
     "start": "node server",
     "doc": "nuxt --config-file ${PWD}/doc/nuxt.config.js",
-    "build-doc": "nuxt generate --config-file ${PWD}/doc/nuxt.config.js",
+    "build-doc": "nuxt generate --config-file ${PWD}/doc/nuxt.config.js"
   },
   "repository": {
     "type": "git",
