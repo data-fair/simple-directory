@@ -38,8 +38,7 @@
     "eslint-plugin-standard": "^3.0.1",
     "eslint-plugin-vue": "^4.3.0",
     "nodemon": "^1.17.3",
-    "nyc": "^11.3.0",
-    "push-dir": "^0.4.1"
+    "nyc": "^11.3.0"
   },
   "dependencies": {
     "@nuxtjs/axios": "^5.1.1",
