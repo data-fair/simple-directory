@@ -27,11 +27,13 @@ after_success:
   - npm run coveralls
   # No docker push or gh-pages push on pull requests
   - if [ "$TRAVIS_PULL_REQUEST" == "true" ]; then exit; fi
+  # Docker build and push
   - docker login -u $DOCKER_USER -p $DOCKER_PASS
   - export REPO=koumoul/simple-directory
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
   - docker build -f Dockerfile -t $REPO:$TAG .
   - docker push $REPO
+  # Doc build and push to gh-pages
   - npm run build-doc
   - git config --global user.email "nobody@nobody.org"
   - git config --global user.name "Travis CI"
@@ -39,4 +41,4 @@ after_success:
   - git init
   - git add .
   - git commit -m "Deploy to Github Pages"
-  - git push --force --quiet "https://${GITHUB_TOKEN}@github.com/koumoul-dev/simple-directory.git"
+  - git push --force --quiet "https://${GITHUB_TOKEN}@github.com/koumoul-dev/simple-directory.git" master:gh-pages
