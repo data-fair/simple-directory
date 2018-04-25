@@ -1,14 +1,16 @@
 <template>
   <v-app>
     <v-toolbar app scroll-off-screen color="transparent" flat>
-      <div class="logo-container">
-        <nuxt-link :to="{name: 'index'}" title="Accueil">
-          <img v-if="env.brand.logo" :src="env.brand.logo">
-          <logo v-else/>
-        </nuxt-link>
-      </div>
+      <template v-if="$route.path !== localePath('index')">
+        <div class="logo-container">
+          <nuxt-link :to="localePath('index')" :title="$t('home')">
+            <img v-if="env.brand.logo" :src="env.brand.logo">
+            <logo v-else/>
+          </nuxt-link>
+        </div>
+        <v-toolbar-title><h1 class="headline">{{ env.brand.title }}</h1></v-toolbar-title>
+      </template>
 
-      <v-toolbar-title><h1 class="headline">{{ env.brand.title }}</h1></v-toolbar-title>
       <v-spacer/>
 
     </v-toolbar>

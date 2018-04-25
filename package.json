@@ -8,8 +8,8 @@
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "report": "nyc report --reporter=html",
     "lint": "eslint --ext js,vue --ignore-path .gitignore .",
-    "dev": "ln -sf ${PWD}/doc/pages public/pages/doc && NODE_ENV=development nodemon server",
-    "build": "ln -sf ${PWD}/doc/pages public/pages/doc && nuxt build",
+    "dev": "ln -nsf ${PWD}/doc/pages/doc public/pages/doc && NODE_ENV=development nodemon server",
+    "build": "ln -nsf ${PWD}/doc/pages/doc public/pages/doc && nuxt build",
     "start": "node server",
     "doc": "nuxt --config-file ${PWD}/doc/nuxt.config.js",
     "build-doc": "nuxt generate --config-file ${PWD}/doc/nuxt.config.js",
@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@nuxtjs/axios": "^5.1.1",
+    "@nuxtjs/markdownit": "^1.2.0",
     "axios": "^0.18.0",
     "body-parser": "^1.18.2",
     "config": "^1.28.1",

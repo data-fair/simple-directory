@@ -1,13 +1,28 @@
 <template>
   <v-app>
     <v-toolbar app scroll-off-screen color="transparent" flat>
-      <div v-if="$route.path !== localePath('index')" class="logo-container">
-        <nuxt-link to="/" title="Accueil">
-          <img src="../../public/assets/logo.svg" style="max-width: 150px;">
-        </nuxt-link>
-      </div>
+      <template v-if="$route.path !== localePath('index')">
+        <div class="logo-container">
+          <nuxt-link :title="$t('home')" :to="localePath('index')">
+            <img src="../../public/assets/logo.svg" style="max-width: 150px;">
+          </nuxt-link>
+        </div>
+        <v-toolbar-title><h1 class="headline">Simple Directory</h1></v-toolbar-title>
+      </template>
 
       <v-spacer/>
+
+      <v-btn :to="localePath({name: 'doc-id', params: {id: 'about'}})" flat small color="primary">
+        {{ $t('doc.about.link') }}
+      </v-btn>
+
+      <v-btn :to="localePath({name: 'doc-id', params: {id: 'install'}})" flat small color="primary">
+        {{ $t('doc.install.link') }}
+      </v-btn>
+
+      <v-btn :to="localePath({name: 'doc-id', params: {id: 'use'}})" flat small color="primary">
+        {{ $t('doc.use.link') }}
+      </v-btn>
 
       <v-speed-dial
         direction="bottom"

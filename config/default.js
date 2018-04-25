@@ -41,5 +41,6 @@ module.exports = {
       success: '#4CAF50', // green.base
       warning: '#FFC107' // amber.base
     }
-  }
+  },
+  defaultLocale: 'fr'
 }

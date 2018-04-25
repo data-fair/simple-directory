@@ -1,4 +1,6 @@
 const config = require('config')
+const fr = require('./i18n/fr')
+const en = require('./i18n/en')
 
 module.exports = {
   dev: process.env.NODE_ENV === 'development',
@@ -15,7 +17,17 @@ module.exports = {
   router: {
     base: ('/' + config.publicUrl.split('//')[1].split('/').slice(1).join('/')).replace('//', '/')
   },
-  modules: ['@nuxtjs/axios'],
+  modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', ['nuxt-i18n', {
+    locales: [
+      { code: 'fr' },
+      { code: 'en' }
+    ],
+    defaultLocale: config.defaultLocale,
+    vueI18n: {
+      fallbackLocale: config.defaultLocale,
+      messages: {fr, en}
+    }
+  }]],
   axios: {
     browserBaseURL: config.publicUrl + '/',
     baseURL: `http://localhost:${config.port}/`
