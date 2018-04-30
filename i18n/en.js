@@ -21,5 +21,13 @@ module.exports = {
     use: {
       link: 'Use'
     }
+  },
+  pages: {
+    login: {
+      title: 'Identify yourself',
+      emailTitle: `By receiving an email`,
+      emailLabel: 'Your email address',
+      emailCaption: `Learn more about <a href="https://medium.com/@ninjudd/passwords-are-obsolete-9ed56d483eb">passwordless</a> authentication`
+    }
   }
 }

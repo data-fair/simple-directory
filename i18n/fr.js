@@ -21,5 +21,13 @@ module.exports = {
     use: {
       link: 'Utilisation'
     }
+  },
+  pages: {
+    login: {
+      title: 'Identifiez vous',
+      emailTitle: `En recevant un email`,
+      emailLabel: 'Votre adresse mail',
+      emailCaption: `En savoir plus sur l'authentification <a href="https://koumoul.com/blog/passwordless">sans mot de passe</a>`
+    }
   }
 }
