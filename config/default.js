@@ -29,8 +29,6 @@ module.exports = {
   },
   brand: {
     logo: null,
-    title: 'Simple Directory',
-    description: 'Manage and authenticate your users.',
     theme: {
       // standard vuetify colors
       primary: '#1E88E5', // blue.darken1

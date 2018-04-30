@@ -1,7 +1,6 @@
 const fs = require('fs')
 const config = require('config')
-const fr = require('../i18n/fr')
-const en = require('../i18n/en')
+const messages = require('./i18n').messages
 
 // Additional dynamic routes for generate
 const routes = fs.readdirSync('doc/pages/doc/')
@@ -31,7 +30,7 @@ module.exports = {
     defaultLocale: 'fr',
     vueI18n: {
       fallbackLocale: 'fr',
-      messages: {fr, en}
+      messages
     }
   }]],
   head: {

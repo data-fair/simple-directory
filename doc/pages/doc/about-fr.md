@@ -30,4 +30,4 @@ En complément de l'authentification sans mot de passe basée sur les emails, le
 
 Le titre, le logo, les couleurs du thème, le contenu des emails, la langue par défaut, etc. *Simple Directory* est largement configurable pour être intégré de manière élégante dans votre système.
 
-Le service est construit de manière à supporter l'ajout de nouveaux supports de persistance des bases d'utilisateurs et de d'organisations. Nous prévoyons également d'implémenter l'intéropérabilité avec d'autres bases comme LDAP, dans ce contexte *Simple Directory* est un moyen de moderniser votre système sans le bouleverser.
+Le service est construit de manière à supporter l'ajout de nouveaux supports de persistance des bases d'utilisateurs et d'organisations. Nous prévoyons également d'implémenter l'intéropérabilité avec d'autres bases comme LDAP, dans ce contexte *Simple Directory* est un moyen de moderniser votre système sans le bouleverser.

@@ -1,13 +1,20 @@
 const config = require('config')
-const fr = require('./i18n/fr')
-const en = require('./i18n/en')
+const i18n = require('./i18n')
 
 module.exports = {
   dev: process.env.NODE_ENV === 'development',
   srcDir: 'public/',
   build: {
     publicPath: config.publicUrl + '/_nuxt/',
-    extractCSS: true
+    extractCSS: true,
+    vendor: ['babel-polyfill'],
+    // Use babel polyfill, not runtime transform to support Array.includes and other methods
+    // cf https://github.com/nuxt/nuxt.js/issues/93
+    babel: {
+      presets: [
+        ['vue-app', {useBuiltIns: true, targets: { ie: 11, uglify: true }}]
+      ]
+    }
   },
   loading: { color: '#1e88e5' }, // Customize the progress bar color
   plugins: [
@@ -18,14 +25,11 @@ module.exports = {
     base: ('/' + config.publicUrl.split('//')[1].split('/').slice(1).join('/')).replace('//', '/')
   },
   modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', ['nuxt-i18n', {
-    locales: [
-      { code: 'fr' },
-      { code: 'en' }
-    ],
+    locales: i18n.locales,
     defaultLocale: config.defaultLocale,
     vueI18n: {
       fallbackLocale: config.defaultLocale,
-      messages: {fr, en}
+      messages: i18n.messages
     }
   }]],
   axios: {
@@ -37,12 +41,12 @@ module.exports = {
     brand: config.brand
   },
   head: {
-    title: config.brand.title,
+    title: i18n.messages[config.defaultLocale].title,
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { hid: 'application', name: 'application-name', content: config.brand.title },
-      { hid: 'description', name: 'description', content: config.brand.description }
+      { hid: 'application', name: 'application-name', content: i18n.messages[config.defaultLocale].title },
+      { hid: 'description', name: 'description', content: i18n.messages[config.defaultLocale].description }
     ],
     link: [
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Nunito:300,400,500,700,400italic|Material+Icons' }

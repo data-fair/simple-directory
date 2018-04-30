@@ -52,6 +52,7 @@
     "event-to-promise": "^0.8.0",
     "express": "^4.16.2",
     "express-jwt": "^5.3.0",
+    "flat": "^4.0.0",
     "js-cookie": "^2.2.0",
     "json-web-key": "^0.3.0",
     "jsonwebtoken": "^8.1.0",

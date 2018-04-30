@@ -2,8 +2,12 @@
   <v-jumbotron>
     <v-container fill-height>
       <v-layout align-center>
-        <v-flex>
-          <h3 class="display-3">Welcome to simple-directory !</h3>
+        <v-flex text-xs-center>
+          <img src="../../public/assets/logo.svg" style="max-width: 150px;">
+          <h3 class="display-3">{{ $t('title') }}</h3>
+          <span class="subheading">{{ $t('description') }}</span>
+          <v-divider class="my-3"/>
+          <v-btn :to="localePath('login')" color="primary">{{ $t('logLink') }}</v-btn>
         </v-flex>
       </v-layout>
     </v-container>
