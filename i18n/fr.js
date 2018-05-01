@@ -63,10 +63,16 @@ Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vo
     <mj-section>
       <mj-column>
         <mj-image width="100" src="{{logo}}"></mj-image>
-        <mj-text font-size="14px" font-weight="500" line-height="21px" color="#212121" font-family="helvetica" align="center" padding-top="16px" padding-bottom="24px">Une demande d'identification a été faite depuis <a href="//{{host}}">{{host}}</a>. Pour la confirmer, cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.</mj-text>
-        <mj-button background-color="{{brand.theme.primary}}" color="#fff" href="{{link}}" border-radius="4px">Connexion à {{host}}</mj-button>
+        <mj-text font-size="14px" font-weight="500" line-height="21px" color="#212121" font-family="helvetica" align="center" padding-top="16px" padding-bottom="24px">
+          Une demande d'identification a été faite depuis <a href="//{{host}}">{{host}}</a>. Pour la confirmer, cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.
+        </mj-text>
+        <mj-button background-color="{{brand.theme.primary}}" color="#fff" href="{{link}}" border-radius="4px">
+          Connexion à {{host}}
+        </mj-button>
         <mj-divider border-width="1px" border-color="#424242" padding-top="48px"></mj-divider>
-        <mj-text font-size="12px" font-weight="400" line-height="18px" color="#424242" font-family="helvetica">Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à <a href="//{{host}}">{{host}}</a>, n'hésitez pas à nous envoyer un email à <a href="mailto:{{contact}}">{{contact}}</a>.</mj-text>
+        <mj-text font-size="12px" font-weight="400" line-height="18px" color="#424242" font-family="helvetica">
+          Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à <a href="//{{host}}">{{host}}</a>, n'hésitez pas à nous contacter à <a href="mailto:{{contact}}">{{contact}}</a>.
+        </mj-text>
       </mj-column>
     </mj-section>
   </mj-body>
