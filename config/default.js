@@ -1,7 +1,7 @@
 module.exports = {
-  port: 5689,
-  publicUrl: 'http://localhost:5689',
-  kid: 'simple-directory-default',
+  port: 8080,
+  publicUrl: 'http://localhost:8080',
+  kid: 'simple-directory',
   secret: {
     public: './resources/keys/default.key.pub',
     private: './resources/keys/default.key'
@@ -54,6 +54,6 @@ module.exports = {
   maildev: {
     active: false,
     smtp: 1025,
-    web: 1090
+    web: 1080
   }
 }

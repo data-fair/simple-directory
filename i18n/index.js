@@ -31,7 +31,7 @@ exports.messages = unflatten(flatMessages, flatOpts)
 // A subset of messages for UI separated for performance.
 exports.publicMessages = unflatten(
   Object.keys(flatMessages)
-    .filter(k => ['common', 'pages'].includes(k.split('_')[1]))
+    .filter(k => ['common', 'pages', 'doc'].includes(k.split('_')[1]))
     .reduce((a, k) => { a[k] = flatMessages[k]; return a }, {})
   , flatOpts)
 

@@ -12,9 +12,8 @@ module.exports = {
     }
   },
   brand: {
-    logo: 'BRAND_LOGO',
-    title: 'BRAND_TITLE',
-    description: 'BRAND_DESCRIPTION'
+    logo: 'BRAND_LOGO'
+
   },
   mails: {
     transport: {

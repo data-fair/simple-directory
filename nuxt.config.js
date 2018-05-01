@@ -30,7 +30,7 @@ module.exports = {
     defaultLocale: config.defaultLocale,
     vueI18n: {
       fallbackLocale: config.defaultLocale,
-      messages: i18n.publicMessages
+      messages: i18n.messages
     }
   }]],
   axios: {

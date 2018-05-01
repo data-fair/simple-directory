@@ -16,7 +16,17 @@ module.exports = {
     config: {
       i18nKey: 'Key in I18N file',
       i18nVar: 'Environment variable',
-      i18nVal: 'Value'
+      i18nVal: 'Value',
+      varKey: 'Key in the configuration file',
+      varName: `Environment variable`,
+      varDesc: 'Description',
+      varDefault: 'Default value',
+      varDescriptions: {
+        publicUrl: `<b>IMPORTANT.</b> The URL where the service will be exposed. For example https://koumoul.com/simple-directory`,
+        brand: {
+          logo: `The URL to replace Simple Directory's default logo.`
+        }
+      }
     },
     use: {
       link: 'Use'
