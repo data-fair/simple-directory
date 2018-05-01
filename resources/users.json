@@ -3,4 +3,9 @@
   "firstName": "John",
   "lastName": "Doe",
   "email": "john.doe@test.org"
+}, {
+  "id": "albanm",
+  "firstName": "Alban",
+  "lastName": "Mouton",
+  "email": "alban.mouton@gmail.com"
 }]

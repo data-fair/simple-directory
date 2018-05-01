@@ -3,7 +3,7 @@
     <v-toolbar app scroll-off-screen color="transparent" flat>
       <template v-if="![localePath('index'), localePath('login')].includes($route.path)">
         <div class="logo-container">
-          <nuxt-link :to="localePath('index')" :title="$t('home')">
+          <nuxt-link :to="localePath('index')" :title="$t('common.home')">
             <img v-if="env.brand.logo" :src="env.brand.logo">
             <logo v-else/>
           </nuxt-link>

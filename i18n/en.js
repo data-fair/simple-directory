@@ -27,7 +27,11 @@ module.exports = {
       title: 'Identify yourself',
       emailTitle: `By receiving an email`,
       emailLabel: 'Your email address',
-      emailCaption: `Learn more about <a href="https://medium.com/@ninjudd/passwords-are-obsolete-9ed56d483eb">passwordless</a> authentication`
+      emailCaption: `Learn more about <a href="https://medium.com/@ninjudd/passwords-are-obsolete-9ed56d483eb">passwordless</a> authentication`,
+      success: `You will receive an email at the specified address. Please use the link in this email to conclude your identification.`
     }
+  },
+  errors: {
+    badEmail: 'Email address is empty or malformed.'
   }
 }

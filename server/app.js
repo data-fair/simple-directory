@@ -6,8 +6,11 @@ const bodyParser = require('body-parser')
 const fs = require('fs')
 const path = require('path')
 const http = require('http')
+const util = require('util')
 const eventToPromise = require('event-to-promise')
 const storages = require('./storages')
+const mails = require('./mails')
+const i18n = require('../i18n')
 
 const app = express()
 const server = http.createServer(app)
@@ -15,6 +18,7 @@ const server = http.createServer(app)
 app.use(cors())
 app.use(cookieParser())
 app.use(bodyParser.json({limit: '100kb'}))
+app.use(i18n.middleware)
 
 const JSONWebKey = require('json-web-key')
 const publicKey = JSONWebKey.fromPEM(fs.readFileSync(path.join(__dirname, '..', config.secret.public)))
@@ -26,23 +30,35 @@ app.get('/.well-known/jwks.json', (req, res) => {
 })
 
 const apiDocs = require('../contract/api-docs')
-app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))
-app.use('/api/auth', require('./auth'))
-app.use('/api/users', require('./users'))
-app.use('/api/organizations', require('./organizations'))
+app.get('/api/v1/api-docs.json', (req, res) => res.json(apiDocs))
+app.use('/api/v1/auth', require('./auth'))
+app.use('/api/v1/users', require('./users'))
+app.use('/api/v1/organizations', require('./organizations'))
 
-// Error handling to complement express default error handling. TODO do something useful of errors.
 app.use((err, req, res, next) => {
-  // Default error handler of express is actually not bad.
-  // It will send stack to client only if not in production and manage interrupted streams.
-  next(err)
+  if (err.statusCode === 500 || !err.statusCode) console.error('Error in express route', err)
+  if (!res.headersSent) res.status(err.statusCode || 500).send(err.message)
 })
 
 exports.run = async() => {
   const nuxt = await require('./nuxt')()
   app.use(nuxt)
+
+  const mailTransport = await mails.init()
+  app.set('mailTransport', mailTransport)
+  // Run a handy development mail server
+  if (config.mails.maildev) {
+    const MailDev = require('maildev')
+    const maildev = new MailDev()
+    maildev.listenAsync = util.promisify(maildev.listen)
+    maildev.closeAsync = util.promisify(maildev.close)
+    await maildev.listenAsync()
+    app.set('maildev', maildev)
+  }
+
   const storage = await storages.init()
   app.set('storage', storage)
+
   server.listen(config.port)
   await eventToPromise(server, 'listening')
 }
@@ -50,4 +66,10 @@ exports.run = async() => {
 exports.stop = async() => {
   server.close()
   await eventToPromise(server, 'close')
+
+  app.get('mailTransport').quit()
+  await eventToPromise(app.get('mailTransport'), 'end')
+  if (config.mails.maildev) {
+    await app.get('maildev').closeAsync()
+  }
 }

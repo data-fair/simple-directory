@@ -13,10 +13,11 @@
           <h4 class="subheading">{{ $t('pages.login.emailTitle') }}</h4>
           <v-text-field
             id="email"
-            :required="true"
             :autofocus="true"
             :label="$t('pages.login.emailLabel')"
             :append-icon-cb="login"
+            v-model="email"
+            :error-messages="emailErrors"
             name="email"
             append-icon="send"
             @keyboard.enter.native="login"
@@ -31,13 +32,15 @@
 
 <script>
 import logo from '../components/logo.vue'
+import eventBus from '../event-bus'
 const {mapState} = require('vuex')
 
 export default {
   components: {logo},
   data: () => ({
     dialog: true,
-    email: null
+    email: null,
+    emailErrors: []
   }),
   computed: {
     ...mapState(['user', 'env']),
@@ -47,9 +50,16 @@ export default {
   },
   methods: {
     async login() {
-      await this.$axio.$post('api/auth/passwordless' + (this.redirectUrl ? '?redirect=' + this.redirectUrl : ''), {
-        email: this.email
-      })
+      try {
+        await this.$axios.$post('api/v1/auth/passwordless' + (this.redirectUrl ? '?redirect=' + this.redirectUrl : ''), {
+          email: this.email
+        })
+        this.emailErrors = []
+        eventBus.$emit('notification', {type: 'success', msg: this.$t('pages.login.success')})
+      } catch (error) {
+        if (error.response.status >= 500) eventBus.$emit('notification', {error})
+        else this.emailErrors = [error.response.data || error.message]
+      }
     }
   }
 }

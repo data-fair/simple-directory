@@ -1,6 +1,6 @@
 module.exports = {
   port: 5689,
-  publicUrl: 'http://localhost:5690',
+  publicUrl: 'http://localhost:5689',
   kid: 'simple-directory-default',
   secret: {
     public: './resources/keys/default.key.pub',
@@ -40,5 +40,16 @@ module.exports = {
       warning: '#FFC107' // amber.base
     }
   },
-  defaultLocale: 'fr'
+  defaultLocale: 'fr',
+  mails: {
+    maildev: false,
+    from: 'no-reply@test.com',
+    contact: 'contact@test.com',
+    // transport is a full configuration object for createTransport of nodemailer
+    // cf https://nodemailer.com/smtp/
+    transport: {
+      port: 1025,
+      ignoreTLS: true
+    }
+  }
 }

@@ -57,5 +57,11 @@
     "firstName": "Issie",
     "lastName": "Carlens",
     "email": "icarlens9@independent.co.uk"
+  },
+  {
+    "id": "albanm",
+    "firstName": "Alban",
+    "lastName": "Mouton",
+    "email": "alban.mouton@koumoul.com"
   }
 ]

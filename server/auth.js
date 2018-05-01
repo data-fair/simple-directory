@@ -3,8 +3,10 @@ const path = require('path')
 const express = require('express')
 const jwt = require('jsonwebtoken')
 const util = require('util')
+const URL = require('url').URL
 const asyncWrap = require('./utils/async-wrap')
 const userName = require('./utils/user-name')
+const mails = require('./mails')
 
 const config = require('config')
 const privateKey = fs.readFileSync(path.join(__dirname, '..', config.secret.private))
@@ -21,9 +23,12 @@ let router = express.Router()
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
 router.post('/passwordless', asyncWrap(async (req, res, next) => {
-  if (!req.body || !req.body.email) return res.sendStatus(400)
+  if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
+
   const user = await req.app.get('storage').getUserByEmail(req.body.email)
-  if (!user) return res.sendStatus(404)
+  // No 404 here so we don't disclose information about existence of the user
+  if (!user) return res.status(204).send()
+
   const organizations = await req.app.get('storage').getUserOrganizations(user.id)
   const payload = {
     id: user.id,
@@ -37,13 +42,15 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     expiresIn: config.jwt.expiresIn,
     keyid: config.kid
   })
-  if (req.query.redirect) {
-    // res.redirect(req.query.redirect + token)
-    res.send(req.query.redirect + token)
-  } else {
-    res.cookie('id_token', token)
-    res.send(token)
-  }
+  const link = (req.query.redirect || config.publicUrl + '/me') + token
+  await mails.send({
+    transport: req.app.get('mailTransport'),
+    key: 'login',
+    messages: req.messages,
+    to: req.body.email,
+    params: {link, host: new URL(link).host}
+  })
+  res.status(204).send()
 }))
 
 // Used to extend an older but still valid token from a user or to validate a passwordless id_token
