@@ -50,7 +50,8 @@ module.exports = {
       { hid: 'description', name: 'description', content: i18n.messages[config.defaultLocale].common.description }
     ],
     link: [
-      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Nunito:300,400,500,700,400italic|Material+Icons' }
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Nunito:300,400,500,700,400italic|Material+Icons' },
+      { rel: 'icon', type: 'image/x-icon', href: 'favicon.ico' }
     ]
   }
 }
