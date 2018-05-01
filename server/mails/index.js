@@ -24,7 +24,7 @@ exports.send = async ({transport, key, messages, to, params}) => {
     ...params,
     ...flatten({brand: config.brand}),
     contact: config.mails.contact,
-    logo: config.brand.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/77c218c8/public/assets/logo.svg'
+    logo: config.brand.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/627b6505/public/assets/logo-150x150.png'
   }
 
   const mjmlRes = mjml2html(applyParams(messages.mails[key].mjml, params))
