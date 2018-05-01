@@ -1,6 +1,6 @@
 const fs = require('fs')
 const config = require('config')
-const messages = require('./i18n').messages
+const messages = require('../i18n').messages
 
 // Additional dynamic routes for generate
 const routes = fs.readdirSync('doc/pages/doc/')
