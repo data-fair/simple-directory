@@ -20,6 +20,10 @@
         {{ $t('doc.install.link') }}
       </v-btn>
 
+      <v-btn :to="localePath({name: 'doc-id', params: {id: 'config'}})" flat small color="primary">
+        {{ $t('doc.config.link') }}
+      </v-btn>
+
       <v-btn :to="localePath({name: 'doc-id', params: {id: 'use'}})" flat small color="primary">
         {{ $t('doc.use.link') }}
       </v-btn>

@@ -16,6 +16,7 @@ module.exports = {
       link: 'Installation'
     },
     config: {
+      link: 'Configuration',
       i18nKey: 'Clé dans le fichier I18N',
       i18nVar: `Variable d'environnement`,
       i18nVal: 'Valeur',
