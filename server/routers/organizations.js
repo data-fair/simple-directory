@@ -1,6 +1,6 @@
 const express = require('express')
-const jwt = require('./jwt')
-const asyncWrap = require('./utils/async-wrap')
+const jwt = require('../jwt')
+const asyncWrap = require('../utils/async-wrap')
 
 let router = express.Router()
 

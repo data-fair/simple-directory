@@ -1,5 +1,5 @@
 module.exports = {
-  mails: {
-    maildev: true
+  maildev: {
+    active: true
   }
 }

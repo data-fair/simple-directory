@@ -31,11 +31,12 @@ app.get('/.well-known/jwks.json', (req, res) => {
 
 const apiDocs = require('../contract/api-docs')
 app.get('/api/v1/api-docs.json', (req, res) => res.json(apiDocs))
-app.use('/api/v1/auth', require('./auth'))
-app.use('/api/v1/users', require('./users'))
-app.use('/api/v1/organizations', require('./organizations'))
+app.use('/api/v1/auth', require('./routers/auth').router)
+app.use('/api/v1/users', require('./routers/users'))
+app.use('/api/v1/organizations', require('./routers/organizations'))
 
 app.use((err, req, res, next) => {
+  err.statusCode = err.statusCode || err.status
   if (err.statusCode === 500 || !err.statusCode) console.error('Error in express route', err)
   if (!res.headersSent) res.status(err.statusCode || 500).send(err.message)
 })
@@ -47,9 +48,9 @@ exports.run = async() => {
   const mailTransport = await mails.init()
   app.set('mailTransport', mailTransport)
   // Run a handy development mail server
-  if (config.mails.maildev) {
+  if (config.maildev.active) {
     const MailDev = require('maildev')
-    const maildev = new MailDev()
+    const maildev = new MailDev(config.maildev)
     maildev.listenAsync = util.promisify(maildev.listen)
     maildev.closeAsync = util.promisify(maildev.close)
     await maildev.listenAsync()
@@ -61,15 +62,15 @@ exports.run = async() => {
 
   server.listen(config.port)
   await eventToPromise(server, 'listening')
+  return app
 }
 
 exports.stop = async() => {
   server.close()
   await eventToPromise(server, 'close')
 
-  app.get('mailTransport').quit()
-  await eventToPromise(app.get('mailTransport'), 'end')
-  if (config.mails.maildev) {
+  app.get('mailTransport').close()
+  if (config.maildev.active) {
     await app.get('maildev').closeAsync()
   }
 }

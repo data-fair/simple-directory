@@ -5,8 +5,5 @@ module.exports = {
       users: './test/resources/users.json',
       organizations: './test/resources/organizations.json'
     }
-  },
-  mails: {
-    maildev: true
   }
 }

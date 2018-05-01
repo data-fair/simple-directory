@@ -4,13 +4,13 @@ const express = require('express')
 const jwt = require('jsonwebtoken')
 const util = require('util')
 const URL = require('url').URL
-const asyncWrap = require('./utils/async-wrap')
-const userName = require('./utils/user-name')
-const mails = require('./mails')
+const asyncWrap = require('../utils/async-wrap')
+const userName = require('../utils/user-name')
+const mails = require('../mails')
 
 const config = require('config')
-const privateKey = fs.readFileSync(path.join(__dirname, '..', config.secret.private))
-const publicKey = fs.readFileSync(path.join(__dirname, '..', config.secret.public))
+const privateKey = fs.readFileSync(path.join(__dirname, '../..', config.secret.private))
+const publicKey = fs.readFileSync(path.join(__dirname, '../..', config.secret.public))
 
 const mapOrganization = (user) => (organization) => ({
   id: organization.id,
@@ -18,7 +18,7 @@ const mapOrganization = (user) => (organization) => ({
   name: organization.name
 })
 
-let router = express.Router()
+let router = exports.router = express.Router()
 
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
@@ -42,7 +42,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     expiresIn: config.jwt.expiresIn,
     keyid: config.kid
   })
-  const link = (req.query.redirect || config.publicUrl + '/me') + token
+  const link = (req.query.redirect || config.publicUrl + '/me?id_token=') + token
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'login',
@@ -80,5 +80,3 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   res.cookie('id_token', token)
   res.send(token)
 }))
-
-module.exports = router

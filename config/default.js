@@ -42,7 +42,6 @@ module.exports = {
   },
   defaultLocale: 'fr',
   mails: {
-    maildev: false,
     from: 'no-reply@test.com',
     contact: 'contact@test.com',
     // transport is a full configuration object for createTransport of nodemailer
@@ -51,5 +50,10 @@ module.exports = {
       port: 1025,
       ignoreTLS: true
     }
+  },
+  maildev: {
+    active: false,
+    smtp: 1025,
+    web: 1090
   }
 }
