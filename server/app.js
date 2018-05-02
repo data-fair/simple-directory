@@ -30,10 +30,10 @@ app.get('/.well-known/jwks.json', (req, res) => {
 })
 
 const apiDocs = require('../contract/api-docs')
-app.get('/api/v1/api-docs.json', (req, res) => res.json(apiDocs))
-app.use('/api/v1/auth', require('./routers/auth').router)
-app.use('/api/v1/users', require('./routers/users'))
-app.use('/api/v1/organizations', require('./routers/organizations'))
+app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))
+app.use('/api/auth', require('./routers/auth').router)
+app.use('/api/users', require('./routers/users'))
+app.use('/api/organizations', require('./routers/organizations'))
 
 app.use((err, req, res, next) => {
   err.statusCode = err.statusCode || err.status

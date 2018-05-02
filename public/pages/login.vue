@@ -51,7 +51,7 @@ export default {
   methods: {
     async login() {
       try {
-        await this.$axios.$post('api/v1/auth/passwordless' + (this.redirectUrl ? '?redirect=' + this.redirectUrl : ''), {
+        await this.$axios.$post('api/auth/passwordless' + (this.redirectUrl ? '?redirect=' + this.redirectUrl : ''), {
           email: this.email
         })
         this.emailErrors = []

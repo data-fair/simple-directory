@@ -67,7 +67,7 @@ module.exports = {
         }
       }
     },
-    '/auth/passwordless': {
+    '/api/auth/passwordless': {
       post: {
         tags: ['Authentication'],
         summary: 'To get a JWT from an email',
@@ -112,7 +112,7 @@ module.exports = {
         }
       }
     },
-    '/auth/exchange': {
+    '/api/auth/exchange': {
       post: {
         tags: ['Authentication'],
         summary: 'Renew a JWT',

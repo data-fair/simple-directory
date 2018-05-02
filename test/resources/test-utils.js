@@ -35,7 +35,7 @@ exports.axios = async (test, email) => {
   const config = require('config')
   const axOpts = {baseURL: config.publicUrl}
   if (email) {
-    await axios.post(config.publicUrl + '/api/v1/auth/passwordless', {email})
+    await axios.post(config.publicUrl + '/api/auth/passwordless', {email})
     // TODO get id_token
     const token = await new Promise((resolve, reject) => {
       test.app.get('maildev').on('new', email => {
