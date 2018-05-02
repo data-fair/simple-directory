@@ -1,6 +1,15 @@
 <template>
   <v-app>
-    <v-toolbar app scroll-off-screen color="transparent" flat>
+    <v-navigation-drawer v-model="drawer" fixed app>
+      <v-subheader>Documentation</v-subheader>
+      <v-list>
+        <v-list-tile v-for="page in pages" :key="page" :to="localePath({name: 'doc-id', params: {id: page}})">
+          <v-list-tile-title>{{ $t(`doc.${page}.link`) }}</v-list-tile-title>
+        </v-list-tile>
+      </v-list>
+    </v-navigation-drawer>
+    <v-toolbar app scroll-off-screen color="white">
+      <v-toolbar-side-icon @click.stop="drawer = !drawer"/>
       <template v-if="$route.path !== localePath('index')">
         <div class="logo-container">
           <nuxt-link :title="$t('home')" :to="localePath('index')">
@@ -11,22 +20,6 @@
       </template>
 
       <v-spacer/>
-
-      <v-btn :to="localePath({name: 'doc-id', params: {id: 'about'}})" flat small color="primary">
-        {{ $t('doc.about.link') }}
-      </v-btn>
-
-      <v-btn :to="localePath({name: 'doc-id', params: {id: 'install'}})" flat small color="primary">
-        {{ $t('doc.install.link') }}
-      </v-btn>
-
-      <v-btn :to="localePath({name: 'doc-id', params: {id: 'config'}})" flat small color="primary">
-        {{ $t('doc.config.link') }}
-      </v-btn>
-
-      <v-btn :to="localePath({name: 'doc-id', params: {id: 'use'}})" flat small color="primary">
-        {{ $t('doc.use.link') }}
-      </v-btn>
 
       <v-speed-dial
         direction="bottom"
@@ -53,7 +46,12 @@
 
 <script>
 
-export default {}
+export default {
+  data: () => ({
+    drawer: true,
+    pages: ['about', 'install', 'config', 'use']
+  })
+}
 
 </script>
 
@@ -69,25 +67,6 @@ body .application {
 
     img, svg {
       height:100%;
-    }
-  }
-
-  main.content {
-    // background-color: white;
-  }
-
-  .main-toolbar {
-
-  }
-
-  .actions-buttons {
-    position: absolute;
-    top: 76px;
-    right: 8px;
-    margin: 0;
-
-    .v-btn {
-      margin-bottom: 16px;
     }
   }
 

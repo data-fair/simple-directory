@@ -1,29 +1,39 @@
 <template>
   <v-app>
-    <v-toolbar app scroll-off-screen color="transparent" flat>
-      <template v-if="![localePath('index'), localePath('login')].includes($route.path)">
-        <div class="logo-container">
-          <nuxt-link :to="localePath('index')" :title="$t('common.home')">
-            <img v-if="env.brand.logo" :src="env.brand.logo">
-            <logo v-else/>
-          </nuxt-link>
-        </div>
-        <v-toolbar-title><h1 class="headline">{{ env.brand.title }}</h1></v-toolbar-title>
-      </template>
+    <template v-if="localePath('login') === $route.path">
+      <v-toolbar app fixed flat color="transparent">
+        <v-spacer/>
+        <lang-switcher />
+      </v-toolbar>
+    </template>
+    <template v-else>
+      <v-navigation-drawer v-model="drawer" fixed app>
+        <v-subheader>Documentation</v-subheader>
+        <v-list>
+          <v-list-tile v-for="page in docPages" :key="page" :to="localePath({name: 'doc-id', params: {id: page}})">
+            <v-list-tile-title>{{ $t(`doc.${page}.link`) }}</v-list-tile-title>
+          </v-list-tile>
+        </v-list>
+      </v-navigation-drawer>
 
-      <v-spacer/>
+      <v-toolbar app scroll-off-screen color="white">
+        <v-toolbar-side-icon @click.stop="drawer = !drawer"/>
+        <template v-if="localePath('index') !== $route.path">
+          <div class="logo-container">
+            <nuxt-link :to="localePath('index')" :title="$t('common.home')">
+              <img v-if="env.brand.logo" :src="env.brand.logo">
+              <logo v-else/>
+            </nuxt-link>
+          </div>
+          <v-toolbar-title><h1 class="headline">{{ $t('common.title') }}</h1></v-toolbar-title>
+        </template>
 
-      <v-speed-dial
-        direction="bottom"
-        transition="fade-transition"
-      >
-        <v-btn slot="activator" fab flat small>{{ $i18n.locale }}</v-btn>
-        <v-btn v-for="locale in $i18n.locales.filter(l => l.code !== $i18n.locale)" :key="locale.code" :to="switchLocalePath(locale.code)" fab small nuxt>
-          {{ locale.code }}
-        </v-btn>
-      </v-speed-dial>
+        <v-spacer/>
 
-    </v-toolbar>
+        <lang-switcher />
+
+      </v-toolbar>
+    </template>
     <v-content>
       <v-container fluid>
         <nuxt/>
@@ -46,14 +56,17 @@
 <script>
 import eventBus from '../event-bus'
 import logo from '../components/logo.vue'
+import langSwitcher from '../components/lang-switcher.vue'
 const {mapState, mapActions} = require('vuex')
 
 export default {
-  components: {logo},
+  components: {logo, langSwitcher},
   data() {
     return {
       notification: null,
-      showSnackbar: false
+      showSnackbar: false,
+      drawer: false,
+      docPages: ['about', 'install', 'config', 'use']
     }
   },
   computed: {
@@ -87,25 +100,6 @@ body .application {
 
     img, svg {
       height:100%;
-    }
-  }
-
-  main.content {
-    // background-color: white;
-  }
-
-  .main-toolbar {
-
-  }
-
-  .actions-buttons {
-    position: absolute;
-    top: 76px;
-    right: 8px;
-    margin: 0;
-
-    .v-btn {
-      margin-bottom: 16px;
     }
   }
 
