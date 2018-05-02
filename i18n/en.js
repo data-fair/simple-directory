@@ -6,6 +6,11 @@ module.exports = {
   description: 'Easy users and organizations management for modern Web-oriented architectures.',
   home: 'Home',
   logLink: 'login / sign up',
+  documentation: 'Documentation',
+  administration: 'Administration',
+  myAccount: 'My account',
+  organization: 'Organization',
+  dashboard: 'Dashboard',
   doc: {
     about: {
       link: 'About'
@@ -30,10 +35,14 @@ module.exports = {
         },
         storage: {
           type: `<b>IMPORTANT.</b> The type of storage for persisting users and organizations.<br>
-The default type "file" is read-only and suited for development/test or to use data exported from another system.`,
+The default type "file" is read-only and suited for development/test or to use data exported from another system.<br>
+The type "mongo" depends on accessing a MongoDB instance, it is the approriate choice for most production deployments.`,
           file: {
             users: `Only for storage.type=file. The path to the JSON file containing users definitions`,
             organizations: `Only for storage.type=file. The path to the JSON file containing organizations definitions`
+          },
+          mongo: {
+            url: 'Only for storage.type=mongo. The full connection string for mongo database.'
           }
         }
       }

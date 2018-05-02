@@ -1,10 +1,10 @@
 const fs = require('fs')
 const util = require('util')
-// Convert fs.readFile into Promise version of same
 const readFile = util.promisify(fs.readFile)
 
 class FileStorage {
   async init(params) {
+    this.readonly = true
     this.users = JSON.parse(await readFile(params.users, 'utf-8'))
     this.organizations = JSON.parse(await readFile(params.organizations, 'utf-8'))
     return this
@@ -47,15 +47,20 @@ class FileStorage {
     }
   }
 
+  async getOrganization(id) {
+    const orga = this.organizations.find(o => o.id === id)
+    if (!orga) return null
+    const cloneOrga = {...orga}
+    delete cloneOrga.members
+    return cloneOrga
+  }
+
   async findOrganizations(params = {}) {
     let filteredOrganizations = this.organizations
     // For convenience in the files the members are stored in the organizations
     // But the actual model exposed is the contrary
     if (params.ids) {
       filteredOrganizations = filteredOrganizations.filter(organization => (params.ids).find(id => organization.id === id))
-    }
-    if (params.member) {
-      filteredOrganizations = filteredOrganizations.filter(organization => organization.members.find(member => member.id === params.member))
     }
     if (params.q) {
       const lq = params.q.toLowerCase()

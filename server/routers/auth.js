@@ -4,6 +4,7 @@ const express = require('express')
 const jwt = require('jsonwebtoken')
 const util = require('util')
 const URL = require('url').URL
+const shortid = require('shortid')
 const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const mails = require('../mails')
@@ -27,10 +28,11 @@ function getPayload(user) {
 // to check that this address belongs to the user.
 router.post('/passwordless', asyncWrap(async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
-
-  const user = await req.app.get('storage').getUser({email: req.body.email})
+  const storage = req.app.get('storage')
+  let user = await storage.getUser({email: req.body.email})
   // No 404 here so we don't disclose information about existence of the user
-  if (!user) return res.status(204).send()
+  if (!user && storage.readonly) return res.status(204).send()
+  if (!user) user = await storage.createUser({email: req.body.email, id: shortid.generate(), organizations: []})
 
   const payload = getPayload(user)
   if (config.admins.includes(req.body.email)) user.isAdmin = true

@@ -16,6 +16,12 @@ npm install
 npm run build
 ```
 
+Run the services dependencies:
+
+```
+docker-compose up -d
+```
+
 Run a development server:
 
 ```

@@ -33,7 +33,11 @@ export default () => {
         this.$router.push('/')
       },
       nuxtServerInit({commit, dispatch}, {req, env, app}) {
-        commit('setAny', {env: {...env}})
+        commit('setAny', {env: {
+          ...env,
+          readonly: req.app.get('storage').readonly
+        }})
+
         let accessToken = null
         if (req.headers.cookie) accessToken = cookieparser.parse(req.headers.cookie).id_token
         commit('setJwt', accessToken)

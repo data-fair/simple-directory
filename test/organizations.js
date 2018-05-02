@@ -14,8 +14,6 @@ test('Get organization list when authenticated', async t => {
   let res = await ax.get('/api/v1/organizations')
   t.is(res.status, 200)
   t.is(res.data.count, 6)
-  res = await ax.get('/api/v1/organizations?is-member=true')
-  t.is(res.data.count, 2)
   res = await ax.get('/api/v1/organizations?q=li')
   t.is(res.data.count, 2)
 })

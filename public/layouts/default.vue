@@ -8,11 +8,49 @@
     </template>
     <template v-else>
       <v-navigation-drawer v-model="drawer" fixed app>
-        <v-subheader>Documentation</v-subheader>
         <v-list>
-          <v-list-tile v-for="page in docPages" :key="page" :to="localePath({name: 'doc-id', params: {id: page}})">
-            <v-list-tile-title>{{ $t(`doc.${page}.link`) }}</v-list-tile-title>
+
+          <!-- User-s profile page -->
+          <v-list-tile v-if="user" :to="localePath('me')">
+            <v-list-tile-action>
+              <v-icon>account_circle</v-icon>
+            </v-list-tile-action>
+            <v-list-tile-title>{{ $t('common.myAccount') }}</v-list-tile-title>
           </v-list-tile>
+
+          <!-- User's organizations pages -->
+          <v-list-tile v-for="orga in user && user.organizations" :key="orga.id" :to="localePath({name: 'organization-id', params: {id: orga.id}})">
+            <v-list-tile-action>
+              <v-icon>group</v-icon>
+            </v-list-tile-action>
+            <v-list-tile-title>{{ $t('common.organization') + ' ' + orga.name }}</v-list-tile-title>
+          </v-list-tile>
+
+          <!-- Administration pages -->
+          <v-list-group v-if="user && user.isAdmin" value="true">
+            <v-list-tile slot="activator">
+              <v-list-tile-action>
+                <v-icon>verified_user</v-icon>
+              </v-list-tile-action>
+              <v-list-tile-title>{{ $t('common.administration') }}</v-list-tile-title>
+            </v-list-tile>
+            <v-list-tile :to="localePath('admin.dashboard')">
+              <v-list-tile-title>{{ $t(`common.dashboard`) }}</v-list-tile-title>
+            </v-list-tile>
+          </v-list-group>
+
+          <!-- Documentation pages -->
+          <v-list-group value="true">
+            <v-list-tile slot="activator">
+              <v-list-tile-action>
+                <v-icon>help</v-icon>
+              </v-list-tile-action>
+              <v-list-tile-title>{{ $t('common.documentation') }}</v-list-tile-title>
+            </v-list-tile>
+            <v-list-tile v-for="page in docPages" :key="page" :to="localePath({name: 'doc-id', params: {id: page}})">
+              <v-list-tile-title>{{ $t(`doc.${page}.link`) }}</v-list-tile-title>
+            </v-list-tile>
+          </v-list-group>
         </v-list>
       </v-navigation-drawer>
 
@@ -27,13 +65,11 @@
           </div>
           <v-toolbar-title><h1 class="headline">{{ $t('common.title') }}</h1></v-toolbar-title>
         </template>
-
         <v-spacer/>
-
         <lang-switcher />
-
       </v-toolbar>
     </template>
+
     <v-content>
       <v-container fluid>
         <nuxt/>
@@ -65,12 +101,14 @@ export default {
     return {
       notification: null,
       showSnackbar: false,
-      drawer: false,
-      docPages: ['about', 'install', 'config', 'use']
+      drawer: false
     }
   },
   computed: {
-    ...mapState(['user', 'env'])
+    ...mapState(['user', 'env']),
+    docPages() {
+      return this.user && this.user.isAdmin ? ['about', 'install', 'config', 'use'] : ['use']
+    }
   },
   mounted() {
     eventBus.$on('notification', notif => {

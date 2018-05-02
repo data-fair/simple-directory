@@ -11,10 +11,14 @@ module.exports = {
   },
   admins: ['admin@test.com'],
   storage: {
+    // One of 'file' and 'mongo'
     type: 'file',
     file: {
       users: './resources/users.json',
       organizations: './resources/organizations.json'
+    },
+    mongo: {
+      url: 'mongodb://mongo:27017/data-fair-' + (process.env.NODE_ENV || 'development')
     }
   },
   info: {

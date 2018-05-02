@@ -6,7 +6,12 @@ module.exports = {
     title: 'Simple Directory',
     description: 'Gestion simplifiée de vos utilisateurs et vos organisations dans une architecture moderne orientée Web.',
     home: 'Accueil',
-    logLink: `Se connecter / s'inscrire`
+    logLink: `Se connecter / s'inscrire`,
+    documentation: 'Documentation',
+    administration: 'Administration',
+    myAccount: 'Mon compte',
+    organization: 'Organisation',
+    dashboard: 'Tableau de bord'
   },
   doc: {
     about: {
@@ -32,10 +37,14 @@ module.exports = {
         },
         storage: {
           type: `<b>IMPORTANT.</b> Le type de stockage pour la persistence des utilisateurs et des organisations.<br>
-Le type "file" par défaut est lecture seule et est adapté en développement/test ou pour utiliser une collection d'utilisateurs exportée depuis un autre système.`,
+Le type "file" par défaut est lecture seule et est adapté en développement/test ou pour utiliser une collection d'utilisateurs exportée depuis un autre système.<br>
+Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mode approprié pour la plupart des installations en production.`,
           file: {
             users: `Uniquement pour storage.type=file. Le chemin du fichier JSON contenant les définitions d'utilisateurs`,
             organizations: `Uniquement pour storage.type=file. Le chemin du fichier JSON contenant les définitions d'organisations`
+          },
+          mongo: {
+            url: 'Uniquement pour storage.type=mongo. La chaine de connexion complète à la base de données mongodb.'
           }
         }
       }

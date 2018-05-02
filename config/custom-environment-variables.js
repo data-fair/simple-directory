@@ -14,6 +14,9 @@ module.exports = {
     file: {
       users: 'STORAGE_FILE_USERS',
       organizations: 'STORAGE_FILE_ORGS'
+    },
+    mongo: {
+      url: 'STORAGE_MONGO_URL'
     }
   },
   webhooks: {

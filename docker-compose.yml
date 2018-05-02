@@ -1,0 +1,6 @@
+version: '3'
+services:
+  mongo:
+    image: mvertes/alpine-mongo:3.4.9-0
+    ports:
+      - 27017:27017
