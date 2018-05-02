@@ -9,6 +9,7 @@ module.exports = {
   jwt: {
     expiresIn: '30d'
   },
+  admins: ['admin@test.com'],
   storage: {
     type: 'file',
     params: {

@@ -26,6 +26,7 @@ module.exports = {
       varDefault: 'Valeur par défaut',
       varDescriptions: {
         publicUrl: `<b>IMPORTANT.</b> L'URL à laquelle le service sera exposé. Par exemple https://koumoul.com/simple-directory`,
+        admins: `<b>IMPORTANT.</b> La liste des adresses mails des administrateurs du service.`,
         brand: {
           logo: `L'URL du logo à utiliser pour remplacer le logo par défaut de <i>Simple Directory</i>.`
         }

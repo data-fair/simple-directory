@@ -5,6 +5,10 @@ module.exports = {
   jwt: {
     expiresIn: 'JWT_LIFETIME'
   },
+  admins: {
+    __name: 'ADMINS',
+    __format: 'json'
+  },
   webhooks: {
     updateEntityNames: {
       __name: 'NAMES_WEBHOOKS',

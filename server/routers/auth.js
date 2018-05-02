@@ -36,6 +36,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     name: userName(user),
     organizations: organizations.map(mapOrganization(user))
   }
+  if (config.admins.includes(req.body.email)) user.isAdmin = true
   if (user.isAdmin) payload.isAdmin = true
   const token = jwt.sign(payload, privateKey, {
     algorithm: 'RS256',
