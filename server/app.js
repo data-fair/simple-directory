@@ -38,7 +38,14 @@ app.use('/api/v1/organizations', require('./routers/organizations'))
 app.use((err, req, res, next) => {
   err.statusCode = err.statusCode || err.status
   if (err.statusCode === 500 || !err.statusCode) console.error('Error in express route', err)
-  if (!res.headersSent) res.status(err.statusCode || 500).send(err.message)
+  if (!res.headersSent) {
+    res.status(err.statusCode || 500)
+    if (['development', 'test'].includes(process.env.NODE_ENV)) {
+      res.send(err.stack)
+    } else {
+      res.send(err.message)
+    }
+  }
 })
 
 exports.run = async() => {

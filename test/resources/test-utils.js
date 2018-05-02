@@ -33,10 +33,7 @@ exports.prepare = (testFile) => {
 
 exports.axios = async (test, email) => {
   const config = require('config')
-  const axOpts = {
-    baseURL: config.publicUrl,
-    validateStatus: status => status < 500
-  }
+  const axOpts = {baseURL: config.publicUrl}
   if (email) {
     await axios.post(config.publicUrl + '/api/v1/auth/passwordless', {email})
     // TODO get id_token
@@ -51,5 +48,16 @@ exports.axios = async (test, email) => {
     })
     axOpts.headers = {Authorization: 'Bearer ' + token}
   }
-  return axios.create(axOpts)
+
+  const ax = axios.create(axOpts)
+
+  // Simpler data associated to failure for cleaner logs
+  ax.interceptors.response.use(response => response, error => {
+    if (error.response && error.response.status < 500) return error.response
+    // console.log(error.response)
+    if (error.response) return Promise.reject(new Error(`${error.response.status}: ${error.response.data}`))
+    return Promise.reject(error)
+  })
+
+  return ax
 }

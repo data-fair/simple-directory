@@ -15,6 +15,13 @@
       "description": "Description of the organization",
       "type": "string"
     },
+    "roles": {
+      "description": "The list or roles used inside this organization",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "members": {
       "description": "The members of the organization",
       "type": "array",

@@ -1,7 +1,3 @@
-const config = require('config')
+const conf = require('config').storage
 
-module.exports.init = async function() {
-  const storage = require('./' + config.storage.type)
-  const configuredStorage = await storage(config.storage.params)
-  return configuredStorage
-}
+module.exports.init = async () => require('./' + conf.type)(conf[conf.type])

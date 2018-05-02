@@ -12,7 +12,7 @@ module.exports = {
   admins: ['admin@test.com'],
   storage: {
     type: 'file',
-    params: {
+    file: {
       users: './resources/users.json',
       organizations: './resources/organizations.json'
     }

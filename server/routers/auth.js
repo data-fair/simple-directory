@@ -12,30 +12,27 @@ const config = require('config')
 const privateKey = fs.readFileSync(path.join(__dirname, '../..', config.secret.private))
 const publicKey = fs.readFileSync(path.join(__dirname, '../..', config.secret.public))
 
-const mapOrganization = (user) => (organization) => ({
-  id: organization.id,
-  role: organization.members.find(m => m.id === user.id).role,
-  name: organization.name
-})
-
 let router = exports.router = express.Router()
+
+function getPayload(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: userName(user),
+    organizations: user.organizations
+  }
+}
 
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
 router.post('/passwordless', asyncWrap(async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
 
-  const user = await req.app.get('storage').getUserByEmail(req.body.email)
+  const user = await req.app.get('storage').getUser({email: req.body.email})
   // No 404 here so we don't disclose information about existence of the user
   if (!user) return res.status(204).send()
 
-  const organizations = await req.app.get('storage').getUserOrganizations(user.id)
-  const payload = {
-    id: user.id,
-    email: req.body.email,
-    name: userName(user),
-    organizations: organizations.map(mapOrganization(user))
-  }
+  const payload = getPayload(user)
   if (config.admins.includes(req.body.email)) user.isAdmin = true
   if (user.isAdmin) payload.isAdmin = true
   const token = jwt.sign(payload, privateKey, {
@@ -66,14 +63,12 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   } catch (err) {
     return res.status(401).send('Invalid id_token')
   }
-  delete decoded.iat
-  delete decoded.exp
 
   // User may have new organizations since last renew
-  const organizations = await req.app.get('storage').getUserOrganizations(decoded.id)
-  decoded.organizations = organizations.map(mapOrganization(decoded))
+  const user = await req.app.get('storage').getUser({id: decoded.id})
+  const payload = getPayload(user)
 
-  const token = jwt.sign(decoded, privateKey, {
+  const token = jwt.sign(payload, privateKey, {
     algorithm: 'RS256',
     expiresIn: config.jwt.expiresIn,
     keyid: config.kid

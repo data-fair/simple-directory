@@ -9,6 +9,13 @@ module.exports = {
     __name: 'ADMINS',
     __format: 'json'
   },
+  storage: {
+    type: 'STORAGE_TYPE',
+    file: {
+      users: 'STORAGE_FILE_USERS',
+      organizations: 'STORAGE_FILE_ORGS'
+    }
+  },
   webhooks: {
     updateEntityNames: {
       __name: 'NAMES_WEBHOOKS',

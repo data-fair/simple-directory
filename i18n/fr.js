@@ -29,6 +29,14 @@ module.exports = {
         admins: `<b>IMPORTANT.</b> La liste des adresses mails des administrateurs du service.`,
         brand: {
           logo: `L'URL du logo à utiliser pour remplacer le logo par défaut de <i>Simple Directory</i>.`
+        },
+        storage: {
+          type: `<b>IMPORTANT.</b> Le type de stockage pour la persistence des utilisateurs et des organisations.<br>
+Le type "file" par défaut est lecture seule et est adapté en développement/test ou pour utiliser une collection d'utilisateurs exportée depuis un autre système.`,
+          file: {
+            users: `Uniquement pour storage.type=file. Le chemin du fichier JSON contenant les définitions d'utilisateurs`,
+            organizations: `Uniquement pour storage.type=file. Le chemin du fichier JSON contenant les définitions d'organisations`
+          }
         }
       }
     },

@@ -1,7 +1,7 @@
 module.exports = {
   storage: {
     type: 'file',
-    params: {
+    file: {
       users: './test/resources/users.json',
       organizations: './test/resources/organizations.json'
     }
