@@ -31,6 +31,7 @@ module.exports = ({directoryUrl, publicUrl, cookieName, cookieOpts}) => {
   jwksClient.getSigningKeyAsync = util.promisify(jwksClient.getSigningKey)
 
   const auth = _auth(directoryUrl, publicUrl, jwksClient, cookieName, cookieOpts)
+  const decode = _decode(cookieName)
   const loginCallback = _loginCallback(publicUrl, jwksClient, cookieName, cookieOpts)
   const login = _login(directoryUrl, publicUrl)
   const logout = _logout(cookieName)
@@ -39,7 +40,7 @@ module.exports = ({directoryUrl, publicUrl, cookieName, cookieOpts}) => {
   router.post('/logout', logout)
   router.post('/keepalive', auth, (req, res) => res.status(204).send())
 
-  return {auth, loginCallback, login, logout, router}
+  return {auth, decode, loginCallback, login, logout, router}
 }
 
 // Fetch the public info of signing key from the directory that acts as jwks provider
@@ -74,8 +75,22 @@ function _loginCallback(publicUrl, jwksClient, cookieName, cookieOpts) {
   })
 }
 
-// This middleware checks if a user has an active session
-// it can extend this session if necessary.
+// This middleware checks if a user has an active session and defines req.user
+// Contrary to auth it does not validate the token, only decode it..
+// so it faster but it is limited to routes where req.user is informative
+function _decode(cookieName) {
+  return (req, res, next) => {
+    // JWT in a cookie = already active session
+    let token = req.cookies[cookieName]
+    if (token) {
+      req.user = jwt.decode(token)
+    }
+    next()
+  }
+}
+
+// This middleware checks if a user has an active session with a valid token
+// it defines req.user and it can extend the session if necessary.
 function _auth(directoryUrl, publicUrl, jwksClient, cookieName, cookieOpts) {
   return asyncWrap(async (req, res, next) => {
     // JWT in a cookie = already active session
@@ -119,7 +134,7 @@ function _auth(directoryUrl, publicUrl, jwksClient, cookieName, cookieOpts) {
 // to send along some optional client id or any kind of trust enhancing secret
 function _login(directoryUrl, publicUrl) {
   return (req, res) => {
-    res.redirect(directoryUrl + '/api/auth/passwordless?redirect=' + encodeURIComponent(req.query.redirect || publicUrl))
+    res.redirect(directoryUrl + '/login?redirect=' + encodeURIComponent(req.query.redirect || publicUrl))
   }
 }
 

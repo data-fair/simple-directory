@@ -65,7 +65,21 @@
           </div>
           <v-toolbar-title><h1 class="headline">{{ $t('common.title') }}</h1></v-toolbar-title>
         </template>
+
         <v-spacer/>
+
+        <v-btn v-if="!user" color="primary" @click="login">
+          {{ $t('common.logLink') }}
+        </v-btn>
+        <v-menu v-else offset-y>
+          <v-btn slot="activator" flat>{{ user.name }}</v-btn>
+          <v-list>
+            <v-list-tile @click="logout">
+              <v-list-tile-title>{{ $t('common.logout') }}</v-list-tile-title>
+            </v-list-tile>
+          </v-list>
+        </v-menu>
+
         <lang-switcher />
       </v-toolbar>
     </template>
@@ -121,7 +135,7 @@ export default {
       this.showSnackbar = true
     })
   },
-  methods: mapActions(['logout'])
+  methods: mapActions(['logout', 'login'])
 }
 
 </script>

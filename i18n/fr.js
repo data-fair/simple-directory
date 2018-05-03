@@ -7,6 +7,7 @@ module.exports = {
     description: 'Gestion simplifiée de vos utilisateurs et vos organisations dans une architecture moderne orientée Web.',
     home: 'Accueil',
     logLink: `Se connecter / s'inscrire`,
+    logout: 'Se déconnecter',
     documentation: 'Documentation',
     administration: 'Administration',
     myAccount: 'Mon compte',

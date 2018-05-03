@@ -15,8 +15,9 @@ export default () => {
       }
     },
     actions: {
-      async login() {
-        window.location.href = this.env.publicUrl + '/api/session/login'
+      login({state}) {
+        const path = this.$router.currentRoute.path
+        window.location.href = `${state.env.publicUrl}/api/session/login?redirect=${state.env.publicUrl}${path}?id_token=`
       },
       async logout({commit}) {
         await this.$axios.post('api/session/logout')
