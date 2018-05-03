@@ -10,6 +10,7 @@ const util = require('util')
 const eventToPromise = require('event-to-promise')
 const storages = require('./storages')
 const mails = require('./mails')
+const session = require('./utils/session')({directoryUrl: config.publicUrl, publicUrl: config.publicUrl})
 const i18n = require('../i18n')
 
 const app = express()
@@ -19,6 +20,7 @@ app.use(cors())
 app.use(cookieParser())
 app.use(bodyParser.json({limit: '100kb'}))
 app.use(i18n.middleware)
+app.use(session.auth)
 
 const JSONWebKey = require('json-web-key')
 const publicKey = JSONWebKey.fromPEM(fs.readFileSync(path.join(__dirname, '..', config.secret.public)))
@@ -34,6 +36,7 @@ app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))
 app.use('/api/auth', require('./routers/auth').router)
 app.use('/api/users', require('./routers/users'))
 app.use('/api/organizations', require('./routers/organizations'))
+app.use('/api/session', session.router)
 
 app.use((err, req, res, next) => {
   err.statusCode = err.statusCode || err.status
@@ -50,6 +53,7 @@ app.use((err, req, res, next) => {
 
 exports.run = async() => {
   const nuxt = await require('./nuxt')()
+  app.use(session.loginCallback)
   app.use(nuxt)
 
   const mailTransport = await mails.init()

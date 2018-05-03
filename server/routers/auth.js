@@ -75,6 +75,5 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
     expiresIn: config.jwt.expiresIn,
     keyid: config.kid
   })
-  res.cookie('id_token', token)
   res.send(token)
 }))

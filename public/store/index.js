@@ -1,8 +1,5 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import jwtDecode from 'jwt-decode'
-import Cookie from 'js-cookie'
-const cookieparser = require('cookieparser')
 
 Vue.use(Vuex)
 
@@ -13,38 +10,24 @@ export default () => {
       env: {}
     },
     mutations: {
-      setJwt(state, jwt) {
-        this.$axios.setToken(jwt, 'Bearer')
-        state.jwt = jwt
-      },
-      setUser(state, user) {
-        if (user && user.roles && user.roles.includes('administrator')) user.isAdmin = true
-        state.user = user
-      },
       setAny(state, params) {
         Object.assign(state, params)
       }
     },
     actions: {
-      logout(context) {
-        context.commit('setJwt')
-        Cookie.remove('id_token')
-        context.commit('setUser')
+      async login() {
+        window.location.href = this.env.publicUrl + '/api/session/login'
+      },
+      async logout({commit}) {
+        await this.$axios.post('api/session/logout')
+        commit('setAny', {user: null})
         this.$router.push('/')
       },
       nuxtServerInit({commit, dispatch}, {req, env, app}) {
-        commit('setAny', {env: {
-          ...env,
-          readonly: req.app.get('storage').readonly
-        }})
-
-        let accessToken = null
-        if (req.headers.cookie) accessToken = cookieparser.parse(req.headers.cookie).id_token
-        commit('setJwt', accessToken)
-        if (accessToken) {
-          const user = jwtDecode(accessToken)
-          commit('setUser', user)
-        }
+        commit('setAny', {
+          user: req.user,
+          env: { ...env, readonly: req.app.get('storage').readonly }
+        })
       }
     }
   })

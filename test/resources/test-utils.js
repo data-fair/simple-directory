@@ -46,7 +46,7 @@ exports.axios = async (test, email) => {
         }
       })
     })
-    axOpts.headers = {Authorization: 'Bearer ' + token}
+    axOpts.headers = {Cookie: `id_token=${token};`}
   }
 
   const ax = axios.create(axOpts)
