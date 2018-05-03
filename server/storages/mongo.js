@@ -35,14 +35,23 @@ class MongodbStorage {
       filter._id = filter.id
       delete filter.id
     }
-    const user = this.db.collection('users').findOne(filter)
+    const user = await this.db.collection('users').findOne(filter)
     if (!user) return null
     return switchBackId(user)
   }
 
   async createUser(user) {
-    await this.db.collection('users').insert(cloneWithId(user))
+    const clonedUser = cloneWithId(user)
+    clonedUser.organizations = clonedUser.organizations || []
+    await this.db.collection('users').insert(clonedUser)
     return user
+  }
+
+  async addUserOrganization(orga, user, role) {
+    await this.db.collection('users').updateOne(
+      {_id: user.id},
+      {$push: {organizations: {id: orga.id, name: orga.name, role}}}
+    )
   }
 
   async findUsers(params = {}) {
@@ -68,13 +77,31 @@ class MongodbStorage {
   }
 
   async getOrganization(id) {
-    const organization = this.db.collection('organizations').findOne({_id: id})
+    const organization = await this.db.collection('organizations').findOne({_id: id})
     if (!organization) return null
     return switchBackId(organization)
   }
 
   async createOrganization(orga) {
     await this.db.collection('organizations').insert(cloneWithId(orga))
+    return orga
+  }
+
+  async patchOrganization(id, patch) {
+    const orga = await this.db.collection('organizations').findOneAndUpdate({_id: id}, {$set: patch})
+    // "name" was modified, also update all organizations references in users
+    if (patch.name) {
+      const cursor = this.db.collection('users').find({organizations: {$elemMatch: {id}}})
+      while (await cursor.hasNext()) {
+        const user = await cursor.next()
+        user.organizations
+          .filter(orga => orga.id === id)
+          .forEach(orga => {
+            orga.name = patch.name
+          })
+        await this.db.collection('users').updateOne({id: user.id}, {$set: {organizations: user.organizations}})
+      }
+    }
     return orga
   }
 

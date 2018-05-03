@@ -8,7 +8,7 @@ module.exports = {
   storage: {
     type: 'mongo',
     mongo: {
-      url: 'mongodb://localhost:27017/data-fair-' + (process.env.NODE_ENV || 'development')
+      url: 'mongodb://localhost:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
     }
   }
 }

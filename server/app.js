@@ -10,6 +10,8 @@ const util = require('util')
 const eventToPromise = require('event-to-promise')
 const storages = require('./storages')
 const mails = require('./mails')
+const asyncWrap = require('./utils/async-wrap')
+const userName = require('./utils/user-name')
 const session = require('./utils/session')({directoryUrl: config.publicUrl, publicUrl: config.publicUrl})
 const i18n = require('../i18n')
 
@@ -30,11 +32,19 @@ app.get('/.well-known/jwks.json', (req, res) => {
   res.json({'keys': [publicKey.toJSON()]})
 })
 
+// Replaces req.user from session with full and fresh user object from storage
+const fullUser = asyncWrap(async (req, res, next) => {
+  if (!req.user) return next()
+  req.user = await req.app.get('storage').getUser({id: req.user.id})
+  if (req.user) req.user.name = userName(req.user)
+  next()
+})
+
 const apiDocs = require('../contract/api-docs')
 app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))
 app.use('/api/auth', require('./routers/auth').router)
-app.use('/api/users', session.auth, require('./routers/users'))
-app.use('/api/organizations', session.auth, require('./routers/organizations'))
+app.use('/api/users', session.auth, fullUser, require('./routers/users'))
+app.use('/api/organizations', session.auth, fullUser, require('./routers/organizations'))
 app.use('/api/session', session.router)
 
 app.use((err, req, res, next) => {

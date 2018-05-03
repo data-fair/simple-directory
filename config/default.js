@@ -18,7 +18,7 @@ module.exports = {
       organizations: './resources/organizations.json'
     },
     mongo: {
-      url: 'mongodb://mongo:27017/data-fair-' + (process.env.NODE_ENV || 'development')
+      url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
     }
   },
   info: {

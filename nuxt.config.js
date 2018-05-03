@@ -46,8 +46,8 @@ module.exports = {
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { hid: 'application', name: 'application-name', content: i18n.messages[config.defaultLocale].common.title },
-      { hid: 'description', name: 'description', content: i18n.messages[config.defaultLocale].common.description }
+      { hid: 'application', name: 'application-name', content: i18n.messages[config.defaultLocale].root.title },
+      { hid: 'description', name: 'description', content: i18n.messages[config.defaultLocale].root.description }
     ],
     link: [
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Nunito:300,400,500,700,400italic|Material+Icons' },

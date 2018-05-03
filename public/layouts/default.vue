@@ -19,15 +19,26 @@
           </v-list-tile>
 
           <!-- User's organizations pages -->
-          <v-list-tile v-for="orga in user && user.organizations" :key="orga.id" :to="localePath({name: 'organization-id', params: {id: orga.id}})">
+          <v-list-tile v-for="orga in userDetails && userDetails.organizations" :key="orga.id" :to="localePath({name: 'organization-id', params: {id: orga.id}})">
             <v-list-tile-action>
               <v-icon>group</v-icon>
             </v-list-tile-action>
             <v-list-tile-title>{{ $t('common.organization') + ' ' + orga.name }}</v-list-tile-title>
           </v-list-tile>
 
+          <!-- Create organization -->
+          <v-list-tile v-if="!env.readonly" :to="localePath('create-organization')" color="accent">
+            <v-list-tile-action>
+              <v-icon>add</v-icon>
+            </v-list-tile-action>
+            <v-list-tile-title>
+              {{ $t('common.createOrganization') }}
+            </v-list-tile-title>
+
+          </v-list-tile>
+
           <!-- Administration pages -->
-          <v-list-group v-if="user && user.isAdmin" value="true">
+          <!--<v-list-group v-if="user && user.isAdmin" value="true">
             <v-list-tile slot="activator">
               <v-list-tile-action>
                 <v-icon>verified_user</v-icon>
@@ -37,7 +48,7 @@
             <v-list-tile :to="localePath('admin.dashboard')">
               <v-list-tile-title>{{ $t(`common.dashboard`) }}</v-list-tile-title>
             </v-list-tile>
-          </v-list-group>
+          </v-list-group>-->
 
           <!-- Documentation pages -->
           <v-list-group value="true">
@@ -63,7 +74,7 @@
               <logo v-else/>
             </nuxt-link>
           </div>
-          <v-toolbar-title><h1 class="headline">{{ $t('common.title') }}</h1></v-toolbar-title>
+          <v-toolbar-title><h1 class="headline hidden-xs-only">{{ $t('root.title') }}</h1></v-toolbar-title>
         </template>
 
         <v-spacer/>
@@ -119,7 +130,7 @@ export default {
     }
   },
   computed: {
-    ...mapState(['user', 'env']),
+    ...mapState(['user', 'env', 'userDetails']),
     docPages() {
       return this.user && this.user.isAdmin ? ['about', 'install', 'config', 'use'] : ['use']
     }
@@ -134,8 +145,9 @@ export default {
       this.notification = notif
       this.showSnackbar = true
     })
+    this.fetchUserDetails()
   },
-  methods: mapActions(['logout', 'login'])
+  methods: mapActions(['logout', 'login', 'fetchUserDetails'])
 }
 
 </script>

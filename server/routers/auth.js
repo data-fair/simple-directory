@@ -32,7 +32,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   let user = await storage.getUser({email: req.body.email})
   // No 404 here so we don't disclose information about existence of the user
   if (!user && storage.readonly) return res.status(204).send()
-  if (!user) user = await storage.createUser({email: req.body.email, id: shortid.generate(), organizations: []})
+  if (!user) user = await storage.createUser({email: req.body.email, id: shortid.generate()})
 
   const payload = getPayload(user)
   if (config.admins.includes(req.body.email)) user.isAdmin = true
@@ -68,6 +68,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
 
   // User may have new organizations since last renew
   const user = await req.app.get('storage').getUser({id: decoded.id})
+  if (!user) return res.status(401).send('User does not exist anymore')
   const payload = getPayload(user)
 
   const token = jwt.sign(payload, privateKey, {

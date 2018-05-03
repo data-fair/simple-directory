@@ -2,9 +2,11 @@
 // messages from environment variables
 
 module.exports = {
-  common: {
+  root: {
     title: 'Simple Directory',
-    description: 'Gestion simplifiée de vos utilisateurs et vos organisations dans une architecture moderne orientée Web.',
+    description: 'Gestion simplifiée de vos utilisateurs et vos organisations dans une architecture moderne orientée Web.'
+  },
+  common: {
     home: 'Accueil',
     logLink: `Se connecter / s'inscrire`,
     logout: 'Se déconnecter',
@@ -12,7 +14,11 @@ module.exports = {
     administration: 'Administration',
     myAccount: 'Mon compte',
     organization: 'Organisation',
-    dashboard: 'Tableau de bord'
+    createOrganization: 'Créer une organisation',
+    dashboard: 'Tableau de bord',
+    description: 'Description',
+    name: 'Nom',
+    save: 'Enregistrer'
   },
   doc: {
     about: {

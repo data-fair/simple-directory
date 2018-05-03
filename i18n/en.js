@@ -2,16 +2,24 @@
 // messages from environment variables
 
 module.exports = {
-  title: 'Simple Directory',
-  description: 'Easy users and organizations management for modern Web-oriented architectures.',
-  home: 'Home',
-  logLink: 'login / sign up',
-  logout: 'logout',
-  documentation: 'Documentation',
-  administration: 'Administration',
-  myAccount: 'My account',
-  organization: 'Organization',
-  dashboard: 'Dashboard',
+  root: {
+    title: 'Simple Directory',
+    description: 'Easy users and organizations management for modern Web-oriented architectures.'
+  },
+  common: {
+    home: 'Home',
+    logLink: 'login / sign up',
+    logout: 'logout',
+    documentation: 'Documentation',
+    administration: 'Administration',
+    myAccount: 'My account',
+    organization: 'Organization',
+    createOrganization: 'Create organization',
+    dashboard: 'Dashboard',
+    description: 'Description',
+    name: 'Name',
+    save: 'Save'
+  },
   doc: {
     about: {
       link: 'About'

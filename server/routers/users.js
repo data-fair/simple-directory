@@ -20,6 +20,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (req.user.id !== req.params.userId) return res.status(403).send()
   const user = await req.app.get('storage').getUser({id: req.params.userId})
+  user.name = userName(user)
   if (!user) return res.status(404).send()
   res.json(user)
 }))

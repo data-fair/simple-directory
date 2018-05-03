@@ -1,4 +1,5 @@
 const express = require('express')
+const shortid = require('shortid')
 const asyncWrap = require('../utils/async-wrap')
 
 let router = express.Router()
@@ -24,17 +25,45 @@ router.get('/:organizationId/roles', asyncWrap(async (req, res, next) => {
     return res.sendStatus(403)
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
-  res.json(orga.roles || ['admin', 'user'])
+  res.send(orga.roles || ['admin', 'user'])
 }))
 
+// Get details of an organization
 router.get('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  // Only search through the organizations that the user belongs to
+  // Only allowed for the organizations that the user belongs to
   if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId)) {
     return res.sendStatus(403)
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
-  res.json(orga)
+  res.send(orga)
+}))
+
+// Create an organization
+router.post('', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send()
+  const storage = req.app.get('storage')
+  const orga = req.body
+  orga.id = orga.id || shortid.generate()
+  orga.roles = orga.roles || ['admin', 'user']
+  await storage.createOrganization(orga)
+  await storage.addUserOrganization(orga, req.user, 'admin')
+  res.status(201).send(orga)
+}))
+
+// Update some parts of an organization as admin of it
+const patchKeys = ['name', 'description']
+router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send()
+  // Only allowed for the organizations that the user belongs to
+  if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId && o.role === 'admin')) {
+    return res.sendStatus(403)
+  }
+
+  const forbiddenKey = Object.keys(req.body).find(key => !patchKeys.includes(key))
+  if (forbiddenKey) return res.status(400).send('Only some parts of the organization can be modified through this route')
+  const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body)
+  res.send(patchedOrga)
 }))
 
 module.exports = router
