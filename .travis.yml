@@ -21,6 +21,8 @@ install:
 
 script:
   - npm run lint
+  - docker-compose up -d
+  - sleep 5
   - npm test
 
 after_success:
