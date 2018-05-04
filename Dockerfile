@@ -12,6 +12,7 @@ ADD i18n i18n
 ADD public public
 ADD doc doc
 ADD nuxt.config.js .
+RUN npm run link-doc
 
 # Adding server files
 ADD scripts scripts
