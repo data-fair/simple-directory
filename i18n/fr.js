@@ -54,6 +54,10 @@ module.exports = {
         brand: {
           logo: `L'URL du logo à utiliser pour remplacer le logo par défaut de <i>Simple Directory</i>.`
         },
+        secret: {
+          public: `<b>IMPORTANT.</b> Le chemin vers la clé publique de chiffrement RSA. Voir la documentation d'installation du service.`,
+          private: `<b>IMPORTANT.</b> Le chemin vers la clé privée de chiffrement RSA. Voir la documentation d'installation du service.`
+        },
         storage: {
           type: `<b>IMPORTANT.</b> Le type de stockage pour la persistence des utilisateurs et des organisations.<br>
 Le type "file" par défaut est lecture seule et est adapté en développement/test ou pour utiliser une collection d'utilisateurs exportée depuis un autre système.<br>

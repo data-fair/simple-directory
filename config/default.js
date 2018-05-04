@@ -3,8 +3,8 @@ module.exports = {
   publicUrl: 'http://localhost:8080',
   kid: 'simple-directory',
   secret: {
-    public: './resources/keys/default.key.pub',
-    private: './resources/keys/default.key'
+    public: './security/simple-directory.key.pub',
+    private: './security/simple-directory.key'
   },
   jwtDurations: {
     initialToken: '15m',
@@ -16,8 +16,8 @@ module.exports = {
     // One of 'file' and 'mongo'
     type: 'mongo',
     file: {
-      users: './resources/users.json',
-      organizations: './resources/organizations.json'
+      users: './data/users.json',
+      organizations: './data/organizations.json'
     },
     mongo: {
       url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development')

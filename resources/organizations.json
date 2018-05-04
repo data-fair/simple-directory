@@ -1,8 +1,0 @@
-[{
-  "id": "test",
-  "name": "Test organization",
-  "members": [{
-    "id": "jd",
-    "role": "user"
-  }]
-}]

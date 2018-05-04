@@ -1,4 +1,8 @@
 module.exports = {
+  secret: {
+    public: './test/resources/test.key.pub',
+    private: './test/resources/test.key'
+  },
   storage: {
     type: 'file',
     file: {

@@ -20,7 +20,8 @@ ADD contract contract
 ADD config config
 ADD README.md .
 
-VOLUME /webapp/resources/keys
+VOLUME /webapp/security
+VOLUME /webapp/data
 EXPOSE 8080
 
 CMD ["node", "server"]

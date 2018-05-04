@@ -31,9 +31,9 @@ npm run dev
 ### Generating public and private keys
 
 ```
-mkdir resources
-openssl genpkey -algorithm RSA -out ./resources/default.key -pkeyopt rsa_keygen_bits:2048
-openssl rsa -in ./resources/default.key -outform PEM -pubout -out  ./resources/default.key.pub
+mkdir security
+openssl genpkey -algorithm RSA -out ./security/simple-directory.key -pkeyopt rsa_keygen_bits:2048
+openssl rsa -in ./security/simple-directory.key -outform PEM -pubout -out  ./security/simple-directory.key.pub
 ```
 
 ## Design

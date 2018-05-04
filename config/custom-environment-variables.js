@@ -11,6 +11,10 @@ module.exports = {
     __name: 'ADMINS',
     __format: 'json'
   },
+  secret: {
+    public: 'PUBLIC_KEY',
+    private: 'PRIVATE_KEY'
+  },
   storage: {
     type: 'STORAGE_TYPE',
     file: {
