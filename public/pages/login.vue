@@ -4,7 +4,7 @@
       <v-card>
         <v-card-title primary-title>
           <h3 class="headline mb-0">{{ $t('pages.login.title') }}</h3>
-          <div class="login-logo-container elevation-2">
+          <div class="login-logo-container elevation-1">
             <img v-if="env.brand.logo" :src="env.brand.logo">
             <logo v-else/>
           </div>
@@ -74,6 +74,11 @@ export default {
     height: 80px;
     border-radius: 40px;
     background-color: white;
-    padding: 8px;
+    padding: 10px;
+    overflow: hidden;
+
+    img, svg {
+      width: 100%;
+    }
   }
 </style>
