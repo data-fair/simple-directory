@@ -14,7 +14,7 @@ module.exports = {
   admins: ['admin@test.com'],
   storage: {
     // One of 'file' and 'mongo'
-    type: 'file',
+    type: 'mongo',
     file: {
       users: './resources/users.json',
       organizations: './resources/organizations.json'
