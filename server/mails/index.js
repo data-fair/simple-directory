@@ -27,7 +27,7 @@ exports.send = async ({transport, key, messages, to, params}) => {
   params = {
     ...params,
     ...flatten({brand: config.brand}),
-    contact: config.mails.contact,
+    contact: config.contact,
     logo: config.brand.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/627b6505/public/assets/logo-150x150.png'
   }
   Object.keys(messages.mails[key]).forEach(k => {

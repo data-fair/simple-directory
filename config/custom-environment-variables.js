@@ -11,6 +11,7 @@ module.exports = {
     __name: 'ADMINS',
     __format: 'json'
   },
+  contact: 'CONTACT',
   secret: {
     public: 'PUBLIC_KEY',
     private: 'PRIVATE_KEY'
@@ -39,7 +40,8 @@ module.exports = {
     transport: {
       __name: 'MAILS_TRANSPORT',
       __format: 'json'
-    }
+    },
+    from: 'MAILS_FROM'
   },
   maildev: {
     active: {

@@ -12,6 +12,7 @@ module.exports = {
     invitationToken: '10d'
   },
   admins: ['admin@test.com'],
+  contact: 'contact@test.com',
   storage: {
     // One of 'file' and 'mongo'
     type: 'mongo',
@@ -50,7 +51,6 @@ module.exports = {
   defaultLocale: 'fr',
   mails: {
     from: 'no-reply@test.com',
-    contact: 'contact@test.com',
     // transport is a full configuration object for createTransport of nodemailer
     // cf https://nodemailer.com/smtp/
     transport: {
