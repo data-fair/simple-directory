@@ -43,7 +43,7 @@ module.exports = {
     brand: config.brand
   },
   head: {
-    title: i18n.messages[config.defaultLocale].common.title,
+    title: i18n.messages[config.defaultLocale].root.title,
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
