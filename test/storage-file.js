@@ -7,7 +7,12 @@ test('Find users', async t => {
   t.is(res.count, 11)
   t.truthy(res.results[0].id)
   t.truthy(res.results[0].email)
-  res = await test.app.get('storage').findUsers({organization: 'KWqAGZ4mG'})
+  res = await test.app.get('storage').findUsers({q: 'alba'})
+  t.is(res.count, 1)
+})
+
+test('Find members', async t => {
+  const res = await test.app.get('storage').findMembers('KWqAGZ4mG')
   t.is(res.count, 2)
 })
 

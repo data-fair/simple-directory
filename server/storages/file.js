@@ -6,7 +6,8 @@ const readFile = util.promisify(fs.readFile)
 class FileStorage {
   async init(params) {
     this.readonly = true
-    this.users = JSON.parse(await readFile(params.users, 'utf-8')).forEach(user => {
+    this.users = JSON.parse(await readFile(params.users, 'utf-8'))
+    this.users.forEach(user => {
       user.name = userName(user)
     })
     this.organizations = JSON.parse(await readFile(params.organizations, 'utf-8'))
@@ -45,7 +46,7 @@ class FileStorage {
     }
   }
 
-  async findMembers(organizationId, params) {
+  async findMembers(organizationId, params = {}) {
     const orga = this.organizations.find(o => o.id === organizationId)
     if (!orga) return null
     let members = orga.members
@@ -53,7 +54,10 @@ class FileStorage {
       const lq = params.q.toLowerCase()
       members = members.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
     }
-    return members
+    return {
+      count: members.length,
+      results: members
+    }
   }
 
   async getOrganization(id) {
