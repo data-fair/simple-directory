@@ -1,8 +1,5 @@
-const fs = require('fs')
-const path = require('path')
 const express = require('express')
-const jwt = require('jsonwebtoken')
-const util = require('util')
+const jwt = require('../utils/jwt')
 const URL = require('url').URL
 const shortid = require('shortid')
 const asyncWrap = require('../utils/async-wrap')
@@ -10,8 +7,6 @@ const userName = require('../utils/user-name')
 const mails = require('../mails')
 
 const config = require('config')
-const privateKey = fs.readFileSync(path.join(__dirname, '../..', config.secret.private))
-const publicKey = fs.readFileSync(path.join(__dirname, '../..', config.secret.public))
 
 let router = exports.router = express.Router()
 
@@ -37,12 +32,8 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   const payload = getPayload(user)
   if (config.admins.includes(req.body.email)) user.isAdmin = true
   if (user.isAdmin) payload.isAdmin = true
-  const token = jwt.sign(payload, privateKey, {
-    algorithm: 'RS256',
-    expiresIn: config.jwt.expiresIn,
-    keyid: config.kid
-  })
-  const link = (req.query.redirect || config.publicUrl + '/me?id_token=') + token
+  const token = jwt.sign(payload, config.jwtDurations.initialToken)
+  const link = (req.query.redirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'login',
@@ -61,7 +52,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   }
   let decoded
   try {
-    decoded = await util.promisify(jwt.verify)(idToken, publicKey)
+    decoded = await jwt.verify(idToken)
   } catch (err) {
     return res.status(401).send('Invalid id_token')
   }
@@ -71,10 +62,6 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = getPayload(user)
 
-  const token = jwt.sign(payload, privateKey, {
-    algorithm: 'RS256',
-    expiresIn: config.jwt.expiresIn,
-    keyid: config.kid
-  })
+  const token = jwt.sign(payload, config.jwtDurations.exhangedToken)
   res.send(token)
 }))

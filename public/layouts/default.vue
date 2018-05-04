@@ -82,8 +82,8 @@
         <v-btn v-if="!user" color="primary" @click="login">
           {{ $t('common.logLink') }}
         </v-btn>
-        <v-menu v-else offset-y>
-          <v-btn slot="activator" flat>{{ user.name }}</v-btn>
+        <v-menu v-else-if="userDetails" offset-y>
+          <v-btn slot="activator" flat>{{ userDetails.name }}</v-btn>
           <v-list>
             <v-list-tile @click="logout">
               <v-list-tile-title>{{ $t('common.logout') }}</v-list-tile-title>

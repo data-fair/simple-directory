@@ -47,7 +47,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   orga.id = orga.id || shortid.generate()
   orga.roles = orga.roles || ['admin', 'user']
   await storage.createOrganization(orga)
-  await storage.addUserOrganization(orga, req.user, 'admin')
+  await storage.addMember(orga, req.user, 'admin')
   res.status(201).send(orga)
 }))
 

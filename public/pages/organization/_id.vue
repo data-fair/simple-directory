@@ -1,7 +1,7 @@
 <template lang="html">
   <v-container>
     <h2 class="headline mb-3">{{ $t('common.organization') + ' ' + (orga && orga.name) }}</h2>
-    <v-form v-if="orga" ref="form" v-model="valid" lazy-validation>
+    <v-form v-if="orga" ref="form" v-model="valid" lazy-validation @submit="save">
       <v-text-field
         :label="$t('common.name')"
         v-model="orga.name"
@@ -9,7 +9,6 @@
         :disabled="!isAdminOrga"
         name="name"
         required
-        @blur="save"
       />
       <v-text-field
         :label="$t('common.description')"
@@ -17,14 +16,16 @@
         :disabled="!isAdminOrga"
         name="description"
         textarea
-        @blur="save"
       />
+      <v-layout row wrap>
+        <v-spacer/>
+        <v-btn color="primary" type="submit">{{ $t('common.save') }}</v-btn>
+      </v-layout>
     </v-form>
-    <v-layout row wrap>
+    <v-layout row wrap class="mt-3">
       <h3 class="title my-3">
         {{ $t('common.members') }} <span v-if="members">({{ $n(members.count) }})</span>
       </h3>
-      <v-spacer/>
       <v-btn v-if="isAdminOrga" :title="$t('pages.organization.addMember')" icon color="primary" @click="newInvitation(); inviteMemberDialog = true"><v-icon>add</v-icon></v-btn>
     </v-layout>
 
@@ -131,11 +132,14 @@ export default {
   },
   methods: {
     ...mapActions(['fetchUserDetails']),
-    async save() {
+    async save(e) {
+      e.preventDefault()
+      console.log('SAVE!!')
       if (!this.$refs.form.validate()) return
       try {
         await this.$axios.$patch(`api/organizations/${this.$route.params.id}`,
           {name: this.orga.name, description: this.orga.description})
+        eventBus.$emit('notification', this.$t('common.modificationOk'))
         this.fetchUserDetails()
       } catch (error) {
         eventBus.$emit('notification', {error})

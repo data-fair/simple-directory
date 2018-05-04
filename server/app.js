@@ -3,15 +3,13 @@ const express = require('express')
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
 const bodyParser = require('body-parser')
-const fs = require('fs')
-const path = require('path')
 const http = require('http')
 const util = require('util')
 const eventToPromise = require('event-to-promise')
 const storages = require('./storages')
 const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
-const userName = require('./utils/user-name')
+const jwt = require('./utils/jwt')
 const session = require('./utils/session')({directoryUrl: config.publicUrl, publicUrl: config.publicUrl})
 const i18n = require('../i18n')
 
@@ -24,7 +22,7 @@ app.use(bodyParser.json({limit: '100kb'}))
 app.use(i18n.middleware)
 
 const JSONWebKey = require('json-web-key')
-const publicKey = JSONWebKey.fromPEM(fs.readFileSync(path.join(__dirname, '..', config.secret.public)))
+const publicKey = JSONWebKey.fromPEM(jwt.publicKey)
 publicKey.kid = config.kid
 publicKey.alg = 'RS256'
 publicKey.use = 'sig'
@@ -36,7 +34,6 @@ app.get('/.well-known/jwks.json', (req, res) => {
 const fullUser = asyncWrap(async (req, res, next) => {
   if (!req.user) return next()
   req.user = await req.app.get('storage').getUser({id: req.user.id})
-  if (req.user) req.user.name = userName(req.user)
   next()
 })
 

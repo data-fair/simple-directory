@@ -2,8 +2,10 @@ module.exports = {
   port: 'PORT',
   publicUrl: 'PUBLIC_URL',
   kid: 'JWT_KID',
-  jwt: {
-    expiresIn: 'JWT_LIFETIME'
+  jwtDurations: {
+    initialToken: 'JWT_DURATION_INITIAL',
+    echangedToken: 'JWT_DURATION_EXCHANGED',
+    invitationToken: 'JWT_DURATION_INVIT'
   },
   admins: {
     __name: 'ADMINS',

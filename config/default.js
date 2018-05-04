@@ -6,8 +6,10 @@ module.exports = {
     public: './resources/keys/default.key.pub',
     private: './resources/keys/default.key'
   },
-  jwt: {
-    expiresIn: '30d'
+  jwtDurations: {
+    initialToken: '15m',
+    exhangedToken: '30d',
+    invitationToken: '10d'
   },
   admins: ['admin@test.com'],
   storage: {

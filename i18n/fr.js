@@ -23,7 +23,14 @@ module.exports = {
     role: 'Rôle',
     search: 'Rechercher',
     confirmOk: 'Ok',
-    confirmCancel: 'Annuler'
+    confirmCancel: 'Annuler',
+    firstName: 'Prénom',
+    lastName: 'Nom de famille',
+    email: 'Adresse mail',
+    modificationOk: 'Votre modification a été appliquée.',
+    invitations: 'Invitations',
+    accept: 'Accepter',
+    reject: 'Rejeter'
   },
   doc: {
     about: {
@@ -80,7 +87,12 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
       confirmDeleteMemberMsg: `Voulez vous vraiment supprimer cet utilisateur de la liste des membres de l'organisation ?`,
       deleteMemberSuccess: `L'utilisateur {name} a été exclu de l'organisation`,
       inviteEmail: `Adresse mail de l'utilisateur`,
-      inviteSuccess: `Une invitation a été envoyée à l'adresse mail {email}`
+      inviteSuccess: `Une invitation a été envoyée à l'adresse {email}`
+    },
+    myAccount: {
+      joinOrga: `Rejoindre {name} en tant que {role}`,
+      confirmRejectInvitation: `Voulez vous vraiment rejeter l'invitation à rejoindre {name} ?`,
+      invitationAccepted: `Vous êtes maintenant membre de l'organisation {name}.`
     }
   },
   errors: {
@@ -96,25 +108,25 @@ Une demande d'identification a été faite depuis {host}. Pour la confirmer, cop
 
 Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à {host}, n'hésitez pas à nous contacter à {contact}.
       `,
-      htmlMsg: `Une demande d'identification a été faite depuis <a href="//{host}">{host}</a>. Pour la confirmer, cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.`,
+      htmlMsg: `Une demande d'identification a été faite depuis <a href="//{host}">{host}</a>. Pour la confirmer cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.`,
       htmlButton: `Connexion à {host}`,
       htmlCaption: `Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à <a href="//{host}">{host}</a>, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     },
     invitation: {
       subject: `Rejoignez l'organisation {organization} sur {host}`,
       text: `
-Un administrateur de l'organisation {organization} vous a invité à la rejoindre. Pour accepter ou refuser cette invitation vous devez visiter votre profil sur {host}.
-Si vous n'avez pas encore de compte vous pouvez vous identifier d'abord en utilisant cette adresse mail, l'invitation vous attendra sur votre profil.
+Un administrateur de l'organisation {organization} vous a invité à la rejoindre. Pour accepter cette invitation copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 10 jours.
+Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
 
 {{link}}
 
 Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à {contact}.
       `,
       htmlMsg: `
-Un administrateur de l'organisation {organization} vous a invité à la rejoindre. Pour accepter ou refuser cette invitation vous devez visiter votre profil sur {host}.
-Si vous n'avez pas encore de compte vous pouvez vous identifier d'abord en utilisant cette adresse mail, l'invitation vous attendra sur votre profil.
+Un administrateur de l'organisation {organization} vous a invité à la rejoindre. Pour accepter cette invitation cliquez sur le bouton ci-dessous. Le lien est valide 10 jours.
+Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
       `,
-      htmlButton: 'Accéder à votre profil',
+      htmlButton: `Accepter l'invitation`,
       htmlCaption: `Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     }
   }

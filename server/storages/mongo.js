@@ -48,7 +48,12 @@ class MongodbStorage {
     return user
   }
 
-  async addUserOrganization(orga, user, role) {
+  async patchUser(id, patch) {
+    const mongoRes = await this.db.collection('users').findOneAndUpdate({_id: id}, {$set: patch})
+    return switchBackId(mongoRes.value)
+  }
+
+  async addMember(orga, user, role) {
     await this.db.collection('users').updateOne(
       {_id: user.id},
       {$push: {organizations: {id: orga.id, name: orga.name, role}}}
@@ -101,7 +106,8 @@ class MongodbStorage {
   }
 
   async patchOrganization(id, patch) {
-    const orga = await this.db.collection('organizations').findOneAndUpdate({_id: id}, {$set: patch})
+    const mongoRes = await this.db.collection('organizations').findOneAndUpdate({_id: id}, {$set: patch})
+    const orga = switchBackId(mongoRes.value)
     // "name" was modified, also update all organizations references in users and invitations
     if (patch.name) {
       this.db.collection('invitations').update({id}, {$set: {name: patch.name}})
@@ -134,11 +140,6 @@ class MongodbStorage {
       .toArray()
     const count = await countPromise
     return {count, results: organizations.map(switchBackId)}
-  }
-
-  async createInvitation(invit) {
-    await this.db.collection('invitations').update({id: invit.id, email: invit.email}, invit, {upsert: true})
-    return invit
   }
 
   async removeMember(organizationId, userId) {

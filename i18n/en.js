@@ -23,7 +23,14 @@ module.exports = {
     role: 'Role',
     search: 'Search',
     confirmOk: 'Ok',
-    confirmCancel: 'Cancel'
+    confirmCancel: 'Cancel',
+    firstName: 'First name',
+    lastName: 'Family name',
+    email: 'Email',
+    modificationOk: 'Your modification was saved.',
+    invitations: 'Invitations',
+    accept: 'Accept',
+    reject: 'Reject'
   },
   doc: {
     about: {
@@ -80,7 +87,12 @@ The type "mongo" depends on accessing a MongoDB instance, it is the approriate c
       confirmDeleteMemberMsg: 'Do you really want to delete this user from the list of members of this organization ?',
       deleteMemberSuccess: 'The user {name} was excluded from the organization',
       inviteEmail: `Email address of the user`,
-      inviteSuccess: `An invitation was sent to the email address {email}`
+      inviteSuccess: `An invitation was sent to the address {email}`
+    },
+    myAccount: {
+      joinOrga: `Join {name} as {role}`,
+      confirmRejectInvitation: `Do you really want to reject the invitation to join {name} ?`,
+      invitationAccepted: `You are now a member of the organization {name}.`
     }
   },
   errors: {
@@ -90,31 +102,31 @@ The type "mongo" depends on accessing a MongoDB instance, it is the approriate c
     login: {
       subject: 'Welcome to {{host}}',
       text: `
-An identification request was made from {{host}}. To confirm, copy the URL below in the address bar of your Web browser. This URL is valid for 15 minutes.
+An identification request was made from {{host}}. To confirm copy the URL below in the address bar of your Web browser. This URL is valid for 15 minutes.
 
 {{link}}
 
 If you encounter a problem with your account or if you didn't submit this identification request to {{host}}, feel free to contact us at {{contact}}.
       `,
-      htmlMsg: `An identification request was made from <a href="//{host}">{host}</a>. To confirm, click on the button below. This link is valid for 15 minutes.`,
+      htmlMsg: `An identification request was made from <a href="//{host}">{host}</a>. To confirm click on the button below. This link is valid for 15 minutes.`,
       htmlButton: `Connect to {host}`,
       htmlCaption: `If you encounter a problem with your account or if you didn't submit this identification request to <a href="//{host}">{host}</a>, feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
     },
     invitation: {
       subject: `Join the organization {organization} on {host}`,
       text: `
-An administrator from the organization {organization} invited you to join. To accept or reject this invitation you must visit your account on {host}.
-If you do not have an account yet you can identify yourself first using this email address, the invitation will be waiting for you on your profile.
+An administrator from the organization {organization} invited you to join. To accept this invitation copy the URL below in the address bar of your Web browser.
+If you do not have an account yet it will be created automatically.
 
 {{link}}
 
 If you encounter a problem with your account or if you find this invitation suspicious feel free to contact us at {contact}.
       `,
       htmlMsg: `
-      An administrator from the organization {organization} invited you to join. To accept or reject this invitation you must visit your account on {host}.
-      If you do not have an account yet you can identify yourself first using this email address, the invitation will be waiting for you on your profile.
+      An administrator from the organization {organization} invited you to join. To accept this invitation click on the button below.
+      If you do not have an account yet it will be created automatically.
       `,
-      htmlButton: 'See your profile',
+      htmlButton: 'Accept the invitation',
       htmlCaption: `If you encounter a problem with your account or if you find this invitation suspicious feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
     }
   }
