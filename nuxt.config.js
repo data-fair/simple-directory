@@ -24,7 +24,7 @@ module.exports = {
     {src: '~plugins/axios'}
   ],
   router: {
-    base: new URL(config.publicUrl).pathname
+    base: new URL(config.publicUrl + '/').pathname
   },
   modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', ['nuxt-i18n', {
     locales: i18n.locales,
