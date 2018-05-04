@@ -27,7 +27,7 @@
           </v-list-tile>
 
           <!-- Create organization -->
-          <v-list-tile v-if="!env.readonly" :to="localePath('create-organization')" color="accent">
+          <v-list-tile v-if="!env.readonly && user" :to="localePath('create-organization')" color="accent">
             <v-list-tile-action>
               <v-icon>add</v-icon>
             </v-list-tile-action>
