@@ -18,7 +18,12 @@ module.exports = {
     dashboard: 'Tableau de bord',
     description: 'Description',
     name: 'Nom',
-    save: 'Enregistrer'
+    save: 'Enregistrer',
+    members: 'Membres',
+    role: 'Rôle',
+    search: 'Rechercher',
+    confirmOk: 'Ok',
+    confirmCancel: 'Annuler'
   },
   doc: {
     about: {
@@ -67,6 +72,15 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
       emailLabel: 'Votre adresse mail',
       emailCaption: `En savoir plus sur l'authentification <a href="https://koumoul.com/blog/passwordless">sans mot de passe</a>`,
       success: `Vous allez recevoir un email à l'adresse renseignée qui contiendra un lien. Veuillez ouvrir ce lien pour terminer votre identification.`
+    },
+    organization: {
+      addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
+      deleteMember: `Supprimer cet utilisateur de la liste des membres de l'organisation`,
+      confirmDeleteMemberTitle: 'Exclure {name}',
+      confirmDeleteMemberMsg: `Voulez vous vraiment supprimer cet utilisateur de la liste des membres de l'organisation ?`,
+      deleteMemberSuccess: `L'utilisateur {name} a été exclu de l'organisation`,
+      inviteEmail: `Adresse mail de l'utilisateur`,
+      inviteSuccess: `Une invitation a été envoyée à l'adresse mail {email}`
     }
   },
   errors: {
@@ -74,35 +88,34 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
   },
   mails: {
     login: {
-      subject: 'Bienvenue sur {{host}}',
+      subject: 'Bienvenue sur {host}',
       text: `
-Une demande d'identification a été faite depuis {{host}}. Pour la confirmer, copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 15 minutes.
+Une demande d'identification a été faite depuis {host}. Pour la confirmer, copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 15 minutes.
+
+{link}
+
+Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à {host}, n'hésitez pas à nous contacter à {contact}.
+      `,
+      htmlMsg: `Une demande d'identification a été faite depuis <a href="//{host}">{host}</a>. Pour la confirmer, cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.`,
+      htmlButton: `Connexion à {host}`,
+      htmlCaption: `Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à <a href="//{host}">{host}</a>, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
+    },
+    invitation: {
+      subject: `Rejoignez l'organisation {organization} sur {host}`,
+      text: `
+Un administrateur de l'organisation {organization} vous a invité à la rejoindre. Pour accepter ou refuser cette invitation vous devez visiter votre profil sur {host}.
+Si vous n'avez pas encore de compte vous pouvez vous identifier d'abord en utilisant cette adresse mail, l'invitation vous attendra sur votre profil.
 
 {{link}}
 
-Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à {{host}}, n'hésitez pas à nous contacter à {{contact}}.
+Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à {contact}.
       `,
-      mjml: `
-<mjml>
-  <mj-body>
-    <mj-section>
-      <mj-column>
-        <mj-image width="100" src="{{logo}}"></mj-image>
-        <mj-text font-size="14px" font-weight="500" line-height="21px" color="#212121" font-family="helvetica" align="center" padding-top="16px" padding-bottom="24px">
-          Une demande d'identification a été faite depuis <a href="//{{host}}">{{host}}</a>. Pour la confirmer, cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.
-        </mj-text>
-        <mj-button background-color="{{brand.theme.primary}}" color="#fff" href="{{link}}" border-radius="4px">
-          Connexion à {{host}}
-        </mj-button>
-        <mj-divider border-width="1px" border-color="#424242" padding-top="48px"></mj-divider>
-        <mj-text font-size="12px" font-weight="400" line-height="18px" color="#424242" font-family="helvetica">
-          Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à <a href="//{{host}}">{{host}}</a>, n'hésitez pas à nous contacter à <a href="mailto:{{contact}}">{{contact}}</a>.
-        </mj-text>
-      </mj-column>
-    </mj-section>
-  </mj-body>
-</mjml>
-      `
+      htmlMsg: `
+Un administrateur de l'organisation {organization} vous a invité à la rejoindre. Pour accepter ou refuser cette invitation vous devez visiter votre profil sur {host}.
+Si vous n'avez pas encore de compte vous pouvez vous identifier d'abord en utilisant cette adresse mail, l'invitation vous attendra sur votre profil.
+      `,
+      htmlButton: 'Accéder à votre profil',
+      htmlCaption: `Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     }
   }
 }

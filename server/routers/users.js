@@ -1,6 +1,5 @@
 const express = require('express')
 const asyncWrap = require('../utils/async-wrap')
-const userName = require('../utils/user-name')
 
 let router = express.Router()
 
@@ -12,7 +11,7 @@ router.get('', asyncWrap(async (req, res, next) => {
     if (req.query.q) params.q = req.query.q
   }
   const users = req.user ? await req.app.get('storage').findUsers(params) : {results: [], count: 0}
-  users.results = users.results.map(user => ({id: user.id, name: userName(user)}))
+  users.results = users.results.map(user => ({id: user.id, name: user.name}))
   res.json(users)
 }))
 
@@ -20,7 +19,6 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (req.user.id !== req.params.userId) return res.status(403).send()
   const user = await req.app.get('storage').getUser({id: req.params.userId})
-  user.name = userName(user)
   if (!user) return res.status(404).send()
   res.json(user)
 }))

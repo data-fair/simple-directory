@@ -20,7 +20,7 @@
             :error-messages="emailErrors"
             name="email"
             append-icon="send"
-            @keyboard.enter.native="login"
+            @keyup.enter="login"
           />
           <p class="caption" v-html="$t('pages.login.emailCaption')"/>
         </v-card-text>

@@ -1,11 +1,14 @@
 const fs = require('fs')
 const util = require('util')
+const userName = require('../utils/user-name')
 const readFile = util.promisify(fs.readFile)
 
 class FileStorage {
   async init(params) {
     this.readonly = true
-    this.users = JSON.parse(await readFile(params.users, 'utf-8'))
+    this.users = JSON.parse(await readFile(params.users, 'utf-8')).forEach(user => {
+      user.name = userName(user)
+    })
     this.organizations = JSON.parse(await readFile(params.organizations, 'utf-8'))
     return this
   }
@@ -32,19 +35,25 @@ class FileStorage {
     if (params.ids) {
       filteredUsers = filteredUsers.filter(user => (params.ids).find(id => user.id === id))
     }
-    if (params.organization) {
-      const orga = this.organizations.find(o => o.id === params.organization)
-      if (!orga) filteredUsers = []
-      else filteredUsers = filteredUsers.filter(user => (orga.members || []).find(m => m.id === user.id))
-    }
     if (params.q) {
       const lq = params.q.toLowerCase()
-      filteredUsers = filteredUsers.filter(user => user.firstName.toLowerCase().indexOf(lq) >= 0 || user.lastName.toLowerCase().indexOf(lq) >= 0)
+      filteredUsers = filteredUsers.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
     }
     return {
       count: filteredUsers.length,
       results: filteredUsers
     }
+  }
+
+  async findMembers(organizationId, params) {
+    const orga = this.organizations.find(o => o.id === organizationId)
+    if (!orga) return null
+    let members = orga.members
+    if (params.q) {
+      const lq = params.q.toLowerCase()
+      members = members.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
+    }
+    return members
   }
 
   async getOrganization(id) {

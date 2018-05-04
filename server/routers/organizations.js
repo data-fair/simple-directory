@@ -2,7 +2,7 @@ const express = require('express')
 const shortid = require('shortid')
 const asyncWrap = require('../utils/async-wrap')
 
-let router = express.Router()
+let router = module.exports = express.Router()
 
 // Get the list of organizations
 router.get('', asyncWrap(async (req, res, next) => {
@@ -16,6 +16,17 @@ router.get('', asyncWrap(async (req, res, next) => {
   res.json(organizations)
 }))
 
+// Get details of an organization
+router.get('/:organizationId', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send()
+  // Only allowed for the organizations that the user belongs to
+  if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId)) {
+    return res.sendStatus(403)
+  }
+  const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
+  res.send(orga)
+}))
+
 // Get the list of organization roles
 // TODO: keep temporarily for compatibility.. but later a simpler GET on the orga will be enough
 router.get('/:organizationId/roles', asyncWrap(async (req, res, next) => {
@@ -26,17 +37,6 @@ router.get('/:organizationId/roles', asyncWrap(async (req, res, next) => {
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
   res.send(orga.roles || ['admin', 'user'])
-}))
-
-// Get details of an organization
-router.get('/:organizationId', asyncWrap(async (req, res, next) => {
-  if (!req.user) return res.status(401).send()
-  // Only allowed for the organizations that the user belongs to
-  if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId)) {
-    return res.sendStatus(403)
-  }
-  const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
-  res.send(orga)
 }))
 
 // Create an organization
@@ -55,7 +55,7 @@ router.post('', asyncWrap(async (req, res, next) => {
 const patchKeys = ['name', 'description']
 router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  // Only allowed for the organizations that the user belongs to
+  // Only allowed for the organizations that the user is admin of
   if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId && o.role === 'admin')) {
     return res.sendStatus(403)
   }
@@ -66,4 +66,26 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   res.send(patchedOrga)
 }))
 
-module.exports = router
+// Get the members of an organization. i.e. a partial user object (id, name, role).
+router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send()
+  // Only search through the organizations that the user belongs to
+  if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId)) {
+    return res.sendStatus(403)
+  }
+  const params = {}
+  if (req.query.q) params.q = req.query.q
+  const members = await req.app.get('storage').findMembers(req.params.organizationId, params)
+  res.send(members)
+}))
+
+// Exclude a member of the organization
+router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send()
+  // Only allowed for the organizations that the user is admin of
+  if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId && o.role === 'admin')) {
+    return res.sendStatus(403)
+  }
+  await req.app.get('storage').removeMember(req.params.organizationId, req.params.userId)
+  res.status(204).send()
+}))

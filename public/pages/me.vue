@@ -9,6 +9,9 @@ import {mapState} from 'vuex'
 export default {
   computed: {
     ...mapState(['user'])
+  },
+  mounted() {
+    if (!this.user) this.$router.push(this.localePath('login'))
   }
 }
 </script>

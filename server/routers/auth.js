@@ -19,7 +19,7 @@ function getPayload(user) {
   return {
     id: user.id,
     email: user.email,
-    name: userName(user),
+    name: user.name,
     organizations: user.organizations
   }
 }
@@ -32,7 +32,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   let user = await storage.getUser({email: req.body.email})
   // No 404 here so we don't disclose information about existence of the user
   if (!user && storage.readonly) return res.status(204).send()
-  if (!user) user = await storage.createUser({email: req.body.email, id: shortid.generate()})
+  if (!user) user = await storage.createUser({email: req.body.email, id: shortid.generate(), name: userName({email: req.body.email})})
 
   const payload = getPayload(user)
   if (config.admins.includes(req.body.email)) user.isAdmin = true

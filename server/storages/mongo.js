@@ -27,6 +27,7 @@ class MongodbStorage {
     this.db = this.client.db()
     await ensureIndex(this.db, 'users', {email: 1}, {unique: true})
     await ensureIndex(this.db, 'users', {'organizations.id': 1}, {sparse: true})
+    await ensureIndex(this.db, 'invitations', {email: 1, id: 1}, {unique: true})
     return this
   }
 
@@ -59,14 +60,8 @@ class MongodbStorage {
     if (params.ids) {
       filter._id = {$in: params.ids}
     }
-    if (params.organization) {
-      filter['organization.id'] = params.organization
-    }
     if (params.q) {
-      filter['$or'] = {
-        firstName: {$regex: params.q, options: 'i'},
-        lastName: {$regex: params.q, options: 'i'}
-      }
+      filter.name = {$regex: params.q, $options: 'i'}
     }
     const countPromise = this.db.collection('users').count(filter)
     const users = await this.db.collection('users')
@@ -74,6 +69,24 @@ class MongodbStorage {
       .toArray()
     const count = await countPromise
     return {count, results: users.map(switchBackId)}
+  }
+
+  async findMembers(organizationId, params = {}) {
+    const filter = {'organizations.$.id': params.organization}
+    if (params.q) {
+      filter.name = {$regex: params.q, $options: 'i'}
+    }
+    const countPromise = this.db.collection('users').count(filter)
+    const users = await this.db.collection('users')
+      .find(filter, {skip: params.skip || 0, limit: params.limit || 20})
+      .toArray()
+    const count = await countPromise
+    return {
+      count,
+      results: users.map(user => {
+        return {id: user._id, name: user.name, email: user.email, role: user.organizations.find(o => o.id === organizationId).role}
+      })
+    }
   }
 
   async getOrganization(id) {
@@ -89,8 +102,9 @@ class MongodbStorage {
 
   async patchOrganization(id, patch) {
     const orga = await this.db.collection('organizations').findOneAndUpdate({_id: id}, {$set: patch})
-    // "name" was modified, also update all organizations references in users
+    // "name" was modified, also update all organizations references in users and invitations
     if (patch.name) {
+      this.db.collection('invitations').update({id}, {$set: {name: patch.name}})
       const cursor = this.db.collection('users').find({organizations: {$elemMatch: {id}}})
       while (await cursor.hasNext()) {
         const user = await cursor.next()
@@ -111,7 +125,7 @@ class MongodbStorage {
       filter._id = {$in: params.ids}
     }
     if (params.q) {
-      filter.name = {$regex: params.q, options: 'i'}
+      filter.name = {$regex: params.q, $options: 'i'}
     }
 
     const countPromise = this.db.collection('organizations').count(filter)
@@ -120,6 +134,16 @@ class MongodbStorage {
       .toArray()
     const count = await countPromise
     return {count, results: organizations.map(switchBackId)}
+  }
+
+  async createInvitation(invit) {
+    await this.db.collection('invitations').update({id: invit.id, email: invit.email}, invit, {upsert: true})
+    return invit
+  }
+
+  async removeMember(organizationId, userId) {
+    await this.db.collection('users')
+      .update({_id: userId}, {$pull: {organizations: {id: organizationId}}}, {multi: true})
   }
 }
 
