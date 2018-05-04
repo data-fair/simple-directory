@@ -1,4 +1,5 @@
 const config = require('config')
+const URL = require('url').URL
 const i18n = require('./i18n')
 
 module.exports = {
@@ -23,7 +24,7 @@ module.exports = {
     {src: '~plugins/axios'}
   ],
   router: {
-    base: ('/' + config.publicUrl.split('//')[1].split('/').slice(1).join('/')).replace('//', '/')
+    base: new URL(config.publicUrl).pathname
   },
   modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', ['nuxt-i18n', {
     locales: i18n.locales,
