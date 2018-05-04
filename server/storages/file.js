@@ -1,3 +1,4 @@
+const path = require('path')
 const fs = require('fs')
 const util = require('util')
 const userName = require('../utils/user-name')
@@ -6,11 +7,11 @@ const readFile = util.promisify(fs.readFile)
 class FileStorage {
   async init(params) {
     this.readonly = true
-    this.users = JSON.parse(await readFile(params.users, 'utf-8'))
+    this.users = JSON.parse(await readFile(path.resolve(__dirname, '../..', params.users), 'utf-8'))
     this.users.forEach(user => {
       user.name = userName(user)
     })
-    this.organizations = JSON.parse(await readFile(params.organizations, 'utf-8'))
+    this.organizations = JSON.parse(await readFile(path.resolve(__dirname, '../..', params.organizations), 'utf-8'))
     return this
   }
 
