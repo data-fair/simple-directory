@@ -1,9 +1,11 @@
 <template>
-  <v-jumbotron>
+  <v-jumbotron class="index">
     <v-container fill-height>
       <v-layout align-center>
         <v-flex text-xs-center>
-          <img src="../../public/assets/logo.svg" style="max-width: 150px;">
+          <img v-if="env.brand.logo" :src="env.brand.logo" class="logo">
+          <logo v-else class="logo"/>
+
           <h3 class="display-3">{{ $t('root.title') }}</h3>
 
           <v-divider class="my-3"/>
@@ -16,5 +18,21 @@
 </template>
 
 <script>
-export default {}
+import logo from '../components/logo.vue'
+const {mapState} = require('vuex')
+
+export default {
+  components: {logo},
+  computed: {
+    ...mapState(['env'])
+  }
+}
 </script>
+
+<style lang="less">
+.index {
+  .logo {
+    max-width: 150px;
+  }
+}
+</style>
