@@ -32,7 +32,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   const payload = getPayload(user)
   if (config.admins.includes(req.body.email)) user.isAdmin = true
   if (user.isAdmin) payload.isAdmin = true
-  const token = jwt.sign(payload, config.jwtDurations.initialToken)
+  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const link = (req.query.redirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
   await mails.send({
     transport: req.app.get('mailTransport'),
@@ -52,7 +52,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   }
   let decoded
   try {
-    decoded = await jwt.verify(idToken)
+    decoded = await jwt.verify(req.app.get('keys'), idToken)
   } catch (err) {
     return res.status(401).send('Invalid id_token')
   }
@@ -62,6 +62,6 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = getPayload(user)
 
-  const token = jwt.sign(payload, config.jwtDurations.exhangedToken)
+  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exhangedToken)
   res.send(token)
 }))

@@ -21,15 +21,6 @@ app.use(cookieParser())
 app.use(bodyParser.json({limit: '100kb'}))
 app.use(i18n.middleware)
 
-const JSONWebKey = require('json-web-key')
-const publicKey = JSONWebKey.fromPEM(jwt.publicKey)
-publicKey.kid = config.kid
-publicKey.alg = 'RS256'
-publicKey.use = 'sig'
-app.get('/.well-known/jwks.json', (req, res) => {
-  res.json({'keys': [publicKey.toJSON()]})
-})
-
 // Replaces req.user from session with full and fresh user object from storage
 const fullUser = asyncWrap(async (req, res, next) => {
   if (!req.user) return next()
@@ -63,6 +54,10 @@ exports.run = async() => {
   app.use(session.loginCallback)
   app.use(session.decode)
   app.use(nuxt)
+
+  const keys = await jwt.init()
+  app.set('keys', keys)
+  app.use(jwt.router(keys))
 
   const mailTransport = await mails.init()
   app.set('mailTransport', mailTransport)

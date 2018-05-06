@@ -28,14 +28,6 @@ Run a development server:
 npm run dev
 ```
 
-### Generating public and private keys
-
-```
-mkdir security
-openssl genpkey -algorithm RSA -out ./security/simple-directory.key -pkeyopt rsa_keygen_bits:2048
-openssl rsa -in ./security/simple-directory.key -outform PEM -pubout -out  ./security/simple-directory.key.pub
-```
-
 ## Design
 
 The application applies the material design recommendations and uses vue and vuetify

@@ -61,6 +61,7 @@
     "less-loader": "^4.0.5",
     "marked": "^0.3.17",
     "mjml": "^4.0.5",
+    "mkdirp-promise": "^5.0.1",
     "mongodb": "^3.0.7",
     "nodemailer": "^4.6.4",
     "nuxt": "^1.4.0",

@@ -15,7 +15,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   const invitation = req.body
   const orga = req.user.organizations.find(o => o.id === invitation.id)
   if (!orga) return res.status(403).send()
-  const token = jwt.sign(invitation, config.jwtDurations.invitationToken)
+  const token = jwt.sign(req.app.get('keys'), invitation, config.jwtDurations.invitationToken)
 
   const link = config.publicUrl + '/api/invitations/_accept?invit_token=' + encodeURIComponent(token)
   await mails.send({
@@ -29,7 +29,7 @@ router.post('', asyncWrap(async (req, res, next) => {
 }))
 
 router.get('/_accept', asyncWrap(async (req, res, next) => {
-  const invit = await jwt.verify(req.query.invit_token)
+  const invit = await jwt.verify(req.app.get('keys'), req.query.invit_token)
   const storage = req.app.get('storage')
   let user = await storage.getUser({email: invit.email})
   if (!user && storage.readonly) return res.status(204).send()
