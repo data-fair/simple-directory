@@ -50,14 +50,14 @@ app.use((err, req, res, next) => {
 })
 
 exports.run = async() => {
+  const keys = await jwt.init()
+  app.set('keys', keys)
+  app.use(jwt.router(keys))
+
   const nuxt = await require('./nuxt')()
   app.use(session.loginCallback)
   app.use(session.decode)
   app.use(nuxt)
-
-  const keys = await jwt.init()
-  app.set('keys', keys)
-  app.use(jwt.router(keys))
 
   const mailTransport = await mails.init()
   app.set('mailTransport', mailTransport)
