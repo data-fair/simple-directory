@@ -1,6 +1,8 @@
 FROM node:8.9.1-alpine
 MAINTAINER "contact@koumoul.com"
 
+RUN apk add --update openssl
+
 ENV NODE_ENV production
 WORKDIR /webapp
 ADD package.json .
