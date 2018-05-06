@@ -3,7 +3,7 @@
     <v-container fill-height>
       <v-layout align-center>
         <v-flex text-xs-center>
-          <img v-if="env.brand.logo" :src="env.brand.logo" class="logo">
+          <img v-if="env.theme.logo" :src="env.theme.logo" class="logo">
           <logo v-else class="logo"/>
 
           <h3 class="display-3">{{ $t('root.title') }}</h3>

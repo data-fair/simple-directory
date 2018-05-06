@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app :dark="env.theme.dark">
     <template v-if="localePath('login') === $route.path">
       <v-toolbar app fixed flat color="transparent">
         <v-spacer/>
@@ -65,12 +65,12 @@
         </v-list>
       </v-navigation-drawer>
 
-      <v-toolbar app scroll-off-screen color="white">
+      <v-toolbar app scroll-off-screen>
         <v-toolbar-side-icon @click.stop="drawer = !drawer"/>
         <template v-if="localePath('index') !== $route.path">
           <div class="logo-container">
             <nuxt-link :to="localePath('index')" :title="$t('common.home')">
-              <img v-if="env.brand.logo" :src="env.brand.logo">
+              <img v-if="env.theme.logo" :src="env.theme.logo">
               <logo v-else/>
             </nuxt-link>
           </div>

@@ -10,7 +10,7 @@ const mjmlTemplate = fs.readFileSync(path.join(__dirname, 'mail.mjml'), 'utf8')
 
 exports.init = async () => {
   const transport = nodemailer.createTransport(config.mails.transport)
-  transport.sendMailAsync = util.promisify(transport.sendMail, {from: config.mails.from})
+  transport.sendMailAsync = util.promisify(transport.sendMail)
   return transport
 }
 
@@ -26,9 +26,9 @@ function applyParams(txt, params) {
 exports.send = async ({transport, key, messages, to, params}) => {
   params = {
     ...params,
-    ...flatten({brand: config.brand}),
+    ...flatten({theme: config.theme}),
     contact: config.contact,
-    logo: config.brand.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/627b6505/public/assets/logo-150x150.png'
+    logo: config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/627b6505/public/assets/logo-150x150.png'
   }
   Object.keys(messages.mails[key]).forEach(k => {
     params[k] = applyParams(messages.mails[key][k], params)
@@ -40,6 +40,7 @@ exports.send = async ({transport, key, messages, to, params}) => {
   }
 
   await transport.sendMailAsync({
+    from: config.mails.from,
     to,
     subject: applyParams(messages.mails[key].subject, params),
     text: applyParams(messages.mails[key].text, params),

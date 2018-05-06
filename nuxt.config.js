@@ -40,7 +40,7 @@ module.exports = {
   },
   env: {
     publicUrl: config.publicUrl,
-    brand: config.brand
+    theme: config.theme
   },
   head: {
     title: i18n.messages[config.defaultLocale].root.title,
@@ -52,6 +52,15 @@ module.exports = {
     ],
     link: [
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Nunito:300,400,500,700,400italic|Material+Icons' }
-    ]
+    ],
+    style: []
   }
+}
+
+if (config.theme.cssUrl) {
+  module.exports.head.link.push({rel: 'stylesheet', href: config.theme.cssUrl})
+}
+
+if (config.theme.cssText) {
+  module.exports.head.style.push({type: 'text/css', cssText: config.theme.cssText})
 }

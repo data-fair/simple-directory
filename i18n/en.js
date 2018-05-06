@@ -52,8 +52,11 @@ module.exports = {
         publicUrl: `<b>IMPORTANT.</b> The URL where the service will be exposed. For example https://koumoul.com/simple-directory`,
         admins: `<b>IMPORTANT.</b> The list of email addresses of the administrators of this service.`,
         contact: `<b>IMPORTANT.</b> The email address of contact for users of the service.`,
-        brand: {
-          logo: `The URL to replace Simple Directory's default logo.`
+        theme: {
+          logo: `The URL to replace Simple Directory's default logo.`,
+          dark: `Switch the whole apparence of pages to a dark style.<br>Note that the default colors are mote adapted to a light style, if you switch to dark you will have to modify them.`,
+          cssUrl: 'Link to a stylesheet to complement the branding variables.<br>WARNING: the HTML structure can change from one version to another. Maintaining an external stylesheet is going to create extra work for you on upgrades.',
+          cssText: 'Raw css content to complement the branding variables.<br>WARNING: the HTML structure can change from one version to another. Maintaining an external stylesheet is going to create extra work for you on upgrades.'
         },
         secret: {
           public: `<b>IMPORTANT.</b> The key to the public RSA signing key. See the install doc of the service.`,
@@ -69,6 +72,10 @@ The type "mongo" depends on accessing a MongoDB instance, it is the approriate c
           },
           mongo: {
             url: 'Only for storage.type=mongo. The full connection string for mongo database.'
+          },
+          mails: {
+            transport: '<b>IMPORTANT.</b> A JSON object of configuration for the email transport compatible with the library <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
+            from: `'<b>IMPORTANT.</> The address to use as sender for emails sent by the service.`
           }
         }
       }

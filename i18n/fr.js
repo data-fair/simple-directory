@@ -52,8 +52,11 @@ module.exports = {
         publicUrl: `<b>IMPORTANT.</b> L'URL à laquelle le service sera exposé. Par exemple https://koumoul.com/simple-directory`,
         admins: `<b>IMPORTANT.</b> La liste des adresses mails des administrateurs du service.`,
         contact: `<b>IMPORTANT.</b> L'adresse mail de contact pour les utilisateurs du service'.`,
-        brand: {
-          logo: `L'URL du logo à utiliser pour remplacer le logo par défaut de <i>Simple Directory</i>.`
+        theme: {
+          logo: `L'URL du logo à utiliser pour remplacer le logo par défaut de <i>Simple Directory</i>.`,
+          dark: `Rendre l'apparence complète des pages sombre.<br>Notez que les couleurs par défaut sont plus adaptées à un thème clair. Si vous passez en sombre vous allsez devoir également modifier ces couleurs.`,
+          cssUrl: 'Lien vers une feuille de style pour compléter les variables de personnalisation.<br>ATTENTION: la structure HTML peut varier de manière importante entre 2 versions. Maintenir cette feuille de style va vous créer du travail supplémentaire à chaque montée en version.',
+          cssText: 'Contenu CSS textuel.<br>ATTENTION: la structure HTML peut varier de manière importante entre 2 versions. Maintenir cette feuille de style va vous créer du travail supplémentaire à chaque montée en version.'
         },
         secret: {
           public: `<b>IMPORTANT.</b> Le chemin vers la clé publique de chiffrement RSA. Voir la documentation d'installation du service.`,
@@ -70,6 +73,10 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
           mongo: {
             url: 'Uniquement pour storage.type=mongo. La chaine de connexion complète à la base de données mongodb.'
           }
+        },
+        mails: {
+          transport: '<b>IMPORTANT.</b> Un objet JSON de configration du transport mail compatible avec la librairie <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
+          from: `'<b>IMPORTANT.</> L'adresse à renseigner comme expéditeur des mails émis par le service.`
         }
       }
     },

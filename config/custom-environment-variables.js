@@ -32,9 +32,23 @@ module.exports = {
       __format: 'json'
     }
   },
-  brand: {
-    logo: 'BRAND_LOGO'
-
+  theme: {
+    logo: 'BRAND_LOGO',
+    dark: {
+      __name: 'BRAND_DARK',
+      __format: 'json'
+    },
+    colors: {
+      primary: 'THEME_PRIMARY',
+      secondary: 'THEME_SECONDARY',
+      accent: 'THEME_ACCENT',
+      error: 'THEME_ERROR',
+      info: 'THEME_INFO',
+      success: 'THEME_SUCCESS',
+      warning: 'THEME_WARNING'
+    },
+    cssUrl: 'BRAND_CSS_URL',
+    cssText: 'BRAND_CSS_TEXT'
   },
   mails: {
     transport: {
