@@ -62,6 +62,7 @@
     "id": "albanm",
     "firstName": "Alban",
     "lastName": "Mouton",
-    "email": "alban.mouton@koumoul.com"
+    "email": "alban.mouton@koumoul.com",
+    "isAdmin": true
   }
 ]

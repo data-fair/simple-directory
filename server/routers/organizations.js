@@ -6,13 +6,19 @@ let router = module.exports = express.Router()
 
 // Get the list of organizations
 router.get('', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.send({results: [], count: 0})
   let params = {}
+
+  // Only service admins can request to see all field. Other users only see id/name
+  const allFields = req.query.allFields === 'true'
+  if (allFields && !req.user.isAdmin) return res.status(403).send()
+  if (!allFields) params.select = ['id', 'name']
+
   if (req.query) {
     if (req.query['ids']) params.ids = req.query['ids'].split(',')
     if (req.query.q) params.q = req.query.q
   }
-  const organizations = req.user ? await req.app.get('storage').findOrganizations(params) : {results: [], count: 0}
-  organizations.results = organizations.results.map(organization => ({id: organization.id, name: organization.name}))
+  const organizations = await req.app.get('storage').findOrganizations(params)
   res.json(organizations)
 }))
 

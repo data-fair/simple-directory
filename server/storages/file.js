@@ -4,6 +4,21 @@ const util = require('util')
 const userName = require('../utils/user-name')
 const readFile = util.promisify(fs.readFile)
 
+function applySelect(resources, select) {
+  if (!select || !select.length) return resources
+  return resources.map(resource => select.reduce((r, key) => { r[key] = resource[key]; return r }, {}))
+}
+
+function getUserOrgas(organizations, user) {
+  return organizations
+    .filter(orga => orga.members.find(member => member.id === user.id))
+    .map(orga => ({
+      id: orga.id,
+      name: orga.name,
+      role: orga.members.find(m => m.id === user.id).role
+    }))
+}
+
 class FileStorage {
   async init(params) {
     this.readonly = true
@@ -20,20 +35,12 @@ class FileStorage {
     const user = this.users.find(u => Object.keys(filter).reduce((a, f) => a && u[f] === filter[f], true))
     if (!user) return null
 
-    // Find organizations that the user belongs to
-    const orgas = this.organizations.filter(orga => orga.members.find(member => member.id === user.id))
-
     // Set these organizations ids, names and the role of the user in them
-    return {...user,
-      organizations: orgas.map(orga => ({
-        id: orga.id,
-        name: orga.name,
-        role: orga.members.find(m => m.id === user.id).role
-      }))}
+    return {...user, organizations: getUserOrgas(this.organizations, user)}
   }
 
   async findUsers(params = {}) {
-    let filteredUsers = this.users
+    let filteredUsers = this.users.map(user => ({...user, organizations: getUserOrgas(this.organizations, user)}))
     if (params.ids) {
       filteredUsers = filteredUsers.filter(user => (params.ids).find(id => user.id === id))
     }
@@ -41,6 +48,9 @@ class FileStorage {
       const lq = params.q.toLowerCase()
       filteredUsers = filteredUsers.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
     }
+
+    filteredUsers = applySelect(filteredUsers, params.select)
+
     return {
       count: filteredUsers.length,
       results: filteredUsers
@@ -70,7 +80,11 @@ class FileStorage {
   }
 
   async findOrganizations(params = {}) {
-    let filteredOrganizations = this.organizations
+    let filteredOrganizations = this.organizations.map(orga => {
+      const cloneOrga = {...orga}
+      delete cloneOrga.members
+      return cloneOrga
+    })
     // For convenience in the files the members are stored in the organizations
     // But the actual model exposed is the contrary
     if (params.ids) {
@@ -81,13 +95,11 @@ class FileStorage {
       filteredOrganizations = filteredOrganizations.filter(organization => organization.name.toLowerCase().indexOf(lq) >= 0)
     }
 
+    filteredOrganizations = applySelect(filteredOrganizations, params.select)
+
     return {
       count: filteredOrganizations.length,
-      results: filteredOrganizations.map(orga => {
-        const cloneOrga = {...orga}
-        delete cloneOrga.members
-        return cloneOrga
-      })
+      results: filteredOrganizations
     }
   }
 }

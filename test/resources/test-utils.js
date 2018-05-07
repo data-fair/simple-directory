@@ -38,9 +38,9 @@ exports.axios = async (test, email) => {
     await axios.post(config.publicUrl + '/api/auth/passwordless', {email})
     // TODO get id_token
     const token = await new Promise((resolve, reject) => {
-      test.app.get('maildev').on('new', email => {
-        if (email.subject.indexOf('localhost:' + config.port) !== -1) {
-          const match = email.text.match(/id_token=(.*)\s/)
+      test.app.get('maildev').on('new', emailObj => {
+        if (emailObj.subject.indexOf('localhost:' + config.port) !== -1 && emailObj.to[0].address === email) {
+          const match = emailObj.text.match(/id_token=(.*)\s/)
           if (!match) return reject(new Error('Failed to extract id_token from mail content'))
           resolve(match[1])
         }

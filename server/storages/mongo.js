@@ -18,6 +18,11 @@ function cloneWithId(resource) {
   return resourceClone
 }
 
+function prepareSelect(select) {
+  if (!select) return {}
+  select.reduce((a, key) => { a[key] = true; return a }, {})
+}
+
 class MongodbStorage {
   async init(params) {
     this.readonly = false
@@ -70,7 +75,7 @@ class MongodbStorage {
     }
     const countPromise = this.db.collection('users').count(filter)
     const users = await this.db.collection('users')
-      .find(filter, {organizations: 0}, {skip: params.skip || 0, limit: params.limit || 20})
+      .find(filter, prepareSelect(params.select), {skip: params.skip || 0, limit: params.limit || 20})
       .toArray()
     const count = await countPromise
     return {count, results: users.map(switchBackId)}
@@ -136,7 +141,7 @@ class MongodbStorage {
 
     const countPromise = this.db.collection('organizations').count(filter)
     const organizations = await this.db.collection('organizations')
-      .find(filter, {skip: params.skip || 0, limit: params.limit || 20})
+      .find(filter, prepareSelect(params.select), {skip: params.skip || 0, limit: params.limit || 20})
       .toArray()
     const count = await countPromise
     return {count, results: organizations.map(switchBackId)}

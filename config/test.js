@@ -3,6 +3,7 @@ module.exports = {
     public: './test/resources/test.key.pub',
     private: './test/resources/test.key'
   },
+  admins: ['alban.mouton@koumoul.com'],
   storage: {
     type: 'file',
     file: {

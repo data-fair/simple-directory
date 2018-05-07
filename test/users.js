@@ -14,13 +14,28 @@ test('Get user list when authenticated', async t => {
   const res = await ax.get('/api/users')
   t.is(res.status, 200)
   t.is(res.data.count, 11)
+  t.deepEqual(Object.keys(res.data.results[0]), ['id', 'name'])
 })
 
-test('Get filter user list when authenticated', async t => {
+test('Get filtered user list', async t => {
   const ax = await testUtils.axios(test, 'dmeadus0@answers.com')
   const res = await ax.get('/api/users?q=Al')
   t.is(res.status, 200)
   t.is(res.data.count, 3)
+})
+
+test('Get user list with all fields when not admin', async t => {
+  const ax = await testUtils.axios(test, 'dmeadus0@answers.com')
+  const res = await ax.get('/api/users?allFields=true')
+  t.is(res.status, 403)
+})
+
+test('Get user list with all fields as admin', async t => {
+  const ax = await testUtils.axios(test, 'alban.mouton@koumoul.com')
+  const res = await ax.get('/api/users?allFields=true')
+  t.is(res.status, 200)
+  t.is(res.data.count, 11)
+  t.truthy(res.data.results[0].organizations)
 })
 
 test('Get user info when not authenticated', async t => {
