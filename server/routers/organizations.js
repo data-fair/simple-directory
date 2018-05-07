@@ -1,23 +1,23 @@
 const express = require('express')
 const shortid = require('shortid')
 const asyncWrap = require('../utils/async-wrap')
+const findUtils = require('../utils/find')
 
 let router = module.exports = express.Router()
 
 // Get the list of organizations
 router.get('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.send({results: [], count: 0})
-  let params = {}
+  let params = {...findUtils.pagination(req.query)}
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
   if (allFields && !req.user.isAdmin) return res.status(403).send()
   if (!allFields) params.select = ['id', 'name']
 
-  if (req.query) {
-    if (req.query['ids']) params.ids = req.query['ids'].split(',')
-    if (req.query.q) params.q = req.query.q
-  }
+  if (req.query['ids']) params.ids = req.query['ids'].split(',')
+  if (req.query.q) params.q = req.query.q
+
   const organizations = await req.app.get('storage').findOrganizations(params)
   res.json(organizations)
 }))
@@ -79,7 +79,7 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId)) {
     return res.sendStatus(403)
   }
-  const params = {}
+  const params = {...findUtils.pagination(req.query)}
   if (req.query.q) params.q = req.query.q
   const members = await req.app.get('storage').findMembers(req.params.organizationId, params)
   res.send(members)

@@ -1,13 +1,14 @@
 const express = require('express')
 const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
+const findUtils = require('../utils/find')
 
 let router = express.Router()
 
 // Get the list of users
 router.get('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.send({results: [], count: 0})
-  let params = {}
+  let params = {...findUtils.pagination(req.query)}
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'

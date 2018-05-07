@@ -53,7 +53,7 @@ class FileStorage {
 
     return {
       count: filteredUsers.length,
-      results: filteredUsers
+      results: filteredUsers.slice(params.skip, params.skip + params.size)
     }
   }
 
@@ -67,7 +67,7 @@ class FileStorage {
     }
     return {
       count: members.length,
-      results: members
+      results: members.slice(params.skip, params.skip + params.size)
     }
   }
 
@@ -99,7 +99,7 @@ class FileStorage {
 
     return {
       count: filteredOrganizations.length,
-      results: filteredOrganizations
+      results: filteredOrganizations.slice(params.skip, params.skip + params.size)
     }
   }
 }
