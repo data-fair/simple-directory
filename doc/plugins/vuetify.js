@@ -3,5 +3,5 @@ import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
 
 Vue.use(Vuetify, {
-  theme: process.env.brand.theme
+  theme: process.env.theme.colors
 })

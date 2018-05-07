@@ -21,7 +21,7 @@ module.exports = {
   loading: { color: '#1e88e5' }, // Customize the progress bar color
   plugins: [{src: '~plugins/vuetify'}],
   router: {base: '/simple-directory/'},
-  env: {brand: config.brand},
+  env: {theme: config.theme},
   modules: ['@nuxtjs/markdownit', ['nuxt-i18n', {
     locales: [
       { code: 'fr' },
