@@ -46,16 +46,33 @@ class MongodbStorage {
     return switchBackId(user)
   }
 
-  async createUser(user) {
+  async createUser(user, byUser) {
+    byUser = byUser || user
     const clonedUser = cloneWithId(user)
     clonedUser.organizations = clonedUser.organizations || []
+    const date = new Date()
+    clonedUser.created = {id: byUser.id, name: byUser.name, date}
+    clonedUser.updated = {id: byUser.id, name: byUser.name, date}
     await this.db.collection('users').insert(clonedUser)
     return user
   }
 
-  async patchUser(id, patch) {
+  async patchUser(id, patch, byUser) {
+    patch.updated = {id: byUser.id, name: byUser.name, date: new Date()}
     const mongoRes = await this.db.collection('users').findOneAndUpdate({_id: id}, {$set: patch})
-    return switchBackId(mongoRes.value)
+    const user = switchBackId(mongoRes.value)
+    // "name" was modified, also update all references in created and updated events
+    if (patch.name) {
+      this.db.collection('users').updateMany({'created.id': id}, {$set: {'created.name': patch.name}})
+      this.db.collection('users').updateMany({'updated.id': id}, {$set: {'updated.name': patch.name}})
+      this.db.collection('organizations').updateMany({'created.id': id}, {$set: {'created.name': patch.name}})
+      this.db.collection('organizations').updateMany({'updated.id': id}, {$set: {'updated.name': patch.name}})
+    }
+    return user
+  }
+
+  async updateLogged(id) {
+    this.db.collection('users').updateOne({_id: id}, {$set: {logged: new Date()}})
   }
 
   async addMember(orga, user, role) {
@@ -63,6 +80,10 @@ class MongodbStorage {
       {_id: user.id},
       {$push: {organizations: {id: orga.id, name: orga.name, role}}}
     )
+  }
+
+  async deleteUser(userId) {
+    await this.db.collection('users').removeOne({_id: userId})
   }
 
   async findUsers(params = {}) {
@@ -75,7 +96,10 @@ class MongodbStorage {
     }
     const countPromise = this.db.collection('users').count(filter)
     const users = await this.db.collection('users')
-      .find(filter, prepareSelect(params.select), {skip: params.skip, limit: params.size})
+      .find(filter, prepareSelect(params.select))
+      .sort(params.sort)
+      .skip(params.skip)
+      .limit(params.size)
       .toArray()
     const count = await countPromise
     return {count, results: users.map(switchBackId)}
@@ -88,7 +112,10 @@ class MongodbStorage {
     }
     const countPromise = this.db.collection('users').count(filter)
     const users = await this.db.collection('users')
-      .find(filter, {skip: params.skip, limit: params.size})
+      .find(filter)
+      .sort(params.sort)
+      .skip(params.skip)
+      .limit(params.size)
       .toArray()
     const count = await countPromise
     return {
@@ -105,17 +132,21 @@ class MongodbStorage {
     return switchBackId(organization)
   }
 
-  async createOrganization(orga) {
-    await this.db.collection('organizations').insert(cloneWithId(orga))
+  async createOrganization(orga, user) {
+    const clonedOrga = cloneWithId(orga)
+    const date = new Date()
+    clonedOrga.created = {id: user.id, name: user.name, date}
+    clonedOrga.updated = {id: user.id, name: user.name, date}
+    await this.db.collection('organizations').insert(clonedOrga)
     return orga
   }
 
-  async patchOrganization(id, patch) {
+  async patchOrganization(id, patch, user) {
+    patch.updated = {id: user.id, name: user.name, date: new Date()}
     const mongoRes = await this.db.collection('organizations').findOneAndUpdate({_id: id}, {$set: patch})
     const orga = switchBackId(mongoRes.value)
-    // "name" was modified, also update all organizations references in users and invitations
+    // "name" was modified, also update all organizations references in users
     if (patch.name) {
-      this.db.collection('invitations').update({id}, {$set: {name: patch.name}})
       const cursor = this.db.collection('users').find({organizations: {$elemMatch: {id}}})
       while (await cursor.hasNext()) {
         const user = await cursor.next()
@@ -130,6 +161,12 @@ class MongodbStorage {
     return orga
   }
 
+  async deleteOrganization(organizationId) {
+    await this.db.collection('users')
+      .updateMany({}, {$pull: {organizations: {id: organizationId}}})
+    await this.db.collection('organizations').removeOne({_id: organizationId})
+  }
+
   async findOrganizations(params = {}) {
     const filter = {}
     if (params.ids) {
@@ -141,7 +178,9 @@ class MongodbStorage {
 
     const countPromise = this.db.collection('organizations').count(filter)
     const organizations = await this.db.collection('organizations')
-      .find(filter, prepareSelect(params.select), {skip: params.skip, limit: params.size})
+      .find(filter, prepareSelect(params.select))
+      .skip(params.skip)
+      .limit(params.size)
       .toArray()
     const count = await countPromise
     return {count, results: organizations.map(switchBackId)}
@@ -149,7 +188,7 @@ class MongodbStorage {
 
   async removeMember(organizationId, userId) {
     await this.db.collection('users')
-      .update({_id: userId}, {$pull: {organizations: {id: organizationId}}}, {multi: true})
+      .updateOne({_id: userId}, {$pull: {organizations: {id: organizationId}}})
   }
 }
 

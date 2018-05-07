@@ -8,7 +8,7 @@ let router = express.Router()
 // Get the list of users
 router.get('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.send({results: [], count: 0})
-  let params = {...findUtils.pagination(req.query)}
+  let params = {...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort)}
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
@@ -44,9 +44,16 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
   const tempUser = {...req.user, ...patch}
   delete tempUser.name
   patch.name = userName(tempUser)
-  console.log('PATCH', patch)
-  const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch)
+  const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
   res.send(patchedUser)
+}))
+
+// Only super admin can delete a user for now
+router.delete('/:userId', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send()
+  if (!req.user.isAdmin) return res.status(403).send()
+  await req.app.get('storage').deleteUser(req.params.userId)
+  res.status(204).send()
 }))
 
 module.exports = router

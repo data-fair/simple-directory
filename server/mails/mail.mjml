@@ -6,7 +6,7 @@
         <mj-text font-size="14px" font-weight="500" line-height="21px" color="#212121" font-family="helvetica" padding-top="16px" padding-bottom="24px">
           {htmlMsg}
         </mj-text>
-        <mj-button background-color="{theme.theme.primary}" color="#fff" href="{link}" border-radius="4px">
+        <mj-button background-color="{theme.colors.primary}" color="#fff" href="{link}" border-radius="4px">
           {htmlButton}
         </mj-button>
         <mj-divider border-width="1px" border-color="#757575" padding-top="48px"></mj-divider>

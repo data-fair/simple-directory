@@ -29,15 +29,20 @@
       <v-btn v-if="isAdminOrga" :title="$t('pages.organization.addMember')" icon color="primary" @click="newInvitation(); inviteMemberDialog = true"><v-icon>add</v-icon></v-btn>
     </v-layout>
 
-    <v-text-field
-      :label="$t('common.search')"
-      v-model="q"
-      :append-icon-cb="fetchMembers"
-      name="search"
-      solo
-      style="max-width:300px;"
-      append-icon="search"
-      @keyup.enter="fetchMembers"/>
+    <v-layout row wrap>
+      <v-text-field
+        :label="$t('common.search')"
+        v-model="q"
+        :append-icon-cb="fetchMembers"
+        name="search"
+        solo
+        style="max-width:300px;"
+        append-icon="search"
+        @keyup.enter="fetchMembers"/>
+      <v-spacer/>
+      <v-pagination v-if="members && members.count > membersPageSize" :length="Math.ceil(members.count / membersPageSize)" v-model="membersPage" @input="fetchMembers"/>
+    </v-layout>
+
     <v-list v-if="members" two-line class="elevation-1 mt-3">
       <v-list-tile v-for="member in members.results" :key="member.id">
         <v-list-tile-content>
@@ -116,7 +121,9 @@ export default {
     currentMember: null,
     invitation: {id: null, email: null, role: null},
     inviteMemberDialog: false,
-    validInvitation: true
+    validInvitation: true,
+    membersPage: 1,
+    membersPageSize: 10
   }),
   computed: {
     ...mapState(['userDetails']),
@@ -134,7 +141,6 @@ export default {
     ...mapActions(['fetchUserDetails']),
     async save(e) {
       e.preventDefault()
-      console.log('SAVE!!')
       if (!this.$refs.form.validate()) return
       try {
         await this.$axios.$patch(`api/organizations/${this.$route.params.id}`,
@@ -147,7 +153,8 @@ export default {
     },
     async fetchMembers() {
       try {
-        this.members = await this.$axios.$get(`api/organizations/${this.$route.params.id}/members`, {params: {q: this.q}})
+        this.members = await this.$axios.$get(`api/organizations/${this.$route.params.id}/members`,
+          {params: {q: this.q, page: this.membersPage, size: this.membersPageSize}})
       } catch (error) {
         eventBus.$emit('notification', {error})
       }

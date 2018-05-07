@@ -14,6 +14,9 @@ module.exports = {
     administration: 'Administration',
     myAccount: 'Mon compte',
     organization: 'Organisation',
+    organizations: 'Organisations',
+    user: 'Utilisateur',
+    users: 'Utilisateurs',
     createOrganization: 'Créer une organisation',
     dashboard: 'Tableau de bord',
     description: 'Description',
@@ -30,7 +33,12 @@ module.exports = {
     modificationOk: 'Votre modification a été appliquée.',
     invitations: 'Invitations',
     accept: 'Accepter',
-    reject: 'Rejeter'
+    reject: 'Rejeter',
+    confirmDeleteTitle: 'Supprimer {name}',
+    confirmDeleteMsg: 'Êtes vous sur de vouloir supprimer cette ressource ? Attention les données ne pourront pas être récupérées.',
+    loggedAt: 'Logged',
+    createdAt: 'Created',
+    updatedAt: 'Updated'
   },
   doc: {
     about: {

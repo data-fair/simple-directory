@@ -19,6 +19,15 @@ function getUserOrgas(organizations, user) {
     }))
 }
 
+function sortCompare(sort) {
+  return function(a, b) {
+    for (let key of Object.keys(sort || {})) {
+      if (a[key] < b[key]) return sort[key]
+    }
+    return 0
+  }
+}
+
 class FileStorage {
   async init(params) {
     this.readonly = true
@@ -53,7 +62,7 @@ class FileStorage {
 
     return {
       count: filteredUsers.length,
-      results: filteredUsers.slice(params.skip, params.skip + params.size)
+      results: filteredUsers.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size)
     }
   }
 
@@ -67,7 +76,7 @@ class FileStorage {
     }
     return {
       count: members.length,
-      results: members.slice(params.skip, params.skip + params.size)
+      results: members.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size)
     }
   }
 
@@ -99,7 +108,7 @@ class FileStorage {
 
     return {
       count: filteredOrganizations.length,
-      results: filteredOrganizations.slice(params.skip, params.skip + params.size)
+      results: filteredOrganizations.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size)
     }
   }
 }

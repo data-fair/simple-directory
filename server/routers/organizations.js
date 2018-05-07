@@ -8,7 +8,7 @@ let router = module.exports = express.Router()
 // Get the list of organizations
 router.get('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.send({results: [], count: 0})
-  let params = {...findUtils.pagination(req.query)}
+  let params = {...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort)}
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
@@ -52,7 +52,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   const orga = req.body
   orga.id = orga.id || shortid.generate()
   orga.roles = orga.roles || ['admin', 'user']
-  await storage.createOrganization(orga)
+  await storage.createOrganization(orga, req.user)
   await storage.addMember(orga, req.user, 'admin')
   res.status(201).send(orga)
 }))
@@ -68,7 +68,7 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
 
   const forbiddenKey = Object.keys(req.body).find(key => !patchKeys.includes(key))
   if (forbiddenKey) return res.status(400).send('Only some parts of the organization can be modified through this route')
-  const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body)
+  const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body, req.user)
   res.send(patchedOrga)
 }))
 
@@ -79,7 +79,7 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId)) {
     return res.sendStatus(403)
   }
-  const params = {...findUtils.pagination(req.query)}
+  const params = {...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort)}
   if (req.query.q) params.q = req.query.q
   const members = await req.app.get('storage').findMembers(req.params.organizationId, params)
   res.send(members)
@@ -93,5 +93,13 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
     return res.sendStatus(403)
   }
   await req.app.get('storage').removeMember(req.params.organizationId, req.params.userId)
+  res.status(204).send()
+}))
+
+// Only super admin can delete an organization for now
+router.delete('/:organizationId', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send()
+  if (!req.user.isAdmin) return res.status(403).send()
+  await req.app.get('storage').deleteOrganization(req.params.organizationId)
   res.status(204).send()
 }))

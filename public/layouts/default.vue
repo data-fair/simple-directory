@@ -37,18 +37,23 @@
 
           </v-list-tile>
 
+          <v-divider/>
+
           <!-- Administration pages -->
-          <!--<v-list-group v-if="user && user.isAdmin" value="true">
+          <v-list-group v-if="user && user.isAdmin" value="true">
             <v-list-tile slot="activator">
               <v-list-tile-action>
                 <v-icon>verified_user</v-icon>
               </v-list-tile-action>
               <v-list-tile-title>{{ $t('common.administration') }}</v-list-tile-title>
             </v-list-tile>
-            <v-list-tile :to="localePath('admin.dashboard')">
-              <v-list-tile-title>{{ $t(`common.dashboard`) }}</v-list-tile-title>
+            <v-list-tile :to="localePath('admin-users')">
+              <v-list-tile-title>{{ $t(`common.users`) }}</v-list-tile-title>
             </v-list-tile>
-          </v-list-group>-->
+            <v-list-tile :to="localePath('admin-organizations')">
+              <v-list-tile-title>{{ $t(`common.organizations`) }}</v-list-tile-title>
+            </v-list-tile>
+          </v-list-group>
 
           <!-- Documentation pages -->
           <v-list-group value="true">
@@ -136,7 +141,9 @@ export default {
     }
   },
   mounted() {
-    eventBus.$on('notification', notif => {
+    eventBus.$on('notification', async notif => {
+      this.showSnackbar = false
+      await this.$nextTick()
       if (typeof notif === 'string') notif = {msg: notif}
       if (notif.error) {
         notif.type = 'error'
