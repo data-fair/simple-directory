@@ -17,10 +17,10 @@ exports.init = async () => {
   const privateKeyPath = path.resolve(__dirname, '../..', config.secret.private)
   const publicKeyPath = path.resolve(__dirname, '../..', config.secret.public)
   try {
-    accessAsync(privateKeyPath, fs.constants.R_OK)
+    await accessAsync(privateKeyPath, fs.constants.F_OK)
   } catch (err) {
-    console.log(err)
-    console.log(`Private key ${privateKeyPath} doesn't exist. Try to create it with openssl...`)
+    if (err.code !== 'ENOENT') throw (err)
+    console.log(`Private key ${privateKeyPath} doesn't exist. Create it with openssl.`)
     await mkdirp(path.dirname(privateKeyPath))
     await execAsync(`openssl genpkey -algorithm RSA -out ${privateKeyPath} -pkeyopt rsa_keygen_bits:2048`)
     await execAsync(`openssl rsa -in ${privateKeyPath} -outform PEM -pubout -out  ${publicKeyPath}`)
