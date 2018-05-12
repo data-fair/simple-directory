@@ -16,7 +16,7 @@ function getPayload(user) {
     email: user.email,
     name: user.name,
     organizations: user.organizations,
-    isAdmin: user.isAdmin
+    isAdmin: config.admins.includes(user.email)
   }
 }
 
@@ -31,8 +31,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   if (!user) {
     const newUser = {
       email: req.body.email,
-      id: shortid.generate(),
-      isAdmin: config.admins.includes(req.body.email)
+      id: shortid.generate()
     }
     newUser.name = userName(newUser)
     user = await storage.createUser(newUser)
