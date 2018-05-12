@@ -1,4 +1,7 @@
 # Simple directory
+
+[Documentation](https://koumoul-dev.github.io/simple-directory/).
+
 This service aims to provide easy access to user and organizations structures and authentication mechanism using Json Web tokens.
 
 [![Build Status](https://travis-ci.org/koumoul-dev/simple-directory.svg?branch=master)](https://travis-ci.org/koumoul-dev/simple-directory)
