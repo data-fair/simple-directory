@@ -2,6 +2,7 @@ const express = require('express')
 const shortid = require('shortid')
 const asyncWrap = require('../utils/async-wrap')
 const findUtils = require('../utils/find')
+const webhooks = require('../webhooks')
 
 let router = module.exports = express.Router()
 
@@ -69,6 +70,7 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   const forbiddenKey = Object.keys(req.body).find(key => !patchKeys.includes(key))
   if (forbiddenKey) return res.status(400).send('Only some parts of the organization can be modified through this route')
   const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body, req.user)
+  if (req.body.name) webhooks.sendOrganizationsWebhooks([patchedOrga])
   res.send(patchedOrga)
 }))
 

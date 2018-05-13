@@ -2,6 +2,7 @@ const express = require('express')
 const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const findUtils = require('../utils/find')
+const webhooks = require('../webhooks')
 
 let router = express.Router()
 
@@ -41,9 +42,11 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
   if (forbiddenKey) return res.status(400).send('Only some parts of the user can be modified through this route')
 
   const patch = req.body
-  const tempUser = {...req.user, ...patch}
-  delete tempUser.name
-  patch.name = userName(tempUser)
+  const name = userName({...req.user, ...patch}, true)
+  if (name !== req.user.name) {
+    patch.name = name
+    webhooks.sensUsersWebhooks([{...req.user, ...patch}])
+  }
   const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
   res.send(patchedUser)
 }))
