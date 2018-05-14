@@ -66,5 +66,9 @@ module.exports = {
     active: false,
     smtp: 1025,
     web: 1080
+  },
+  nuxtBuild: {
+    active: true,
+    blocking: true
   }
 }

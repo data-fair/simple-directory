@@ -18,5 +18,8 @@ module.exports = {
     mongo: {
       url: 'mongodb://localhost:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
     }
+  },
+  nuxtBuild: {
+    blocking: false
   }
 }

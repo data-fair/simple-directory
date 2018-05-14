@@ -64,5 +64,15 @@ module.exports = {
     },
     smtp: 'MAILDEV_SMTP',
     web: 'MAILDEV_WEB'
+  },
+  nuxtBuild: {
+    active: {
+      __name: 'NUXT_BUILD_ACTIVE',
+      __format: 'json'
+    },
+    blocking: {
+      __name: 'NUXT_BUILD_BLOCKING',
+      __format: 'json'
+    }
   }
 }
