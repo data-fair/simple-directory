@@ -59,7 +59,7 @@ module.exports = {
       varDescriptions: {
         publicUrl: `<b>IMPORTANT.</b> L'URL à laquelle le service sera exposé. Par exemple https://koumoul.com/simple-directory`,
         admins: `<b>IMPORTANT.</b> La liste des adresses mails des administrateurs du service.`,
-        contact: `<b>IMPORTANT.</b> L'adresse mail de contact pour les utilisateurs du service'.`,
+        contact: `<b>IMPORTANT.</b> L'adresse mail de contact pour les utilisateurs du service.`,
         theme: {
           logo: `L'URL du logo à utiliser pour remplacer le logo par défaut de <i>Simple Directory</i>.`,
           dark: `Rendre l'apparence complète des pages sombre.<br>Notez que les couleurs par défaut sont plus adaptées à un thème clair. Si vous passez en sombre vous allsez devoir également modifier ces couleurs.`,
@@ -98,6 +98,7 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
       emailTitle: `En recevant un email`,
       emailLabel: 'Votre adresse mail',
       emailCaption: `En savoir plus sur l'authentification <a href="https://koumoul.com/blog/passwordless">sans mot de passe</a>`,
+      conditionsCaption: '',
       success: `Vous allez recevoir un email à l'adresse renseignée qui contiendra un lien. Veuillez ouvrir ce lien pour terminer votre identification.`
     },
     organization: {

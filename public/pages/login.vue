@@ -22,7 +22,8 @@
             append-icon="send"
             @keyup.enter="login"
           />
-          <p class="caption" v-html="$t('pages.login.emailCaption')"/>
+          <p v-if="$t('pages.login.emailCaption')" class="caption" v-html="$t('pages.login.emailCaption')"/>
+          <p v-if="$t('pages.login.conditionsCaption')" class="caption" v-html="$t('pages.login.conditionsCaption')"/>
         </v-card-text>
       </v-card>
     </v-flex>
