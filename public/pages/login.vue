@@ -44,7 +44,8 @@ export default {
     emailErrors: []
   }),
   computed: {
-    ...mapState(['user', 'env']),
+    ...mapState('session', ['user']),
+    ...mapState(['env']),
     redirectUrl() {
       return this.$route.query && this.$route.query.redirect
     }

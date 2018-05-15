@@ -135,12 +135,19 @@ export default {
     }
   },
   computed: {
-    ...mapState(['user', 'env', 'userDetails']),
+    ...mapState('session', ['user']),
+    ...mapState(['env', 'userDetails']),
     docPages() {
       return this.user && this.user.isAdmin ? ['about', 'install', 'config', 'use'] : ['use']
     }
   },
+  watch: {
+    user() {
+      this.$store.dispatch('fetchUserDetails')
+    }
+  },
   mounted() {
+    this.$store.dispatch('fetchUserDetails')
     eventBus.$on('notification', async notif => {
       this.showSnackbar = false
       await this.$nextTick()
@@ -152,9 +159,8 @@ export default {
       this.notification = notif
       this.showSnackbar = true
     })
-    this.fetchUserDetails()
   },
-  methods: mapActions(['logout', 'login', 'fetchUserDetails'])
+  methods: mapActions('session', ['logout', 'login'])
 }
 
 </script>

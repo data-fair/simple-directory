@@ -1,12 +1,13 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import {sessionStore} from 'simple-directory-client-nuxt'
 
 Vue.use(Vuex)
 
 export default () => {
   return new Vuex.Store({
+    modules: {session: sessionStore},
     state: {
-      user: null,
       userDetails: null,
       env: {}
     },
@@ -17,24 +18,15 @@ export default () => {
     },
     actions: {
       async fetchUserDetails({state, commit}) {
-        if (!state.user) return
-        const userDetails = await this.$axios.$get(`api/users/${state.user.id}`)
+        if (!state.session.user) return
+        const userDetails = await this.$axios.$get(`api/users/${state.session.user.id}`)
         commit('setAny', {userDetails})
-      },
-      login({state}) {
-        const path = this.$router.currentRoute.path
-        window.location.href = `${state.env.publicUrl}/api/session/login?redirect=${state.env.publicUrl}${path}?id_token=`
-      },
-      async logout({commit}) {
-        await this.$axios.post('api/session/logout')
-        commit('setAny', {user: null})
-        this.$router.push('/')
       },
       nuxtServerInit({commit, dispatch}, {req, env, app}) {
         commit('setAny', {
-          user: req.user,
           env: { ...env, readonly: req.app.get('storage').readonly }
         })
+        dispatch('session/init', {user: req.user, baseUrl: env.publicUrl + '/api/session'})
       }
     }
   })

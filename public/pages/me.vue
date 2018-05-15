@@ -40,7 +40,8 @@ export default {
     rejectDialog: false
   }),
   computed: {
-    ...mapState(['user', 'userDetails'])
+    ...mapState('session', ['user']),
+    ...mapState(['userDetails'])
   },
   watch: {
     userDetails() {

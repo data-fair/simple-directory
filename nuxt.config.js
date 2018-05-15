@@ -21,7 +21,8 @@ module.exports = {
   plugins: [
     {src: '~plugins/vuetify'},
     {src: '~plugins/moment'},
-    {src: '~plugins/axios'}
+    {src: '~plugins/axios'},
+    {src: '~plugins/session', ssr: false}
   ],
   router: {
     base: new URL(config.publicUrl + '/').pathname
