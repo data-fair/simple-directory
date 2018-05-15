@@ -10,7 +10,7 @@ const storages = require('./storages')
 const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
 const jwt = require('./utils/jwt')
-const session = require('./utils/session')({directoryUrl: config.publicUrl, publicUrl: config.publicUrl})
+const session = require('simple-directory-client-express')({directoryUrl: config.publicUrl, publicUrl: config.publicUrl})
 const i18n = require('../i18n')
 
 const app = express()
