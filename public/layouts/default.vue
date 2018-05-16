@@ -74,7 +74,11 @@
         <v-toolbar-side-icon @click.stop="drawer = !drawer"/>
         <template v-if="localePath('index') !== $route.path">
           <div class="logo-container">
-            <nuxt-link :to="localePath('index')" :title="$t('common.home')">
+            <a v-if="env.homePage" :href="env.homePage" :title="$t('common.home')">
+              <img v-if="env.theme.logo" :src="env.theme.logo">
+              <logo v-else/>
+            </a>
+            <nuxt-link v-else :to="localePath('index')" :title="$t('common.home')">
               <img v-if="env.theme.logo" :src="env.theme.logo">
               <logo v-else/>
             </nuxt-link>

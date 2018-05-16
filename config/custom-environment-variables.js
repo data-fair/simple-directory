@@ -12,6 +12,7 @@ module.exports = {
     __format: 'json'
   },
   contact: 'CONTACT',
+  homePage: 'HOME_PAGE',
   secret: {
     public: 'PUBLIC_KEY',
     private: 'PRIVATE_KEY'

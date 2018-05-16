@@ -13,6 +13,7 @@ module.exports = {
   },
   admins: ['admin@test.com'],
   contact: 'contact@test.com',
+  homePage: null,
   storage: {
     // One of 'file' and 'mongo'
     type: 'mongo',

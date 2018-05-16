@@ -41,7 +41,8 @@ module.exports = {
   },
   env: {
     publicUrl: config.publicUrl,
-    theme: config.theme
+    theme: config.theme,
+    homePage: config.homePage
   },
   head: {
     title: i18n.messages[config.defaultLocale].root.title,
