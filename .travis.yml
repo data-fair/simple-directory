@@ -35,12 +35,13 @@ after_success:
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
   - docker build -f Dockerfile -t $REPO:$TAG .
   - docker push $REPO
-  # Doc build and push to gh-pages
+  # Doc build
   - npm run build-doc
-  - git config --global user.email "nobody@nobody.org"
-  - git config --global user.name "Travis CI"
-  - cd doc-dist
-  - git init
-  - git add .
-  - git commit -m "Deploy to Github Pages"
-  - git push --force --quiet "https://${GITHUB_TOKEN}@github.com/koumoul-dev/simple-directory.git" master:gh-pages
+
+deploy:
+  provider: pages
+  local_dir: doc-dist
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
+  on:
+    branch: master
