@@ -25,8 +25,10 @@
       :pagination.sync="pagination"
       :total-items="pagination.totalItems"
       :loading="loading"
+      :rows-per-page-items="[10, 25, 100]"
       class="elevation-1"
       item-key="id"
+      rows-per-page-text=""
     >
       <template slot="items" slot-scope="props">
         <td>{{ props.item.email }}</td>
@@ -76,7 +78,7 @@ export default {
     currentUser: null,
     deleteUserDialog: false,
     q: '',
-    pagination: {page: 1, rowsPerPage: 10, totalItems: 0, descending: false, sortBy: 'email'},
+    pagination: {page: 1, rowsPerPage: 25, totalItems: 0, descending: false, sortBy: 'email'},
     loading: false,
     headers: null
   }),
@@ -115,7 +117,7 @@ export default {
       this.loading = true
       try {
         this.users = await this.$axios.$get(`api/users`,
-          {params: {q: this.q, page: this.pagination.page, size: this.pagination.rowsPerPage, sort: this.sort}})
+          {params: {q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.rowsPerPage, sort: this.sort}})
         this.pagination.totalItems = this.users.count
       } catch (error) {
         eventBus.$emit('notification', {error})

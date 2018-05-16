@@ -20,7 +20,7 @@ function cloneWithId(resource) {
 
 function prepareSelect(select) {
   if (!select) return {}
-  select.reduce((a, key) => { a[key] = true; return a }, {})
+  return select.reduce((a, key) => { a[key] = true; return a }, {})
 }
 
 class MongodbStorage {
@@ -94,9 +94,11 @@ class MongodbStorage {
     if (params.q) {
       filter.name = {$regex: params.q, $options: 'i'}
     }
+
     const countPromise = this.db.collection('users').count(filter)
     const users = await this.db.collection('users')
-      .find(filter, prepareSelect(params.select))
+      .find(filter)
+      .project(prepareSelect(params.select))
       .sort(params.sort)
       .skip(params.skip)
       .limit(params.size)
@@ -178,7 +180,8 @@ class MongodbStorage {
 
     const countPromise = this.db.collection('organizations').count(filter)
     const organizations = await this.db.collection('organizations')
-      .find(filter, prepareSelect(params.select))
+      .find(filter)
+      .project(prepareSelect(params.select))
       .skip(params.skip)
       .limit(params.size)
       .toArray()
