@@ -108,7 +108,7 @@ class MongodbStorage {
   }
 
   async findMembers(organizationId, params = {}) {
-    const filter = {'organizations.$.id': params.organization}
+    const filter = {'organizations.$.id': organizationId}
     if (params.q) {
       filter.name = {$regex: params.q, $options: 'i'}
     }
