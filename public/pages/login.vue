@@ -53,9 +53,7 @@ export default {
   methods: {
     async login() {
       try {
-        await this.$axios.$post('api/auth/passwordless' + (this.redirectUrl ? '?redirect=' + this.redirectUrl : ''), {
-          email: this.email
-        })
+        await this.$axios.$post('api/auth/passwordless', {email: this.email}, {params: {redirect: this.redirectUrl}})
         this.emailErrors = []
         eventBus.$emit('notification', {type: 'success', msg: this.$t('pages.login.success')})
       } catch (error) {
