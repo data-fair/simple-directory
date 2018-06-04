@@ -1,5 +1,6 @@
 <template lang="html">
   <v-speed-dial
+    v-if="$i18n.locales.length > 1"
     direction="bottom"
     transition="fade-transition"
   >

@@ -1,20 +1,16 @@
 const config = require('config')
-const fs = require('fs')
 const flatten = require('flat')
 const unflatten = flatten.unflatten
 const flatOpts = {delimiter: '_'}
 
+exports.locales = config.i18n.locales.map(l => ({code: l}))
+
 // Build a map of messages of this form
 // {fr: {msg1: 'libellé 1'}, en: {msg1: 'label 1'}}
 const messages = {}
-fs.readdirSync(__dirname)
-  .filter(f => f !== 'index.js')
-  .map(f => f.replace('.js', '').replace('.json', ''))
-  .forEach(f => {
-    messages[f] = require('./' + f)
-  })
-
-exports.locales = Object.keys(messages).map(l => ({code: l}))
+config.i18n.locales.forEach(l => {
+  messages[l] = require('./' + l)
+})
 
 const flatMessages = flatten(messages, flatOpts)
 
@@ -36,7 +32,7 @@ exports.publicMessages = unflatten(
   , flatOpts)
 
 exports.middleware = (req, res, next) => {
-  const locale = req.get('Accept-Language') || config.defaultLocale
+  const locale = req.get('Accept-Language') || config.i18n.defaultLocale
   req.messages = exports.messages[locale]
   next()
 }
