@@ -34,9 +34,9 @@ module.exports = {
     }
   },
   theme: {
-    logo: 'BRAND_LOGO',
+    logo: 'THEME_LOGO',
     dark: {
-      __name: 'BRAND_DARK',
+      __name: 'THEME_DARK',
       __format: 'json'
     },
     colors: {
@@ -48,8 +48,8 @@ module.exports = {
       success: 'THEME_SUCCESS',
       warning: 'THEME_WARNING'
     },
-    cssUrl: 'BRAND_CSS_URL',
-    cssText: 'BRAND_CSS_TEXT'
+    cssUrl: 'THEME_CSS_URL',
+    cssText: 'THEME_CSS_TEXT'
   },
   mails: {
     transport: {

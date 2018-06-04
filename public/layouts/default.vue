@@ -1,5 +1,5 @@
 <template>
-  <v-app :dark="env.theme.dark">
+  <v-app :dark="env.theme.dark" :id="$route.name ? 'page-' + $route.name.replace('-' + $i18n.locale, '') : ''">
     <template v-if="localePath('login') === $route.path">
       <v-toolbar app fixed flat color="transparent">
         <v-spacer/>
