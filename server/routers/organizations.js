@@ -1,5 +1,6 @@
 const express = require('express')
 const shortid = require('shortid')
+const config = require('config')
 const asyncWrap = require('../utils/async-wrap')
 const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
@@ -43,7 +44,7 @@ router.get('/:organizationId/roles', asyncWrap(async (req, res, next) => {
     return res.sendStatus(403)
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
-  res.send(orga.roles || ['admin', 'user'])
+  res.send(orga.roles || config.roles.defaults)
 }))
 
 // Create an organization
@@ -52,7 +53,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   const orga = req.body
   orga.id = orga.id || shortid.generate()
-  orga.roles = orga.roles || ['admin', 'user']
+  orga.roles = orga.roles || config.roles.defaults
   await storage.createOrganization(orga, req.user)
   await storage.addMember(orga, req.user, 'admin')
   res.status(201).send(orga)

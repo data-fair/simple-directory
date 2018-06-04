@@ -11,6 +11,13 @@ module.exports = {
     __name: 'ADMINS',
     __format: 'json'
   },
+  roles: {
+    defaults: {
+      __name: 'ROLES_DEFAULTS',
+      __format: 'json'
+    },
+    editable: 'ROLES_EDITABLE'
+  },
   contact: 'CONTACT',
   homePage: 'HOME_PAGE',
   secret: {

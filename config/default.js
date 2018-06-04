@@ -12,6 +12,10 @@ module.exports = {
     invitationToken: '10d'
   },
   admins: ['admin@test.com'],
+  roles: {
+    defaults: ['admin', 'user'],
+    editable: false
+  },
   contact: 'contact@test.com',
   homePage: null,
   storage: {
@@ -71,5 +75,8 @@ module.exports = {
   nuxtBuild: {
     active: true,
     blocking: true
+  },
+  quotas: {
+    defaultMaxCreatedOrgs: -1
   }
 }

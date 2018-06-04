@@ -19,7 +19,7 @@
       />
       <v-layout row wrap>
         <v-spacer/>
-        <v-btn color="primary" type="submit">{{ $t('common.save') }}</v-btn>
+        <v-btn v-if="isAdminOrga" color="primary" type="submit">{{ $t('common.save') }}</v-btn>
       </v-layout>
     </v-form>
     <v-layout row wrap class="mt-3">
