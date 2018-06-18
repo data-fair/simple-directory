@@ -66,6 +66,7 @@ module.exports = {
     from: 'MAILS_FROM'
   },
   maildev: {
+    url: 'MAILDEV_URL',
     active: {
       __name: 'MAILDEV_ACTIVE',
       __format: 'json'

@@ -26,6 +26,10 @@
           <p v-if="$t('pages.login.conditionsCaption')" class="caption" v-html="$t('pages.login.conditionsCaption')"/>
         </v-card-text>
       </v-card>
+      <p v-if="env.maildev">
+        <br>
+        <a :href="env.maildev" flat>{{ $t('pages.login.maildevLink') }}</a>
+      </p>
     </v-flex>
   </v-layout>
 

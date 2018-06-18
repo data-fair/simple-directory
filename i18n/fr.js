@@ -99,7 +99,8 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
       emailLabel: 'Votre adresse mail',
       emailCaption: `En savoir plus sur l'authentification <a href="https://koumoul.com/blog/passwordless">sans mot de passe</a>`,
       conditionsCaption: '',
-      success: `Vous allez recevoir un email à l'adresse renseignée qui contiendra un lien. Veuillez ouvrir ce lien pour terminer votre identification.`
+      success: `Vous allez recevoir un email à l'adresse renseignée qui contiendra un lien. Veuillez ouvrir ce lien pour terminer votre identification.`,
+      maildevLink: 'Accédez à la boite mail de développement'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',

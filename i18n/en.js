@@ -99,7 +99,8 @@ The type "mongo" depends on accessing a MongoDB instance, it is the approriate c
       emailLabel: 'Your email address',
       emailCaption: `Learn more about <a href="https://medium.com/@ninjudd/passwords-are-obsolete-9ed56d483eb">passwordless</a> authentication`,
       conditionsCaption: '',
-      success: `You will receive an email at the specified address. Please use the link in this email to conclude your identification.`
+      success: `You will receive an email at the specified address. Please use the link in this email to conclude your identification.`,
+      maildevLink: 'Open the development mail box'
     },
     organization: {
       addMember: 'Invite a user to join this organization',

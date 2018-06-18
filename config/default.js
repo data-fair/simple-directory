@@ -71,6 +71,7 @@ module.exports = {
     }
   },
   maildev: {
+    url: 'http://localhost:1080',
     active: false,
     smtp: 1025,
     web: 1080
