@@ -157,7 +157,7 @@ class MongodbStorage {
           .forEach(orga => {
             orga.name = patch.name
           })
-        await this.db.collection('users').updateOne({id: user.id}, {$set: {organizations: user.organizations}})
+        await this.db.collection('users').updateOne({_id: user._id}, {$set: {organizations: user.organizations}})
       }
     }
     return orga
