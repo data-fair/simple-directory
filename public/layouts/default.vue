@@ -1,5 +1,5 @@
 <template>
-  <v-app :dark="env.theme.dark" :id="$route.name ? 'page-' + $route.name.replace('-' + $i18n.locale, '') : ''">
+  <v-app :dark="env.theme.dark" :id="$route.name ? 'page-' + $route.name.replace('-' + $i18n.locale, '') : ''" :class="embed ? 'embed' : ''">
     <template v-if="localePath('login') === $route.path">
       <v-toolbar app fixed flat color="transparent">
         <v-spacer/>
@@ -70,7 +70,7 @@
         </v-list>
       </v-navigation-drawer>
 
-      <v-toolbar app scroll-off-screen>
+      <v-toolbar v-if="showToolbar" app scroll-off-screen>
         <v-toolbar-side-icon @click.stop="drawer = !drawer"/>
         <template v-if="localePath('index') !== $route.path">
           <div class="logo-container">
@@ -135,7 +135,7 @@ export default {
     return {
       notification: null,
       showSnackbar: false,
-      drawer: false
+      drawer: this.$route.query && this.$route.query.showNav === 'true'
     }
   },
   computed: {
@@ -143,6 +143,12 @@ export default {
     ...mapState(['env', 'userDetails']),
     docPages() {
       return this.user && this.user.isAdmin ? ['about', 'install', 'config', 'use'] : ['use']
+    },
+    embed() {
+      return this.$route.query && this.$route.query.embed === 'true'
+    },
+    showToolbar() {
+      return !this.embed || (this.$route.query && this.$route.query.showToolbar === 'true')
     }
   },
   watch: {
@@ -170,6 +176,10 @@ export default {
 </script>
 
 <style lang="less">
+body .application.embed {
+  background: transparent;
+}
+
 body .application {
   font-family: 'Nunito', sans-serif;
 
