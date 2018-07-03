@@ -8,7 +8,7 @@ module.exports = {
   },
   jwtDurations: {
     initialToken: '15m',
-    exhangedToken: '30d',
+    exchangedToken: '30d',
     invitationToken: '10d'
   },
   admins: ['admin@test.com'],

@@ -4,7 +4,7 @@ module.exports = {
   kid: 'JWT_KID',
   jwtDurations: {
     initialToken: 'JWT_DURATION_INITIAL',
-    echangedToken: 'JWT_DURATION_EXCHANGED',
+    exchangedToken: 'JWT_DURATION_EXCHANGED',
     invitationToken: 'JWT_DURATION_INVIT'
   },
   admins: {

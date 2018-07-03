@@ -70,6 +70,6 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   const payload = getPayload(user)
   if (!storage.readonly) await storage.updateLogged(decoded.id)
 
-  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exhangedToken)
+  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   res.send(token)
 }))
