@@ -37,6 +37,9 @@
           <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
           <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
           <td class="justify-center layout px-0">
+            <v-btn :to="localePath({name: 'organization-id', params: {id: props.item.id}})" icon class="mx-0">
+              <v-icon>edit</v-icon>
+            </v-btn>
             <v-btn icon class="mx-0" @click="currentOrganization = props.item;deleteOrganizationDialog = true">
               <v-icon color="warning">delete</v-icon>
             </v-btn>

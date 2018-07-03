@@ -7,6 +7,16 @@ const webhooks = require('../webhooks')
 
 let router = module.exports = express.Router()
 
+// Either a super admin, or an admin of the current organization
+function isAdmin(req) {
+  return req.user.isAdmin || (req.user.organizations || []).find(o => o.id === req.params.organizationId && o.role === 'admin')
+}
+
+// Either a super admin, or a member of the current organization
+function isMember(req) {
+  return req.user.isAdmin || (req.user.organizations || []).find(o => o.id === req.params.organizationId)
+}
+
 // Get the list of organizations
 router.get('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.send({results: [], count: 0})
@@ -28,7 +38,7 @@ router.get('', asyncWrap(async (req, res, next) => {
 router.get('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only allowed for the organizations that the user belongs to
-  if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId)) {
+  if (!isMember(req)) {
     return res.status(403).send('Permission denied')
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
@@ -40,7 +50,7 @@ router.get('/:organizationId', asyncWrap(async (req, res, next) => {
 router.get('/:organizationId/roles', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only search through the organizations that the user belongs to
-  if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId)) {
+  if (!isMember(req)) {
     return res.status(403).send('Permission denied')
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
@@ -64,7 +74,7 @@ const patchKeys = ['name', 'description']
 router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only allowed for the organizations that the user is admin of
-  if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId && o.role === 'admin')) {
+  if (!isAdmin(req)) {
     return res.status(403).send('Permission denied')
   }
 
@@ -79,7 +89,7 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
 router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only search through the organizations that the user belongs to
-  if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId)) {
+  if (!isMember(req)) {
     return res.status(403).send('Permission denied')
   }
   const params = {...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort)}
@@ -92,7 +102,7 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
 router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only allowed for the organizations that the user is admin of
-  if (!req.user.organizations || !req.user.organizations.find(o => o.id === req.params.organizationId && o.role === 'admin')) {
+  if (!isAdmin(req)) {
     return res.status(403).send('Permission denied')
   }
   await req.app.get('storage').removeMember(req.params.organizationId, req.params.userId)
