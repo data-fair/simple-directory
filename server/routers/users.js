@@ -13,7 +13,7 @@ router.get('', asyncWrap(async (req, res, next) => {
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
-  if (allFields && !req.user.isAdmin) return res.status(403).send()
+  if (allFields && !req.user.isAdmin) return res.status(403).send('Permission denied')
   if (!allFields) params.select = ['id', 'name']
 
   if (req.query) {
@@ -26,7 +26,7 @@ router.get('', asyncWrap(async (req, res, next) => {
 
 router.get('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (req.user.id !== req.params.userId) return res.status(403).send()
+  if (req.user.id !== req.params.userId) return res.status(403).send('Permission denied')
   const user = await req.app.get('storage').getUser({id: req.params.userId})
   if (!user) return res.status(404).send()
   res.json(user)
@@ -36,7 +36,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
 const patchKeys = ['firstName', 'lastName']
 router.patch('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (req.user.id !== req.params.userId) return res.status(403).send()
+  if (req.user.id !== req.params.userId) return res.status(403).send('Permission denied')
 
   const forbiddenKey = Object.keys(req.body).find(key => !patchKeys.includes(key))
   if (forbiddenKey) return res.status(400).send('Only some parts of the user can be modified through this route')
@@ -54,7 +54,7 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
 // Only super admin can delete a user for now
 router.delete('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (!req.user.isAdmin) return res.status(403).send()
+  if (!req.user.isAdmin) return res.status(403).send('Permission denied')
   await req.app.get('storage').deleteUser(req.params.userId)
   res.status(204).send()
 }))

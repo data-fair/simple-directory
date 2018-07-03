@@ -14,7 +14,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   const invitation = req.body
   const orga = req.user.organizations.find(o => o.id === invitation.id)
-  if (!orga) return res.status(403).send()
+  if (!orga) return res.status(403).send('Permission denied')
   const token = jwt.sign(req.app.get('keys'), invitation, config.jwtDurations.invitationToken)
 
   const link = config.publicUrl + '/api/invitations/_accept?invit_token=' + encodeURIComponent(token)
