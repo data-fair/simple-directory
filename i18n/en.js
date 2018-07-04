@@ -36,9 +36,12 @@ module.exports = {
     reject: 'Reject',
     confirmDeleteTitle: 'Delete {name}',
     confirmDeleteMsg: 'Do you really want to delete this resource ? Data will not be recoverable.',
-    loggedAt: 'Connecté le',
-    createdAt: 'Créé le',
-    updatedAt: 'Mis à jour le'
+    editTitle: 'Edit {name}',
+    loggedAt: 'Logged at',
+    createdAt: 'Created on',
+    updatedAt: 'Updated on',
+    maxCreatedOrgs: `Max number of created organizations`,
+    nbCreatedOrgs: `Number of organizations created :`
   },
   doc: {
     about: {
@@ -93,6 +96,13 @@ The type "mongo" depends on accessing a MongoDB instance, it is the approriate c
     }
   },
   pages: {
+    admin: {
+      users: {
+        noCreatedOrgsLimit: `The users can create an indeterminate number of organizations.`,
+        createdOrgsLimit: `The users can create {defaultMaxCreatedOrgs} organization(s) by default.`,
+        explainLimit: `Define a value to limit the number of organizations the user can create. -1 for an indeterminate value. Empty the field to fallback on the default value ({defaultMaxCreatedOrgs}).`
+      }
+    },
     login: {
       title: 'Identify yourself',
       emailTitle: `By receiving an email`,
@@ -118,7 +128,9 @@ The type "mongo" depends on accessing a MongoDB instance, it is the approriate c
     }
   },
   errors: {
-    badEmail: 'Email address is empty or malformed.'
+    badEmail: 'Email address is empty or malformed.',
+    maxCreatedOrgs: `The user cannot create more organizations. Limit attained.`,
+    '403': 'Insufficient permissions'
   },
   mails: {
     login: {

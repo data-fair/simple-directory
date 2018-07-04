@@ -36,9 +36,12 @@ module.exports = {
     reject: 'Rejeter',
     confirmDeleteTitle: 'Supprimer {name}',
     confirmDeleteMsg: 'Êtes vous sur de vouloir supprimer cette ressource ? Attention les données ne pourront pas être récupérées.',
+    editTitle: 'Modifer {name}',
     loggedAt: 'Logged',
     createdAt: 'Created',
-    updatedAt: 'Updated'
+    updatedAt: 'Updated',
+    maxCreatedOrgs: `Nombre maximal d'organisations à créer`,
+    nbCreatedOrgs: `Nombre d'organisations créées :`
   },
   doc: {
     about: {
@@ -93,6 +96,13 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
     }
   },
   pages: {
+    admin: {
+      users: {
+        noCreatedOrgsLimit: `Les utilisateurs peuvent créer un nombre indéfini d'organisations.`,
+        createdOrgsLimit: `Les utilisateurs peuvent créer {defaultMaxCreatedOrgs} organisation(s) par défaut.`,
+        explainLimit: `Définissez une valeur pour limiter le nombre d'organisations que cet utilisateur peut créer. -1 pour un nombre indéterminé. Videz le champs pour retomber sur la valeur par défaut ({defaultMaxCreatedOrgs}).`
+      }
+    },
     login: {
       title: 'Identifiez vous',
       emailTitle: `En recevant un email`,
@@ -118,7 +128,9 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
     }
   },
   errors: {
-    badEmail: 'Adresse mail non renseignée ou malformée'
+    badEmail: 'Adresse mail non renseignée ou malformée.',
+    maxCreatedOrgs: `L'utilisateur ne peut pas créer plus d'organisations. Quota atteint.`,
+    '403': 'Permissions insuffisantes.'
   },
   mails: {
     login: {

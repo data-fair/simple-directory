@@ -1,5 +1,5 @@
 <template lang="html">
-  <v-container>
+  <v-container fluid>
     <v-layout row wrap class="mt-3">
       <h2 class="title mb-3">
         {{ $t('common.organizations') }} <span v-if="organizations">({{ $n(organizations.count) }})</span>

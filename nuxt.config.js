@@ -43,7 +43,8 @@ module.exports = {
     publicUrl: config.publicUrl,
     theme: config.theme,
     homePage: config.homePage,
-    maildev: config.maildev.active ? config.maildev.url : null
+    maildev: config.maildev.active ? config.maildev.url : null,
+    defaultMaxCreatedOrgs: config.quotas.defaultMaxCreatedOrgs
   },
   head: {
     title: i18n.messages[config.i18n.defaultLocale].root.title,

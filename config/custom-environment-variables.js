@@ -90,5 +90,11 @@ module.exports = {
       __name: 'I18N_LOCALES',
       __format: 'json'
     }
+  },
+  quotas: {
+    defaultMaxCreatedOrgs: {
+      __name: 'DEFAULT_MAX_CREATED_ORGS',
+      __format: 'json'
+    }
   }
 }

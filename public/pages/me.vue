@@ -22,6 +22,10 @@
         name="lastName"
         @keyup.enter="save"
       />
+      <div v-if="showMaxCreatedOrgs">
+        <p v-if="nbCreatedOrgs !== null">{{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }} </p>
+        <p>{{ $t('common.maxCreatedOrgs') }} : {{ userDetails.maxCreatedOrgs !== undefined && userDetails.maxCreatedOrgs !== null ? userDetails.maxCreatedOrgs : env.defaultMaxCreatedOrgs }}</p>
+      </div>
       <v-layout row wrap>
         <v-spacer/>
         <v-btn color="primary" @click="save">{{ $t('common.save') }}</v-btn>
@@ -37,15 +41,27 @@ import eventBus from '../event-bus'
 export default {
   data: () => ({
     patch: {firstName: null, lastName: null},
-    rejectDialog: false
+    rejectDialog: false,
+    nbCreatedOrgs: null
   }),
   computed: {
     ...mapState('session', ['user']),
-    ...mapState(['userDetails'])
+    ...mapState(['userDetails', 'env']),
+    showMaxCreatedOrgs() {
+      if (!this.userDetails) return false
+      if (this.env.defaultMaxCreatedOrgs === -1) return false
+      if (this.env.defaultMaxCreatedOrgs === 0 && !this.userDetails.maxCreatedOrgs) return false
+      return true
+    }
   },
   watch: {
     userDetails() {
       this.initPatch()
+    },
+    async showMaxCreatedOrgs() {
+      if (this.showMaxCreatedOrgs) {
+        this.nbCreatedOrgs = (await this.$axios.$get(`api/organizations`, {params: {creator: this.user.id, size: 0}})).count
+      }
     }
   },
   mounted() {

@@ -1,9 +1,14 @@
 <template lang="html">
-  <v-container>
+  <v-container fluid>
     <v-layout row wrap class="mt-3">
       <h2 class="title mb-3">
         {{ $t('common.users') }} <span v-if="users">({{ $n(users.count) }})</span>
       </h2>
+    </v-layout>
+
+    <v-layout row wrap class="mb-3">
+      <p v-if="env.defaultMaxCreatedOrgs === -1">{{ $t('pages.admin.users.noCreatedOrgsLimit') }}</p>
+      <p v-else>{{ $t('pages.admin.users.createdOrgsLimit', {defaultMaxCreatedOrgs: env.defaultMaxCreatedOrgs}) }}</p>
     </v-layout>
 
     <v-layout row wrap class="mb-3">
@@ -38,6 +43,12 @@
           <nuxt-link :to="localePath({name: 'organization-id', params: {id: orga.id}})">{{ orga.name }} ({{ orga.role }})</nuxt-link>
           &nbsp;
         </span></td>
+        <td v-if="env.defaultMaxCreatedOrgs !== -1">
+          <span>{{ props.item.maxCreatedOrgs }}</span>
+          <v-btn v-if="env.defaultMaxCreatedOrgs !== -1" icon class="mx-0" @click="showEditMaxCreatedOrgsDialog(props.item)">
+            <v-icon>edit</v-icon>
+          </v-btn>
+        </td>
         <template v-if="!env.readonly">
           <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
           <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
@@ -66,6 +77,24 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="editMaxCreatedOrgsDialog" max-width="500px">
+      <v-card v-if="currentUser">
+        <v-card-title primary-title>
+          {{ $t('common.editTitle', {name: currentUser.name}) }}
+        </v-card-title>
+        <v-card-text>
+          <p>{{ $t('pages.admin.users.explainLimit', {defaultMaxCreatedOrgs: env.defaultMaxCreatedOrgs}) }}</p>
+          <p v-if="nbCreatedOrgs !== null">{{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }} </p>
+          <v-text-field id="maxCreatedOrgs" v-model="newMaxCreatedOrgs" :label="$t('common.maxCreatedOrgs')" name="maxCreatedOrgs" type="number"/>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn flat @click="editMaxCreatedOrgsDialog = false">{{ $t('common.confirmCancel') }}</v-btn>
+          <v-btn color="warning" @click="editMaxCreatedOrgsDialog = false;saveMaxCreatedOrgs(currentUser, newMaxCreatedOrgs)">{{ $t('common.confirmOk') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -77,10 +106,13 @@ export default {
     users: null,
     currentUser: null,
     deleteUserDialog: false,
+    editMaxCreatedOrgsDialog: false,
     q: '',
     pagination: {page: 1, rowsPerPage: 25, totalItems: 0, descending: false, sortBy: 'email'},
     loading: false,
-    headers: null
+    headers: null,
+    newMaxCreatedOrgs: null,
+    nbCreatedOrgs: null
   }),
   computed: {
     sort() {
@@ -103,6 +135,9 @@ export default {
       {text: this.$t('common.lastName'), value: 'lastName'},
       {text: this.$t('common.organizations'), value: 'organizations', sortable: false}
     ]
+    if (this.env.defaultMaxCreatedOrgs !== -1) {
+      this.headers.push({text: this.$t('common.maxCreatedOrgs')})
+    }
     if (!this.env.readonly) {
       this.headers = this.headers.concat([
         {text: this.$t('common.createdAt'), value: 'created.date'},
@@ -128,6 +163,23 @@ export default {
       try {
         await this.$axios.$delete(`api/users/${user.id}`)
         this.fetchUsers()
+      } catch (error) {
+        eventBus.$emit('notification', {error})
+      }
+    },
+    async showEditMaxCreatedOrgsDialog(user) {
+      this.currentUser = user
+      this.newMaxCreatedOrgs = user.maxCreatedOrgs
+      this.nbCreatedOrgs = null
+      this.editMaxCreatedOrgsDialog = true
+      this.nbCreatedOrgs = (await this.$axios.$get(`api/organizations`, {params: {creator: user.id, size: 0}})).count
+    },
+    async saveMaxCreatedOrgs(user, newMaxCreatedOrgs) {
+      if (newMaxCreatedOrgs === '' || newMaxCreatedOrgs === undefined) newMaxCreatedOrgs = null
+      if (newMaxCreatedOrgs !== null) newMaxCreatedOrgs = Number(newMaxCreatedOrgs)
+      try {
+        await this.$axios.$patch(`api/users/${user.id}`, {maxCreatedOrgs: newMaxCreatedOrgs})
+        this.$set(user, 'maxCreatedOrgs', newMaxCreatedOrgs)
       } catch (error) {
         eventBus.$emit('notification', {error})
       }

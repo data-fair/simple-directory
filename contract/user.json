@@ -22,6 +22,10 @@
     "isAdmin": {
       "description": "Is this user a global admin (independant of organizations)",
       "type": "boolean"
+    },
+    "maxCreatedOrgs": {
+      "description": "The maximum number of organizations this user can create. -1 means indeterminate number. Fallback to a global default value if not defined.",
+      "type": "number"
     }
   }
 }

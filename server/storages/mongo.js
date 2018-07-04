@@ -58,7 +58,7 @@ class MongodbStorage {
   }
 
   async patchUser(id, patch, byUser) {
-    patch.updated = {id: byUser.id, name: byUser.name, date: new Date()}
+    if (byUser) patch.updated = {id: byUser.id, name: byUser.name, date: new Date()}
     const mongoRes = await this.db.collection('users').findOneAndUpdate({_id: id}, {$set: patch})
     const user = switchBackId(mongoRes.value)
     // "name" was modified, also update all references in created and updated events
@@ -176,6 +176,9 @@ class MongodbStorage {
     }
     if (params.q) {
       filter.name = {$regex: params.q, $options: 'i'}
+    }
+    if (params.creator) {
+      filter['created.id'] = params.creator
     }
 
     const countPromise = this.db.collection('organizations').count(filter)
