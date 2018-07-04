@@ -56,7 +56,7 @@
           </v-list-group>
 
           <!-- Documentation pages -->
-          <v-list-group value="true">
+          <v-list-group v-if="!embed" value="true">
             <v-list-tile slot="activator">
               <v-list-tile-action>
                 <v-icon>help</v-icon>
@@ -116,7 +116,7 @@
         <v-btn flat icon @click.native="showSnackbar = false"><v-icon>close</v-icon></v-btn>
       </v-snackbar>
     </v-content>
-    <v-footer class="pa-3">
+    <v-footer v-if="!embed" class="pa-3">
       <v-spacer/>
       <div>Powered by <a href="https://koumoul-dev.github.io/simple-directory/">Simple Directory</a></div>
     </v-footer>
