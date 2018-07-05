@@ -13,7 +13,7 @@ router.get('', asyncWrap(async (req, res, next) => {
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
-  if (allFields && !req.user.isAdmin) return res.status(403).send(req.messages.errors['403'])
+  if (allFields && !req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
   if (!allFields) params.select = ['id', 'name']
 
   if (req.query) {
@@ -26,7 +26,7 @@ router.get('', asyncWrap(async (req, res, next) => {
 
 router.get('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors['403'])
+  if (req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
   const user = await req.app.get('storage').getUser({id: req.params.userId})
   if (!user) return res.status(404).send()
   res.json(user)
@@ -37,12 +37,12 @@ const patchKeys = ['firstName', 'lastName']
 const adminKeys = ['maxCreatedOrgs']
 router.patch('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (!req.user.isAdmin && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors['403'])
+  if (!req.user.isAdmin && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
 
   const unpatchableKey = Object.keys(req.body).find(key => !patchKeys.concat(adminKeys).includes(key))
   if (unpatchableKey) return res.status(400).send('Only some parts of the user can be modified through this route')
   const adminKey = Object.keys(req.body).find(key => adminKeys.includes(key))
-  if (adminKey && !req.user.isAdmin) return res.status(403).send(req.messages.errors['403'])
+  if (adminKey && !req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
 
   const patch = req.body
   const name = userName({...req.user, ...patch}, true)
@@ -57,7 +57,7 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
 // Only super admin can delete a user for now
 router.delete('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (!req.user.isAdmin) return res.status(403).send(req.messages.errors['403'])
+  if (!req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
   await req.app.get('storage').deleteUser(req.params.userId)
   res.status(204).send()
 }))

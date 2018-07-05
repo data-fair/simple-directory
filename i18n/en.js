@@ -130,7 +130,7 @@ The type "mongo" depends on accessing a MongoDB instance, it is the approriate c
   errors: {
     badEmail: 'Email address is empty or malformed.',
     maxCreatedOrgs: `The user cannot create more organizations. Limit attained.`,
-    '403': 'Insufficient permissions'
+    permissionDenied: 'Insufficient permissions'
   },
   mails: {
     login: {

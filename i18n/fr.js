@@ -130,7 +130,7 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
   errors: {
     badEmail: 'Adresse mail non renseignée ou malformée.',
     maxCreatedOrgs: `L'utilisateur ne peut pas créer plus d'organisations. Quota atteint.`,
-    '403': 'Permissions insuffisantes.'
+    permissionDenied: 'Permissions insuffisantes.'
   },
   mails: {
     login: {

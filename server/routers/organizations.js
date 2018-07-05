@@ -24,7 +24,7 @@ router.get('', asyncWrap(async (req, res, next) => {
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
-  if (allFields && !req.user.isAdmin) return res.status(403).send(req.messages.errors['403'])
+  if (allFields && !req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
   if (!allFields) params.select = ['id', 'name']
 
   if (req.query['ids']) params.ids = req.query['ids'].split(',')
@@ -40,7 +40,7 @@ router.get('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only allowed for the organizations that the user belongs to
   if (!isMember(req)) {
-    return res.status(403).send(req.messages.errors['403'])
+    return res.status(403).send(req.messages.errors.permissionDenied)
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
   res.send(orga)
@@ -52,7 +52,7 @@ router.get('/:organizationId/roles', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only search through the organizations that the user belongs to
   if (!isMember(req)) {
-    return res.status(403).send(req.messages.errors['403'])
+    return res.status(403).send(req.messages.errors.permissionDenied)
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
   res.send(orga.roles || config.roles.defaults)
@@ -82,7 +82,7 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only allowed for the organizations that the user is admin of
   if (!isAdmin(req)) {
-    return res.status(403).send(req.messages.errors['403'])
+    return res.status(403).send(req.messages.errors.permissionDenied)
   }
 
   const forbiddenKey = Object.keys(req.body).find(key => !patchKeys.includes(key))
@@ -97,7 +97,7 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only search through the organizations that the user belongs to
   if (!isMember(req)) {
-    return res.status(403).send(req.messages.errors['403'])
+    return res.status(403).send(req.messages.errors.permissionDenied)
   }
   const params = {...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort)}
   if (req.query.q) params.q = req.query.q
@@ -110,7 +110,7 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   if (!req.user) return res.status(401).send()
   // Only allowed for the organizations that the user is admin of
   if (!isAdmin(req)) {
-    return res.status(403).send(req.messages.errors['403'])
+    return res.status(403).send(req.messages.errors.permissionDenied)
   }
   await req.app.get('storage').removeMember(req.params.organizationId, req.params.userId)
   res.status(204).send()
@@ -119,7 +119,7 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
 // Only super admin can delete an organization for now
 router.delete('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (!req.user.isAdmin) return res.status(403).send(req.messages.errors['403'])
+  if (!req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
   await req.app.get('storage').deleteOrganization(req.params.organizationId)
   res.status(204).send()
 }))

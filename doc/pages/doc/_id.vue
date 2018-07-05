@@ -54,7 +54,7 @@ export default {
       let table = `<table><thead><tr><th>${this.$t('doc.config.i18nKey')}</th><th>${this.$t('doc.config.i18nVar')}</th><th>${this.$t('doc.config.i18nVal')}</th></tr></thead><tbody>\n`
       table += Object.keys(flatMessages)
         .filter(k => k.indexOf('doc_') !== 0)
-        .map(k => `<tr><td>${k.replace(/_/g, '.')}</td><td>I18N_${this.$i18n.locale}_${k}</td><td><pre>${escapeHtml(flatMessages[k])}</pre></td></tr>`)
+        .map(k => `<tr><td>${k.replace(/_/g, '.')}</td><td>I18N_${this.$i18n.locale}_${k}</td><td><pre>${escapeHtml(flatMessages[k] || 'MISSING')}</pre></td></tr>`)
         .join('\n')
       table += '</tbody></table>'
       return table
