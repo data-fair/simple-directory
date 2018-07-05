@@ -25,7 +25,7 @@ export default () => {
           commit('setAny', {userDetails})
         } catch (error) {
           // User doesn't exist anymore or is disconnected
-          if (error.response.status === 403) dispatch('session/logout')
+          if (error.response.status === 401 || error.response.status === 403) dispatch('session/logout')
           else eventBus.$emit('notification', {error})
         }
       },
