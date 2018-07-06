@@ -74,6 +74,9 @@ class FileStorage {
       const lq = params.q.toLowerCase()
       members = members.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
     }
+    if (params.ids) {
+      members = members.filter(user => (params.ids).find(id => user.id === id))
+    }
     return {
       count: members.length,
       results: members.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size)
