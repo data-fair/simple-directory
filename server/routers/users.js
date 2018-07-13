@@ -1,4 +1,5 @@
 const express = require('express')
+const config = require('config')
 const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const findUtils = require('../utils/find')
@@ -26,9 +27,10 @@ router.get('', asyncWrap(async (req, res, next) => {
 
 router.get('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (!req.user.isAdmin && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
   const user = await req.app.get('storage').getUser({id: req.params.userId})
   if (!user) return res.status(404).send()
+  user.isAdmin = config.admins.includes(user.email)
   res.json(user)
 }))
 
