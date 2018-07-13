@@ -115,6 +115,8 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
       deleteMember: `Supprimer cet utilisateur de la liste des membres de l'organisation`,
+      editMember: `Modifier le rôle de cet utilisateur dans l'organisation`,
+      confirmEditMemberTitle: 'Modifier {name}',
       confirmDeleteMemberTitle: 'Exclure {name}',
       confirmDeleteMemberMsg: `Voulez vous vraiment supprimer cet utilisateur de la liste des membres de l'organisation ?`,
       deleteMemberSuccess: `L'utilisateur {name} a été exclu de l'organisation`,

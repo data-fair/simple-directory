@@ -75,13 +75,6 @@ class MongodbStorage {
     this.db.collection('users').updateOne({_id: id}, {$set: {logged: new Date()}})
   }
 
-  async addMember(orga, user, role) {
-    await this.db.collection('users').updateOne(
-      {_id: user.id},
-      {$push: {organizations: {id: orga.id, name: orga.name, role}}}
-    )
-  }
-
   async deleteUser(userId) {
     await this.db.collection('users').removeOne({_id: userId})
   }
@@ -193,6 +186,20 @@ class MongodbStorage {
       .toArray()
     const count = await countPromise
     return {count, results: organizations.map(switchBackId)}
+  }
+
+  async addMember(orga, user, role) {
+    await this.db.collection('users').updateOne(
+      {_id: user.id},
+      {$push: {organizations: {id: orga.id, name: orga.name, role}}}
+    )
+  }
+
+  async setMemberRole(organizationId, userId, role) {
+    await this.db.collection('users').updateOne(
+      {_id: userId, 'organizations.id': organizationId},
+      {$set: {'organizations.$.role': role}}
+    )
   }
 
   async removeMember(organizationId, userId) {

@@ -115,6 +115,8 @@ The type "mongo" depends on accessing a MongoDB instance, it is the approriate c
     organization: {
       addMember: 'Invite a user to join this organization',
       deleteMember: 'Delete this user from the list of members',
+      editMember: `Change the role of this user in the organization`,
+      confirmEditMemberTitle: 'Change {name}',
       confirmDeleteMemberTitle: 'Exclude {name}',
       confirmDeleteMemberMsg: 'Do you really want to delete this user from the list of members of this organization ?',
       deleteMemberSuccess: 'The user {name} was excluded from the organization',

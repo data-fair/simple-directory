@@ -55,6 +55,7 @@ router.get('/:organizationId/roles', asyncWrap(async (req, res, next) => {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
+  if (!orga) return res.status(404).send()
   res.send(orga.roles || config.roles.defaults)
 }))
 
@@ -114,6 +115,21 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
   await req.app.get('storage').removeMember(req.params.organizationId, req.params.userId)
+  res.status(204).send()
+}))
+
+// Change the role of the user in the organization
+router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send()
+  // Only allowed for the organizations that the user is admin of
+  if (!isAdmin(req)) {
+    return res.status(403).send(req.messages.errors.permissionDenied)
+  }
+  const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
+  if (!orga) return res.status(404).send()
+  const roles = orga.roles || config.roles.defaults
+  if (!roles.includes(req.body.role)) return res.status(400).send()
+  await req.app.get('storage').setMemberRole(req.params.organizationId, req.params.userId, req.body.role)
   res.status(204).send()
 }))
 

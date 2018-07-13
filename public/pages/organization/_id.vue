@@ -50,7 +50,10 @@
           <v-list-tile-sub-title>{{ member.email }}</v-list-tile-sub-title>
           <v-list-tile-sub-title>{{ member.role }}</v-list-tile-sub-title>
         </v-list-tile-content>
-        <v-list-tile-action v-if="isAdminOrga">
+        <v-list-tile-action v-if="isAdminOrga && member.id !== userDetails.id">
+          <v-btn :title="$t('pages.organization.editMember')" flat icon @click="currentMember = member; newRole = member.role; editMemberDialog = true">
+            <v-icon>edit</v-icon>
+          </v-btn>
           <v-btn :title="$t('pages.organization.deleteMember')" flat icon color="warning" @click="currentMember = member;deleteMemberDialog = true">
             <v-icon>delete</v-icon>
           </v-btn>
@@ -105,6 +108,22 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="editMemberDialog" max-width="500px">
+      <v-card v-if="currentMember">
+        <v-card-title primary-title>
+          {{ $t('pages.organization.confirmEditMemberTitle', {name: currentMember.name}) }}
+        </v-card-title>
+        <v-card-text>
+          <v-select :items="orga.roles" v-model="newRole" :label="$t('common.role')" />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn flat @click="editMemberDialog = false">{{ $t('common.confirmCancel') }}</v-btn>
+          <v-btn color="warning" @click="editMemberDialog = false;setMemberRole(currentMember, newRole)">{{ $t('common.confirmOk') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -116,21 +135,24 @@ export default {
     orga: null,
     valid: true,
     members: null,
+    roles: null,
     q: '',
     deleteMemberDialog: false,
+    editMemberDialog: false,
     currentMember: null,
     invitation: {id: null, email: null, role: null},
     inviteMemberDialog: false,
     validInvitation: true,
     membersPage: 1,
-    membersPageSize: 10
+    membersPageSize: 10,
+    newRole: null
   }),
   computed: {
     ...mapState(['userDetails']),
     isAdminOrga() {
-      return this.userDetails &&
-        this.userDetails.organizations &&
-        this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin')
+      if (!this.userDetails) return false
+      if (this.userDetails.isAdmin) return true
+      return this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin')
     }
   },
   async mounted() {
@@ -181,6 +203,14 @@ export default {
         } catch (error) {
           eventBus.$emit('notification', {error})
         }
+      }
+    },
+    async setMemberRole(member, newRole) {
+      member.role = newRole
+      try {
+        await this.$axios.patch(`api/organizations/${this.$route.params.id}/members/${member.id}`, {role: newRole})
+      } catch (error) {
+        eventBus.$emit('notification', {error})
       }
     }
   }
