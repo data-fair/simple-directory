@@ -9,13 +9,16 @@ let router = express.Router()
 
 // Get the list of users
 router.get('', asyncWrap(async (req, res, next) => {
-  if (!req.user) return res.send({results: [], count: 0})
+  if (config.listEntitiesMode !== 'anonymous' && !req.user) return res.send({results: [], count: 0})
   let params = {...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort)}
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
-  if (allFields && !req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
-  if (!allFields) params.select = ['id', 'name']
+  if (allFields) {
+    if (!req.user || !req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
+  } else {
+    params.select = ['id', 'name']
+  }
 
   if (req.query) {
     if (req.query['ids']) params.ids = req.query['ids'].split(',')

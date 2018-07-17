@@ -96,5 +96,6 @@ module.exports = {
       __name: 'DEFAULT_MAX_CREATED_ORGS',
       __format: 'json'
     }
-  }
+  },
+  listEntitiesMode: 'LIST_ENTITIES_MODE'
 }

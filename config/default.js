@@ -82,5 +82,8 @@ module.exports = {
   },
   quotas: {
     defaultMaxCreatedOrgs: -1
-  }
+  },
+  // Restricts who can use the find endpoints on users and organizations
+  // One of 'anonymous', 'authenticated'
+  listEntitiesMode: 'authenticated'
 }
