@@ -10,7 +10,7 @@ const storages = require('./storages')
 const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
 const jwt = require('./utils/jwt')
-const session = require('simple-directory-client-express')({
+const session = require('@koumoul/sd-express')({
   directoryUrl: config.publicUrl,
   publicUrl: config.publicUrl,
   privateDirectoryUrl: 'http://localhost:' + config.port
