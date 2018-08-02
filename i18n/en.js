@@ -140,17 +140,27 @@ Can be 'anonymous' or 'authenticated'.'`,
   },
   mails: {
     login: {
-      subject: 'Welcome to {{host}}',
+      subject: 'Welcome to {host}',
       text: `
-An identification request was made from {{host}}. To confirm copy the URL below in the address bar of your Web browser. This URL is valid for 15 minutes.
+An identification request was made from {host}. To confirm copy the URL below in the address bar of your Web browser. This URL is valid for 15 minutes.
 
-{{link}}
+{link}
 
-If you encounter a problem with your account or if you didn't submit this identification request to {{host}}, feel free to contact us at {{contact}}.
+If you encounter a problem with your account or if you didn't submit this identification request to {host}, feel free to contact us at {contact}.
       `,
       htmlMsg: `An identification request was made from <a href="//{host}">{host}</a>. To confirm click on the button below. This link is valid for 15 minutes.`,
       htmlButton: `Connect to {host}`,
       htmlCaption: `If you encounter a problem with your account or if you didn't submit this identification request to <a href="//{host}">{host}</a>, feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
+    },
+    noCreation: {
+      subject: 'Failure to authenticate to {host}',
+      text: `
+An identification request was made from {host}, but it was rejected as this email address is unknown.
+
+Feel free to contact us at {contact}.
+      `,
+      htmlMsg: `An identification request was made from <a href="//{host}">{host}</a>, but it was rejected as this email address is unknown.`,
+      htmlCaption: `Feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
     },
     invitation: {
       subject: `Join the organization {organization} on {host}`,
@@ -158,7 +168,7 @@ If you encounter a problem with your account or if you didn't submit this identi
 An administrator from the organization {organization} invited you to join. To accept this invitation copy the URL below in the address bar of your Web browser.
 If you do not have an account yet it will be created automatically.
 
-{{link}}
+{link}
 
 If you encounter a problem with your account or if you find this invitation suspicious feel free to contact us at {contact}.
       `,

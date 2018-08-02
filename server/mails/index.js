@@ -7,6 +7,7 @@ const nodemailer = require('nodemailer')
 const flatten = require('flat')
 
 const mjmlTemplate = fs.readFileSync(path.join(__dirname, 'mail.mjml'), 'utf8')
+const mjmlNoButtonTemplate = fs.readFileSync(path.join(__dirname, 'mail-nobutton.mjml'), 'utf8')
 
 exports.init = async () => {
   const transport = nodemailer.createTransport(config.mails.transport)
@@ -33,7 +34,7 @@ exports.send = async ({transport, key, messages, to, params}) => {
   Object.keys(messages.mails[key]).forEach(k => {
     params[k] = applyParams(messages.mails[key][k], params)
   })
-  const mjmlRes = mjml2html(applyParams(mjmlTemplate, params))
+  const mjmlRes = mjml2html(applyParams(params.htmlButton ? mjmlTemplate : mjmlNoButtonTemplate, params))
   if (mjmlRes.errors && mjmlRes.errors.length) {
     console.error('Error while preparing mail body', mjmlRes.errors)
     throw new Error('Error while preparing mail body')

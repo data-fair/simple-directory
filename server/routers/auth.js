@@ -27,7 +27,17 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   let user = await storage.getUser({email: req.body.email})
   // No 404 here so we don't disclose information about existence of the user
-  if (!user && storage.readonly) return res.status(204).send()
+  if (!user && (storage.readonly || config.onlyCreateInvited)) {
+    const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
+    await mails.send({
+      transport: req.app.get('mailTransport'),
+      key: 'noCreation',
+      messages: req.messages,
+      to: req.body.email,
+      params: {link, host: new URL(link).host}
+    })
+    return res.status(204).send()
+  }
   if (!user) {
     const newUser = {
       email: req.body.email,

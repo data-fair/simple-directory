@@ -152,13 +152,23 @@ Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vo
       htmlButton: `Connexion à {host}`,
       htmlCaption: `Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à <a href="//{host}">{host}</a>, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     },
+    noCreation: {
+      subject: `Échec d'authentification sur {host}`,
+      text: `
+Une demande d'identification a été faite depuis {host}, mais elle a été rejetée car cette adresse email est inconnue.
+
+N'hésitez pas à nous contacter à {contact}.
+      `,
+      htmlMsg: `Une demande d'identification a été faite depuis <a href="//{host}">{host}</a>, mais elle a été rejetée car cette adresse email est inconnue.`,
+      htmlCaption: `N'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
+    },
     invitation: {
       subject: `Rejoignez l'organisation {organization} sur {host}`,
       text: `
 Un administrateur de l'organisation {organization} vous a invité à la rejoindre. Pour accepter cette invitation copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 10 jours.
 Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
 
-{{link}}
+{link}
 
 Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à {contact}.
       `,
