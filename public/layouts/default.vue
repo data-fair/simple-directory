@@ -18,8 +18,8 @@
             <v-list-tile-title>{{ $t('common.myAccount') }}</v-list-tile-title>
           </v-list-tile>
 
-          <!-- User's organizations pages -->
-          <v-list-tile v-for="orga in userDetails && userDetails.organizations" :key="orga.id" :to="localePath({name: 'organization-id', params: {id: orga.id}})">
+          <!-- User's organizations pages (only admin) -->
+          <v-list-tile v-for="orga in userDetails && userDetails.organizations" v-if="orga.role === 'admin'" :key="orga.id" :to="localePath({name: 'organization-id', params: {id: orga.id}})">
             <v-list-tile-action>
               <v-icon>group</v-icon>
             </v-list-tile-action>

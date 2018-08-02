@@ -22,6 +22,14 @@
         name="lastName"
         @keyup.enter="save"
       />
+      <div v-if="userDetails && userDetails.organizations.length">
+        <span>{{ $t('common.organizations') }}:</span>
+        <span v-for="orga in userDetails.organizations" :key="orga.id">
+          {{ orga.name }} ({{ orga.role }})
+          &nbsp;
+        </span>
+      </div>
+      <br>
       <div v-if="showMaxCreatedOrgs">
         <p v-if="nbCreatedOrgs !== null">{{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }} </p>
         <p>{{ $t('common.maxCreatedOrgs') }} : {{ userDetails.maxCreatedOrgs !== undefined && userDetails.maxCreatedOrgs !== null ? userDetails.maxCreatedOrgs : env.defaultMaxCreatedOrgs }}</p>
