@@ -14,7 +14,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   const invitation = req.body
   const orga = req.user.organizations.find(o => o.id === invitation.id)
-  if (!orga) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (!req.user.isAdmin && (!orga || orga.role !== 'admin')) return res.status(403).send(req.messages.errors.permissionDenied)
   const token = jwt.sign(req.app.get('keys'), invitation, config.jwtDurations.invitationToken)
 
   const link = config.publicUrl + '/api/invitations/_accept?invit_token=' + encodeURIComponent(token)
@@ -36,5 +36,5 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   if (!user) user = await storage.createUser({email: invit.email, id: shortid.generate(), name: userName({email: invit.email})})
   const orga = await storage.getOrganization(invit.id)
   await storage.addMember(orga, user, invit.role)
-  res.redirect(`${config.publicUrl}/organization/${invit.id}`)
+  res.redirect(`${config.publicUrl}/invitation?email=` + encodeURIComponent(invit.email))
 }))

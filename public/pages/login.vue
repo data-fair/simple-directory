@@ -42,11 +42,13 @@ const {mapState} = require('vuex')
 
 export default {
   components: {logo},
-  data: () => ({
-    dialog: true,
-    email: null,
-    emailErrors: []
-  }),
+  data() {
+    return {
+      dialog: true,
+      email: this.$route.query.email,
+      emailErrors: []
+    }
+  },
   computed: {
     ...mapState('session', ['user']),
     ...mapState(['env']),
