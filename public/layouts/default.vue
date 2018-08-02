@@ -56,7 +56,7 @@
           </v-list-group>
 
           <!-- Documentation pages -->
-          <v-list-group v-if="!embed" value="true">
+          <v-list-group v-if="!embed && docPages.length" value="true">
             <v-list-tile slot="activator">
               <v-list-tile-action>
                 <v-icon>help</v-icon>
@@ -142,7 +142,7 @@ export default {
     ...mapState('session', ['user']),
     ...mapState(['env', 'userDetails']),
     docPages() {
-      return this.user && this.user.isAdmin ? ['about', 'install', 'config', 'use'] : ['use']
+      return this.user && this.user.isAdmin ? ['about', 'install', 'config', 'use'] : []// ['use']
     },
     embed() {
       return this.$route.query && this.$route.query.embed === 'true'
