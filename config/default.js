@@ -85,5 +85,9 @@ module.exports = {
   },
   // Restricts who can use the find endpoints on users and organizations
   // One of 'anonymous', 'authenticated'
-  listEntitiesMode: 'authenticated'
+  listEntitiesMode: 'authenticated',
+  // Users can not be created at first email sent. They must be invited in an organization.
+  onlyCreateInvited: false,
+  // Default redirection after login. If not specified user will go to his profile page.
+  defaultLoginRedirect: null
 }

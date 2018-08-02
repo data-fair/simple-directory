@@ -90,7 +90,9 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
           from: `'<b>IMPORTANT.</> L'adresse à renseigner comme expéditeur des mails émis par le service.`
         },
         listEntitiesMode: `Permet de restreindre de manière globale l'accès aux listes d'utilisateurs et d'organisations.<br>
-Peut valoir 'anonymous' ou 'authenticated'.'`
+Peut valoir 'anonymous' ou 'authenticated'.'`,
+        defaultLoginRedirect: `Redirection par défaut après login. Si non spécifié l'utilisateur sera redirigé vers son profil.`,
+        onlyCreateInvited: `Si vrai les utilisateurs ne seront pas créés au premier email envoyé. Ils doivent être invités dans une organisation.`
       }
     },
     use: {
@@ -125,10 +127,10 @@ Peut valoir 'anonymous' ou 'authenticated'.'`
       inviteEmail: `Adresse mail de l'utilisateur`,
       inviteSuccess: `Une invitation a été envoyée à l'adresse {email}`
     },
-    myAccount: {
-      joinOrga: `Rejoindre {name} en tant que {role}`,
-      confirmRejectInvitation: `Voulez vous vraiment rejeter l'invitation à rejoindre {name} ?`,
-      invitationAccepted: `Vous êtes maintenant membre de l'organisation {name}.`
+    invitation: {
+      title: 'Invitation validée',
+      msgSameUser: `Votre invitation à être membre d'une organisation a bien été acceptée. Vous pouvez consulter votre <a href="{profileUrl}">votre profil</a>.`,
+      msgDifferentUser: `Cette invitation à être membre d'une organisation a bien été acceptée. Vous pouvez <a href="{loginUrl}">vous connecter</a> avec le compte invité.`
     }
   },
   errors: {

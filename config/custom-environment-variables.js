@@ -97,5 +97,10 @@ module.exports = {
       __format: 'json'
     }
   },
-  listEntitiesMode: 'LIST_ENTITIES_MODE'
+  listEntitiesMode: 'LIST_ENTITIES_MODE',
+  onlyCreateInvited: {
+    __name: 'ONLY_CREATE_INVITED',
+    __format: 'json'
+  },
+  defaultLoginRedirect: 'DEFAULT_LOGIN_REDIRECT'
 }

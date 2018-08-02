@@ -39,7 +39,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 
   const payload = getPayload(user)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-  const link = (req.query.redirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
+  const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'login',
