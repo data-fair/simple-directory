@@ -137,7 +137,10 @@ Can be 'anonymous' or 'authenticated'.'`,
   errors: {
     badEmail: 'Email address is empty or malformed.',
     maxCreatedOrgs: `The user cannot create more organizations. Limit attained.`,
-    permissionDenied: 'Insufficient permissions.'
+    permissionDenied: 'Insufficient permissions.',
+    userUnknown: 'Unknown user.',
+    orgaUnknown: 'Unknown organization.',
+    invitationConflict: 'This user is lready member of the organization.'
   },
   mails: {
     login: {

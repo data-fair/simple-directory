@@ -25,7 +25,7 @@ export default {
     ...mapState('session', ['user']),
     ...mapState(['env']),
     sameUser() {
-      return this.user.email === this.$route.query.email
+      return this.user && this.$route.query && (this.user.email === this.$route.query.email)
     }
   }
 }

@@ -137,7 +137,9 @@ Peut valoir 'anonymous' ou 'authenticated'.'`,
   errors: {
     badEmail: 'Adresse mail non renseignée ou malformée.',
     maxCreatedOrgs: `L'utilisateur ne peut pas créer plus d'organisations. Quota atteint.`,
-    permissionDenied: 'Permissions insuffisantes.'
+    permissionDenied: 'Permissions insuffisantes.',
+    userUnknown: 'Utilisateur inconnu.',
+    invitationConflict: 'Cet utilisateur est déjà membre de cette organisation.'
   },
   mails: {
     login: {
