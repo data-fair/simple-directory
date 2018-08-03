@@ -37,9 +37,10 @@ module.exports = {
     confirmDeleteTitle: 'Supprimer {name}',
     confirmDeleteMsg: 'Êtes vous sur de vouloir supprimer cette ressource ? Attention les données ne pourront pas être récupérées.',
     editTitle: 'Modifer {name}',
-    loggedAt: 'Logged',
-    createdAt: 'Created',
-    updatedAt: 'Updated',
+    loggedAt: 'Dernier login',
+    createdAt: 'Créé le',
+    createdPhrase: 'Créé par {name} le {date}',
+    updatedAt: 'Mis à jour le',
     maxCreatedOrgs: `Nombre maximal d'organisations à créer`,
     nbCreatedOrgs: `Nombre d'organisations créées :`
   },

@@ -1,6 +1,7 @@
 <template lang="html">
   <v-container>
     <h2 class="headline mb-3">{{ $t('common.organization') + ' ' + (orga && orga.name) }}</h2>
+    <v-subheader v-if="orga">{{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}</v-subheader>
     <v-form v-if="orga" ref="form" v-model="valid" lazy-validation @submit="save">
       <v-text-field
         :label="$t('common.name')"
