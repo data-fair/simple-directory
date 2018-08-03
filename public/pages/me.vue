@@ -65,16 +65,12 @@ export default {
   watch: {
     userDetails() {
       this.initPatch()
-    },
-    async showMaxCreatedOrgs() {
-      if (this.showMaxCreatedOrgs) {
-        this.nbCreatedOrgs = (await this.$axios.$get(`api/organizations`, {params: {creator: this.user.id, size: 0}})).count
-      }
     }
   },
-  mounted() {
+  async created() {
     if (!this.user) this.$router.push(this.localePath('login'))
     if (this.userDetails) this.initPatch()
+    this.nbCreatedOrgs = (await this.$axios.$get(`api/organizations`, {params: {creator: this.user.id, size: 0}})).count
   },
   methods: {
     ...mapActions(['fetchUserDetails']),
