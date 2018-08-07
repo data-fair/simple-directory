@@ -11,6 +11,9 @@ env:
 language: node_js
 node_js:
   - '8'
+cache:
+  directories:
+    - node_modules
 
 # sudo: required
 
@@ -33,7 +36,9 @@ after_success:
   - docker login -u $DOCKER_USER -p $DOCKER_PASS
   - export REPO=koumoul/simple-directory
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
-  - docker build -f Dockerfile -t $REPO:$TAG .
+  # Pull before push in order to fill docker cache
+  - docker pull $REPO:latest
+  - docker build -f Dockerfile --cache-from $REPO:latest -t $REPO:$TAG .
   - docker push $REPO
   # Doc build
   - npm run build-doc

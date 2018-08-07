@@ -139,6 +139,7 @@ Peut valoir 'anonymous' ou 'authenticated'.'`,
     maxCreatedOrgs: `L'utilisateur ne peut pas créer plus d'organisations. Quota atteint.`,
     permissionDenied: 'Permissions insuffisantes.',
     userUnknown: 'Utilisateur inconnu.',
+    orgaUnknown: 'Organisation inconnue.',
     invitationConflict: 'Cet utilisateur est déjà membre de cette organisation.'
   },
   mails: {
