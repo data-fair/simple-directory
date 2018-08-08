@@ -102,5 +102,8 @@ module.exports = {
     __name: 'ONLY_CREATE_INVITED',
     __format: 'json'
   },
-  defaultLoginRedirect: 'DEFAULT_LOGIN_REDIRECT'
+  defaultLoginRedirect: 'DEFAULT_LOGIN_REDIRECT',
+  secretKeys: {
+    sendMails: 'SECRET_SENDMAILS'
+  }
 }

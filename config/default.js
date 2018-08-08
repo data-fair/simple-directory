@@ -89,5 +89,9 @@ module.exports = {
   // Users can not be created at first email sent. They must be invited in an organization.
   onlyCreateInvited: false,
   // Default redirection after login. If not specified user will go to his profile page.
-  defaultLoginRedirect: null
+  defaultLoginRedirect: null,
+  // secrets that can be used to configure global webhooks for example to send emails to users
+  secretKeys: {
+    sendMails: null
+  }
 }

@@ -2,6 +2,7 @@ const config = require('config')
 const JWK = require('./JWK.json')
 const user = require('./user.json')
 const organization = require('./organization.json')
+const mail = require('./mail.json')
 const version = require('../package.json').version
 
 const authenticationParams = [{
@@ -205,6 +206,38 @@ module.exports = {
           },
           401: {
             description: 'Authentication error'
+          }
+        }
+      }
+    },
+    '/api/mails': {
+      post: {
+        tags: ['mails'],
+        summary: 'Send emails to users and organizations members',
+        parameters: [{
+          name: 'key',
+          in: 'query',
+          description: 'A secret from the config to secure this specific operation.',
+          required: true,
+          schema: {
+            type: 'string'
+          }
+        }],
+        requestBody: {
+          description: 'The email definition',
+          required: true,
+          content: {
+            'application/json': {
+              schema: mail
+            }
+          }
+        },
+        responses: {
+          200: {
+            description: 'A JWT, or the input redirect URL concatenated with a JWT'
+          },
+          400: {
+            description: 'Input data has wrong format'
           }
         }
       }

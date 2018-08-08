@@ -69,13 +69,19 @@ class FileStorage {
   async findMembers(organizationId, params = {}) {
     const orga = this.organizations.find(o => o.id === organizationId)
     if (!orga) return null
-    let members = orga.members
+    let members = orga.members.map(m => {
+      const user = this.users.find(u => u.id === m.id)
+      return {...m, name: user.name, email: user.email}
+    })
     if (params.q) {
       const lq = params.q.toLowerCase()
-      members = members.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
+      members = members.filter(member => member.name.toLowerCase().indexOf(lq) >= 0)
     }
     if (params.ids) {
-      members = members.filter(user => (params.ids).find(id => user.id === id))
+      members = members.filter(member => (params.ids).find(id => member.id === id))
+    }
+    if (params.role) {
+      members = members.filter(member => member.role === params.role)
     }
     return {
       count: members.length,

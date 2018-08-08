@@ -101,12 +101,15 @@ class MongodbStorage {
   }
 
   async findMembers(organizationId, params = {}) {
-    const filter = {'organizations.id': organizationId}
+    const filter = {'organizations': {$elemMatch: {id: organizationId}}}
     if (params.ids) {
       filter._id = {$in: params.ids}
     }
     if (params.q) {
       filter.name = {$regex: params.q, $options: 'i'}
+    }
+    if (params.role) {
+      filter.organizations.$elemMatch.role = params.role
     }
     const countPromise = this.db.collection('users').count(filter)
     const users = await this.db.collection('users')

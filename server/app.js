@@ -35,6 +35,7 @@ const fullUser = asyncWrap(async (req, res, next) => {
 const apiDocs = require('../contract/api-docs')
 app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))
 app.use('/api/auth', require('./routers/auth').router)
+app.use('/api/mails', require('./routers/mails'))
 app.use('/api/users', session.auth, fullUser, require('./routers/users'))
 app.use('/api/organizations', session.auth, fullUser, require('./routers/organizations'))
 app.use('/api/invitations', session.auth, fullUser, require('./routers/invitations'))

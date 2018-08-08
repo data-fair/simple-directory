@@ -16,5 +16,8 @@ module.exports = {
   },
   nuxtBuild: {
     active: false
+  },
+  secretKeys: {
+    sendMails: 'testkey'
   }
 }
