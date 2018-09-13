@@ -82,6 +82,7 @@ export default {
       if (!this.$refs.form.validate()) return
       try {
         await this.$axios.$patch(`api/users/${this.user.id}`, this.patch)
+        await this.$axios.$post(`api/session/keepalive`)
         eventBus.$emit('notification', this.$t('common.modificationOk'))
         this.fetchUserDetails()
       } catch (error) {

@@ -27,6 +27,11 @@ export default {
     sameUser() {
       return this.user && this.$route.query && (this.user.email === this.$route.query.email)
     }
+  },
+  async mounted() {
+    if (this.sameUser) {
+      await this.$axios.$post(`api/session/keepalive`)
+    }
   }
 }
 </script>
