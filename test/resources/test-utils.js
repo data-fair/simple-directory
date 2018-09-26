@@ -39,7 +39,7 @@ exports.axios = async (test, email) => {
     // TODO get id_token
     const token = await new Promise((resolve, reject) => {
       test.app.get('maildev').on('new', emailObj => {
-        if (emailObj.subject.indexOf('localhost:' + config.port) !== -1 && emailObj.to[0].address === email) {
+        if (emailObj.subject.indexOf('localhost:' + config.port) !== -1 && emailObj.to[0].address.toLowerCase() === email.toLowerCase()) {
           const match = emailObj.text.match(/id_token=(.*)\s/)
           if (!match) return reject(new Error('Failed to extract id_token from mail content'))
           resolve(match[1])
