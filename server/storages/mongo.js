@@ -1,10 +1,16 @@
 const collation = { locale: 'en', strength: 1 }
 
-async function ensureIndex(db, collection, key, options) {
+async function ensureIndex(db, collection, key, options = {}) {
   try {
-    await db.collection(collection).createIndex(key, options || {})
+    await db.collection(collection).createIndex(key, options)
   } catch (error) {
-    console.error('Init mongodb index creation failure for', collection, key, error)
+    if (error.codeName === 'IndexOptionsConflict') {
+      console.log(`Index options conflict for index ${collection}.${JSON.stringify(key)}.${JSON.stringify(options)}. Delete then re-create the index`)
+      await db.collection(collection).dropIndex(key)
+      await db.collection(collection).createIndex(key, options)
+    } else {
+      throw error
+    }
   }
 }
 
