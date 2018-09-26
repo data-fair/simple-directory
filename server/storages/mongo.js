@@ -1,4 +1,4 @@
-const collation = { locale: 'simple', strength: 1 }
+const collation = { locale: 'en', strength: 1 }
 
 async function ensureIndex(db, collection, key, options) {
   try {
