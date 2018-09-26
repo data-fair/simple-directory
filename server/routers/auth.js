@@ -54,7 +54,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     transport: req.app.get('mailTransport'),
     key: 'login',
     messages: req.messages,
-    to: req.body.email,
+    to: user.email,
     params: {link, host: new URL(link).host}
   })
   res.status(204).send()
