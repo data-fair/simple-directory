@@ -50,7 +50,7 @@ class MongodbStorage {
   }
 
   async getUserByEmail(email) {
-    const user = await this.db.collection('users').find({email}).collation(collation)
+    const user = (await this.db.collection('users').find({email}).collation(collation).toArray())[0]
     if (!user) return null
     return switchBackId(user)
   }
