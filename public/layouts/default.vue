@@ -201,6 +201,11 @@ body .application {
       margin-top: 4px;
     }
   }
+
+  // No need to prevent users from selecting (and copying) the texts in lists
+  .list__tile {
+    user-select: text;
+  }
 }
 
 </style>
