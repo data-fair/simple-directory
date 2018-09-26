@@ -1,3 +1,5 @@
+const collation = { locale: 'simple', strength: 1 }
+
 async function ensureIndex(db, collection, key, options) {
   try {
     await db.collection(collection).createIndex(key, options || {})
@@ -30,7 +32,8 @@ class MongodbStorage {
     const mongoClient = this.mongodb.MongoClient
     this.client = await mongoClient.connect(params.url, {autoReconnect: true, bufferMaxEntries: -1})
     this.db = this.client.db()
-    await ensureIndex(this.db, 'users', {email: 1}, {unique: true})
+    // An index for comparison case and diacritics insensitive
+    await ensureIndex(this.db, 'users', {email: 1}, {unique: true, collation})
     await ensureIndex(this.db, 'users', {'organizations.id': 1}, {sparse: true})
     await ensureIndex(this.db, 'invitations', {email: 1, id: 1}, {unique: true})
     return this
@@ -42,6 +45,12 @@ class MongodbStorage {
       delete filter.id
     }
     const user = await this.db.collection('users').findOne(filter)
+    if (!user) return null
+    return switchBackId(user)
+  }
+
+  async getUserByEmail(email) {
+    const user = await this.db.collection('users').find({email}).collation(collation)
     if (!user) return null
     return switchBackId(user)
   }

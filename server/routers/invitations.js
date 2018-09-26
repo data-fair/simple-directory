@@ -31,7 +31,7 @@ router.post('', asyncWrap(async (req, res, next) => {
 router.get('/_accept', asyncWrap(async (req, res, next) => {
   const invit = await jwt.verify(req.app.get('keys'), req.query.invit_token)
   const storage = req.app.get('storage')
-  let user = await storage.getUser({email: invit.email})
+  let user = await storage.getUserByEmail(invit.email)
   if (!user && storage.readonly) return res.status(400).send(req.messages.errors.userUnknown)
   if (!user) user = await storage.createUser({email: invit.email, id: shortid.generate(), name: userName({email: invit.email})})
   const orga = await storage.getOrganization(invit.id)

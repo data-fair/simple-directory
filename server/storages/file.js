@@ -48,6 +48,15 @@ class FileStorage {
     return {...user, organizations: getUserOrgas(this.organizations, user)}
   }
 
+  async getUserByEmail(email) {
+    // Case insensitive comparison
+    const user = this.users.find(u => u.email.toLowerCase() === email.toLowerCase())
+    if (!user) return null
+
+    // Set these organizations ids, names and the role of the user in them
+    return {...user, organizations: getUserOrgas(this.organizations, user)}
+  }
+
   async findUsers(params = {}) {
     let filteredUsers = this.users.map(user => ({...user, organizations: getUserOrgas(this.organizations, user)}))
     if (params.ids) {
