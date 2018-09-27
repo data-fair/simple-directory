@@ -34,9 +34,10 @@ function prepareSelect(select) {
 class MongodbStorage {
   async init(params) {
     this.readonly = false
-    this.mongodb = require('mongodb')
-    const mongoClient = this.mongodb.MongoClient
-    this.client = await mongoClient.connect(params.url, {autoReconnect: true, bufferMaxEntries: -1})
+    this.mongodb =
+    console.log('Connecting to mongodb ' + params.url)
+    this.client = await require('mongodb').MongoClient.connect(params.url)
+
     this.db = this.client.db()
     // An index for comparison case and diacritics insensitive
     await ensureIndex(this.db, 'users', {email: 1}, {unique: true, collation})
