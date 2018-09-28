@@ -36,7 +36,15 @@ class MongodbStorage {
     this.readonly = false
     this.mongodb =
     console.log('Connecting to mongodb ' + params.url)
-    this.client = await require('mongodb').MongoClient.connect(params.url)
+    const MongoClient = require('mongodb').MongoClient
+    try {
+      this.client = await MongoClient.connect(params.url)
+    } catch (err) {
+      // 1 retry after 1s
+      // solve the quite common case in docker-compose of the service starting at the same time as the db
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      this.client = await MongoClient.connect(params.url)
+    }
 
     this.db = this.client.db()
     // An index for comparison case and diacritics insensitive
