@@ -130,7 +130,7 @@ Peut valoir 'anonymous' ou 'authenticated'.'`,
     },
     invitation: {
       title: 'Invitation validée',
-      msgSameUser: `Votre invitation à être membre d'une organisation a bien été acceptée. Vous pouvez consulter votre <a href="{profileUrl}">votre profil</a>.`,
+      msgSameUser: `Votre invitation à être membre d'une organisation a bien été acceptée. Vous pouvez consulter <a href="{profileUrl}">votre profil</a>.`,
       msgDifferentUser: `Cette invitation à être membre d'une organisation a bien été acceptée. Vous pouvez <a href="{loginUrl}">vous connecter</a> avec le compte invité.`
     }
   },
