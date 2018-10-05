@@ -1,6 +1,6 @@
 {
   "name": "simple-directory",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "Easy users and organizations management for modern Web-oriented architectures.",
   "main": "server/app.js",
   "scripts": {
