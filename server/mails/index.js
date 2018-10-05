@@ -9,8 +9,14 @@ const flatten = require('flat')
 const mjmlTemplate = fs.readFileSync(path.join(__dirname, 'mail.mjml'), 'utf8')
 const mjmlNoButtonTemplate = fs.readFileSync(path.join(__dirname, 'mail-nobutton.mjml'), 'utf8')
 
+const maildevTransport = {
+  port: config.maildev.smtp,
+  ignoreTLS: true,
+  default: 'localhost'
+}
+
 exports.init = async () => {
-  const transport = nodemailer.createTransport(config.mails.transport)
+  const transport = nodemailer.createTransport(config.maildev.active ? maildevTransport : config.mails.transport)
   transport.sendMailAsync = util.promisify(transport.sendMail)
   return transport
 }
