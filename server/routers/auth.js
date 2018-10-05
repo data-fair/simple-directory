@@ -5,6 +5,7 @@ const shortid = require('shortid')
 const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const mails = require('../mails')
+const emailValidator = require('email-validator')
 
 const config = require('config')
 
@@ -24,6 +25,8 @@ function getPayload(user) {
 // to check that this address belongs to the user.
 router.post('/passwordless', asyncWrap(async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
+  if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
+
   const storage = req.app.get('storage')
   let user = await storage.getUserByEmail(req.body.email)
   // No 404 here so we don't disclose information about existence of the user

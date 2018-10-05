@@ -6,12 +6,16 @@ const jwt = require('../utils/jwt')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
 const userName = require('../utils/user-name')
+const emailValidator = require('email-validator')
 
 let router = module.exports = express.Router()
 
 // Invitation for a user to join an organization from an admin of this organization
 router.post('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
+  if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
+  if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
+
   const invitation = req.body
   const orga = req.user.organizations.find(o => o.id === invitation.id)
   if (!req.user.isAdmin && (!orga || orga.role !== 'admin')) return res.status(403).send(req.messages.errors.permissionDenied)
