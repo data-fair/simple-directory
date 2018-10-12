@@ -102,6 +102,7 @@
 
         <lang-switcher />
       </v-toolbar>
+      <v-toolbar-side-icon v-else-if="showNav" @click.stop="drawer = !drawer"/>
     </template>
 
     <v-content>
@@ -135,6 +136,7 @@ export default {
     return {
       notification: null,
       showSnackbar: false,
+      showNav: this.$route.query && this.$route.query.showNav === 'true',
       drawer: this.$route.query && this.$route.query.showNav === 'true'
     }
   },
