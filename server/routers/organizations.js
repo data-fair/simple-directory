@@ -37,6 +37,11 @@ router.get('', asyncWrap(async (req, res, next) => {
   if (req.query.creator) params.creator = req.query.creator
 
   const organizations = await req.app.get('storage').findOrganizations(params)
+  if (allFields) {
+    organizations.results.forEach(orga => {
+      orga.roles = orga.roles || config.roles.defaults
+    })
+  }
   res.json(organizations)
 }))
 
@@ -48,6 +53,7 @@ router.get('/:organizationId', asyncWrap(async (req, res, next) => {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
+  orga.roles = orga.roles || config.roles.defaults
   res.send(orga)
 }))
 
@@ -76,7 +82,6 @@ router.post('', asyncWrap(async (req, res, next) => {
   }
   const orga = req.body
   orga.id = orga.id || shortid.generate()
-  orga.roles = orga.roles || config.roles.defaults
   await storage.createOrganization(orga, req.user)
   await storage.addMember(orga, req.user, 'admin')
   res.status(201).send(orga)
@@ -133,7 +138,7 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   const roles = orga.roles || config.roles.defaults
-  if (!roles.includes(req.body.role)) return res.status(400).send()
+  if (!roles.includes(req.body.role)) return res.status(400).send(req.messages.errors.replace('{role}', req.body.role))
   await req.app.get('storage').setMemberRole(req.params.organizationId, req.params.userId, req.body.role)
   res.status(204).send()
 }))

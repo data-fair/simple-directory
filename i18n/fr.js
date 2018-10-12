@@ -140,7 +140,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     permissionDenied: 'Permissions insuffisantes.',
     userUnknown: 'Utilisateur inconnu.',
     orgaUnknown: 'Organisation inconnue.',
-    invitationConflict: 'Cet utilisateur est déjà membre de cette organisation.'
+    invitationConflict: 'Cet utilisateur est déjà membre de cette organisation.',
+    unknownRole: 'Rôle {role} inconnu.'
   },
   mails: {
     login: {
