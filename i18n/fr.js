@@ -91,7 +91,7 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
           from: `'<b>IMPORTANT.</> L'adresse à renseigner comme expéditeur des mails émis par le service.`
         },
         listEntitiesMode: `Permet de restreindre de manière globale l'accès aux listes d'utilisateurs et d'organisations.<br>
-Peut valoir 'anonymous' ou 'authenticated'.'`,
+Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         defaultLoginRedirect: `Redirection par défaut après login. Si non spécifié l'utilisateur sera redirigé vers son profil.`,
         onlyCreateInvited: `Si vrai les utilisateurs ne seront pas créés au premier email envoyé. Ils doivent être invités dans une organisation.`
       }

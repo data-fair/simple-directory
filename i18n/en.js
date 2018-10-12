@@ -91,7 +91,7 @@ The type "mongo" depends on accessing a MongoDB instance, it is the approriate c
           from: `'<b>IMPORTANT.</> The address to use as sender for emails sent by the service.`
         },
         listEntitiesMode: `Used to restrict in a global manner access to the lists of users and organizations.<br>
-Can be 'anonymous' or 'authenticated'.'`,
+Can be 'anonymous', 'authenticated' or 'admin'.`,
         defaultLoginRedirect: 'Default redirection after login. If not specified user will go to his profile page.',
         onlyCreateInvited: 'If true users can not be created at first email sent. They must be invited in an organization.'
       }

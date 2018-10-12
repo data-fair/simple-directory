@@ -19,7 +19,9 @@ function isMember(req) {
 
 // Get the list of organizations
 router.get('', asyncWrap(async (req, res, next) => {
-  if (config.listEntitiesMode !== 'anonymous' && !req.user) return res.send({results: [], count: 0})
+  if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({results: [], count: 0})
+  if (config.listEntitiesMode === 'admin' && !(req.user && req.user.isAdmin)) return res.send({results: [], count: 0})
+
   let params = {...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort)}
 
   // Only service admins can request to see all field. Other users only see id/name

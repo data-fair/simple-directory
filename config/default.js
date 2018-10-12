@@ -84,7 +84,7 @@ module.exports = {
     defaultMaxCreatedOrgs: -1
   },
   // Restricts who can use the find endpoints on users and organizations
-  // One of 'anonymous', 'authenticated'
+  // One of 'anonymous', 'authenticated' or 'admin'
   listEntitiesMode: 'authenticated',
   // Users can not be created at first email sent. They must be invited in an organization.
   onlyCreateInvited: false,
