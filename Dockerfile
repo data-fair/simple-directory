@@ -1,4 +1,4 @@
-FROM node:8.9.1-alpine
+FROM koumoul/webapp-base:1.7.0
 MAINTAINER "contact@koumoul.com"
 
 RUN apk add --update openssl
