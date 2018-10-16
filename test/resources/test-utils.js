@@ -15,7 +15,7 @@ exports.prepare = (testFile) => {
   process.env.MAILDEV_ACTIVE = true
   process.env.MAILDEV_SMTP = smtpPort
   process.env.MAILDEV_WEB = 1090 + testFiles.indexOf(testFile)
-  process.env.MAILS_TRANSPORT = JSON.stringify({port: smtpPort, ignoreTLS: true})
+  process.env.MAILS_TRANSPORT = JSON.stringify({ port: smtpPort, ignoreTLS: true })
   const config = require('config')
 
   let app
@@ -28,14 +28,14 @@ exports.prepare = (testFile) => {
     await app.stop()
   })
 
-  return {test, config}
+  return { test, config }
 }
 
 exports.axios = async (test, email) => {
   const config = require('config')
-  const axOpts = {baseURL: config.publicUrl}
+  const axOpts = { baseURL: config.publicUrl }
   if (email) {
-    await axios.post(config.publicUrl + '/api/auth/passwordless', {email})
+    await axios.post(config.publicUrl + '/api/auth/passwordless', { email })
     // TODO get id_token
     const token = await new Promise((resolve, reject) => {
       test.app.get('maildev').on('new', emailObj => {
@@ -46,7 +46,7 @@ exports.axios = async (test, email) => {
         }
       })
     })
-    axOpts.headers = {Cookie: `id_token=${token};`}
+    axOpts.headers = { Cookie: `id_token=${token};` }
   }
 
   const ax = axios.create(axOpts)

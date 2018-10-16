@@ -30,10 +30,10 @@ function applyParams(txt, params) {
   return txt
 }
 
-exports.send = async ({transport, key, messages, to, params}) => {
+exports.send = async ({ transport, key, messages, to, params }) => {
   params = {
     ...params,
-    ...flatten({theme: config.theme}),
+    ...flatten({ theme: config.theme }),
     contact: config.contact,
     logo: config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/v0.12.3/public/assets/logo-150x150.png'
   }

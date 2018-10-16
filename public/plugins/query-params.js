@@ -2,7 +2,7 @@
 
 const persistentParams = ['embed', 'showNav']
 
-export default ({app}) => {
+export default ({ app }) => {
   app.router.beforeEach((to, from, next) => {
     let persistedParam = false
     persistentParams.forEach(param => {
@@ -11,7 +11,7 @@ export default ({app}) => {
         persistedParam = true
       }
     })
-    if (persistedParam) next({...to})
+    if (persistedParam) next({ ...to })
     else next()
   })
 }

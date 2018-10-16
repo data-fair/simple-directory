@@ -44,7 +44,7 @@ class FileStorage {
     if (!user) return null
 
     // Set these organizations ids, names and the role of the user in them
-    return {...user, organizations: getUserOrgas(this.organizations, user)}
+    return { ...user, organizations: getUserOrgas(this.organizations, user) }
   }
 
   async getUserByEmail(email) {
@@ -53,11 +53,11 @@ class FileStorage {
     if (!user) return null
 
     // Set these organizations ids, names and the role of the user in them
-    return {...user, organizations: getUserOrgas(this.organizations, user)}
+    return { ...user, organizations: getUserOrgas(this.organizations, user) }
   }
 
   async findUsers(params = {}) {
-    let filteredUsers = this.users.map(user => ({...user, organizations: getUserOrgas(this.organizations, user)}))
+    let filteredUsers = this.users.map(user => ({ ...user, organizations: getUserOrgas(this.organizations, user) }))
     if (params.ids) {
       filteredUsers = filteredUsers.filter(user => (params.ids).find(id => user.id === id))
     }
@@ -79,7 +79,7 @@ class FileStorage {
     if (!orga) return null
     let members = orga.members.map(m => {
       const user = this.users.find(u => u.id === m.id)
-      return {...m, name: user.name, email: user.email}
+      return { ...m, name: user.name, email: user.email }
     })
     if (params.q) {
       const lq = params.q.toLowerCase()
@@ -100,14 +100,14 @@ class FileStorage {
   async getOrganization(id) {
     const orga = this.organizations.find(o => o.id === id)
     if (!orga) return null
-    const cloneOrga = {...orga}
+    const cloneOrga = { ...orga }
     delete cloneOrga.members
     return cloneOrga
   }
 
   async findOrganizations(params = {}) {
     let filteredOrganizations = this.organizations.map(orga => {
-      const cloneOrga = {...orga}
+      const cloneOrga = { ...orga }
       delete cloneOrga.members
       return cloneOrga
     })

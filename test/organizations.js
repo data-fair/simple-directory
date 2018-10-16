@@ -1,6 +1,6 @@
 const testUtils = require('./resources/test-utils')
 
-const {test} = testUtils.prepare(__filename)
+const { test } = testUtils.prepare(__filename)
 
 test('Get organization list when not authenticated', async t => {
   const ax = await testUtils.axios(test)

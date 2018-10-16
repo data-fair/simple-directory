@@ -2,7 +2,7 @@ const config = require('config')
 const flatten = require('flat')
 const unflatten = flatten.unflatten
 const acceptLangParser = require('accept-language-parser')
-const flatOpts = {delimiter: '_'}
+const flatOpts = { delimiter: '_' }
 
 exports.locales = config.i18n.locales.map(l => {
   if (typeof l === 'string') return { code: l }

@@ -9,10 +9,10 @@ let router = express.Router()
 
 // Get the list of users
 router.get('', asyncWrap(async (req, res, next) => {
-  if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({results: [], count: 0})
-  if (config.listEntitiesMode === 'admin' && !(req.user && req.user.isAdmin)) return res.send({results: [], count: 0})
+  if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
+  if (config.listEntitiesMode === 'admin' && !(req.user && req.user.isAdmin)) return res.send({ results: [], count: 0 })
 
-  let params = {...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort)}
+  let params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
@@ -33,7 +33,7 @@ router.get('', asyncWrap(async (req, res, next) => {
 router.get('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (!req.user.isAdmin && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
-  const user = await req.app.get('storage').getUser({id: req.params.userId})
+  const user = await req.app.get('storage').getUser({ id: req.params.userId })
   if (!user) return res.status(404).send()
   user.isAdmin = config.admins.includes(user.email)
   res.json(user)
@@ -52,10 +52,10 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
   if (adminKey && !req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
 
   const patch = req.body
-  const name = userName({...req.user, ...patch}, true)
+  const name = userName({ ...req.user, ...patch }, true)
   if (name !== req.user.name) {
     patch.name = name
-    webhooks.sendUsersWebhooks([{...req.user, ...patch}])
+    webhooks.sendUsersWebhooks([{ ...req.user, ...patch }])
   }
   const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
   res.send(patchedUser)

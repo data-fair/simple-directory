@@ -1,13 +1,13 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import {sessionStore} from '@koumoul/sd-vue'
+import { sessionStore } from '@koumoul/sd-vue'
 import eventBus from '../event-bus.js'
 
 Vue.use(Vuex)
 
 export default () => {
   return new Vuex.Store({
-    modules: {session: sessionStore},
+    modules: { session: sessionStore },
     state: {
       userDetails: null,
       env: {}
@@ -18,20 +18,20 @@ export default () => {
       }
     },
     actions: {
-      async fetchUserDetails({state, commit, dispatch}) {
+      async fetchUserDetails({ state, commit, dispatch }) {
         if (!state.session.user) return
         try {
           const userDetails = await this.$axios.$get(`api/users/${state.session.user.id}`)
-          commit('setAny', {userDetails})
+          commit('setAny', { userDetails })
         } catch (error) {
           // User doesn't exist anymore or is disconnected
           if (error.response.status === 401 || error.response.status === 403) dispatch('session/logout')
-          else eventBus.$emit('notification', {error})
+          else eventBus.$emit('notification', { error })
         }
       },
-      nuxtServerInit({commit, dispatch}, {req, env, app}) {
-        commit('setAny', {env: {...env}})
-        dispatch('session/init', {user: req.user, baseUrl: env.publicUrl + '/api/session'})
+      nuxtServerInit({ commit, dispatch }, { req, env, app }) {
+        commit('setAny', { env: { ...env } })
+        dispatch('session/init', { user: req.user, baseUrl: env.publicUrl + '/api/session' })
       }
     }
   })

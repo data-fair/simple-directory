@@ -27,7 +27,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     key: 'invitation',
     messages: req.messages,
     to: req.body.email,
-    params: {link, host: new URL(link).host, organization: invitation.name}
+    params: { link, host: new URL(link).host, organization: invitation.name }
   })
   res.status(201).send()
 }))
@@ -37,7 +37,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   let user = await storage.getUserByEmail(invit.email)
   if (!user && storage.readonly) return res.status(400).send(req.messages.errors.userUnknown)
-  if (!user) user = await storage.createUser({email: invit.email, id: shortid.generate(), name: userName({email: invit.email})})
+  if (!user) user = await storage.createUser({ email: invit.email, id: shortid.generate(), name: userName({ email: invit.email }) })
   const orga = await storage.getOrganization(invit.id)
   if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
   if (user.organizations && user.organizations.find(o => o.id === invit.id)) return res.status(400).send(req.messages.errors.invitationConflict)

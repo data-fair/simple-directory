@@ -19,10 +19,10 @@
 
 <script>
 import logo from '../components/logo.vue'
-const {mapState} = require('vuex')
+const { mapState } = require('vuex')
 
 export default {
-  components: {logo},
+  components: { logo },
   computed: {
     ...mapState(['env'])
   }

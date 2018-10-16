@@ -19,10 +19,10 @@ function isMember(req) {
 
 // Get the list of organizations
 router.get('', asyncWrap(async (req, res, next) => {
-  if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({results: [], count: 0})
-  if (config.listEntitiesMode === 'admin' && !(req.user && req.user.isAdmin)) return res.send({results: [], count: 0})
+  if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
+  if (config.listEntitiesMode === 'admin' && !(req.user && req.user.isAdmin)) return res.send({ results: [], count: 0 })
 
-  let params = {...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort)}
+  let params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
@@ -75,8 +75,8 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   const storage = req.app.get('storage')
   if (!req.user.isAdmin) {
-    const createdOrgs = (await storage.findOrganizations({size: 0, skip: 0, creator: req.user.id})).count
-    let maxCreatedOrgs = (await storage.getUser({id: req.user.id})).maxCreatedOrgs
+    const createdOrgs = (await storage.findOrganizations({ size: 0, skip: 0, creator: req.user.id })).count
+    let maxCreatedOrgs = (await storage.getUser({ id: req.user.id })).maxCreatedOrgs
     if (maxCreatedOrgs === undefined || maxCreatedOrgs === null) maxCreatedOrgs = config.quotas.defaultMaxCreatedOrgs
     if (maxCreatedOrgs !== -1 && createdOrgs >= maxCreatedOrgs) return res.status(429).send(req.messages.errors.maxCreatedOrgs)
   }
@@ -110,7 +110,7 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (!isMember(req)) {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
-  const params = {...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort)}
+  const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
   if (req.query.q) params.q = req.query.q
   if (req.query['ids']) params.ids = req.query['ids'].split(',')
   const members = await req.app.get('storage').findMembers(req.params.organizationId, params)

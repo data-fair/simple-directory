@@ -37,7 +37,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
       key: 'noCreation',
       messages: req.messages,
       to: req.body.email,
-      params: {link, host: new URL(link).host}
+      params: { link, host: new URL(link).host }
     })
     return res.status(204).send()
   }
@@ -58,7 +58,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     key: 'login',
     messages: req.messages,
     to: user.email,
-    params: {link, host: new URL(link).host}
+    params: { link, host: new URL(link).host }
   })
   res.status(204).send()
 }))
@@ -78,7 +78,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
 
   // User may have new organizations since last renew
   const storage = req.app.get('storage')
-  const user = await storage.getUser({id: decoded.id})
+  const user = await storage.getUser({ id: decoded.id })
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = getPayload(user)
   if (!storage.readonly) await storage.updateLogged(decoded.id)

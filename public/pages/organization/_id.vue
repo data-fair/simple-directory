@@ -34,11 +34,11 @@
       <v-text-field
         :label="$t('common.search')"
         v-model="q"
-        @click:append="fetchMembers"
         name="search"
         solo
         style="max-width:300px;"
         append-icon="search"
+        @click:append="fetchMembers"
         @keyup.enter="fetchMembers"/>
       <v-spacer/>
       <v-pagination v-if="members && members.count > membersPageSize" :length="Math.ceil(members.count / membersPageSize)" v-model="membersPage" @input="fetchMembers"/>
@@ -129,7 +129,7 @@
 </template>
 
 <script>
-import {mapActions, mapState} from 'vuex'
+import { mapActions, mapState } from 'vuex'
 import eventBus from '../../event-bus'
 export default {
   data: () => ({
@@ -141,7 +141,7 @@ export default {
     deleteMemberDialog: false,
     editMemberDialog: false,
     currentMember: null,
-    invitation: {id: null, email: null, role: null},
+    invitation: { id: null, email: null, role: null },
     inviteMemberDialog: false,
     validInvitation: true,
     membersPage: 1,
@@ -167,32 +167,32 @@ export default {
       if (!this.$refs.form.validate()) return
       try {
         await this.$axios.$patch(`api/organizations/${this.$route.params.id}`,
-          {name: this.orga.name, description: this.orga.description})
+          { name: this.orga.name, description: this.orga.description })
         eventBus.$emit('notification', this.$t('common.modificationOk'))
         this.fetchUserDetails()
       } catch (error) {
-        eventBus.$emit('notification', {error})
+        eventBus.$emit('notification', { error })
       }
     },
     async fetchMembers() {
       try {
         this.members = await this.$axios.$get(`api/organizations/${this.$route.params.id}/members`,
-          {params: {q: this.q, page: this.membersPage, size: this.membersPageSize}})
+          { params: { q: this.q, page: this.membersPage, size: this.membersPageSize } })
       } catch (error) {
-        eventBus.$emit('notification', {error})
+        eventBus.$emit('notification', { error })
       }
     },
     async deleteMember(member) {
       try {
         await this.$axios.$delete(`api/organizations/${this.$route.params.id}/members/${member.id}`)
-        eventBus.$emit('notification', this.$t('pages.organization.deleteMemberSuccess', {name: member.name}))
+        eventBus.$emit('notification', this.$t('pages.organization.deleteMemberSuccess', { name: member.name }))
         this.fetchMembers()
       } catch (error) {
-        eventBus.$emit('notification', {error})
+        eventBus.$emit('notification', { error })
       }
     },
     newInvitation() {
-      this.invitation = {id: this.orga.id, name: this.orga.name, email: '', role: null}
+      this.invitation = { id: this.orga.id, name: this.orga.name, email: '', role: null }
       this.$refs.inviteForm.reset()
     },
     async confirmInvitation() {
@@ -200,18 +200,18 @@ export default {
         this.inviteMemberDialog = false
         try {
           await this.$axios.$post(`api/invitations/`, this.invitation)
-          eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', {email: this.invitation.email}))
+          eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', { email: this.invitation.email }))
         } catch (error) {
-          eventBus.$emit('notification', {error})
+          eventBus.$emit('notification', { error })
         }
       }
     },
     async setMemberRole(member, newRole) {
       member.role = newRole
       try {
-        await this.$axios.patch(`api/organizations/${this.$route.params.id}/members/${member.id}`, {role: newRole})
+        await this.$axios.patch(`api/organizations/${this.$route.params.id}/members/${member.id}`, { role: newRole })
       } catch (error) {
-        eventBus.$emit('notification', {error})
+        eventBus.$emit('notification', { error })
       }
     }
   }

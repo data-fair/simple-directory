@@ -17,10 +17,10 @@ router.post('/', asyncWrap(async (req, res) => {
   const to = []
   for (let t of req.body.to) {
     if (t.type === 'user') {
-      to.push((await storage.getUser({id: t.id})).email)
+      to.push((await storage.getUser({ id: t.id })).email)
     }
     if (t.type === 'organization') {
-      const members = await storage.findMembers(t.id, {role: t.role, size: 10000, skip: 0})
+      const members = await storage.findMembers(t.id, { role: t.role, size: 10000, skip: 0 })
       members.results.forEach(member => to.push(member.email))
     }
   }

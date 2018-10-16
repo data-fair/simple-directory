@@ -13,15 +13,15 @@ const routes = fs.readdirSync('doc/pages/doc/')
 
 module.exports = {
   srcDir: 'doc/',
-  build: {extractCSS: true},
+  build: { extractCSS: true },
   generate: {
     dir: 'doc-dist',
     routes
   },
   loading: { color: '#1e88e5' }, // Customize the progress bar color
-  plugins: [{src: '~plugins/vuetify'}],
-  router: {base: '/simple-directory/'},
-  env: {theme: config.theme},
+  plugins: [{ src: '~plugins/vuetify' }],
+  router: { base: '/simple-directory/' },
+  env: { theme: config.theme },
   modules: ['@nuxtjs/markdownit', ['nuxt-i18n', {
     locales: [
       { code: 'fr' },

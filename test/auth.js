@@ -1,6 +1,6 @@
 const testUtils = require('./resources/test-utils')
 
-const {test} = testUtils.prepare(__filename)
+const { test } = testUtils.prepare(__filename)
 
 test('Create session for known user', async t => {
   const ax = await testUtils.axios(test, 'dmeadus0@answers.com')

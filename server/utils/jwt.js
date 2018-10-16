@@ -37,7 +37,7 @@ exports.router = (keys) => {
   publicKey.alg = 'RS256'
   publicKey.use = 'sig'
   router.get('/.well-known/jwks.json', (req, res) => {
-    res.json({'keys': [publicKey.toJSON()]})
+    res.json({ 'keys': [publicKey.toJSON()] })
   })
   return router
 }

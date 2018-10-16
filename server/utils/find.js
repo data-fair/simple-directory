@@ -11,7 +11,7 @@ exports.pagination = (query, defaultSize = 10) => {
   } else if (query && query.page && !isNaN(parseInt(query.page))) {
     skip = (parseInt(query.page) - 1) * size
   }
-  return {skip, size}
+  return { skip, size }
 }
 
 exports.sort = (sortStr) => {

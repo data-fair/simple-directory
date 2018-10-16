@@ -1,23 +1,23 @@
 const testUtils = require('./resources/test-utils')
 
-const {test} = testUtils.prepare(__filename)
+const { test } = testUtils.prepare(__filename)
 
 test('Find users', async t => {
-  let res = await test.app.get('storage').findUsers({skip: 0, size: 10})
+  let res = await test.app.get('storage').findUsers({ skip: 0, size: 10 })
   t.is(res.count, 11)
   t.truthy(res.results[0].id)
   t.truthy(res.results[0].email)
-  res = await test.app.get('storage').findUsers({q: 'alba', skip: 0, size: 10})
+  res = await test.app.get('storage').findUsers({ q: 'alba', skip: 0, size: 10 })
   t.is(res.count, 1)
 })
 
 test('Find members', async t => {
-  const res = await test.app.get('storage').findMembers('KWqAGZ4mG', {skip: 0, size: 10})
+  const res = await test.app.get('storage').findMembers('KWqAGZ4mG', { skip: 0, size: 10 })
   t.is(res.count, 2)
 })
 
 test('Get user', async t => {
-  let res = await test.app.get('storage').getUser({id: 'dmeadus0'})
+  let res = await test.app.get('storage').getUser({ id: 'dmeadus0' })
   t.truthy(res)
   t.truthy(res.email)
   t.truthy(res.organizations)
