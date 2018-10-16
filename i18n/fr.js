@@ -141,7 +141,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     userUnknown: 'Utilisateur inconnu.',
     orgaUnknown: 'Organisation inconnue.',
     invitationConflict: 'Cet utilisateur est déjà membre de cette organisation.',
-    unknownRole: 'Rôle {role} inconnu.'
+    unknownRole: 'Rôle {role} inconnu.',
+    serviceUnavailable: 'Service indisponible pour cause de maintenance'
   },
   mails: {
     login: {

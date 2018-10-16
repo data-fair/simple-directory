@@ -22,13 +22,17 @@ const server = http.createServer(app)
 
 app.use(cors())
 app.use(cookieParser())
-app.use(bodyParser.json({limit: '100kb'}))
+app.use(bodyParser.json({ limit: '100kb' }))
 app.use(i18n.middleware)
+app.use((req, res, next) => {
+  if (!req.app.get('api-ready')) res.status(503).send(req.messages.errors.serviceUnavailable)
+  else next()
+})
 
 // Replaces req.user from session with full and fresh user object from storage
 const fullUser = asyncWrap(async (req, res, next) => {
   if (!req.user) return next()
-  req.user = {...await req.app.get('storage').getUser({id: req.user.id}), isAdmin: req.user.isAdmin}
+  req.user = { ...await req.app.get('storage').getUser({ id: req.user.id }), isAdmin: req.user.isAdmin }
   next()
 })
 
@@ -55,14 +59,15 @@ app.use((err, req, res, next) => {
 })
 
 exports.run = async() => {
+  server.listen(config.port)
+  await eventToPromise(server, 'listening')
+
   const keys = await jwt.init()
   app.set('keys', keys)
   app.use(jwt.router(keys))
 
-  const nuxt = await require('./nuxt')()
-  app.use(session.loginCallback)
-  app.use(session.decode)
-  app.use(nuxt)
+  const storage = await storages.init()
+  app.set('storage', storage)
 
   const mailTransport = await mails.init()
   app.set('mailTransport', mailTransport)
@@ -75,12 +80,18 @@ exports.run = async() => {
     await maildev.listenAsync()
     app.set('maildev', maildev)
   }
+  app.set('api-ready', true)
 
-  const storage = await storages.init()
-  app.set('storage', storage)
+  app.use((req, res, next) => {
+    if (!req.app.get('ui-ready')) res.status(503).send(req.messages.errors.serviceUnavailable)
+    else next()
+  })
+  const nuxt = await require('./nuxt')()
+  app.use(session.loginCallback)
+  app.use(session.decode)
+  app.use(nuxt)
+  app.set('ui-ready', true)
 
-  server.listen(config.port)
-  await eventToPromise(server, 'listening')
   return app
 }
 
