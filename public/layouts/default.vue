@@ -1,5 +1,6 @@
 <template>
-  <v-app :dark="env.theme.dark" :id="$route.name ? 'page-' + $route.name.replace('-' + $i18n.locale, '') : ''" :class="embed ? 'embed' : ''">
+  <!--<v-app :dark="env.theme.dark" :id="$route.name ? 'page-' + $route.name.replace('-' + $i18n.locale, '') : ''" :class="embed ? 'embed' : ''">-->
+  <v-app>
     <template v-if="localePath('login') === $route.path">
       <v-toolbar app fixed flat color="transparent">
         <v-spacer/>
@@ -71,7 +72,7 @@
       </v-navigation-drawer>
 
       <v-toolbar v-if="showToolbar" app scroll-off-screen>
-        <v-toolbar-side-icon @click.stop="drawer = !drawer"/>
+        <v-toolbar-side-icon v-if="user" @click.stop="drawer = !drawer"/>
         <template v-if="localePath('index') !== $route.path">
           <div class="logo-container">
             <a v-if="env.homePage" :href="env.homePage" :title="$t('common.home')">
@@ -128,10 +129,10 @@
 import eventBus from '../event-bus'
 import logo from '../components/logo.vue'
 import langSwitcher from '../components/lang-switcher.vue'
-const {mapState, mapActions} = require('vuex')
+const { mapState, mapActions } = require('vuex')
 
 export default {
-  components: {logo, langSwitcher},
+  components: { logo, langSwitcher },
   data() {
     return {
       notification: null,
@@ -163,7 +164,7 @@ export default {
     eventBus.$on('notification', async notif => {
       this.showSnackbar = false
       await this.$nextTick()
-      if (typeof notif === 'string') notif = {msg: notif}
+      if (typeof notif === 'string') notif = { msg: notif }
       if (notif.error) {
         notif.type = 'error'
         notif.errorMsg = (notif.error.response && (notif.error.response.data || notif.error.response.status)) || notif.error.message || notif.error
@@ -196,7 +197,7 @@ body .application {
     }
   }
 
-  .notification .snack__content {
+  .notification .v-snack__content {
     height: auto;
     p {
       margin-bottom: 4px;
@@ -205,7 +206,7 @@ body .application {
   }
 
   // No need to prevent users from selecting (and copying) the texts in lists
-  .list__tile {
+  .v-list__tile {
     user-select: text;
   }
 }

@@ -15,11 +15,11 @@
       <v-text-field
         :label="$t('common.search')"
         v-model="q"
-        :append-icon-cb="fetchUsers"
         name="search"
         solo
         style="max-width:300px;"
         append-icon="search"
+        @click:append="fetchUsers"
         @keyup.enter="fetchUsers"/>
     </v-layout>
 
@@ -99,16 +99,18 @@
 </template>
 
 <script>
-import {mapState} from 'vuex'
+import * as VDataTable from 'vuetify/es5/components/VDataTable'
+import { mapState } from 'vuex'
 import eventBus from '../../event-bus'
 export default {
+  components: { ...VDataTable },
   data: () => ({
     users: null,
     currentUser: null,
     deleteUserDialog: false,
     editMaxCreatedOrgsDialog: false,
     q: '',
-    pagination: {page: 1, rowsPerPage: 25, totalItems: 0, descending: false, sortBy: 'email'},
+    pagination: { page: 1, rowsPerPage: 25, totalItems: 0, descending: false, sortBy: 'email' },
     loading: false,
     headers: null,
     newMaxCreatedOrgs: null,
@@ -130,20 +132,20 @@ export default {
   async mounted() {
     this.fetchUsers()
     this.headers = [
-      {text: this.$t('common.email'), value: 'email'},
-      {text: this.$t('common.firstName'), value: 'firstName'},
-      {text: this.$t('common.lastName'), value: 'lastName'},
-      {text: this.$t('common.organizations'), value: 'organizations', sortable: false}
+      { text: this.$t('common.email'), value: 'email' },
+      { text: this.$t('common.firstName'), value: 'firstName' },
+      { text: this.$t('common.lastName'), value: 'lastName' },
+      { text: this.$t('common.organizations'), value: 'organizations', sortable: false }
     ]
     if (this.env.defaultMaxCreatedOrgs !== -1) {
-      this.headers.push({text: this.$t('common.maxCreatedOrgs')})
+      this.headers.push({ text: this.$t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs' })
     }
     if (!this.env.readonly) {
       this.headers = this.headers.concat([
-        {text: this.$t('common.createdAt'), value: 'created.date'},
-        {text: this.$t('common.updatedAt'), value: 'updated.date'},
-        {text: this.$t('common.loggedAt'), value: 'logged'},
-        {text: ''}
+        { text: this.$t('common.createdAt'), value: 'created.date' },
+        { text: this.$t('common.updatedAt'), value: 'updated.date' },
+        { text: this.$t('common.loggedAt'), value: 'logged' },
+        { text: '', value: 'actions' }
       ])
     }
   },
@@ -152,10 +154,10 @@ export default {
       this.loading = true
       try {
         this.users = await this.$axios.$get(`api/users`,
-          {params: {q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.rowsPerPage, sort: this.sort}})
+          { params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.rowsPerPage, sort: this.sort } })
         this.pagination.totalItems = this.users.count
       } catch (error) {
-        eventBus.$emit('notification', {error})
+        eventBus.$emit('notification', { error })
       }
       this.loading = false
     },
@@ -164,7 +166,7 @@ export default {
         await this.$axios.$delete(`api/users/${user.id}`)
         this.fetchUsers()
       } catch (error) {
-        eventBus.$emit('notification', {error})
+        eventBus.$emit('notification', { error })
       }
     },
     async showEditMaxCreatedOrgsDialog(user) {
@@ -172,16 +174,16 @@ export default {
       this.newMaxCreatedOrgs = user.maxCreatedOrgs
       this.nbCreatedOrgs = null
       this.editMaxCreatedOrgsDialog = true
-      this.nbCreatedOrgs = (await this.$axios.$get(`api/organizations`, {params: {creator: user.id, size: 0}})).count
+      this.nbCreatedOrgs = (await this.$axios.$get(`api/organizations`, { params: { creator: user.id, size: 0 } })).count
     },
     async saveMaxCreatedOrgs(user, newMaxCreatedOrgs) {
       if (newMaxCreatedOrgs === '' || newMaxCreatedOrgs === undefined) newMaxCreatedOrgs = null
       if (newMaxCreatedOrgs !== null) newMaxCreatedOrgs = Number(newMaxCreatedOrgs)
       try {
-        await this.$axios.$patch(`api/users/${user.id}`, {maxCreatedOrgs: newMaxCreatedOrgs})
+        await this.$axios.$patch(`api/users/${user.id}`, { maxCreatedOrgs: newMaxCreatedOrgs })
         this.$set(user, 'maxCreatedOrgs', newMaxCreatedOrgs)
       } catch (error) {
-        eventBus.$emit('notification', {error})
+        eventBus.$emit('notification', { error })
       }
     }
   }

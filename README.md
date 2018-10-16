@@ -25,11 +25,12 @@ Run the services dependencies:
 docker-compose up -d
 ```
 
-Run a development server:
+Run the 2 development servers with these commands et separate shells:
 
-```
-npm run dev
-```
+    npm run dev-server
+    npm run dev-client
+
+When both servers are ready, go to [http://localhost:5689](http://localhost:5689).
 
 ## Design
 

@@ -30,9 +30,7 @@ export default () => {
         }
       },
       nuxtServerInit({commit, dispatch}, {req, env, app}) {
-        commit('setAny', {
-          env: { ...env, readonly: req.app.get('storage').readonly }
-        })
+        commit('setAny', {env: {...env}})
         dispatch('session/init', {user: req.user, baseUrl: env.publicUrl + '/api/session'})
       }
     }

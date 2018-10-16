@@ -1,4 +1,4 @@
-const mjml2html = require('mjml')
+const mjml2html = require('mjml').default
 const util = require('util')
 const path = require('path')
 const fs = require('fs')

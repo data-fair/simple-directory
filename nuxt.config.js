@@ -1,34 +1,40 @@
 const config = require('config')
 const URL = require('url').URL
+const webpack = require('webpack')
 const i18n = require('./i18n')
 
 module.exports = {
-  dev: process.env.NODE_ENV === 'development',
   srcDir: 'public/',
   build: {
-    publicPath: config.publicUrl + '/_nuxt/',
-    extractCSS: true,
-    vendor: ['babel-polyfill'],
-    // Use babel polyfill, not runtime transform to support Array.includes and other methods
-    // cf https://github.com/nuxt/nuxt.js/issues/93
+    transpile: [/^vuetify/], // Necessary for "à la carte" import of vuetify components
     babel: {
-      presets: [
-        ['vue-app', {useBuiltIns: true, targets: { ie: 11, uglify: true }}]
-      ]
+      // Necessary for "à la carte" import of vuetify components
+      plugins: [['transform-imports', {
+        vuetify: {
+          transform: 'vuetify/es5/components/${member}',
+          preventFullImport: true
+        }
+      }]]
+    },
+    publicPath: config.publicUrl + '/_nuxt/',
+    extend (config, { isServer, isDev, isClient }) {
+      // Ignore all locale files of moment.js, those we want are loaded in plugins/moment.js
+      config.plugins.push(new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/))
     }
   },
   loading: { color: '#1e88e5' }, // Customize the progress bar color
   plugins: [
-    {src: '~plugins/vuetify'},
-    {src: '~plugins/moment'},
-    {src: '~plugins/axios'},
-    {src: '~plugins/session', ssr: false},
-    {src: '~plugins/query-params', ssr: false}
+    { src: '~plugins/session', ssr: false },
+    { src: '~plugins/query-params', ssr: false },
+    { src: '~plugins/vuetify' },
+    { src: '~plugins/moment' },
+    { src: '~plugins/axios' }
   ],
   router: {
     base: new URL(config.publicUrl + '/').pathname
   },
   modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', ['nuxt-i18n', {
+    seo: false,
     locales: i18n.locales,
     defaultLocale: config.i18n.defaultLocale,
     vueI18n: {
@@ -45,7 +51,8 @@ module.exports = {
     theme: config.theme,
     homePage: config.homePage,
     maildev: config.maildev.active ? config.maildev.url : null,
-    defaultMaxCreatedOrgs: config.quotas.defaultMaxCreatedOrgs
+    defaultMaxCreatedOrgs: config.quotas.defaultMaxCreatedOrgs,
+    readonly: require('./server/storages').readonly()
   },
   head: {
     title: i18n.messages[config.i18n.defaultLocale].root.title,
@@ -63,9 +70,9 @@ module.exports = {
 }
 
 if (config.theme.cssUrl) {
-  module.exports.head.link.push({rel: 'stylesheet', href: config.theme.cssUrl})
+  module.exports.head.link.push({ rel: 'stylesheet', href: config.theme.cssUrl })
 }
 
 if (config.theme.cssText) {
-  module.exports.head.style.push({type: 'text/css', cssText: config.theme.cssText})
+  module.exports.head.style.push({ type: 'text/css', cssText: config.theme.cssText })
 }

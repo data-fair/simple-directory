@@ -1,5 +1,5 @@
 <template>
-  <v-jumbotron class="index">
+  <v-responsive class="index">
     <v-container fill-height>
       <v-layout align-center>
         <v-flex text-xs-center>
@@ -14,7 +14,7 @@
         </v-flex>
       </v-layout>
     </v-container>
-  </v-jumbotron>
+  </v-responsive>
 </template>
 
 <script>

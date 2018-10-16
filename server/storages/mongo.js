@@ -235,4 +235,5 @@ class MongodbStorage {
   }
 }
 
-module.exports = async (params) => new MongodbStorage().init(params)
+exports.init = async (params) => new MongodbStorage().init(params)
+exports.readonly = false

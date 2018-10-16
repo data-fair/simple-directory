@@ -30,7 +30,6 @@ function sortCompare(sort) {
 
 class FileStorage {
   async init(params) {
-    this.readonly = true
     this.users = JSON.parse(await readFile(path.resolve(__dirname, '../..', params.users), 'utf-8'))
     this.users.forEach(user => {
       user.name = userName(user)
@@ -131,4 +130,5 @@ class FileStorage {
   }
 }
 
-module.exports = async (params) => new FileStorage().init(params)
+exports.init = async (params) => new FileStorage().init(params)
+exports.readonly = true

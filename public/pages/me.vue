@@ -43,12 +43,12 @@
 </template>
 
 <script>
-import {mapState, mapActions} from 'vuex'
+import { mapState, mapActions } from 'vuex'
 import eventBus from '../event-bus'
 
 export default {
   data: () => ({
-    patch: {firstName: null, lastName: null},
+    patch: { firstName: null, lastName: null },
     rejectDialog: false,
     nbCreatedOrgs: null
   }),
@@ -70,7 +70,7 @@ export default {
   async created() {
     if (!this.user) this.$router.push(this.localePath('login'))
     if (this.userDetails) this.initPatch()
-    this.nbCreatedOrgs = (await this.$axios.$get(`api/organizations`, {params: {creator: this.user.id, size: 0}})).count
+    this.nbCreatedOrgs = (await this.$axios.$get(`api/organizations`, { params: { creator: this.user.id, size: 0 } })).count
   },
   methods: {
     ...mapActions(['fetchUserDetails']),
@@ -86,7 +86,7 @@ export default {
         eventBus.$emit('notification', this.$t('common.modificationOk'))
         this.fetchUserDetails()
       } catch (error) {
-        eventBus.$emit('notification', {error})
+        eventBus.$emit('notification', { error })
       }
     }
   }

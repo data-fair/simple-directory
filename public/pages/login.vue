@@ -4,7 +4,7 @@
       <v-card>
         <v-card-title primary-title>
           <h3 class="headline mb-0">{{ $t('pages.login.title') }}</h3>
-          <div class="card login-logo-container">
+          <div :class="`v-card theme--${env.theme.dark ? 'dark' : 'light'} login-logo-container`">
             <img v-if="env.theme.logo" :src="env.theme.logo">
             <logo v-else/>
           </div>
@@ -15,11 +15,11 @@
             id="email"
             :autofocus="true"
             :label="$t('pages.login.emailLabel')"
-            :append-icon-cb="login"
             v-model="email"
             :error-messages="emailErrors"
             name="email"
             append-icon="send"
+            @click:append="login"
             @keyup.enter="login"
           />
           <p v-if="$t('pages.login.emailCaption')" class="caption" v-html="$t('pages.login.emailCaption')"/>
@@ -38,10 +38,10 @@
 <script>
 import logo from '../components/logo.vue'
 import eventBus from '../event-bus'
-const {mapState} = require('vuex')
+const { mapState } = require('vuex')
 
 export default {
-  components: {logo},
+  components: { logo },
   data() {
     return {
       dialog: true,
@@ -59,11 +59,11 @@ export default {
   methods: {
     async login() {
       try {
-        await this.$axios.$post('api/auth/passwordless', {email: this.email}, {params: {redirect: this.redirectUrl}})
+        await this.$axios.$post('api/auth/passwordless', { email: this.email }, { params: { redirect: this.redirectUrl } })
         this.emailErrors = []
-        eventBus.$emit('notification', {type: 'success', msg: this.$t('pages.login.success')})
+        eventBus.$emit('notification', { type: 'success', msg: this.$t('pages.login.success') })
       } catch (error) {
-        if (error.response.status >= 500) eventBus.$emit('notification', {error})
+        if (error.response.status >= 500) eventBus.$emit('notification', { error })
         else this.emailErrors = [error.response.data || error.message]
       }
     }

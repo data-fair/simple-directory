@@ -1,7 +1,7 @@
 module.exports = {
   port: 5689,
   publicUrl: 'http://localhost:5689',
-  admins: ['alban.mouton@koumoul.com'],
+  admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com'],
   homePage: 'https://koumoul.com',
   maildev: {
     active: true
@@ -19,8 +19,5 @@ module.exports = {
     mongo: {
       url: 'mongodb://localhost:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
     }
-  },
-  nuxtBuild: {
-    blocking: false
   }
 }

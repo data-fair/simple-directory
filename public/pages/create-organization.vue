@@ -9,11 +9,11 @@
         name="name"
         required
       />
-      <v-text-field
+      <v-textarea
         :label="$t('common.description')"
         v-model="newOrga.description"
         name="description"
-        textarea
+        outline
       />
       <v-layout row>
         <v-spacer/>
@@ -24,10 +24,10 @@
 </template>
 
 <script>
-import {mapActions} from 'vuex'
+import { mapActions } from 'vuex'
 import eventBus from '../event-bus'
 export default {
-  data: () => ({valid: true, newOrga: {name: '', description: ''}}),
+  data: () => ({ valid: true, newOrga: { name: '', description: '' } }),
   methods: {
     ...mapActions(['fetchUserDetails']),
     async create() {
@@ -35,9 +35,9 @@ export default {
       try {
         const res = await this.$axios.$post('api/organizations', this.newOrga)
         this.fetchUserDetails()
-        this.$router.push(this.localePath({name: 'organization-id', params: {id: res.id}}))
+        this.$router.push(this.localePath({ name: 'organization-id', params: { id: res.id } }))
       } catch (error) {
-        eventBus.$emit('notification', {error})
+        eventBus.$emit('notification', { error })
       }
     }
   }

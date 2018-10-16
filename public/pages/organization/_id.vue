@@ -11,12 +11,12 @@
         name="name"
         required
       />
-      <v-text-field
+      <v-textarea
         :label="$t('common.description')"
         v-model="orga.description"
         :disabled="!isAdminOrga"
         name="description"
-        textarea
+        outline
       />
       <v-layout row wrap>
         <v-spacer/>
@@ -34,7 +34,7 @@
       <v-text-field
         :label="$t('common.search')"
         v-model="q"
-        :append-icon-cb="fetchMembers"
+        @click:append="fetchMembers"
         name="search"
         solo
         style="max-width:300px;"

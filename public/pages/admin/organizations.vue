@@ -10,11 +10,11 @@
       <v-text-field
         :label="$t('common.search')"
         v-model="q"
-        :append-icon-cb="fetchOrganizations"
         name="search"
         solo
         style="max-width:300px;"
         append-icon="search"
+        @click:append="fetchOrganizations"
         @keyup.enter="fetchOrganizations"/>
     </v-layout>
 
@@ -67,15 +67,17 @@
 </template>
 
 <script>
-import {mapState} from 'vuex'
+import * as VDataTable from 'vuetify/es5/components/VDataTable'
+import { mapState } from 'vuex'
 import eventBus from '../../event-bus'
 export default {
+  components: { ...VDataTable },
   data: () => ({
     organizations: null,
     currentOrganization: null,
     deleteOrganizationDialog: false,
     q: '',
-    pagination: {page: 1, rowsPerPage: 25, totalItems: 0, descending: false, sortBy: 'name'},
+    pagination: { page: 1, rowsPerPage: 25, totalItems: 0, descending: false, sortBy: 'name' },
     loading: false,
     headers: null
   }),
@@ -95,14 +97,14 @@ export default {
   async mounted() {
     this.fetchOrganizations()
     this.headers = [
-      {text: this.$t('common.name'), value: 'name'},
-      {text: this.$t('common.description'), value: 'description'}
+      { text: this.$t('common.name'), value: 'name' },
+      { text: this.$t('common.description'), value: 'description' }
     ]
     if (!this.env.readonly) {
       this.headers = this.headers.concat([
-        {text: this.$t('common.createdAt'), value: 'created.date'},
-        {text: this.$t('common.updatedAt'), value: 'updated.date'},
-        {text: ''}
+        { text: this.$t('common.createdAt'), value: 'created.date' },
+        { text: this.$t('common.updatedAt'), value: 'updated.date' },
+        { text: '', value: 'actions' }
       ])
     }
   },
@@ -111,10 +113,10 @@ export default {
       this.loading = true
       try {
         this.organizations = await this.$axios.$get(`api/organizations`,
-          {params: {q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.rowsPerPage, sort: this.sort}})
+          { params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.rowsPerPage, sort: this.sort } })
         this.pagination.totalItems = this.organizations.count
       } catch (error) {
-        eventBus.$emit('notification', {error})
+        eventBus.$emit('notification', { error })
       }
       this.loading = false
     },
@@ -123,7 +125,7 @@ export default {
         await this.$axios.$delete(`api/organizations/${organization.id}`)
         this.fetchOrganizations()
       } catch (error) {
-        eventBus.$emit('notification', {error})
+        eventBus.$emit('notification', { error })
       }
     }
   }

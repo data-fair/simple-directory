@@ -58,7 +58,7 @@ module.exports = {
   },
   i18n: {
     defaultLocale: 'fr',
-    locales: ['fr', 'en']
+    locales: [{ code: 'fr', iso: 'fr-FR' }, { code: 'en', iso: 'es-US' }]
   },
   mails: {
     from: 'no-reply@test.com',
@@ -75,10 +75,6 @@ module.exports = {
     active: false,
     smtp: 1025,
     web: 1080
-  },
-  nuxtBuild: {
-    active: true,
-    blocking: true
   },
   quotas: {
     defaultMaxCreatedOrgs: -1
