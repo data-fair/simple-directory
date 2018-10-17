@@ -95,5 +95,9 @@ module.exports = {
   defaultLoginRedirect: 'DEFAULT_LOGIN_REDIRECT',
   secretKeys: {
     sendMails: 'SECRET_SENDMAILS'
+  },
+  listenWhenReady: {
+    __name: 'LISTEN_WHEN_READY',
+    __format: 'json'
   }
 }

@@ -59,8 +59,10 @@ app.use((err, req, res, next) => {
 })
 
 exports.run = async() => {
-  server.listen(config.port)
-  await eventToPromise(server, 'listening')
+  if (!config.listenWhenReady) {
+    server.listen(config.port)
+    await eventToPromise(server, 'listening')
+  }
 
   const keys = await jwt.init()
   app.set('keys', keys)
@@ -92,6 +94,10 @@ exports.run = async() => {
   app.use(nuxt)
   app.set('ui-ready', true)
 
+  if (config.listenWhenReady) {
+    server.listen(config.port)
+    await eventToPromise(server, 'listening')
+  }
   return app
 }
 
