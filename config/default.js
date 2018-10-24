@@ -39,8 +39,9 @@ module.exports = {
     }
   },
   webhooks: {
-    updateEntityNames: []
+    identities: []
   },
+  analytics: {}, // a "modules" definition for @koumoul/vue-multianalytics
   theme: {
     logo: null,
     dark: false,

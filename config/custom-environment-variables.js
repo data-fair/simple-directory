@@ -34,9 +34,13 @@ module.exports = {
       url: 'STORAGE_MONGO_URL'
     }
   },
+  analytics: {
+    __name: 'ANALYTICS',
+    __format: 'json'
+  },
   webhooks: {
-    updateEntityNames: {
-      __name: 'NAMES_WEBHOOKS',
+    identities: {
+      __name: 'IDENTITIES_WEBHOOKS',
       __format: 'json'
     }
   },
