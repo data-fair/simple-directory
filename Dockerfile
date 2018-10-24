@@ -1,4 +1,4 @@
-FROM koumoul/webapp-base:1.7.0
+FROM koumoul/webapp-base:1.8.0
 MAINTAINER "contact@koumoul.com"
 
 RUN apk add --update openssl
@@ -7,7 +7,7 @@ ENV NODE_ENV production
 WORKDIR /webapp
 ADD package.json .
 ADD package-lock.json .
-RUN npm install --production
+RUN npm install --production && node-prune
 
 # Adding UI files
 ADD i18n i18n
