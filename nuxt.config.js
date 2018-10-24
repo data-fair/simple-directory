@@ -28,7 +28,8 @@ module.exports = {
     { src: '~plugins/query-params', ssr: false },
     { src: '~plugins/vuetify' },
     { src: '~plugins/moment' },
-    { src: '~plugins/axios' }
+    { src: '~plugins/axios' },
+    { src: '~plugins/analytics', ssr: false }
   ],
   router: {
     base: new URL(config.publicUrl + '/').pathname
@@ -52,7 +53,8 @@ module.exports = {
     homePage: config.homePage,
     maildev: config.maildev.active ? config.maildev.url : null,
     defaultMaxCreatedOrgs: config.quotas.defaultMaxCreatedOrgs,
-    readonly: require('./server/storages').readonly()
+    readonly: require('./server/storages').readonly(),
+    analytics: config.analytics
   },
   head: {
     title: i18n.messages[config.i18n.defaultLocale].root.title,

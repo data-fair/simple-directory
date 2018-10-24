@@ -74,6 +74,7 @@ module.exports = {
           public: `<b>IMPORTANT.</b> The key to the public RSA signing key. See the install doc of the service.`,
           private: `<b>IMPORTANT.</b> The key to the private RSA signing key. See the install doc of the service.`
         },
+        analytics: 'JSON for configuring analytics, matches with the "modules" section of the lib <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
           type: `<b>IMPORTANT.</b> The type of storage for persisting users and organizations.<br>
 The default type "file" is read-only and suited for development/test or to use data exported from another system.<br>
