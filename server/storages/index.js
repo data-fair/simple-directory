@@ -13,7 +13,6 @@ exports.init = async () => {
       const adminsOrg = await storage.getOrganization(config.adminsOrg.id)
       if (!adminsOrg) {
         await storage.createOrganization(config.adminsOrg, { id: 'init', name: 'init' })
-        console.log('created', config.adminsOrg)
       }
     }
     for (let adminEmail of config.admins) {
@@ -30,7 +29,6 @@ exports.init = async () => {
           newAdmin.organizations.push({ ...config.adminsOrg, role: 'admin' })
         }
         await storage.createUser(newAdmin)
-        console.log('created', newAdmin)
       }
     }
   }
