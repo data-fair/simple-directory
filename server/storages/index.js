@@ -22,6 +22,7 @@ exports.init = async () => {
         const newAdmin = {
           email: adminEmail,
           id: shortid.generate(),
+          maxCreatedOrgs: -1,
           organizations: []
         }
         newAdmin.name = userName(newAdmin)
