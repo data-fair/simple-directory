@@ -33,7 +33,6 @@ function prepareSelect(select) {
 
 class MongodbStorage {
   async init(params) {
-    this.readonly = false
     console.log('Connecting to mongodb ' + params.url)
     const MongoClient = require('mongodb').MongoClient
     try {
