@@ -11,6 +11,10 @@ module.exports = {
     __name: 'ADMINS',
     __format: 'json'
   },
+  adminsOrg: {
+    __name: 'ADMINS_ORG',
+    __format: 'json'
+  },
   roles: {
     defaults: {
       __name: 'ROLES_DEFAULTS',

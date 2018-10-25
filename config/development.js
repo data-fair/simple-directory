@@ -1,7 +1,8 @@
 module.exports = {
   port: 5689,
   publicUrl: 'http://localhost:5689',
-  admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com'],
+  admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'user1@test.com'],
+  adminsOrg: { id: 'admins-org', name: `Admins organization` },
   homePage: 'https://koumoul.com',
   maildev: {
     active: true

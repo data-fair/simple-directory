@@ -13,6 +13,7 @@ module.exports = {
     invitationToken: '10d'
   },
   admins: ['admin@test.com'],
+  adminsOrg: null,
   roles: {
     defaults: ['admin', 'user'],
     editable: false
