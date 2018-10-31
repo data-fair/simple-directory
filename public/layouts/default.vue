@@ -1,6 +1,5 @@
 <template>
-  <!--<v-app :dark="env.theme.dark" :id="$route.name ? 'page-' + $route.name.replace('-' + $i18n.locale, '') : ''" :class="embed ? 'embed' : ''">-->
-  <v-app>
+  <v-app :dark="env.theme.dark" :class="appClass">
     <template v-if="localePath('login') === $route.path">
       <v-toolbar app fixed flat color="transparent">
         <v-spacer/>
@@ -152,6 +151,12 @@ export default {
     },
     showToolbar() {
       return !this.embed || (this.$route.query && this.$route.query.showToolbar === 'true')
+    },
+    appClass() {
+      const classes = []
+      if (this.$route.name) classes.push('page-' + this.$route.name.replace('___' + this.$i18n.locale, ''))
+      if (this.embed) classes.push('embed')
+      return classes.join(' ')
     }
   },
   watch: {
