@@ -107,5 +107,9 @@ module.exports = {
   listenWhenReady: {
     __name: 'LISTEN_WHEN_READY',
     __format: 'json'
+  },
+  noUI: {
+    __name: 'NO_UI',
+    __format: 'json'
   }
 }

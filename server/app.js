@@ -84,15 +84,18 @@ exports.run = async() => {
   }
   app.set('api-ready', true)
 
-  app.use((req, res, next) => {
-    if (!req.app.get('ui-ready')) res.status(503).send(req.messages.errors.serviceUnavailable)
-    else next()
-  })
-  const nuxt = await require('./nuxt')()
-  app.use(session.loginCallback)
-  app.use(session.decode)
-  app.use(nuxt)
-  app.set('ui-ready', true)
+  if (!config.noUI) {
+    app.use((req, res, next) => {
+      if (!req.app.get('ui-ready')) res.status(503).send(req.messages.errors.serviceUnavailable)
+      else next()
+    })
+
+    const nuxt = await require('./nuxt')()
+    app.use(session.loginCallback)
+    app.use(session.decode)
+    app.use(nuxt)
+    app.set('ui-ready', true)
+  }
 
   if (config.listenWhenReady) {
     server.listen(config.port)
