@@ -32,12 +32,13 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   // No 404 here so we don't disclose information about existence of the user
   if (!user && (storage.readonly || (config.onlyCreateInvited && !config.admins.includes(req.body.email)))) {
     const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
+    const linkUrl = new URL(link)
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'noCreation',
       messages: req.messages,
       to: req.body.email,
-      params: { link, host: new URL(link).host }
+      params: { link, host: linkUrl.host, origin: linkUrl.origin }
     })
     return res.status(204).send()
   }
@@ -53,12 +54,13 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   const payload = getPayload(user)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
+  const linkUrl = new URL(link)
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'login',
     messages: req.messages,
     to: user.email,
-    params: { link, host: new URL(link).host }
+    params: { link, host: linkUrl.host, origin: linkUrl.origin }
   })
   res.status(204).send()
 }))

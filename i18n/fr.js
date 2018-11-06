@@ -155,9 +155,9 @@ Une demande d'identification a été faite depuis {host}. Pour la confirmer, cop
 
 Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à {host}, n'hésitez pas à nous contacter à {contact}.
       `,
-      htmlMsg: `Une demande d'identification a été faite depuis <a href="//{host}">{host}</a>. Pour la confirmer cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.`,
+      htmlMsg: `Une demande d'identification a été faite depuis <a href="{origin}">{host}</a>. Pour la confirmer cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.`,
       htmlButton: `Connexion à {host}`,
-      htmlCaption: `Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à <a href="//{host}">{host}</a>, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
+      htmlCaption: `Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à <a href="{origin}">{host}</a>, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     },
     noCreation: {
       subject: `Échec d'authentification sur {host}`,
@@ -166,7 +166,7 @@ Une demande d'identification a été faite depuis {host}, mais elle a été reje
 
 N'hésitez pas à nous contacter à {contact}.
       `,
-      htmlMsg: `Une demande d'identification a été faite depuis <a href="//{host}">{host}</a>, mais elle a été rejetée car cette adresse email est inconnue.`,
+      htmlMsg: `Une demande d'identification a été faite depuis <a href="{origin}">{host}</a>, mais elle a été rejetée car cette adresse email est inconnue.`,
       htmlCaption: `N'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     },
     invitation: {

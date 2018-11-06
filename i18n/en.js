@@ -155,9 +155,9 @@ An identification request was made from {host}. To confirm copy the URL below in
 
 If you encounter a problem with your account or if you didn't submit this identification request to {host}, feel free to contact us at {contact}.
       `,
-      htmlMsg: `An identification request was made from <a href="//{host}">{host}</a>. To confirm click on the button below. This link is valid for 15 minutes.`,
+      htmlMsg: `An identification request was made from <a href="{origin}">{host}</a>. To confirm click on the button below. This link is valid for 15 minutes.`,
       htmlButton: `Connect to {host}`,
-      htmlCaption: `If you encounter a problem with your account or if you didn't submit this identification request to <a href="//{host}">{host}</a>, feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
+      htmlCaption: `If you encounter a problem with your account or if you didn't submit this identification request to <a href="{origin}">{host}</a>, feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
     },
     noCreation: {
       subject: 'Failure to authenticate to {host}',
@@ -166,7 +166,7 @@ An identification request was made from {host}, but it was rejected as this emai
 
 Feel free to contact us at {contact}.
       `,
-      htmlMsg: `An identification request was made from <a href="//{host}">{host}</a>, but it was rejected as this email address is unknown.`,
+      htmlMsg: `An identification request was made from <a href="{origin}">{host}</a>, but it was rejected as this email address is unknown.`,
       htmlCaption: `Feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
     },
     invitation: {

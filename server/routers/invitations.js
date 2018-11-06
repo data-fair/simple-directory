@@ -22,12 +22,13 @@ router.post('', asyncWrap(async (req, res, next) => {
   const token = jwt.sign(req.app.get('keys'), invitation, config.jwtDurations.invitationToken)
 
   const link = config.publicUrl + '/api/invitations/_accept?invit_token=' + encodeURIComponent(token)
+  const linkUrl = new URL(link)
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'invitation',
     messages: req.messages,
     to: req.body.email,
-    params: { link, host: new URL(link).host, organization: invitation.name }
+    params: { link, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin }
   })
   res.status(201).send()
 }))
