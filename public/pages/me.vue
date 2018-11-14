@@ -53,7 +53,7 @@ export default {
     nbCreatedOrgs: null
   }),
   computed: {
-    ...mapState('session', ['user']),
+    ...mapState('session', ['user', 'initialized']),
     ...mapState(['userDetails', 'env']),
     showMaxCreatedOrgs() {
       if (!this.userDetails) return false
@@ -65,12 +65,16 @@ export default {
   watch: {
     userDetails() {
       this.initPatch()
+    },
+    initialized: {
+      async handler() {
+        if (!this.initialized) return
+        if (!this.user) this.$router.push(this.localePath('login'))
+        if (this.userDetails) this.initPatch()
+        this.nbCreatedOrgs = (await this.$axios.$get(`api/organizations`, { params: { creator: this.user.id, size: 0 } })).count
+      },
+      immediate: true
     }
-  },
-  async created() {
-    if (!this.user) this.$router.push(this.localePath('login'))
-    if (this.userDetails) this.initPatch()
-    this.nbCreatedOrgs = (await this.$axios.$get(`api/organizations`, { params: { creator: this.user.id, size: 0 } })).count
   },
   methods: {
     ...mapActions(['fetchUserDetails']),

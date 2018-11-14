@@ -161,7 +161,7 @@ export default {
   },
   watch: {
     user() {
-      this.$store.dispatch('fetchUserDetails')
+      if (!this.userDetails) this.$store.dispatch('fetchUserDetails')
     }
   },
   mounted() {
