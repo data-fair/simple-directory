@@ -111,5 +111,9 @@ module.exports = {
   noUI: {
     __name: 'NO_UI',
     __format: 'json'
+  },
+  prebuilt: {
+    __name: 'PREBUILT',
+    __format: 'json'
   }
 }
