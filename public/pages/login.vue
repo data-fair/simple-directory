@@ -224,19 +224,21 @@ export default {
 </script>
 
 <style lang="less">
-  .login-logo-container {
-    position: absolute;
-    right: -20px;
-    top: -20px;
-    width: 80px;
-    height: 80px;
-    border-radius: 40px;
+  .application.page-login {
+    .login-logo-container {
+      position: absolute;
+      right: -20px;
+      top: -20px;
+      width: 80px;
+      height: 80px;
+      border-radius: 40px;
 
-    padding: 8px;
-    overflow: hidden;
+      padding: 8px;
+      overflow: hidden;
 
-    img, svg {
-      width: 100%;
+      img, svg {
+        width: 100%;
+      }
     }
   }
 </style>
