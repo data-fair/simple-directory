@@ -38,13 +38,19 @@ class FileStorage {
     return this
   }
 
+  cleanUser(user) {
+    const res = { ...user, organizations: getUserOrgas(this.organizations, user) }
+    delete res.password
+    return res
+  }
+
   async getUser(filter) {
     // Find user by strict equality of properties passed in filter
     const user = this.users.find(u => Object.keys(filter).reduce((a, f) => a && u[f] === filter[f], true))
     if (!user) return null
 
     // Set these organizations ids, names and the role of the user in them
-    return { ...user, organizations: getUserOrgas(this.organizations, user) }
+    return this.cleanUser(user)
   }
 
   async getUserByEmail(email) {
@@ -53,11 +59,18 @@ class FileStorage {
     if (!user) return null
 
     // Set these organizations ids, names and the role of the user in them
-    return { ...user, organizations: getUserOrgas(this.organizations, user) }
+    return this.cleanUser(user)
+  }
+
+  async getPassword(userId) {
+    // Case insensitive comparison
+    const user = this.users.find(u => u.id === userId)
+    if (!user) return null
+    return user && user.password
   }
 
   async findUsers(params = {}) {
-    let filteredUsers = this.users.map(user => ({ ...user, organizations: getUserOrgas(this.organizations, user) }))
+    let filteredUsers = this.users.map(user => this.cleanUser(user))
     if (params.ids) {
       filteredUsers = filteredUsers.filter(user => (params.ids).find(id => user.id === id))
     }

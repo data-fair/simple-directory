@@ -3,6 +3,8 @@ const config = require('config')
 const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const findUtils = require('../utils/find')
+const jwt = require('../utils/jwt')
+const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 
 let router = express.Router()
@@ -66,6 +68,25 @@ router.delete('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (!req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
   await req.app.get('storage').deleteUser(req.params.userId)
+  res.status(204).send()
+}))
+
+// Change password of a user using an action token sent in a mail
+router.post('/:userId/password', asyncWrap(async (req, res, next) => {
+  if (!req.body.password) return res.status(401).send()
+  const actionToken = req.query.action_token
+  if (!actionToken) return res.status(401).send()
+  let decoded
+  try {
+    decoded = await jwt.verify(req.app.get('keys'), actionToken)
+  } catch (err) {
+    return res.status(401).send(req.messages.errors.invalidToken)
+  }
+  if (decoded.id !== req.params.userId) return res.status(401).send()
+  if (decoded.action !== 'changePassword') return res.status(401).send()
+  if (!passwords.validate(req.body.password)) return res.status(400).send(req.messages.errors.malformedPassword)
+  const storedPassword = await passwords.hashPassword(req.body.password)
+  await req.app.get('storage').patchUser(req.params.userId, { password: storedPassword })
   res.status(204).send()
 }))
 

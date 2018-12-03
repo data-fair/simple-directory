@@ -12,7 +12,7 @@ module.exports = {
     private: './test/resources/test.key'
   },
   storage: {
-    type: 'file',
+    type: 'mongo',
     file: {
       users: './test/resources/users.json',
       organizations: './test/resources/organizations.json'

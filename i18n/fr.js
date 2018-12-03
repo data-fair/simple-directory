@@ -10,6 +10,7 @@ module.exports = {
     home: 'Accueil',
     logLink: `Se connecter / s'inscrire`,
     logout: 'Se déconnecter',
+    login: 'Se connecter',
     documentation: 'Documentation',
     administration: 'Administration',
     myAccount: 'Mon compte',
@@ -44,7 +45,11 @@ module.exports = {
     maxCreatedOrgs: `Nombre maximal d'organisations à créer`,
     nbCreatedOrgs: `Nombre d'organisations créées :`,
     back: 'Retour',
-    next: 'Suivant'
+    next: 'Suivant',
+    password: 'Mot de passe',
+    checkInbox: 'Vérifiez votre boite mail',
+    spamWarning: `Si vous n'avez pas reçu de mail, vérifiez qu'il n'a pas été classé automatiquement en tant que spam.`,
+    validate: 'Valider'
   },
   doc: {
     about: {
@@ -117,7 +122,20 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       emailCaption: `En savoir plus sur l'authentification <a href="https://koumoul.com/blog/passwordless">sans mot de passe</a>`,
       conditionsCaption: '',
       success: `Vous allez recevoir un email à l'adresse renseignée qui contiendra un lien. Veuillez ouvrir ce lien pour terminer votre identification.`,
-      maildevLink: 'Accédez à la boite mail de développement'
+      maildevLink: 'Accédez à la boite mail de développement',
+      newPassword: 'Nouveau mot de passe',
+      newPassword2: 'Confirmez le nouveau mot de passe',
+      changePassword: 'Mot de passe oublié ? Modifier le mot de passe.',
+      newPasswordMsg: `Saisissez 2 fois le nouveau mot de passe.`,
+      changePasswordConfirmed: `
+<p>Le mot de passe associé à votre compte a bien été modifié.</p>
+<p class="caption">Vous pouvez vous connecter avec le nouveau mot de passe.</p>
+      `,
+      changePasswordSent: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour modifier le mot de passe associé à votre compte.`,
+      passwordlessMsg1: `Pour vous connecter à notre plateforme un email suffit.`,
+      passwordlessMsg2: `Envoyer un email de connexion.`,
+      passwordlessConfirmed: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour vous connecter sur notre plateforme.`,
+      passwordlessCreate: `Si c'est la première fois que vous vous connectez, votre compte sera automatiquement créé.`
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
@@ -145,7 +163,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     invitationConflict: 'Cet utilisateur est déjà membre de cette organisation.',
     unknownRole: 'Rôle {role} inconnu.',
     serviceUnavailable: 'Service indisponible pour cause de maintenance.',
-    badCredentials: `Adresse email ou mot de passe invalide.`
+    badCredentials: `Adresse email ou mot de passe invalide.`,
+    invalidToken: `Le jeton n'est pas valide. Il est peut-être périmé.`,
+    malformedPassword: 'Le mot de passe doit faire au moins 8 caractères et contenir au moins un chiffre et une majuscule.'
   },
   mails: {
     login: {
@@ -187,6 +207,23 @@ Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
       `,
       htmlButton: `Accepter l'invitation`,
       htmlCaption: `Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
+    },
+    action: {
+      subject: `Effectuez une action sur votre compte sur {host}`,
+      text: `
+Une action demandant une confirmation par email a été déclenchée sur cette adresse. Pour valider cette action copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 15 minutes.
+Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
+
+{link}
+
+Si vous rencontrez un problème avec votre compte ou que vous trouvez ce message suspect, n'hésitez pas à nous contacter à {contact}.
+      `,
+      htmlMsg: `
+Une action demandant une confirmation par email a été déclenchée sur cette adresse. Pour valider cette action cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.
+Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
+      `,
+      htmlButton: `Valider`,
+      htmlCaption: `Si vous rencontrez un problème avec votre compte ou que vous trouvez ce message suspect, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     }
   }
 }

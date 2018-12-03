@@ -34,6 +34,9 @@
         <p v-if="nbCreatedOrgs !== null">{{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }} </p>
         <p>{{ $t('common.maxCreatedOrgs') }} : {{ userDetails.maxCreatedOrgs !== undefined && userDetails.maxCreatedOrgs !== null ? userDetails.maxCreatedOrgs : env.defaultMaxCreatedOrgs }}</p>
       </div>
+      <v-layout v-if="!env.readonly" row>
+        <p><a @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
+      </v-layout>
       <v-layout row wrap>
         <v-spacer/>
         <v-btn color="primary" @click="save">{{ $t('common.save') }}</v-btn>
@@ -89,6 +92,14 @@ export default {
         await this.$axios.$post(`api/session/keepalive`)
         eventBus.$emit('notification', this.$t('common.modificationOk'))
         this.fetchUserDetails()
+      } catch (error) {
+        eventBus.$emit('notification', { error })
+      }
+    },
+    async changePasswordAction() {
+      try {
+        await this.$axios.$post('api/auth/action', { email: this.user.email, action: 'changePassword', target: this.env.publicUrl + '/login' })
+        eventBus.$emit('notification', this.$t('pages.login.changePasswordSent', { email: this.user.email }))
       } catch (error) {
         eventBus.$emit('notification', { error })
       }

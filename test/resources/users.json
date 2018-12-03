@@ -2,7 +2,10 @@
     "id": "dmeadus0",
     "firstName": "Danna",
     "lastName": "Meadus",
-    "email": "dmeadus0@answers.com"
+    "email": "dmeadus0@answers.com",
+    "password": {
+      "clear": "testpasswd"
+    }
   },
   {
     "id": "ccherryholme1",

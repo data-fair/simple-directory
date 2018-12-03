@@ -10,6 +10,7 @@ module.exports = {
     home: 'Home',
     logLink: 'login / sign up',
     logout: 'logout',
+    login: 'login',
     documentation: 'Documentation',
     administration: 'Administration',
     myAccount: 'My account',
@@ -42,7 +43,13 @@ module.exports = {
     createdPhrase: 'Created by {name} on {date}',
     updatedAt: 'Updated on',
     maxCreatedOrgs: `Max number of created organizations`,
-    nbCreatedOrgs: `Number of organizations created :`
+    nbCreatedOrgs: `Number of organizations created :`,
+    back: 'Back',
+    next: 'Next',
+    password: 'Password',
+    checkInbox: 'Check your mail box',
+    spamWarning: `If you didn't receive an email, check if it was classified as spam in your mail box.`,
+    validate: 'Validate'
   },
   doc: {
     about: {
@@ -115,7 +122,20 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       emailCaption: `Learn more about <a href="https://medium.com/@ninjudd/passwords-are-obsolete-9ed56d483eb">passwordless</a> authentication`,
       conditionsCaption: '',
       success: `You will receive an email at the specified address. Please use the link in this email to conclude your identification.`,
-      maildevLink: 'Open the development mail box'
+      maildevLink: 'Open the development mail box',
+      newPassword: 'New password',
+      newPassword2: 'Confirm new password',
+      changePassword: 'Forgotten password ? Change the password.',
+      newPasswordMsg: `Type twice the new password.`,
+      changePasswordConfirmed: `
+<p>The password associated with your account has been modified.</p>
+<p class="caption">You can login using the new password.</p>
+      `,
+      changePasswordSent: `An email was sent to the address {email}. This email contains a link to change the password of your account.`,
+      passwordlessMsg1: `To connect to our platform an email is sufficient.`,
+      passwordlessMsg2: `Send a login email.`,
+      passwordlessConfirmed: `An email was sent to the address {email}. This email contains a link to connect to the platform.`,
+      passwordLessCreate: `Si c'est la première fois que vous vous connectez, votre compte sera automatiquement créé.`
     },
     organization: {
       addMember: 'Invite a user to join this organization',
@@ -144,7 +164,10 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     orgaUnknown: 'Unknown organization.',
     invitationConflict: 'This user is lready member of the organization.',
     unknownRole: 'Role {role} is unknown.',
-    serviceUnavailable: 'Service unavailable because of maintenance.'
+    serviceUnavailable: 'Service unavailable because of maintenance.',
+    badCredentials: `Email address or password invalid.`,
+    invalidToken: `The token is not valid. Maybe it is expired.`,
+    malformedPassword: 'The password should be at least 8 characters long and contain at least on number and one uppercase character.'
   },
   mails: {
     login: {

@@ -2,11 +2,11 @@ const express = require('express')
 const jwt = require('../utils/jwt')
 const URL = require('url').URL
 const shortid = require('shortid')
+const emailValidator = require('email-validator')
 const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const mails = require('../mails')
-const emailValidator = require('email-validator')
-
+const passwords = require('../utils/passwords')
 const config = require('config')
 
 let router = exports.router = express.Router()
@@ -87,4 +87,68 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
 
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   res.send(token)
+}))
+
+// Authenticate a user base on his email address and password
+router.post('/password', asyncWrap(async (req, res, next) => {
+  if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
+  if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
+  if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
+
+  const storage = req.app.get('storage')
+  const user = await storage.getUserByEmail(req.body.email)
+  if (!user) return res.status(400).send(req.messages.errors.badCredentials)
+  const storedPassword = await storage.getPassword(user.id)
+  const validPassword = await passwords.checkPassword(req.body.password, storedPassword)
+  if (!validPassword) return res.status(400).send(req.messages.errors.badCredentials)
+  const payload = getPayload(user)
+  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+  const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
+  res.send(link)
+}))
+
+// Send an email to confirm user identity before authorizing an action
+router.post('/action', asyncWrap(async (req, res, next) => {
+  if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
+  if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
+  if (!req.body.action) return res.status(400).send(req.messages.errors.badCredentials)
+
+  const storage = req.app.get('storage')
+  let user = await storage.getUserByEmail(req.body.email)
+  // No 404 here so we don't disclose information about existence of the user
+  if (!user && (storage.readonly || (config.onlyCreateInvited && !config.admins.includes(req.body.email)))) {
+    const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
+    const linkUrl = new URL(link)
+    await mails.send({
+      transport: req.app.get('mailTransport'),
+      key: 'noCreation',
+      messages: req.messages,
+      to: req.body.email,
+      params: { link, host: linkUrl.host, origin: linkUrl.origin }
+    })
+    return res.status(204).send()
+  }
+  if (!user) {
+    const newUser = {
+      email: req.body.email,
+      id: shortid.generate()
+    }
+    newUser.name = userName(newUser)
+    user = await storage.createUser(newUser)
+  }
+
+  const payload = getPayload(user)
+  payload.action = req.body.action
+  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+  const linkUrl = new URL(req.body.target || config.publicUrl + '/login')
+  linkUrl.searchParams.set('action_token', encodeURIComponent(token))
+
+  await mails.send({
+    transport: req.app.get('mailTransport'),
+    key: 'action',
+    messages: req.messages,
+    to: user.email,
+    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
+  })
+  res.status(204).send()
 }))
