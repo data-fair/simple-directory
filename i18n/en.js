@@ -111,7 +111,6 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     },
     login: {
       title: 'Identify yourself',
-      emailTitle: `By receiving an email`,
       emailLabel: 'Your email address',
       emailCaption: `Learn more about <a href="https://medium.com/@ninjudd/passwords-are-obsolete-9ed56d483eb">passwordless</a> authentication`,
       conditionsCaption: '',
@@ -127,7 +126,9 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       confirmDeleteMemberMsg: 'Do you really want to delete this user from the list of members of this organization ?',
       deleteMemberSuccess: 'The user {name} was excluded from the organization',
       inviteEmail: `Email address of the user`,
-      inviteSuccess: `An invitation was sent to the address {email}`
+      inviteSuccess: `An invitation was sent to the address {email}`,
+      back: 'Back',
+      next: 'Next'
     },
     invitation: {
       title: 'Invitation validated',

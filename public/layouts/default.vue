@@ -189,7 +189,6 @@ body .application.embed {
 }
 
 body .application {
-  font-family: 'Nunito', sans-serif;
 
   .logo-container {
     height: 100%;

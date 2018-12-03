@@ -2,24 +2,17 @@ const config = require('config')
 const URL = require('url').URL
 const webpack = require('webpack')
 const i18n = require('./i18n')
+const VuetifyLoaderPlugin = require('vuetify-loader/lib/plugin')
 
 module.exports = {
   srcDir: 'public/',
   build: {
     transpile: [/^vuetify/], // Necessary for "à la carte" import of vuetify components
-    babel: {
-      // Necessary for "à la carte" import of vuetify components
-      plugins: [['transform-imports', {
-        vuetify: {
-          transform: 'vuetify/es5/components/${member}',
-          preventFullImport: true
-        }
-      }]]
-    },
     publicPath: config.publicUrl + '/_nuxt/',
     extend (config, { isServer, isDev, isClient }) {
       // Ignore all locale files of moment.js, those we want are loaded in plugins/moment.js
       config.plugins.push(new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/))
+      config.plugins.push(new VuetifyLoaderPlugin())
     }
   },
   loading: { color: '#1e88e5' }, // Customize the progress bar color
@@ -54,7 +47,8 @@ module.exports = {
     maildev: config.maildev.active ? config.maildev.url : null,
     defaultMaxCreatedOrgs: config.quotas.defaultMaxCreatedOrgs,
     readonly: require('./server/storages').readonly(),
-    analytics: config.analytics
+    analytics: config.analytics,
+    onlyCreateInvited: config.onlyCreateInvited
   },
   head: {
     title: i18n.messages[config.i18n.defaultLocale].root.title,

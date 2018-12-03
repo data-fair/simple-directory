@@ -42,7 +42,9 @@ module.exports = {
     createdPhrase: 'Créé par {name} le {date}',
     updatedAt: 'Mis à jour le',
     maxCreatedOrgs: `Nombre maximal d'organisations à créer`,
-    nbCreatedOrgs: `Nombre d'organisations créées :`
+    nbCreatedOrgs: `Nombre d'organisations créées :`,
+    back: 'Retour',
+    next: 'Suivant'
   },
   doc: {
     about: {
@@ -111,7 +113,6 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     },
     login: {
       title: 'Identifiez vous',
-      emailTitle: `En recevant un email`,
       emailLabel: 'Votre adresse mail',
       emailCaption: `En savoir plus sur l'authentification <a href="https://koumoul.com/blog/passwordless">sans mot de passe</a>`,
       conditionsCaption: '',
@@ -143,7 +144,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     orgaUnknown: 'Organisation inconnue.',
     invitationConflict: 'Cet utilisateur est déjà membre de cette organisation.',
     unknownRole: 'Rôle {role} inconnu.',
-    serviceUnavailable: 'Service indisponible pour cause de maintenance.'
+    serviceUnavailable: 'Service indisponible pour cause de maintenance.',
+    badCredentials: `Adresse email ou mot de passe invalide.`
   },
   mails: {
     login: {

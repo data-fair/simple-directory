@@ -99,11 +99,9 @@
 </template>
 
 <script>
-import * as VDataTable from 'vuetify/es5/components/VDataTable'
 import { mapState } from 'vuex'
 import eventBus from '../../event-bus'
 export default {
-  components: { ...VDataTable },
   data: () => ({
     users: null,
     currentUser: null,

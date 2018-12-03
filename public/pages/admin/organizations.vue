@@ -67,11 +67,9 @@
 </template>
 
 <script>
-import * as VDataTable from 'vuetify/es5/components/VDataTable'
 import { mapState } from 'vuex'
 import eventBus from '../../event-bus'
 export default {
-  components: { ...VDataTable },
   data: () => ({
     organizations: null,
     currentOrganization: null,
