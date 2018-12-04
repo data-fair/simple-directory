@@ -32,6 +32,7 @@
     >
       <template slot="items" slot-scope="props">
         <td>{{ props.item.name }}</td>
+        <td>{{ props.item.id }}</td>
         <td>{{ props.item.description }}</td>
         <template v-if="!env.readonly">
           <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
@@ -96,13 +97,14 @@ export default {
     this.fetchOrganizations()
     this.headers = [
       { text: this.$t('common.name'), value: 'name' },
-      { text: this.$t('common.description'), value: 'description' }
+      { text: this.$t('common.id'), value: 'id', sortable: false },
+      { text: this.$t('common.description'), value: 'description', sortable: false }
     ]
     if (!this.env.readonly) {
       this.headers = this.headers.concat([
         { text: this.$t('common.createdAt'), value: 'created.date' },
         { text: this.$t('common.updatedAt'), value: 'updated.date' },
-        { text: '', value: 'actions' }
+        { text: '', value: 'actions', sortable: false }
       ])
     }
   },

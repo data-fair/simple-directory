@@ -35,7 +35,7 @@
         <p>{{ $t('common.maxCreatedOrgs') }} : {{ userDetails.maxCreatedOrgs !== undefined && userDetails.maxCreatedOrgs !== null ? userDetails.maxCreatedOrgs : env.defaultMaxCreatedOrgs }}</p>
       </div>
       <v-layout v-if="!env.readonly" row>
-        <p><a @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
+        <p><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
       </v-layout>
       <v-layout row wrap>
         <v-spacer/>

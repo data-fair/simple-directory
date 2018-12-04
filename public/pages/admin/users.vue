@@ -37,6 +37,7 @@
     >
       <template slot="items" slot-scope="props">
         <td>{{ props.item.email }}</td>
+        <td>{{ props.item.id }}</td>
         <td>{{ props.item.firstName }}</td>
         <td>{{ props.item.lastName }}</td>
         <td><span v-for="orga in props.item.organizations" :key="orga.id">
@@ -131,19 +132,20 @@ export default {
     this.fetchUsers()
     this.headers = [
       { text: this.$t('common.email'), value: 'email' },
+      { text: this.$t('common.id'), value: 'id', sortable: false },
       { text: this.$t('common.firstName'), value: 'firstName' },
       { text: this.$t('common.lastName'), value: 'lastName' },
       { text: this.$t('common.organizations'), value: 'organizations', sortable: false }
     ]
     if (this.env.defaultMaxCreatedOrgs !== -1) {
-      this.headers.push({ text: this.$t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs' })
+      this.headers.push({ text: this.$t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs', sortable: false })
     }
     if (!this.env.readonly) {
       this.headers = this.headers.concat([
         { text: this.$t('common.createdAt'), value: 'created.date' },
         { text: this.$t('common.updatedAt'), value: 'updated.date' },
         { text: this.$t('common.loggedAt'), value: 'logged' },
-        { text: '', value: 'actions' }
+        { text: '', value: 'actions', sortable: false }
       ])
     }
   },

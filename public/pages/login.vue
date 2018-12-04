@@ -53,7 +53,7 @@
 
               <v-layout v-if="!env.readonly" row>
                 <v-spacer/>
-                <p><a @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
+                <p><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
               </v-layout>
             </v-card-text>
 
@@ -63,7 +63,7 @@
               </v-btn>
               <v-spacer/>
               <v-btn :disabled="step === 1 && !email" color="primary" depressed @click="passwordAuth">
-                Valider
+                {{ $t('common.validate') }}
               </v-btn>
             </v-card-actions>
           </v-window-item>

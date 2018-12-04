@@ -21,6 +21,7 @@ module.exports = {
     createOrganization: 'Créer une organisation',
     dashboard: 'Tableau de bord',
     description: 'Description',
+    id: 'Identifiant',
     name: 'Nom',
     save: 'Enregistrer',
     members: 'Membres',
@@ -125,7 +126,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       maildevLink: 'Accédez à la boite mail de développement',
       newPassword: 'Nouveau mot de passe',
       newPassword2: 'Confirmez le nouveau mot de passe',
-      changePassword: 'Mot de passe oublié ? Modifier le mot de passe.',
+      changePassword: 'Renouveler le mot de passe.',
+      changePasswordTooltip: `En cas d'oubli de votre mot de passe ou de besoin de modification de celui-ci, renouvelez votre mot de passe.`,
       newPasswordMsg: `Saisissez 2 fois le nouveau mot de passe.`,
       changePasswordConfirmed: `
 <p>Le mot de passe associé à votre compte a bien été modifié.</p>
@@ -212,7 +214,6 @@ Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
       subject: `Effectuez une action sur votre compte sur {host}`,
       text: `
 Une action demandant une confirmation par email a été déclenchée sur cette adresse. Pour valider cette action copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 15 minutes.
-Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
 
 {link}
 
@@ -220,7 +221,6 @@ Si vous rencontrez un problème avec votre compte ou que vous trouvez ce message
       `,
       htmlMsg: `
 Une action demandant une confirmation par email a été déclenchée sur cette adresse. Pour valider cette action cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.
-Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
       `,
       htmlButton: `Valider`,
       htmlCaption: `Si vous rencontrez un problème avec votre compte ou que vous trouvez ce message suspect, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`

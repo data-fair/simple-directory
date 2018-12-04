@@ -21,6 +21,7 @@ module.exports = {
     createOrganization: 'Create organization',
     dashboard: 'Dashboard',
     description: 'Description',
+    id: 'Identifier',
     name: 'Name',
     save: 'Save',
     members: 'Members',
@@ -125,7 +126,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       maildevLink: 'Open the development mail box',
       newPassword: 'New password',
       newPassword2: 'Confirm new password',
-      changePassword: 'Forgotten password ? Change the password.',
+      changePassword: 'Renew the password.',
+      changePasswordTooltip: `In case you forgot your password or if you need to change it, renew your password.`,
       newPasswordMsg: `Type twice the new password.`,
       changePasswordConfirmed: `
 <p>The password associated with your account has been modified.</p>
@@ -209,6 +211,21 @@ If you encounter a problem with your account or if you find this invitation susp
       `,
       htmlButton: 'Accept the invitation',
       htmlCaption: `If you encounter a problem with your account or if you find this invitation suspicious feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
+    },
+    action: {
+      subject: `Accomplish an action on your account {host}`,
+      text: `
+An action requiring confirmation by email was triggered on this address. To confirm this action you can copy the URL below in your browers. Ths URL is valid for 15 minutes.
+
+{link}
+
+If you encounter a problem with your account or if you find this message suspicious feel free to contact us at {contact}.
+      `,
+      htmlMsg: `
+An action requiring confirmation by email was triggered on this address. To confirm this action click on the button below. The link is valid for 15 minutes.
+      `,
+      htmlButton: `Confirm`,
+      htmlCaption: `If you encounter a problem with your account or if you find this message suspicious feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
     }
   }
 }
