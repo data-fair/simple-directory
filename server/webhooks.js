@@ -8,7 +8,7 @@ exports.sendUsersWebhooks = async (users) => {
     for (let webhook of config.webhooks.identities) {
       debug('Send user name webhook to ' + webhook.base, name)
       try {
-        await axios.post(`${webhook.base}/user/${user.id}`, { name })
+        await axios.post(`${webhook.base}/user/${user.id}`, { name }, { params: { key: webhook.key } })
       } catch (err) {
         console.error('Failure in webhook ' + webhook.base, err)
       }
@@ -21,7 +21,7 @@ exports.sendOrganizationsWebhooks = async (organizations) => {
     for (let webhook of config.webhooks.identities) {
       debug('Send organization name webhook to ' + webhook.base, organization.name)
       try {
-        await axios.post(`${webhook.base}/organization/${organization.id}`, { name: organization.name })
+        await axios.post(`${webhook.base}/organization/${organization.id}`, { name: organization.name }, { params: { key: webhook.key } })
       } catch (err) {
         console.error('Failure in webhook ' + webhook.base, err)
       }
