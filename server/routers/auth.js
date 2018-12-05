@@ -7,6 +7,7 @@ const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const mails = require('../mails')
 const passwords = require('../utils/passwords')
+const webhooks = require('../webhooks')
 const config = require('config')
 
 let router = exports.router = express.Router()
@@ -49,6 +50,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     }
     newUser.name = userName(newUser)
     user = await storage.createUser(newUser)
+    webhooks.sendUsersWebhooks([user])
   }
 
   const payload = getPayload(user)
@@ -89,7 +91,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   res.send(token)
 }))
 
-// Authenticate a user base on his email address and password
+// Authenticate a user based on his email address and password
 router.post('/password', asyncWrap(async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
@@ -135,6 +137,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
     }
     newUser.name = userName(newUser)
     user = await storage.createUser(newUser)
+    webhooks.sendUsersWebhooks([user])
   }
 
   const payload = getPayload(user)
