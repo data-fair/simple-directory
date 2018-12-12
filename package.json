@@ -46,8 +46,8 @@
     "semver-extract": "^1.1.1"
   },
   "dependencies": {
-    "@koumoul/sd-express": "^0.11.1",
-    "@koumoul/sd-vue": "^0.10.2",
+    "@koumoul/sd-express": "^0.12.0",
+    "@koumoul/sd-vue": "^0.11.0",
     "@koumoul/vue-multianalytics": "^1.10.1",
     "@nuxtjs/axios": "^5.3.3",
     "@nuxtjs/markdownit": "^1.2.2",
@@ -57,6 +57,7 @@
     "body-parser": "^1.18.3",
     "config": "^1.31.0",
     "cookie-parser": "^1.4.3",
+    "cookie-universal-nuxt": "^2.0.11",
     "cors": "^2.8.4",
     "debug": "^3.2.6",
     "email-validator": "^2.0.4",
@@ -78,9 +79,9 @@
     "nuxt": "^2.2.0",
     "nuxt-i18n": "^5.4.4",
     "shortid": "^2.2.13",
+    "style-loader": "^0.23.1",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.2",
-    "style-loader": "^0.23.1",
     "vue-moment": "^4.0.0",
     "vuetify": "^1.3.8",
     "vuetify-loader": "^1.0.7"

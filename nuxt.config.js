@@ -27,7 +27,7 @@ module.exports = {
   router: {
     base: new URL(config.publicUrl + '/').pathname
   },
-  modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', ['nuxt-i18n', {
+  modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', 'cookie-universal-nuxt', ['nuxt-i18n', {
     seo: false,
     locales: i18n.locales,
     defaultLocale: config.i18n.defaultLocale,

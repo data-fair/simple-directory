@@ -1,13 +1,13 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import { sessionStore } from '@koumoul/sd-vue'
+import { sessionStoreBuilder } from '@koumoul/sd-vue'
 import eventBus from '../event-bus.js'
 
 Vue.use(Vuex)
 
 export default () => {
   return new Vuex.Store({
-    modules: { session: sessionStore },
+    modules: { session: sessionStoreBuilder() },
     state: {
       userDetails: null,
       env: {}
@@ -31,7 +31,7 @@ export default () => {
       },
       nuxtServerInit({ commit, dispatch }, { req, env, app }) {
         commit('setAny', { env: { ...env } })
-        dispatch('session/init', { user: req.user, baseUrl: env.publicUrl + '/api/session' })
+        dispatch('session/init', { cookies: this.$cookies, baseUrl: env.publicUrl + '/api/session' })
       }
     }
   })
