@@ -13,7 +13,8 @@ const jwt = require('./utils/jwt')
 const session = require('@koumoul/sd-express')({
   directoryUrl: config.publicUrl,
   publicUrl: config.publicUrl,
-  privateDirectoryUrl: 'http://localhost:' + config.port
+  privateDirectoryUrl: 'http://localhost:' + config.port,
+  cookieDomain: config.sessionDomain
 })
 const i18n = require('../i18n')
 

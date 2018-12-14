@@ -2,6 +2,7 @@ module.exports = {
   port: 'PORT',
   publicUrl: 'PUBLIC_URL',
   kid: 'JWT_KID',
+  sessionDomain: 'SESSION_DOMAIN',
   jwtDurations: {
     initialToken: 'JWT_DURATION_INITIAL',
     exchangedToken: 'JWT_DURATION_EXCHANGED',

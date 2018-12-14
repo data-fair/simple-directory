@@ -8,6 +8,7 @@ module.exports = {
     public: './security/simple-directory.key.pub',
     private: './security/simple-directory.key'
   },
+  sessionDomain: null,
   jwtDurations: {
     initialToken: '15m',
     exchangedToken: '30d',
