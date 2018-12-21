@@ -43,5 +43,12 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
   if (user.organizations && user.organizations.find(o => o.id === invit.id)) return res.status(400).send(req.messages.errors.invitationConflict)
   await storage.addMember(orga, user, invit.role)
-  res.redirect(`${config.publicUrl}/invitation?email=` + encodeURIComponent(invit.email))
+  let redirectUrl = `${config.publicUrl}/invitation?email=`
+  if (config.invitationRedirect) {
+    redirectUrl = config.invitationRedirect
+  }
+  if (redirectUrl.endsWith('email=')) {
+    redirectUrl += encodeURIComponent(invit.email)
+  }
+  res.redirect(redirectUrl)
 }))

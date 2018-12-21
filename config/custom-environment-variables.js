@@ -102,6 +102,7 @@ module.exports = {
     __format: 'json'
   },
   defaultLoginRedirect: 'DEFAULT_LOGIN_REDIRECT',
+  invitationRedirect: 'INVITATION_REDIRECT',
   secretKeys: {
     sendMails: 'SECRET_SENDMAILS'
   },

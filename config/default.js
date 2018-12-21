@@ -91,6 +91,9 @@ module.exports = {
   onlyCreateInvited: false,
   // Default redirection after login. If not specified user will go to his profile page.
   defaultLoginRedirect: null,
+  // Redirect after successful invitation to an organization.
+  // If not specified user will go to a dedicated page on simple-directory.
+  invitationRedirect: null,
   // secrets that can be used to configure global webhooks for example to send emails to users
   secretKeys: {
     sendMails: null
