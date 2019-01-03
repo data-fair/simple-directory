@@ -22,7 +22,6 @@ exports.hashPassword = async (password) => {
 
 // Use the same salt and params as used to derive the original key
 exports.checkPassword = async (password, storedPassword) => {
-  console.log(storedPassword)
   if (!password || !storedPassword) return false
   // minimalist storage engines can store password in clear text
   if (storedPassword.clear) {

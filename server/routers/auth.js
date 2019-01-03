@@ -3,6 +3,7 @@ const jwt = require('../utils/jwt')
 const URL = require('url').URL
 const shortid = require('shortid')
 const emailValidator = require('email-validator')
+const bodyParser = require('body-parser')
 const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const mails = require('../mails')
@@ -11,6 +12,10 @@ const webhooks = require('../webhooks')
 const config = require('config')
 
 let router = exports.router = express.Router()
+
+// these routes accept url encoded form data so that they can be used from basic
+// html forms
+router.use(bodyParser.urlencoded({ limit: '100kb' }))
 
 function getPayload(user) {
   return {
