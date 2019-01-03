@@ -111,7 +111,8 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   const payload = getPayload(user)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
-  res.send(link)
+  if (req.is('application/x-www-form-urlencoded')) res.redirect(link)
+  else res.send(link)
 }))
 
 // Send an email to confirm user identity before authorizing an action
