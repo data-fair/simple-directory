@@ -102,7 +102,8 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
         listEntitiesMode: `Permet de restreindre de manière globale l'accès aux listes d'utilisateurs et d'organisations.<br>
 Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         defaultLoginRedirect: `Redirection par défaut après login. Si non spécifié l'utilisateur sera redirigé vers son profil.`,
-        onlyCreateInvited: `Si vrai les utilisateurs ne seront pas créés au premier email envoyé. Ils doivent être invités dans une organisation.`
+        onlyCreateInvited: `Si vrai les utilisateurs ne seront pas créés au premier email envoyé. Ils doivent être invités dans une organisation.`,
+        tosUrl: `<b>IMPORTANT.</b> Une URL vers vos conditions générales d'utilisation. Si ce paramètre n'est pas défini et ne pointe pas vers une page Web correcte vous risquez de ne pas respecter vos obligations vis à vis de vos utilisateurs.`
       }
     },
     use: {
@@ -121,7 +122,6 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       title: 'Identifiez vous',
       emailLabel: 'Votre adresse mail',
       emailCaption: `En savoir plus sur l'authentification <a href="https://koumoul.com/blog/passwordless">sans mot de passe</a>`,
-      conditionsCaption: '',
       success: `Vous allez recevoir un email à l'adresse renseignée qui contiendra un lien. Veuillez ouvrir ce lien pour terminer votre identification.`,
       maildevLink: 'Accédez à la boite mail de développement',
       newPassword: 'Nouveau mot de passe',
@@ -137,7 +137,12 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       passwordlessMsg1: `Pour vous connecter à notre plateforme un email suffit.`,
       passwordlessMsg2: `Envoyer un email de connexion.`,
       passwordlessConfirmed: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour vous connecter sur notre plateforme.`,
-      passwordlessCreate: `Si c'est la première fois que vous vous connectez, votre compte sera automatiquement créé.`
+      createUserMsg1: `Si vous ne vous êtes pas encore connecté à notre plateforme veuillez créer un compte.`,
+      createUserMsg2: `Créer un compte.`,
+      tosMsg: `Avant de créer votre compte veuillez prendre connaissance de <a href="{tosUrl}">nos conditions générales d'utilisation</a>.`,
+      tosConfirm: `Je confirme avoir lu les conditions générales d'utilisation pour ce site.`,
+      createUserConfirm: 'Créer le compte',
+      createUserConfirmed: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour valider la création du compte.`
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
@@ -170,8 +175,21 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     malformedPassword: 'Le mot de passe doit faire au moins 8 caractères et contenir au moins un chiffre et une majuscule.'
   },
   mails: {
-    login: {
+    creation: {
       subject: 'Bienvenue sur {host}',
+      text: `
+Une demande de création de compte a été faite depuis {host} pour cette adresse email. Pour activer le compte vous devez copier l'URL ci-dessous dans un navigateur. Cette URL est valide 15 minutes.
+
+{link}
+
+Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à créer un compte sur {host}, n'hésitez pas à nous contacter à {contact}.
+      `,
+      htmlMsg: `Une demande de création de compte a été faite depuis <a href="{origin}">{host}</a> pour cette adresse email. Pour la confirmer cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.`,
+      htmlButton: `Valider la création de compte`,
+      htmlCaption: `Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à <a href="{origin}">{host}</a>, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
+    },
+    login: {
+      subject: 'Identification sur {host}',
       text: `
 Une demande d'identification a été faite depuis {host}. Pour la confirmer, copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 15 minutes.
 
@@ -191,6 +209,16 @@ Une demande d'identification a été faite depuis {host}, mais elle a été reje
 N'hésitez pas à nous contacter à {contact}.
       `,
       htmlMsg: `Une demande d'identification a été faite depuis <a href="{origin}">{host}</a>, mais elle a été rejetée car cette adresse email est inconnue.`,
+      htmlCaption: `N'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
+    },
+    conflict: {
+      subject: `Échec de création de compte sur {host}`,
+      text: `
+Une demande de création de compte a été faite depuis {host}, mais elle a été rejetée car cette adresse email est déjà associée à un compte.
+
+N'hésitez pas à nous contacter à {contact}.
+      `,
+      htmlMsg: `Une demande de création de compte a été faite depuis <a href="{origin}">{host}</a>, mais elle a été rejetée car cette adresse email est déjà associée à un compte.`,
       htmlCaption: `N'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     },
     invitation: {

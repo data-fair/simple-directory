@@ -81,7 +81,7 @@ class MongodbStorage {
     const date = new Date()
     clonedUser.created = { id: byUser.id, name: byUser.name, date }
     clonedUser.updated = { id: byUser.id, name: byUser.name, date }
-    await this.db.collection('users').insert(clonedUser)
+    await this.db.collection('users').findOneAndReplace({ _id: user.id }, clonedUser, { upsert: true })
     return user
   }
 
@@ -101,6 +101,10 @@ class MongodbStorage {
 
   async updateLogged(id) {
     this.db.collection('users').updateOne({ _id: id }, { $set: { logged: new Date() } })
+  }
+
+  async confirmEmail(id) {
+    this.db.collection('users').updateOne({ _id: id }, { $set: { emailConfirmed: true } })
   }
 
   async deleteUser(userId) {

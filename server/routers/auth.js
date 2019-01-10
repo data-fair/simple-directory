@@ -1,31 +1,19 @@
+const config = require('config')
 const express = require('express')
-const jwt = require('../utils/jwt')
 const URL = require('url').URL
-const shortid = require('shortid')
 const emailValidator = require('email-validator')
 const bodyParser = require('body-parser')
+const jwt = require('../utils/jwt')
 const asyncWrap = require('../utils/async-wrap')
-const userName = require('../utils/user-name')
 const mails = require('../mails')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
-const config = require('config')
 
 let router = exports.router = express.Router()
 
 // these routes accept url encoded form data so that they can be used from basic
 // html forms
 router.use(bodyParser.urlencoded({ limit: '100kb' }))
-
-function getPayload(user) {
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    organizations: user.organizations,
-    isAdmin: config.admins.includes(user.email)
-  }
-}
 
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
@@ -36,7 +24,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   let user = await storage.getUserByEmail(req.body.email)
   // No 404 here so we don't disclose information about existence of the user
-  if (!user && (storage.readonly || (config.onlyCreateInvited && !config.admins.includes(req.body.email)))) {
+  if (!user || user.emailConfirmed === false) {
     const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
     const linkUrl = new URL(link)
     await mails.send({
@@ -48,17 +36,8 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     })
     return res.status(204).send()
   }
-  if (!user) {
-    const newUser = {
-      email: req.body.email,
-      id: shortid.generate()
-    }
-    newUser.name = userName(newUser)
-    user = await storage.createUser(newUser)
-    webhooks.sendUsersWebhooks([user])
-  }
 
-  const payload = getPayload(user)
+  const payload = jwt.getPayload(user)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
   const linkUrl = new URL(link)
@@ -89,8 +68,14 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   const user = await storage.getUser({ id: decoded.id })
   if (!user) return res.status(401).send('User does not exist anymore')
-  const payload = getPayload(user)
-  if (!storage.readonly) await storage.updateLogged(decoded.id)
+  const payload = jwt.getPayload(user)
+  if (!storage.readonly) {
+    await storage.updateLogged(decoded.id)
+    if (user.emailConfirmed === false) {
+      await storage.confirmEmail(decoded.id)
+      webhooks.sendUsersWebhooks([user])
+    }
+  }
 
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   res.send(token)
@@ -104,11 +89,12 @@ router.post('/password', asyncWrap(async (req, res, next) => {
 
   const storage = req.app.get('storage')
   const user = await storage.getUserByEmail(req.body.email)
-  if (!user) return res.status(400).send(req.messages.errors.badCredentials)
+  if (!user || user.emailConfirmed === false) return res.status(400).send(req.messages.errors.badCredentials)
   const storedPassword = await storage.getPassword(user.id)
   const validPassword = await passwords.checkPassword(req.body.password, storedPassword)
   if (!validPassword) return res.status(400).send(req.messages.errors.badCredentials)
-  const payload = getPayload(user)
+  const payload = jwt.getPayload(user)
+  if (!storage.readonly) await storage.updateLogged(user.id)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
   if (req.is('application/x-www-form-urlencoded')) res.redirect(link)
@@ -124,7 +110,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   let user = await storage.getUserByEmail(req.body.email)
   // No 404 here so we don't disclose information about existence of the user
-  if (!user && (storage.readonly || (config.onlyCreateInvited && !config.admins.includes(req.body.email)))) {
+  if (!user) {
     const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
     const linkUrl = new URL(link)
     await mails.send({
@@ -136,17 +122,8 @@ router.post('/action', asyncWrap(async (req, res, next) => {
     })
     return res.status(204).send()
   }
-  if (!user) {
-    const newUser = {
-      email: req.body.email,
-      id: shortid.generate()
-    }
-    newUser.name = userName(newUser)
-    user = await storage.createUser(newUser)
-    webhooks.sendUsersWebhooks([user])
-  }
 
-  const payload = getPayload(user)
+  const payload = jwt.getPayload(user)
   payload.action = req.body.action
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(req.body.target || config.publicUrl + '/login')

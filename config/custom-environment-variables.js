@@ -117,5 +117,6 @@ module.exports = {
   prebuilt: {
     __name: 'PREBUILT',
     __format: 'json'
-  }
+  },
+  tosUrl: 'TOS_URL'
 }

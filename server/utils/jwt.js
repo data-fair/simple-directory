@@ -49,3 +49,13 @@ exports.sign = (keys, payload, expiresIn) => jwt.sign(payload, keys.private, {
 })
 
 exports.verify = async (keys, token) => asyncVerify(token, keys.public)
+
+exports.getPayload = (user) => {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    organizations: user.organizations,
+    isAdmin: config.admins.includes(user.email)
+  }
+}

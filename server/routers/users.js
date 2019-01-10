@@ -1,11 +1,14 @@
 const express = require('express')
 const config = require('config')
+const shortid = require('shortid')
+const emailValidator = require('email-validator')
 const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const findUtils = require('../utils/find')
 const jwt = require('../utils/jwt')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
+const mails = require('../mails')
 
 let router = express.Router()
 
@@ -30,6 +33,71 @@ router.get('', asyncWrap(async (req, res, next) => {
   }
   const users = await req.app.get('storage').findUsers(params)
   res.json(users)
+}))
+
+const createKeys = ['firstName', 'lastName', 'email', 'password']
+router.post('', asyncWrap(async (req, res, next) => {
+  if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
+  if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
+  const invalidKey = Object.keys(req.body).find(key => !createKeys.concat(adminKeys).includes(key))
+  if (invalidKey) return res.status(400).send(`Attribute ${invalidKey} is not accepted`)
+
+  const storage = req.app.get('storage')
+
+  // email is already taken, send a conflict email
+  const user = await req.app.get('storage').getUser({ email: req.body.email })
+  if (user && user.emailConfirmed !== false) {
+    const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
+    const linkUrl = new URL(link)
+    await mails.send({
+      transport: req.app.get('mailTransport'),
+      key: 'conflict',
+      messages: req.messages,
+      to: req.body.email,
+      params: { host: linkUrl.host, origin: linkUrl.origin }
+    })
+    return res.status(204).send()
+  }
+
+  // Re-create a user that was never validated.. first clean temporary user
+  if (user && user.emailConfirmed === false) {
+    await storage.deleteUser(user.id)
+  }
+
+  // create user
+  const newUser = {
+    email: req.body.email,
+    id: shortid.generate(),
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    emailConfirmed: false
+  }
+  newUser.name = userName(newUser)
+
+  // password is optional as we support passwordless auth
+  if (![undefined, null].includes(req.body.password)) {
+    if (!passwords.validate(req.body.password)) {
+      return res.status(400).send(req.messages.errors.malformedPassword)
+    }
+    newUser.password = await passwords.hashPassword(req.body.password)
+  }
+
+  await storage.createUser(newUser)
+
+  // prepare same link and payload as for a passwordless authentication
+  // the user will be validated and authenticated at the same time by the exchange route
+  const payload = jwt.getPayload(newUser)
+  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+  const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
+  const linkUrl = new URL(link)
+  await mails.send({
+    transport: req.app.get('mailTransport'),
+    key: 'creation',
+    messages: req.messages,
+    to: req.body.email,
+    params: { link, host: linkUrl.host, origin: linkUrl.origin }
+  })
+  return res.status(204).send()
 }))
 
 router.get('/:userId', asyncWrap(async (req, res, next) => {

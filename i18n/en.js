@@ -102,7 +102,8 @@ The type "mongo" depends on accessing a MongoDB instance, it is the approriate c
         listEntitiesMode: `Used to restrict in a global manner access to the lists of users and organizations.<br>
 Can be 'anonymous', 'authenticated' or 'admin'.`,
         defaultLoginRedirect: 'Default redirection after login. If not specified user will go to his profile page.',
-        onlyCreateInvited: 'If true users can not be created at first email sent. They must be invited in an organization.'
+        onlyCreateInvited: 'If true users can not be created at first email sent. They must be invited in an organization.',
+        tosUrl: `<b>IMPORTANT.</b> The URL toward you terms of services. If this parameter is empty or does not link toward a proper Web page you risk not satisfying your obligations toward your users.`
       }
     },
     use: {
@@ -121,7 +122,6 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       title: 'Identify yourself',
       emailLabel: 'Your email address',
       emailCaption: `Learn more about <a href="https://medium.com/@ninjudd/passwords-are-obsolete-9ed56d483eb">passwordless</a> authentication`,
-      conditionsCaption: '',
       success: `You will receive an email at the specified address. Please use the link in this email to conclude your identification.`,
       maildevLink: 'Open the development mail box',
       newPassword: 'New password',
@@ -137,7 +137,12 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       passwordlessMsg1: `To connect to our platform an email is sufficient.`,
       passwordlessMsg2: `Send a login email.`,
       passwordlessConfirmed: `An email was sent to the address {email}. This email contains a link to connect to the platform.`,
-      passwordLessCreate: `Si c'est la première fois que vous vous connectez, votre compte sera automatiquement créé.`
+      createUserMsg1: `If you didn't already connect to our platform you must create an account.`,
+      createUserMsg2: `Create an account.`,
+      tosMsg: `Before creating an account please read <a href="{tosUrl}">our terms of services</a>.`,
+      tosConfirm: `I confirm that I have read the terms of services for this site.`,
+      createUserConfirm: 'Create the account',
+      createUserConfirmed: `An email was sent to the address {email}. This email contains a link to validate the creation of your account.`
     },
     organization: {
       addMember: 'Invite a user to join this organization',
@@ -172,8 +177,21 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     malformedPassword: 'The password should be at least 8 characters long and contain at least on number and one uppercase character.'
   },
   mails: {
-    login: {
+    creation: {
       subject: 'Welcome to {host}',
+      text: `
+An account creation request was made from {host}. To activate the account you must copy the URL below in the address bar of your Web browser. This URL is valid for 15 minutes.
+
+{link}
+
+If you encounter a problem with your account or if you didn't submit this identification request to {host}, feel free to contact us at {contact}.
+      `,
+      htmlMsg: `An account creation request was made from <a href="{origin}">{host}</a>. To activate the account you must click on the button below. This link is valid for 15 minutes.`,
+      htmlButton: `Validate the account creation`,
+      htmlCaption: `If you encounter a problem with your account or if you didn't submit this identification request to <a href="{origin}">{host}</a>, feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
+    },
+    login: {
+      subject: 'Identification on {host}',
       text: `
 An identification request was made from {host}. To confirm copy the URL below in the address bar of your Web browser. This URL is valid for 15 minutes.
 
@@ -193,6 +211,16 @@ An identification request was made from {host}, but it was rejected as this emai
 Feel free to contact us at {contact}.
       `,
       htmlMsg: `An identification request was made from <a href="{origin}">{host}</a>, but it was rejected as this email address is unknown.`,
+      htmlCaption: `Feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
+    },
+    conflict: {
+      subject: 'Failure to create an account on {host}',
+      text: `
+An account creation request was made from {host}, but it was rejected as this email address is already associated to an account.
+
+Feel free to contact us at {contact}.
+      `,
+      htmlMsg: `An account creation request was made from <a href="{origin}">{host}</a>, but it was rejected as this email address is already associated to an account.`,
       htmlCaption: `Feel free to contact us at <a href="mailto:{contact}">{contact}</a>.`
     },
     invitation: {

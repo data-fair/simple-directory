@@ -48,7 +48,8 @@ module.exports = {
     defaultMaxCreatedOrgs: config.quotas.defaultMaxCreatedOrgs,
     readonly: require('./server/storages').readonly(),
     analytics: config.analytics,
-    onlyCreateInvited: config.onlyCreateInvited
+    onlyCreateInvited: config.onlyCreateInvited,
+    tosUrl: config.tosUrl
   },
   head: {
     title: i18n.messages[config.i18n.defaultLocale].root.title,

@@ -98,5 +98,7 @@ module.exports = {
   secretKeys: {
     sendMails: null
   },
-  prebuilt: false
+  prebuilt: false,
+  // A link to the terms of services for the site
+  tosUrl: null
 }

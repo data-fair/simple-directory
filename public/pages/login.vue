@@ -1,7 +1,7 @@
 <template>
   <v-layout row justify-space-around>
     <v-flex xs12 sm8 md6 lg4 xl3>
-      <v-card raised class="pa-3">
+      <v-card raised class="pa-2">
         <v-card-title primary-title>
           <h3 class="headline mb-0">{{ stepsTitles[step] || email }}</h3>
           <div :class="`v-card v-card--raised theme--${env.theme.dark ? 'dark' : 'light'} login-logo-container`">
@@ -24,8 +24,8 @@
               <v-layout row>
                 <p>{{ $t('pages.login.passwordlessMsg1') }} <a @click="passwordlessAuth">{{ $t('pages.login.passwordlessMsg2') }}</a></p>
               </v-layout>
-              <v-layout v-if="$t('pages.login.conditionsCaption')" row wrap class="pt-4">
-                <p class="caption mb-1" v-html="$t('pages.login.conditionsCaption')"/>
+              <v-layout v-if="!env.onlyCreateInvited" row>
+                <p>{{ $t('pages.login.createUserMsg1') }} <a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a></p>
               </v-layout>
             </v-card-text>
 
@@ -33,6 +33,70 @@
               <v-spacer/>
               <v-btn :disabled="!email" color="primary" depressed @click="step='password'">
                 {{ $t('common.next') }}
+              </v-btn>
+            </v-card-actions>
+          </v-window-item>
+
+          <v-window-item value="tos">
+            <v-card-text>
+              <v-layout row>
+                <p v-html="$t('pages.login.tosMsg', {tosUrl: env.tosUrl})"/>
+              </v-layout>
+              <v-layout row>
+                <v-checkbox
+                  :label="$t('pages.login.tosConfirm')"
+                  v-model="tosAccepted"
+                />
+              </v-layout>
+            </v-card-text>
+
+            <v-card-actions>
+              <v-btn v-if="step !== 1" flat @click="step='email'">
+                {{ $t('common.back') }}
+              </v-btn>
+              <v-spacer/>
+              <v-btn :disabled="!tosAccepted" color="primary" depressed @click="step='createUser'">
+                {{ $t('common.next') }}
+              </v-btn>
+            </v-card-actions>
+          </v-window-item>
+
+          <v-window-item value="createUser">
+            <v-card-text>
+
+              <v-text-field
+                :autofocus="true"
+                :label="$t('common.firstName')"
+                v-model="newUser.firstName"
+                name="firstname"
+                @keyup.enter="createUser"
+              />
+
+              <v-text-field
+                :label="$t('common.lastName')"
+                v-model="newUser.lastName"
+                name="lastname"
+                @keyup.enter="createUser"
+              />
+
+              <v-text-field
+                id="password"
+                :label="$t('common.password')"
+                v-model="newUser.password"
+                :error-messages="createUserErrors"
+                name="password"
+                type="password"
+                @keyup.enter="createUser"
+              />
+            </v-card-text>
+
+            <v-card-actions>
+              <v-btn v-if="step !== 1" flat @click="step='email'">
+                {{ $t('common.back') }}
+              </v-btn>
+              <v-spacer/>
+              <v-btn depressed color="primary" @click="createUser">
+                {{ $t('pages.login.createUserConfirm') }}
               </v-btn>
             </v-card-actions>
           </v-window-item>
@@ -68,10 +132,16 @@
             </v-card-actions>
           </v-window-item>
 
+          <v-window-item value="createUserConfirmed">
+            <v-card-text>
+              <p>{{ $t('pages.login.createUserConfirmed', {email}) }}</p>
+              <p class="caption">{{ $t('common.spamWarning', {email}) }}</p>
+            </v-card-text>
+          </v-window-item>
+
           <v-window-item value="emailConfirmed">
             <v-card-text>
               <p>{{ $t('pages.login.passwordlessConfirmed', {email}) }}</p>
-              <p v-if="!env.onlyCreateInvited">{{ $t('pages.login.passwordlessCreate', {email}) }}</p>
               <p class="caption">{{ $t('common.spamWarning', {email}) }}</p>
             </v-card-text>
           </v-window-item>
@@ -159,7 +229,14 @@ export default {
       actionToken: this.$route.query.action_token,
       newPassword: null,
       newPassword2: null,
-      newPasswordErrors: []
+      newPasswordErrors: [],
+      tosAccepted: false,
+      newUser: {
+        firstName: null,
+        lastName: null,
+        password: null
+      },
+      createUserErrors: []
     }
   },
   computed: {
@@ -182,6 +259,23 @@ export default {
     }
   },
   methods: {
+    createUserStep() {
+      if (!this.email) {
+        this.emailErrors = ['']
+      } else {
+        this.step = this.env.tosUrl ? 'tos' : 'createUser'
+      }
+    },
+    async createUser() {
+      try {
+        await this.$axios.$post('api/users', { email: this.email, ...this.newUser }, { params: { redirect: this.redirectUrl } })
+        this.createUserErrors = []
+        this.step = 'createUserConfirmed'
+      } catch (error) {
+        if (error.response.status >= 500) eventBus.$emit('notification', { error })
+        else this.createUserErrors = [error.response.data || error.message]
+      }
+    },
     async passwordlessAuth() {
       try {
         await this.$axios.$post('api/auth/passwordless', { email: this.email }, { params: { redirect: this.redirectUrl } })
