@@ -26,7 +26,9 @@ if (config.sessionDomain) {
   app.use(cors({
     credentials: true,
     origin(origin, callback) {
-      if (!origin || origin === config.publicUrl || origin.endsWith('.' + config.sessionDomain)) {
+      if (!origin) return callback(null, true)
+      const originDomain = new URL(origin).host
+      if (originDomain === config.sessionDomain || originDomain.endsWith('.' + config.sessionDomain)) {
         callback(null, true)
       } else {
         callback(new Error(`No CORS allowed from origin ${origin}`))
