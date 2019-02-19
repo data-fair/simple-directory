@@ -139,7 +139,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       passwordlessConfirmed: `An email was sent to the address {email}. This email contains a link to connect to the platform.`,
       createUserMsg1: `If you didn't already connect to our platform you must create an account.`,
       createUserMsg2: `Create an account.`,
-      tosMsg: `Before creating an account please read <a href="{tosUrl}">our terms of services</a>.`,
+      tosMsg: `Before creating an account please read <a href="{tosUrl}" target="_blank">our terms of services</a>.`,
       tosConfirm: `I confirm that I have read the terms of services for this site.`,
       createUserConfirm: 'Create the account',
       createUserConfirmed: `An email was sent to the address {email}. This email contains a link to validate the creation of your account.`

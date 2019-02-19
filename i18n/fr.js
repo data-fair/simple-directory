@@ -139,7 +139,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       passwordlessConfirmed: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour vous connecter sur notre plateforme.`,
       createUserMsg1: `Si vous ne vous êtes pas encore connecté à notre plateforme veuillez créer un compte.`,
       createUserMsg2: `Créer un compte.`,
-      tosMsg: `Avant de créer votre compte veuillez prendre connaissance de <a href="{tosUrl}">nos conditions générales d'utilisation</a>.`,
+      tosMsg: `Avant de créer votre compte veuillez prendre connaissance de <a href="{tosUrl}" target="_blank">nos conditions générales d'utilisation</a>.`,
       tosConfirm: `Je confirme avoir lu les conditions générales d'utilisation pour ce site.`,
       createUserConfirm: 'Créer le compte',
       createUserConfirmed: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour valider la création du compte.`
