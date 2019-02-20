@@ -21,22 +21,7 @@ const i18n = require('../i18n')
 const app = express()
 const server = http.createServer(app)
 
-// Only accept cross domain with credentials from domain and subdomain
-if (config.sessionDomain) {
-  app.use(cors({
-    credentials: true,
-    origin(origin, callback) {
-      if (!origin) return callback(null, true)
-      const originDomain = new URL(origin).host
-      if (originDomain === config.sessionDomain || originDomain.endsWith('.' + config.sessionDomain)) {
-        callback(null, true)
-      } else {
-        callback(new Error(`No CORS allowed from origin ${origin}`))
-      }
-    }
-  }))
-}
-
+app.use(session.cors({}))
 app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))
 app.use(i18n.middleware)
