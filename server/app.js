@@ -1,7 +1,6 @@
 const config = require('config')
 const express = require('express')
 const cookieParser = require('cookie-parser')
-const cors = require('cors')
 const bodyParser = require('body-parser')
 const http = require('http')
 const util = require('util')
