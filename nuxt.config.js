@@ -22,7 +22,8 @@ module.exports = {
     { src: '~plugins/vuetify' },
     { src: '~plugins/moment' },
     { src: '~plugins/axios' },
-    { src: '~plugins/analytics', ssr: false }
+    { src: '~plugins/analytics', ssr: false },
+    { src: '~plugins/iframe-resizer', ssr: false }
   ],
   router: {
     base: new URL(config.publicUrl + '/').pathname
