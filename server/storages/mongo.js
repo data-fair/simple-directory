@@ -215,6 +215,7 @@ class MongodbStorage {
     const countPromise = this.db.collection('organizations').count(filter)
     const organizations = await this.db.collection('organizations')
       .find(filter)
+      .sort(params.sort)
       .project(prepareSelect(params.select))
       .skip(params.skip)
       .limit(params.size)
