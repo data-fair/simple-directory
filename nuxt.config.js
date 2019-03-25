@@ -7,7 +7,7 @@ const VuetifyLoaderPlugin = require('vuetify-loader/lib/plugin')
 module.exports = {
   srcDir: 'public/',
   build: {
-    transpile: [/^vuetify/], // Necessary for "à la carte" import of vuetify components
+    transpile: [/^vuetify/, /@koumoul/], // Necessary for "à la carte" import of vuetify components
     publicPath: config.publicUrl + '/_nuxt/',
     extend (config, { isServer, isDev, isClient }) {
       // Ignore all locale files of moment.js, those we want are loaded in plugins/moment.js

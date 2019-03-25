@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import { sessionStoreBuilder } from '@koumoul/sd-vue'
+import { sessionStoreBuilder } from '@koumoul/sd-vue/src'
 import eventBus from '../event-bus.js'
 
 Vue.use(Vuex)
