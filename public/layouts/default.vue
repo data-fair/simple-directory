@@ -195,7 +195,7 @@ body .application {
     padding: 4px;
     margin-left: 4px !important;
     margin-right: 4px;
-
+    width: 64px;
     img, svg {
       height:100%;
     }
