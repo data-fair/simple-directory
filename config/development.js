@@ -22,5 +22,8 @@ module.exports = {
     mongo: {
       url: 'mongodb://localhost:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
     }
+  },
+  webhooks: {
+    identities: [{ base: 'http://test-koumoul.com/identities', key: 'somesecret' }]
   }
 }

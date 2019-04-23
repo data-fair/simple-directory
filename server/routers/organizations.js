@@ -84,7 +84,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   orga.id = orga.id || shortid.generate()
   await storage.createOrganization(orga, req.user)
   await storage.addMember(orga, req.user, 'admin')
-  webhooks.sendOrganizationsWebhooks([orga])
+  webhooks.postIdentity('organization', orga)
   res.status(201).send(orga)
 }))
 
@@ -100,7 +100,7 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   const forbiddenKey = Object.keys(req.body).find(key => !patchKeys.includes(key))
   if (forbiddenKey) return res.status(400).send('Only some parts of the organization can be modified through this route')
   const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body, req.user)
-  if (req.body.name) webhooks.sendOrganizationsWebhooks([patchedOrga])
+  webhooks.postIdentity('organization', patchedOrga)
   res.send(patchedOrga)
 }))
 
@@ -149,5 +149,6 @@ router.delete('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (!req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
   await req.app.get('storage').deleteOrganization(req.params.organizationId)
+  webhooks.deleteIdentity('organization', req.params.organizationId)
   res.status(204).send()
 }))

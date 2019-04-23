@@ -73,7 +73,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
     await storage.updateLogged(decoded.id)
     if (user.emailConfirmed === false) {
       await storage.confirmEmail(decoded.id)
-      webhooks.sendUsersWebhooks([user])
+      webhooks.postIdentity('user', user)
     }
   }
 

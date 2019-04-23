@@ -2,29 +2,29 @@ const config = require('config')
 const axios = require('axios')
 const userName = require('./utils/user-name')
 const debug = require('debug')('webhooks')
-exports.sendUsersWebhooks = async (users) => {
-  for (let user of users) {
-    const name = userName(user)
-    for (let webhook of config.webhooks.identities) {
-      debug('Send user name webhook to ' + webhook.base, name)
-      try {
-        await axios.post(`${webhook.base}/user/${user.id}`, { name }, { params: { key: webhook.key } })
-      } catch (err) {
-        console.error('Failure in webhook ' + webhook.base, err)
-      }
+
+exports.postIdentity = async (type, identity) => {
+  const name = type === 'user' ? userName(identity) : identity.name
+  for (let webhook of config.webhooks.identities) {
+    const url = `${webhook.base}/${type}/${identity.id}`
+    const body = { name }
+    debug(`Send identity name webhook to ${url} : `, body)
+    try {
+      await axios.post(url, body, { params: { key: webhook.key } })
+    } catch (err) {
+      console.error('Failure in webhook ' + url, err.body || err.message || err)
     }
   }
 }
 
-exports.sendOrganizationsWebhooks = async (organizations) => {
-  for (let organization of organizations) {
-    for (let webhook of config.webhooks.identities) {
-      debug('Send organization name webhook to ' + webhook.base, organization.name)
-      try {
-        await axios.post(`${webhook.base}/organization/${organization.id}`, { name: organization.name }, { params: { key: webhook.key } })
-      } catch (err) {
-        console.error('Failure in webhook ' + webhook.base, err)
-      }
+exports.deleteIdentity = async (type, id) => {
+  for (let webhook of config.webhooks.identities) {
+    const url = `${webhook.base}/${type}/${id}`
+    debug(`Send identity delete webhook to ${url}`)
+    try {
+      await axios.delete(url, { params: { key: webhook.key } })
+    } catch (err) {
+      console.error('Failure in webhook ' + url, err.body || err.message || err)
     }
   }
 }

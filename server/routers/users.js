@@ -125,7 +125,7 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
   const name = userName({ ...req.user, ...patch }, true)
   if (name !== req.user.name) {
     patch.name = name
-    webhooks.sendUsersWebhooks([{ ...req.user, ...patch }])
+    webhooks.postIdentity('user', { ...req.user, ...patch })
   }
   const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
   res.send(patchedUser)
@@ -136,6 +136,7 @@ router.delete('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (!req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
   await req.app.get('storage').deleteUser(req.params.userId)
+  webhooks.deleteIdentity('user', req.params.userId)
   res.status(204).send()
 }))
 
