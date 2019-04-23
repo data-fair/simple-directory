@@ -87,7 +87,11 @@ class MongodbStorage {
 
   async patchUser(id, patch, byUser) {
     if (byUser) patch.updated = { id: byUser.id, name: byUser.name, date: new Date() }
-    const mongoRes = await this.db.collection('users').findOneAndUpdate({ _id: id }, { $set: patch })
+    const mongoRes = await this.db.collection('users').findOneAndUpdate(
+      { _id: id },
+      { $set: patch },
+      { returnOriginal: false }
+    )
     const user = cleanResource(mongoRes.value)
     // "name" was modified, also update all references in created and updated events
     if (patch.name) {
@@ -176,7 +180,11 @@ class MongodbStorage {
 
   async patchOrganization(id, patch, user) {
     patch.updated = { id: user.id, name: user.name, date: new Date() }
-    const mongoRes = await this.db.collection('organizations').findOneAndUpdate({ _id: id }, { $set: patch })
+    const mongoRes = await this.db.collection('organizations').findOneAndUpdate(
+      { _id: id },
+      { $set: patch },
+      { returnOriginal: false }
+    )
     const orga = cleanResource(mongoRes.value)
     // "name" was modified, also update all organizations references in users
     if (patch.name) {
