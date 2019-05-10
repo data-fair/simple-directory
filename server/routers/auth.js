@@ -8,6 +8,7 @@ const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
+const debug = require('debug')('auth')
 
 let router = exports.router = express.Router()
 
@@ -41,6 +42,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
   const linkUrl = new URL(link)
+  debug(`Passwordless authentication of user ${user.name}`)
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'login',
@@ -78,6 +80,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   }
 
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  debug(`Exchange session token for user ${user.name}`)
   res.send(token)
 }))
 
@@ -97,6 +100,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (!storage.readonly) await storage.updateLogged(user.id)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
+  debug(`Password based authentication of user ${user.name}`)
   if (req.is('application/x-www-form-urlencoded')) res.redirect(link)
   else res.send(link)
 }))
