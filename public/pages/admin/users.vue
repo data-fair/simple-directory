@@ -109,7 +109,7 @@ export default {
     deleteUserDialog: false,
     editMaxCreatedOrgsDialog: false,
     q: '',
-    pagination: { page: 1, rowsPerPage: 25, totalItems: 0, descending: false, sortBy: 'email' },
+    pagination: { page: 1, rowsPerPage: 10, totalItems: 0, descending: false, sortBy: 'email' },
     loading: false,
     headers: null,
     newMaxCreatedOrgs: null,

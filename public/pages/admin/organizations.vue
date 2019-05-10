@@ -76,7 +76,7 @@ export default {
     currentOrganization: null,
     deleteOrganizationDialog: false,
     q: '',
-    pagination: { page: 1, rowsPerPage: 25, totalItems: 0, descending: false, sortBy: 'name' },
+    pagination: { page: 1, rowsPerPage: 10, totalItems: 0, descending: false, sortBy: 'name' },
     loading: false,
     headers: null
   }),
