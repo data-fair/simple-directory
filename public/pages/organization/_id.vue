@@ -152,8 +152,8 @@ export default {
     ...mapState(['userDetails']),
     ...mapState('session', ['user']),
     isAdminOrga() {
-      if (this.user.adminMode) return true
       if (!this.userDetails) return false
+      if (this.user.adminMode) return true
       return this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin')
     }
   },
