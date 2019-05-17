@@ -40,17 +40,17 @@
           <v-divider/>
 
           <!-- Administration pages -->
-          <v-list-group v-if="user && user.isAdmin" value="true">
-            <v-list-tile slot="activator">
+          <v-list-group v-if="user && user.adminMode" value="true">
+            <v-list-tile slot="activator" color="admin">
               <v-list-tile-action>
-                <v-icon>verified_user</v-icon>
+                <v-icon color="admin">verified_user</v-icon>
               </v-list-tile-action>
               <v-list-tile-title>{{ $t('common.administration') }}</v-list-tile-title>
             </v-list-tile>
-            <v-list-tile :to="localePath('admin-users')">
+            <v-list-tile :to="localePath('admin-users')" color="admin">
               <v-list-tile-title>{{ $t(`common.users`) }}</v-list-tile-title>
             </v-list-tile>
-            <v-list-tile :to="localePath('admin-organizations')">
+            <v-list-tile :to="localePath('admin-organizations')" color="admin">
               <v-list-tile-title>{{ $t(`common.organizations`) }}</v-list-tile-title>
             </v-list-tile>
           </v-list-group>
@@ -70,7 +70,7 @@
         </v-list>
       </v-navigation-drawer>
 
-      <v-toolbar v-if="showToolbar" app scroll-off-screen>
+      <v-toolbar v-if="showToolbar" :color="user.adminMode ? 'admin' : 'default'" :dark="user.adminMode" app scroll-off-screen>
         <v-toolbar-side-icon v-if="user" @click.stop="drawer = !drawer"/>
         <template v-if="localePath('index') !== $route.path">
           <div class="logo-container">
@@ -96,6 +96,12 @@
           <v-list>
             <v-list-tile @click="logout">
               <v-list-tile-title>{{ $t('common.logout') }}</v-list-tile-title>
+            </v-list-tile>
+            <v-list-tile v-if="user.isAdmin && !user.adminMode" color="admin" @click="setAdminMode(true)">
+              <v-list-tile-title>{{ $t('common.activateAdminMode') }}</v-list-tile-title>
+            </v-list-tile>
+            <v-list-tile v-if="user.isAdmin && user.adminMode" color="admin" @click="setAdminMode(false)">
+              <v-list-tile-title>{{ $t('common.deactivateAdminMode') }}</v-list-tile-title>
             </v-list-tile>
           </v-list>
         </v-menu>
@@ -178,7 +184,7 @@ export default {
       this.showSnackbar = true
     })
   },
-  methods: mapActions('session', ['logout', 'login'])
+  methods: mapActions('session', ['logout', 'login', 'setAdminMode'])
 }
 
 </script>

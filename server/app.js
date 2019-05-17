@@ -32,7 +32,11 @@ app.use((req, res, next) => {
 // Replaces req.user from session with full and fresh user object from storage
 const fullUser = asyncWrap(async (req, res, next) => {
   if (!req.user) return next()
-  req.user = { ...await req.app.get('storage').getUser({ id: req.user.id }), isAdmin: req.user.isAdmin }
+  req.user = {
+    ...await req.app.get('storage').getUser({ id: req.user.id }),
+    isAdmin: req.user.isAdmin,
+    adminMode: req.user.adminMode
+  }
   next()
 })
 

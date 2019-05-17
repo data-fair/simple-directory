@@ -11,6 +11,8 @@ module.exports = {
     logLink: `Se connecter / s'inscrire`,
     logout: 'Se déconnecter',
     login: 'Se connecter',
+    activateAdminMode: 'Activer mode admin',
+    deactivateAdminMode: 'Désactiver mode admin',
     documentation: 'Documentation',
     administration: 'Administration',
     myAccount: 'Mon compte',

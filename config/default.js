@@ -56,7 +56,8 @@ module.exports = {
       error: 'FF5252', // red.accent2
       info: '#2196F3', // blue.base
       success: '#4CAF50', // green.base
-      warning: '#E91E63' // pink.base
+      warning: '#E91E63', // pink.base
+      admin: '#E53935' // red.darken1
     },
     cssUrl: null,
     cssText: ''

@@ -11,6 +11,8 @@ module.exports = {
     logLink: 'login / sign up',
     logout: 'logout',
     login: 'login',
+    activateAdminMode: 'Activate admin mode',
+    deactivateAdminMode: 'Deactivate admin mode',
     documentation: 'Documentation',
     administration: 'Administration',
     myAccount: 'My account',
