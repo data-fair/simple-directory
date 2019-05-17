@@ -70,7 +70,7 @@
         </v-list>
       </v-navigation-drawer>
 
-      <v-toolbar v-if="showToolbar" :color="(user && user.adminMode) ? 'admin' : 'default'" :dark="user.adminMode" app scroll-off-screen>
+      <v-toolbar v-if="showToolbar" :color="(user && user.adminMode) ? 'admin' : 'default'" :dark="user && user.adminMode" app scroll-off-screen>
         <v-toolbar-side-icon v-if="user" @click.stop="drawer = !drawer"/>
         <template v-if="localePath('index') !== $route.path">
           <div class="logo-container">
