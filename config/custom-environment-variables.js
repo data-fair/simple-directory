@@ -114,9 +114,5 @@ module.exports = {
     __name: 'NO_UI',
     __format: 'json'
   },
-  prebuilt: {
-    __name: 'PREBUILT',
-    __format: 'json'
-  },
   tosUrl: 'TOS_URL'
 }

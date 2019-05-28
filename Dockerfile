@@ -3,6 +3,8 @@ MAINTAINER "contact@koumoul.com"
 
 RUN apk add --update openssl
 
+ARG VERSION
+ENV VERSION=$VERSION
 ENV NODE_ENV production
 WORKDIR /webapp
 ADD package.json .
@@ -25,6 +27,7 @@ ADD README.md .
 
 VOLUME /webapp/security
 VOLUME /webapp/data
+VOLUME /webapp/.nuxt
 EXPOSE 8080
 
 CMD ["node", "server"]
