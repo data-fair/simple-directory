@@ -2,8 +2,6 @@
 
 *Gestion simplifiée de vos utilisateurs et vos organisations dans une architecture moderne orientée Web.*
 
-**Avertissement : Simple Directory est en chantier. Toutes les fonctionnalités décrites dans cette documentation ne sont pas encore disponibles. Et nous ne recommandons pas encore à quiconque d'installer le service.**
-
 *Simple Directory* est initialement développé par [Koumoul](https://koumoul.com) pour satisfaire nos besoins en terme de gestion des utilisateurs et des organisations dans une plateforme Web constituée de services autonomes. Nous cherchons un compromis entre des fonctionnalités puissantes dans le domaine très dense qu'est la gestion d'identité sur le Web et une simplicité maximale pour fluidifier l'expérience de maintenance, d'administration, d'intégration et d'utilisation.
 
 Le projet est [publié en Open Source](https://github.com/koumoul-dev/simple-directory) pour instaurer la confiance par la transparence et dans l'espoir de trouver une place dans l'écosystème du logiciel libre et de développer une communauté.
