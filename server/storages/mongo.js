@@ -147,6 +147,9 @@ class MongodbStorage {
     if (params.role) {
       filter.organizations.$elemMatch.role = params.role
     }
+    if (params.department) {
+      filter.organizations.$elemMatch.department = params.department
+    }
     const countPromise = this.db.collection('users').count(filter)
     const users = await this.db.collection('users')
       .find(filter)
@@ -158,7 +161,8 @@ class MongodbStorage {
     return {
       count,
       results: users.map(user => {
-        return { id: user._id, name: user.name, email: user.email, role: user.organizations.find(o => o.id === organizationId).role }
+        const userOrga = user.organizations.find(o => o.id === organizationId)
+        return { id: user._id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department }
       })
     }
   }
@@ -232,17 +236,17 @@ class MongodbStorage {
     return { count, results: organizations.map(cleanResource) }
   }
 
-  async addMember(orga, user, role) {
+  async addMember(orga, user, role, department) {
     await this.db.collection('users').updateOne(
       { _id: user.id },
-      { $push: { organizations: { id: orga.id, name: orga.name, role } } }
+      { $push: { organizations: { id: orga.id, name: orga.name, role, department } } }
     )
   }
 
-  async setMemberRole(organizationId, userId, role) {
+  async setMemberRole(organizationId, userId, role, department) {
     await this.db.collection('users').updateOne(
       { _id: userId, 'organizations.id': organizationId },
-      { $set: { 'organizations.$.role': role } }
+      { $set: { 'organizations.$.role': role, 'organizations.$.department': department } }
     )
   }
 

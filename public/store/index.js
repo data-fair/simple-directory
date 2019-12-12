@@ -29,6 +29,15 @@ export default () => {
           else eventBus.$emit('notification', { error })
         }
       },
+      async patchOrganization({ dispatch }, { id, patch, msg }) {
+        try {
+          await this.$axios.$patch(`api/organizations/${id}`, patch)
+          eventBus.$emit('notification', msg)
+          dispatch('fetchUserDetails')
+        } catch (error) {
+          eventBus.$emit('notification', { error })
+        }
+      },
       nuxtServerInit({ commit, dispatch }, { req, env, app }) {
         commit('setAny', { env: { ...env } })
         dispatch('session/init', { cookies: this.$cookies, baseUrl: env.publicUrl + '/api/session' })

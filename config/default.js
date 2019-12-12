@@ -100,5 +100,6 @@ module.exports = {
     sendMails: null
   },
   // A link to the terms of services for the site
-  tosUrl: null
+  tosUrl: null,
+  manageDepartments: false
 }

@@ -89,7 +89,7 @@ router.post('', asyncWrap(async (req, res, next) => {
 }))
 
 // Update some parts of an organization as admin of it
-const patchKeys = ['name', 'description']
+const patchKeys = ['name', 'description', 'departments', 'departmentLabel']
 router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only allowed for the organizations that the user is admin of
@@ -140,7 +140,7 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
   if (!orga) return res.status(404).send()
   const roles = orga.roles || config.roles.defaults
   if (!roles.includes(req.body.role)) return res.status(400).send(req.messages.errors.replace('{role}', req.body.role))
-  await req.app.get('storage').setMemberRole(req.params.organizationId, req.params.userId, req.body.role)
+  await req.app.get('storage').setMemberRole(req.params.organizationId, req.params.userId, req.body.role, req.body.department)
   res.status(204).send()
 }))
 

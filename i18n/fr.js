@@ -52,7 +52,9 @@ module.exports = {
     password: 'Mot de passe',
     checkInbox: 'Vérifiez votre boite mail',
     spamWarning: `Si vous n'avez pas reçu de mail, vérifiez qu'il n'a pas été classé automatiquement en tant que spam.`,
-    validate: 'Valider'
+    validate: 'Valider',
+    department: 'Département',
+    departments: 'Départements'
   },
   doc: {
     about: {
@@ -155,7 +157,15 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       confirmDeleteMemberMsg: `Voulez vous vraiment supprimer cet utilisateur de la liste des membres de l'organisation ?`,
       deleteMemberSuccess: `L'utilisateur {name} a été exclu de l'organisation`,
       inviteEmail: `Adresse mail de l'utilisateur`,
-      inviteSuccess: `Une invitation a été envoyée à l'adresse {email}`
+      inviteSuccess: `Une invitation a été envoyée à l'adresse {email}`,
+      departmentLabelTitle: `Nom du concept "département"`,
+      departmentLabelHelp: `Laissez vide pour afficher "département". Renseignez pour utiliser un autre vocabulaire comme "service", "agence", etc.`,
+      addDepartment: 'Créer un nouveau département',
+      editDepartment: 'Modifier le nom de ce département',
+      deleteDepartment: 'Supprimer ce département',
+      confirmEditDepartmentTitle: 'Modifier {name}',
+      confirmDeleteDepartmentTitle: 'Supprimer {name}',
+      confirmDeleteDepartmentMsg: `Voulez vous vraiment supprimer ce département de votre organisation ?`
     },
     invitation: {
       title: 'Invitation validée',

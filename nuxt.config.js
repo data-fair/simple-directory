@@ -50,7 +50,8 @@ module.exports = {
     readonly: require('./server/storages').readonly(),
     analytics: config.analytics,
     onlyCreateInvited: config.onlyCreateInvited,
-    tosUrl: config.tosUrl
+    tosUrl: config.tosUrl,
+    manageDepartments: config.manageDepartments
   },
   head: {
     title: i18n.messages[config.i18n.defaultLocale].root.title,

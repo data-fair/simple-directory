@@ -114,5 +114,9 @@ module.exports = {
     __name: 'NO_UI',
     __format: 'json'
   },
-  tosUrl: 'TOS_URL'
+  tosUrl: 'TOS_URL',
+  manageDepartments: {
+    __name: 'MANAGE_DEPARTMENTS',
+    __format: 'json'
+  }
 }
