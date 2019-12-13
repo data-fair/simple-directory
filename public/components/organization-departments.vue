@@ -2,7 +2,7 @@
   <v-container fluid class="pa-0">
     <v-layout row wrap class="mt-3">
       <h3 class="title my-3">
-        {{ $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
+        {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
       </h3>
       <v-btn v-if="isAdminOrga" :title="$t('pages.organization.addDepartment')" icon color="primary" @click="newDepartment(); createDialog = true">
         <v-icon>add</v-icon>

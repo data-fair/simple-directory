@@ -28,7 +28,7 @@
           <v-list-tile-sub-title>{{ member.email }}</v-list-tile-sub-title>
           <v-list-tile-sub-title>
             <span>{{ $t('common.role') }} = {{ member.role }}</span>
-            <span v-if="member.department">, {{ $t('common.department') }} = {{ member.department }}</span>
+            <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ member.department }}</span>
           </v-list-tile-sub-title>
         </v-list-tile-content>
         <v-list-tile-action v-if="isAdminOrga && member.id !== userDetails.id">
@@ -68,7 +68,7 @@
               v-if="env.manageDepartments && orga.departments && orga.departments.length"
               :items="orga.departments"
               v-model="invitation.department"
-              :label="$t('common.department')"
+              :label="orga.departmentLabel || $t('common.department')"
               item-value="id"
               item-text="name"
               name="department"
@@ -110,7 +110,7 @@
             v-if="env.manageDepartments && orga.departments && orga.departments.length"
             :items="orga.departments"
             v-model="newDepartment"
-            :label="$t('common.department')"
+            :label="orga.departmentLabel || $t('common.department')"
             item-value="id"
             item-text="name"
           />
