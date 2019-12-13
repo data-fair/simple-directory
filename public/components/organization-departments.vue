@@ -13,7 +13,7 @@
       <v-list-tile v-for="department in orga.departments" :key="department.id">
         <v-list-tile-content>
           <v-list-tile-title>{{ department.name }}</v-list-tile-title>
-          <v-list-tile-sub-title>{{ department.id }}</v-list-tile-sub-title>
+          <v-list-tile-sub-title>{{ $t('common.id') }} = {{ department.id }}</v-list-tile-sub-title>
         </v-list-tile-content>
         <v-list-tile-action v-if="isAdminOrga">
           <v-btn :title="$t('pages.organization.editDepartment')" flat icon @click="currentDepartment = department; editDepartment = {...department}; editDialog = true">
@@ -74,7 +74,7 @@
     </v-dialog>
 
     <v-dialog v-model="editDialog" max-width="500px">
-      <v-card v-if="currentDepartment">
+      <v-card v-if="editDepartment">
         <v-card-title primary-title>
           {{ $t('pages.organization.confirmEditDepartmentTitle', {name: currentDepartment.name}) }}
         </v-card-title>
