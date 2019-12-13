@@ -20,7 +20,7 @@ router.post('/', asyncWrap(async (req, res) => {
       to.push((await storage.getUser({ id: t.id })).email)
     }
     if (t.type === 'organization') {
-      const members = await storage.findMembers(t.id, { roles: [t.role], size: 10000, skip: 0 })
+      const members = await storage.findMembers(t.id, { roles: t.role && [t.role], size: 10000, skip: 0 })
       members.results.forEach(member => to.push(member.email))
     }
   }

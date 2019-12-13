@@ -98,13 +98,13 @@ class FileStorage {
       const lq = params.q.toLowerCase()
       members = members.filter(member => member.name.toLowerCase().indexOf(lq) >= 0)
     }
-    if (params.ids) {
+    if (params.ids && params.ids.length) {
       members = members.filter(member => params.ids.includes(member.id))
     }
-    if (params.roles) {
+    if (params.roles && params.roles.length) {
       members = members.filter(member => params.roles.includes(member.role))
     }
-    if (params.departments) {
+    if (params.departments && params.departments.length) {
       members = members.filter(member => params.roles.includes(member.departments))
     }
     return {

@@ -138,16 +138,16 @@ class MongodbStorage {
 
   async findMembers(organizationId, params = {}) {
     const filter = { 'organizations': { $elemMatch: { id: organizationId } } }
-    if (params.ids) {
+    if (params.ids && params.ids.length) {
       filter._id = { $in: params.ids }
     }
     if (params.q) {
       filter.name = { $regex: params.q, $options: 'i' }
     }
-    if (params.roles) {
+    if (params.roles && params.roles.length) {
       filter.organizations.$elemMatch.role = { $in: params.roles }
     }
-    if (params.departments) {
+    if (params.departments && params.departments.length) {
       filter.organizations.$elemMatch.department = { $in: params.departments }
     }
     const countPromise = this.db.collection('users').count(filter)
