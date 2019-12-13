@@ -17,18 +17,42 @@
         append-icon="search"
         @click:append="fetchMembers"
         @keyup.enter="fetchMembers"/>
+      <v-select
+        :items="orga.roles"
+        v-model="role"
+        :label="$t('common.role')"
+        style="max-width:300px;"
+        class="ml-2"
+        name="role"
+        solo
+        clearable
+        @change="fetchMembers"
+      />
+      <v-select
+        v-if="env.manageDepartments && orga.departments && orga.departments.length"
+        :items="orga.departments"
+        v-model="department"
+        :label="orga.departmentLabel || $t('common.department')"
+        style="max-width:300px;"
+        item-value="id"
+        item-text="name"
+        clearable
+        class="ml-2"
+        name="department"
+        solo
+        @change="fetchMembers"
+      />
       <v-spacer/>
-      <v-pagination v-if="members && members.count > membersPageSize" :length="Math.ceil(members.count / membersPageSize)" v-model="membersPage" @input="fetchMembers"/>
     </v-layout>
 
-    <v-list v-if="members" two-line class="elevation-1 mt-1">
+    <v-list v-if="members && members.count" two-line class="elevation-1 mt-1">
       <v-list-tile v-for="member in members.results" :key="member.id">
         <v-list-tile-content>
           <v-list-tile-title>{{ member.name }}</v-list-tile-title>
           <v-list-tile-sub-title>{{ member.email }}</v-list-tile-sub-title>
           <v-list-tile-sub-title>
             <span>{{ $t('common.role') }} = {{ member.role }}</span>
-            <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ member.department }}</span>
+            <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
           </v-list-tile-sub-title>
         </v-list-tile-content>
         <v-list-tile-action v-if="isAdminOrga && member.id !== userDetails.id">
@@ -41,6 +65,11 @@
         </v-list-tile-action>
       </v-list-tile>
     </v-list>
+
+    <v-layout v-if="members && members.count > membersPageSize" row class="mt-2">
+      <v-spacer />
+      <v-pagination :length="Math.ceil(members.count / membersPageSize)" v-model="membersPage" @input="fetchMembers"/>
+    </v-layout>
 
     <v-dialog v-model="inviteMemberDialog" max-width="500px">
       <v-card v-if="orga">
@@ -144,6 +173,8 @@ export default {
     members: null,
     roles: null,
     q: '',
+    role: null,
+    department: null,
     deleteMemberDialog: false,
     editMemberDialog: false,
     currentMember: null,
@@ -165,7 +196,7 @@ export default {
     async fetchMembers() {
       try {
         this.members = await this.$axios.$get(`api/organizations/${this.orga.id}/members`,
-          { params: { q: this.q, page: this.membersPage, size: this.membersPageSize } })
+          { params: { q: this.q, page: this.membersPage, size: this.membersPageSize, department: this.department, role: this.role } })
       } catch (error) {
         eventBus.$emit('notification', { error })
       }

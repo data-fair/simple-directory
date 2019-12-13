@@ -113,7 +113,9 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   }
   const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
   if (req.query.q) params.q = req.query.q
-  if (req.query['ids']) params.ids = req.query['ids'].split(',')
+  if (req.query['ids'] || req.query['id']) params.ids = (req.query['ids'] || req.query['id']).split(',')
+  if (req.query.role) params.roles = req.query.role.split(',')
+  if (req.query.department) params.departments = req.query.department.split(',')
   const members = await req.app.get('storage').findMembers(req.params.organizationId, params)
   res.send(members)
 }))

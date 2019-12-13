@@ -99,10 +99,13 @@ class FileStorage {
       members = members.filter(member => member.name.toLowerCase().indexOf(lq) >= 0)
     }
     if (params.ids) {
-      members = members.filter(member => (params.ids).find(id => member.id === id))
+      members = members.filter(member => params.ids.includes(member.id))
     }
-    if (params.role) {
-      members = members.filter(member => member.role === params.role)
+    if (params.roles) {
+      members = members.filter(member => params.roles.includes(member.role))
+    }
+    if (params.departments) {
+      members = members.filter(member => params.roles.includes(member.departments))
     }
     return {
       count: members.length,

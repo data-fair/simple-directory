@@ -144,11 +144,11 @@ class MongodbStorage {
     if (params.q) {
       filter.name = { $regex: params.q, $options: 'i' }
     }
-    if (params.role) {
-      filter.organizations.$elemMatch.role = params.role
+    if (params.roles) {
+      filter.organizations.$elemMatch.role = { $in: params.roles }
     }
-    if (params.department) {
-      filter.organizations.$elemMatch.department = params.department
+    if (params.departments) {
+      filter.organizations.$elemMatch.department = { $in: params.departments }
     }
     const countPromise = this.db.collection('users').count(filter)
     const users = await this.db.collection('users')
