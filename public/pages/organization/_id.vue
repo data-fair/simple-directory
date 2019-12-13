@@ -19,7 +19,7 @@
         outline
       />
       <v-text-field
-        v-if="env.manageDepartments"
+        v-if="env.manageDepartments && env.manageDepartmentLabel"
         :label="$t('pages.organization.departmentLabelTitle')"
         v-model="orga.departmentLabel"
         :disabled="!isAdminOrga"

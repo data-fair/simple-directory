@@ -101,5 +101,6 @@ module.exports = {
   },
   // A link to the terms of services for the site
   tosUrl: null,
-  manageDepartments: false
+  manageDepartments: false,
+  manageDepartmentLabel: false
 }

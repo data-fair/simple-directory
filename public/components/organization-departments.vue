@@ -4,7 +4,7 @@
       <h3 class="title my-3">
         {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
       </h3>
-      <v-btn v-if="isAdminOrga" :title="$t('pages.organization.addDepartment')" icon color="primary" @click="newDepartment(); createDialog = true">
+      <v-btn v-if="isAdminOrga" :title="$t('pages.organization.addDepartment', {departmentLabel})" icon color="primary" @click="newDepartment(); createDialog = true">
         <v-icon>add</v-icon>
       </v-btn>
     </v-layout>
@@ -16,10 +16,10 @@
           <v-list-tile-sub-title>{{ $t('common.id') }} = {{ department.id }}</v-list-tile-sub-title>
         </v-list-tile-content>
         <v-list-tile-action v-if="isAdminOrga">
-          <v-btn :title="$t('pages.organization.editDepartment')" flat icon @click="currentDepartment = department; editDepartment = {...department}; editDialog = true">
+          <v-btn :title="$t('pages.organization.editDepartment', {departmentLabel})" flat icon @click="currentDepartment = department; editDepartment = {...department}; editDialog = true">
             <v-icon>edit</v-icon>
           </v-btn>
-          <v-btn :title="$t('pages.organization.deleteDepartment')" flat icon color="warning" @click="currentDepartment = department; deleteDialog = true">
+          <v-btn :title="$t('pages.organization.deleteDepartment', {departmentLabel})" flat icon color="warning" @click="currentDepartment = department; deleteDialog = true">
             <v-icon>delete</v-icon>
           </v-btn>
         </v-list-tile-action>
@@ -29,7 +29,7 @@
     <v-dialog v-model="createDialog" max-width="500px">
       <v-card v-if="currentDepartment">
         <v-card-title primary-title>
-          {{ $t('pages.organization.addDepartment') }}
+          {{ $t('pages.organization.addDepartment', {departmentLabel}) }}
         </v-card-title>
         <v-card-text>
           <v-form ref="createForm">
@@ -60,10 +60,10 @@
     <v-dialog v-model="deleteDialog" max-width="500px">
       <v-card v-if="currentDepartment">
         <v-card-title primary-title>
-          {{ $t('pages.organization.confirmDeleteDepartmentTitle', {name: currentDepartment.name}) }}
+          {{ $t('pages.organization.confirmDeleteDepartmentTitle', {name: currentDepartment.name, departmentLabel}) }}
         </v-card-title>
         <v-card-text>
-          {{ $t('pages.organization.confirmDeleteDepartmentMsg') }}
+          {{ $t('pages.organization.confirmDeleteDepartmentMsg', {name: currentDepartment.name, departmentLabel}) }}
         </v-card-text>
         <v-card-actions>
           <v-spacer/>
@@ -76,7 +76,7 @@
     <v-dialog v-model="editDialog" max-width="500px">
       <v-card v-if="editDepartment">
         <v-card-title primary-title>
-          {{ $t('pages.organization.confirmEditDepartmentTitle', {name: currentDepartment.name}) }}
+          {{ $t('pages.organization.confirmEditDepartmentTitle', {name: currentDepartment.name, departmentLabel}) }}
         </v-card-title>
         <v-card-text>
           <v-text-field
@@ -119,7 +119,10 @@ export default {
     editDialog: false
   }),
   computed: {
-    ...mapState(['userDetails'])
+    ...mapState(['userDetails']),
+    departmentLabel() {
+      return this.orga.departmentLabel || this.$t('common.department')
+    }
   },
   created() {
     this.orga.departments = this.orga.departments || []

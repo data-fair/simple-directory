@@ -118,5 +118,9 @@ module.exports = {
   manageDepartments: {
     __name: 'MANAGE_DEPARTMENTS',
     __format: 'json'
+  },
+  manageDepartmentLabel: {
+    __name: 'MANAGE_DEPARTMENT_LABEL',
+    __format: 'json'
   }
 }

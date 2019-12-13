@@ -51,7 +51,8 @@ module.exports = {
     analytics: config.analytics,
     onlyCreateInvited: config.onlyCreateInvited,
     tosUrl: config.tosUrl,
-    manageDepartments: config.manageDepartments
+    manageDepartments: config.manageDepartments,
+    manageDepartmentLabel: config.manageDepartmentLabel
   },
   head: {
     title: i18n.messages[config.i18n.defaultLocale].root.title,
