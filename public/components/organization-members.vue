@@ -46,24 +46,27 @@
     </v-layout>
 
     <v-list v-if="members && members.count" two-line class="elevation-1 mt-1">
-      <v-list-tile v-for="member in members.results" :key="member.id">
-        <v-list-tile-content>
-          <v-list-tile-title>{{ member.name }}</v-list-tile-title>
-          <v-list-tile-sub-title>{{ member.email }}</v-list-tile-sub-title>
-          <v-list-tile-sub-title>
-            <span>{{ $t('common.role') }} = {{ member.role }}</span>
-            <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
-          </v-list-tile-sub-title>
-        </v-list-tile-content>
-        <v-list-tile-action v-if="isAdminOrga && member.id !== userDetails.id">
-          <v-btn :title="$t('pages.organization.editMember')" flat icon @click="currentMember = member; newRole = member.role; newDepartment = member.department; editMemberDialog = true">
-            <v-icon>edit</v-icon>
-          </v-btn>
-          <v-btn :title="$t('pages.organization.deleteMember')" flat icon color="warning" @click="currentMember = member;deleteMemberDialog = true">
-            <v-icon>delete</v-icon>
-          </v-btn>
-        </v-list-tile-action>
-      </v-list-tile>
+      <template v-for="(member, i) in members.results">
+        <v-list-tile :key="member.id">
+          <v-list-tile-content>
+            <v-list-tile-title>{{ member.name }}</v-list-tile-title>
+            <v-list-tile-sub-title>{{ member.email }}</v-list-tile-sub-title>
+            <v-list-tile-sub-title>
+              <span>{{ $t('common.role') }} = {{ member.role }}</span>
+              <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
+            </v-list-tile-sub-title>
+          </v-list-tile-content>
+          <v-list-tile-action v-if="isAdminOrga">
+            <v-btn :title="$t('pages.organization.editMember')" flat icon @click="currentMember = member; newRole = member.role; newDepartment = member.department; editMemberDialog = true">
+              <v-icon>edit</v-icon>
+            </v-btn>
+            <v-btn :title="$t('pages.organization.deleteMember')" flat icon color="warning" @click="currentMember = member;deleteMemberDialog = true">
+              <v-icon>delete</v-icon>
+            </v-btn>
+          </v-list-tile-action>
+        </v-list-tile>
+        <v-divider v-if="i + 1 < members.results.length" :key="i"/>
+      </template>
     </v-list>
 
     <v-layout v-if="members && members.count > membersPageSize" row class="mt-2">

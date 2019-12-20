@@ -10,20 +10,23 @@
     </v-layout>
 
     <v-list v-if="orga.departments.length" two-line class="elevation-1 mt-3">
-      <v-list-tile v-for="department in orga.departments" :key="department.id">
-        <v-list-tile-content>
-          <v-list-tile-title>{{ department.name }}</v-list-tile-title>
-          <v-list-tile-sub-title>{{ $t('common.id') }} = {{ department.id }}</v-list-tile-sub-title>
-        </v-list-tile-content>
-        <v-list-tile-action v-if="isAdminOrga">
-          <v-btn :title="$t('pages.organization.editDepartment', {departmentLabel})" flat icon @click="currentDepartment = department; editDepartment = {...department}; editDialog = true">
-            <v-icon>edit</v-icon>
-          </v-btn>
-          <v-btn :title="$t('pages.organization.deleteDepartment', {departmentLabel})" flat icon color="warning" @click="currentDepartment = department; deleteDialog = true">
-            <v-icon>delete</v-icon>
-          </v-btn>
-        </v-list-tile-action>
-      </v-list-tile>
+      <template v-for="(department, i) in orga.departments">
+        <v-list-tile :key="department.id">
+          <v-list-tile-content>
+            <v-list-tile-title>{{ department.name }}</v-list-tile-title>
+            <v-list-tile-sub-title>{{ $t('common.id') }} = {{ department.id }}</v-list-tile-sub-title>
+          </v-list-tile-content>
+          <v-list-tile-action v-if="isAdminOrga">
+            <v-btn :title="$t('pages.organization.editDepartment', {departmentLabel})" flat icon @click="edit(department)">
+              <v-icon>edit</v-icon>
+            </v-btn>
+            <v-btn :title="$t('pages.organization.deleteDepartment', {departmentLabel})" flat icon color="warning" @click="e => {e.preventDefault();currentDepartment = department; deleteDialog = true}">
+              <v-icon>delete</v-icon>
+            </v-btn>
+          </v-list-tile-action>
+        </v-list-tile>
+        <v-divider v-if="i + 1 < orga.departments.length" :key="i"/>
+      </template>
     </v-list>
 
     <v-dialog v-model="createDialog" max-width="500px">
@@ -52,7 +55,7 @@
         <v-card-actions>
           <v-spacer/>
           <v-btn flat @click="createDialog = false">{{ $t('common.confirmCancel') }}</v-btn>
-          <v-btn color="warning" @click="confirmCreate">{{ $t('common.confirmOk') }}</v-btn>
+          <v-btn color="primary" @click="confirmCreate">{{ $t('common.confirmOk') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -90,7 +93,7 @@
         <v-card-actions>
           <v-spacer/>
           <v-btn flat @click="editDialog = false">{{ $t('common.confirmCancel') }}</v-btn>
-          <v-btn color="warning" @click="confirmEdit">{{ $t('common.confirmOk') }}</v-btn>
+          <v-btn color="primary" @click="confirmEdit">{{ $t('common.confirmOk') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -139,6 +142,11 @@ export default {
         await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
         this.$emit('change')
       }
+    },
+    edit(department) {
+      this.currentDepartment = department
+      this.editDepartment = { ...department }
+      this.editDialog = true
     },
     async confirmEdit() {
       if (this.$refs.createForm.validate()) {
