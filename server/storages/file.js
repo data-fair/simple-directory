@@ -13,9 +13,9 @@ function getUserOrgas(organizations, user) {
   return organizations
     .filter(orga => orga.members.find(member => member.id === user.id))
     .map(orga => ({
+      ...orga.members.find(m => m.id === user.id),
       id: orga.id,
-      name: orga.name,
-      role: orga.members.find(m => m.id === user.id).role
+      name: orga.name
     }))
 }
 
