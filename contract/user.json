@@ -26,17 +26,6 @@
     "maxCreatedOrgs": {
       "description": "The maximum number of organizations this user can create. -1 means indeterminate number. Fallback to a global default value if not defined.",
       "type": "number"
-    },
-    "department": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
-      }
     }
   }
 }

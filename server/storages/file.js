@@ -35,6 +35,10 @@ class FileStorage {
       user.name = userName(user)
     })
     this.organizations = JSON.parse(await readFile(path.resolve(__dirname, '../..', params.organizations), 'utf-8'))
+    this.organizations.forEach(orga => {
+      orga.members = orga.members || []
+      orga.departments = orga.departments || []
+    })
     return this
   }
 
@@ -105,7 +109,7 @@ class FileStorage {
       members = members.filter(member => params.roles.includes(member.role))
     }
     if (params.departments && params.departments.length) {
-      members = members.filter(member => params.roles.includes(member.departments))
+      members = members.filter(member => params.departments.includes(member.department))
     }
     return {
       count: members.length,
