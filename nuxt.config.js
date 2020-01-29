@@ -37,7 +37,7 @@ module.exports = {
     { src: '~plugins/iframe-resizer', ssr: false }
   ],
   router: {
-    base: new URL(config.publicUrl + '/').pathname
+    base: config.basePath
   },
   modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', 'cookie-universal-nuxt', ['nuxt-i18n', {
     seo: false,

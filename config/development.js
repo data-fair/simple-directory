@@ -7,7 +7,7 @@ module.exports = {
   adminsOrg: { id: 'admins-org', name: `Admins organization` },
   homePage: 'https://koumoul.com',
   maildev: {
-    // active: true
+    active: true
   },
   mails: {
     from: 'no-reply@test.com',
