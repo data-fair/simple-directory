@@ -3,6 +3,7 @@ const i18n = require('./i18n')
 let config = require('config')
 config.basePath = new URL(config.publicUrl + '/').pathname
 config.i18nMessages = i18n.messages
+config.readonly = require('./server/storages').readonly()
 
 if (process.env.NODE_ENV === 'production') {
   const nuxtConfigInject = require('@koumoul/nuxt-config-inject')
@@ -54,9 +55,9 @@ module.exports = {
     publicUrl: config.publicUrl,
     theme: config.theme,
     homePage: config.homePage,
-    maildev: config.maildev.active ? config.maildev.url : null,
+    maildev: config.maildev,
     defaultMaxCreatedOrgs: config.quotas.defaultMaxCreatedOrgs,
-    readonly: require('./server/storages').readonly(),
+    readonly: config.readonly,
     analytics: config.analytics,
     onlyCreateInvited: config.onlyCreateInvited,
     tosUrl: config.tosUrl,

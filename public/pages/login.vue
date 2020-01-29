@@ -196,9 +196,9 @@
         </v-window>
 
       </v-card>
-      <p v-if="env.maildev">
+      <p v-if="env.maildev.active">
         <br>
-        <a :href="env.maildev" flat>{{ $t('pages.login.maildevLink') }}</a>
+        <a :href="env.maildev.url" flat>{{ $t('pages.login.maildevLink') }}</a>
       </p>
     </v-flex>
   </v-layout>
