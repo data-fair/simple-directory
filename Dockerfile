@@ -27,7 +27,6 @@ RUN npm run build
 
 VOLUME /webapp/security
 VOLUME /webapp/data
-VOLUME /webapp/.nuxt
 EXPOSE 8080
 
 CMD ["node", "server"]
