@@ -83,13 +83,6 @@ module.exports = {
     smtp: 'MAILDEV_SMTP',
     web: 'MAILDEV_WEB'
   },
-  i18n: {
-    defaultLocale: 'I18N_DEFAULT_LOCALE',
-    locales: {
-      __name: 'I18N_LOCALES',
-      __format: 'json'
-    }
-  },
   quotas: {
     defaultMaxCreatedOrgs: {
       __name: 'DEFAULT_MAX_CREATED_ORGS',

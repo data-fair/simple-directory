@@ -7,7 +7,21 @@ module.exports = {
   adminsOrg: { id: 'admins-org', name: `Admins organization` },
   homePage: 'https://koumoul.com',
   maildev: {
-    active: true
+    // active: true
+  },
+  mails: {
+    from: 'no-reply@test.com',
+    // transport is a full configuration object for createTransport of nodemailer
+    // cf https://nodemailer.com/smtp/
+    transport: {
+      host: 'ssl0.ovh.net',
+      port: 465,
+      tls: true,
+      auth: {
+        user: 'no-reply@gfd-groupe.com',
+        pass: '!gfdservi44!'
+      }
+    }
   },
   secret: {
     public: './test/resources/test.key.pub',

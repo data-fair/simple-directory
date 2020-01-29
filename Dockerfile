@@ -16,13 +16,13 @@ ADD i18n i18n
 ADD public public
 ADD doc doc
 ADD nuxt.config.js .
-RUN npm run link-doc
+ADD config config
+RUN npm run build
 
 # Adding server files
 ADD scripts scripts
 ADD server server
 ADD contract contract
-ADD config config
 ADD README.md .
 
 VOLUME /webapp/security

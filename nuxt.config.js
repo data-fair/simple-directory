@@ -1,7 +1,16 @@
-const config = require('config')
 const URL = require('url').URL
-const webpack = require('webpack')
 const i18n = require('./i18n')
+let config = require('config')
+config.basePath = new URL(config.publicUrl + '/').pathname
+config.i18nMessages = i18n.messages
+
+if (process.env.NODE_ENV === 'production') {
+  const nuxtConfigInject = require('@koumoul/nuxt-config-inject')
+  if (process.argv.slice(-1)[0] === 'build') config = nuxtConfigInject.prepare(config)
+  else nuxtConfigInject.replace(config)
+}
+
+const webpack = require('webpack')
 const VuetifyLoaderPlugin = require('vuetify-loader/lib/plugin')
 
 module.exports = {
@@ -31,10 +40,10 @@ module.exports = {
   modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', 'cookie-universal-nuxt', ['nuxt-i18n', {
     seo: false,
     locales: i18n.locales,
-    defaultLocale: config.i18n.defaultLocale,
+    defaultLocale: i18n.defaultLocale,
     vueI18n: {
-      fallbackLocale: config.i18n.defaultLocale,
-      messages: i18n.messages
+      fallbackLocale: i18n.defaultLocale,
+      messages: config.i18nMessages
     }
   }]],
   axios: {
@@ -55,12 +64,12 @@ module.exports = {
     manageDepartmentLabel: config.manageDepartmentLabel
   },
   head: {
-    title: i18n.messages[config.i18n.defaultLocale].root.title,
+    title: config.i18nMessages[i18n.defaultLocale].root.title,
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { hid: 'application', name: 'application-name', content: i18n.messages[config.i18n.defaultLocale].root.title },
-      { hid: 'description', name: 'description', content: i18n.messages[config.i18n.defaultLocale].root.description }
+      { hid: 'application', name: 'application-name', content: i18n.messages[i18n.defaultLocale].root.title },
+      { hid: 'description', name: 'description', content: i18n.messages[i18n.defaultLocale].root.description }
     ],
     link: [
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Nunito:300,400,500,700,400italic' }
