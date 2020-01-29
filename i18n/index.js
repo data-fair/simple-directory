@@ -1,13 +1,10 @@
-const config = require('config')
 const flatten = require('flat')
 const unflatten = flatten.unflatten
 const acceptLangParser = require('accept-language-parser')
 const flatOpts = { delimiter: '_' }
 
-exports.locales = config.i18n.locales.map(l => {
-  if (typeof l === 'string') return { code: l }
-  else return l
-})
+exports.defaultLocale = 'fr'
+exports.locales = [{ code: 'fr', iso: 'fr-FR' }, { code: 'en', iso: 'es-US' }]
 
 // Build a map of messages of this form
 // {fr: {msg1: 'libellé 1'}, en: {msg1: 'label 1'}}
@@ -37,7 +34,7 @@ exports.publicMessages = unflatten(
 
 exports.middleware = (req, res, next) => {
   const locales = acceptLangParser.parse(req.get('Accept-Language'))
-  const localeCode = (locales && locales[0] && locales[0].code) || config.i18n.defaultLocale
-  req.messages = exports.messages[localeCode] || exports.messages[config.i18n.defaultLocale]
+  const localeCode = (locales && locales[0] && locales[0].code) || exports.defaultLocale
+  req.messages = exports.messages[localeCode] || exports.messages[exports.defaultLocale]
   next()
 }
