@@ -115,5 +115,9 @@ module.exports = {
   manageDepartmentLabel: {
     __name: 'MANAGE_DEPARTMENT_LABEL',
     __format: 'json'
+  },
+  passwordless: {
+    __name: 'PASSWORDLESS',
+    __format: 'json'
   }
 }
