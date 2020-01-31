@@ -217,13 +217,12 @@ export default {
       dialog: true,
       email: this.$route.query.email,
       emailErrors: [],
-      step: 'login',
+      step: this.$route.query.step || 'login',
       stepsTitles: {
         login: this.$t('pages.login.title'),
         emailConfirmed: this.$t('common.checkInbox'),
         createUser: this.$t('pages.login.createUserMsg2'),
         createUserConfirmed: this.$t('pages.login.createUserConfirm'),
-        changePassword: this.$t('pages.login.changePassword'),
         changePasswordSent: this.$t('pages.login.changePassword')
       },
       password: '',

@@ -41,15 +41,15 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 
   const payload = jwt.getPayload(user)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-  const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
-  const linkUrl = new URL(link)
+  const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me')
+  linkUrl.searchParams.set('id_token', token)
   debug(`Passwordless authentication of user ${user.name}`)
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'login',
     messages: req.messages,
     to: user.email,
-    params: { link, host: linkUrl.host, origin: linkUrl.origin }
+    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
   })
   res.status(204).send()
 }))
@@ -100,10 +100,11 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   const payload = jwt.getPayload(user)
   if (!storage.readonly) await storage.updateLogged(user.id)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-  const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
+  const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me')
+  linkUrl.searchParams.set('id_token', token)
   debug(`Password based authentication of user ${user.name}`)
-  if (req.is('application/x-www-form-urlencoded')) res.redirect(link)
-  else res.send(link)
+  if (req.is('application/x-www-form-urlencoded')) res.redirect(linkUrl.href)
+  else res.send(linkUrl.href)
 }))
 
 // Send an email to confirm user identity before authorizing an action
@@ -132,7 +133,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   payload.action = req.body.action
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(req.body.target || config.publicUrl + '/login')
-  linkUrl.searchParams.set('action_token', encodeURIComponent(token))
+  linkUrl.searchParams.set('action_token', token)
 
   await mails.send({
     transport: req.app.get('mailTransport'),

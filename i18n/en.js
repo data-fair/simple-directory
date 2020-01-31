@@ -152,6 +152,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       deleteMemberSuccess: 'The user {name} was excluded from the organization',
       inviteEmail: `Email address of the user`,
       inviteSuccess: `An invitation was sent to the address {email}`,
+      memberConflict: 'This user is already a member',
       back: 'Back',
       next: 'Next'
     },

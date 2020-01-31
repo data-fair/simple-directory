@@ -74,7 +74,7 @@
       <v-pagination :length="Math.ceil(members.count / membersPageSize)" v-model="membersPage" @input="fetchMembers"/>
     </v-layout>
 
-    <v-dialog v-model="inviteMemberDialog" max-width="500px">
+    <v-dialog v-if="members && members.results" v-model="inviteMemberDialog" max-width="500px">
       <v-card v-if="orga">
         <v-card-title primary-title>
           {{ $t('pages.organization.addMember') }}
@@ -85,7 +85,7 @@
               id="id"
               v-model="invitation.email"
               :label="$t('pages.organization.inviteEmail')"
-              :rules="[v => !!v || '']"
+              :rules="[v => !!v || '', v => !members.results.find(m => m.email === v) || $t('pages.organization.memberConflict')]"
               name="email"
               required
             />
