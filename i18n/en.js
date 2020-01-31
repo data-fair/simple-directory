@@ -131,12 +131,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       changePassword: 'Renew the password.',
       changePasswordTooltip: `In case you forgot your password or if you need to change it, renew your password.`,
       newPasswordMsg: `Type twice the new password.`,
-      changePasswordConfirmed: `
-<p>The password associated with your account has been modified.</p>
-<p class="caption">You can login using the new password.</p>
-      `,
       changePasswordSent: `An email was sent to the address {email}. This email contains a link to change the password of your account.`,
-      passwordlessMsg1: `To connect to our platform an email is sufficient.`,
+      passwordlessMsg1: `To login an email is sufficient.`,
       passwordlessMsg2: `Send a login email.`,
       passwordlessConfirmed: `An email was sent to the address {email}. This email contains a link to connect to the platform.`,
       createUserMsg1: `If you didn't already connect to our platform you must create an account.`,
@@ -176,7 +172,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     serviceUnavailable: 'Service unavailable because of maintenance.',
     badCredentials: `Email address or password invalid.`,
     invalidToken: `The token is not valid. Maybe it is expired.`,
-    malformedPassword: 'The password should be at least 8 characters long and contain at least on number and one uppercase character.'
+    malformedPassword: 'The password should be at least 8 characters long and contain at least on number and one uppercase character.',
+    noPasswordless: `Passordless authentication is not accepted by this service.`
   },
   mails: {
     creation: {

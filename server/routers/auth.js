@@ -19,6 +19,7 @@ router.use(bodyParser.urlencoded({ limit: '100kb' }))
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
 router.post('/passwordless', asyncWrap(async (req, res, next) => {
+  if (!config.passwordless) return res.status(400).send(req.messages.errors.noPasswordless)
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
 
@@ -114,7 +115,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   let user = await storage.getUserByEmail(req.body.email)
   // No 404 here so we don't disclose information about existence of the user
-  if (!user) {
+  if (!user || user.emailConfirmed === false) {
     const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
     const linkUrl = new URL(link)
     await mails.send({

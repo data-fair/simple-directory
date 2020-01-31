@@ -130,19 +130,15 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       maildevLink: 'Accédez à la boite mail de développement',
       newPassword: 'Nouveau mot de passe',
       newPassword2: 'Confirmez le nouveau mot de passe',
-      changePassword: 'Renouveler le mot de passe.',
+      changePassword: 'Renouveler le mot de passe',
       changePasswordTooltip: `En cas d'oubli de votre mot de passe ou de besoin de modification de celui-ci, renouvelez votre mot de passe.`,
       newPasswordMsg: `Saisissez 2 fois le nouveau mot de passe.`,
-      changePasswordConfirmed: `
-<p>Le mot de passe associé à votre compte a bien été modifié.</p>
-<p class="caption">Vous pouvez vous connecter avec le nouveau mot de passe.</p>
-      `,
       changePasswordSent: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour modifier le mot de passe associé à votre compte.`,
-      passwordlessMsg1: `Pour vous connecter à notre plateforme un email suffit.`,
+      passwordlessMsg1: `Pour vous connecter un email suffit.`,
       passwordlessMsg2: `Envoyer un email de connexion.`,
       passwordlessConfirmed: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour vous connecter sur notre plateforme.`,
       createUserMsg1: `Si vous ne vous êtes pas encore connecté à notre plateforme veuillez créer un compte.`,
-      createUserMsg2: `Créer un compte.`,
+      createUserMsg2: `Créer un compte`,
       tosMsg: `Avant de créer votre compte veuillez prendre connaissance de <a href="{tosUrl}" target="_blank">nos conditions générales d'utilisation</a>.`,
       tosConfirm: `Je confirme avoir lu les conditions générales d'utilisation pour ce site.`,
       createUserConfirm: 'Créer le compte',
@@ -184,7 +180,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     serviceUnavailable: 'Service indisponible pour cause de maintenance.',
     badCredentials: `Adresse email ou mot de passe invalide.`,
     invalidToken: `Le jeton n'est pas valide. Il est peut-être périmé.`,
-    malformedPassword: 'Le mot de passe doit faire au moins 8 caractères et contenir au moins un chiffre et une majuscule.'
+    malformedPassword: 'Le mot de passe doit faire au moins 8 caractères et contenir au moins un chiffre et une majuscule.',
+    noPasswordless: `L'authentification sans mot de passe n'est pas acceptée par ce service.`
   },
   mails: {
     creation: {
@@ -216,11 +213,11 @@ Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vo
     noCreation: {
       subject: `Échec d'authentification sur {host}`,
       text: `
-Une demande d'identification a été faite depuis {host}, mais elle a été rejetée car cette adresse email est inconnue.
+Une demande d'identification a été faite depuis {host}, mais elle a été rejetée car cette adresse email est inconnue ou n'a pas été validée.
 
 N'hésitez pas à nous contacter à {contact}.
       `,
-      htmlMsg: `Une demande d'identification a été faite depuis <a href="{origin}">{host}</a>, mais elle a été rejetée car cette adresse email est inconnue.`,
+      htmlMsg: `Une demande d'identification a été faite depuis <a href="{origin}">{host}</a>, mais elle a été rejetée car cette adresse email est inconnue ou n'a pas été validée.`,
       htmlCaption: `N'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     },
     conflict: {

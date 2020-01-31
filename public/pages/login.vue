@@ -10,29 +10,42 @@
           </div>
         </v-card-title>
         <v-window v-model="step">
-          <v-window-item value="email">
+          <v-window-item value="login">
             <v-card-text>
               <v-text-field
                 id="email"
                 :autofocus="true"
                 :label="$t('pages.login.emailLabel')"
                 v-model="email"
-                :error-messages="emailErrors"
                 name="email"
-                @keyup.enter="step='password'"
               />
-              <v-layout row>
-                <p>{{ $t('pages.login.passwordlessMsg1') }} <a @click="passwordlessAuth">{{ $t('pages.login.passwordlessMsg2') }}</a></p>
+              <v-layout v-if="env.passwordless" row class="caption">
+                <p class="mb-2">{{ $t('pages.login.passwordlessMsg1') }} <a @click="passwordlessAuth">{{ $t('pages.login.passwordlessMsg2') }}</a></p>
               </v-layout>
+
+              <v-text-field
+                id="password"
+                :autofocus="true"
+                :label="$t('common.password')"
+                v-model="password"
+                :error-messages="passwordErrors"
+                name="password"
+                type="password"
+                @keyup.enter="passwordAuth"
+              />
               <v-layout v-if="!env.onlyCreateInvited" row>
-                <p>{{ $t('pages.login.createUserMsg1') }} <a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a></p>
+                <p class="mb-2"><a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a></p>
               </v-layout>
+              <v-layout v-if="!env.readonly" row>
+                <p class="mb-0"><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
+              </v-layout>
+
             </v-card-text>
 
             <v-card-actions>
               <v-spacer/>
-              <v-btn :disabled="!email" color="primary" depressed @click="step='password'">
-                {{ $t('common.next') }}
+              <v-btn :disabled="!email || !password" color="primary" depressed @click="passwordAuth">
+                {{ $t('common.login') }}
               </v-btn>
             </v-card-actions>
           </v-window-item>
@@ -51,7 +64,7 @@
             </v-card-text>
 
             <v-card-actions>
-              <v-btn v-if="step !== 1" flat @click="step='email'">
+              <v-btn v-if="step !== 1" flat @click="step='login'">
                 {{ $t('common.back') }}
               </v-btn>
               <v-spacer/>
@@ -63,35 +76,46 @@
 
           <v-window-item value="createUser">
             <v-card-text>
+              <v-form ref="createUserForm">
+                <v-text-field
+                  id="createuser-email"
+                  :autofocus="true"
+                  :label="$t('pages.login.emailLabel')"
+                  v-model="email"
+                  :rules="[v => !!v || '']"
+                  name="createuser-email"
+                  required
+                />
 
-              <v-text-field
-                :autofocus="true"
-                :label="$t('common.firstName')"
-                v-model="newUser.firstName"
-                name="firstname"
-                @keyup.enter="createUser"
-              />
+                <v-text-field
+                  :autofocus="true"
+                  :label="$t('common.firstName')"
+                  v-model="newUser.firstName"
+                  name="firstname"
+                  @keyup.enter="createUser"
+                />
 
-              <v-text-field
-                :label="$t('common.lastName')"
-                v-model="newUser.lastName"
-                name="lastname"
-                @keyup.enter="createUser"
-              />
+                <v-text-field
+                  :label="$t('common.lastName')"
+                  v-model="newUser.lastName"
+                  name="lastname"
+                  @keyup.enter="createUser"
+                />
 
-              <v-text-field
-                id="password"
-                :label="$t('common.password')"
-                v-model="newUser.password"
-                :error-messages="createUserErrors"
-                name="password"
-                type="password"
-                @keyup.enter="createUser"
-              />
+                <v-text-field
+                  id="password"
+                  :label="$t('common.password')"
+                  v-model="newUser.password"
+                  :error-messages="createUserErrors"
+                  name="password"
+                  type="password"
+                  @keyup.enter="createUser"
+                />
+              </v-form>
             </v-card-text>
 
             <v-card-actions>
-              <v-btn v-if="step !== 1" flat @click="step='email'">
+              <v-btn v-if="step !== 1" flat @click="step='login'">
                 {{ $t('common.back') }}
               </v-btn>
               <v-spacer/>
@@ -101,42 +125,16 @@
             </v-card-actions>
           </v-window-item>
 
-          <v-window-item value="password">
-            <v-card-text>
-
-              <v-text-field
-                id="password"
-                :autofocus="true"
-                :label="$t('common.password')"
-                v-model="password"
-                :error-messages="passwordErrors"
-                name="password"
-                type="password"
-                @keyup.enter="passwordAuth"
-              />
-
-              <v-layout v-if="!env.readonly" row>
-                <v-spacer/>
-                <p><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
-              </v-layout>
-            </v-card-text>
-
-            <v-card-actions>
-              <v-btn v-if="step !== 1" flat @click="step='email'">
-                {{ $t('common.back') }}
-              </v-btn>
-              <v-spacer/>
-              <v-btn :disabled="step === 1 && !email" color="primary" depressed @click="passwordAuth">
-                {{ $t('common.validate') }}
-              </v-btn>
-            </v-card-actions>
-          </v-window-item>
-
           <v-window-item value="createUserConfirmed">
             <v-card-text>
               <p>{{ $t('pages.login.createUserConfirmed', {email}) }}</p>
               <p class="caption">{{ $t('common.spamWarning', {email}) }}</p>
             </v-card-text>
+            <v-card-actions>
+              <v-btn v-if="step !== 1" flat @click="step='login'">
+                {{ $t('common.back') }}
+              </v-btn>
+            </v-card-actions>
           </v-window-item>
 
           <v-window-item value="emailConfirmed">
@@ -144,6 +142,11 @@
               <p>{{ $t('pages.login.passwordlessConfirmed', {email}) }}</p>
               <p class="caption">{{ $t('common.spamWarning', {email}) }}</p>
             </v-card-text>
+            <v-card-actions>
+              <v-btn v-if="step !== 1" flat @click="step='login'">
+                {{ $t('common.back') }}
+              </v-btn>
+            </v-card-actions>
           </v-window-item>
 
           <v-window-item value="changePasswordSent">
@@ -151,6 +154,11 @@
               <p>{{ $t('pages.login.changePasswordSent', {email}) }}</p>
               <p class="caption">{{ $t('common.spamWarning', {email}) }}</p>
             </v-card-text>
+            <v-card-actions>
+              <v-btn v-if="step !== 1" flat @click="step='login'">
+                {{ $t('common.back') }}
+              </v-btn>
+            </v-card-actions>
           </v-window-item>
 
           <v-window-item value="changePassword">
@@ -173,22 +181,12 @@
               />
             </v-card-text>
             <v-card-actions>
-              <v-btn v-if="step !== 1" flat @click="step='email'">
+              <v-btn v-if="step !== 1" flat @click="step='login'">
                 {{ $t('common.back') }}
               </v-btn>
               <v-spacer/>
               <v-btn :disabled="!newPassword || newPassword !== newPassword2" color="primary" depressed @click="changePassword">
                 {{ $t('common.validate') }}
-              </v-btn>
-            </v-card-actions>
-          </v-window-item>
-
-          <v-window-item value="changePasswordConfirmed">
-            <v-card-text v-html="$t('pages.login.changePasswordConfirmed')"/>
-            <v-card-actions>
-              <v-spacer/>
-              <v-btn :disabled="step === 1 && !email" color="primary" depressed @click="step='password'">
-                {{ $t('common.login') }}
               </v-btn>
             </v-card-actions>
           </v-window-item>
@@ -219,10 +217,14 @@ export default {
       dialog: true,
       email: this.$route.query.email,
       emailErrors: [],
-      step: 'email',
+      step: 'login',
       stepsTitles: {
-        email: this.$t('pages.login.title'),
-        emailConfirmed: this.$t('common.checkInbox')
+        login: this.$t('pages.login.title'),
+        emailConfirmed: this.$t('common.checkInbox'),
+        createUser: this.$t('pages.login.createUserMsg2'),
+        createUserConfirmed: this.$t('pages.login.createUserConfirm'),
+        changePassword: this.$t('pages.login.changePassword'),
+        changePasswordSent: this.$t('pages.login.changePassword')
       },
       password: '',
       passwordErrors: [],
@@ -255,18 +257,15 @@ export default {
       this.step = 'changePassword'
       this.email = this.actionPayload.email
     } else {
-      this.step = 'email'
+      this.step = 'login'
     }
   },
   methods: {
     createUserStep() {
-      if (!this.email) {
-        this.emailErrors = ['']
-      } else {
-        this.step = this.env.tosUrl ? 'tos' : 'createUser'
-      }
+      this.step = this.env.tosUrl ? 'tos' : 'createUser'
     },
     async createUser() {
+      if (!this.$refs.createUserForm.validate()) return
       try {
         await this.$axios.$post('api/users', { email: this.email, ...this.newUser }, { params: { redirect: this.redirectUrl } })
         this.createUserErrors = []
@@ -289,7 +288,6 @@ export default {
     async passwordAuth() {
       try {
         const link = await this.$axios.$post('api/auth/password', { email: this.email, password: this.password }, { params: { redirect: this.redirectUrl } })
-        console.log('LINK', link)
         window.location.href = link
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
@@ -307,7 +305,8 @@ export default {
     async changePassword() {
       try {
         await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, { password: this.newPassword }, { params: { 'action_token': this.actionToken } })
-        this.step = 'changePasswordConfirmed'
+        const link = await this.$axios.$post('api/auth/password', { email: this.email, password: this.newPassword }, { params: { redirect: this.redirectUrl } })
+        window.location.href = link
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
         else this.newPasswordErrors = [error.response.data || error.message]

@@ -6,3 +6,4 @@
 /public/pages/doc
 /security
 *.swp
+/nuxt-dist

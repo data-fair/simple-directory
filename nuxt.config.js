@@ -64,7 +64,8 @@ module.exports = {
     onlyCreateInvited: config.onlyCreateInvited,
     tosUrl: config.tosUrl,
     manageDepartments: config.manageDepartments,
-    manageDepartmentLabel: config.manageDepartmentLabel
+    manageDepartmentLabel: config.manageDepartmentLabel,
+    passwordless: config.passwordless
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

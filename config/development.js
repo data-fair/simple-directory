@@ -40,5 +40,7 @@ module.exports = {
   webhooks: {
     identities: [{ base: 'http://test-koumoul.com/identities', key: 'somesecret' }]
   },
-  manageDepartments: true
+  tosUrl: 'https://test.com',
+  manageDepartments: true,
+  passwordless: false
 }

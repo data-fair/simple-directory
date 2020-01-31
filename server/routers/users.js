@@ -44,6 +44,24 @@ router.post('', asyncWrap(async (req, res, next) => {
 
   const storage = req.app.get('storage')
 
+  // create user
+  const newUser = {
+    email: req.body.email,
+    id: shortid.generate(),
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    emailConfirmed: false
+  }
+  newUser.name = userName(newUser)
+
+  // password is optional as we support passwordless auth
+  if (![undefined, null].includes(req.body.password)) {
+    if (!passwords.validate(req.body.password)) {
+      return res.status(400).send(req.messages.errors.malformedPassword)
+    }
+    newUser.password = await passwords.hashPassword(req.body.password)
+  }
+
   // email is already taken, send a conflict email
   const user = await req.app.get('storage').getUser({ email: req.body.email })
   if (user && user.emailConfirmed !== false) {
@@ -62,24 +80,6 @@ router.post('', asyncWrap(async (req, res, next) => {
   // Re-create a user that was never validated.. first clean temporary user
   if (user && user.emailConfirmed === false) {
     await storage.deleteUser(user.id)
-  }
-
-  // create user
-  const newUser = {
-    email: req.body.email,
-    id: shortid.generate(),
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    emailConfirmed: false
-  }
-  newUser.name = userName(newUser)
-
-  // password is optional as we support passwordless auth
-  if (![undefined, null].includes(req.body.password)) {
-    if (!passwords.validate(req.body.password)) {
-      return res.status(400).send(req.messages.errors.malformedPassword)
-    }
-    newUser.password = await passwords.hashPassword(req.body.password)
   }
 
   await storage.createUser(newUser)
