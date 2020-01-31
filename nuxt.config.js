@@ -42,6 +42,8 @@ module.exports = {
   },
   modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', 'cookie-universal-nuxt', ['nuxt-i18n', {
     seo: false,
+    // cannot come from config as it must be defined at build time (routes are impacted
+    // we will override some of it at runtime using env.i18n
     locales: i18n.locales,
     defaultLocale: i18n.defaultLocale,
     vueI18n: {
@@ -65,7 +67,8 @@ module.exports = {
     tosUrl: config.tosUrl,
     manageDepartments: config.manageDepartments,
     manageDepartmentLabel: config.manageDepartmentLabel,
-    passwordless: config.passwordless
+    passwordless: config.passwordless,
+    i18n: config.i18n
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

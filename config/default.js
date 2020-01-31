@@ -62,6 +62,9 @@ module.exports = {
     cssUrl: null,
     cssText: ''
   },
+  i18n: {
+    locales: ['fr', 'en']
+  },
   mails: {
     from: 'no-reply@test.com',
     // transport is a full configuration object for createTransport of nodemailer

@@ -67,6 +67,12 @@ module.exports = {
     cssUrl: 'THEME_CSS_URL',
     cssText: 'THEME_CSS_TEXT'
   },
+  i18n: {
+    locales: {
+      __name: 'I18N_LOCALES',
+      __format: 'json'
+    }
+  },
   mails: {
     transport: {
       __name: 'MAILS_TRANSPORT',
