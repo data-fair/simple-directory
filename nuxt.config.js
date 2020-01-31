@@ -8,7 +8,7 @@ config.readonly = require('./server/storages').readonly()
 if (process.env.NODE_ENV === 'production') {
   const nuxtConfigInject = require('@koumoul/nuxt-config-inject')
   if (process.argv.slice(-1)[0] === 'build') config = nuxtConfigInject.prepare(config)
-  else nuxtConfigInject.replace(config)
+  else nuxtConfigInject.replace(config, ['nuxt-dist/**/*', 'static/**/*'])
 }
 
 const webpack = require('webpack')
@@ -16,6 +16,7 @@ const VuetifyLoaderPlugin = require('vuetify-loader/lib/plugin')
 
 module.exports = {
   srcDir: 'public/',
+  buildDir: 'nuxt-dist',
   build: {
     transpile: ['vuetify', /@koumoul/], // Necessary for "à la carte" import of vuetify components
     publicPath: config.publicUrl + '/_nuxt/',
