@@ -181,9 +181,6 @@
               />
             </v-card-text>
             <v-card-actions>
-              <v-btn v-if="step !== 1" flat @click="step='login'">
-                {{ $t('common.back') }}
-              </v-btn>
               <v-spacer/>
               <v-btn :disabled="!newPassword || newPassword !== newPassword2" color="primary" depressed @click="changePassword">
                 {{ $t('common.validate') }}
