@@ -8,7 +8,7 @@ config.readonly = require('./server/storages').readonly()
 if (process.env.NODE_ENV === 'production') {
   const nuxtConfigInject = require('@koumoul/nuxt-config-inject')
   if (process.argv.slice(-1)[0] === 'build') config = nuxtConfigInject.prepare(config)
-  else nuxtConfigInject.replace(config, ['nuxt-dist/**/*', 'static/**/*'])
+  else nuxtConfigInject.replace(config, ['nuxt-dist/**/*', 'public/static/**/*'])
 }
 
 const webpack = require('webpack')
