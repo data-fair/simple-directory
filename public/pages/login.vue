@@ -25,7 +25,6 @@
 
               <v-text-field
                 id="password"
-                :autofocus="true"
                 :label="$t('common.password')"
                 v-model="password"
                 :error-messages="passwordErrors"
@@ -88,7 +87,6 @@
                 />
 
                 <v-text-field
-                  :autofocus="true"
                   :label="$t('common.firstName')"
                   v-model="newUser.firstName"
                   name="firstname"
