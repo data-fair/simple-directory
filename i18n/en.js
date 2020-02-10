@@ -52,7 +52,10 @@ module.exports = {
     password: 'Password',
     checkInbox: 'Check your mail box',
     spamWarning: `If you didn't receive an email, check if it was classified as spam in your mail box.`,
-    validate: 'Validate'
+    validate: 'Validate',
+    department: 'Department',
+    departments: 'Departments',
+    autoAdmin: `Automatically add me as admin `
   },
   doc: {
     about: {

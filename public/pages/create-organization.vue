@@ -15,6 +15,7 @@
         name="description"
         outline
       />
+      <v-checkbox v-if="user && user.adminMode" :label="$t('common.autoAdmin')" v-model="autoAdmin" name="member" />
       <v-layout row>
         <v-spacer/>
         <v-btn :disabled="!valid" color="primary" @click="create">{{ $t('common.save') }}</v-btn>
@@ -24,16 +25,23 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 import eventBus from '../event-bus'
 export default {
-  data: () => ({ valid: true, newOrga: { name: '', description: '' } }),
+  data: () => ({
+    valid: true,
+    newOrga: { name: '', description: '' },
+    autoAdmin: true
+  }),
+  computed: {
+    ...mapState('session', ['user'])
+  },
   methods: {
     ...mapActions(['fetchUserDetails']),
     async create() {
       if (!this.$refs.form.validate()) return
       try {
-        const res = await this.$axios.$post('api/organizations', this.newOrga)
+        const res = await this.$axios.$post('api/organizations', this.newOrga, { params: { autoAdmin: this.autoAdmin } })
         this.fetchUserDetails()
         this.$router.push(this.localePath({ name: 'organization-id', params: { id: res.id } }))
       } catch (error) {

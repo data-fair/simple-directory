@@ -83,7 +83,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   const orga = req.body
   orga.id = orga.id || shortid.generate()
   await storage.createOrganization(orga, req.user)
-  await storage.addMember(orga, req.user, 'admin')
+  if (req.query.autoAdmin !== 'false') await storage.addMember(orga, req.user, 'admin')
   webhooks.postIdentity('organization', orga)
   res.status(201).send(orga)
 }))

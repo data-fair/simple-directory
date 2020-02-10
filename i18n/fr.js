@@ -54,7 +54,8 @@ module.exports = {
     spamWarning: `Si vous n'avez pas reçu de mail, vérifiez qu'il n'a pas été classé automatiquement en tant que spam.`,
     validate: 'Valider',
     department: 'Département',
-    departments: 'Départements'
+    departments: 'Départements',
+    autoAdmin: `M'ajouter automatiquement comme administrateur`
   },
   doc: {
     about: {
