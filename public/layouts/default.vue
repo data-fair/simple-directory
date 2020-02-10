@@ -92,10 +92,13 @@
           {{ $t('common.logLink') }}
         </v-btn>
         <v-menu v-else-if="userDetails" offset-y>
-          <v-btn slot="activator" flat>{{ userDetails.name }}</v-btn>
+          <v-btn slot="activator" flat>{{ user.name }}</v-btn>
           <v-list>
             <v-list-tile @click="logout">
               <v-list-tile-title>{{ $t('common.logout') }}</v-list-tile-title>
+            </v-list-tile>
+            <v-list-tile @click="asAdmin()">
+              <v-list-tile-title>{{ $t('common.delAsAdmin') }}</v-list-tile-title>
             </v-list-tile>
             <v-list-tile v-if="user.isAdmin && !user.adminMode" color="admin" @click="setAdminMode(true)">
               <v-list-tile-title>{{ $t('common.activateAdminMode') }}</v-list-tile-title>
@@ -184,7 +187,7 @@ export default {
       this.showSnackbar = true
     })
   },
-  methods: mapActions('session', ['logout', 'login', 'setAdminMode'])
+  methods: mapActions('session', ['logout', 'login', 'setAdminMode', 'asAdmin'])
 }
 
 </script>

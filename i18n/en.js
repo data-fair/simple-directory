@@ -55,7 +55,9 @@ module.exports = {
     validate: 'Validate',
     department: 'Department',
     departments: 'Departments',
-    autoAdmin: `Automatically add me as admin `
+    autoAdmin: `Automatically add me as admin`,
+    asAdmin: 'Log as this user',
+    delAsAdmin: 'Get back to your normal session'
   },
   doc: {
     about: {

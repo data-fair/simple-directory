@@ -72,11 +72,16 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   const user = await storage.getUser({ id: decoded.id })
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = jwt.getPayload(user)
-  if (!storage.readonly) {
-    await storage.updateLogged(decoded.id)
-    if (user.emailConfirmed === false) {
-      await storage.confirmEmail(decoded.id)
-      webhooks.postIdentity('user', user)
+  if (decoded.asAdmin) {
+    payload.asAdmin = decoded.asAdmin
+    payload.name = decoded.name
+  } else {
+    if (!storage.readonly) {
+      await storage.updateLogged(decoded.id)
+      if (user.emailConfirmed === false) {
+        await storage.confirmEmail(decoded.id)
+        webhooks.postIdentity('user', user)
+      }
     }
   }
 
@@ -143,4 +148,49 @@ router.post('/action', asyncWrap(async (req, res, next) => {
     params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
   })
   res.status(204).send()
+}))
+
+// create a session has a user but from a super admin session
+router.post('/asadmin', asyncWrap(async (req, res, next) => {
+  const idToken = (req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop())
+  if (!idToken) {
+    return res.status(401).send('No id_token cookie provided')
+  }
+  let decoded
+  try {
+    decoded = await jwt.verify(req.app.get('keys'), idToken)
+  } catch (err) {
+    return res.status(401).send('Invalid id_token')
+  }
+  if (!decoded.isAdmin) return res.status(403).send('This functionality is for admins only')
+  const storage = req.app.get('storage')
+  const user = await storage.getUser({ id: req.body.id })
+  if (!user) return res.status(404).send('User does not exist')
+  const payload = jwt.getPayload(user)
+  payload.name += ' (administration)'
+  payload.asAdmin = { id: idToken.id, name: idToken.name }
+  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  debug(`Exchange session token for user ${user.name} from an admin session`)
+  res.send(token)
+}))
+router.delete('/asadmin', asyncWrap(async (req, res, next) => {
+  const idToken = (req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop())
+  if (!idToken) {
+    return res.status(401).send('No id_token cookie provided')
+  }
+  let decoded
+  try {
+    decoded = await jwt.verify(req.app.get('keys'), idToken)
+  } catch (err) {
+    return res.status(401).send('Invalid id_token')
+  }
+  if (!decoded.asAdmin) return res.status(403).send('This functionality is for admins only')
+
+  const storage = req.app.get('storage')
+  const user = await storage.getUser({ id: decoded.asAdmin.id })
+  if (!user) return res.status(401).send('User does not exist anymore')
+  const payload = jwt.getPayload(user)
+  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  debug(`Exchange session token for user ${user.name} from an asAdmin session`)
+  res.send(token)
 }))

@@ -55,7 +55,9 @@ module.exports = {
     validate: 'Valider',
     department: 'Département',
     departments: 'Départements',
-    autoAdmin: `M'ajouter automatiquement comme administrateur`
+    autoAdmin: `M'ajouter automatiquement comme administrateur`,
+    asAdmin: 'Se connecter en tant que cet utiisateur',
+    delAsAdmin: 'Revenir à ma session administrateur'
   },
   doc: {
     about: {

@@ -55,7 +55,10 @@
           <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
           <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
           <td class="justify-center layout px-0">
-            <v-btn icon class="mx-0" @click="currentUser = props.item;deleteUserDialog = true">
+            <v-btn :title="$t('common.asAdmin')" icon class="mx-0" @click="asAdmin(props.item)">
+              <v-icon color="warning">supervised_user_circle</v-icon>
+            </v-btn>
+            <v-btn :title="$t('common.delete')" icon class="mx-0" @click="currentUser = props.item;deleteUserDialog = true">
               <v-icon color="warning">delete</v-icon>
             </v-btn>
           </td>
@@ -100,7 +103,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 import eventBus from '../../event-bus'
 export default {
   data: () => ({
@@ -150,6 +153,7 @@ export default {
     }
   },
   methods: {
+    ...mapActions('session', ['asAdmin']),
     async fetchUsers() {
       this.loading = true
       try {
