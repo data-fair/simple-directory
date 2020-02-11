@@ -15,7 +15,7 @@
         name="description"
         outline
       />
-      <v-checkbox v-if="user && user.adminMode" :label="$t('common.autoAdmin')" v-model="autoAdmin" name="member" />
+      <v-checkbox v-if="user && user.isAdmin" :label="$t('common.autoAdmin')" v-model="autoAdmin" name="member" />
       <v-layout row>
         <v-spacer/>
         <v-btn :disabled="!valid" color="primary" @click="create">{{ $t('common.save') }}</v-btn>

@@ -60,6 +60,9 @@
             <v-btn :title="$t('pages.organization.editMember')" flat icon @click="currentMember = member; newRole = member.role; newDepartment = member.department; editMemberDialog = true">
               <v-icon>edit</v-icon>
             </v-btn>
+            <v-btn v-if="user.isAdmin" :title="$t('common.asAdmin')" icon class="mx-0" @click="asAdmin(props.item)">
+              <v-icon color="warning">supervised_user_circle</v-icon>
+            </v-btn>
             <v-btn :title="$t('pages.organization.deleteMember')" flat icon color="warning" @click="currentMember = member;deleteMemberDialog = true">
               <v-icon>delete</v-icon>
             </v-btn>
@@ -158,7 +161,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 import eventBus from '../event-bus'
 
 export default {
@@ -190,7 +193,9 @@ export default {
     newDepartment: null
   }),
   computed: {
-    ...mapState(['userDetails', 'env'])
+    ...mapState(['userDetails', 'env']),
+    ...mapState('session', ['user']),
+    ...mapActions('session', ['asAdmin'])
   },
   async mounted() {
     this.fetchMembers()
