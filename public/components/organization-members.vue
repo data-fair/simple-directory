@@ -56,13 +56,17 @@
               <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
             </v-list-tile-sub-title>
           </v-list-tile-content>
-          <v-list-tile-action v-if="isAdminOrga">
+          <v-list-tile-action v-if="isAdminOrga" style="min-width:0;">
             <v-btn :title="$t('pages.organization.editMember')" flat icon @click="currentMember = member; newRole = member.role; newDepartment = member.department; editMemberDialog = true">
               <v-icon>edit</v-icon>
             </v-btn>
-            <v-btn v-if="user.isAdmin" :title="$t('common.asAdmin')" icon class="mx-0" @click="asAdmin(member)">
+          </v-list-tile-action>
+          <v-list-tile-action v-if="user.adminMode" style="min-width:0;">
+            <v-btn :title="$t('common.asAdmin')" icon class="mx-0" @click="asAdmin(member)">
               <v-icon color="warning">supervised_user_circle</v-icon>
             </v-btn>
+          </v-list-tile-action>
+          <v-list-tile-action v-if="isAdminOrga" style="min-width:0;">
             <v-btn :title="$t('pages.organization.deleteMember')" flat icon color="warning" @click="currentMember = member;deleteMemberDialog = true">
               <v-icon>delete</v-icon>
             </v-btn>
@@ -194,13 +198,13 @@ export default {
   }),
   computed: {
     ...mapState(['userDetails', 'env']),
-    ...mapState('session', ['user']),
-    ...mapActions('session', ['asAdmin'])
+    ...mapState('session', ['user'])
   },
   async mounted() {
     this.fetchMembers()
   },
   methods: {
+    ...mapActions('session', ['asAdmin']),
     async fetchMembers() {
       try {
         this.members = await this.$axios.$get(`api/organizations/${this.orga.id}/members`,
