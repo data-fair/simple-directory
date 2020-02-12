@@ -54,7 +54,7 @@ class MongodbStorage {
   }
 
   async getUser(filter) {
-    if (filter.id) {
+    if ('id' in filter) {
       filter._id = filter.id
       delete filter.id
     }
