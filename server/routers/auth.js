@@ -75,6 +75,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   if (decoded.asAdmin) {
     payload.asAdmin = decoded.asAdmin
     payload.name = decoded.name
+    payload.isAdmin = false
   } else {
     if (!storage.readonly) {
       await storage.updateLogged(decoded.id)
@@ -169,6 +170,7 @@ router.post('/asadmin', asyncWrap(async (req, res, next) => {
   const payload = jwt.getPayload(user)
   payload.name += ' (administration)'
   payload.asAdmin = { id: idToken.id, name: idToken.name }
+  payload.isAdmin = false
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
   res.send(token)
