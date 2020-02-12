@@ -85,7 +85,6 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
       }
     }
   }
-
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name}`)
   res.send(token)
@@ -169,7 +168,7 @@ router.post('/asadmin', asyncWrap(async (req, res, next) => {
   if (!user) return res.status(404).send('User does not exist')
   const payload = jwt.getPayload(user)
   payload.name += ' (administration)'
-  payload.asAdmin = { id: idToken.id, name: idToken.name }
+  payload.asAdmin = { id: decoded.id, name: decoded.name }
   payload.isAdmin = false
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
@@ -187,7 +186,6 @@ router.delete('/asadmin', asyncWrap(async (req, res, next) => {
     return res.status(401).send('Invalid id_token')
   }
   if (!decoded.asAdmin) return res.status(403).send('This functionality is for admins only')
-
   const storage = req.app.get('storage')
   const user = await storage.getUser({ id: decoded.asAdmin.id })
   if (!user) return res.status(401).send('User does not exist anymore')
