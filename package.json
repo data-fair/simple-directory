@@ -4,7 +4,7 @@
   "description": "Easy users and organizations management for modern Web-oriented architectures.",
   "main": "server/app.js",
   "scripts": {
-    "test": "nyc ava --timeout=10000 -v test/*.js",
+    "test": "nyc ava --timeout=10000 --serial -v test/*.js",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "report": "nyc report --reporter=html",
     "lint": "eslint --ext js,vue --ignore-path .gitignore .",

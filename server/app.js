@@ -1,5 +1,4 @@
 const config = require('config')
-const fs = require('fs-extra')
 const express = require('express')
 const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser')
@@ -80,7 +79,6 @@ exports.run = async() => {
   app.set('mailTransport', mailTransport)
   // Run a handy development mail server
   if (config.maildev.active) {
-    await fs.remove('/tmp/maildev')
     const MailDev = require('maildev')
     const maildev = new MailDev(config.maildev)
     maildev.listenAsync = util.promisify(maildev.listen)
