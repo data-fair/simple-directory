@@ -1,11 +1,11 @@
 <template lang="html">
   <v-speed-dial
-    v-if="env.i18n.locales.length > 1"
+    v-if="locales.length > 1"
     direction="bottom"
     transition="fade-transition"
   >
     <v-btn slot="activator" fab depressed small>{{ $i18n.locale }}</v-btn>
-    <v-btn v-for="locale in env.i18n.locales.filter(l => l !== $i18n.locale)" :key="locale" :to="switchLocalePath(locale)" fab small nuxt>
+    <v-btn v-for="locale in locales.filter(l => l !== $i18n.locale)" :key="locale" :to="switchLocalePath(locale)" fab small nuxt>
       {{ locale }}
     </v-btn>
   </v-speed-dial>
@@ -16,7 +16,10 @@ import { mapState } from 'vuex'
 
 export default {
   computed: {
-    ...mapState(['env'])
+    ...mapState(['env']),
+    locales() {
+      return this.env.i18n.locales.filter(l => !!this.$i18n.locales.find(loc => loc.code === l))
+    }
   }
 }
 </script>
