@@ -3,7 +3,7 @@
     <v-flex xs12 sm8 md6 lg4 xl3>
       <v-card raised class="pa-2">
         <v-card-title primary-title>
-          <h3 class="headline mb-0">{{ stepsTitles[step] || email }}</h3>
+          <h3 :class="{headline: true, 'mb-0': true, 'warning--text': adminMode}">{{ stepsTitles[step] || email }}</h3>
           <div :class="`v-card v-card--raised theme--${env.theme.dark ? 'dark' : 'light'} login-logo-container`">
             <img v-if="env.theme.logo" :src="env.theme.logo">
             <logo v-else/>
@@ -12,6 +12,9 @@
         <v-window v-model="step">
           <v-window-item value="login">
             <v-card-text>
+              <v-layout v-if="adminMode" row>
+                <p class="warning--text">{{ $t('pages.login.adminMode') }}</p>
+              </v-layout>
               <v-text-field
                 id="email"
                 :autofocus="true"
@@ -19,7 +22,7 @@
                 v-model="email"
                 name="email"
               />
-              <v-layout v-if="env.passwordless" row class="caption">
+              <v-layout v-if="env.passwordless && !adminMode" row class="caption">
                 <p class="mb-2">{{ $t('pages.login.passwordlessMsg1') }} <a @click="passwordlessAuth">{{ $t('pages.login.passwordlessMsg2') }}</a></p>
               </v-layout>
 
@@ -32,10 +35,10 @@
                 type="password"
                 @keyup.enter="passwordAuth"
               />
-              <v-layout v-if="!env.onlyCreateInvited" row>
+              <v-layout v-if="!env.onlyCreateInvited && !adminMode" row>
                 <p class="mb-2"><a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a></p>
               </v-layout>
-              <v-layout v-if="!env.readonly" row>
+              <v-layout v-if="!env.readonly && !adminMode" row>
                 <p class="mb-0"><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
               </v-layout>
 
@@ -43,7 +46,7 @@
 
             <v-card-actions>
               <v-spacer/>
-              <v-btn :disabled="!email || !password" color="primary" depressed @click="passwordAuth">
+              <v-btn :disabled="!email || !password" :color="adminMode ? 'warning' : 'primary'" depressed @click="passwordAuth">
                 {{ $t('common.login') }}
               </v-btn>
             </v-card-actions>
@@ -223,6 +226,7 @@ export default {
       password: '',
       passwordErrors: [],
       actionToken: this.$route.query.action_token,
+      adminMode: this.$route.query.adminMode === 'true',
       newPassword: null,
       newPassword2: null,
       newPasswordErrors: [],
@@ -281,7 +285,7 @@ export default {
     },
     async passwordAuth() {
       try {
-        const link = await this.$axios.$post('api/auth/password', { email: this.email, password: this.password }, { params: { redirect: this.redirectUrl } })
+        const link = await this.$axios.$post('api/auth/password', { email: this.email, password: this.password, adminMode: this.adminMode }, { params: { redirect: this.redirectUrl } })
         window.location.href = link
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })

@@ -145,7 +145,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       tosMsg: `Before creating an account please read <a href="{tosUrl}" target="_blank">our terms of services</a>.`,
       tosConfirm: `I confirm that I have read the terms of services for this site.`,
       createUserConfirm: 'Create the account',
-      createUserConfirmed: `An email was sent to the address {email}. This email contains a link to validate the creation of your account.`
+      createUserConfirmed: `An email was sent to the address {email}. This email contains a link to validate the creation of your account.`,
+      adminMode: 'Confirm your identity to switch to admin mode.'
     },
     organization: {
       addMember: 'Invite a user to join this organization',

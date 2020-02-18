@@ -72,6 +72,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   const user = await storage.getUser({ id: decoded.id })
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = jwt.getPayload(user)
+  if (decoded.adminMode && req.query.noAdmin !== 'true') payload.adminMode = true
   if (decoded.asAdmin) {
     payload.asAdmin = decoded.asAdmin
     payload.name = decoded.name
@@ -103,6 +104,10 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   const validPassword = await passwords.checkPassword(req.body.password, storedPassword)
   if (!validPassword) return res.status(400).send(req.messages.errors.badCredentials)
   const payload = jwt.getPayload(user)
+  if (req.body.adminMode) {
+    if (payload.isAdmin) payload.adminMode = true
+    else return res.status(403).send('Admin mode for superadmins only')
+  }
   if (!storage.readonly) await storage.updateLogged(user.id)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me')

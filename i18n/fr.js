@@ -145,7 +145,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       tosMsg: `Avant de créer votre compte veuillez prendre connaissance de <a href="{tosUrl}" target="_blank">nos conditions générales d'utilisation</a>.`,
       tosConfirm: `Je confirme avoir lu les conditions générales d'utilisation pour ce site.`,
       createUserConfirm: 'Créer le compte',
-      createUserConfirmed: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour valider la création du compte.`
+      createUserConfirmed: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour valider la création du compte.`,
+      adminMode: 'Confirmez votre identité pour passer en mode administration.'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
