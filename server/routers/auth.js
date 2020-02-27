@@ -27,7 +27,6 @@ const limiterOptions = {
 }
 const limiter = (req) => {
   if (config.storage.type === 'mongo') {
-    console.log('mongo limiter')
     _limiter = _limiter || new RateLimiterMongo({ storeClient: req.app.get('storage').client, ...limiterOptions })
   } else {
     _limiter = _limiter || new RateLimiterMemory(limiterOptions)
