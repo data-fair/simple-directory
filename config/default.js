@@ -102,5 +102,9 @@ module.exports = {
   tosUrl: null,
   manageDepartments: false,
   manageDepartmentLabel: false,
-  passwordless: true
+  passwordless: true,
+  authRateLimit: {
+    attempts: 5,
+    duration: 60
+  }
 }

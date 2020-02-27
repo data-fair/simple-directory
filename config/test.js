@@ -16,5 +16,9 @@ module.exports = {
   },
   secretKeys: {
     sendMails: 'testkey'
+  },
+  authRateLimit: {
+    attempts: 100,
+    duration: 60
   }
 }

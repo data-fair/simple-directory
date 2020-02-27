@@ -22,8 +22,8 @@ router.use(bodyParser.urlencoded({ limit: '100kb' }))
 let _limiter
 const limiterOptions = {
   keyPrefix: 'sd-rate-limiter-auth',
-  points: 5, // 5 attempts
-  duration: 60 // per minute
+  points: config.authRateLimit.attempts,
+  duration: config.authRateLimit.duration
 }
 const limiter = (req) => {
   if (config.storage.type === 'mongo') {
