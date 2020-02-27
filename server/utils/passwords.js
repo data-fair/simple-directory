@@ -7,6 +7,7 @@ const params = { iterations: 100000, size: 64, alg: 'sha512' }
 
 exports.validate = (password, errorMessages) => {
   if (password.length < 8) return false
+  if (!/[a-z]/.exec(password)) return false
   if (!/[A-Z]/.exec(password)) return false
   if (!/[0-9]/.exec(password)) return false
   return true

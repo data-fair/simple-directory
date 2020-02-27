@@ -3,6 +3,8 @@ const express = require('express')
 const URL = require('url').URL
 const emailValidator = require('email-validator')
 const bodyParser = require('body-parser')
+const requestIp = require('request-ip')
+const { RateLimiterMongo, RateLimiterMemory } = require('rate-limiter-flexible')
 const jwt = require('../utils/jwt')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
@@ -16,12 +18,36 @@ let router = exports.router = express.Router()
 // html forms
 router.use(bodyParser.urlencoded({ limit: '100kb' }))
 
+// protect authentication routes with rate limiting to prevent brute force attacks
+let _limiter
+const limiterOptions = {
+  keyPrefix: 'sd-rate-limiter-auth',
+  points: 5, // 5 attempts
+  duration: 60 // per minute
+}
+const limiter = (req) => {
+  if (config.storage.type === 'mongo') {
+    console.log('mongo limiter')
+    _limiter = _limiter || new RateLimiterMongo({ storeClient: req.app.get('storage').client, ...limiterOptions })
+  } else {
+    _limiter = _limiter || new RateLimiterMemory(limiterOptions)
+  }
+  return _limiter
+}
+
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
 router.post('/passwordless', asyncWrap(async (req, res, next) => {
   if (!config.passwordless) return res.status(400).send(req.messages.errors.noPasswordless)
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
+
+  try {
+    await limiter(req).consume(requestIp.getClientIp(req), 1)
+  } catch (err) {
+    console.error('Rate limit error for /passwordless route', requestIp.getClientIp(req), req.body.email, err)
+    return res.status(429).send(req.messages.errors.rateLimitAuth)
+  }
 
   const storage = req.app.get('storage')
   let user = await storage.getUserByEmail(req.body.email)
@@ -97,6 +123,13 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
   if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
 
+  try {
+    await limiter(req).consume(requestIp.getClientIp(req), 1)
+  } catch (err) {
+    console.error('Rate limit error for /password route', requestIp.getClientIp(req), req.body.email, err)
+    return res.status(429).send(req.messages.errors.rateLimitAuth)
+  }
+
   const storage = req.app.get('storage')
   const user = await storage.getUserByEmail(req.body.email)
   if (!user || user.emailConfirmed === false) return res.status(400).send(req.messages.errors.badCredentials)
@@ -122,6 +155,13 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
   if (!req.body.action) return res.status(400).send(req.messages.errors.badCredentials)
+
+  try {
+    await limiter(req).consume(requestIp.getClientIp(req), 1)
+  } catch (err) {
+    console.error('Rate limit error for /action route', requestIp.getClientIp(req), req.body.email, err)
+    return res.status(429).send(req.messages.errors.rateLimitAuth)
+  }
 
   const storage = req.app.get('storage')
   let user = await storage.getUserByEmail(req.body.email)

@@ -186,7 +186,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     badCredentials: `Adresse email ou mot de passe invalide.`,
     invalidToken: `Le jeton n'est pas valide. Il est peut-être périmé.`,
     malformedPassword: 'Le mot de passe doit faire au moins 8 caractères et contenir au moins un chiffre et une majuscule.',
-    noPasswordless: `L'authentification sans mot de passe n'est pas acceptée par ce service.`
+    noPasswordless: `L'authentification sans mot de passe n'est pas acceptée par ce service.`,
+    rateLimitAuth: `Trop de tentatives dans un bref interval. Veuillez patienter avant d'essayer de nouveau.`
   },
   mails: {
     creation: {
