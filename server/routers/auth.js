@@ -234,6 +234,7 @@ router.delete('/asadmin', asyncWrap(async (req, res, next) => {
   const user = await storage.getUser({ id: decoded.asAdmin.id })
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = jwt.getPayload(user)
+  payload.adminMode = true
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
   res.send(token)
