@@ -150,7 +150,7 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
 router.delete('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (!isAdmin(req)) return res.status(403).send(req.messages.errors.permissionDenied)
-  const { count } = await req.app.get('storage').findMembers(req.params.organizationId, params)
+  const { count } = await req.app.get('storage').findMembers(req.params.organizationId)
   if (count > 1) return res.status(400).send(req.messages.errors.nonEmptyOrganization)
   await req.app.get('storage').deleteOrganization(req.params.organizationId)
   webhooks.deleteIdentity('organization', req.params.organizationId)
