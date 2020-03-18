@@ -125,5 +125,15 @@ module.exports = {
   passwordless: {
     __name: 'PASSWORDLESS',
     __format: 'json'
+  },
+  authRateLimit: {
+    attempts: {
+      __name: 'AUTHRATELIMIT_ATTEMPTS',
+      __format: 'json'
+    },
+    duration: {
+      __name: 'AUTHRATELIMIT_DURATION',
+      __format: 'json'
+    }
   }
 }
