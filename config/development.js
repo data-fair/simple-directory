@@ -13,15 +13,7 @@ module.exports = {
     from: 'no-reply@test.com',
     // transport is a full configuration object for createTransport of nodemailer
     // cf https://nodemailer.com/smtp/
-    transport: {
-      host: 'ssl0.ovh.net',
-      port: 465,
-      tls: true,
-      auth: {
-        user: 'no-reply@gfd-groupe.com',
-        pass: '!gfdservi44!'
-      }
-    }
+    transport: {}
   },
   secret: {
     public: './test/resources/test.key.pub',
