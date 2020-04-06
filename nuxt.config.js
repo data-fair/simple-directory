@@ -49,6 +49,11 @@ module.exports = {
     vueI18n: {
       fallbackLocale: i18n.defaultLocale,
       messages: config.i18nMessages
+    },
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_lang',
+      alwaysRedirect: true
     }
   }]],
   axios: {

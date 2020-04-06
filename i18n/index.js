@@ -34,7 +34,7 @@ exports.publicMessages = unflatten(
 
 exports.middleware = (req, res, next) => {
   const locales = acceptLangParser.parse(req.get('Accept-Language'))
-  const localeCode = (locales && locales[0] && locales[0].code) || exports.defaultLocale
+  const localeCode = req.cookies.i18n_lang || (locales && locales[0] && locales[0].code) || exports.defaultLocale
   req.messages = exports.messages[localeCode] || exports.messages[exports.defaultLocale]
   next()
 }
