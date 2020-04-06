@@ -180,7 +180,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     serviceUnavailable: 'Service unavailable because of maintenance.',
     badCredentials: `Email address or password invalid.`,
     invalidToken: `The token is not valid. Maybe it is expired.`,
-    malformedPassword: 'The password should be at least 8 characters long and contain at least on number and one uppercase character.',
+    malformedPassword: 'The password should be at least 8 characters long and contain at least one number and one uppercase character.',
     noPasswordless: `Passordless authentication is not accepted by this service.`,
     rateLimitAuth: `Too many attemps in a short interval. Please wait before trying again.`
   },
