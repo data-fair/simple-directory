@@ -99,7 +99,7 @@ export default {
   async mounted() {
     this.fetchOrganizations()
     this.headers = [
-      { text: this.$t('common.avatar'), value: 'avatarUrl' },
+      { text: this.$t('common.avatar'), value: 'avatarUrl', sortable: false },
       { text: this.$t('common.name'), value: 'name' },
       { text: this.$t('common.id'), value: 'id', sortable: false },
       { text: this.$t('common.description'), value: 'description', sortable: false }
