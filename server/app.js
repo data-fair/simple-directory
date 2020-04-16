@@ -47,6 +47,7 @@ app.use('/api/mails', require('./routers/mails'))
 app.use('/api/users', session.auth, fullUser, require('./routers/users'))
 app.use('/api/organizations', session.auth, fullUser, require('./routers/organizations'))
 app.use('/api/invitations', session.auth, fullUser, require('./routers/invitations'))
+app.use('/api/avatars', session.auth, fullUser, require('./routers/avatars'))
 app.use('/api/session', session.router)
 
 app.use((err, req, res, next) => {

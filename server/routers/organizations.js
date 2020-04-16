@@ -42,6 +42,10 @@ router.get('', asyncWrap(async (req, res, next) => {
       orga.roles = orga.roles || config.roles.defaults
     })
   }
+
+  organizations.results.forEach(orga => {
+    orga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
+  })
   res.json(organizations)
 }))
 
@@ -54,6 +58,7 @@ router.get('/:organizationId', asyncWrap(async (req, res, next) => {
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
   orga.roles = orga.roles || config.roles.defaults
+  orga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
   res.send(orga)
 }))
 
@@ -85,6 +90,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   await storage.createOrganization(orga, req.user)
   if (!req.user.isAdmin || req.query.autoAdmin !== 'false') await storage.addMember(orga, req.user, 'admin')
   webhooks.postIdentity('organization', orga)
+  orga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
   res.status(201).send(orga)
 }))
 
@@ -101,6 +107,7 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   if (forbiddenKey) return res.status(400).send('Only some parts of the organization can be modified through this route')
   const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body, req.user)
   webhooks.postIdentity('organization', patchedOrga)
+  patchedOrga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + patchedOrga.id + '/avatar.png'
   res.send(patchedOrga)
 }))
 
@@ -117,6 +124,9 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (req.query.role) params.roles = req.query.role.split(',')
   if (req.query.department) params.departments = req.query.department.split(',')
   const members = await req.app.get('storage').findMembers(req.params.organizationId, params)
+  members.results.forEach(member => {
+    member.avatarUrl = config.publicUrl + '/api/avatars/user/' + member.id + '/avatar.png'
+  })
   res.send(members)
 }))
 

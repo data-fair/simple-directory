@@ -50,6 +50,7 @@ class MongodbStorage {
     await ensureIndex(this.db, 'users', { email: 1 }, { unique: true, collation })
     await ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
     await ensureIndex(this.db, 'invitations', { email: 1, id: 1 }, { unique: true })
+    await ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1 }, { unique: true })
     return this
   }
 
@@ -253,6 +254,20 @@ class MongodbStorage {
   async removeMember(organizationId, userId) {
     await this.db.collection('users')
       .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId } } })
+  }
+
+  async setAvatar(avatar) {
+    await this.db.collection('avatars').replaceOne(
+      { 'owner.type': avatar.owner.type, 'owner.id': avatar.owner.id },
+      avatar,
+      { upsert: true }
+    )
+  }
+
+  async getAvatar(owner) {
+    const avatar = await this.db.collection('avatars').findOne({ 'owner.type': owner.type, 'owner.id': owner.id })
+    if (avatar && avatar.buffer) avatar.buffer = avatar.buffer.buffer
+    return avatar
   }
 }
 

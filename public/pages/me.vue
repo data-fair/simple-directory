@@ -8,6 +8,9 @@
         :disabled="true"
         name="email"
       />
+
+      <load-avatar v-if="userDetails" :owner="{...userDetails, type: 'user'}" />
+
       <v-text-field
         :label="$t('common.firstName')"
         v-model="patch.firstName"
@@ -48,8 +51,12 @@
 <script>
 import { mapState, mapActions } from 'vuex'
 import eventBus from '../event-bus'
+import LoadAvatar from '../components/load-avatar.vue'
 
 export default {
+  components: {
+    LoadAvatar
+  },
   data: () => ({
     patch: { firstName: null, lastName: null },
     rejectDialog: false,

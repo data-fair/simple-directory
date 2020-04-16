@@ -36,6 +36,9 @@
       rows-per-page-text=""
     >
       <template slot="items" slot-scope="props">
+        <td>
+          <v-avatar :size="40"><img :src="props.item.avatarUrl"></v-avatar>
+        </td>
         <td>{{ props.item.email }}</td>
         <td>{{ props.item.id }}</td>
         <td>{{ props.item.firstName }}</td>
@@ -134,6 +137,7 @@ export default {
   async mounted() {
     this.fetchUsers()
     this.headers = [
+      { text: this.$t('common.avatar'), value: 'avatarUrl' },
       { text: this.$t('common.email'), value: 'email' },
       { text: this.$t('common.id'), value: 'id', sortable: false },
       { text: this.$t('common.firstName'), value: 'firstName' },

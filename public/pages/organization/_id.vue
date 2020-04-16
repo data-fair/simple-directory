@@ -2,6 +2,7 @@
   <v-container v-if="orga">
     <h2 class="headline mb-3">{{ $t('common.organization') + ' ' + orga.name }}</h2>
     <v-subheader>{{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}</v-subheader>
+    <load-avatar v-if="orga" :owner="{...orga, type: 'organization'}" />
     <v-form ref="form" v-model="valid" lazy-validation @submit="save">
       <v-text-field
         :label="$t('common.name')"
@@ -48,9 +49,10 @@
 import { mapActions, mapState } from 'vuex'
 import OrganizationMembers from '~/components/organization-members.vue'
 import OrganizationDepartments from '~/components/organization-departments.vue'
+import LoadAvatar from '~/components/load-avatar.vue'
 
 export default {
-  components: { OrganizationMembers, OrganizationDepartments },
+  components: { OrganizationMembers, OrganizationDepartments, LoadAvatar },
   data: () => ({
     orga: null,
     valid: true

@@ -26,6 +26,11 @@
     "maxCreatedOrgs": {
       "description": "The maximum number of organizations this user can create. -1 means indeterminate number. Fallback to a global default value if not defined.",
       "type": "number"
+    },
+    "avatarUrl": {
+      "description": "URL of this user's avatar",
+      "type": "string",
+      "readOnly": true
     }
   }
 }

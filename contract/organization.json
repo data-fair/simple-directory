@@ -64,6 +64,11 @@
           }
         }
       }
+    },
+    "avatarUrl": {
+      "description": "URL of this organization's avatar",
+      "type": "string",
+      "readOnly": true
     }
   }
 }

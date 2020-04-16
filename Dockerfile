@@ -1,7 +1,7 @@
 FROM koumoul/webapp-base:1.8.0
 MAINTAINER "contact@koumoul.com"
 
-RUN apk add --update openssl
+RUN apk add --update openssl graphicsmagick
 
 ARG VERSION
 ENV VERSION=$VERSION
