@@ -25,6 +25,31 @@
         name="lastName"
         @keyup.enter="save"
       />
+      <v-layout row>
+        <v-menu
+          v-model="birthdayMenu"
+          :close-on-content-click="false"
+          :nudge-right="40"
+          transition="scale-transition"
+          offset-y
+          full-width
+          max-width="290px"
+          min-width="290px"
+        >
+          <template v-slot:activator="{ on }">
+            <v-text-field
+              v-model="patch.birthday"
+              :label="$t('common.birthday')"
+              prepend-icon="event"
+              readonly
+              clearable
+              v-on="on"
+            />
+          </template>
+          <v-date-picker v-model="patch.birthday" :max="maxBirthday" :picker-date="patch.birthday || maxBirthday" no-title @input="birthdayMenu = false"/>
+        </v-menu>
+      </v-layout>
+
       <div v-if="userDetails && userDetails.organizations.length">
         <span>{{ $t('common.organizations') }}:</span>
         <span v-for="orga in userDetails.organizations" :key="orga.id">
@@ -52,15 +77,18 @@
 import { mapState, mapActions } from 'vuex'
 import eventBus from '../event-bus'
 import LoadAvatar from '../components/load-avatar.vue'
+const moment = require('moment')
 
 export default {
   components: {
     LoadAvatar
   },
   data: () => ({
-    patch: { firstName: null, lastName: null },
+    patch: { firstName: null, lastName: null, birthday: null },
     rejectDialog: false,
-    nbCreatedOrgs: null
+    nbCreatedOrgs: null,
+    birthdayMenu: false,
+    maxBirthday: moment().subtract(13, 'years').toISOString()
   }),
   computed: {
     ...mapState('session', ['user', 'initialized']),
@@ -91,6 +119,7 @@ export default {
     initPatch() {
       this.patch.firstName = this.userDetails.firstName
       this.patch.lastName = this.userDetails.lastName
+      this.patch.birthday = this.userDetails.birthday
     },
     async save() {
       if (!this.$refs.form.validate()) return

@@ -39,7 +39,7 @@ router.get('', asyncWrap(async (req, res, next) => {
   res.json(users)
 }))
 
-const createKeys = ['firstName', 'lastName', 'email', 'password']
+const createKeys = ['firstName', 'lastName', 'email', 'password', 'birthday']
 router.post('', asyncWrap(async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
@@ -115,7 +115,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
 }))
 
 // Update some parts of a user as himself
-const patchKeys = ['firstName', 'lastName']
+const patchKeys = ['firstName', 'lastName', 'birthday']
 const adminKeys = ['maxCreatedOrgs']
 router.patch('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()

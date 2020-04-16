@@ -27,6 +27,11 @@
       "description": "The maximum number of organizations this user can create. -1 means indeterminate number. Fallback to a global default value if not defined.",
       "type": "number"
     },
+    "birthday": {
+      "description": "Birth date of the user",
+      "type": "string",
+      "format": "date-time"
+    },
     "avatarUrl": {
       "description": "URL of this user's avatar",
       "type": "string",

@@ -9,7 +9,7 @@
 
       <v-dialog v-model="dialog" :loading="loading" persistent max-width="700">
         <v-card>
-          <v-card-title class="headline">Préparez l'image</v-card-title>
+          <v-card-title class="headline" v-text="$t('pages.avatar.prepare')"/>
           <v-card-text>
             <vue-cropper
               ref="cropper"
@@ -20,8 +20,8 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer/>
-            <v-btn flat @click="dialog = false">Annuler</v-btn>
-            <v-btn :disabled="loading" color="primary" @click="validate">Confirmer</v-btn>
+            <v-btn flat @click="dialog = false" v-text="$t('common.confirmCancel')" />
+            <v-btn :disabled="loading" color="primary" @click="validate" v-text="$t('common.validate')" />
           </v-card-actions>
         </v-card>
       </v-dialog>

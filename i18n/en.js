@@ -57,7 +57,9 @@ module.exports = {
     departments: 'Departments',
     autoAdmin: `Automatically add me as admin`,
     asAdmin: 'Log as this user',
-    delAsAdmin: 'Get back to your normal session'
+    delAsAdmin: 'Get back to your normal session',
+    avatar: 'Avatar',
+    birthday: 'Birthday'
   },
   doc: {
     about: {
@@ -166,6 +168,9 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       title: 'Invitation validated',
       msgSameUser: `Your invitation to become member of an organization has been validated. You can visit <a href="{profileUrl}">your profile</a>.`,
       msgDifferentUser: `This invitation to become member of an organization has been validated. You can <a href="{loginUrl}">login with</a> the invited account.`
+    },
+    avatar: {
+      prepare: `Prepare the image`
     }
   },
   errors: {

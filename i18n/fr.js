@@ -57,7 +57,9 @@ module.exports = {
     departments: 'Départements',
     autoAdmin: `M'ajouter automatiquement comme administrateur`,
     asAdmin: 'Se connecter en tant que cet utiisateur',
-    delAsAdmin: 'Revenir à ma session administrateur'
+    delAsAdmin: 'Revenir à ma session administrateur',
+    avatar: 'Avatar',
+    birthday: 'Anniversaire'
   },
   doc: {
     about: {
@@ -172,6 +174,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       title: 'Invitation validée',
       msgSameUser: `Votre invitation à être membre d'une organisation a bien été acceptée. Vous pouvez consulter <a href="{profileUrl}">votre profil</a>.`,
       msgDifferentUser: `Cette invitation à être membre d'une organisation a bien été acceptée. Vous pouvez <a href="{loginUrl}">vous connecter</a> avec le compte invité.`
+    },
+    avatar: {
+      prepare: `Préparez l'image`
     }
   },
   errors: {
