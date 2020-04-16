@@ -14,7 +14,7 @@ test('Get user list when authenticated', async t => {
   const res = await ax.get('/api/users')
   t.is(res.status, 200)
   t.is(res.data.count, 11)
-  t.deepEqual(Object.keys(res.data.results[0]), ['id', 'name'])
+  t.deepEqual(Object.keys(res.data.results[0]), ['id', 'name', 'avatarUrl'])
 })
 
 test('Get filtered user list', async t => {
