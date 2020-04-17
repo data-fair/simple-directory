@@ -259,7 +259,16 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
   if (!provider) return res.status(404).send('Unknown OAuth provider')
 
+  if (req.query.error) {
+    console.error('Bad OAuth query', req.query)
+    throw new Error('Bad OAuth query')
+  }
   const userInfo = await provider.userInfo(await provider.accessToken(req.query.code))
+  if (!userInfo.email) {
+    console.error('Bad user from oauth', userInfo)
+    return res.status(500).send('Bad user from oauth')
+  }
+
   const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
 
   // check for user with same email
@@ -288,7 +297,10 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
     await storage.createUser(user.id)
   } else {
     debug('Existing user authenticated through oauth', user, userInfo)
-    await storage.patchUser(user.id, { oauth: { ...user.oauth, [req.params.oauthId]: oauthInfo } })
+    const patch = { oauth: { ...user.oauth, [req.params.oauthId]: oauthInfo } }
+    if (userInfo.firstName && !user.firstName) patch.firstName = userInfo.firstName
+    if (userInfo.lastName && !user.lastName) patch.lastName = userInfo.lastName
+    await storage.patchUser(user.id, patch)
   }
 
   const payload = jwt.getPayload(user)
