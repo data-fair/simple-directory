@@ -65,6 +65,7 @@ const providers = {
         lastName: res[0].data.localizedLastName,
         email: res[1].data.elements[0]['handle~'].emailAddress
       }
+      userInfo.name = userInfo.firstName + ' ' + userInfo.lastName
 
       const displayImage = res[0].data.profilePicture['displayImage~'].elements
         .find(e => e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'] && e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'].displaySize.width === 100)
