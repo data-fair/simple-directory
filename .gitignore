@@ -7,4 +7,5 @@
 /security
 *.swp
 /nuxt-dist
+config/local.js
 config/local.json
