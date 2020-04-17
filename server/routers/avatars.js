@@ -29,6 +29,11 @@ router.get('/:type/:id/avatar.png', asyncWrap(async (req, res, next) => {
     const identity = req.params.type === 'organization' ? (await storage.getOrganization(req.params.id)) : (await storage.getUser({ id: req.params.id }))
     if (!identity) return res.status(404).send()
 
+    if (req.params.type === 'user' && identity.oauth) {
+      const oauthWithAvatar = Object.keys(identity.oauth).find(oauth => !!identity.oauth[oauth].avatarUrl)
+      if (oauthWithAvatar) return res.redirect(identity.oauth[oauthWithAvatar].avatarUrl)
+    }
+
     const initials = getInitials(identity)
 
     if (!avatar) {

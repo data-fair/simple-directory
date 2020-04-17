@@ -15,6 +15,14 @@
               <v-layout v-if="adminMode" row>
                 <p class="warning--text">{{ $t('pages.login.adminMode') }}</p>
               </v-layout>
+
+              <template v-if="env.oauth.length && !adminMode">
+                <!--<v-layout row>
+                  <p class="mb-0">{{ $t('pages.login.oauth') }}</p>
+                </v-layout>-->
+                <oauth-login-links class="mb-3" />
+              </template>
+
               <v-text-field
                 id="email"
                 :autofocus="true"
@@ -206,10 +214,14 @@
 import { mapState } from 'vuex'
 import jwtDecode from 'jwt-decode'
 import logo from '../components/logo.vue'
+import OauthLoginLinks from '../components/oauth-login-links.vue'
 import eventBus from '../event-bus'
 
 export default {
-  components: { logo },
+  components: {
+    logo,
+    OauthLoginLinks
+  },
   data() {
     return {
       dialog: true,

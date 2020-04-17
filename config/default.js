@@ -106,5 +106,43 @@ module.exports = {
   authRateLimit: {
     attempts: 5,
     duration: 60
+  },
+  // Example of oauth configuration
+  // oauth: [{
+  //   id: 'github',
+  //   icon: 'mdi-github',
+  //   title: 'GitHub',
+  //   color: '#4078c0',
+  //   scope: 'user:email'
+  //   state: '...' // just type random stuff
+  //   client: {
+  //     id: '...',
+  //     secret: '...'
+  //   },
+  //   auth: {
+  //     tokenHost: 'https://github.com',
+  //     tokenPath: '/login/oauth/access_token',
+  //     authorizePath: '/login/oauth/authorize'
+  //   }
+  // }]
+  oauth: {
+    providers: [],
+    statesDir: './security',
+    github: {
+      id: '',
+      secret: ''
+    },
+    facebook: {
+      id: '',
+      secret: ''
+    },
+    google: {
+      id: '',
+      secret: ''
+    },
+    linkedin: {
+      id: '',
+      secret: ''
+    }
   }
 }

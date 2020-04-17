@@ -148,7 +148,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       tosConfirm: `I confirm that I have read the terms of services for this site.`,
       createUserConfirm: 'Create the account',
       createUserConfirmed: `An email was sent to the address {email}. This email contains a link to validate the creation of your account.`,
-      adminMode: 'Confirm your identity to switch to admin mode.'
+      adminMode: 'Confirm your identity to switch to admin mode.',
+      oauth: 'Connect with:'
     },
     organization: {
       addMember: 'Invite a user to join this organization',

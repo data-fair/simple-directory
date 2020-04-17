@@ -18,7 +18,7 @@
         name="search"
         solo
         style="max-width:300px;"
-        append-icon="search"
+        append-icon="mdi-magnify"
         @click:append="fetchUsers"
         @keyup.enter="fetchUsers"/>
     </v-layout>
@@ -50,7 +50,7 @@
         <td v-if="env.defaultMaxCreatedOrgs !== -1">
           <span>{{ props.item.maxCreatedOrgs }}</span>
           <v-btn v-if="env.defaultMaxCreatedOrgs !== -1" icon class="mx-0" @click="showEditMaxCreatedOrgsDialog(props.item)">
-            <v-icon>edit</v-icon>
+            <v-icon>mdi-pencil</v-icon>
           </v-btn>
         </td>
         <template v-if="!env.readonly">
@@ -59,10 +59,10 @@
           <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
           <td class="justify-center layout px-0">
             <v-btn :title="$t('common.asAdmin')" icon class="mx-0" @click="asAdmin(props.item)">
-              <v-icon color="warning">supervised_user_circle</v-icon>
+              <v-icon color="warning">mdi-account-switch</v-icon>
             </v-btn>
             <v-btn :title="$t('common.delete')" icon class="mx-0" @click="currentUser = props.item;deleteUserDialog = true">
-              <v-icon color="warning">delete</v-icon>
+              <v-icon color="warning">mdi-delete</v-icon>
             </v-btn>
           </td>
         </template>

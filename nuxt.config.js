@@ -4,6 +4,7 @@ let config = require('config')
 config.basePath = new URL(config.publicUrl + '/').pathname
 config.i18nMessages = i18n.messages
 config.readonly = require('./server/storages').readonly()
+config.publicOAuth = require('./server/utils/oauth').publicProviders
 
 if (process.env.NODE_ENV === 'production') {
   const nuxtConfigInject = require('@koumoul/nuxt-config-inject')
@@ -73,7 +74,8 @@ module.exports = {
     manageDepartments: config.manageDepartments,
     manageDepartmentLabel: config.manageDepartmentLabel,
     passwordless: config.passwordless,
-    i18n: config.i18n
+    i18n: config.i18n,
+    oauth: config.publicOAuth
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

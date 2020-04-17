@@ -4,12 +4,15 @@ const URL = require('url').URL
 const emailValidator = require('email-validator')
 const bodyParser = require('body-parser')
 const requestIp = require('request-ip')
+const shortid = require('shortid')
 const { RateLimiterMongo, RateLimiterMemory } = require('rate-limiter-flexible')
 const jwt = require('../utils/jwt')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
+const oauth = require('../utils/oauth')
+const userName = require('../utils/user-name')
 const debug = require('debug')('auth')
 
 let router = exports.router = express.Router()
@@ -238,4 +241,61 @@ router.delete('/asadmin', asyncWrap(async (req, res, next) => {
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
   res.send(token)
+}))
+
+router.get('/oauth/providers', (req, res) => {
+  res.send(oauth.publicProviders)
+})
+
+router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
+  const provider = oauth.providers.find(p => p.id === req.params.oauthId)
+  if (!provider) return res.status(404).send('Unknown OAuth provider')
+  res.redirect(provider.authorizationUri)
+}))
+
+router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
+  const storage = req.app.get('storage')
+
+  const provider = oauth.providers.find(p => p.id === req.params.oauthId)
+  if (!provider) return res.status(404).send('Unknown OAuth provider')
+
+  const userInfo = await provider.userInfo(await provider.accessToken(req.query.code))
+  const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
+
+  // check for user with same email
+  let user = await storage.getUser({ email: userInfo.email })
+
+  // Re-create a user that was never validated.. first clean temporary user
+  if (user && user.emailConfirmed === false) {
+    await storage.deleteUser(user.id)
+    user = null
+  }
+
+  if (!user) {
+    if (config.onlyCreateInvited || storage.readonly) return res.status(403).send('Unknown user for email ' + userInfo.email)
+    user = {
+      email: userInfo.email,
+      id: shortid.generate(),
+      firstName: userInfo.firstName || '',
+      lastName: userInfo.lastName || '',
+      emailConfirmed: true,
+      oauth: {
+        [req.params.oauthId]: oauthInfo
+      }
+    }
+    user.name = userName(user)
+    debug('Create user authenticated through oauth', user)
+    await storage.createUser(user.id)
+  } else {
+    debug('Existing user authenticated through oauth', user, userInfo)
+    await storage.patchUser(user.id, { oauth: { ...user.oauth, [req.params.oauthId]: oauthInfo } })
+  }
+
+  const payload = jwt.getPayload(user)
+  if (!storage.readonly) await storage.updateLogged(user.id)
+  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+  const linkUrl = new URL(config.defaultLoginRedirect || config.publicUrl + '/me')
+  linkUrl.searchParams.set('id_token', token)
+  debug(`OAuth based authentication of user ${user.name}`)
+  res.redirect(linkUrl.href)
 }))

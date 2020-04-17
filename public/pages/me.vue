@@ -40,7 +40,7 @@
             <v-text-field
               v-model="patch.birthday"
               :label="$t('common.birthday')"
-              prepend-icon="event"
+              prepend-icon="mdi-calendar"
               readonly
               clearable
               v-on="on"
@@ -65,6 +65,14 @@
       <v-layout v-if="!env.readonly" row>
         <p><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
       </v-layout>
+
+      <v-layout v-if="userDetails && userDetails.oauth && Object.keys(userDetails.oauth).length" row>
+        <v-btn v-for="oauth of env.oauth.filter(oauth => !!userDetails.oauth[oauth.id])" :key="oauth.id" :color="oauth.color" :href="userDetails.oauth[oauth.id].url" dark small round depressed class="pl-1 text-none pr-3">
+          <v-icon>{{ oauth.icon }}</v-icon>
+          &nbsp;&nbsp;{{ oauth.title }} - {{ userDetails.oauth[oauth.id].login || userDetails.oauth[oauth.id].name }}
+        </v-btn>
+      </v-layout>
+
       <v-layout row wrap>
         <v-spacer/>
         <v-btn color="primary" @click="save">{{ $t('common.save') }}</v-btn>

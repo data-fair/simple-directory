@@ -5,7 +5,7 @@
         {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
       </h3>
       <v-btn v-if="isAdminOrga" :title="$t('pages.organization.addDepartment', {departmentLabel})" icon color="primary" @click="newDepartment(); createDialog = true">
-        <v-icon>add</v-icon>
+        <v-icon>mdi-plus</v-icon>
       </v-btn>
     </v-layout>
 
@@ -18,10 +18,10 @@
           </v-list-tile-content>
           <v-list-tile-action v-if="isAdminOrga">
             <v-btn :title="$t('pages.organization.editDepartment', {departmentLabel})" flat icon @click="edit(department)">
-              <v-icon>edit</v-icon>
+              <v-icon>mdi-pencil</v-icon>
             </v-btn>
             <v-btn :title="$t('pages.organization.deleteDepartment', {departmentLabel})" flat icon color="warning" @click="e => {e.preventDefault();currentDepartment = department; deleteDialog = true}">
-              <v-icon>delete</v-icon>
+              <v-icon>mdi-delete</v-icon>
             </v-btn>
           </v-list-tile-action>
         </v-list-tile>

@@ -13,7 +13,7 @@
           <!-- User-s profile page -->
           <v-list-tile v-if="user" :to="localePath('me')">
             <v-list-tile-action>
-              <v-icon>account_circle</v-icon>
+              <v-icon>mdi-account-circle</v-icon>
             </v-list-tile-action>
             <v-list-tile-title>{{ $t('common.myAccount') }}</v-list-tile-title>
           </v-list-tile>
@@ -21,7 +21,7 @@
           <!-- User's organizations pages (only admin) -->
           <v-list-tile v-for="orga in userDetails && userDetails.organizations" v-if="orga.role === 'admin'" :key="orga.id" :to="localePath({name: 'organization-id', params: {id: orga.id}})">
             <v-list-tile-action>
-              <v-icon>group</v-icon>
+              <v-icon>mdi-account-multiple</v-icon>
             </v-list-tile-action>
             <v-list-tile-title>{{ $t('common.organization') + ' ' + orga.name }}</v-list-tile-title>
           </v-list-tile>
@@ -29,7 +29,7 @@
           <!-- Create organization -->
           <v-list-tile v-if="!env.readonly && userDetails && (userDetails.maxCreatedOrgs || env.defaultMaxCreatedOrgs !== 0)" :to="localePath('create-organization')" color="accent">
             <v-list-tile-action>
-              <v-icon>add</v-icon>
+              <v-icon>mdi-plus</v-icon>
             </v-list-tile-action>
             <v-list-tile-title>
               {{ $t('common.createOrganization') }}
@@ -43,7 +43,7 @@
           <v-list-group v-if="user && user.adminMode" value="true">
             <v-list-tile slot="activator" color="admin">
               <v-list-tile-action>
-                <v-icon color="admin">verified_user</v-icon>
+                <v-icon color="admin">mdi-shield-check</v-icon>
               </v-list-tile-action>
               <v-list-tile-title>{{ $t('common.administration') }}</v-list-tile-title>
             </v-list-tile>
@@ -59,7 +59,7 @@
           <v-list-group v-if="!embed && docPages.length" value="true">
             <v-list-tile slot="activator">
               <v-list-tile-action>
-                <v-icon>help</v-icon>
+                <v-icon>mdi-help-circle</v-icon>
               </v-list-tile-action>
               <v-list-tile-title>{{ $t('common.documentation') }}</v-list-tile-title>
             </v-list-tile>
@@ -123,7 +123,7 @@
           <p>{{ notification.msg }}</p>
           <p v-if="notification.errorMsg" class="ml-3">{{ notification.errorMsg }}</p>
         </div>
-        <v-btn flat icon @click.native="showSnackbar = false"><v-icon>close</v-icon></v-btn>
+        <v-btn flat icon @click.native="showSnackbar = false"><v-icon>mdi-close</v-icon></v-btn>
       </v-snackbar>
     </v-content>
     <v-footer v-if="!embed" class="pa-3">

@@ -148,7 +148,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       tosConfirm: `Je confirme avoir lu les conditions générales d'utilisation pour ce site.`,
       createUserConfirm: 'Créer le compte',
       createUserConfirmed: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour valider la création du compte.`,
-      adminMode: 'Confirmez votre identité pour passer en mode administration.'
+      adminMode: 'Confirmez votre identité pour passer en mode administration.',
+      oauth: 'Connectez vous avec :'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',

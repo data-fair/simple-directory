@@ -36,6 +36,11 @@
       "description": "URL of this user's avatar",
       "type": "string",
       "readOnly": true
+    },
+    "oauth": {
+      "description": "Identity ratteched to oauth providers",
+      "type": "object",
+      "readOnly": true
     }
   }
 }

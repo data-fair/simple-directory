@@ -135,5 +135,27 @@ module.exports = {
       __name: 'AUTHRATELIMIT_DURATION',
       __format: 'json'
     }
+  },
+  oauth: {
+    providers: {
+      __name: 'OAUTH_PROVIDERS',
+      __format: 'json'
+    },
+    github: {
+      id: 'OAUTH_GITHUB_ID',
+      secret: 'OAUTH_GITHUB_SECRET'
+    },
+    facebook: {
+      id: 'OAUTH_FACEBOOK_ID',
+      secret: 'OAUTH_FACEBOOK_SECRET'
+    },
+    google: {
+      id: 'OAUTH_GOOGLE_ID',
+      secret: 'OAUTH_GOOGLE_SECRET'
+    },
+    linkedin: {
+      id: 'OAUTH_LINKEDIN_ID',
+      secret: 'OAUTH_LINKEDIN_SECRET'
+    }
   }
 }

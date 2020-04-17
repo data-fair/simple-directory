@@ -28,9 +28,7 @@
       >
         <v-tooltip slot="append-outer" left>
           <template v-slot:activator="{on}">
-            <v-icon v-on="on">
-              info
-            </v-icon>
+            <v-icon v-on="on">mdi-information</v-icon>
           </template>
           <div v-html="$t('pages.organization.departmentLabelHelp')" />
         </v-tooltip>

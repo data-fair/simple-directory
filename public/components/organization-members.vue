@@ -4,7 +4,7 @@
       <h3 class="title my-3">
         {{ $t('common.members') }} <span v-if="members">({{ $n(members.count) }})</span>
       </h3>
-      <v-btn v-if="isAdminOrga" :title="$t('pages.organization.addMember')" icon color="primary" @click="newInvitation(); inviteMemberDialog = true"><v-icon>add</v-icon></v-btn>
+      <v-btn v-if="isAdminOrga" :title="$t('pages.organization.addMember')" icon color="primary" @click="newInvitation(); inviteMemberDialog = true"><v-icon>mdi-plus</v-icon></v-btn>
     </v-layout>
 
     <v-layout row wrap>
@@ -14,7 +14,7 @@
         name="search"
         solo
         style="max-width:300px;"
-        append-icon="search"
+        append-icon="mdi-magnify"
         @click:append="fetchMembers"
         @keyup.enter="fetchMembers"/>
       <v-select
@@ -58,17 +58,17 @@
           </v-list-tile-content>
           <v-list-tile-action v-if="isAdminOrga" style="min-width:0;">
             <v-btn :title="$t('pages.organization.editMember')" flat icon @click="currentMember = member; newRole = member.role; newDepartment = member.department; editMemberDialog = true">
-              <v-icon>edit</v-icon>
+              <v-icon>mdi-pencil</v-icon>
             </v-btn>
           </v-list-tile-action>
           <v-list-tile-action v-if="user.adminMode" style="min-width:0;">
             <v-btn :title="$t('common.asAdmin')" icon class="mx-0" @click="asAdmin(member)">
-              <v-icon color="warning">supervised_user_circle</v-icon>
+              <v-icon color="warning">mdi-account-switch</v-icon>
             </v-btn>
           </v-list-tile-action>
           <v-list-tile-action v-if="isAdminOrga" style="min-width:0;">
             <v-btn :title="$t('pages.organization.deleteMember')" flat icon color="warning" @click="currentMember = member;deleteMemberDialog = true">
-              <v-icon>delete</v-icon>
+              <v-icon>mdi-delete</v-icon>
             </v-btn>
           </v-list-tile-action>
         </v-list-tile>
