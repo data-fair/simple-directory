@@ -24,7 +24,7 @@ router.get('', asyncWrap(async (req, res, next) => {
   if (allFields) {
     if (!req.user || !req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
   } else {
-    params.select = ['id', 'name', 'avatarUrl']
+    params.select = ['id', 'name']
   }
 
   if (req.query) {
@@ -32,10 +32,6 @@ router.get('', asyncWrap(async (req, res, next) => {
     if (req.query.q) params.q = req.query.q
   }
   const users = await req.app.get('storage').findUsers(params)
-
-  users.results.forEach(user => {
-    user.avatarUrl = config.publicUrl + '/api/avatars/user/' + user.id + '/avatar.png'
-  })
   res.json(users)
 }))
 

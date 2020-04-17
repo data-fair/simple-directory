@@ -42,10 +42,6 @@ router.get('', asyncWrap(async (req, res, next) => {
       orga.roles = orga.roles || config.roles.defaults
     })
   }
-
-  organizations.results.forEach(orga => {
-    orga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
-  })
   res.json(organizations)
 }))
 
@@ -124,9 +120,6 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (req.query.role) params.roles = req.query.role.split(',')
   if (req.query.department) params.departments = req.query.department.split(',')
   const members = await req.app.get('storage').findMembers(req.params.organizationId, params)
-  members.results.forEach(member => {
-    member.avatarUrl = config.publicUrl + '/api/avatars/user/' + member.id + '/avatar.png'
-  })
   res.send(members)
 }))
 
