@@ -40,8 +40,16 @@ const providers = {
       authorizePath: '/v6.0/dialog/oauth'
     },
     userInfo: async (accessToken) => {
-      const res = await axios.get('https://graph.facebook.com/me', { params: { access_token: accessToken } })
-      console.log('FACEBOOK RES', res.data)
+      // TOFO: fetch picture, but it is a temporary URL we should store the result if we want to use it
+      const res = await axios.get('https://graph.facebook.com/me', { params: { access_token: accessToken, fields: 'name,first_name,last_name,link,email' } })
+      return {
+        id: res.data.id,
+        name: res.data.name,
+        firstName: res.data.first_name,
+        lastName: res.data.last_name,
+        email: res.data.email,
+        url: res.data.link
+      }
     }
   },
   google: {
@@ -76,18 +84,14 @@ const providers = {
           params: {
             projection: '(id,localizedFirstName,localizedLastName,profilePicture(displayImage~digitalmediaAsset:playableStreams))'
           },
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
+          headers: { Authorization: `Bearer ${accessToken}` }
         }),
         axios.get('https://api.linkedin.com/v2/clientAwareMemberHandles', {
           params: {
             q: 'members',
             projection: '(elements*(primary,type,handle~))'
           },
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
+          headers: { Authorization: `Bearer ${accessToken}` }
         })
       ])
 
