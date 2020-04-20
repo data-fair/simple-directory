@@ -41,14 +41,14 @@ const providers = {
     },
     userInfo: async (accessToken) => {
       // TOFO: fetch picture, but it is a temporary URL we should store the result if we want to use it
-      const res = await axios.get('https://graph.facebook.com/me', { params: { access_token: accessToken, fields: 'name,first_name,last_name,link,email' } })
+      const res = await axios.get('https://graph.facebook.com/me', { params: { access_token: accessToken, fields: 'name,first_name,last_name,email' } })
       return {
         id: res.data.id,
         name: res.data.name,
         firstName: res.data.first_name,
         lastName: res.data.last_name,
         email: res.data.email,
-        url: res.data.link
+        url: 'https://www.facebook.com'
       }
     }
   },
