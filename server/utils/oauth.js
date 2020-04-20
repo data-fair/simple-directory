@@ -63,7 +63,9 @@ const providers = {
         id: res[0].data.id,
         firstName: res[0].data.localizedFirstName,
         lastName: res[0].data.localizedLastName,
-        email: res[1].data.elements[0]['handle~'].emailAddress
+        email: res[1].data.elements[0]['handle~'].emailAddress,
+        // building profile url would require the r_basicprofile authorization, but it is possible only after requesting special authorization by linkein
+        url: 'https://www.linkedin.com'
       }
       userInfo.name = userInfo.firstName + ' ' + userInfo.lastName
 
