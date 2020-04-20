@@ -44,6 +44,22 @@ const providers = {
       console.log('FACEBOOK RES', res.data)
     }
   },
+  google: {
+    title: 'Google',
+    icon: 'mdi-google',
+    color: '#0F9D58',
+    scope: 'profile email',
+    auth: {
+      tokenHost: 'https://www.googleapis.com',
+      tokenPath: '/oauth2/v4/token',
+      authorizeHost: 'https://accounts.google.com',
+      authorizePath: '/o/oauth2/v2/auth'
+    },
+    userInfo: async (accessToken) => {
+      const res = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', { params: { alt: 'json', access_token: accessToken } })
+      console.log('GOOGLE RES', res.data)
+    }
+  },
   linkedin: {
     title: 'LinkedIn',
     icon: 'mdi-linkedin',
