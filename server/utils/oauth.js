@@ -28,6 +28,22 @@ const providers = {
       }
     }
   },
+  facebook: {
+    title: 'Facebook',
+    icon: 'mdi-facebook',
+    color: '#3b5998',
+    scope: 'email',
+    auth: {
+      tokenHost: 'https://graph.facebook.com',
+      tokenPath: '/v6.0/oauth/access_token',
+      authorizeHost: 'https://www.facebook.com',
+      authorizePath: '/v6.0/dialog/oauth'
+    },
+    userInfo: async (accessToken) => {
+      const res = await axios.get('https://graph.facebook.com/me', { params: { access_token: accessToken } })
+      console.log('FACEBOOK RES', res.data)
+    }
+  },
   linkedin: {
     title: 'LinkedIn',
     icon: 'mdi-linkedin',
