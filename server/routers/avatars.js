@@ -23,6 +23,7 @@ const getInitials = (identity) => {
 
 router.get('/:type/:id/avatar.png', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
+  if (!['user', 'organization'].includes(req.params.type)) return res.status(400).send('Owner type must be "user" or "organization"')
   const owner = { id: req.params.id, type: req.params.type }
   let avatar = await storage.getAvatar(owner)
   if (!avatar || avatar.initials) {
