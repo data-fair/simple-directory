@@ -65,7 +65,15 @@ const providers = {
     },
     userInfo: async (accessToken) => {
       const res = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', { params: { alt: 'json', access_token: accessToken } })
-      console.log('GOOGLE RES', res.data)
+      return {
+        id: res.data.id,
+        name: res.data.name,
+        firstName: res.data.given_name,
+        lastName: res.data.family_name,
+        email: res.data.email,
+        avatarUrl: res.data.picture, // is this URL temporary ?
+        url: 'https://www.google.com'
+      }
     }
   },
   linkedin: {
@@ -108,7 +116,7 @@ const providers = {
       const displayImage = res[0].data.profilePicture['displayImage~'].elements
         .find(e => e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'] && e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'].displaySize.width === 100)
       const displayImageIdentifier = displayImage && displayImage.identifiers.find(i => i.identifierType === 'EXTERNAL_URL')
-      if (displayImageIdentifier) userInfo.avatarUrl = displayImageIdentifier.identifier
+      if (displayImageIdentifier) userInfo.avatarUrl = displayImageIdentifier.identifier // is this URL temporary ?
 
       return userInfo
     }
