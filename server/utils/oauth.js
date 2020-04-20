@@ -11,23 +11,30 @@ const providers = {
     title: 'GitHub',
     icon: 'mdi-github',
     color: '#6e5494',
-    scope: 'read:user',
+    scope: 'read:user user:email',
     auth: {
       tokenHost: 'https://github.com',
       tokenPath: '/login/oauth/access_token',
       authorizePath: '/login/oauth/authorize'
     },
     userInfo: async (accessToken) => {
-      const res = await axios.get('https://api.github.com/user', { headers: { Authorization: `token ${accessToken}` } })
-      debug(`user info from github`, res.data)
-      return {
-        login: res.data.login,
-        id: res.data.id,
-        name: res.data.name,
-        email: res.data.email,
-        url: res.data.html_url,
-        avatarUrl: res.data.avatar_url
+      const res = await Promise.all([
+        axios.get('https://api.github.com/user', { headers: { Authorization: `token ${accessToken}` } }),
+        axios.get('https://api.github.com/user/emails', { headers: { Authorization: `token ${accessToken}` } })
+      ])
+      debug(`user info from github`, res[0].data, res[1].data)
+      const userInfo = {
+        login: res[0].data.login,
+        id: res[0].data.id,
+        name: res[0].data.name,
+        url: res[0].data.html_url,
+        avatarUrl: res[0].data.avatar_url
       }
+      let email = res[1].data.find(e => e.primary)
+      if (!email) email = res[1].data.find(e => e.verified)
+      if (!email) email = res[1].data[0]
+      if (email) userInfo.email = email.email
+      return userInfo
     }
   },
   facebook: {
