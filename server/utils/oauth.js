@@ -149,10 +149,12 @@ const providers = {
       }
       userInfo.name = userInfo.firstName + ' ' + userInfo.lastName
 
-      const displayImage = res[0].data.profilePicture['displayImage~'].elements
-        .find(e => e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'] && e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'].displaySize.width === 100)
-      const displayImageIdentifier = displayImage && displayImage.identifiers.find(i => i.identifierType === 'EXTERNAL_URL')
-      if (displayImageIdentifier) userInfo.avatarUrl = displayImageIdentifier.identifier // is this URL temporary ?
+      if (res[0].data.profilePicture['displayImage~']) {
+        const displayImage = res[0].data.profilePicture['displayImage~'].elements
+          .find(e => e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'] && e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'].displaySize.width === 100)
+        const displayImageIdentifier = displayImage && displayImage.identifiers.find(i => i.identifierType === 'EXTERNAL_URL')
+        if (displayImageIdentifier) userInfo.avatarUrl = displayImageIdentifier.identifier // is this URL temporary ?
+      }
 
       return userInfo
     }
