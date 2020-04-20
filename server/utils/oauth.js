@@ -4,6 +4,7 @@ const fs = require('fs-extra')
 const config = require('config')
 const shortid = require('shortid')
 const axios = require('axios')
+const debug = require('debug')('oauth')
 
 const providers = {
   github: {
@@ -18,6 +19,7 @@ const providers = {
     },
     userInfo: async (accessToken) => {
       const res = await axios.get('https://api.github.com/user', { headers: { Authorization: `token ${accessToken}` } })
+      debug(`user info from github`, res.data)
       return {
         login: res.data.login,
         id: res.data.id,
@@ -42,6 +44,7 @@ const providers = {
     userInfo: async (accessToken) => {
       // TOFO: fetch picture, but it is a temporary URL we should store the result if we want to use it
       const res = await axios.get('https://graph.facebook.com/me', { params: { access_token: accessToken, fields: 'name,first_name,last_name,email' } })
+      debug(`user info from facebook`, res.data)
       return {
         id: res.data.id,
         name: res.data.name,
@@ -65,6 +68,7 @@ const providers = {
     },
     userInfo: async (accessToken) => {
       const res = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', { params: { alt: 'json', access_token: accessToken } })
+      debug(`user info from google`, res.data)
       return {
         id: res.data.id,
         name: res.data.name,
@@ -76,6 +80,29 @@ const providers = {
       }
     }
   },
+  /*
+  Problem with instagram provider.. it does not return an email for the user
+  instagram: {
+    title: 'Instagram',
+    icon: 'mdi-instagram',
+    color: '#e1306c',
+    scope: 'basic',
+    auth: {
+      tokenHost: 'https://api.instagram.com',
+      tokenPath: '/oauth/access_token',
+      authorizePath: '/oauth/authorize'
+    },
+    userInfo: async (accessToken) => {
+      const res = await axios.get('https://api.instagram.com/users/self', { params: { access_token: accessToken } })
+      return {
+        login: res.data.username,
+        id: res.data.id,
+        name: res.data.full_name,
+        avatarUrl: res.data.profile_picture, // is this URL temporary ?
+        url: 'https://www.instagram.com'
+      }
+    }
+  } */
   linkedin: {
     title: 'LinkedIn',
     icon: 'mdi-linkedin',
@@ -102,6 +129,8 @@ const providers = {
           headers: { Authorization: `Bearer ${accessToken}` }
         })
       ])
+
+      debug(`user info from linkedin`, res[0].data, res[1].data)
 
       const userInfo = {
         id: res[0].data.id,
