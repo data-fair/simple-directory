@@ -268,6 +268,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
     console.error('Bad user from oauth', userInfo)
     return res.status(500).send('Bad user from oauth')
   }
+  debug('Got user info from oauth', req.params.oauthId, userInfo)
 
   const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
 
