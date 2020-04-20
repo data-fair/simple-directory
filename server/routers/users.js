@@ -63,7 +63,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   }
 
   // email is already taken, send a conflict email
-  const user = await req.app.get('storage').getUser({ email: req.body.email })
+  const user = await req.app.get('storage').getUserByEmail(req.body.email)
   if (user && user.emailConfirmed !== false) {
     const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
     const linkUrl = new URL(link)

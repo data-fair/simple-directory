@@ -272,7 +272,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
 
   // check for user with same email
-  let user = await storage.getUser({ email: userInfo.email })
+  let user = await storage.getUserByEmail(userInfo.email)
 
   // Re-create a user that was never validated.. first clean temporary user
   if (user && user.emailConfirmed === false) {
