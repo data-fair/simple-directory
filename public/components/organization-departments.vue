@@ -39,7 +39,7 @@
             <v-text-field
               v-model="currentDepartment.id"
               :label="$t('common.id')"
-              :rules="[v => !!v || '']"
+              :rules="[v => !!v || '', v => !v, v => !!v.match(/^[ a-zA-Z0-9]*$/) || $t('pages.organization.departmentIdInvalid')]"
               name="id"
               required
             />

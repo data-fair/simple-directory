@@ -163,7 +163,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       inviteSuccess: `An invitation was sent to the address {email}`,
       memberConflict: 'This user is already a member',
       back: 'Back',
-      next: 'Next'
+      next: 'Next',
+      departmentIdInvalid: 'Identifier should contain anly letters, numbers and spaces'
     },
     invitation: {
       title: 'Invitation validated',

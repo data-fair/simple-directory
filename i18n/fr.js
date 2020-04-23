@@ -169,7 +169,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       deleteDepartment: 'Supprimer {departmentLabel}',
       confirmEditDepartmentTitle: 'Modifier {name}',
       confirmDeleteDepartmentTitle: 'Supprimer {name}',
-      confirmDeleteDepartmentMsg: `Voulez vous vraiment supprimer {name} de votre organisation ?`
+      confirmDeleteDepartmentMsg: `Voulez vous vraiment supprimer {name} de votre organisation ?`,
+      departmentIdInvalid: 'L\'identifiant ne doit contenir que des lettres, nombres et espaces.'
     },
     invitation: {
       title: 'Invitation validée',
