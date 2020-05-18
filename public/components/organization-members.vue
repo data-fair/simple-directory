@@ -111,6 +111,7 @@
               item-value="id"
               item-text="name"
               name="department"
+              clearable
             />
           </v-form>
         </v-card-text>
@@ -152,6 +153,7 @@
             :label="orga.departmentLabel || $t('common.department')"
             item-value="id"
             item-text="name"
+            clearable
           />
         </v-card-text>
         <v-card-actions>

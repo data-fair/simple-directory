@@ -94,7 +94,7 @@
     "stylus-loader": "^3.0.2",
     "vue-cropperjs": "^4.1.0",
     "vue-moment": "^4.0.0",
-    "vuetify": "^1.5.2",
+    "vuetify": "^1.5.22",
     "vuetify-loader": "^1.2.1"
   }
 }
