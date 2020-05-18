@@ -4,7 +4,7 @@ const { test } = testUtils.prepare(__filename)
 
 test('Find users', async t => {
   let res = await test.app.get('storage').findUsers({ skip: 0, size: 10 })
-  t.is(res.count, 11)
+  t.is(res.count, 12)
   t.truthy(res.results[0].id)
   t.truthy(res.results[0].email)
   res = await test.app.get('storage').findUsers({ q: 'alba', skip: 0, size: 10 })

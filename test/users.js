@@ -13,7 +13,7 @@ test('Get user list when authenticated', async t => {
   const ax = await testUtils.axios(test, 'dmeadus0@answers.com')
   const res = await ax.get('/api/users')
   t.is(res.status, 200)
-  t.is(res.data.count, 11)
+  t.is(res.data.count, 12)
   t.deepEqual(Object.keys(res.data.results[0]), ['id', 'name'])
 })
 
@@ -34,7 +34,7 @@ test('Get user list with all fields as admin', async t => {
   const ax = await testUtils.axios(test, 'alban.mouton@koumoul.com')
   const res = await ax.get('/api/users?allFields=true')
   t.is(res.status, 200)
-  t.is(res.data.count, 11)
+  t.is(res.data.count, 12)
   t.truthy(res.data.results[0].organizations)
 })
 
