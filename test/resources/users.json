@@ -67,5 +67,13 @@
     "lastName": "Mouton",
     "email": "alban.mouton@koumoul.com",
     "isAdmin": true
+  },
+  {
+    "id": "superadmin",
+    "email": "superadmin@test.com",
+    "isAdmin": true,
+    "password": {
+      "clear": "superpasswd"
+    }
   }
 ]

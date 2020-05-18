@@ -3,12 +3,13 @@ const asyncWrap = require('../utils/async-wrap')
 const noAvatar = require('no-avatar')
 const makeAvatar = require('util').promisify(noAvatar.make)
 const colors = require('material-colors')
+const seedrandom = require('seedrandom')
 const colorKeys = Object.keys(colors).filter(c => colors[c] && colors[c]['600'])
 const multer = require('multer')
 
 let router = module.exports = express.Router()
 
-const randomColor = () => colors[colorKeys[Math.floor(Math.random() * colorKeys.length)]]['600']
+const randomColor = (seed) => colors[colorKeys[Math.floor(seedrandom(seed)() * colorKeys.length)]]['600']
 
 const getInitials = (identity) => {
   let initials
@@ -25,7 +26,7 @@ router.get('/:type/:id/avatar.png', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   if (!['user', 'organization'].includes(req.params.type)) return res.status(400).send('Owner type must be "user" or "organization"')
   const owner = { id: req.params.id, type: req.params.type }
-  let avatar = await storage.getAvatar(owner)
+  let avatar = storage.getAvatar && await storage.getAvatar(owner)
   if (!avatar || avatar.initials) {
     const identity = req.params.type === 'organization' ? (await storage.getOrganization(req.params.id)) : (await storage.getUser({ id: req.params.id }))
     if (!identity) return res.status(404).send()
@@ -39,10 +40,10 @@ router.get('/:type/:id/avatar.png', asyncWrap(async (req, res, next) => {
 
     if (!avatar) {
     // create a initials based avatar
-      const color = randomColor()
+      const color = randomColor(JSON.stringify(req.params))
       const buffer = await makeAvatar({ width: 100, height: 100, text: initials, fontSize: 40, bgColor: color })
       avatar = { initials, color, buffer, owner }
-      await storage.setAvatar(avatar)
+      if (storage.setAvatar) await storage.setAvatar(avatar)
     } else if (avatar.initials !== initials) {
     // this initials based avatar needs to be updated
       avatar.buffer = await makeAvatar({ width: 100, height: 100, text: initials, fontSize: 40, bgColor: avatar.color })
