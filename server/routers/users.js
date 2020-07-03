@@ -136,7 +136,7 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
 // Only super admin can delete a user for now
 router.delete('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (!req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (!req.user.isAdmin && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
   await req.app.get('storage').deleteUser(req.params.userId)
   webhooks.deleteIdentity('user', req.params.userId)
   res.status(204).send()
