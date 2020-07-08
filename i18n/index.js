@@ -3,8 +3,17 @@ const unflatten = flatten.unflatten
 const acceptLangParser = require('accept-language-parser')
 const flatOpts = { delimiter: '_' }
 
+// cannot be changed at runtime for now, because it impacts the build
 exports.defaultLocale = 'fr'
-exports.locales = [{ code: 'fr', iso: 'fr-FR' }, { code: 'en', iso: 'es-US' }]
+// this the full list of available langs, the proposed list is overwritten in config.i18n.locales
+exports.locales = [
+  { code: 'fr' },
+  { code: 'en' },
+  { code: 'de' },
+  { code: 'it' },
+  { code: 'es' },
+  { code: 'pt' }
+]
 
 // Build a map of messages of this form
 // {fr: {msg1: 'libellé 1'}, en: {msg1: 'label 1'}}
