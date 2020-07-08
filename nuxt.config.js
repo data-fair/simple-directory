@@ -3,6 +3,7 @@ const i18n = require('./i18n')
 let config = require('config')
 config.basePath = new URL(config.publicUrl + '/').pathname
 config.i18nMessages = i18n.messages
+config.i18nLocales = config.i18n.locales.join(',')
 config.readonly = require('./server/storages').readonly()
 config.publicOAuth = require('./server/utils/oauth').publicProviders
 
@@ -74,7 +75,7 @@ module.exports = {
     manageDepartments: config.manageDepartments,
     manageDepartmentLabel: config.manageDepartmentLabel,
     passwordless: config.passwordless,
-    i18n: config.i18n,
+    i18nLocales: config.i18nLocales,
     oauth: config.publicOAuth
   },
   head: {
