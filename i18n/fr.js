@@ -209,6 +209,7 @@ Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à cr
       `,
       htmlMsg: `Une demande de création de compte a été faite depuis <a href="{origin}">{host}</a> pour cette adresse email. Pour la confirmer cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.`,
       htmlButton: `Valider la création de compte`,
+      htmlAlternativeLink: `Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d'adresse de votre navigateur :`,
       htmlCaption: `Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à <a href="{origin}">{host}</a>, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     },
     login: {
@@ -222,6 +223,7 @@ Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vo
       `,
       htmlMsg: `Une demande d'identification a été faite depuis <a href="{origin}">{host}</a>. Pour la confirmer cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.`,
       htmlButton: `Connexion à {host}`,
+      htmlAlternativeLink: `Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d'adresse de votre navigateur :`,
       htmlCaption: `Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vous connecter à <a href="{origin}">{host}</a>, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     },
     noCreation: {
@@ -259,6 +261,7 @@ Un administrateur de l'organisation {organization} vous a invité à la rejoindr
 Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
       `,
       htmlButton: `Accepter l'invitation`,
+      htmlAlternativeLink: `Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d'adresse de votre navigateur :`,
       htmlCaption: `Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     },
     action: {
@@ -274,6 +277,7 @@ Si vous rencontrez un problème avec votre compte ou que vous trouvez ce message
 Une action demandant une confirmation par email a été déclenchée sur cette adresse. Pour valider cette action cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.
       `,
       htmlButton: `Valider`,
+      htmlAlternativeLink: `Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d'adresse de votre navigateur :`,
       htmlCaption: `Si vous rencontrez un problème avec votre compte ou que vous trouvez ce message suspect, n'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.`
     }
   }
