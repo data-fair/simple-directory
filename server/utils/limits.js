@@ -31,7 +31,8 @@ exports.getLimits = async (db, consumer) => {
     await coll.replaceOne({ type: consumer.type, id: consumer.id }, limit, { upsert: true })
   }
   if (limit.store_nb_members.consumption === undefined) {
-    limit = await exports.setNbMembers(db, consumer.id)
+    if (consumer.type === 'organization') limit = await exports.setNbMembers(db, consumer.id)
+    else limit.store_nb_members.consumption = 1
   }
   return limit
 }
