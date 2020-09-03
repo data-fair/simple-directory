@@ -41,6 +41,21 @@
           <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
           <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
           <td class="justify-center layout px-0">
+            <v-btn
+              :loading="!props.item.limits"
+              :color="!props.item.limits ? 'default' : (props.item.limits.store_nb_members.consumption >= props.item.limits.store_nb_members.limit ? 'warning' : 'primary')"
+              :dark="!!props.item.limits"
+              small
+              round
+              class="mt-2 text-lowercase"
+              @click="currentOrganization = props.item;currentLimits = JSON.parse(JSON.stringify(props.item.limits));limitOrganizationDialog = true"
+            >
+              <template v-if="props.item.limits">
+                <template v-if="!props.item.limits.store_nb_members || !props.item.limits.store_nb_members.consumption">{{ $t('common.missingInfo') }}</template>
+                <template v-else-if="props.item.limits.store_nb_members.limit === 0">{{ props.item.limits.store_nb_members.consumption.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}</template>
+                <template v-else>{{ props.item.limits.store_nb_members.consumption.toLocaleString() }} / {{ props.item.limits.store_nb_members.limit.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}</template>
+              </template>
+            </v-btn>
             <v-btn :to="localePath({name: 'organization-id', params: {id: props.item.id}})" icon class="mx-0">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
@@ -67,6 +82,22 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="limitOrganizationDialog" max-width="500px">
+      <v-card v-if="currentOrganization">
+        <v-card-title primary-title>
+          {{ $t('pages.admin.organizations.limitOrganizationTitle', {name: currentOrganization.name}) }}
+        </v-card-title>
+        <v-card-text v-if="currentLimits">
+          <v-text-field v-model.number="currentLimits.store_nb_members.limit" :label="$t('pages.admin.organizations.nbMembers')" type="number" />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn flat @click="limitOrganizationDialog = false">{{ $t('common.confirmCancel') }}</v-btn>
+          <v-btn color="warning" @click="limitOrganizationDialog = false;saveLimits(currentOrganization, currentLimits)">{{ $t('common.confirmOk') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -77,7 +108,9 @@ export default {
   data: () => ({
     organizations: null,
     currentOrganization: null,
+    currentLimits: null,
     deleteOrganizationDialog: false,
+    limitOrganizationDialog: false,
     q: '',
     pagination: { page: 1, rowsPerPage: 10, totalItems: 0, descending: false, sortBy: 'name' },
     loading: false,
@@ -123,6 +156,11 @@ export default {
         eventBus.$emit('notification', { error })
       }
       this.loading = false
+
+      for (const org of this.organizations.results) {
+        const limits = await this.$axios.$get(`api/limits/organization/${org.id}`)
+        this.$set(org, 'limits', limits)
+      }
     },
     async deleteOrganization(organization) {
       try {
@@ -131,6 +169,12 @@ export default {
       } catch (error) {
         eventBus.$emit('notification', { error })
       }
+    },
+    async saveLimits(organization, limits) {
+      if (!limits.store_nb_members.limit) limits.store_nb_members.limit = 0
+      delete organization.limits
+      await this.$axios.$post(`api/limits/organization/${organization.id}`, limits)
+      this.$set(organization, 'limits', limits)
     }
   }
 }

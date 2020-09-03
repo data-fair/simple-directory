@@ -4,6 +4,7 @@ const config = require('config')
 const asyncWrap = require('../utils/async-wrap')
 const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
+const limits = require('../utils/limits')
 
 let router = module.exports = express.Router()
 
@@ -102,6 +103,7 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   const forbiddenKey = Object.keys(req.body).find(key => !patchKeys.includes(key))
   if (forbiddenKey) return res.status(400).send('Only some parts of the organization can be modified through this route')
   const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body, req.user)
+  if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
   webhooks.postIdentity('organization', patchedOrga)
   patchedOrga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + patchedOrga.id + '/avatar.png'
   res.send(patchedOrga)
@@ -130,7 +132,11 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   if (!isAdmin(req)) {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
-  await req.app.get('storage').removeMember(req.params.organizationId, req.params.userId)
+  const storage = req.app.get('storage')
+  await storage.removeMember(req.params.organizationId, req.params.userId)
+  if (storage.db) {
+    await limits.setNbMembers(storage.db, req.params.organizationId)
+  }
   res.status(204).send()
 }))
 

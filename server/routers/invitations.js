@@ -6,6 +6,7 @@ const jwt = require('../utils/jwt')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
 const userName = require('../utils/user-name')
+const limits = require('../utils/limits')
 const emailValidator = require('email-validator')
 
 let router = module.exports = express.Router()
@@ -15,6 +16,13 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
+  const storage = req.app.get('storage')
+  if (storage.db) {
+    const limit = await limits.get(storage.db, { type: 'organization', id: req.body.id }, 'store_nb_members')
+    if (limit.consumption >= limit.limit && limit.limit > 0) {
+      return res.status(429).send(`L'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.`)
+    }
+  }
 
   const invitation = req.body
   const orga = req.user.organizations.find(o => o.id === invitation.id)
@@ -36,12 +44,24 @@ router.post('', asyncWrap(async (req, res, next) => {
 router.get('/_accept', asyncWrap(async (req, res, next) => {
   const invit = await jwt.verify(req.app.get('keys'), req.query.invit_token)
   const storage = req.app.get('storage')
+
   let user = await storage.getUserByEmail(invit.email)
   if (!user && storage.readonly) return res.status(400).send(req.messages.errors.userUnknown)
 
   let redirectUrl = new URL(config.invitationRedirect || `${config.publicUrl}/invitation`)
   redirectUrl.searchParams.set('email', invit.email)
   redirectUrl.searchParams.set('id_token_org', invit.id)
+
+  const orga = await storage.getOrganization(invit.id)
+  if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
+
+  const consumer = { type: 'organization', id: orga.id }
+  if (storage.db) {
+    const limit = await limits.get(storage.db, consumer, 'store_nb_members')
+    if (limit.consumption >= limit.limit && limit.limit > 0) {
+      return res.status(429).send(`L'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.`)
+    }
+  }
 
   if (!user) {
     const userInit = { email: invit.email, id: shortid.generate(), name: userName({ email: invit.email }), emailConfirmed: true }
@@ -59,10 +79,14 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
       redirectUrl.searchParams.set('redirect', reboundRedirect)
     }
   }
-  const orga = await storage.getOrganization(invit.id)
-  if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
-  if (user.organizations && user.organizations.find(o => o.id === invit.id)) return res.status(400).send(req.messages.errors.invitationConflict)
+
+  if (user.organizations && user.organizations.find(o => o.id === invit.id)) {
+    return res.status(400).send(req.messages.errors.invitationConflict)
+  }
   await storage.addMember(orga, user, invit.role, invit.department)
+  if (storage.db) {
+    await limits.setNbMembers(storage.db, orga.id)
+  }
 
   res.redirect(redirectUrl.href)
 }))

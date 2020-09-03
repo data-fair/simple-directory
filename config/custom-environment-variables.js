@@ -93,6 +93,10 @@ module.exports = {
     defaultMaxCreatedOrgs: {
       __name: 'DEFAULT_MAX_CREATED_ORGS',
       __format: 'json'
+    },
+    defaultMaxNbMembers: {
+      __name: 'DEFAULT_MAX_NB_MEMBERS',
+      __format: 'json'
     }
   },
   listEntitiesMode: 'LIST_ENTITIES_MODE',

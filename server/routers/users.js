@@ -129,6 +129,7 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
     webhooks.postIdentity('user', { ...req.user, ...patch })
   }
   const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
+  if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
   patchedUser.avatarUrl = config.publicUrl + '/api/avatars/user/' + patchedUser.id + '/avatar.png'
   res.send(patchedUser)
 }))

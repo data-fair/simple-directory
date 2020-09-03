@@ -86,7 +86,10 @@
         <v-card-title primary-title>
           {{ $t('pages.organization.addMember') }}
         </v-card-title>
-        <v-card-text>
+        <v-card-text v-if="disableInvite">
+          <v-alert :value="true" type="warning">{{ $t('pages.organization.disableInvite') }}</v-alert>
+        </v-card-text>
+        <v-card-text v-else>
           <v-form ref="inviteForm" v-model="validInvitation">
             <v-text-field
               id="id"
@@ -118,7 +121,7 @@
         <v-card-actions>
           <v-spacer/>
           <v-btn flat @click="inviteMemberDialog = false">{{ $t('common.confirmCancel') }}</v-btn>
-          <v-btn color="warning" @click="confirmInvitation()">{{ $t('common.confirmOk') }}</v-btn>
+          <v-btn :disabled="disableInvite" color="warning" @click="confirmInvitation()">{{ $t('common.confirmOk') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -179,6 +182,10 @@ export default {
     orga: {
       type: Object,
       default: null
+    },
+    nbMembersLimits: {
+      type: Object,
+      default: null
     }
   },
   data: () => ({
@@ -200,7 +207,10 @@ export default {
   }),
   computed: {
     ...mapState(['userDetails', 'env']),
-    ...mapState('session', ['user'])
+    ...mapState('session', ['user']),
+    disableInvite() {
+      return this.nbMembersLimits.consumption >= this.nbMembersLimits.limit
+    }
   },
   async mounted() {
     this.fetchMembers()
@@ -226,7 +236,7 @@ export default {
     },
     newInvitation() {
       this.invitation = { id: this.orga.id, name: this.orga.name, email: '', role: null, department: null }
-      this.$refs.inviteForm.reset()
+      if (this.$refs.inviteForm) this.$refs.inviteForm.reset()
     },
     async confirmInvitation() {
       if (this.$refs.inviteForm.validate()) {

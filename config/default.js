@@ -82,7 +82,8 @@ module.exports = {
     web: 1080
   },
   quotas: {
-    defaultMaxCreatedOrgs: -1
+    defaultMaxCreatedOrgs: -1,
+    defaultMaxNbMembers: 0
   },
   // Restricts who can use the find endpoints on users and organizations
   // One of 'anonymous', 'authenticated' or 'admin'

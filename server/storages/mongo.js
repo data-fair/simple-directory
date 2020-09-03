@@ -51,6 +51,8 @@ class MongodbStorage {
     await ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
     await ensureIndex(this.db, 'invitations', { email: 1, id: 1 }, { unique: true })
     await ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1 }, { unique: true })
+    await ensureIndex(this.db, 'limits', { id: 'text', name: 'text' }, { name: 'fulltext' })
+    await ensureIndex(this.db, 'limits', { type: 1, id: 1 }, { name: 'limits-find-current', unique: true })
     return this
   }
 
@@ -125,7 +127,7 @@ class MongodbStorage {
       filter.name = { $regex: params.q, $options: 'i' }
     }
 
-    const countPromise = this.db.collection('users').count(filter)
+    const countPromise = this.db.collection('users').countDocuments(filter)
     const users = await this.db.collection('users')
       .find(filter)
       .project(prepareSelect(params.select))
@@ -151,7 +153,7 @@ class MongodbStorage {
     if (params.departments && params.departments.length) {
       filter.organizations.$elemMatch.department = { $in: params.departments }
     }
-    const countPromise = this.db.collection('users').count(filter)
+    const countPromise = this.db.collection('users').countDocuments(filter)
     const users = await this.db.collection('users')
       .find(filter)
       .sort(params.sort)
@@ -225,7 +227,7 @@ class MongodbStorage {
       filter['created.id'] = params.creator
     }
 
-    const countPromise = this.db.collection('organizations').count(filter)
+    const countPromise = this.db.collection('organizations').countDocuments(filter)
     const organizations = await this.db.collection('organizations')
       .find(filter)
       .sort(params.sort)
@@ -242,6 +244,10 @@ class MongodbStorage {
       { _id: user.id },
       { $push: { organizations: { id: orga.id, name: orga.name, role, department } } }
     )
+  }
+
+  async countMembers(organizationId) {
+    return this.db.collection('users').countDocuments({ 'organizations.id': organizationId })
   }
 
   async setMemberRole(organizationId, userId, role, department) {

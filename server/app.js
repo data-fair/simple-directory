@@ -9,6 +9,7 @@ const storages = require('./storages')
 const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
 const jwt = require('./utils/jwt')
+const limits = require('./utils/limits')
 const session = require('@koumoul/sd-express')({
   directoryUrl: config.publicUrl,
   publicUrl: config.publicUrl,
@@ -48,6 +49,7 @@ app.use('/api/users', session.auth, fullUser, require('./routers/users'))
 app.use('/api/organizations', session.auth, fullUser, require('./routers/organizations'))
 app.use('/api/invitations', session.auth, fullUser, require('./routers/invitations'))
 app.use('/api/avatars', session.auth, fullUser, require('./routers/avatars'))
+app.use('/api/limits', limits.router)
 app.use('/api/session', session.router)
 
 app.use((err, req, res, next) => {
@@ -78,6 +80,7 @@ exports.run = async() => {
 
   const mailTransport = await mails.init()
   app.set('mailTransport', mailTransport)
+
   // Run a handy development mail server
   if (config.maildev.active) {
     const MailDev = require('maildev')

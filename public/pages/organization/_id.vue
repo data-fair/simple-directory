@@ -39,7 +39,7 @@
       </v-layout>
     </v-form>
     <organization-departments v-if="env.manageDepartments" :orga="orga" :is-admin-orga="isAdminOrga" @change="fetchOrganization" />
-    <organization-members :orga="orga" :is-admin-orga="isAdminOrga"/>
+    <organization-members :orga="orga" :is-admin-orga="isAdminOrga" :nb-members-limits="limits && limits.store_nb_members"/>
   </v-container>
 </template>
 
@@ -53,6 +53,7 @@ export default {
   components: { OrganizationMembers, OrganizationDepartments, LoadAvatar },
   data: () => ({
     orga: null,
+    limits: null,
     valid: true
   }),
   computed: {
@@ -66,11 +67,15 @@ export default {
   },
   async mounted() {
     this.fetchOrganization()
+    this.fetchLimits()
   },
   methods: {
     ...mapActions(['patchOrganization']),
     async fetchOrganization() {
       this.orga = await this.$axios.$get(`api/organizations/${this.$route.params.id}`)
+    },
+    async fetchLimits() {
+      this.limits = await this.$axios.$get(`api/limits/organization/${this.$route.params.id}`)
     },
     async save(e) {
       e.preventDefault()

@@ -59,7 +59,8 @@ module.exports = {
     asAdmin: 'Se connecter en tant que cet utiisateur',
     delAsAdmin: 'Revenir à ma session administrateur',
     avatar: 'Avatar',
-    birthday: 'Anniversaire'
+    birthday: 'Anniversaire',
+    missingInfo: 'Information manquante'
   },
   doc: {
     about: {
@@ -125,6 +126,11 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         noCreatedOrgsLimit: `Les utilisateurs peuvent créer un nombre indéfini d'organisations.`,
         createdOrgsLimit: `Les utilisateurs peuvent créer {defaultMaxCreatedOrgs} organisation(s) par défaut.`,
         explainLimit: `Définissez une valeur pour limiter le nombre d'organisations que cet utilisateur peut créer. -1 pour un nombre indéterminé. Videz le champs pour retomber sur la valeur par défaut ({defaultMaxCreatedOrgs}).`
+      },
+      organizations: {
+        limitOrganizationTitle: `Modifiez les limites de l'organisation`,
+        members: 'membre(s)',
+        nbMembers: 'Nombre maximal de membres (0 pour aucune limite)'
       }
     },
     login: {
@@ -153,6 +159,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
+      disableInvite: 'Cette organisation a atteint son nombre maximal de membres.',
       deleteMember: `Supprimer cet utilisateur de la liste des membres de l'organisation`,
       editMember: `Modifier le rôle de cet utilisateur dans l'organisation`,
       confirmEditMemberTitle: 'Modifier {name}',
