@@ -107,7 +107,8 @@ module.exports = {
   defaultLoginRedirect: 'DEFAULT_LOGIN_REDIRECT',
   invitationRedirect: 'INVITATION_REDIRECT',
   secretKeys: {
-    sendMails: 'SECRET_SENDMAILS'
+    sendMails: 'SECRET_SENDMAILS',
+    limits: 'SECRET_LIMITS'
   },
   listenWhenReady: {
     __name: 'LISTEN_WHEN_READY',

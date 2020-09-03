@@ -97,7 +97,8 @@ module.exports = {
   invitationRedirect: null,
   // secrets that can be used to configure global webhooks for example to send emails to users
   secretKeys: {
-    sendMails: null
+    sendMails: null,
+    limits: null
   },
   // A link to the terms of services for the site
   tosUrl: null,
