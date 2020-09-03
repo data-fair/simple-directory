@@ -34,6 +34,9 @@ exports.getLimits = async (db, consumer) => {
     if (consumer.type === 'organization') limit = await exports.setNbMembers(db, consumer.id)
     else limit.store_nb_members.consumption = 1
   }
+  if (limit.store_nb_members.limit === undefined) {
+    limit.store_nb_members.limit = config.quotas.defaultMaxNbMembers
+  }
   return limit
 }
 

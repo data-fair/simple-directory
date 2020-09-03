@@ -17,7 +17,9 @@ router.post('/', asyncWrap(async (req, res) => {
   const to = []
   for (let t of req.body.to) {
     if (t.type === 'user') {
-      to.push((await storage.getUser({ id: t.id })).email)
+      const user = (await storage.getUser({ id: t.id }))
+      if (user) to.push(user.email)
+      else console.error('Trying to send an email to a user that doesn\'t exist anymore')
     }
     if (t.type === 'organization') {
       const members = await storage.findMembers(t.id, { roles: t.role && [t.role], size: 10000, skip: 0 })
