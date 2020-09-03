@@ -1,6 +1,5 @@
 const express = require('express')
 const config = require('config')
-const moment = require('moment')
 const ajv = require('ajv')()
 const asyncWrap = require('./async-wrap')
 
