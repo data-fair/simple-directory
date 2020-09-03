@@ -67,12 +67,12 @@ const router = exports.router = express.Router()
 
 const isSuperAdmin = (req, res, next) => {
   if (req.user && req.user.adminMode) return next()
-  if (req.query.key === config.secretKeys.limits) return next()
+  if (req.query.key && req.query.key === config.secretKeys.limits) return next()
   res.status(401).send()
 }
 
 const isAccountAdmin = (req, res, next) => {
-  if (req.query.key === config.secretKeys.limits) return next()
+  if (req.query.key && req.query.key === config.secretKeys.limits) return next()
   if (!req.user) return res.status(401).send()
   if (req.user.adminMode) return next()
   if (!['organization', 'user'].includes(req.params.type)) return res.status(400).send('Wrong consumer type')
