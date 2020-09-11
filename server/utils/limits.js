@@ -75,7 +75,7 @@ const isSuperAdmin = (req, res, next) => {
   res.status(401).send()
 }
 
-const isAccountAdmin = (req, res, next) => {
+const isAccountMember = (req, res, next) => {
   if (req.query.key && req.query.key === config.secretKeys.limits) return next()
   if (!req.user) return res.status(401).send()
   if (req.user.adminMode) return next()
@@ -84,7 +84,7 @@ const isAccountAdmin = (req, res, next) => {
     if (req.user.id !== req.params.id) return res.status(403).send()
   }
   if (req.params.type === 'organization') {
-    const org = req.user.organizations.find(o => o.id === req.params.id && o.role === config.adminRole)
+    const org = req.user.organizations.find(o => o.id === req.params.id)
     if (!org) return res.status(403).send()
   }
   next()
@@ -102,7 +102,7 @@ router.post('/:type/:id', isSuperAdmin, asyncWrap(async (req, res, next) => {
 }))
 
 // A user can get limits information for himself only
-router.get('/:type/:id', isAccountAdmin, asyncWrap(async (req, res, next) => {
+router.get('/:type/:id', isAccountMember, asyncWrap(async (req, res, next) => {
   const limit = await exports.getLimits(req.app.get('storage').db, { type: req.params.type, id: req.params.id })
   delete limit._id
   res.send(limit)
