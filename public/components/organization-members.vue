@@ -209,7 +209,7 @@ export default {
     ...mapState(['userDetails', 'env']),
     ...mapState('session', ['user']),
     disableInvite() {
-      return this.nbMembersLimits.consumption >= this.nbMembersLimits.limit
+      return this.nbMembersLimits.limit > 0 && this.nbMembersLimits.consumption >= this.nbMembersLimits.limit
     }
   },
   async mounted() {
