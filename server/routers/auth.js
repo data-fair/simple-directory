@@ -250,7 +250,7 @@ router.get('/oauth/providers', (req, res) => {
 router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
   if (!provider) return res.status(404).send('Unknown OAuth provider')
-  res.redirect(provider.authorizationUri)
+  res.redirect(provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || config.publicUrl))
 }))
 
 router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
@@ -307,7 +307,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   const payload = jwt.getPayload(user)
   if (!storage.readonly) await storage.updateLogged(user.id)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-  const linkUrl = new URL(config.defaultLoginRedirect || config.publicUrl + '/me')
+  const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me')
   linkUrl.searchParams.set('id_token', token)
   debug(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)

@@ -20,7 +20,7 @@
                 <!--<v-layout row>
                   <p class="mb-0">{{ $t('pages.login.oauth') }}</p>
                 </v-layout>-->
-                <oauth-login-links class="mb-3" />
+                <oauth-login-links :redirect="redirectUrl" class="mb-3" />
               </template>
 
               <v-text-field
