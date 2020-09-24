@@ -263,6 +263,13 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
     console.error('Bad OAuth query', req.query)
     throw new Error('Bad OAuth query')
   }
+
+  let [state, redirect] = req.query.state.split('-')
+  if (redirect) redirect = decodeURIComponent(redirect)
+  if (state !== provider.state) {
+    console.error('Bad state in oauth query, CSRF attack ?', state, provider.state)
+    throw new Error('Bad OAuth state')
+  }
   const userInfo = await provider.userInfo(await provider.accessToken(req.query.code))
   if (!userInfo.email) {
     console.error('Bad user from oauth', userInfo)
@@ -307,7 +314,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   const payload = jwt.getPayload(user)
   if (!storage.readonly) await storage.updateLogged(user.id)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-  const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me')
+  const linkUrl = new URL(redirect || config.defaultLoginRedirect || config.publicUrl + '/me')
   linkUrl.searchParams.set('id_token', token)
   debug(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)

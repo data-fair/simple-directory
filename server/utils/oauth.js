@@ -177,21 +177,20 @@ fs.ensureDir(statesDir)
 exports.providers.forEach(p => {
   // a random string as state for each provider
   const statePath = path.join(statesDir, 'oauth-state-' + p.id)
-  let state
   if (fs.existsSync(statePath)) {
-    state = fs.readFileSync(statePath, 'utf8')
+    p.state = fs.readFileSync(statePath, 'utf8')
   } else {
-    state = shortid.generate()
-    fs.writeFileSync(statePath, state)
+    p.state = shortid.generate()
+    fs.writeFileSync(statePath, p.state)
   }
 
   const callbackUri = `${config.publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
   p.authorizationUri = (redirect) => p.client.authorizationCode.authorizeURL({
-    redirect_uri: callbackUri + `?redirect=${encodeURIComponent(redirect)}`,
+    redirect_uri: callbackUri,
     scope: p.scope,
-    state
+    state: p.state + '-' + encodeURIComponent(redirect.replace('?id_token=', ''))
   })
 
   // get an access token from code sent as callback to login redirect
