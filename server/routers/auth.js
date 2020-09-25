@@ -264,12 +264,11 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
     throw new Error('Bad OAuth query')
   }
 
-  const state = req.query.state.split('-')[0]
-  if (state !== provider.state) {
-    console.error('Bad state in oauth query, CSRF attack ?', state, provider.state)
+  if (!req.query.state.startsWith(provider.state + '-')) {
+    console.error('Bad state in oauth query, CSRF attack ?', provider.state, req.query.state)
     throw new Error('Bad OAuth state')
   }
-  const redirect = decodeURIComponent(req.query.state.replace(state + '-', ''))
+  const redirect = decodeURIComponent(req.query.state.replace(provider.state + '-', ''))
 
   const userInfo = await provider.userInfo(await provider.accessToken(req.query.code))
   if (!userInfo.email) {
