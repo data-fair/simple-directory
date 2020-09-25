@@ -259,16 +259,17 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
   if (!provider) return res.status(404).send('Unknown OAuth provider')
 
-  if (req.query.error) {
-    console.error('Bad OAuth query', req.query)
-    throw new Error('Bad OAuth query')
-  }
-
   if (!req.query.state.startsWith(provider.state + '-')) {
     console.error('Bad state in oauth query, CSRF attack ?', provider.state, req.query.state)
     throw new Error('Bad OAuth state')
   }
   const redirect = decodeURIComponent(req.query.state.replace(provider.state + '-', ''))
+  const target = redirect || config.defaultLoginRedirect || config.publicUrl + '/me'
+
+  if (req.query.error) {
+    console.log('Bad OAuth query', req.query)
+    res.redirect(target)
+  }
 
   const userInfo = await provider.userInfo(await provider.accessToken(req.query.code))
   if (!userInfo.email) {
@@ -314,7 +315,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   const payload = jwt.getPayload(user)
   if (!storage.readonly) await storage.updateLogged(user.id)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-  const linkUrl = new URL(redirect || config.defaultLoginRedirect || config.publicUrl + '/me')
+  const linkUrl = new URL(target)
   linkUrl.searchParams.set('id_token', token)
   debug(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
