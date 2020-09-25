@@ -1,0 +1,914 @@
+<!doctype html>
+<html data-n-head-ssr>
+  <head >
+    <title>Simple Directory</title><meta data-n-head="ssr" charset="utf-8"><meta data-n-head="ssr" name="viewport" content="width=device-width, initial-scale=1"><meta data-n-head="ssr" data-hid="application" name="application-name" content="Simple Directory"><meta data-n-head="ssr" data-hid="description" name="description" content="Simple Directory - Documentation"><link data-n-head="ssr" rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:300,400,500,700,400italic|Material+Icons"><link data-n-head="ssr" rel="icon" type="image/x-icon" href="favicon.ico"><style data-n-head="ssr" id="vuetify-theme-stylesheet" type="text/css">a { color: #1e88e5; }
+.primary {
+  background-color: #1e88e5 !important;
+  border-color: #1e88e5 !important;
+}
+.primary--text {
+  color: #1e88e5 !important;
+  caret-color: #1e88e5 !important;
+}
+.primary.lighten-5 {
+  background-color: #cfffff !important;
+  border-color: #cfffff !important;
+}
+.primary--text.text--lighten-5 {
+  color: #cfffff !important;
+  caret-color: #cfffff !important;
+}
+.primary.lighten-4 {
+  background-color: #b0f5ff !important;
+  border-color: #b0f5ff !important;
+}
+.primary--text.text--lighten-4 {
+  color: #b0f5ff !important;
+  caret-color: #b0f5ff !important;
+}
+.primary.lighten-3 {
+  background-color: #91d8ff !important;
+  border-color: #91d8ff !important;
+}
+.primary--text.text--lighten-3 {
+  color: #91d8ff !important;
+  caret-color: #91d8ff !important;
+}
+.primary.lighten-2 {
+  background-color: #70bdff !important;
+  border-color: #70bdff !important;
+}
+.primary--text.text--lighten-2 {
+  color: #70bdff !important;
+  caret-color: #70bdff !important;
+}
+.primary.lighten-1 {
+  background-color: #4da2ff !important;
+  border-color: #4da2ff !important;
+}
+.primary--text.text--lighten-1 {
+  color: #4da2ff !important;
+  caret-color: #4da2ff !important;
+}
+.primary.darken-1 {
+  background-color: #006fc9 !important;
+  border-color: #006fc9 !important;
+}
+.primary--text.text--darken-1 {
+  color: #006fc9 !important;
+  caret-color: #006fc9 !important;
+}
+.primary.darken-2 {
+  background-color: #0057ad !important;
+  border-color: #0057ad !important;
+}
+.primary--text.text--darken-2 {
+  color: #0057ad !important;
+  caret-color: #0057ad !important;
+}
+.primary.darken-3 {
+  background-color: #004092 !important;
+  border-color: #004092 !important;
+}
+.primary--text.text--darken-3 {
+  color: #004092 !important;
+  caret-color: #004092 !important;
+}
+.primary.darken-4 {
+  background-color: #002b78 !important;
+  border-color: #002b78 !important;
+}
+.primary--text.text--darken-4 {
+  color: #002b78 !important;
+  caret-color: #002b78 !important;
+}
+.secondary {
+  background-color: #42a5f5 !important;
+  border-color: #42a5f5 !important;
+}
+.secondary--text {
+  color: #42a5f5 !important;
+  caret-color: #42a5f5 !important;
+}
+.secondary.lighten-5 {
+  background-color: #e4ffff !important;
+  border-color: #e4ffff !important;
+}
+.secondary--text.text--lighten-5 {
+  color: #e4ffff !important;
+  caret-color: #e4ffff !important;
+}
+.secondary.lighten-4 {
+  background-color: #c5ffff !important;
+  border-color: #c5ffff !important;
+}
+.secondary--text.text--lighten-4 {
+  color: #c5ffff !important;
+  caret-color: #c5ffff !important;
+}
+.secondary.lighten-3 {
+  background-color: #a6f8ff !important;
+  border-color: #a6f8ff !important;
+}
+.secondary--text.text--lighten-3 {
+  color: #a6f8ff !important;
+  caret-color: #a6f8ff !important;
+}
+.secondary.lighten-2 {
+  background-color: #87dcff !important;
+  border-color: #87dcff !important;
+}
+.secondary--text.text--lighten-2 {
+  color: #87dcff !important;
+  caret-color: #87dcff !important;
+}
+.secondary.lighten-1 {
+  background-color: #66c0ff !important;
+  border-color: #66c0ff !important;
+}
+.secondary--text.text--lighten-1 {
+  color: #66c0ff !important;
+  caret-color: #66c0ff !important;
+}
+.secondary.darken-1 {
+  background-color: #018bd8 !important;
+  border-color: #018bd8 !important;
+}
+.secondary--text.text--darken-1 {
+  color: #018bd8 !important;
+  caret-color: #018bd8 !important;
+}
+.secondary.darken-2 {
+  background-color: #0072bc !important;
+  border-color: #0072bc !important;
+}
+.secondary--text.text--darken-2 {
+  color: #0072bc !important;
+  caret-color: #0072bc !important;
+}
+.secondary.darken-3 {
+  background-color: #0059a1 !important;
+  border-color: #0059a1 !important;
+}
+.secondary--text.text--darken-3 {
+  color: #0059a1 !important;
+  caret-color: #0059a1 !important;
+}
+.secondary.darken-4 {
+  background-color: #004286 !important;
+  border-color: #004286 !important;
+}
+.secondary--text.text--darken-4 {
+  color: #004286 !important;
+  caret-color: #004286 !important;
+}
+.accent {
+  background-color: #ff9800 !important;
+  border-color: #ff9800 !important;
+}
+.accent--text {
+  color: #ff9800 !important;
+  caret-color: #ff9800 !important;
+}
+.accent.lighten-5 {
+  background-color: #ffffa2 !important;
+  border-color: #ffffa2 !important;
+}
+.accent--text.text--lighten-5 {
+  color: #ffffa2 !important;
+  caret-color: #ffffa2 !important;
+}
+.accent.lighten-4 {
+  background-color: #ffff85 !important;
+  border-color: #ffff85 !important;
+}
+.accent--text.text--lighten-4 {
+  color: #ffff85 !important;
+  caret-color: #ffff85 !important;
+}
+.accent.lighten-3 {
+  background-color: #ffeb69 !important;
+  border-color: #ffeb69 !important;
+}
+.accent--text.text--lighten-3 {
+  color: #ffeb69 !important;
+  caret-color: #ffeb69 !important;
+}
+.accent.lighten-2 {
+  background-color: #ffcf4d !important;
+  border-color: #ffcf4d !important;
+}
+.accent--text.text--lighten-2 {
+  color: #ffcf4d !important;
+  caret-color: #ffcf4d !important;
+}
+.accent.lighten-1 {
+  background-color: #ffb32f !important;
+  border-color: #ffb32f !important;
+}
+.accent--text.text--lighten-1 {
+  color: #ffb32f !important;
+  caret-color: #ffb32f !important;
+}
+.accent.darken-1 {
+  background-color: #df7e00 !important;
+  border-color: #df7e00 !important;
+}
+.accent--text.text--darken-1 {
+  color: #df7e00 !important;
+  caret-color: #df7e00 !important;
+}
+.accent.darken-2 {
+  background-color: #bf6400 !important;
+  border-color: #bf6400 !important;
+}
+.accent--text.text--darken-2 {
+  color: #bf6400 !important;
+  caret-color: #bf6400 !important;
+}
+.accent.darken-3 {
+  background-color: #a14c00 !important;
+  border-color: #a14c00 !important;
+}
+.accent--text.text--darken-3 {
+  color: #a14c00 !important;
+  caret-color: #a14c00 !important;
+}
+.accent.darken-4 {
+  background-color: #843300 !important;
+  border-color: #843300 !important;
+}
+.accent--text.text--darken-4 {
+  color: #843300 !important;
+  caret-color: #843300 !important;
+}
+.error {
+  background-color: #ff5252 !important;
+  border-color: #ff5252 !important;
+}
+.error--text {
+  color: #ff5252 !important;
+  caret-color: #ff5252 !important;
+}
+.error.lighten-5 {
+  background-color: #ffe4d5 !important;
+  border-color: #ffe4d5 !important;
+}
+.error--text.text--lighten-5 {
+  color: #ffe4d5 !important;
+  caret-color: #ffe4d5 !important;
+}
+.error.lighten-4 {
+  background-color: #ffc6b9 !important;
+  border-color: #ffc6b9 !important;
+}
+.error--text.text--lighten-4 {
+  color: #ffc6b9 !important;
+  caret-color: #ffc6b9 !important;
+}
+.error.lighten-3 {
+  background-color: #ffa99e !important;
+  border-color: #ffa99e !important;
+}
+.error--text.text--lighten-3 {
+  color: #ffa99e !important;
+  caret-color: #ffa99e !important;
+}
+.error.lighten-2 {
+  background-color: #ff8c84 !important;
+  border-color: #ff8c84 !important;
+}
+.error--text.text--lighten-2 {
+  color: #ff8c84 !important;
+  caret-color: #ff8c84 !important;
+}
+.error.lighten-1 {
+  background-color: #ff6f6a !important;
+  border-color: #ff6f6a !important;
+}
+.error--text.text--lighten-1 {
+  color: #ff6f6a !important;
+  caret-color: #ff6f6a !important;
+}
+.error.darken-1 {
+  background-color: #df323b !important;
+  border-color: #df323b !important;
+}
+.error--text.text--darken-1 {
+  color: #df323b !important;
+  caret-color: #df323b !important;
+}
+.error.darken-2 {
+  background-color: #bf0025 !important;
+  border-color: #bf0025 !important;
+}
+.error--text.text--darken-2 {
+  color: #bf0025 !important;
+  caret-color: #bf0025 !important;
+}
+.error.darken-3 {
+  background-color: #9f0010 !important;
+  border-color: #9f0010 !important;
+}
+.error--text.text--darken-3 {
+  color: #9f0010 !important;
+  caret-color: #9f0010 !important;
+}
+.error.darken-4 {
+  background-color: #800000 !important;
+  border-color: #800000 !important;
+}
+.error--text.text--darken-4 {
+  color: #800000 !important;
+  caret-color: #800000 !important;
+}
+.info {
+  background-color: #2196f3 !important;
+  border-color: #2196f3 !important;
+}
+.info--text {
+  color: #2196f3 !important;
+  caret-color: #2196f3 !important;
+}
+.info.lighten-5 {
+  background-color: #d4ffff !important;
+  border-color: #d4ffff !important;
+}
+.info--text.text--lighten-5 {
+  color: #d4ffff !important;
+  caret-color: #d4ffff !important;
+}
+.info.lighten-4 {
+  background-color: #b5ffff !important;
+  border-color: #b5ffff !important;
+}
+.info--text.text--lighten-4 {
+  color: #b5ffff !important;
+  caret-color: #b5ffff !important;
+}
+.info.lighten-3 {
+  background-color: #95e8ff !important;
+  border-color: #95e8ff !important;
+}
+.info--text.text--lighten-3 {
+  color: #95e8ff !important;
+  caret-color: #95e8ff !important;
+}
+.info.lighten-2 {
+  background-color: #75ccff !important;
+  border-color: #75ccff !important;
+}
+.info--text.text--lighten-2 {
+  color: #75ccff !important;
+  caret-color: #75ccff !important;
+}
+.info.lighten-1 {
+  background-color: #51b0ff !important;
+  border-color: #51b0ff !important;
+}
+.info--text.text--lighten-1 {
+  color: #51b0ff !important;
+  caret-color: #51b0ff !important;
+}
+.info.darken-1 {
+  background-color: #007cd6 !important;
+  border-color: #007cd6 !important;
+}
+.info--text.text--darken-1 {
+  color: #007cd6 !important;
+  caret-color: #007cd6 !important;
+}
+.info.darken-2 {
+  background-color: #0064ba !important;
+  border-color: #0064ba !important;
+}
+.info--text.text--darken-2 {
+  color: #0064ba !important;
+  caret-color: #0064ba !important;
+}
+.info.darken-3 {
+  background-color: #004d9f !important;
+  border-color: #004d9f !important;
+}
+.info--text.text--darken-3 {
+  color: #004d9f !important;
+  caret-color: #004d9f !important;
+}
+.info.darken-4 {
+  background-color: #003784 !important;
+  border-color: #003784 !important;
+}
+.info--text.text--darken-4 {
+  color: #003784 !important;
+  caret-color: #003784 !important;
+}
+.success {
+  background-color: #4caf50 !important;
+  border-color: #4caf50 !important;
+}
+.success--text {
+  color: #4caf50 !important;
+  caret-color: #4caf50 !important;
+}
+.success.lighten-5 {
+  background-color: #dcffd6 !important;
+  border-color: #dcffd6 !important;
+}
+.success--text.text--lighten-5 {
+  color: #dcffd6 !important;
+  caret-color: #dcffd6 !important;
+}
+.success.lighten-4 {
+  background-color: #beffba !important;
+  border-color: #beffba !important;
+}
+.success--text.text--lighten-4 {
+  color: #beffba !important;
+  caret-color: #beffba !important;
+}
+.success.lighten-3 {
+  background-color: #a2ff9e !important;
+  border-color: #a2ff9e !important;
+}
+.success--text.text--lighten-3 {
+  color: #a2ff9e !important;
+  caret-color: #a2ff9e !important;
+}
+.success.lighten-2 {
+  background-color: #85e783 !important;
+  border-color: #85e783 !important;
+}
+.success--text.text--lighten-2 {
+  color: #85e783 !important;
+  caret-color: #85e783 !important;
+}
+.success.lighten-1 {
+  background-color: #69cb69 !important;
+  border-color: #69cb69 !important;
+}
+.success--text.text--lighten-1 {
+  color: #69cb69 !important;
+  caret-color: #69cb69 !important;
+}
+.success.darken-1 {
+  background-color: #2d9437 !important;
+  border-color: #2d9437 !important;
+}
+.success--text.text--darken-1 {
+  color: #2d9437 !important;
+  caret-color: #2d9437 !important;
+}
+.success.darken-2 {
+  background-color: #00791e !important;
+  border-color: #00791e !important;
+}
+.success--text.text--darken-2 {
+  color: #00791e !important;
+  caret-color: #00791e !important;
+}
+.success.darken-3 {
+  background-color: #006000 !important;
+  border-color: #006000 !important;
+}
+.success--text.text--darken-3 {
+  color: #006000 !important;
+  caret-color: #006000 !important;
+}
+.success.darken-4 {
+  background-color: #004700 !important;
+  border-color: #004700 !important;
+}
+.success--text.text--darken-4 {
+  color: #004700 !important;
+  caret-color: #004700 !important;
+}
+.warning {
+  background-color: #e91e63 !important;
+  border-color: #e91e63 !important;
+}
+.warning--text {
+  color: #e91e63 !important;
+  caret-color: #e91e63 !important;
+}
+.warning.lighten-5 {
+  background-color: #ffc0e7 !important;
+  border-color: #ffc0e7 !important;
+}
+.warning--text.text--lighten-5 {
+  color: #ffc0e7 !important;
+  caret-color: #ffc0e7 !important;
+}
+.warning.lighten-4 {
+  background-color: #ffa3cb !important;
+  border-color: #ffa3cb !important;
+}
+.warning--text.text--lighten-4 {
+  color: #ffa3cb !important;
+  caret-color: #ffa3cb !important;
+}
+.warning.lighten-3 {
+  background-color: #ff85b0 !important;
+  border-color: #ff85b0 !important;
+}
+.warning--text.text--lighten-3 {
+  color: #ff85b0 !important;
+  caret-color: #ff85b0 !important;
+}
+.warning.lighten-2 {
+  background-color: #ff6795 !important;
+  border-color: #ff6795 !important;
+}
+.warning--text.text--lighten-2 {
+  color: #ff6795 !important;
+  caret-color: #ff6795 !important;
+}
+.warning.lighten-1 {
+  background-color: #ff467c !important;
+  border-color: #ff467c !important;
+}
+.warning--text.text--lighten-1 {
+  color: #ff467c !important;
+  caret-color: #ff467c !important;
+}
+.warning.darken-1 {
+  background-color: #c9004b !important;
+  border-color: #c9004b !important;
+}
+.warning--text.text--darken-1 {
+  color: #c9004b !important;
+  caret-color: #c9004b !important;
+}
+.warning.darken-2 {
+  background-color: #aa0035 !important;
+  border-color: #aa0035 !important;
+}
+.warning--text.text--darken-2 {
+  color: #aa0035 !important;
+  caret-color: #aa0035 !important;
+}
+.warning.darken-3 {
+  background-color: #8b0021 !important;
+  border-color: #8b0021 !important;
+}
+.warning--text.text--darken-3 {
+  color: #8b0021 !important;
+  caret-color: #8b0021 !important;
+}
+.warning.darken-4 {
+  background-color: #6c000a !important;
+  border-color: #6c000a !important;
+}
+.warning--text.text--darken-4 {
+  color: #6c000a !important;
+  caret-color: #6c000a !important;
+}
+.admin {
+  background-color: #e53935 !important;
+  border-color: #e53935 !important;
+}
+.admin--text {
+  color: #e53935 !important;
+  caret-color: #e53935 !important;
+}
+.admin.lighten-5 {
+  background-color: #ffccb3 !important;
+  border-color: #ffccb3 !important;
+}
+.admin--text.text--lighten-5 {
+  color: #ffccb3 !important;
+  caret-color: #ffccb3 !important;
+}
+.admin.lighten-4 {
+  background-color: #ffaf98 !important;
+  border-color: #ffaf98 !important;
+}
+.admin--text.text--lighten-4 {
+  color: #ffaf98 !important;
+  caret-color: #ffaf98 !important;
+}
+.admin.lighten-3 {
+  background-color: #ff927e !important;
+  border-color: #ff927e !important;
+}
+.admin--text.text--lighten-3 {
+  color: #ff927e !important;
+  caret-color: #ff927e !important;
+}
+.admin.lighten-2 {
+  background-color: #ff7565 !important;
+  border-color: #ff7565 !important;
+}
+.admin--text.text--lighten-2 {
+  color: #ff7565 !important;
+  caret-color: #ff7565 !important;
+}
+.admin.lighten-1 {
+  background-color: #ff584c !important;
+  border-color: #ff584c !important;
+}
+.admin--text.text--lighten-1 {
+  color: #ff584c !important;
+  caret-color: #ff584c !important;
+}
+.admin.darken-1 {
+  background-color: #c50f1f !important;
+  border-color: #c50f1f !important;
+}
+.admin--text.text--darken-1 {
+  color: #c50f1f !important;
+  caret-color: #c50f1f !important;
+}
+.admin.darken-2 {
+  background-color: #a50009 !important;
+  border-color: #a50009 !important;
+}
+.admin--text.text--darken-2 {
+  color: #a50009 !important;
+  caret-color: #a50009 !important;
+}
+.admin.darken-3 {
+  background-color: #860000 !important;
+  border-color: #860000 !important;
+}
+.admin--text.text--darken-3 {
+  color: #860000 !important;
+  caret-color: #860000 !important;
+}
+.admin.darken-4 {
+  background-color: #690000 !important;
+  border-color: #690000 !important;
+}
+.admin--text.text--darken-4 {
+  color: #690000 !important;
+  caret-color: #690000 !important;
+}</style><base href="/simple-directory/"><link rel="preload" href="/simple-directory/_nuxt/7f4645330e9576c451bb.js" as="script"><link rel="preload" href="/simple-directory/_nuxt/daf7bfa3fb6fe2c69f59.js" as="script"><link rel="preload" href="/simple-directory/_nuxt/f6bbb56d76edd2980647.css" as="style"><link rel="preload" href="/simple-directory/_nuxt/72ff0a8a58440c5ddb9c.js" as="script"><link rel="preload" href="/simple-directory/_nuxt/edc1ed2a9e61105390d1.css" as="style"><link rel="preload" href="/simple-directory/_nuxt/5be449df0696ffd04542.js" as="script"><link rel="preload" href="/simple-directory/_nuxt/5b367f745cb1f2263236.css" as="style"><link rel="preload" href="/simple-directory/_nuxt/b0ef5c1444d79f79082d.js" as="script"><link rel="stylesheet" href="/simple-directory/_nuxt/f6bbb56d76edd2980647.css"><link rel="stylesheet" href="/simple-directory/_nuxt/edc1ed2a9e61105390d1.css"><link rel="stylesheet" href="/simple-directory/_nuxt/5b367f745cb1f2263236.css">
+  </head>
+  <body >
+    <div data-server-rendered="true" id="__nuxt"><!----><div id="__layout"><div data-app="true" id="app" class="application theme--light"><div class="application--wrap"><aside class="v-navigation-drawer v-navigation-drawer--close v-navigation-drawer--fixed v-navigation-drawer--is-mobile theme--light" style="height:100%;margin-top:0px;transform:translateX(-300px);width:300px;"><div class="v-subheader theme--light">Documentation</div> <div role="list" class="v-list theme--light"><div role="listitem"><a href="/simple-directory/en/doc/about" class="v-list__tile v-list__tile--link theme--light"><div class="v-list__tile__title">About</div></a></div><div role="listitem"><a href="/simple-directory/en/doc/install" class="v-list__tile v-list__tile--link theme--light"><div class="v-list__tile__title">Install</div></a></div><div role="listitem"><a href="/simple-directory/en/doc/config" class="primary--text v-list__tile--active v-list__tile v-list__tile--link theme--light"><div class="v-list__tile__title">Configuration</div></a></div><div role="listitem"><a href="/simple-directory/en/doc/use" class="v-list__tile v-list__tile--link theme--light"><div class="v-list__tile__title">Use</div></a></div></div><div class="v-navigation-drawer__border"></div></aside> <nav class="v-toolbar v-toolbar--fixed theme--light white" style="margin-top:0px;padding-right:0px;padding-left:0px;transform:translateY(0px);"><div class="v-toolbar__content" style="height:56px;"><button type="button" class="v-toolbar__side-icon v-btn v-btn--icon theme--light"><div class="v-btn__content"><i aria-hidden="true" class="v-icon material-icons theme--light">menu</i></div></button> <div class="logo-container"><a href="/simple-directory/en" title="home" class="nuxt-link-active"><img src="/simple-directory/_nuxt/img/7e81bb8.svg" style="max-width:150px;"></a></div> <div class="v-toolbar__title"><h1 class="headline">Simple Directory</h1></div> <div class="spacer"></div> <div class="v-speed-dial v-speed-dial--direction-bottom"><button type="button" class="v-btn v-btn--flat v-btn--floating v-btn--small theme--light"><div class="v-btn__content">en</div></button><div class="v-speed-dial__list"></div></div></div></nav> <main class="v-content" style="padding-top:56px;padding-right:0px;padding-bottom:0px;padding-left:0px;"><div class="v-content__wrap"><div class="container fluid"><div class="container doc-page" style="display:none;"><section><h2>Configuration</h2>
+<h3>Variables</h3>
+<p><em>Simple Directory</em> supports quite a large number of parameters that are documented below. We try as much as possible to define sensible default values, still some parameters will almost always need to be overridden, these parameters have <strong>IMPORTANT</strong> in their descriptions.</p>
+<p>Parameters can be overridden by directly modifying the files, but the recommanded way is to use environment variables.</p>
+<p><table><thead><tr><th>Key in the configuration file</th><th>Environment variable</th><th>Description</th><th>Default value</th></tr></thead><tbody>
+<tr><td>port</td><td>PORT</td><td></td><td>8080</td></tr>
+<tr><td>publicUrl</td><td>PUBLIC_URL</td><td><b>IMPORTANT.</b> The URL where the service will be exposed. For example https://koumoul.com/simple-directory</td><td>http://localhost:8080</td></tr>
+<tr><td>kid</td><td>JWT_KID</td><td></td><td>simple-directory</td></tr>
+<tr><td>sessionDomain</td><td>SESSION_DOMAIN</td><td></td><td>null</td></tr>
+<tr><td>jwtDurations.initialToken</td><td>JWT_DURATION_INITIAL</td><td></td><td>15m</td></tr>
+<tr><td>jwtDurations.exchangedToken</td><td>JWT_DURATION_EXCHANGED</td><td></td><td>30d</td></tr>
+<tr><td>jwtDurations.invitationToken</td><td>JWT_DURATION_INVIT</td><td></td><td>10d</td></tr>
+<tr><td>admins</td><td>ADMINS</td><td><b>IMPORTANT.</b> The list of email addresses of the administrators of this service.</td><td>["admin@test.com"]</td></tr>
+<tr><td>adminsOrg</td><td>ADMINS_ORG</td><td></td><td>null</td></tr>
+<tr><td>roles.defaults</td><td>ROLES_DEFAULTS</td><td></td><td>["admin","user"]</td></tr>
+<tr><td>roles.editable</td><td>ROLES_EDITABLE</td><td></td><td>false</td></tr>
+<tr><td>contact</td><td>CONTACT</td><td><b>IMPORTANT.</b> The email address of contact for users of the service.</td><td>contact@test.com</td></tr>
+<tr><td>homePage</td><td>HOME_PAGE</td><td></td><td>null</td></tr>
+<tr><td>secret.public</td><td>PUBLIC_KEY</td><td><b>IMPORTANT.</b> The key to the public RSA signing key. See the install doc of the service.</td><td>./security/simple-directory.key.pub</td></tr>
+<tr><td>secret.private</td><td>PRIVATE_KEY</td><td><b>IMPORTANT.</b> The key to the private RSA signing key. See the install doc of the service.</td><td>./security/simple-directory.key</td></tr>
+<tr><td>storage.type</td><td>STORAGE_TYPE</td><td><b>IMPORTANT.</b> The type of storage for persisting users and organizations.<br>
+The default type "file" is read-only and suited for development/test or to use data exported from another system.<br>
+The type "mongo" depends on accessing a MongoDB instance, it is the approriate choice for most production deployments.</td><td>mongo</td></tr>
+<tr><td>storage.file.users</td><td>STORAGE_FILE_USERS</td><td>Only for storage.type=file. The path to the JSON file containing users definitions</td><td>./data/users.json</td></tr>
+<tr><td>storage.file.organizations</td><td>STORAGE_FILE_ORGS</td><td>Only for storage.type=file. The path to the JSON file containing organizations definitions</td><td>./data/organizations.json</td></tr>
+<tr><td>storage.mongo.url</td><td>STORAGE_MONGO_URL</td><td>Only for storage.type=mongo. The full connection string for mongo database.</td><td>mongodb://mongo:27017/simple-directory-production</td></tr>
+<tr><td>analytics</td><td>ANALYTICS</td><td>JSON for configuring analytics, matches with the "modules" section of the lib <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a></td><td>{}</td></tr>
+<tr><td>webhooks.identities</td><td>IDENTITIES_WEBHOOKS</td><td></td><td>[]</td></tr>
+<tr><td>theme.logo</td><td>THEME_LOGO</td><td>The URL to replace Simple Directory's default logo.</td><td>null</td></tr>
+<tr><td>theme.dark</td><td>THEME_DARK</td><td>Switch the whole apparence of pages to a dark style.<br>Note that the default colors are mote adapted to a light style, if you switch to dark you will have to modify them.</td><td>false</td></tr>
+<tr><td>theme.colors.primary</td><td>THEME_PRIMARY</td><td></td><td>#1E88E5</td></tr>
+<tr><td>theme.colors.secondary</td><td>THEME_SECONDARY</td><td></td><td>#42A5F5</td></tr>
+<tr><td>theme.colors.accent</td><td>THEME_ACCENT</td><td></td><td>#FF9800</td></tr>
+<tr><td>theme.colors.error</td><td>THEME_ERROR</td><td></td><td>FF5252</td></tr>
+<tr><td>theme.colors.info</td><td>THEME_INFO</td><td></td><td>#2196F3</td></tr>
+<tr><td>theme.colors.success</td><td>THEME_SUCCESS</td><td></td><td>#4CAF50</td></tr>
+<tr><td>theme.colors.warning</td><td>THEME_WARNING</td><td></td><td>#E91E63</td></tr>
+<tr><td>theme.cssUrl</td><td>THEME_CSS_URL</td><td>Link to a stylesheet to complement the branding variables.<br>WARNING: the HTML structure can change from one version to another. Maintaining an external stylesheet is going to create extra work for you on upgrades.</td><td>null</td></tr>
+<tr><td>theme.cssText</td><td>THEME_CSS_TEXT</td><td>Raw css content to complement the branding variables.<br>WARNING: the HTML structure can change from one version to another. Maintaining an external stylesheet is going to create extra work for you on upgrades.</td><td></td></tr>
+<tr><td>i18n.locales</td><td>I18N_LOCALES</td><td></td><td>["fr","en"]</td></tr>
+<tr><td>mails.transport</td><td>MAILS_TRANSPORT</td><td><b>IMPORTANT.</b> A JSON object of configuration for the email transport compatible with the library <a href="https://nodemailer.com/smtp/">nodemailer</a>.</td><td>{"port":1025,"ignoreTLS":true,"default":"localhost"}</td></tr>
+<tr><td>mails.from</td><td>MAILS_FROM</td><td>'<b>IMPORTANT.</> The address to use as sender for emails sent by the service.</td><td>no-reply@test.com</td></tr>
+<tr><td>maildev.url</td><td>MAILDEV_URL</td><td></td><td>http://localhost:1080</td></tr>
+<tr><td>maildev.active</td><td>MAILDEV_ACTIVE</td><td></td><td>false</td></tr>
+<tr><td>maildev.smtp</td><td>MAILDEV_SMTP</td><td></td><td>1025</td></tr>
+<tr><td>maildev.web</td><td>MAILDEV_WEB</td><td></td><td>1080</td></tr>
+<tr><td>quotas.defaultMaxCreatedOrgs</td><td>DEFAULT_MAX_CREATED_ORGS</td><td></td><td>-1</td></tr>
+<tr><td>quotas.defaultMaxNbMembers</td><td>DEFAULT_MAX_NB_MEMBERS</td><td></td><td>0</td></tr>
+<tr><td>listEntitiesMode</td><td>LIST_ENTITIES_MODE</td><td>Used to restrict in a global manner access to the lists of users and organizations.<br>
+Can be 'anonymous', 'authenticated' or 'admin'.</td><td>authenticated</td></tr>
+<tr><td>onlyCreateInvited</td><td>ONLY_CREATE_INVITED</td><td>If true users can not be created at first email sent. They must be invited in an organization.</td><td>false</td></tr>
+<tr><td>defaultLoginRedirect</td><td>DEFAULT_LOGIN_REDIRECT</td><td>Default redirection after login. If not specified user will go to his profile page.</td><td>null</td></tr>
+<tr><td>invitationRedirect</td><td>INVITATION_REDIRECT</td><td></td><td>null</td></tr>
+<tr><td>secretKeys.sendMails</td><td>SECRET_SENDMAILS</td><td></td><td>null</td></tr>
+<tr><td>secretKeys.limits</td><td>SECRET_LIMITS</td><td></td><td>null</td></tr>
+<tr><td>listenWhenReady</td><td>LISTEN_WHEN_READY</td><td></td><td>false</td></tr>
+<tr><td>noUI</td><td>NO_UI</td><td></td><td>false</td></tr>
+<tr><td>tosUrl</td><td>TOS_URL</td><td><b>IMPORTANT.</b> The URL toward you terms of services. If this parameter is empty or does not link toward a proper Web page you risk not satisfying your obligations toward your users.</td><td>null</td></tr>
+<tr><td>manageDepartments</td><td>MANAGE_DEPARTMENTS</td><td></td><td>false</td></tr>
+<tr><td>manageDepartmentLabel</td><td>MANAGE_DEPARTMENT_LABEL</td><td></td><td>false</td></tr>
+<tr><td>passwordless</td><td>PASSWORDLESS</td><td></td><td>true</td></tr>
+<tr><td>authRateLimit.attempts</td><td>AUTHRATELIMIT_ATTEMPTS</td><td></td><td>5</td></tr>
+<tr><td>authRateLimit.duration</td><td>AUTHRATELIMIT_DURATION</td><td></td><td>60</td></tr>
+<tr><td>oauth.providers</td><td>OAUTH_PROVIDERS</td><td></td><td>[]</td></tr>
+<tr><td>oauth.github.id</td><td>OAUTH_GITHUB_ID</td><td></td><td></td></tr>
+<tr><td>oauth.github.secret</td><td>OAUTH_GITHUB_SECRET</td><td></td><td></td></tr>
+<tr><td>oauth.facebook.id</td><td>OAUTH_FACEBOOK_ID</td><td></td><td></td></tr>
+<tr><td>oauth.facebook.secret</td><td>OAUTH_FACEBOOK_SECRET</td><td></td><td></td></tr>
+<tr><td>oauth.google.id</td><td>OAUTH_GOOGLE_ID</td><td></td><td></td></tr>
+<tr><td>oauth.google.secret</td><td>OAUTH_GOOGLE_SECRET</td><td></td><td></td></tr>
+<tr><td>oauth.linkedin.id</td><td>OAUTH_LINKEDIN_ID</td><td></td><td></td></tr>
+<tr><td>oauth.linkedin.secret</td><td>OAUTH_LINKEDIN_SECRET</td><td></td><td></td></tr>
+</tbody></table></p>
+<h3>Internationalization</h3>
+<p>All messages in <em>Simple Directory</em> are externalized and internationalized.</p>
+<p>To add a language you can add a file in <a href="(https://github.com/koumoul-dev/simple-directory/tree/master/i18n)">this directory </a> either by overwriting the Docker image or submitting a pull request.</p>
+<p>To change some values you can set environment variables when running the service. The table below contains the supported keys. <strong>Warning:</strong> we try to keep the keys as stables as possible, but still some modification may occur between 2 versions of <em>Simple Directory</em>. If you overwrite some values, you should check it again after each upgrade.</p>
+<p><table><thead><tr><th>Key in I18N file</th><th>Environment variable</th><th>Value</th></tr></thead><tbody>
+<tr><td>common.id</td><td>I18N_en_common_id</td><td><pre>Identifier</pre></td></tr>
+<tr><td>common.next</td><td>I18N_en_common_next</td><td><pre>Next</pre></td></tr>
+<tr><td>common.name</td><td>I18N_en_common_name</td><td><pre>Name</pre></td></tr>
+<tr><td>common.home</td><td>I18N_en_common_home</td><td><pre>Home</pre></td></tr>
+<tr><td>common.save</td><td>I18N_en_common_save</td><td><pre>Save</pre></td></tr>
+<tr><td>common.role</td><td>I18N_en_common_role</td><td><pre>Role</pre></td></tr>
+<tr><td>common.user</td><td>I18N_en_common_user</td><td><pre>User</pre></td></tr>
+<tr><td>common.back</td><td>I18N_en_common_back</td><td><pre>Back</pre></td></tr>
+<tr><td>common.email</td><td>I18N_en_common_email</td><td><pre>Email</pre></td></tr>
+<tr><td>common.login</td><td>I18N_en_common_login</td><td><pre>login</pre></td></tr>
+<tr><td>common.users</td><td>I18N_en_common_users</td><td><pre>Users</pre></td></tr>
+<tr><td>common.logout</td><td>I18N_en_common_logout</td><td><pre>logout</pre></td></tr>
+<tr><td>common.reject</td><td>I18N_en_common_reject</td><td><pre>Reject</pre></td></tr>
+<tr><td>common.accept</td><td>I18N_en_common_accept</td><td><pre>Accept</pre></td></tr>
+<tr><td>common.avatar</td><td>I18N_en_common_avatar</td><td><pre>Avatar</pre></td></tr>
+<tr><td>common.search</td><td>I18N_en_common_search</td><td><pre>Search</pre></td></tr>
+<tr><td>common.asAdmin</td><td>I18N_en_common_asAdmin</td><td><pre>Log as this user</pre></td></tr>
+<tr><td>common.members</td><td>I18N_en_common_members</td><td><pre>Members</pre></td></tr>
+<tr><td>common.logLink</td><td>I18N_en_common_logLink</td><td><pre>login / sign up</pre></td></tr>
+<tr><td>common.validate</td><td>I18N_en_common_validate</td><td><pre>Validate</pre></td></tr>
+<tr><td>common.password</td><td>I18N_en_common_password</td><td><pre>Password</pre></td></tr>
+<tr><td>common.birthday</td><td>I18N_en_common_birthday</td><td><pre>Birthday</pre></td></tr>
+<tr><td>common.loggedAt</td><td>I18N_en_common_loggedAt</td><td><pre>Logged at</pre></td></tr>
+<tr><td>common.lastName</td><td>I18N_en_common_lastName</td><td><pre>Family name</pre></td></tr>
+<tr><td>common.editTitle</td><td>I18N_en_common_editTitle</td><td><pre>Edit {name}</pre></td></tr>
+<tr><td>common.firstName</td><td>I18N_en_common_firstName</td><td><pre>First name</pre></td></tr>
+<tr><td>common.createdAt</td><td>I18N_en_common_createdAt</td><td><pre>Created on</pre></td></tr>
+<tr><td>common.updatedAt</td><td>I18N_en_common_updatedAt</td><td><pre>Updated on</pre></td></tr>
+<tr><td>common.confirmOk</td><td>I18N_en_common_confirmOk</td><td><pre>Ok</pre></td></tr>
+<tr><td>common.autoAdmin</td><td>I18N_en_common_autoAdmin</td><td><pre>Automatically add me as admin</pre></td></tr>
+<tr><td>common.dashboard</td><td>I18N_en_common_dashboard</td><td><pre>Dashboard</pre></td></tr>
+<tr><td>common.myAccount</td><td>I18N_en_common_myAccount</td><td><pre>My account</pre></td></tr>
+<tr><td>common.department</td><td>I18N_en_common_department</td><td><pre>Department</pre></td></tr>
+<tr><td>common.delAsAdmin</td><td>I18N_en_common_delAsAdmin</td><td><pre>Get back to your normal session</pre></td></tr>
+<tr><td>common.checkInbox</td><td>I18N_en_common_checkInbox</td><td><pre>Check your mail box</pre></td></tr>
+<tr><td>common.missingInfo</td><td>I18N_en_common_missingInfo</td><td><pre>Missing info</pre></td></tr>
+<tr><td>common.departments</td><td>I18N_en_common_departments</td><td><pre>Departments</pre></td></tr>
+<tr><td>common.spamWarning</td><td>I18N_en_common_spamWarning</td><td><pre>If you didn&#039;t receive an email, check if it was classified as spam in your mail box.</pre></td></tr>
+<tr><td>common.invitations</td><td>I18N_en_common_invitations</td><td><pre>Invitations</pre></td></tr>
+<tr><td>common.description</td><td>I18N_en_common_description</td><td><pre>Description</pre></td></tr>
+<tr><td>common.organization</td><td>I18N_en_common_organization</td><td><pre>Organization</pre></td></tr>
+<tr><td>common.nbCreatedOrgs</td><td>I18N_en_common_nbCreatedOrgs</td><td><pre>Number of organizations created :</pre></td></tr>
+<tr><td>common.organizations</td><td>I18N_en_common_organizations</td><td><pre>Organizations</pre></td></tr>
+<tr><td>common.createdPhrase</td><td>I18N_en_common_createdPhrase</td><td><pre>Created by {name} on {date}</pre></td></tr>
+<tr><td>common.documentation</td><td>I18N_en_common_documentation</td><td><pre>Documentation</pre></td></tr>
+<tr><td>common.confirmCancel</td><td>I18N_en_common_confirmCancel</td><td><pre>Cancel</pre></td></tr>
+<tr><td>common.administration</td><td>I18N_en_common_administration</td><td><pre>Administration</pre></td></tr>
+<tr><td>common.maxCreatedOrgs</td><td>I18N_en_common_maxCreatedOrgs</td><td><pre>Max number of created organizations</pre></td></tr>
+<tr><td>common.modificationOk</td><td>I18N_en_common_modificationOk</td><td><pre>Your modification was saved.</pre></td></tr>
+<tr><td>common.confirmDeleteMsg</td><td>I18N_en_common_confirmDeleteMsg</td><td><pre>Do you really want to delete this resource ? Data will not be recoverable.</pre></td></tr>
+<tr><td>common.activateAdminMode</td><td>I18N_en_common_activateAdminMode</td><td><pre>Activate admin mode</pre></td></tr>
+<tr><td>common.confirmDeleteTitle</td><td>I18N_en_common_confirmDeleteTitle</td><td><pre>Delete {name}</pre></td></tr>
+<tr><td>common.createOrganization</td><td>I18N_en_common_createOrganization</td><td><pre>Create organization</pre></td></tr>
+<tr><td>common.deactivateAdminMode</td><td>I18N_en_common_deactivateAdminMode</td><td><pre>Deactivate admin mode</pre></td></tr>
+<tr><td>root.title</td><td>I18N_en_root_title</td><td><pre>Simple Directory</pre></td></tr>
+<tr><td>root.description</td><td>I18N_en_root_description</td><td><pre>Easy users and organizations management for modern Web-oriented architectures.</pre></td></tr>
+<tr><td>errors.badEmail</td><td>I18N_en_errors_badEmail</td><td><pre>Email address is empty or malformed.</pre></td></tr>
+<tr><td>errors.userUnknown</td><td>I18N_en_errors_userUnknown</td><td><pre>Unknown user.</pre></td></tr>
+<tr><td>errors.orgaUnknown</td><td>I18N_en_errors_orgaUnknown</td><td><pre>Unknown organization.</pre></td></tr>
+<tr><td>errors.unknownRole</td><td>I18N_en_errors_unknownRole</td><td><pre>Role {role} is unknown.</pre></td></tr>
+<tr><td>errors.invalidToken</td><td>I18N_en_errors_invalidToken</td><td><pre>The token is not valid. Maybe it is expired.</pre></td></tr>
+<tr><td>errors.rateLimitAuth</td><td>I18N_en_errors_rateLimitAuth</td><td><pre>Too many attemps in a short interval. Please wait before trying again.</pre></td></tr>
+<tr><td>errors.noPasswordless</td><td>I18N_en_errors_noPasswordless</td><td><pre>Passordless authentication is not accepted by this service.</pre></td></tr>
+<tr><td>errors.badCredentials</td><td>I18N_en_errors_badCredentials</td><td><pre>Email address or password invalid.</pre></td></tr>
+<tr><td>errors.maxCreatedOrgs</td><td>I18N_en_errors_maxCreatedOrgs</td><td><pre>The user cannot create more organizations. Limit attained.</pre></td></tr>
+<tr><td>errors.permissionDenied</td><td>I18N_en_errors_permissionDenied</td><td><pre>Insufficient permissions.</pre></td></tr>
+<tr><td>errors.malformedPassword</td><td>I18N_en_errors_malformedPassword</td><td><pre>The password should be at least 8 characters long and contain at least one number and one uppercase character.</pre></td></tr>
+<tr><td>errors.invitationConflict</td><td>I18N_en_errors_invitationConflict</td><td><pre>This user is already member of the organization.</pre></td></tr>
+<tr><td>errors.serviceUnavailable</td><td>I18N_en_errors_serviceUnavailable</td><td><pre>Service unavailable because of maintenance.</pre></td></tr>
+<tr><td>errors.nonEmptyOrganization</td><td>I18N_en_errors_nonEmptyOrganization</td><td><pre>You must remove other members from this organization</pre></td></tr>
+<tr><td>mails.login.text</td><td>I18N_en_mails_login_text</td><td><pre>
+An identification request was made from {host}. To confirm copy the URL below in the address bar of your Web browser. This URL is valid for 15 minutes.
+
+{link}
+
+If you encounter a problem with your account or if you didn&#039;t submit this identification request to {host}, feel free to contact us at {contact}.
+      </pre></td></tr>
+<tr><td>mails.login.htmlMsg</td><td>I18N_en_mails_login_htmlMsg</td><td><pre>An identification request was made from &lt;a href=&quot;{origin}&quot;&gt;{host}&lt;/a&gt;. To confirm click on the button below. This link is valid for 15 minutes.</pre></td></tr>
+<tr><td>mails.login.subject</td><td>I18N_en_mails_login_subject</td><td><pre>Identification on {host}</pre></td></tr>
+<tr><td>mails.login.htmlButton</td><td>I18N_en_mails_login_htmlButton</td><td><pre>Connect to {host}</pre></td></tr>
+<tr><td>mails.login.htmlCaption</td><td>I18N_en_mails_login_htmlCaption</td><td><pre>If you encounter a problem with your account or if you didn&#039;t submit this identification request to &lt;a href=&quot;{origin}&quot;&gt;{host}&lt;/a&gt;, feel free to contact us at &lt;a href=&quot;mailto:{contact}&quot;&gt;{contact}&lt;/a&gt;.</pre></td></tr>
+<tr><td>mails.login.htmlAlternativeLink</td><td>I18N_en_mails_login_htmlAlternativeLink</td><td><pre>If the button doesn&#039;t work, you can copy/paste this link in the address bar of your browser:</pre></td></tr>
+<tr><td>mails.action.text</td><td>I18N_en_mails_action_text</td><td><pre>
+An action requiring confirmation by email was triggered on this address. To confirm this action you can copy the URL below in your browers. Ths URL is valid for 15 minutes.
+
+{link}
+
+If you encounter a problem with your account or if you find this message suspicious feel free to contact us at {contact}.
+      </pre></td></tr>
+<tr><td>mails.action.htmlMsg</td><td>I18N_en_mails_action_htmlMsg</td><td><pre>
+An action requiring confirmation by email was triggered on this address. To confirm this action click on the button below. The link is valid for 15 minutes.
+      </pre></td></tr>
+<tr><td>mails.action.subject</td><td>I18N_en_mails_action_subject</td><td><pre>Accomplish an action on your account {host}</pre></td></tr>
+<tr><td>mails.action.htmlButton</td><td>I18N_en_mails_action_htmlButton</td><td><pre>Confirm</pre></td></tr>
+<tr><td>mails.action.htmlCaption</td><td>I18N_en_mails_action_htmlCaption</td><td><pre>If you encounter a problem with your account or if you find this message suspicious feel free to contact us at &lt;a href=&quot;mailto:{contact}&quot;&gt;{contact}&lt;/a&gt;.</pre></td></tr>
+<tr><td>mails.action.htmlAlternativeLink</td><td>I18N_en_mails_action_htmlAlternativeLink</td><td><pre>If the button doesn&#039;t work, you can copy/paste this link in the address bar of your browser:</pre></td></tr>
+<tr><td>mails.conflict.text</td><td>I18N_en_mails_conflict_text</td><td><pre>
+An account creation request was made from {host}, but it was rejected as this email address is already associated to an account.
+
+Feel free to contact us at {contact}.
+      </pre></td></tr>
+<tr><td>mails.conflict.subject</td><td>I18N_en_mails_conflict_subject</td><td><pre>Failure to create an account on {host}</pre></td></tr>
+<tr><td>mails.conflict.htmlMsg</td><td>I18N_en_mails_conflict_htmlMsg</td><td><pre>An account creation request was made from &lt;a href=&quot;{origin}&quot;&gt;{host}&lt;/a&gt;, but it was rejected as this email address is already associated to an account.</pre></td></tr>
+<tr><td>mails.conflict.htmlCaption</td><td>I18N_en_mails_conflict_htmlCaption</td><td><pre>Feel free to contact us at &lt;a href=&quot;mailto:{contact}&quot;&gt;{contact}&lt;/a&gt;.</pre></td></tr>
+<tr><td>mails.creation.text</td><td>I18N_en_mails_creation_text</td><td><pre>
+An account creation request was made from {host}. To activate the account you must copy the URL below in the address bar of your Web browser. This URL is valid for 15 minutes.
+
+{link}
+
+If you encounter a problem with your account or if you didn&#039;t submit this identification request to {host}, feel free to contact us at {contact}.
+      </pre></td></tr>
+<tr><td>mails.creation.subject</td><td>I18N_en_mails_creation_subject</td><td><pre>Welcome to {host}</pre></td></tr>
+<tr><td>mails.creation.htmlMsg</td><td>I18N_en_mails_creation_htmlMsg</td><td><pre>An account creation request was made from &lt;a href=&quot;{origin}&quot;&gt;{host}&lt;/a&gt;. To activate the account you must click on the button below. This link is valid for 15 minutes.</pre></td></tr>
+<tr><td>mails.creation.htmlButton</td><td>I18N_en_mails_creation_htmlButton</td><td><pre>Validate the account creation</pre></td></tr>
+<tr><td>mails.creation.htmlCaption</td><td>I18N_en_mails_creation_htmlCaption</td><td><pre>If you encounter a problem with your account or if you didn&#039;t submit this identification request to &lt;a href=&quot;{origin}&quot;&gt;{host}&lt;/a&gt;, feel free to contact us at &lt;a href=&quot;mailto:{contact}&quot;&gt;{contact}&lt;/a&gt;.</pre></td></tr>
+<tr><td>mails.creation.htmlAlternativeLink</td><td>I18N_en_mails_creation_htmlAlternativeLink</td><td><pre>If the button doesn&#039;t work, you can copy/paste this link in the address bar of your browser:</pre></td></tr>
+<tr><td>mails.invitation.text</td><td>I18N_en_mails_invitation_text</td><td><pre>
+An administrator from the organization {organization} invited you to join. To accept this invitation copy the URL below in the address bar of your Web browser.
+If you do not have an account yet it will be created automatically.
+
+{link}
+
+If you encounter a problem with your account or if you find this invitation suspicious feel free to contact us at {contact}.
+      </pre></td></tr>
+<tr><td>mails.invitation.htmlMsg</td><td>I18N_en_mails_invitation_htmlMsg</td><td><pre>
+      An administrator from the organization {organization} invited you to join. To accept this invitation click on the button below.
+      If you do not have an account yet it will be created automatically.
+      </pre></td></tr>
+<tr><td>mails.invitation.subject</td><td>I18N_en_mails_invitation_subject</td><td><pre>Join the organization {organization} on {host}</pre></td></tr>
+<tr><td>mails.invitation.htmlButton</td><td>I18N_en_mails_invitation_htmlButton</td><td><pre>Accept the invitation</pre></td></tr>
+<tr><td>mails.invitation.htmlCaption</td><td>I18N_en_mails_invitation_htmlCaption</td><td><pre>If you encounter a problem with your account or if you find this invitation suspicious feel free to contact us at &lt;a href=&quot;mailto:{contact}&quot;&gt;{contact}&lt;/a&gt;.</pre></td></tr>
+<tr><td>mails.invitation.htmlAlternativeLink</td><td>I18N_en_mails_invitation_htmlAlternativeLink</td><td><pre>If the button doesn&#039;t work, you can copy/paste this link in the address bar of your browser:</pre></td></tr>
+<tr><td>mails.noCreation.text</td><td>I18N_en_mails_noCreation_text</td><td><pre>
+An identification request was made from {host}, but it was rejected as this email address is unknown.
+
+Feel free to contact us at {contact}.
+      </pre></td></tr>
+<tr><td>mails.noCreation.htmlMsg</td><td>I18N_en_mails_noCreation_htmlMsg</td><td><pre>An identification request was made from &lt;a href=&quot;{origin}&quot;&gt;{host}&lt;/a&gt;, but it was rejected as this email address is unknown.</pre></td></tr>
+<tr><td>mails.noCreation.subject</td><td>I18N_en_mails_noCreation_subject</td><td><pre>Failure to authenticate to {host}</pre></td></tr>
+<tr><td>mails.noCreation.htmlCaption</td><td>I18N_en_mails_noCreation_htmlCaption</td><td><pre>Feel free to contact us at &lt;a href=&quot;mailto:{contact}&quot;&gt;{contact}&lt;/a&gt;.</pre></td></tr>
+<tr><td>pages.login.oauth</td><td>I18N_en_pages_login_oauth</td><td><pre>Connect with:</pre></td></tr>
+<tr><td>pages.login.title</td><td>I18N_en_pages_login_title</td><td><pre>Identify yourself</pre></td></tr>
+<tr><td>pages.login.tosMsg</td><td>I18N_en_pages_login_tosMsg</td><td><pre>Before creating an account please read &lt;a href=&quot;{tosUrl}&quot; target=&quot;_blank&quot;&gt;our terms of services&lt;/a&gt;.</pre></td></tr>
+<tr><td>pages.login.success</td><td>I18N_en_pages_login_success</td><td><pre>You will receive an email at the specified address. Please use the link in this email to conclude your identification.</pre></td></tr>
+<tr><td>pages.login.adminMode</td><td>I18N_en_pages_login_adminMode</td><td><pre>Confirm your identity to switch to admin mode.</pre></td></tr>
+<tr><td>pages.login.emailLabel</td><td>I18N_en_pages_login_emailLabel</td><td><pre>Your email address</pre></td></tr>
+<tr><td>pages.login.tosConfirm</td><td>I18N_en_pages_login_tosConfirm</td><td><pre>I confirm that I have read the terms of services for this site.</pre></td></tr>
+<tr><td>pages.login.newPassword</td><td>I18N_en_pages_login_newPassword</td><td><pre>New password</pre></td></tr>
+<tr><td>pages.login.maildevLink</td><td>I18N_en_pages_login_maildevLink</td><td><pre>Open the development mail box</pre></td></tr>
+<tr><td>pages.login.emailCaption</td><td>I18N_en_pages_login_emailCaption</td><td><pre>Learn more about &lt;a href=&quot;https://medium.com/@ninjudd/passwords-are-obsolete-9ed56d483eb&quot;&gt;passwordless&lt;/a&gt; authentication</pre></td></tr>
+<tr><td>pages.login.newPassword2</td><td>I18N_en_pages_login_newPassword2</td><td><pre>Confirm new password</pre></td></tr>
+<tr><td>pages.login.createUserMsg1</td><td>I18N_en_pages_login_createUserMsg1</td><td><pre>If you didn&#039;t already connect to our platform you must create an account.</pre></td></tr>
+<tr><td>pages.login.newPasswordMsg</td><td>I18N_en_pages_login_newPasswordMsg</td><td><pre>Type twice the new password.</pre></td></tr>
+<tr><td>pages.login.createUserMsg2</td><td>I18N_en_pages_login_createUserMsg2</td><td><pre>Create an account.</pre></td></tr>
+<tr><td>pages.login.changePassword</td><td>I18N_en_pages_login_changePassword</td><td><pre>Renew the password.</pre></td></tr>
+<tr><td>pages.login.passwordlessMsg1</td><td>I18N_en_pages_login_passwordlessMsg1</td><td><pre>To login an email is sufficient.</pre></td></tr>
+<tr><td>pages.login.passwordlessMsg2</td><td>I18N_en_pages_login_passwordlessMsg2</td><td><pre>Send a login email.</pre></td></tr>
+<tr><td>pages.login.createUserConfirm</td><td>I18N_en_pages_login_createUserConfirm</td><td><pre>Create the account</pre></td></tr>
+<tr><td>pages.login.changePasswordSent</td><td>I18N_en_pages_login_changePasswordSent</td><td><pre>An email was sent to the address {email}. This email contains a link to change the password of your account.</pre></td></tr>
+<tr><td>pages.login.createUserConfirmed</td><td>I18N_en_pages_login_createUserConfirmed</td><td><pre>An email was sent to the address {email}. This email contains a link to validate the creation of your account.</pre></td></tr>
+<tr><td>pages.login.passwordlessConfirmed</td><td>I18N_en_pages_login_passwordlessConfirmed</td><td><pre>An email was sent to the address {email}. This email contains a link to connect to the platform.</pre></td></tr>
+<tr><td>pages.login.changePasswordTooltip</td><td>I18N_en_pages_login_changePasswordTooltip</td><td><pre>In case you forgot your password or if you need to change it, renew your password.</pre></td></tr>
+<tr><td>pages.avatar.prepare</td><td>I18N_en_pages_avatar_prepare</td><td><pre>Prepare the image</pre></td></tr>
+<tr><td>pages.invitation.title</td><td>I18N_en_pages_invitation_title</td><td><pre>Invitation validated</pre></td></tr>
+<tr><td>pages.invitation.msgSameUser</td><td>I18N_en_pages_invitation_msgSameUser</td><td><pre>Your invitation to become member of an organization has been validated. You can visit &lt;a href=&quot;{profileUrl}&quot;&gt;your profile&lt;/a&gt;.</pre></td></tr>
+<tr><td>pages.invitation.msgDifferentUser</td><td>I18N_en_pages_invitation_msgDifferentUser</td><td><pre>This invitation to become member of an organization has been validated. You can &lt;a href=&quot;{loginUrl}&quot;&gt;login with&lt;/a&gt; the invited account.</pre></td></tr>
+<tr><td>pages.organization.next</td><td>I18N_en_pages_organization_next</td><td><pre>Next</pre></td></tr>
+<tr><td>pages.organization.back</td><td>I18N_en_pages_organization_back</td><td><pre>Back</pre></td></tr>
+<tr><td>pages.organization.addMember</td><td>I18N_en_pages_organization_addMember</td><td><pre>Invite a user to join this organization</pre></td></tr>
+<tr><td>pages.organization.editMember</td><td>I18N_en_pages_organization_editMember</td><td><pre>Change the role of this user in the organization</pre></td></tr>
+<tr><td>pages.organization.inviteEmail</td><td>I18N_en_pages_organization_inviteEmail</td><td><pre>Email address of the user</pre></td></tr>
+<tr><td>pages.organization.deleteMember</td><td>I18N_en_pages_organization_deleteMember</td><td><pre>Delete this user from the list of members</pre></td></tr>
+<tr><td>pages.organization.inviteSuccess</td><td>I18N_en_pages_organization_inviteSuccess</td><td><pre>An invitation was sent to the address {email}</pre></td></tr>
+<tr><td>pages.organization.disableInvite</td><td>I18N_en_pages_organization_disableInvite</td><td><pre>This organization already contains its maximum number of members.</pre></td></tr>
+<tr><td>pages.organization.memberConflict</td><td>I18N_en_pages_organization_memberConflict</td><td><pre>This user is already a member</pre></td></tr>
+<tr><td>pages.organization.deleteMemberSuccess</td><td>I18N_en_pages_organization_deleteMemberSuccess</td><td><pre>The user {name} was excluded from the organization</pre></td></tr>
+<tr><td>pages.organization.departmentIdInvalid</td><td>I18N_en_pages_organization_departmentIdInvalid</td><td><pre>Identifier should contain anly letters, numbers and spaces</pre></td></tr>
+<tr><td>pages.organization.confirmDeleteMemberMsg</td><td>I18N_en_pages_organization_confirmDeleteMemberMsg</td><td><pre>Do you really want to delete this user from the list of members of this organization ?</pre></td></tr>
+<tr><td>pages.organization.confirmEditMemberTitle</td><td>I18N_en_pages_organization_confirmEditMemberTitle</td><td><pre>Change {name}</pre></td></tr>
+<tr><td>pages.organization.confirmDeleteMemberTitle</td><td>I18N_en_pages_organization_confirmDeleteMemberTitle</td><td><pre>Exclude {name}</pre></td></tr>
+<tr><td>pages.admin.users.explainLimit</td><td>I18N_en_pages_admin_users_explainLimit</td><td><pre>Define a value to limit the number of organizations the user can create. -1 for an indeterminate value. Empty the field to fallback on the default value ({defaultMaxCreatedOrgs}).</pre></td></tr>
+<tr><td>pages.admin.users.createdOrgsLimit</td><td>I18N_en_pages_admin_users_createdOrgsLimit</td><td><pre>The users can create {defaultMaxCreatedOrgs} organization(s) by default.</pre></td></tr>
+<tr><td>pages.admin.users.noCreatedOrgsLimit</td><td>I18N_en_pages_admin_users_noCreatedOrgsLimit</td><td><pre>The users can create an indeterminate number of organizations.</pre></td></tr>
+<tr><td>pages.admin.organizations.members</td><td>I18N_en_pages_admin_organizations_members</td><td><pre>member(s)</pre></td></tr>
+<tr><td>pages.admin.organizations.nbMembers</td><td>I18N_en_pages_admin_organizations_nbMembers</td><td><pre>maximum number of members (0 for no limit)</pre></td></tr>
+<tr><td>pages.admin.organizations.limitOrganizationTitle</td><td>I18N_en_pages_admin_organizations_limitOrganizationTitle</td><td><pre>Edit the limits of the organization</pre></td></tr></tbody></table></p>
+</section>
+</div></div></div></main> <footer class="v-footer pa-3 theme--light" style="height:32px;"><div class="spacer"></div> <div>Powered by <a href="https://koumoul-dev.github.io/simple-directory/">Simple Directory</a></div></footer></div></div></div></div><script>window.__NUXT__={layout:"default",data:[{}],error:null,serverRendered:true};</script><script src="/simple-directory/_nuxt/7f4645330e9576c451bb.js" defer></script><script src="/simple-directory/_nuxt/b0ef5c1444d79f79082d.js" defer></script><script src="/simple-directory/_nuxt/daf7bfa3fb6fe2c69f59.js" defer></script><script src="/simple-directory/_nuxt/72ff0a8a58440c5ddb9c.js" defer></script><script src="/simple-directory/_nuxt/5be449df0696ffd04542.js" defer></script>
+  </body>
+</html>
