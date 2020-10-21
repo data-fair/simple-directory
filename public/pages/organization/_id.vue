@@ -1,7 +1,7 @@
 <template lang="html">
   <v-container v-if="orga">
     <h2 class="headline mb-3">{{ $t('common.organization') + ' ' + orga.name }}</h2>
-    <v-subheader>{{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}</v-subheader>
+    <v-subheader v-if="orga.created">{{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}</v-subheader>
     <load-avatar v-if="orga" :owner="{...orga, type: 'organization'}" />
     <v-form ref="form" v-model="valid" lazy-validation @submit="save">
       <v-text-field
