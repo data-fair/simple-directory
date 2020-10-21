@@ -4,9 +4,7 @@
       <h3 class="title my-3">
         {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
       </h3>
-      <v-btn v-if="isAdminOrga" :title="$t('pages.organization.addDepartment', {departmentLabel})" icon color="primary" @click="newDepartment(); createDialog = true">
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
+      <add-department-menu :orga="orga" :is-admin-orga="isAdminOrga" :department-label="departmentLabel" @change="$emit('change')" />
     </v-layout>
 
     <v-list v-if="orga.departments.length" two-line class="elevation-1 mt-3">
@@ -17,93 +15,24 @@
             <v-list-tile-sub-title>{{ $t('common.id') }} = {{ department.id }}</v-list-tile-sub-title>
           </v-list-tile-content>
           <v-list-tile-action v-if="isAdminOrga">
-            <v-btn :title="$t('pages.organization.editDepartment', {departmentLabel})" flat icon @click="edit(department)">
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
-            <v-btn :title="$t('pages.organization.deleteDepartment', {departmentLabel})" flat icon color="warning" @click="e => {e.preventDefault();currentDepartment = department; deleteDialog = true}">
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
+            <edit-department-menu :orga="orga" :department="department" :department-label="departmentLabel" @change="$emit('change')" />
+            <delete-department-menu :orga="orga" :department="department" :department-label="departmentLabel" @change="$emit('change')"/>
           </v-list-tile-action>
         </v-list-tile>
         <v-divider v-if="i + 1 < orga.departments.length" :key="i"/>
       </template>
     </v-list>
-
-    <v-dialog v-model="createDialog" max-width="500px">
-      <v-card v-if="currentDepartment">
-        <v-card-title primary-title>
-          {{ $t('pages.organization.addDepartment', {departmentLabel}) }}
-        </v-card-title>
-        <v-card-text>
-          <v-form ref="createForm">
-            <v-text-field
-              v-model="currentDepartment.id"
-              :label="$t('common.id')"
-              :rules="[v => !!v || '', v => !v, v => !!v.match(/^[ a-zA-Z0-9]*$/) || $t('pages.organization.departmentIdInvalid')]"
-              name="id"
-              required
-            />
-            <v-text-field
-              v-model="currentDepartment.name"
-              :label="$t('common.name')"
-              :rules="[v => !!v || '']"
-              name="name"
-              required
-            />
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer/>
-          <v-btn flat @click="createDialog = false">{{ $t('common.confirmCancel') }}</v-btn>
-          <v-btn color="primary" @click="confirmCreate">{{ $t('common.confirmOk') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog v-model="deleteDialog" max-width="500px">
-      <v-card v-if="currentDepartment">
-        <v-card-title primary-title>
-          {{ $t('pages.organization.confirmDeleteDepartmentTitle', {name: currentDepartment.name, departmentLabel}) }}
-        </v-card-title>
-        <v-card-text>
-          {{ $t('pages.organization.confirmDeleteDepartmentMsg', {name: currentDepartment.name, departmentLabel}) }}
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer/>
-          <v-btn flat @click="deleteDialog = false">{{ $t('common.confirmCancel') }}</v-btn>
-          <v-btn color="warning" @click="confirmDelete">{{ $t('common.confirmOk') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog v-model="editDialog" max-width="500px">
-      <v-card v-if="editDepartment">
-        <v-card-title primary-title>
-          {{ $t('pages.organization.confirmEditDepartmentTitle', {name: currentDepartment.name, departmentLabel}) }}
-        </v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="editDepartment.name"
-            :label="$t('common.name')"
-            :rules="[v => !!v || '']"
-            name="name"
-            required
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer/>
-          <v-btn flat @click="editDialog = false">{{ $t('common.confirmCancel') }}</v-btn>
-          <v-btn color="primary" @click="confirmEdit">{{ $t('common.confirmOk') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-container>
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex'
+import { mapState } from 'vuex'
+import AddDepartmentMenu from '~/components/add-department-menu.vue'
+import EditDepartmentMenu from '~/components/edit-department-menu.vue'
+import DeleteDepartmentMenu from '~/components/delete-department-menu.vue'
 
 export default {
+  components: { AddDepartmentMenu, EditDepartmentMenu, DeleteDepartmentMenu },
   props: {
     isAdminOrga: {
       type: Boolean,
@@ -114,13 +43,7 @@ export default {
       default: null
     }
   },
-  data: () => ({
-    currentDepartment: null,
-    editDepartment: null,
-    createDialog: false,
-    deleteDialog: false,
-    editDialog: false
-  }),
+  data: () => ({}),
   computed: {
     ...mapState(['userDetails']),
     departmentLabel() {
@@ -129,41 +52,6 @@ export default {
   },
   created() {
     this.orga.departments = this.orga.departments || []
-  },
-  methods: {
-    ...mapActions(['patchOrganization']),
-    newDepartment() {
-      this.currentDepartment = { id: '', name: '' }
-    },
-    async confirmCreate() {
-      if (this.$refs.createForm.validate()) {
-        this.createDialog = false
-        const departments = this.orga.departments.concat([this.currentDepartment])
-        await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
-        this.$emit('change')
-      }
-    },
-    edit(department) {
-      this.currentDepartment = department
-      this.editDepartment = { ...department }
-      this.editDialog = true
-    },
-    async confirmEdit() {
-      if (this.$refs.createForm.validate()) {
-        this.editDialog = false
-        const departments = this.orga.departments.map(d => d.id === this.editDepartment.id ? this.editDepartment : d)
-        await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
-        this.$emit('change')
-      }
-    },
-    async confirmDelete() {
-      if (this.$refs.createForm.validate()) {
-        this.deleteDialog = false
-        const departments = this.orga.departments.filter(d => d.id !== this.currentDepartment.id)
-        await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
-        this.$emit('change')
-      }
-    }
   }
 }
 </script>

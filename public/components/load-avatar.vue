@@ -7,7 +7,7 @@
 
       <input type="file" accept="image/png, image/jpeg" @change="openFile($event)">
 
-      <v-dialog v-model="dialog" :loading="loading" persistent max-width="700">
+      <v-dialog v-model="dialog" :loading="loading" persistent max-width="700" hide-overlay>
         <v-card>
           <v-card-title class="headline" v-text="$t('pages.avatar.prepare')"/>
           <v-card-text>
