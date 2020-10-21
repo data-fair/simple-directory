@@ -142,7 +142,13 @@ export default {
     },
     async changePasswordAction() {
       try {
-        await this.$axios.$post('api/auth/action', { email: this.user.email, action: 'changePassword', target: this.env.publicUrl + '/login' })
+        let target = this.env.publicUrl + '/login'
+        try {
+          target += '?redirect=' + encodeURIComponent(window.parent.location.href)
+        } catch (err) {
+          // no problem, we simply are not in an iframe context
+        }
+        await this.$axios.$post('api/auth/action', { email: this.user.email, action: 'changePassword', target })
         eventBus.$emit('notification', this.$t('pages.login.changePasswordSent', { email: this.user.email }))
       } catch (error) {
         eventBus.$emit('notification', { error })

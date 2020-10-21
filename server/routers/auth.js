@@ -169,7 +169,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   let user = await storage.getUserByEmail(req.body.email)
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
-    const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
+    const link = req.body.target || config.defaultLoginRedirect || (config.publicUrl + '/login')
     const linkUrl = new URL(link)
     await mails.send({
       transport: req.app.get('mailTransport'),
@@ -184,7 +184,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   const payload = jwt.getPayload(user)
   payload.action = req.body.action
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-  const linkUrl = new URL(req.body.target || config.publicUrl + '/login')
+  const linkUrl = new URL(req.body.target || config.defaultLoginRedirect || config.publicUrl + '/login')
   linkUrl.searchParams.set('action_token', token)
 
   await mails.send({
