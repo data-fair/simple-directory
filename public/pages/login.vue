@@ -1,5 +1,5 @@
 <template>
-  <v-layout row justify-space-around>
+  <v-layout row justify-space-around data-iframe-height>
     <v-flex xs12 sm8 md6 lg4 xl3>
       <v-card raised class="pa-2">
         <v-card-title primary-title>

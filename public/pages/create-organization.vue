@@ -1,5 +1,5 @@
 <template lang="html">
-  <v-container>
+  <v-container data-iframe-height>
     <h2 class="headline mb-3">{{ $t('common.createOrganization') }}</h2>
     <v-form ref="form" v-model="valid" lazy-validation>
       <v-text-field

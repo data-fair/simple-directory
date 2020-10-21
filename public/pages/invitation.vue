@@ -1,5 +1,5 @@
 <template>
-  <v-jumbotron class="index">
+  <v-jumbotron class="index" data-iframe-height>
     <v-container fill-height>
       <v-layout align-center>
         <v-flex text-xs-center>

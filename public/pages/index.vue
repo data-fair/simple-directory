@@ -1,5 +1,5 @@
 <template>
-  <v-responsive class="index">
+  <v-responsive class="index" data-iframe-height>
     <v-container fill-height>
       <v-layout align-center>
         <v-flex text-xs-center>

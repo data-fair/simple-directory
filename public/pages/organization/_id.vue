@@ -1,5 +1,5 @@
 <template lang="html">
-  <v-container v-if="orga">
+  <v-container v-if="orga" data-iframe-height>
     <h2 class="headline mb-3">{{ $t('common.organization') + ' ' + orga.name }}</h2>
     <v-subheader v-if="orga.created">{{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}</v-subheader>
     <load-avatar v-if="orga" :owner="{...orga, type: 'organization'}" />

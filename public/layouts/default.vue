@@ -1,5 +1,5 @@
 <template>
-  <v-app :dark="env.theme.dark" :class="appClass" data-iframe-height>
+  <v-app :dark="env.theme.dark" :class="appClass">
     <template v-if="localePath('login') === $route.path">
       <v-toolbar app fixed flat color="transparent">
         <v-spacer/>

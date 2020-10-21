@@ -1,7 +1,7 @@
 <template lang="html">
   <v-container>
     <h2 class="headline mb-3">{{ $t('common.myAccount') }}</h2>
-    <v-form v-if="user" ref="form">
+    <v-form v-if="user" ref="form" data-iframe-height>
       <v-text-field
         :label="$t('common.email')"
         v-model="user.email"
