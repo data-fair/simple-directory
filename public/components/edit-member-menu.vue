@@ -1,5 +1,5 @@
 <template>
-  <v-menu v-model="menu" max-width="500px" :close-on-content-click="false">
+  <v-menu v-model="menu" :close-on-content-click="false" max-width="500px">
     <template v-slot:activator="{on}">
       <v-btn :title="$t('pages.organization.editMember')" flat icon v-on="on">
         <v-icon>mdi-pencil</v-icon>
