@@ -52,11 +52,12 @@ export default {
   },
   methods: {
     ...mapActions(['fetchUserDetails']),
-    ...mapActions('session', ['switchOrganization']),
+    ...mapActions('session', ['switchOrganization', 'keepalive']),
     async confirmCreate() {
       if (this.$refs.createForm.validate()) {
         this.menu = false
         const res = await this.$axios.$post('api/organizations', this.editOrganization, { params: { autoAdmin: true } })
+        await this.keepalive()
         this.switchOrganization(res.id)
         window.top.location.reload()
       }
