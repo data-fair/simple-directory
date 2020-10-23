@@ -50,18 +50,6 @@
         </v-menu>
       </v-layout>
 
-      <div v-if="userDetails && userDetails.organizations.length">
-        <span>{{ $t('common.organizations') }}:</span>
-        <span v-for="orga in userDetails.organizations" :key="orga.id">
-          {{ orga.name }} ({{ orga.role }})
-          &nbsp;
-        </span>
-      </div>
-      <br>
-      <div v-if="showMaxCreatedOrgs">
-        <p v-if="nbCreatedOrgs !== null">{{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }} </p>
-        <p>{{ $t('common.maxCreatedOrgs') }} : {{ userDetails.maxCreatedOrgs !== undefined && userDetails.maxCreatedOrgs !== null ? userDetails.maxCreatedOrgs : env.defaultMaxCreatedOrgs }}</p>
-      </div>
       <v-layout v-if="!env.readonly" row>
         <p><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
       </v-layout>
@@ -77,6 +65,26 @@
         <v-spacer/>
         <v-btn color="primary" @click="save">{{ $t('common.save') }}</v-btn>
       </v-layout>
+      <br>
+
+      <h2 class="headline mb-3">{{ $t('common.myOrganizations') }}</h2>
+
+      <div v-if="userDetails">
+        <span v-for="orga in userDetails.organizations" v-if="userDetails.organizations.length" :key="orga.id">
+          {{ orga.name }} ({{ orga.role }})
+          &nbsp;
+        </span>
+        <span v-else>
+          {{ $t('pages.me.noOrganization') }}
+        </span>
+      </div>
+      <br>
+      <div v-if="showMaxCreatedOrgs">
+        <p v-if="nbCreatedOrgs !== null">{{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }} </p>
+        <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
+      </div>
+
+      <add-organization-menu v-if="maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs" />
     </v-form>
   </v-container>
 </template>
@@ -85,12 +93,11 @@
 import { mapState, mapActions } from 'vuex'
 import eventBus from '../event-bus'
 import LoadAvatar from '../components/load-avatar.vue'
+import AddOrganizationMenu from '../components/add-organization-menu.vue'
 const moment = require('moment')
 
 export default {
-  components: {
-    LoadAvatar
-  },
+  components: { LoadAvatar, AddOrganizationMenu },
   data: () => ({
     patch: { firstName: null, lastName: null, birthday: null },
     rejectDialog: false,
@@ -101,11 +108,15 @@ export default {
   computed: {
     ...mapState('session', ['user', 'initialized']),
     ...mapState(['userDetails', 'env']),
+    maxCreatedOrgs() {
+      if (!this.userDetails) return 0
+      return this.userDetails.maxCreatedOrgs !== undefined && this.userDetails.maxCreatedOrgs !== null ? this.userDetails.maxCreatedOrgs : this.env.defaultMaxCreatedOrgs
+    },
     showMaxCreatedOrgs() {
       if (!this.userDetails) return false
       if (this.env.defaultMaxCreatedOrgs === -1) return false
       if (this.env.defaultMaxCreatedOrgs === 0 && !this.userDetails.maxCreatedOrgs) return false
-      return true
+      return this.maxCreatedOrgs === -1 ? 'illimité' : ('' + this.maxCreatedOrgs)
     }
   },
   watch: {

@@ -16,6 +16,7 @@ module.exports = {
     documentation: 'Documentation',
     administration: 'Administration',
     myAccount: 'Mon compte',
+    myOrganizations: 'Mes organisations',
     organization: 'Organisation',
     organizations: 'Organisations',
     user: 'Utilisateur',
@@ -186,6 +187,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     },
     avatar: {
       prepare: `Préparez l'image`
+    },
+    me: {
+      noOrganization: 'Vous n\'êtes membre d\'aucune organisation.'
     }
   },
   errors: {

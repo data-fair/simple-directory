@@ -76,7 +76,7 @@ router.get('/:organizationId/roles', asyncWrap(async (req, res, next) => {
 router.post('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   const storage = req.app.get('storage')
-  if (!req.user.isAdmin) {
+  if (!req.user.adminMode) {
     const createdOrgs = (await storage.findOrganizations({ size: 0, skip: 0, creator: req.user.id })).count
     let maxCreatedOrgs = (await storage.getUser({ id: req.user.id })).maxCreatedOrgs
     if (maxCreatedOrgs === undefined || maxCreatedOrgs === null) maxCreatedOrgs = config.quotas.defaultMaxCreatedOrgs
