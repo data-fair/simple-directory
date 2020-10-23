@@ -71,7 +71,7 @@
 
     <v-dialog v-model="deleteUserDialog" max-width="500px">
       <v-card v-if="currentUser">
-        <v-card-title primary-title>
+        <v-card-title class="title">
           {{ $t('common.confirmDeleteTitle', {name: currentUser.name}) }}
         </v-card-title>
         <v-card-text>
@@ -87,7 +87,7 @@
 
     <v-dialog v-model="editMaxCreatedOrgsDialog" max-width="500px">
       <v-card v-if="currentUser">
-        <v-card-title primary-title>
+        <v-card-title class="title">
           {{ $t('common.editTitle', {name: currentUser.name}) }}
         </v-card-title>
         <v-card-text>

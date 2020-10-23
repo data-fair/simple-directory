@@ -7,15 +7,20 @@
 
       <input type="file" accept="image/png, image/jpeg" @change="openFile($event)">
 
-      <v-dialog v-model="dialog" :loading="loading" persistent max-width="700" hide-overlay>
-        <v-card>
-          <v-card-title class="headline" v-text="$t('pages.avatar.prepare')"/>
-          <v-card-text>
+      <v-menu v-model="dialog" :loading="loading" :close-on-content-click="false" :close-on-click="false">
+        <template v-slot:activator="{on}">
+          <span/>
+        </template>
+        <v-card width="700">
+          <v-card-title class="title" v-text="$t('pages.avatar.prepare')"/>
+          <v-card-text class="py-0">
             <vue-cropper
               ref="cropper"
               :src="imgSrc"
               :aspect-ratio="1"
               :auto-crop="true"
+              :min-container-width="668"
+              :min-container-height="400"
               alt="Avatar"/>
           </v-card-text>
           <v-card-actions>
@@ -24,7 +29,7 @@
             <v-btn :disabled="loading" color="primary" @click="validate" v-text="$t('common.validate')" />
           </v-card-actions>
         </v-card>
-      </v-dialog>
+      </v-menu>
 
     </v-list-tile-content>
   </v-list-tile>

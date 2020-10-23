@@ -6,7 +6,7 @@
       </v-btn>
     </template>
     <v-card v-if="orga">
-      <v-card-title primary-title>
+      <v-card-title class="title">
         {{ $t('pages.organization.addMember') }}
       </v-card-title>
       <v-card-text v-if="disableInvite">

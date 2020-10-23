@@ -7,7 +7,7 @@
     </template>
 
     <v-card>
-      <v-card-title primary-title>
+      <v-card-title class="title">
         {{ $t('pages.organization.confirmDeleteDepartmentTitle', {name: department.name, departmentLabel}) }}
       </v-card-title>
       <v-card-text>

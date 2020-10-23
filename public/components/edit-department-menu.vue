@@ -7,7 +7,7 @@
     </template>
 
     <v-card v-if="editDepartment">
-      <v-card-title primary-title>
+      <v-card-title class="title">
         {{ $t('pages.organization.confirmEditDepartmentTitle', {name: department.name, departmentLabel}) }}
       </v-card-title>
       <v-card-text>

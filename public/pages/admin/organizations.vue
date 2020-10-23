@@ -69,7 +69,7 @@
 
     <v-dialog v-model="deleteOrganizationDialog" max-width="500px">
       <v-card v-if="currentOrganization">
-        <v-card-title primary-title>
+        <v-card-title class="title">
           {{ $t('common.confirmDeleteTitle', {name: currentOrganization.name}) }}
         </v-card-title>
         <v-card-text>
@@ -85,7 +85,7 @@
 
     <v-dialog v-model="limitOrganizationDialog" max-width="500px">
       <v-card v-if="currentOrganization">
-        <v-card-title primary-title>
+        <v-card-title class="title">
           {{ $t('pages.admin.organizations.limitOrganizationTitle', {name: currentOrganization.name}) }}
         </v-card-title>
         <v-card-text v-if="currentLimits">

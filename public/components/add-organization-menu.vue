@@ -7,7 +7,7 @@
     </template>
 
     <v-card v-if="editOrganization" :width="500">
-      <v-card-title primary-title>
+      <v-card-title class="title">
         {{ $t('common.createOrganization') }}
       </v-card-title>
       <v-card-text>

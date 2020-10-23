@@ -6,7 +6,7 @@
       </v-btn>
     </template>
     <v-card>
-      <v-card-title primary-title>
+      <v-card-title class="title">
         {{ $t('pages.organization.confirmDeleteMemberTitle', {name: member.name}) }}
       </v-card-title>
       <v-card-text>
