@@ -120,6 +120,14 @@
                   type="password"
                   @keyup.enter="createUser"
                 />
+
+                <v-text-field
+                  :label="$t('pages.login.newPassword2')"
+                  v-model="newUserPassword2"
+                  :error-messages="newUser.password !== newUserPassword2 ? ['Les mots de passe sont différents'] : []"
+                  name="newUserPassword2"
+                  type="password"
+                />
               </v-form>
             </v-card-text>
 
@@ -128,7 +136,7 @@
                 {{ $t('common.back') }}
               </v-btn>
               <v-spacer/>
-              <v-btn depressed color="primary" @click="createUser">
+              <v-btn :disabled="!newUser.password || newUser.password !== newUserPassword2" depressed color="primary" @click="createUser">
                 {{ $t('pages.login.createUserConfirm') }}
               </v-btn>
             </v-card-actions>
@@ -248,7 +256,8 @@ export default {
         lastName: null,
         password: null
       },
-      createUserErrors: []
+      createUserErrors: [],
+      newUserPassword2: null
     }
   },
   computed: {
