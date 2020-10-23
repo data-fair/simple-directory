@@ -70,10 +70,12 @@
       <h2 class="headline mb-3">{{ $t('common.myOrganizations') }}</h2>
 
       <div v-if="userDetails">
-        <span v-for="orga in userDetails.organizations" v-if="userDetails.organizations.length" :key="orga.id">
-          {{ orga.name }} ({{ orga.role }})
-          &nbsp;
-        </span>
+        <template v-if="userDetails.organizations.length">
+          <span v-for="orga in userDetails.organizations" :key="orga.id">
+            {{ orga.name }} ({{ orga.role }})
+            &nbsp;
+          </span>
+        </template>
         <span v-else>
           {{ $t('pages.me.noOrganization') }}
         </span>
