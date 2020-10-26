@@ -58,7 +58,7 @@ export default {
   props: ['orga', 'isAdminOrga', 'members', 'disableInvite'],
   data: () => ({
     menu: false,
-    invitation: { id: null, email: null, role: null },
+    invitation: { id: null, email: null, role: null, department: null, redirect: null },
     validInvitation: true
   }),
   computed: {
@@ -67,7 +67,7 @@ export default {
   watch: {
     menu() {
       if (!this.menu) return
-      this.invitation = { id: this.orga.id, name: this.orga.name, email: '', role: null, department: null }
+      this.invitation = { id: this.orga.id, name: this.orga.name, email: '', role: null, department: null, redirect: this.$route.query.redirect }
       if (this.$refs.inviteForm) this.$refs.inviteForm.reset()
     }
   },

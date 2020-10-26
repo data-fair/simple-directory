@@ -48,7 +48,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   let user = await storage.getUserByEmail(invit.email)
   if (!user && storage.readonly) return res.status(400).send(req.messages.errors.userUnknown)
 
-  let redirectUrl = new URL(req.query.redirect || config.invitationRedirect || `${config.publicUrl}/invitation`)
+  let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${config.publicUrl}/invitation`)
   redirectUrl.searchParams.set('email', invit.email)
   redirectUrl.searchParams.set('id_token_org', invit.id)
 
