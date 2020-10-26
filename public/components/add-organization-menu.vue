@@ -59,6 +59,7 @@ export default {
         const res = await this.$axios.$post('api/organizations', this.editOrganization, { params: { autoAdmin: true } })
         await this.keepalive()
         this.switchOrganization(res.id)
+        // reloading top page, so that limits are re-fetched, etc.
         window.top.location.reload()
       }
     }

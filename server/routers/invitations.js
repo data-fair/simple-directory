@@ -48,7 +48,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   let user = await storage.getUserByEmail(invit.email)
   if (!user && storage.readonly) return res.status(400).send(req.messages.errors.userUnknown)
 
-  let redirectUrl = new URL(config.invitationRedirect || `${config.publicUrl}/invitation`)
+  let redirectUrl = new URL(req.query.redirect || config.invitationRedirect || `${config.publicUrl}/invitation`)
   redirectUrl.searchParams.set('email', invit.email)
   redirectUrl.searchParams.set('id_token_org', invit.id)
 
@@ -81,12 +81,13 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   }
 
   if (user.organizations && user.organizations.find(o => o.id === invit.id)) {
-    return res.status(400).send(req.messages.errors.invitationConflict)
+    // nothing to do, just redirect the user, accepting twice an invitation is not a problem
+    // return res.status(400).send(req.messages.errors.invitationConflict)
+  } else {
+    await storage.addMember(orga, user, invit.role, invit.department)
+    if (storage.db) {
+      await limits.setNbMembers(storage.db, orga.id)
+    }
   }
-  await storage.addMember(orga, user, invit.role, invit.department)
-  if (storage.db) {
-    await limits.setNbMembers(storage.db, orga.id)
-  }
-
   res.redirect(redirectUrl.href)
 }))
