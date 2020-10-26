@@ -76,7 +76,8 @@ module.exports = {
     manageDepartmentLabel: config.manageDepartmentLabel,
     passwordless: config.passwordless,
     i18nLocales: config.i18nLocales,
-    oauth: config.publicOAuth
+    oauth: config.publicOAuth,
+    sessionDomain: config.sessionDomain
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,
