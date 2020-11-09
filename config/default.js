@@ -59,6 +59,10 @@ module.exports = {
       warning: '#E91E63', // pink.base
       admin: '#E53935' // red.darken1
     },
+    darkColors: {
+      primary: '#2196F3', // blue.base
+      success: '#00E676' // green.accent3
+    },
     cssUrl: null,
     cssText: ''
   },
