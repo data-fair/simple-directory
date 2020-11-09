@@ -50,6 +50,8 @@ exports.sign = (keys, payload, expiresIn) => jwt.sign(payload, keys.private, {
 
 exports.verify = async (keys, token) => asyncVerify(token, keys.public)
 
+exports.decode = (token) => jwt.decode(token)
+
 exports.getPayload = (user) => {
   const payload = {
     id: user.id,

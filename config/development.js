@@ -6,6 +6,11 @@ module.exports = {
   admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com'],
   adminsOrg: { id: 'admins-org', name: `Admins organization` },
   homePage: 'https://koumoul.com',
+  jwtDurations: {
+    initialToken: '1m',
+    exchangedToken: '5m',
+    invitationToken: '1m'
+  },
   maildev: {
     active: true
   },
@@ -37,6 +42,6 @@ module.exports = {
   quotas: {
     defaultMaxCreatedOrgs: 1
     // defaultMaxNbMembers: 0
-  }
-  // passwordless: false
+  },
+  passwordless: false
 }

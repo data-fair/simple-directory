@@ -8,6 +8,7 @@ const mails = require('../mails')
 const userName = require('../utils/user-name')
 const limits = require('../utils/limits')
 const emailValidator = require('email-validator')
+const debug = require('debug')('invitations')
 
 let router = module.exports = express.Router()
 
@@ -16,6 +17,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
+  debug('new invitation', req.body)
   const storage = req.app.get('storage')
   if (storage.db) {
     const limit = await limits.get(storage.db, { type: 'organization', id: req.body.id }, 'store_nb_members')
@@ -42,21 +44,68 @@ router.post('', asyncWrap(async (req, res, next) => {
 }))
 
 router.get('/_accept', asyncWrap(async (req, res, next) => {
-  const invit = await jwt.verify(req.app.get('keys'), req.query.invit_token)
+  let invit
+  let verified
+  try {
+    invit = await jwt.verify(req.app.get('keys'), req.query.invit_token)
+    verified = true
+  } catch (err) {
+    if (err.name !== 'TokenExpiredError') {
+      debug('invalid invitation', err)
+      return res.status(401).send('Invalid invitation token')
+    } else {
+      debug('old invalid invitation accepted only to present good redirect to the user')
+    }
+    // if the token was once valid, but deprecated we accept it partially
+    // meaning that we will not perform writes base on it
+    // but we accept to check the user's existence and create the best redirect for him
+    invit = jwt.decode(req.query.invit_token)
+    verified = false
+  }
+  debug('accept invitation', invit, verified)
   const storage = req.app.get('storage')
 
   let user = await storage.getUserByEmail(invit.email)
   if (!user && storage.readonly) return res.status(400).send(req.messages.errors.userUnknown)
 
+  const orga = await storage.getOrganization(invit.id)
+  if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
+
   let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${config.publicUrl}/invitation`)
   redirectUrl.searchParams.set('email', invit.email)
   redirectUrl.searchParams.set('id_token_org', invit.id)
 
-  const orga = await storage.getOrganization(invit.id)
-  if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
+  // case where the invitation was already accepted, but we still want the user to proceed
+  if (user && user.organizations && user.organizations.find(o => o.id === invit.id)) {
+    debug('invitation was already accepted, redirect', redirectUrl.href)
+    // missing password, invitation must have been accepted without completing account creation
+    if (!await storage.hasPassword(invit.email) && !config.passwordless) {
+      const payload = jwt.getPayload(user)
+      payload.action = 'changePassword'
+      const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+      const reboundRedirect = redirectUrl.href
+      redirectUrl = new URL(`${config.publicUrl}/login`)
+      redirectUrl.searchParams.set('step', 'changePassword')
+      redirectUrl.searchParams.set('email', invit.email)
+      redirectUrl.searchParams.set('id_token_org', invit.id)
+      redirectUrl.searchParams.set('action_token', token)
+      redirectUrl.searchParams.set('redirect', reboundRedirect)
+      debug('redirect to changePassword step', redirectUrl.href)
+    }
+    if (!req.user || req.user.email !== invit.email) {
+      const reboundRedirect = redirectUrl.href
+      redirectUrl = new URL(`${config.publicUrl}/login`)
+      redirectUrl.searchParams.set('email', invit.email)
+      redirectUrl.searchParams.set('id_token_org', invit.id)
+      redirectUrl.searchParams.set('redirect', reboundRedirect)
+      debug('redirect to login', redirectUrl.href)
+    }
+    return res.redirect(redirectUrl.href)
+  }
+  if (!verified) return res.status(401).send('Invalid invitation token')
 
-  const consumer = { type: 'organization', id: orga.id }
   if (storage.db) {
+    const consumer = { type: 'organization', id: orga.id }
     const limit = await limits.get(storage.db, consumer, 'store_nb_members')
     if (limit.consumption >= limit.limit && limit.limit > 0) {
       return res.status(429).send(`L'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.`)
@@ -66,6 +115,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   if (!user) {
     const userInit = { email: invit.email, id: shortid.generate(), name: userName({ email: invit.email }), emailConfirmed: true }
     if (invit.department) userInit.department = invit.department
+    debug('create invited user', userInit)
     user = await storage.createUser(userInit)
     if (!config.passwordless) {
       const payload = jwt.getPayload(user)
@@ -75,19 +125,16 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
       redirectUrl = new URL(`${config.publicUrl}/login`)
       redirectUrl.searchParams.set('step', 'changePassword')
       redirectUrl.searchParams.set('email', invit.email)
+      redirectUrl.searchParams.set('id_token_org', invit.id)
       redirectUrl.searchParams.set('action_token', token)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
+      debug('redirect new user to changePassword step', redirectUrl.href)
     }
   }
 
-  if (user.organizations && user.organizations.find(o => o.id === invit.id)) {
-    // nothing to do, just redirect the user, accepting twice an invitation is not a problem
-    // return res.status(400).send(req.messages.errors.invitationConflict)
-  } else {
-    await storage.addMember(orga, user, invit.role, invit.department)
-    if (storage.db) {
-      await limits.setNbMembers(storage.db, orga.id)
-    }
+  await storage.addMember(orga, user, invit.role, invit.department)
+  if (storage.db) {
+    await limits.setNbMembers(storage.db, orga.id)
   }
   res.redirect(redirectUrl.href)
 }))

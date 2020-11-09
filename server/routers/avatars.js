@@ -39,13 +39,13 @@ router.get('/:type/:id/avatar.png', asyncWrap(async (req, res, next) => {
     const initials = getInitials(identity)
 
     if (!avatar) {
-    // create a initials based avatar
+      // create a initials based avatar
       const color = randomColor(JSON.stringify(req.params))
       const buffer = await makeAvatar({ width: 100, height: 100, text: initials, fontSize: 40, bgColor: color })
       avatar = { initials, color, buffer, owner }
       if (storage.setAvatar) await storage.setAvatar(avatar)
     } else if (avatar.initials !== initials) {
-    // this initials based avatar needs to be updated
+      // this initials based avatar needs to be updated
       avatar.buffer = await makeAvatar({ width: 100, height: 100, text: initials, fontSize: 40, bgColor: avatar.color })
       await storage.setAvatar(avatar)
     }

@@ -84,7 +84,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 
 // Used to extend an older but still valid token from a user or to validate a passwordless id_token
 router.post('/exchange', asyncWrap(async (req, res, next) => {
-  const idToken = (req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop())
+  const idToken = (req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop()) || req.query.id_token
   if (!idToken) {
     return res.status(401).send('No id_token cookie provided')
   }

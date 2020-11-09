@@ -66,6 +66,11 @@ class MongodbStorage {
     return cleanResource(user)
   }
 
+  async hasPassword(email) {
+    const user = (await this.db.collection('users').find({ email }).collation(collation).toArray())[0]
+    return !!(user && user.password)
+  }
+
   async getUserByEmail(email) {
     const user = (await this.db.collection('users').find({ email }).collation(collation).toArray())[0]
     if (!user) return null
