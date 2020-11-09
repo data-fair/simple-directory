@@ -10,7 +10,7 @@ env:
     - secure: "fMCZAXHlkr8SQLKyj0cM7uEhgz2WeGotl26bo4Oap267h89I7t01Zp+SHtMy97kZlR2y38uF3ZA7MIBWCQTjwJrk8HxRkjovoYri6BTXBv39+KOnLme5ytIcik+Z3aeycJQPJyYPbt9KgbrX9mrUSgSlrqJ9Dql4MePKPMfo0VZorKAqA8L3K+KHkRsULmbG9mByL+6+J0hwlRg29zJHbFobH2HKSohQidalR3TWCdEBlfu5Qz17YhoWbanl/JSUl16NqjydE7QtLsyw73cEy4RPOBkjXvdBboNI+6MljpitiiuoKvQyKkYAf+UKUlYZ2p1JReLmeRfH5Gl8Oop9lb4jG8oZDsx6hMp0MtOETDmikzH9GQ0UlcdpES/cS2LXR+ZbO7k+mHgUO4QaNKDaVEzYoSGN4Vm1aFN+PeWifrWHVtLiYWzPMMy3OCGI4OHdirKHgyrca7eXrWWHRdnM8Emj15X8109m1Nat6NCkebpqzUBC+nhs8H9Jy0BUcdyY4T5oxT9vEqh1EpfmzquUVJxmZJRheBrs69UEpfUkUMKlgPLuffdt3uGNqeG/yijrc12yYDDQhIA/XDzEQEplLog46uFzAEOGuEvV3L7+/eK1/Gxm1aFwgoPRNmMMMUFhRBH1MU8/xQYscFQepcYn2pHXgZb9k9xczbVFgZsXRqo="
 language: node_js
 node_js:
-  - '8'
+  - '12'
 cache:
   directories:
     - node_modules
