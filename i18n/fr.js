@@ -62,9 +62,7 @@ module.exports = {
     delAsAdmin: 'Revenir à ma session administrateur',
     avatar: 'Avatar',
     birthday: 'Anniversaire',
-    missingInfo: 'Information manquante',
-    yes: 'Oui',
-    no: 'Non'
+    missingInfo: 'Information manquante'
   },
   doc: {
     about: {

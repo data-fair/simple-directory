@@ -31,6 +31,7 @@ module.exports = {
     search: 'Search',
     confirmOk: 'Ok',
     confirmCancel: 'Cancel',
+    confirmTitle: 'Do you want to confirm this operation ?',
     firstName: 'First name',
     lastName: 'Family name',
     email: 'Email',
@@ -60,9 +61,7 @@ module.exports = {
     delAsAdmin: 'Get back to your normal session',
     avatar: 'Avatar',
     birthday: 'Birthday',
-    missingInfo: 'Missing info',
-    yes: 'Yes',
-    no: 'No'
+    missingInfo: 'Missing info'
   },
   doc: {
     about: {
@@ -182,6 +181,13 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     },
     avatar: {
       prepare: `Prepare the image`
+    },
+    me: {
+      noOrganization: 'Your are not a member in ny organization.',
+      operations: 'Sensitive operations',
+      deleteMyself: 'Delete this account',
+      deleteMyselfAlert: 'If your delete your account the associated data will deleted as well and cannot be recovered.',
+      deleteMyselfCheck: 'check and click on OK to confirm the deletion.'
     }
   },
   errors: {
