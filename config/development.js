@@ -11,6 +11,9 @@ module.exports = {
     exchangedToken: '5m',
     invitationToken: '1m'
   },
+  i18n: {
+    locales: ['fr', 'en', 'es']
+  },
   maildev: {
     active: true
   },

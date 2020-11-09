@@ -19,7 +19,7 @@ exports.locales = [
 // {fr: {msg1: 'libellé 1'}, en: {msg1: 'label 1'}}
 const messages = {}
 exports.locales.forEach(l => {
-  messages[l.code] = require('./' + l.code)
+  messages[l.code] = { ...require('./' + exports.defaultLocale), ...require('./' + l.code) }
 })
 
 const flatMessages = flatten(messages, flatOpts)
