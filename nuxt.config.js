@@ -71,6 +71,7 @@ module.exports = {
     readonly: config.readonly,
     analytics: config.analytics,
     onlyCreateInvited: config.onlyCreateInvited,
+    userSelfDelete: config.userSelfDelete,
     tosUrl: config.tosUrl,
     manageDepartments: config.manageDepartments,
     manageDepartmentLabel: config.manageDepartmentLabel,

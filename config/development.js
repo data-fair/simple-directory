@@ -46,5 +46,6 @@ module.exports = {
     defaultMaxCreatedOrgs: 1
     // defaultMaxNbMembers: 0
   },
-  passwordless: false
+  passwordless: false,
+  userSelfDelete: true
 }

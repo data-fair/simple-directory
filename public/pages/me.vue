@@ -87,6 +87,18 @@
       </div>
 
       <add-organization-menu v-if="maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs" />
+
+      <template v-if="env.userSelfDelete">
+        <h2 class="headline mt-4 mb-3">{{ $t('pages.me.operations') }}</h2>
+        <confirm-menu
+          :button-text="$t('pages.me.deleteMyself')"
+          :title="$t('pages.me.deleteMyself')"
+          :alert="$t('pages.me.deleteMyselfAlert')"
+          :check-text="$t('pages.me.deleteMyselfCheck')"
+          yes-color="warning"
+          @confirm="deleteMyself"
+        />
+      </template>
     </v-form>
   </v-container>
 </template>
@@ -96,10 +108,11 @@ import { mapState, mapActions } from 'vuex'
 import eventBus from '../event-bus'
 import LoadAvatar from '../components/load-avatar.vue'
 import AddOrganizationMenu from '../components/add-organization-menu.vue'
+import ConfirmMenu from '../components/confirm-menu.vue'
 const moment = require('moment')
 
 export default {
-  components: { LoadAvatar, AddOrganizationMenu },
+  components: { LoadAvatar, AddOrganizationMenu, ConfirmMenu },
   data: () => ({
     patch: { firstName: null, lastName: null, birthday: null },
     rejectDialog: false,
@@ -137,6 +150,7 @@ export default {
   },
   methods: {
     ...mapActions(['fetchUserDetails']),
+    ...mapActions('session', ['logout']),
     initPatch() {
       this.patch.firstName = this.userDetails.firstName
       this.patch.lastName = this.userDetails.lastName
@@ -163,6 +177,16 @@ export default {
         }
         await this.$axios.$post('api/auth/action', { email: this.user.email, action: 'changePassword', target })
         eventBus.$emit('notification', this.$t('pages.login.changePasswordSent', { email: this.user.email }))
+      } catch (error) {
+        eventBus.$emit('notification', { error })
+      }
+    },
+    async deleteMyself() {
+      try {
+        await this.$axios.$delete(`api/users/${this.user.id}`)
+        await this.logout()
+        // reloading top page, so that limits are re-fetched, etc.
+        window.top.location.reload()
       } catch (error) {
         eventBus.$emit('notification', { error })
       }

@@ -60,7 +60,9 @@ module.exports = {
     delAsAdmin: 'Get back to your normal session',
     avatar: 'Avatar',
     birthday: 'Birthday',
-    missingInfo: 'Missing info'
+    missingInfo: 'Missing info',
+    yes: 'Yes',
+    no: 'No'
   },
   doc: {
     about: {

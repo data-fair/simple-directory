@@ -32,6 +32,7 @@ module.exports = {
     search: 'Rechercher',
     confirmOk: 'Ok',
     confirmCancel: 'Annuler',
+    confirmTitle: 'Souhaitez-vous confirmer cette opération ?',
     firstName: 'Prénom',
     lastName: 'Nom de famille',
     email: 'Adresse mail',
@@ -61,7 +62,9 @@ module.exports = {
     delAsAdmin: 'Revenir à ma session administrateur',
     avatar: 'Avatar',
     birthday: 'Anniversaire',
-    missingInfo: 'Information manquante'
+    missingInfo: 'Information manquante',
+    yes: 'Oui',
+    no: 'Non'
   },
   doc: {
     about: {
@@ -189,7 +192,11 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       prepare: `Préparez l'image`
     },
     me: {
-      noOrganization: 'Vous n\'êtes membre d\'aucune organisation.'
+      noOrganization: 'Vous n\'êtes membre d\'aucune organisation.',
+      operations: 'Opérations sensibles',
+      deleteMyself: 'Supprimer ce compte',
+      deleteMyselfAlert: 'Si vous supprimez votre compte les données associées seront également supprimées et ne pourront pas être récupérées.',
+      deleteMyselfCheck: 'cochez cette case et cliquez sur OK pour confirmer la suppression.'
     }
   },
   errors: {

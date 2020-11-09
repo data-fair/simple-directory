@@ -90,6 +90,8 @@ module.exports = {
   listEntitiesMode: 'authenticated',
   // Users can not be created at first email sent. They must be invited in an organization.
   onlyCreateInvited: false,
+  // users cannot delete their own account by default
+  userSelfDelete: false,
   // Default redirection after login. If not specified user will go to his profile page.
   defaultLoginRedirect: null,
   // Redirect after successful invitation to an organization.
