@@ -1,7 +1,7 @@
 <template>
   <v-menu v-model="menu" :close-on-content-click="false">
     <template v-slot:activator="{ on }">
-      <v-tooltip v-if="icon" top>
+      <!--<v-tooltip v-if="icon" top>
         <template v-slot:activator="{ on: onTooltip }">
           <v-btn
             :color="yesColor"
@@ -12,9 +12,8 @@
           </v-btn>
         </template>
         <span>{{ tooltip }}</span>
-      </v-tooltip>
+      </v-tooltip>-->
       <v-btn
-        v-else
         :color="yesColor"
         v-on="on"
       >
@@ -26,7 +25,7 @@
         {{ title || $t('common.confirmTitle') }}
       </v-card-title>
       <v-card-text>
-        <v-alert :value="true" v-if="alert" :type="yesColor" outline>{{alert}}</v-alert>
+        <v-alert v-if="alert" :value="true" :type="yesColor" outline>{{ alert }}</v-alert>
         <template v-if="checkText">
           <v-checkbox v-model="checked" :label="checkText" :color="yesColor" />
         </template>
