@@ -47,6 +47,7 @@ module.exports = {
   analytics: {}, // a "modules" definition for @koumoul/vue-multianalytics
   theme: {
     logo: null,
+    favicon: '/favicon.ico',
     dark: false,
     colors: {
       // standard vuetify colors

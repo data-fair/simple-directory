@@ -51,6 +51,7 @@ module.exports = {
   },
   theme: {
     logo: 'THEME_LOGO',
+    favicon: 'THEME_FAVICON',
     dark: {
       __name: 'THEME_DARK',
       __format: 'json'
