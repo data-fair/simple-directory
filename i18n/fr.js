@@ -58,7 +58,7 @@ module.exports = {
     department: 'Département',
     departments: 'Départements',
     autoAdmin: `M'ajouter automatiquement comme administrateur`,
-    asAdmin: 'Se connecter en tant que cet utiisateur',
+    asAdmin: 'Se connecter en tant que cet utilisateur',
     delAsAdmin: 'Revenir à ma session administrateur',
     avatar: 'Avatar',
     birthday: 'Anniversaire',
@@ -86,7 +86,7 @@ module.exports = {
         contact: `<b>IMPORTANT.</b> L'adresse mail de contact pour les utilisateurs du service.`,
         theme: {
           logo: `L'URL du logo à utiliser pour remplacer le logo par défaut de <i>Simple Directory</i>.`,
-          dark: `Rendre l'apparence complète des pages sombre.<br>Notez que les couleurs par défaut sont plus adaptées à un thème clair. Si vous passez en sombre vous allsez devoir également modifier ces couleurs.`,
+          dark: `Rendre l'apparence complète des pages sombre.<br>Notez que les couleurs par défaut sont plus adaptées à un thème clair. Si vous passez en sombre vous allez devoir également modifier ces couleurs.`,
           cssUrl: 'Lien vers une feuille de style pour compléter les variables de personnalisation.<br>ATTENTION: la structure HTML peut varier de manière importante entre 2 versions. Maintenir cette feuille de style va vous créer du travail supplémentaire à chaque montée en version.',
           cssText: 'Contenu CSS textuel.<br>ATTENTION: la structure HTML peut varier de manière importante entre 2 versions. Maintenir cette feuille de style va vous créer du travail supplémentaire à chaque montée en version.'
         },
@@ -96,7 +96,7 @@ module.exports = {
         },
         analytics: 'JSON de configuration des analytics, correspond à la partie "modules" de configuration de la librairie <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
-          type: `<b>IMPORTANT.</b> Le type de stockage pour la persistence des utilisateurs et des organisations.<br>
+          type: `<b>IMPORTANT.</b> Le type de stockage pour la persistance des utilisateurs et des organisations.<br>
 Le type "file" par défaut est lecture seule et est adapté en développement/test ou pour utiliser une collection d'utilisateurs exportée depuis un autre système.<br>
 Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mode approprié pour la plupart des installations en production.`,
           file: {
@@ -108,8 +108,8 @@ Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mo
           }
         },
         mails: {
-          transport: '<b>IMPORTANT.</b> Un objet JSON de configration du transport mail compatible avec la librairie <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
-          from: `'<b>IMPORTANT.</> L'adresse à renseigner comme expéditeur des mails émis par le service.`
+          transport: '<b>IMPORTANT.</b> Un objet JSON de configuration du transport mail compatible avec la librairie <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
+          from: `'<b>IMPORTANT.</b> L'adresse à renseigner comme expéditeur des mails émis par le service.`
         },
         listEntitiesMode: `Permet de restreindre de manière globale l'accès aux listes d'utilisateurs et d'organisations.<br>
 Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,

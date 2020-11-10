@@ -108,7 +108,7 @@ The type "mongo" depends on accessing a MongoDB instance, it is the approriate c
         },
         mails: {
           transport: '<b>IMPORTANT.</b> A JSON object of configuration for the email transport compatible with the library <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
-          from: `'<b>IMPORTANT.</> The address to use as sender for emails sent by the service.`
+          from: `<b>IMPORTANT.</b> The address to use as sender for emails sent by the service.`
         },
         listEntitiesMode: `Used to restrict in a global manner access to the lists of users and organizations.<br>
 Can be 'anonymous', 'authenticated' or 'admin'.`,
@@ -172,6 +172,12 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       memberConflict: 'This user is already a member',
       back: 'Back',
       next: 'Next',
+      addDepartment: 'Create {departmentLabel}',
+      editDepartment: 'Edit {departmentLabel}',
+      deleteDepartment: 'Delete {departmentLabel}',
+      confirmEditDepartmentTitle: 'Edit {name}',
+      confirmDeleteDepartmentTitle: 'Delete {name}',
+      confirmDeleteDepartmentMsg: `Are you you want to delete {name} from your organization ?`,
       departmentIdInvalid: 'Identifier should contain anly letters, numbers and spaces'
     },
     invitation: {
@@ -183,7 +189,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       prepare: `Prepare the image`
     },
     me: {
-      noOrganization: 'Your are not a member in ny organization.',
+      noOrganization: 'Your are not a member in any organization.',
       operations: 'Sensitive operations',
       deleteMyself: 'Delete this account',
       deleteMyselfAlert: 'If your delete your account the associated data will deleted as well and cannot be recovered.',

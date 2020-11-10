@@ -12,7 +12,7 @@ module.exports = {
     invitationToken: '1m'
   },
   i18n: {
-    locales: ['fr', 'en', 'es']
+    locales: ['fr', 'en', 'es', 'it', 'pt', 'de']
   },
   maildev: {
     active: true
