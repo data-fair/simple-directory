@@ -8,7 +8,7 @@ module.exports = {
   homePage: 'https://koumoul.com',
   jwtDurations: {
     initialToken: '1m',
-    exchangedToken: '5m',
+    // exchangedToken: '5m',
     invitationToken: '1m'
   },
   i18n: {

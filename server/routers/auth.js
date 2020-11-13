@@ -125,23 +125,28 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
   if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
 
+  const returnError = (error, errorCode) => {
+    if (req.is('application/x-www-form-urlencoded')) res.redirect(`${config.publicUrl}/login?error=${error}`)
+    else res.status(errorCode).send(req.messages.errors[error])
+  }
+
   try {
     await limiter(req).consume(requestIp.getClientIp(req), 1)
   } catch (err) {
     console.error('Rate limit error for /password route', requestIp.getClientIp(req), req.body.email, err)
-    return res.status(429).send(req.messages.errors.rateLimitAuth)
+    return returnError('rateLimitAuth', 429)
   }
 
   const storage = req.app.get('storage')
   const user = await storage.getUserByEmail(req.body.email)
-  if (!user || user.emailConfirmed === false) return res.status(400).send(req.messages.errors.badCredentials)
+  if (!user || user.emailConfirmed === false) return returnError('badCredentials', 400)
   const storedPassword = await storage.getPassword(user.id)
   const validPassword = await passwords.checkPassword(req.body.password, storedPassword)
-  if (!validPassword) return res.status(400).send(req.messages.errors.badCredentials)
+  if (!validPassword) return returnError('badCredentials', 400)
   const payload = jwt.getPayload(user)
   if (req.body.adminMode) {
     if (payload.isAdmin) payload.adminMode = true
-    else return res.status(403).send('Admin mode for superadmins only')
+    else return returnError('adminModeOnly', 403)
   }
   if (!storage.readonly) await storage.updateLogged(user.id)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
@@ -249,7 +254,7 @@ router.get('/oauth/providers', (req, res) => {
 
 router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
-  if (!provider) return res.status(404).send('Unknown OAuth provider')
+  if (!provider) return res.redirect(`${config.publicUrl}/login?error=unknownOAuthProvider`)
   res.redirect(provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || config.publicUrl))
 }))
 

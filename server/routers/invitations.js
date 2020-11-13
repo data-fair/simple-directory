@@ -46,13 +46,15 @@ router.post('', asyncWrap(async (req, res, next) => {
 router.get('/_accept', asyncWrap(async (req, res, next) => {
   let invit
   let verified
+  const errorUrl = new URL(`${config.publicUrl}/login`)
   try {
     invit = await jwt.verify(req.app.get('keys'), req.query.invit_token)
     verified = true
   } catch (err) {
     if (err.name !== 'TokenExpiredError') {
       debug('invalid invitation', err)
-      return res.status(401).send('Invalid invitation token')
+      errorUrl.searchParams.set('error', 'invalidInvitationToken')
+      return res.redirect(errorUrl.href)
     } else {
       debug('old invalid invitation accepted only to present good redirect to the user')
     }
@@ -66,10 +68,16 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
 
   let user = await storage.getUserByEmail(invit.email)
-  if (!user && storage.readonly) return res.status(400).send(req.messages.errors.userUnknown)
+  if (!user && storage.readonly) {
+    errorUrl.searchParams.set('error', 'userUnknown')
+    return res.redirect(errorUrl.href)
+  }
 
   const orga = await storage.getOrganization(invit.id)
-  if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
+  if (!orga) {
+    errorUrl.searchParams.set('error', 'orgaUnknown')
+    return res.redirect(errorUrl.href)
+  }
 
   let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${config.publicUrl}/invitation`)
   redirectUrl.searchParams.set('email', invit.email)
@@ -102,13 +110,17 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
     }
     return res.redirect(redirectUrl.href)
   }
-  if (!verified) return res.status(401).send('Invalid invitation token')
+  if (!verified) {
+    errorUrl.searchParams.set('error', 'expiredInvitationToken')
+    return res.redirect(errorUrl.href)
+  }
 
   if (storage.db) {
     const consumer = { type: 'organization', id: orga.id }
     const limit = await limits.get(storage.db, consumer, 'store_nb_members')
     if (limit.consumption >= limit.limit && limit.limit > 0) {
-      return res.status(429).send(`L'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.`)
+      errorUrl.searchParams.set('error', 'maxNbMembers')
+      return res.redirect(errorUrl.href)
     }
   }
 

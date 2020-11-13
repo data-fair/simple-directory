@@ -156,7 +156,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       createUserConfirm: 'Create the account',
       createUserConfirmed: `An email was sent to the address {email}. This email contains a link to validate the creation of your account.`,
       adminMode: 'Confirm your identity to switch to admin mode.',
-      oauth: 'Connect with:'
+      oauth: 'Connect with:',
+      error: 'Error'
     },
     organization: {
       addMember: 'Invite a user to join this organization',
@@ -210,7 +211,12 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     invalidToken: `The token is not valid. Maybe it is expired.`,
     malformedPassword: 'The password should be at least 8 characters long and contain at least one number and one uppercase character.',
     noPasswordless: `Passordless authentication is not accepted by this service.`,
-    rateLimitAuth: `Too many attemps in a short interval. Please wait before trying again.`
+    rateLimitAuth: `Too many attemps in a short interval. Please wait before trying again.`,
+    invalidInvitationToken: `The invitation link you received is invalid.`,
+    expiredInvitationToken: `The invitation link you received has expired, you can no longer accept this invitation.`,
+    maxNbMembers: `The organization already contains the maximum number of members allowed by its quotas.`,
+    unknownOAuthProvider: 'OAuth identification not supported.',
+    adminModeOnly: 'Functionality reserved for super administrators.'
   },
   mails: {
     creation: {

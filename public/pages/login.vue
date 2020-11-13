@@ -205,6 +205,17 @@
             </v-card-actions>
           </v-window-item>
 
+          <v-window-item value="error">
+            <v-card-text v-if="error">
+              <v-alert
+                :value="true"
+                type="error"
+                outline>
+                {{ $t('errors.' + error) }}
+              </v-alert>
+            </v-card-text>
+          </v-window-item>
+
         </v-window>
 
       </v-card>
@@ -241,7 +252,8 @@ export default {
         emailConfirmed: this.$t('common.checkInbox'),
         createUser: this.$t('pages.login.createUserMsg2'),
         createUserConfirmed: this.$t('pages.login.createUserConfirm'),
-        changePasswordSent: this.$t('pages.login.changePassword')
+        changePasswordSent: this.$t('pages.login.changePassword'),
+        error: this.$t('pages.login.error')
       },
       password: '',
       passwordErrors: [],
@@ -257,7 +269,8 @@ export default {
         password: null
       },
       createUserErrors: [],
-      newUserPassword2: null
+      newUserPassword2: null,
+      error: this.$route.query.error
     }
   },
   computed: {
@@ -275,6 +288,8 @@ export default {
     if (this.actionPayload) {
       this.step = 'changePassword'
       this.email = this.actionPayload.email
+    } else if (this.error) {
+      this.step = 'error'
     } else {
       this.step = 'login'
     }

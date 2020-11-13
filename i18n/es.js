@@ -156,7 +156,8 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       createUserConfirm: 'Crear una cuenta',
       createUserConfirmed: `Se ha enviado un correo electrónico a la dirección {email}. Este correo electrónico contiene un enlace para validar la creación de la cuenta.`,
       adminMode: 'Confirme su identidad para cambiar al modo de administración.',
-      oauth: 'Conectar con:'
+      oauth: 'Conectar con:',
+      error: 'Error'
     },
     organization: {
       addMember: 'Invitar a un usuario a unirse a la organización',
@@ -210,7 +211,12 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
     invalidToken: `El token no es válido. Quizás haya expirado.`,
     malformedPassword: 'La contraseña debe tener al menos 8 caracteres y contener al menos un número y un carácter en mayúscula.',
     noPasswordless: `La autenticación sin contraseña no es aceptada por este servicio.`,
-    rateLimitAuth: `Demasiados intentos en un corto intervalo. Por favor espere antes de intentarlo de nuevo.`
+    rateLimitAuth: `Demasiados intentos en un corto intervalo. Por favor espere antes de intentarlo de nuevo.`,
+    invalidInvitationToken: `El enlace de invitación que recibió no es válido.`,
+    expiredInvitationToken: `El enlace de invitación que recibió ha caducado, ya no puede aceptar esta invitación.`,
+    maxNbMembers: `La organización ya contiene el número máximo de miembros permitidos por sus cuotas.`,
+    unknownOAuthProvider: 'No se admite la identificación OAuth.',
+    adminModeOnly: 'Funcionalidad reservada para superadministradores.'
   },
   mails: {
     creation: {

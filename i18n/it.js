@@ -156,7 +156,8 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       createUserConfirm: 'Creare un conto',
       createUserConfirmed: "Le è stata inviata un'e-mail all'indirizzo {email}. Questa e-mail contiene un link per convalidare la creazione del conto.",
       adminMode: 'Confermi la sua identità per entrare nella modalità di amministrazione.',
-      oauth: 'Effettuare il login con :'
+      oauth: 'Effettuare il login con :',
+      error: 'Errore'
     },
     organization: {
       addMember: "Invitare un utente ad aderire all'organizzazione...",
@@ -210,7 +211,12 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
     invalidToken: `Il token non è valido. Forse è scaduto.`,
     malformedPassword: 'La password deve contenere almeno 8 caratteri e contenere almeno un numero e un carattere maiuscolo.',
     noPasswordless: `L'autenticazione passordless non è accettata da questo servizio.`,
-    rateLimitAuth: `Troppi tentativi in un breve intervallo. Attendi prima di riprovare.`
+    rateLimitAuth: `Troppi tentativi in un breve intervallo. Attendi prima di riprovare.`,
+    invalidInvitationToken: `Il link di invito che hai ricevuto non è valido.`,
+    expiredInvitationToken: `Il link di invito che hai ricevuto è scaduto, non puoi più accettare questo invito.`,
+    maxNbMembers: `L'organizzazione contiene già il numero massimo di membri consentito dalle sue quote.`,
+    unknownOAuthProvider: 'Identificazione OAuth non supportata.',
+    adminModeOnly: 'Funzionalità riservata ai super amministratori.'
   },
   mails: {
     creation: {

@@ -156,7 +156,8 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       createUserConfirm: 'Konto erstellen',
       createUserConfirmed: `Ihnen wurde eine E-Mail an {email} geschickt. Diese E-Mail enthält einen Link zur Validierung der Erstellung des Kontos.`,
       adminMode: 'Bestätigen Sie Ihre Identität, um in den Verwaltungsmodus zu wechseln.',
-      oauth: 'Anmeldung mit :'
+      oauth: 'Anmeldung mit :',
+      error: 'Error'
     },
     organization: {
       addMember: 'Laden Sie einen Benutzer zum Beitritt zur Organisation ein',
@@ -210,7 +211,12 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
     invalidToken: `Das Token ist ungültig. Vielleicht ist es abgelaufen.`,
     malformedPassword: 'Das Passwort sollte mindestens 8 Zeichen lang sein und mindestens eine Zahl und ein Großbuchstaben enthalten.',
     noPasswordless: `Die passwortlose Authentifizierung wird von diesem Dienst nicht akzeptiert.`,
-    rateLimitAuth: `Zu viele Versuche in kurzer Zeit. Bitte warten Sie, bevor Sie es erneut versuchen.`
+    rateLimitAuth: `Zu viele Versuche in kurzer Zeit. Bitte warten Sie, bevor Sie es erneut versuchen.`,
+    invalidInvitationToken: `Der Einladungslink, den Sie erhalten haben, ist ungültig.`,
+    expiredInvitationToken: `Der Einladungslink, den Sie erhalten haben, ist abgelaufen. Sie können diese Einladung nicht mehr annehmen.`,
+    maxNbMembers: `Die Organisation enthält bereits die maximale Anzahl von Mitgliedern, die durch ihre Quoten zulässig sind.`,
+    unknownOAuthProvider: 'OAuth-Identifizierung wird nicht unterstützt.',
+    adminModeOnly: 'Funktionalität für Superadministratoren reserviert.'
   },
   mails: {
     creation: {
