@@ -99,6 +99,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
       redirectUrl.searchParams.set('action_token', token)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
       debug('redirect to changePassword step', redirectUrl.href)
+      return res.redirect(redirectUrl.href)
     }
     if (!req.user || req.user.email !== invit.email) {
       const reboundRedirect = redirectUrl.href
@@ -107,6 +108,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
       redirectUrl.searchParams.set('id_token_org', invit.id)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
       debug('redirect to login', redirectUrl.href)
+      return res.redirect(redirectUrl.href)
     }
     return res.redirect(redirectUrl.href)
   }
