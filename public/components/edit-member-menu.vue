@@ -24,7 +24,7 @@
       <v-card-actions>
         <v-spacer/>
         <v-btn flat @click="menu = false">{{ $t('common.confirmCancel') }}</v-btn>
-        <v-btn color="warning" @click="menu = false;$emit('save', member)">{{ $t('common.confirmOk') }}</v-btn>
+        <v-btn color="warning" @click="menu = false;$emit('save', editMember)">{{ $t('common.confirmOk') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-menu>

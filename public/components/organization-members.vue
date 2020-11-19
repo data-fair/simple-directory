@@ -143,6 +143,7 @@ export default {
     async saveMember(member) {
       try {
         await this.$axios.patch(`api/organizations/${this.orga.id}/members/${member.id}`, { role: member.role, department: member.department })
+        this.fetchMembers()
       } catch (error) {
         eventBus.$emit('notification', { error })
       }
