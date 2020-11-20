@@ -1,5 +1,5 @@
 <template lang="html">
-  <v-container fluid>
+  <v-container fluid data-iframe-height>
     <v-layout row wrap class="mt-3">
       <h2 class="title mb-3">
         {{ $t('common.users') }} <span v-if="users">({{ $n(users.count) }})</span>
