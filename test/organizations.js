@@ -18,6 +18,13 @@ test('Get organization list when authenticated', async t => {
   t.is(res.data.count, 2)
 })
 
+test('Get organization list when authenticated with api key', async t => {
+  const ax = await testUtils.axios(test)
+  const res = await ax.get('/api/organizations?apiKey=testkey')
+  t.is(res.status, 200)
+  t.is(res.data.count, 6)
+})
+
 test('Get organization roles', async t => {
   const ax = await testUtils.axios(test, 'dmeadus0@answers.com')
   let res = await ax.get('/api/organizations/3sSi7xDIK/roles')

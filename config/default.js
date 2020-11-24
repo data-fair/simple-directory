@@ -105,7 +105,8 @@ module.exports = {
   // secrets that can be used to configure global webhooks for example to send emails to users
   secretKeys: {
     sendMails: null,
-    limits: null
+    limits: null,
+    readAll: null
   },
   // A link to the terms of services for the site
   tosUrl: null,

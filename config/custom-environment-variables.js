@@ -122,7 +122,8 @@ module.exports = {
   invitationRedirect: 'INVITATION_REDIRECT',
   secretKeys: {
     sendMails: 'SECRET_SENDMAILS',
-    limits: 'SECRET_LIMITS'
+    limits: 'SECRET_LIMITS',
+    readAll: 'SECRET_READ_ALL'
   },
   listenWhenReady: {
     __name: 'LISTEN_WHEN_READY',

@@ -31,12 +31,29 @@ app.use((req, res, next) => {
 })
 
 // Replaces req.user from session with full and fresh user object from storage
+// also minimalist api key management
 const fullUser = asyncWrap(async (req, res, next) => {
-  if (!req.user) return next()
-  req.user = {
-    ...await req.app.get('storage').getUser({ id: req.user.id }),
-    isAdmin: req.user.isAdmin,
-    adminMode: req.user.adminMode
+  if (req.user) {
+    req.user = {
+      ...await req.app.get('storage').getUser({ id: req.user.id }),
+      isAdmin: req.user.isAdmin,
+      adminMode: req.user.adminMode
+    }
+  }
+
+  const apiKey = req.get('x-apiKey') || req.get('x-api-key') || req.query.apiKey
+  if (apiKey) {
+    if (apiKey !== config.secretKeys.readAll) {
+      return res.status(401).send('bad api key')
+    } else {
+      if (req.method !== 'GET') return res.status(403).send('api key is only for read endpoints')
+      req.user = {
+        isAdmin: true,
+        adminMode: true,
+        id: 'readAll',
+        organizations: []
+      }
+    }
   }
   next()
 })
