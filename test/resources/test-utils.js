@@ -2,7 +2,6 @@ const test = require('ava')
 const axios = require('axios')
 const fs = require('fs-extra')
 const path = require('path')
-const MongoClient = require('mongodb').MongoClient
 
 const testDir = path.join(__dirname, '../')
 const testFiles = fs.readdirSync(testDir).map(f => path.join(testDir, f))
@@ -18,12 +17,6 @@ exports.prepare = (testFile) => {
   process.env.MAILDEV_WEB = 1090 + testFiles.indexOf(testFile)
   process.env.MAILS_TRANSPORT = JSON.stringify({ port: smtpPort, ignoreTLS: true })
   const config = require('config')
-
-  test.before('clean db', async t => {
-    const client = await MongoClient.connect(config.storage.mongo.url)
-    const db = client.db()
-    await db.dropDatabase()
-  })
 
   let app
   test.before('run app', async t => {

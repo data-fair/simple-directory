@@ -23,7 +23,7 @@ module.exports = {
   contact: 'contact@test.com',
   homePage: null,
   storage: {
-    // One of 'file' and 'mongo'
+    // One of 'file', 'mongo' and 'ldap'
     type: 'mongo',
     file: {
       users: './data/users.json',
@@ -31,6 +31,23 @@ module.exports = {
     },
     mongo: {
       url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
+    },
+    ldap: {
+      url: 'ldap://ldap:389',
+      searchUserDN: 'cn=admin,dc=example,dc=org',
+      searchUserPassword: 'admin',
+      baseDN: 'dc=example,dc=org',
+      users: {
+        filter: '(objectclass=inetOrgPerson)',
+        mapping: {
+          id: 'uidNumber',
+          email: 'mail',
+          firstName: 'givenName',
+          lastName: 'sn',
+          birthday: null,
+          avatarUrl: null
+        }
+      }
     }
   },
   info: {
