@@ -54,6 +54,7 @@ router.get('/:organizationId', asyncWrap(async (req, res, next) => {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
+  if (!orga) return res.status(404).send()
   orga.roles = orga.roles || config.roles.defaults
   orga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
   res.send(orga)
