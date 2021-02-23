@@ -64,7 +64,7 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
 }
 
 async function boundClient(params) {
-  const client = ldap.createClient({ url: params.url, reconnect: true, timeut: 4000 })
+  const client = ldap.createClient({ url: params.url, reconnect: true, timeout: 4000 })
   client.bind = promisify(client.bind)
   client.add = promisify(client.add)
   client.del = promisify(client.del)
@@ -207,8 +207,23 @@ class LdapStorage {
     return this._getUser({ email })
   }
 
-  async getPassword(userId) {
-    // TODO
+  async checkPassword(id, password) {
+    const user = await this._getUser({ id }, false)
+    if (!user) return
+    const dn = user.entry.objectName
+
+    const client = ldap.createClient({ url: this.ldapParams.url, reconnect: false, timeout: 4000 })
+    client.bind = promisify(client.bind)
+    client.unbind = promisify(client.unbind)
+    try {
+      await client.bind(dn, password)
+      return true
+    } catch (err) {
+      debug('auth failure', id, err)
+      return false
+    } finally {
+      client.unbind()
+    }
   }
 
   // ids, q, sort, select, skip, size

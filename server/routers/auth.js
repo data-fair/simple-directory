@@ -140,9 +140,15 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   const user = await storage.getUserByEmail(req.body.email)
   if (!user || user.emailConfirmed === false) return returnError('badCredentials', 400)
-  const storedPassword = await storage.getPassword(user.id)
-  const validPassword = await passwords.checkPassword(req.body.password, storedPassword)
-  if (!validPassword) return returnError('badCredentials', 400)
+  if (storage.getPassword) {
+    const storedPassword = await storage.getPassword(user.id)
+    const validPassword = await passwords.checkPassword(req.body.password, storedPassword)
+    if (!validPassword) return returnError('badCredentials', 400)
+  } else {
+    if (!await storage.checkPassword(user.id, req.body.password)) {
+      return returnError('badCredentials', 400)
+    }
+  }
   const payload = jwt.getPayload(user)
   if (req.body.adminMode) {
     if (payload.isAdmin) payload.adminMode = true
