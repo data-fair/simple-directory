@@ -28,7 +28,11 @@ exports.init = async () => {
         if (config.adminsOrg) {
           newAdmin.organizations.push({ ...config.adminsOrg, role: 'admin' })
         }
-        await storage.createUser(newAdmin)
+        try {
+          await storage.createUser(newAdmin)
+        } catch (err) {
+          console.error('Failure to create initial admin user', err)
+        }
       }
     }
   }

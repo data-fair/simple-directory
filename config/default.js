@@ -37,15 +37,27 @@ module.exports = {
       searchUserDN: 'cn=admin,dc=example,dc=org',
       searchUserPassword: 'admin',
       baseDN: 'dc=example,dc=org',
+      organizationAsDC: true,
+      readonly: true,
       users: {
-        filter: '(objectclass=inetOrgPerson)',
+        objectClass: 'inetOrgPerson',
+        dnKey: 'cn',
         mapping: {
-          id: 'uidNumber',
+          id: 'entryUUID',
+          name: 'cn',
           email: 'mail',
           firstName: 'givenName',
           lastName: 'sn',
           birthday: null,
           avatarUrl: null
+        }
+      },
+      organizations: {
+        objectClass: 'organization',
+        dnKey: 'dc',
+        mapping: {
+          id: 'dc',
+          name: 'o'
         }
       }
     }

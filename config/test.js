@@ -14,7 +14,8 @@ module.exports = {
       url: 'mongodb://localhost:27017/data-fair-' + (process.env.NODE_ENV || 'development')
     },
     ldap: {
-      url: 'ldap://localhost:389'
+      url: 'ldap://localhost:389',
+      readonly: false
     }
   },
   secretKeys: {
