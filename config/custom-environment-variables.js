@@ -37,6 +37,36 @@ module.exports = {
     },
     mongo: {
       url: 'STORAGE_MONGO_URL'
+    },
+    ldap: {
+      url: 'STORAGE_LDAP_URL',
+      searchUserDN: 'STORAGE_LDAP_SEARCH_USER_DN',
+      searchUserPassword: 'STORAGE_LDAP_SEARCH_USER_PASS',
+      baseDN: 'STORAGE_LDAP_BASE_DN',
+      organizationAsDC: {
+        __name: 'STORAGE_LDAP_ORG_AS_DC',
+        __format: 'json'
+      },
+      readonly: {
+        __name: 'STORAGE_LDAP_READONLY',
+        __format: 'json'
+      },
+      users: {
+        objectClass: 'STORAGE_LDAP_USERS_OBJECT_CLASS',
+        dnKey: 'STORAGE_LDAP_USERS_DN_KEY',
+        mapping: {
+          __name: 'STORAGE_LDAP_USERS_MAPPING',
+          __format: 'json'
+        }
+      },
+      organizations: {
+        objectClass: 'STORAGE_LDAP_ORGS_OBJECT_CLASS',
+        dnKey: 'STORAGE_LDAP_ORGS_DN_KEY',
+        mapping: {
+          __name: 'STORAGE_LDAP_ORGS_MAPPING',
+          __format: 'json'
+        }
+      }
     }
   },
   analytics: {
