@@ -65,10 +65,13 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
 
 async function boundClient(params) {
   const client = ldap.createClient({ url: params.url, reconnect: true, timeout: 4000 })
+  debug('ldap client created', params.url)
   client.bind = promisify(client.bind)
   client.add = promisify(client.add)
   client.del = promisify(client.del)
+  debug('bind service account', params.searchUserDN)
   await client.bind(params.searchUserDN, params.searchUserPassword)
+  debug('service account bound')
   return client
 }
 
