@@ -210,7 +210,8 @@ class LdapStorage {
       const dn = ldap.parseDN(res.results[0].entry.objectName)
       const orgDC = dn.rdns[1].attrs.dc.value
       const org = await this.getOrganization(orgDC)
-      user.organizations = [org]
+      // TODO: how to determine role ?
+      user.organizations = [{ ...org, role: 'admin' }]
     } else {
       // TODO
     }
