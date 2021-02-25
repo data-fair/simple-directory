@@ -53,8 +53,12 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
       const parts = [`(objectClass=${objectClass})`]
         .concat(Object.keys(obj)
           .filter(key => !!obj[key])
+          .filter(key => !!mapping[key])
           .map(key => `(${mapping[key]}=${assertSafe(obj[key])})`)
         )
+      if (obj.q) {
+        parts.push(`(${mapping.name}=*${assertSafe(obj.q)}*)`)
+      }
       if (parts.length === 1) return parts[0]
       const filter = `(&${parts.join('')})`
       debug('ldap filter', obj, objectClass, filter)
@@ -197,9 +201,20 @@ class LdapStorage {
       Object.values(this.ldapParams.users.mapping),
       this._userMapping.from,
       {},
-      onlyItem
+      false
     )
-    return res.results[0]
+    if (!res.results[0]) return
+    if (!onlyItem) return res.results[0]
+    const user = res.results[0].item
+    if (this.ldapParams.organizationAsDC) {
+      const dn = ldap.parseDN(res.results[0].entry.objectName)
+      const orgDC = dn.rdns[1].attrs.dc.value
+      const org = await this.getOrganization(orgDC)
+      user.organizations = [org]
+    } else {
+      // TODO
+    }
+    return user
   }
 
   async getUser(filter) {
@@ -233,7 +248,7 @@ class LdapStorage {
   async findUsers(params = {}) {
     return this._search(
       this.ldapParams.baseDN,
-      `(objectClass=${this.ldapParams.users.objectClass})`,
+      this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass),
       Object.values(this.ldapParams.users.mapping),
       this._userMapping.from,
       params
@@ -286,7 +301,7 @@ class LdapStorage {
   async findOrganizations(params = {}) {
     return this._search(
       this.ldapParams.baseDN,
-      `(objectClass=${this.ldapParams.organizations.objectClass})`,
+      this._orgMapping.filter({ q: params.q }, this.ldapParams.organizations.objectClass),
       Object.values(this.ldapParams.organizations.mapping),
       this._orgMapping.from,
       params
