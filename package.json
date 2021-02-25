@@ -4,7 +4,8 @@
   "description": "Easy users and organizations management for modern Web-oriented architectures.",
   "main": "server/app.js",
   "scripts": {
-    "test": "nyc ava --timeout=10000 --serial -v test/*.js",
+    "test": "ava --timeout=10000 --fail-fast --serial -v test/*.js",
+    "test-cover": "nyc ava --timeout=10000 --fail-fast --serial -v test/*.js",
     "test-single": "ava --timeout=10000 --serial -v",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "report": "nyc report --reporter=html",

@@ -31,7 +31,7 @@ jobs:
       with:
         time: '15s'
     - run: docker ps
-    - run: npm test
+    - run: npm run test-cover
     - run: docker-compose stop
     # - run: npm run coveralls
     - name: Docker meta
