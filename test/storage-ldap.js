@@ -19,7 +19,7 @@ test('create and find users', async t => {
     firstName: 'Alban',
     lastName: 'Mouton',
     email: 'alban.mouton@koumoul.com',
-    organizations: [{ id: 'myorg' }]
+    organizations: [{ id: 'myorg', role: 'admin' }]
   })
   let res = await storage.findUsers({ skip: 0, size: 10 })
   t.is(res.count, 1)
@@ -34,4 +34,5 @@ test('create and find users', async t => {
   t.is(user.organizations.length, 1)
   t.is(user.organizations[0].id, 'myorg')
   t.is(user.organizations[0].name, 'My Org')
+  t.is(user.organizations[0].role, 'admin')
 })

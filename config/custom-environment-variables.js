@@ -43,10 +43,6 @@ module.exports = {
       searchUserDN: 'STORAGE_LDAP_SEARCH_USER_DN',
       searchUserPassword: 'STORAGE_LDAP_SEARCH_USER_PASS',
       baseDN: 'STORAGE_LDAP_BASE_DN',
-      organizationAsDC: {
-        __name: 'STORAGE_LDAP_ORG_AS_DC',
-        __format: 'json'
-      },
       readonly: {
         __name: 'STORAGE_LDAP_READONLY',
         __format: 'json'
@@ -65,6 +61,20 @@ module.exports = {
         mapping: {
           __name: 'STORAGE_LDAP_ORGS_MAPPING',
           __format: 'json'
+        }
+      },
+      members: {
+        organizationAsDC: {
+          __name: 'STORAGE_LDAP_MEMBERS_ORG_AS_DC',
+          __format: 'json'
+        },
+        role: {
+          attr: 'STORAGE_LDAP_MEMBERS_ROLE_ATTR',
+          values: {
+            __name: 'STORAGE_LDAP_MEMBERS_ROLE_VALUES',
+            __format: 'json'
+          },
+          default: 'STORAGE_LDAP_MEMBERS_ROLE_DEFAULT'
         }
       }
     }

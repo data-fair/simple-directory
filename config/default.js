@@ -37,8 +37,8 @@ module.exports = {
       searchUserDN: 'cn=admin,dc=example,dc=org',
       searchUserPassword: 'admin',
       baseDN: 'dc=example,dc=org',
-      organizationAsDC: true,
       readonly: true,
+      // map entities in ldap to SD users
       users: {
         objectClass: 'inetOrgPerson',
         dnKey: 'cn',
@@ -52,12 +52,26 @@ module.exports = {
           avatarUrl: null
         }
       },
+      // map entities in ldap to SD organizations
       organizations: {
         objectClass: 'organization',
         dnKey: 'dc',
         mapping: {
           id: 'dc',
           name: 'o'
+        }
+      },
+      // manage the link between users and organizations
+      members: {
+        // organizations ar the parent DC of their users
+        organizationAsDC: true,
+        role: {
+          attr: 'employeeType',
+          values: {
+            admin: ['administrator'],
+            user: []
+          },
+          default: 'user'
         }
       }
     }

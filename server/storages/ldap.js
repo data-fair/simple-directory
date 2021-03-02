@@ -103,7 +103,7 @@ class LdapStorage {
       ['id'],
       [],
       this.ldapParams.organizations.objectClass,
-      this.ldapParams.organizationAsDC ? 'dcObject' : null
+      this.ldapParams.members.organizationAsDC ? 'dcObject' : null
     )
     return this
   }
@@ -157,7 +157,7 @@ class LdapStorage {
     const entry = this._userMapping.to(user)
     const dnKey = this.ldapParams.users.dnKey
     if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
-    if (this.ldapParams.organizationAsDC) {
+    if (this.ldapParams.members.organizationAsDC) {
       if (!user.organizations || !user.organizations.length) {
         throw new Error(`L'utilisateur doit être associé à une organisation dès la création`)
       }
@@ -180,6 +180,11 @@ class LdapStorage {
   async createUser(user) {
     const entry = this._userMapping.to(user)
     const dn = this._userDN(user)
+    if (user.organizations.length && this.ldapParams.members.role.attr) {
+      const roleValues = this.ldapParams.members.role.values[user.organizations[0].role]
+      const roleValue = roleValues && roleValues[0]
+      entry[this.ldapParams.members.role.attr] = roleValue || this.ldapParams.members.role.default
+    }
 
     debug('add user to ldap', dn, entry)
     await this.client.add(dn, entry)
@@ -195,10 +200,12 @@ class LdapStorage {
   }
 
   async _getUser(filter, onlyItem = true) {
+    const attributes = Object.values(this.ldapParams.users.mapping)
+    if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
     const res = await this._search(
       this.ldapParams.baseDN,
       this._userMapping.filter(filter, this.ldapParams.users.objectClass),
-      Object.values(this.ldapParams.users.mapping),
+      attributes,
       this._userMapping.from,
       {},
       false
@@ -206,12 +213,20 @@ class LdapStorage {
     if (!res.results[0]) return
     if (!onlyItem) return res.results[0]
     const user = res.results[0].item
-    if (this.ldapParams.organizationAsDC) {
+    if (this.ldapParams.members.organizationAsDC) {
       const dn = ldap.parseDN(res.results[0].entry.objectName)
       const orgDC = dn.rdns[1].attrs.dc.value
       const org = await this.getOrganization(orgDC)
-      // TODO: how to determine role ?
-      user.organizations = [{ ...org, role: 'admin' }]
+
+      let role = this.ldapParams.members.role.default
+      if (this.ldapParams.members.role.attr) {
+        const ldapRoles = res.results[0].attrs[this.ldapParams.members.role.attr]
+        const ldapRole = ldapRoles && ldapRoles[0]
+        if (ldapRole) {
+          role = Object.keys(this.ldapParams.members.role.values).find(v => this.ldapParams.members.role.values[v].includes(ldapRole)) || role
+        }
+      }
+      user.organizations = [{ ...org, role }]
     } else {
       // TODO
     }
@@ -257,7 +272,7 @@ class LdapStorage {
   }
 
   async findMembers(organizationId, params = {}) {
-    if (this.ldapParams.organizationAsDC) {
+    if (this.ldapParams.members.organizationAsDC) {
       const dn = this._orgDN(this._orgMapping.to({ id: organizationId }))
       return this._search(
         dn,
