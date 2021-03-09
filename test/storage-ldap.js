@@ -35,4 +35,14 @@ test('create and find users', async t => {
   t.is(user.organizations[0].id, 'myorg')
   t.is(user.organizations[0].name, 'My Org')
   t.is(user.organizations[0].role, 'admin')
+
+  res = await storage.findMembers('myorg')
+  t.is(res.count, 1)
+  t.is(res.results[0].name, 'Alban Mouton')
+  t.is(res.results[0].role, 'admin')
+
+  res = await storage.findMembers('myorg', { q: 'notauser' })
+  t.is(res.count, 0)
+  res = await storage.findMembers('myorg', { q: 'alba' })
+  t.is(res.count, 1)
 })

@@ -1,5 +1,6 @@
 const { promisify } = require('util')
 const ldap = require('ldapjs')
+const memoize = require('memoizee')
 const debug = require('debug')('ldap')
 
 // TODO: should we sanititze user inputs to prevent injection ?
@@ -105,6 +106,10 @@ class LdapStorage {
       this.ldapParams.organizations.objectClass,
       this.ldapParams.members.organizationAsDC ? 'dcObject' : null
     )
+
+    // memoized getOrganization to support the join done when fetching members
+    this._getOrganizationMem = memoize((id) => this.getOrganization(id), { maxAge: 10000 })
+
     return this
   }
 
@@ -201,6 +206,33 @@ class LdapStorage {
     await this.client.del(dn)
   }
 
+  async _setUserOrg(user, entry, attrs) {
+    let org
+    if (this.ldapParams.organizations.staticSingleOrg) {
+      org = this.ldapParams.organizations.staticSingleOrg
+    } else if (this.ldapParams.members.organizationAsDC) {
+      const dn = ldap.parseDN(entry.objectName)
+      const orgDC = dn.rdns[1].attrs.dc.value
+      org = await this._getOrganizationMem(orgDC)
+    } else {
+      // TODO
+    }
+
+    if (org) {
+      let role
+      if (this.ldapParams.members.role.attr) {
+        const ldapRoles = attrs[this.ldapParams.members.role.attr]
+        if (ldapRoles) {
+          role = Object.keys(this.ldapParams.members.role.values).find(role => {
+            return !!ldapRoles.find(ldapRole => this.ldapParams.members.role.values[role].includes(ldapRole))
+          })
+        }
+      }
+      role = role || this.ldapParams.members.role.default
+      user.organizations = [{ ...org, role }]
+    }
+  }
+
   async _getUser(filter, onlyItem = true) {
     const attributes = Object.values(this.ldapParams.users.mapping)
     if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
@@ -215,30 +247,7 @@ class LdapStorage {
     if (!res.results[0]) return
     if (!onlyItem) return res.results[0]
     const user = res.results[0].item
-    let org
-    if (this.ldapParams.organizations.staticSingleOrg) {
-      org = this.ldapParams.organizations.staticSingleOrg
-    } else if (this.ldapParams.members.organizationAsDC) {
-      const dn = ldap.parseDN(res.results[0].entry.objectName)
-      const orgDC = dn.rdns[1].attrs.dc.value
-      org = await this.getOrganization(orgDC)
-    } else {
-      // TODO
-    }
-
-    if (org) {
-      let role
-      if (this.ldapParams.members.role.attr) {
-        const ldapRoles = res.results[0].attrs[this.ldapParams.members.role.attr]
-        if (ldapRoles) {
-          role = Object.keys(this.ldapParams.members.role.values).find(role => {
-            return !!ldapRoles.find(ldapRole => this.ldapParams.members.role.values[role].includes(ldapRole))
-          })
-        }
-      }
-      role = role || this.ldapParams.members.role.default
-      user.organizations = [{ ...org, role }]
-    }
+    await this._setUserOrg(user, res.results[0].entry, res.results[0].attrs)
     return user
   }
 
@@ -285,26 +294,29 @@ class LdapStorage {
     if (this.ldapParams.organizations.staticSingleOrg) {
       dn = this.ldapParams.baseDN
     } else if (this.ldapParams.members.organizationAsDC) {
-      dn = this._orgDN(this._orgMapping.to({ id: organizationId }))
-      return this._search(
-        dn,
-        `(objectClass=${this.ldapParams.users.objectClass})`,
-        Object.values(this.ldapParams.users.mapping),
-        this._userMapping.from,
-        params
-      )
+      dn = this._orgDN({ id: organizationId })
     } else {
       // TODO
     }
 
     if (dn) {
-      return this._search(
+      const attributes = Object.values(this.ldapParams.users.mapping)
+      if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
+      const res = await this._search(
         dn,
-        `(objectClass=${this.ldapParams.users.objectClass})`,
-        Object.values(this.ldapParams.users.mapping),
+        this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass),
+        attributes,
         this._userMapping.from,
-        params
+        params,
+        false
       )
+      for (let i = 0; i < res.results.length; i++) {
+        const user = res.results[i].item
+        await this._setUserOrg(user, res.results[i].entry, res.results[i].attrs)
+        const userOrga = user.organizations.find(o => o.id === organizationId)
+        res.results[i] = { id: user.id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department }
+      }
+      return res
     }
   }
 

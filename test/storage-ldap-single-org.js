@@ -35,4 +35,14 @@ test('create and find users in static single org', async t => {
   t.is(user.organizations[0].id, 'test-single-org')
   t.is(user.organizations[0].name, 'Test single org')
   t.is(user.organizations[0].role, 'admin')
+
+  res = await storage.findMembers('test-single-org')
+  t.is(res.count, 1)
+  t.is(res.results[0].name, 'Alban Mouton')
+  t.is(res.results[0].role, 'admin')
+
+  res = await storage.findMembers('test-single-org', { q: 'notauser' })
+  t.is(res.count, 0)
+  res = await storage.findMembers('test-single-org', { q: 'alba' })
+  t.is(res.count, 1)
 })
