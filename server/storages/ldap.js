@@ -280,13 +280,22 @@ class LdapStorage {
 
   // ids, q, sort, select, skip, size
   async findUsers(params = {}) {
-    return this._search(
+    const attributes = Object.values(this.ldapParams.users.mapping)
+    if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
+    const res = await this._search(
       this.ldapParams.baseDN,
       this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass),
-      Object.values(this.ldapParams.users.mapping),
+      attributes,
       this._userMapping.from,
-      params
+      params,
+      false
     )
+    for (let i = 0; i < res.results.length; i++) {
+      const user = res.results[i].item
+      await this._setUserOrg(user, res.results[i].entry, res.results[i].attrs)
+      res.results[i] = user
+    }
+    return res
   }
 
   async findMembers(organizationId, params = {}) {
