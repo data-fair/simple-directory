@@ -4,7 +4,7 @@
       <h3 class="title my-3">
         {{ $t('common.members') }} <span v-if="members">({{ $n(members.count) }})</span>
       </h3>
-      <add-member-menu :orga="orga" :is-admin-orga="isAdminOrga" :members="members" :disable-invite="disableInvite" />
+      <add-member-menu v-if="!env.readonly" :orga="orga" :is-admin-orga="isAdminOrga" :members="members" :disable-invite="disableInvite" />
     </v-layout>
 
     <v-layout row wrap>
@@ -57,7 +57,7 @@
             </v-list-tile-sub-title>
           </v-list-tile-content>
           <v-list-tile-action v-if="isAdminOrga" style="min-width:0;">
-            <edit-member-menu :orga="orga" :member="member" @save="saveMember"/>
+            <edit-member-menu v-if="!env.readonly" :orga="orga" :member="member" @save="saveMember"/>
           </v-list-tile-action>
           <v-list-tile-action v-if="user.adminMode" style="min-width:0;">
             <v-btn :title="$t('common.asAdmin')" icon class="mx-0" @click="asAdmin(member)">
@@ -65,7 +65,7 @@
             </v-btn>
           </v-list-tile-action>
           <v-list-tile-action v-if="isAdminOrga" style="min-width:0;">
-            <delete-member-menu :member="member" @delete="deleteMember" />
+            <delete-member-menu v-if="!env.readonly" :member="member" @delete="deleteMember" />
           </v-list-tile-action>
         </v-list-tile>
         <v-divider v-if="i + 1 < members.results.length" :key="i"/>

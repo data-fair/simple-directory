@@ -4,7 +4,7 @@
       <h3 class="title my-3">
         {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
       </h3>
-      <add-department-menu :orga="orga" :is-admin-orga="isAdminOrga" :department-label="departmentLabel" @change="$emit('change')" />
+      <add-department-menu v-if="!env.readonly" :orga="orga" :is-admin-orga="isAdminOrga" :department-label="departmentLabel" @change="$emit('change')" />
     </v-layout>
 
     <v-list v-if="orga.departments.length" two-line class="elevation-1 mt-3">
@@ -15,8 +15,8 @@
             <v-list-tile-sub-title>{{ $t('common.id') }} = {{ department.id }}</v-list-tile-sub-title>
           </v-list-tile-content>
           <v-list-tile-action v-if="isAdminOrga">
-            <edit-department-menu :orga="orga" :department="department" :department-label="departmentLabel" @change="$emit('change')" />
-            <delete-department-menu :orga="orga" :department="department" :department-label="departmentLabel" @change="$emit('change')"/>
+            <edit-department-menu v-if="!env.readonly" :orga="orga" :department="department" :department-label="departmentLabel" @change="$emit('change')" />
+            <delete-department-menu v-if="!env.readonly" :orga="orga" :department="department" :department-label="departmentLabel" @change="$emit('change')"/>
           </v-list-tile-action>
         </v-list-tile>
         <v-divider v-if="i + 1 < orga.departments.length" :key="i"/>
@@ -45,7 +45,7 @@ export default {
   },
   data: () => ({}),
   computed: {
-    ...mapState(['userDetails']),
+    ...mapState(['userDetails', 'env']),
     departmentLabel() {
       return this.orga.departmentLabel || this.$t('common.department')
     }

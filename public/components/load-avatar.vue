@@ -5,7 +5,7 @@
     </v-list-tile-avatar>
     <v-list-tile-content>
 
-      <input type="file" accept="image/png, image/jpeg" @change="openFile($event)">
+      <input :disabled="disabled" type="file" accept="image/png, image/jpeg" @change="openFile($event)">
 
       <v-menu v-model="dialog" :loading="loading" :close-on-content-click="false" :close-on-click="false">
         <template v-slot:activator="{on}">
@@ -63,7 +63,8 @@ export default {
     VueCropper
   },
   props: {
-    owner: { type: Object, default: null }
+    owner: { type: Object, default: null },
+    disabled: { type: Boolean, default: false }
   },
   data() {
     return {

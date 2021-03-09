@@ -64,6 +64,13 @@
             </v-btn>
           </td>
         </template>
+        <template v-else>
+          <td class="justify-center layout px-0">
+            <v-btn :to="localePath({name: 'organization-id', params: {id: props.item.id}})" icon class="mx-0">
+              <v-icon>mdi-eye</v-icon>
+            </v-btn>
+          </td>
+        </template>
       </template>
     </v-data-table>
 
@@ -140,10 +147,10 @@ export default {
     if (!this.env.readonly) {
       this.headers = this.headers.concat([
         { text: this.$t('common.createdAt'), value: 'created.date' },
-        { text: this.$t('common.updatedAt'), value: 'updated.date' },
-        { text: '', value: 'actions', sortable: false }
+        { text: this.$t('common.updatedAt'), value: 'updated.date' }
       ])
     }
+    this.headers.push({ text: '', value: 'actions', sortable: false })
   },
   methods: {
     async fetchOrganizations() {
@@ -157,9 +164,11 @@ export default {
       }
       this.loading = false
 
-      for (const org of this.organizations.results) {
-        const limits = await this.$axios.$get(`api/limits/organization/${org.id}`)
-        this.$set(org, 'limits', limits)
+      if (!this.env.readonly) {
+        for (const org of this.organizations.results) {
+          const limits = await this.$axios.$get(`api/limits/organization/${org.id}`)
+          this.$set(org, 'limits', limits)
+        }
       }
     },
     async deleteOrganization(organization) {

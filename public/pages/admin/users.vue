@@ -47,7 +47,7 @@
           <nuxt-link :to="localePath({name: 'organization-id', params: {id: orga.id}})">{{ orga.name }} ({{ orga.role }})</nuxt-link>
           &nbsp;
         </span></td>
-        <td v-if="env.defaultMaxCreatedOrgs !== -1">
+        <td v-if="env.defaultMaxCreatedOrgs !== -1 && !env.readonly">
           <span>{{ props.item.maxCreatedOrgs }}</span>
           <v-btn v-if="env.defaultMaxCreatedOrgs !== -1" icon class="mx-0" @click="showEditMaxCreatedOrgsDialog(props.item)">
             <v-icon>mdi-pencil</v-icon>
@@ -65,6 +65,11 @@
               <v-icon color="warning">mdi-delete</v-icon>
             </v-btn>
           </td>
+        </template>
+        <template v-else>
+          <v-btn :title="$t('common.asAdmin')" icon class="mx-0" @click="asAdmin(props.item)">
+            <v-icon color="warning">mdi-account-switch</v-icon>
+          </v-btn>
         </template>
       </template>
     </v-data-table>
@@ -144,17 +149,17 @@ export default {
       { text: this.$t('common.lastName'), value: 'lastName' },
       { text: this.$t('common.organizations'), value: 'organizations', sortable: false }
     ]
-    if (this.env.defaultMaxCreatedOrgs !== -1) {
+    if (this.env.defaultMaxCreatedOrgs !== -1 && !this.env.readonly) {
       this.headers.push({ text: this.$t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs', sortable: false })
     }
     if (!this.env.readonly) {
       this.headers = this.headers.concat([
         { text: this.$t('common.createdAt'), value: 'created.date' },
         { text: this.$t('common.updatedAt'), value: 'updated.date' },
-        { text: this.$t('common.loggedAt'), value: 'logged' },
-        { text: '', value: 'actions', sortable: false }
+        { text: this.$t('common.loggedAt'), value: 'logged' }
       ])
     }
+    this.headers.push({ text: '', value: 'actions', sortable: false })
   },
   methods: {
     ...mapActions('session', ['asAdmin']),

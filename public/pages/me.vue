@@ -9,19 +9,23 @@
         name="email"
       />
 
-      <load-avatar v-if="userDetails" :owner="{...userDetails, type: 'user'}" />
+      <load-avatar
+        v-if="userDetails"
+        :owner="{...userDetails, type: 'user'}"
+        :disabled="!userDetails || env.readonly"
+      />
 
       <v-text-field
         :label="$t('common.firstName')"
         v-model="patch.firstName"
-        :disabled="!userDetails"
+        :disabled="!userDetails || env.readonly"
         name="firstName"
         @keyup.enter="save"
       />
       <v-text-field
         :label="$t('common.lastName')"
         v-model="patch.lastName"
-        :disabled="!userDetails"
+        :disabled="!userDetails || env.readonly"
         name="lastName"
         @keyup.enter="save"
       />
@@ -40,6 +44,7 @@
             <v-text-field
               v-model="patch.birthday"
               :label="$t('common.birthday')"
+              :disabled="!userDetails || env.readonly"
               prepend-icon="mdi-calendar"
               readonly
               clearable
@@ -61,7 +66,7 @@
         </v-btn>
       </v-layout>
 
-      <v-layout row wrap>
+      <v-layout v-if="!env.readonly" row wrap>
         <v-spacer/>
         <v-btn color="primary" @click="save">{{ $t('common.save') }}</v-btn>
       </v-layout>
@@ -86,9 +91,9 @@
         <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
       </div>
 
-      <add-organization-menu v-if="maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs" />
+      <add-organization-menu v-if="!env.readonly && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
 
-      <template v-if="env.userSelfDelete">
+      <template v-if="env.userSelfDelete && !env.readonly">
         <h2 class="headline mt-4 mb-3">{{ $t('pages.me.operations') }}</h2>
         <confirm-menu
           :button-text="$t('pages.me.deleteMyself')"

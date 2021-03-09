@@ -2,20 +2,20 @@
   <v-container v-if="orga" data-iframe-height>
     <h2 class="headline mb-3">{{ $t('common.organization') + ' ' + orga.name }}</h2>
     <v-subheader v-if="orga.created">{{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}</v-subheader>
-    <load-avatar v-if="orga" :owner="{...orga, type: 'organization'}" />
+    <load-avatar v-if="orga" :owner="{...orga, type: 'organization'}" :disabled="env.readonly" />
     <v-form ref="form" v-model="valid" lazy-validation @submit="save">
       <v-text-field
         :label="$t('common.name')"
         v-model="orga.name"
         :rules="[v => !!v || '']"
-        :disabled="!isAdminOrga"
+        :disabled="!isAdminOrga || env.readonly"
         name="name"
         required
       />
       <v-textarea
         :label="$t('common.description')"
         v-model="orga.description"
-        :disabled="!isAdminOrga"
+        :disabled="!isAdminOrga || env.readonly"
         name="description"
         outline
       />
@@ -23,7 +23,7 @@
         v-if="env.manageDepartments && env.manageDepartmentLabel"
         :label="$t('pages.organization.departmentLabelTitle')"
         v-model="orga.departmentLabel"
-        :disabled="!isAdminOrga"
+        :disabled="!isAdminOrga || env.readonly"
         name="departmentLabel"
       >
         <v-tooltip slot="append-outer" left>
@@ -35,7 +35,7 @@
       </v-text-field>
       <v-layout row wrap>
         <v-spacer/>
-        <v-btn v-if="isAdminOrga" color="primary" type="submit">{{ $t('common.save') }}</v-btn>
+        <v-btn v-if="isAdminOrga && !env.readonly" color="primary" type="submit">{{ $t('common.save') }}</v-btn>
       </v-layout>
     </v-form>
     <organization-departments v-if="env.manageDepartments" :orga="orga" :is-admin-orga="isAdminOrga" @change="fetchOrganization" />
@@ -75,7 +75,9 @@ export default {
       this.orga = await this.$axios.$get(`api/organizations/${this.$route.params.id}`)
     },
     async fetchLimits() {
-      this.limits = await this.$axios.$get(`api/limits/organization/${this.$route.params.id}`)
+      if (!this.env.readonly) {
+        this.limits = await this.$axios.$get(`api/limits/organization/${this.$route.params.id}`)
+      }
     },
     async save(e) {
       e.preventDefault()
