@@ -54,6 +54,9 @@ module.exports = {
       },
       // map entities in ldap to SD organizations
       organizations: {
+        // a single static organization, all users are in it
+        // {id: ..., name: ...}
+        staticSingleOrg: null,
         objectClass: 'organization',
         dnKey: 'dc',
         mapping: {
@@ -63,7 +66,7 @@ module.exports = {
       },
       // manage the link between users and organizations
       members: {
-        // organizations ar the parent DC of their users
+        // organizations arr the parent DC of their users
         organizationAsDC: true,
         role: {
           attr: 'employeeType',

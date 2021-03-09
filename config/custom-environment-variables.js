@@ -56,6 +56,10 @@ module.exports = {
         }
       },
       organizations: {
+        staticSingleOrg: {
+          __name: 'STORAGE_LDAP_ORGS_STATIC_SINGLE_ORG',
+          __format: 'json'
+        },
         objectClass: 'STORAGE_LDAP_ORGS_OBJECT_CLASS',
         dnKey: 'STORAGE_LDAP_ORGS_DN_KEY',
         mapping: {

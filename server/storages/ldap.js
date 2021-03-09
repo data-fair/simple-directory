@@ -157,7 +157,9 @@ class LdapStorage {
     const entry = this._userMapping.to(user)
     const dnKey = this.ldapParams.users.dnKey
     if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
-    if (this.ldapParams.members.organizationAsDC) {
+    if (this.ldapParams.organizations.staticSingleOrg) {
+      return `${dnKey}=${entry[dnKey]}, ${this.ldapParams.baseDN}`
+    } else if (this.ldapParams.members.organizationAsDC) {
       if (!user.organizations || !user.organizations.length) {
         throw new Error(`L'utilisateur doit être associé à une organisation dès la création`)
       }
@@ -213,11 +215,18 @@ class LdapStorage {
     if (!res.results[0]) return
     if (!onlyItem) return res.results[0]
     const user = res.results[0].item
-    if (this.ldapParams.members.organizationAsDC) {
+    let org
+    if (this.ldapParams.organizations.staticSingleOrg) {
+      org = this.ldapParams.organizations.staticSingleOrg
+    } else if (this.ldapParams.members.organizationAsDC) {
       const dn = ldap.parseDN(res.results[0].entry.objectName)
       const orgDC = dn.rdns[1].attrs.dc.value
-      const org = await this.getOrganization(orgDC)
+      org = await this.getOrganization(orgDC)
+    } else {
+      // TODO
+    }
 
+    if (org) {
       let role = this.ldapParams.members.role.default
       if (this.ldapParams.members.role.attr) {
         const ldapRoles = res.results[0].attrs[this.ldapParams.members.role.attr]
@@ -227,8 +236,6 @@ class LdapStorage {
         }
       }
       user.organizations = [{ ...org, role }]
-    } else {
-      // TODO
     }
     return user
   }
@@ -272,8 +279,11 @@ class LdapStorage {
   }
 
   async findMembers(organizationId, params = {}) {
-    if (this.ldapParams.members.organizationAsDC) {
-      const dn = this._orgDN(this._orgMapping.to({ id: organizationId }))
+    let dn
+    if (this.ldapParams.organizations.staticSingleOrg) {
+      dn = this.ldapParams.baseDN
+    } else if (this.ldapParams.members.organizationAsDC) {
+      dn = this._orgDN(this._orgMapping.to({ id: organizationId }))
       return this._search(
         dn,
         `(objectClass=${this.ldapParams.users.objectClass})`,
@@ -283,6 +293,16 @@ class LdapStorage {
       )
     } else {
       // TODO
+    }
+
+    if (dn) {
+      return this._search(
+        dn,
+        `(objectClass=${this.ldapParams.users.objectClass})`,
+        Object.values(this.ldapParams.users.mapping),
+        this._userMapping.from,
+        params
+      )
     }
   }
 
@@ -305,6 +325,13 @@ class LdapStorage {
   }
 
   async getOrganization(id) {
+    if (this.ldapParams.organizations.staticSingleOrg) {
+      if (this.ldapParams.organizations.staticSingleOrg.id === id) {
+        return this.ldapParams.organizations.staticSingleOrg
+      } else {
+        return null
+      }
+    }
     const res = await this._search(
       this.ldapParams.baseDN,
       this._orgMapping.filter({ id }, this.ldapParams.organizations.objectClass),
@@ -315,6 +342,12 @@ class LdapStorage {
   }
 
   async findOrganizations(params = {}) {
+    if (this.ldapParams.organizations.staticSingleOrg) {
+      return {
+        count: 1,
+        results: [this.ldapParams.organizations.staticSingleOrg]
+      }
+    }
     return this._search(
       this.ldapParams.baseDN,
       this._orgMapping.filter({ q: params.q }, this.ldapParams.organizations.objectClass),
