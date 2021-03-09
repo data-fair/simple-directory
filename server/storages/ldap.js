@@ -227,14 +227,16 @@ class LdapStorage {
     }
 
     if (org) {
-      let role = this.ldapParams.members.role.default
+      let role
       if (this.ldapParams.members.role.attr) {
         const ldapRoles = res.results[0].attrs[this.ldapParams.members.role.attr]
-        const ldapRole = ldapRoles && ldapRoles[0]
-        if (ldapRole) {
-          role = Object.keys(this.ldapParams.members.role.values).find(v => this.ldapParams.members.role.values[v].includes(ldapRole)) || role
+        if (ldapRoles) {
+          role = Object.keys(this.ldapParams.members.role.values).find(role => {
+            return !!ldapRoles.find(ldapRole => this.ldapParams.members.role.values[role].includes(ldapRole))
+          })
         }
       }
+      role = role || this.ldapParams.members.role.default
       user.organizations = [{ ...org, role }]
     }
     return user
