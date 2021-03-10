@@ -36,13 +36,17 @@ class MongodbStorage {
   async init(params) {
     console.log('Connecting to mongodb ' + params.url)
     const MongoClient = require('mongodb').MongoClient
+    const opts = {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }
     try {
-      this.client = await MongoClient.connect(params.url)
+      this.client = await MongoClient.connect(params.url, opts)
     } catch (err) {
       // 1 retry after 1s
       // solve the quite common case in docker-compose of the service starting at the same time as the db
       await new Promise(resolve => setTimeout(resolve, 1000))
-      this.client = await MongoClient.connect(params.url)
+      this.client = await MongoClient.connect(params.url, opts)
     }
 
     this.db = this.client.db()
