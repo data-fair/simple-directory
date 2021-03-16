@@ -50,7 +50,7 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
       })
       return entry
     },
-    filter (obj, objectClass) {
+    filter (obj, objectClass, extraFilter) {
       const parts = [`(objectClass=${objectClass})`]
         .concat(Object.keys(obj)
           .filter(key => !!obj[key])
@@ -59,6 +59,9 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
         )
       if (obj.q) {
         parts.push(`(${mapping.name}=*${assertSafe(obj.q)}*)`)
+      }
+      if (extraFilter) {
+        parts.push(extraFilter)
       }
       if (parts.length === 1) return parts[0]
       const filter = `(&${parts.join('')})`
@@ -310,10 +313,27 @@ class LdapStorage {
 
     if (dn) {
       const attributes = Object.values(this.ldapParams.users.mapping)
-      if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
+      let roleFilter
+      if (this.ldapParams.members.role.attr) {
+        attributes.push(this.ldapParams.members.role.attr)
+        if (params.roles && params.roles.length) {
+          let roleAttrValues = []
+          params.roles.forEach(role => {
+            roleAttrValues = roleAttrValues.concat(this.ldapParams.members.role.values[role] || (role === this.ldapParams.members.role.default ? [] : [role]))
+          })
+          if (roleAttrValues.length) {
+            const roleAttrFilters = roleAttrValues.map(val => `(${this.ldapParams.members.role.attr}=${assertSafe(val)})`)
+            if (roleAttrFilters.length > 1) {
+              roleFilter = `(|${roleAttrFilters.join('')})`
+            } else {
+              roleFilter = roleAttrFilters[0]
+            }
+          }
+        }
+      }
       const res = await this._search(
         dn,
-        this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass),
+        this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass, roleFilter),
         attributes,
         this._userMapping.from,
         params,
