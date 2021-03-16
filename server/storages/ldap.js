@@ -1,6 +1,5 @@
 const { promisify } = require('util')
 const ldap = require('ldapjs')
-const memoize = require('memoizee')
 const debug = require('debug')('ldap')
 
 // TODO: should we sanititze user inputs to prevent injection ?
@@ -71,30 +70,12 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
   }
 }
 
-async function boundClient(params) {
-  const client = ldap.createClient({ url: params.url, reconnect: true, timeout: 4000 })
-  debug('ldap client created', params.url)
-  client.bind = promisify(client.bind)
-  client.add = promisify(client.add)
-  client.del = promisify(client.del)
-  debug('bind service account', params.searchUserDN)
-  await client.bind(params.searchUserDN, params.searchUserPassword)
-  debug('service account bound')
-  return client
-}
-
 class LdapStorage {
   async init(params) {
     this.ldapParams = params
     console.log('Connecting to ldap ' + params.url)
-    try {
-      this.client = await boundClient(params)
-    } catch (err) {
-      // 1 retry after 1s
-      // solve the quite common case in docker-compose of the service starting at the same time as the db
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      this.client = await boundClient(params)
-    }
+    // check connexion at startup
+    await this._client(async (client) => {})
 
     this._userMapping = buildMappingFn(
       this.ldapParams.users.mapping,
@@ -110,16 +91,30 @@ class LdapStorage {
       this.ldapParams.members.organizationAsDC ? 'dcObject' : null
     )
 
-    // memoized getOrganization to support the join done when fetching members
-    this._getOrganizationMem = memoize((id) => this.getOrganization(id), { maxAge: 10000 })
-
     return this
   }
 
+  async _client(fn) {
+    const client = ldap.createClient({ url: this.ldapParams.url, timeout: 4000 })
+    client.on('error', err => console.error(err.message))
+
+    debug('ldap client created', this.ldapParams.url)
+    client.bind = promisify(client.bind)
+    client.unbind = promisify(client.unbind)
+    client.add = promisify(client.add)
+    client.del = promisify(client.del)
+    debug('bind service account', this.ldapParams.searchUserDN)
+    await client.bind(this.ldapParams.searchUserDN, this.ldapParams.searchUserPassword)
+    debug('service account bound')
+    const promise = fn(client)
+    promise.finally(() => client.unbind())
+    return promise
+  }
+
   // promisified search
-  async _search (base, filter, attributes, mappingFn, params = {}, onlyItem = true) {
+  async _search (client, base, filter, attributes, mappingFn, params = {}, onlyItem = true) {
     const results = await new Promise((resolve, reject) => {
-      this.client.search(base, {
+      client.search(base, {
         filter,
         attributes: attributes.filter(key => !!key),
         scope: 'sub',
@@ -197,7 +192,9 @@ class LdapStorage {
     }
 
     debug('add user to ldap', dn, entry)
-    await this.client.add(dn, entry)
+    await this._client(async (client) => {
+      await client.add(dn, entry)
+    })
     return user
   }
 
@@ -206,17 +203,20 @@ class LdapStorage {
     if (!user) return
     const dn = user.entry.objectName
     debug('delete user from ldap', dn)
-    await this.client.del(dn)
+    await this._client(async (client) => {
+      await client.del(dn)
+    })
   }
 
-  async _setUserOrg(user, entry, attrs) {
+  async _setUserOrg(client, user, entry, attrs, orgCache = {}) {
     let org
     if (this.ldapParams.organizations.staticSingleOrg) {
       org = this.ldapParams.organizations.staticSingleOrg
     } else if (this.ldapParams.members.organizationAsDC) {
       const dn = ldap.parseDN(entry.objectName)
       const orgDC = dn.rdns[1].attrs.dc.value
-      org = await this._getOrganizationMem(orgDC)
+      orgCache[orgDC] = orgCache[orgDC] || await this._getOrganization(client, orgDC)
+      org = orgCache[orgDC]
     } else {
       // TODO
     }
@@ -239,19 +239,22 @@ class LdapStorage {
   async _getUser(filter, onlyItem = true) {
     const attributes = Object.values(this.ldapParams.users.mapping)
     if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
-    const res = await this._search(
-      this.ldapParams.baseDN,
-      this._userMapping.filter(filter, this.ldapParams.users.objectClass),
-      attributes,
-      this._userMapping.from,
-      {},
-      false
-    )
-    if (!res.results[0]) return
-    if (!onlyItem) return res.results[0]
-    const user = res.results[0].item
-    await this._setUserOrg(user, res.results[0].entry, res.results[0].attrs)
-    return user
+    return this._client(async (client) => {
+      const res = await this._search(
+        client,
+        this.ldapParams.baseDN,
+        this._userMapping.filter(filter, this.ldapParams.users.objectClass),
+        attributes,
+        this._userMapping.from,
+        {},
+        false
+      )
+      if (!res.results[0]) return
+      if (!onlyItem) return res.results[0]
+      const user = res.results[0].item
+      await this._setUserOrg(client, user, res.results[0].entry, res.results[0].attrs)
+      return user
+    })
   }
 
   async getUser(filter) {
@@ -285,20 +288,24 @@ class LdapStorage {
   async findUsers(params = {}) {
     const attributes = Object.values(this.ldapParams.users.mapping)
     if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
-    const res = await this._search(
-      this.ldapParams.baseDN,
-      this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass),
-      attributes,
-      this._userMapping.from,
-      params,
-      false
-    )
-    for (let i = 0; i < res.results.length; i++) {
-      const user = res.results[i].item
-      await this._setUserOrg(user, res.results[i].entry, res.results[i].attrs)
-      res.results[i] = user
-    }
-    return res
+    return this._client(async (client) => {
+      const res = await this._search(
+        client,
+        this.ldapParams.baseDN,
+        this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass),
+        attributes,
+        this._userMapping.from,
+        params,
+        false
+      )
+      const orgCache = {}
+      for (let i = 0; i < res.results.length; i++) {
+        const user = res.results[i].item
+        await this._setUserOrg(client, user, res.results[i].entry, res.results[i].attrs, orgCache)
+        res.results[i] = user
+      }
+      return res
+    })
   }
 
   async findMembers(organizationId, params = {}) {
@@ -331,21 +338,25 @@ class LdapStorage {
           }
         }
       }
-      const res = await this._search(
-        dn,
-        this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass, roleFilter),
-        attributes,
-        this._userMapping.from,
-        params,
-        false
-      )
-      for (let i = 0; i < res.results.length; i++) {
-        const user = res.results[i].item
-        await this._setUserOrg(user, res.results[i].entry, res.results[i].attrs)
-        const userOrga = user.organizations.find(o => o.id === organizationId)
-        res.results[i] = { id: user.id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department }
-      }
-      return res
+      return this._client(async (client) => {
+        const res = await this._search(
+          client,
+          dn,
+          this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass, roleFilter),
+          attributes,
+          this._userMapping.from,
+          params,
+          false
+        )
+        const orgCache = {}
+        for (let i = 0; i < res.results.length; i++) {
+          const user = res.results[i].item
+          await this._setUserOrg(client, user, res.results[i].entry, res.results[i].attrs, orgCache)
+          const userOrga = user.organizations.find(o => o.id === organizationId)
+          res.results[i] = { id: user.id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department }
+        }
+        return res
+      })
     }
   }
 
@@ -357,17 +368,21 @@ class LdapStorage {
     delete entry.dc
 
     debug('add org to ldap', dn, entry)
-    await this.client.add(dn, entry)
+    await this._client(async (client) => {
+      await client.add(dn, entry)
+    })
     return org
   }
 
   async deleteOrganization(id) {
     const dn = this._orgDN({ id })
     debug('delete org from ldap', dn)
-    await this.client.del(dn)
+    await this._client(async (client) => {
+      await client.del(dn)
+    })
   }
 
-  async getOrganization(id) {
+  async _getOrganization(client, id) {
     if (this.ldapParams.organizations.staticSingleOrg) {
       if (this.ldapParams.organizations.staticSingleOrg.id === id) {
         return this.ldapParams.organizations.staticSingleOrg
@@ -376,12 +391,19 @@ class LdapStorage {
       }
     }
     const res = await this._search(
+      client,
       this.ldapParams.baseDN,
       this._orgMapping.filter({ id }, this.ldapParams.organizations.objectClass),
       Object.values(this.ldapParams.organizations.mapping),
       this._orgMapping.from
     )
     return res.results[0]
+  }
+
+  async getOrganization(id) {
+    return this._client(async (client) => {
+      return this._getOrganization(client, id)
+    })
   }
 
   async findOrganizations(params = {}) {
@@ -391,13 +413,16 @@ class LdapStorage {
         results: [this.ldapParams.organizations.staticSingleOrg]
       }
     }
-    return this._search(
-      this.ldapParams.baseDN,
-      this._orgMapping.filter({ q: params.q }, this.ldapParams.organizations.objectClass),
-      Object.values(this.ldapParams.organizations.mapping),
-      this._orgMapping.from,
-      params
-    )
+    return this._client(async (client) => {
+      return this._search(
+        client,
+        this.ldapParams.baseDN,
+        this._orgMapping.filter({ q: params.q }, this.ldapParams.organizations.objectClass),
+        Object.values(this.ldapParams.organizations.mapping),
+        this._orgMapping.from,
+        params
+      )
+    })
   }
 }
 
