@@ -287,12 +287,18 @@ class LdapStorage {
   // ids, q, sort, select, skip, size
   async findUsers(params = {}) {
     const attributes = Object.values(this.ldapParams.users.mapping)
-    if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
+    let roleFilter
+    if (this.ldapParams.members.role.attr) {
+      attributes.push(this.ldapParams.members.role.attr)
+      if (this.ldapParams.members.onlyWithRole) {
+        roleFilter = this._getRoleFilter(Object.keys(this.ldapParams.members.role.values))
+      }
+    }
     return this._client(async (client) => {
       const res = await this._search(
         client,
         this.ldapParams.baseDN,
-        this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass),
+        this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass, roleFilter),
         attributes,
         this._userMapping.from,
         params,
@@ -306,6 +312,23 @@ class LdapStorage {
       }
       return res
     })
+  }
+
+  _getRoleFilter(roles) {
+    let roleFilter
+    let roleAttrValues = []
+    roles.forEach(role => {
+      roleAttrValues = roleAttrValues.concat(this.ldapParams.members.role.values[role] || (role === this.ldapParams.members.role.default ? [] : [role]))
+    })
+    if (roleAttrValues.length) {
+      const roleAttrFilters = roleAttrValues.map(val => `(${this.ldapParams.members.role.attr}=${assertSafe(val)})`)
+      if (roleAttrFilters.length > 1) {
+        roleFilter = `(|${roleAttrFilters.join('')})`
+      } else {
+        roleFilter = roleAttrFilters[0]
+      }
+    }
+    return roleFilter
   }
 
   async findMembers(organizationId, params = {}) {
@@ -324,18 +347,9 @@ class LdapStorage {
       if (this.ldapParams.members.role.attr) {
         attributes.push(this.ldapParams.members.role.attr)
         if (params.roles && params.roles.length) {
-          let roleAttrValues = []
-          params.roles.forEach(role => {
-            roleAttrValues = roleAttrValues.concat(this.ldapParams.members.role.values[role] || (role === this.ldapParams.members.role.default ? [] : [role]))
-          })
-          if (roleAttrValues.length) {
-            const roleAttrFilters = roleAttrValues.map(val => `(${this.ldapParams.members.role.attr}=${assertSafe(val)})`)
-            if (roleAttrFilters.length > 1) {
-              roleFilter = `(|${roleAttrFilters.join('')})`
-            } else {
-              roleFilter = roleAttrFilters[0]
-            }
-          }
+          roleFilter = this._getRoleFilter(params.roles)
+        } else if (this.ldapParams.members.onlyWithRole) {
+          roleFilter = this._getRoleFilter(Object.keys(this.ldapParams.members.role.values))
         }
       }
       return this._client(async (client) => {

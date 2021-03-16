@@ -68,6 +68,8 @@ module.exports = {
       members: {
         // organizations arr the parent DC of their users
         organizationAsDC: true,
+        // only list users/members with a known role
+        onlyWithRole: false,
         role: {
           attr: 'employeeType',
           values: {

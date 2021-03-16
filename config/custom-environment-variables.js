@@ -72,6 +72,10 @@ module.exports = {
           __name: 'STORAGE_LDAP_MEMBERS_ORG_AS_DC',
           __format: 'json'
         },
+        onlyWithRole: {
+          __name: 'STORAGE_LDAP_ONLY_WITH_ROLE',
+          __format: 'json'
+        },
         role: {
           attr: 'STORAGE_LDAP_MEMBERS_ROLE_ATTR',
           values: {
