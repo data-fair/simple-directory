@@ -10,3 +10,4 @@
 config/local.js
 config/local.json
 .idea
+/data

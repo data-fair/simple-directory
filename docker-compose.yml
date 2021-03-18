@@ -6,6 +6,8 @@ services:
       - 27017:27017
   ldap:
     image: osixia/openldap:1.4.0
+    volumes:
+      - ./data/ldap:/var/lib/ldap
     ports:
       - 389:389
       - 636:636

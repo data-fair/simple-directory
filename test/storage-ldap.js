@@ -1,7 +1,8 @@
 const testUtils = require('./resources/test-utils')
 
 process.env.STORAGE_TYPE = 'ldap'
-process.env.STORAGE_LDAP_MEMBERS_ROLE_VALUES = JSON.stringify({ admin: ['administrator'], user: [] })
+process.env.STORAGE_LDAP_ONLY_WITH_ROLE = 'true'
+process.env.STORAGE_LDAP_MEMBERS_ROLE_VALUES = JSON.stringify({ admin: ['cn=administrator,dc=test', 'cn=superadmin,dc=test'], user: ['cn=users,dc=test'] })
 const { test } = testUtils.prepare(__filename)
 
 test.before('clean ldap directory', async t => {

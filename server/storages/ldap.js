@@ -2,16 +2,6 @@ const { promisify } = require('util')
 const ldap = require('ldapjs')
 const debug = require('debug')('ldap')
 
-// TODO: should we sanititze user inputs to prevent injection ?
-
-function assertSafe(key) {
-  if (key.includes(',') || key.includes('=')) {
-    debug('unsafe key', key)
-    throw new Error('Les caractères , et = sont interdits dans certaines propriétés.')
-  }
-  return key
-}
-
 function sortCompare(sort) {
   return function(a, b) {
     for (let key of Object.keys(sort || {})) {
@@ -50,22 +40,21 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
       return entry
     },
     filter (obj, objectClass, extraFilter) {
-      const parts = [`(objectClass=${objectClass})`]
-        .concat(Object.keys(obj)
-          .filter(key => !!obj[key])
-          .filter(key => !!mapping[key])
-          .map(key => `(${mapping[key]}=${assertSafe(obj[key])})`)
-        )
+      const filters = [new ldap.EqualityFilter({ attribute: 'objectClass', value: objectClass })]
+      Object.keys(obj)
+        .filter(key => !!obj[key])
+        .filter(key => !!mapping[key])
+        .forEach(key => {
+          filters.push(new ldap.EqualityFilter({ attribute: mapping[key], value: obj[key] }))
+        })
       if (obj.q) {
-        parts.push(`(${mapping.name}=*${assertSafe(obj.q)}*)`)
+        filters.push(new ldap.SubstringFilter({ attribute: mapping.name, any: [obj.q] }))
       }
       if (extraFilter) {
-        parts.push(extraFilter)
+        filters.push(extraFilter)
       }
-      if (parts.length === 1) return parts[0]
-      const filter = `(&${parts.join('')})`
-      debug('ldap filter', obj, objectClass, filter)
-      return filter
+      if (filters.length === 1) return filters[0]
+      return new ldap.AndFilter({ filters })
     }
   }
 }
@@ -98,14 +87,12 @@ class LdapStorage {
     const client = ldap.createClient({ url: this.ldapParams.url, timeout: 4000 })
     client.on('error', err => console.error(err.message))
 
-    debug('ldap client created', this.ldapParams.url)
     client.bind = promisify(client.bind)
     client.unbind = promisify(client.unbind)
     client.add = promisify(client.add)
     client.del = promisify(client.del)
-    debug('bind service account', this.ldapParams.searchUserDN)
+    debug('bind service account', this.ldapParams.url, this.ldapParams.searchUserDN)
     await client.bind(this.ldapParams.searchUserDN, this.ldapParams.searchUserPassword)
-    debug('service account bound')
     const promise = fn(client)
     promise.finally(() => client.unbind())
     return promise
@@ -144,7 +131,11 @@ class LdapStorage {
       })
     })
 
-    debug('search results', base, filter, attributes, results)
+    debug(`search results
+  - base: ${base}
+  - filter: ${filter}
+  - attributes: ${JSON.stringify(attributes)}
+  - result: `, results)
     const skip = params.skip || 0
     const size = params.size || 20
     return {
@@ -200,7 +191,10 @@ class LdapStorage {
 
   async deleteUser(id) {
     const user = await this._getUser({ id }, false)
-    if (!user) return
+    if (!user) {
+      debug('delete user not found')
+      return
+    }
     const dn = user.entry.objectName
     debug('delete user from ldap', dn)
     await this._client(async (client) => {
@@ -286,6 +280,7 @@ class LdapStorage {
 
   // ids, q, sort, select, skip, size
   async findUsers(params = {}) {
+    debug('find users', params)
     const attributes = Object.values(this.ldapParams.users.mapping)
     let roleFilter
     if (this.ldapParams.members.role.attr) {
@@ -321,9 +316,11 @@ class LdapStorage {
       roleAttrValues = roleAttrValues.concat(this.ldapParams.members.role.values[role] || (role === this.ldapParams.members.role.default ? [] : [role]))
     })
     if (roleAttrValues.length) {
-      const roleAttrFilters = roleAttrValues.map(val => `(${this.ldapParams.members.role.attr}=${assertSafe(val)})`)
+      // const roleAttrFilters = roleAttrValues.map(val => `(${this.ldapParams.members.role.attr}=${val})`)
+      const roleAttrFilters = roleAttrValues.map(value => new ldap.EqualityFilter({ attribute: this.ldapParams.members.role.attr, value }))
       if (roleAttrFilters.length > 1) {
-        roleFilter = `(|${roleAttrFilters.join('')})`
+        // roleFilter = `(|${roleAttrFilters.join('')})`
+        roleFilter = new ldap.OrFilter({ filters: roleAttrFilters })
       } else {
         roleFilter = roleAttrFilters[0]
       }
@@ -332,6 +329,7 @@ class LdapStorage {
   }
 
   async findMembers(organizationId, params = {}) {
+    debug('find members', params)
     let dn
     if (this.ldapParams.organizations.staticSingleOrg) {
       dn = this.ldapParams.baseDN
@@ -421,6 +419,7 @@ class LdapStorage {
   }
 
   async findOrganizations(params = {}) {
+    debug('find orgs', params)
     if (this.ldapParams.organizations.staticSingleOrg) {
       return {
         count: 1,

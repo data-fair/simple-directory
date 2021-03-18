@@ -43,7 +43,7 @@ module.exports = {
         objectClass: 'inetOrgPerson',
         dnKey: 'cn',
         mapping: {
-          id: 'entryUUID',
+          id: 'cn',
           name: 'cn',
           email: 'mail',
           firstName: 'givenName',
