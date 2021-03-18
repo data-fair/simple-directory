@@ -144,7 +144,7 @@ class LdapStorage {
       })
     })
 
-    debug('search results', base, filter, results)
+    debug('search results', base, filter, attributes, results)
     const skip = params.skip || 0
     const size = params.size || 20
     return {

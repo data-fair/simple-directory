@@ -2,7 +2,7 @@ const testUtils = require('./resources/test-utils')
 
 process.env.STORAGE_TYPE = 'ldap'
 process.env.STORAGE_LDAP_MEMBERS_ROLE_VALUES = JSON.stringify({ admin: ['administrator'], user: [] })
-const { test, config } = testUtils.prepare(__filename)
+const { test } = testUtils.prepare(__filename)
 
 test.before('clean ldap directory', async t => {
   const user = await test.app.get('storage').getUser({ email: 'alban.mouton@koumoul.com' })
