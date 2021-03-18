@@ -72,10 +72,11 @@ module.exports = {
         onlyWithRole: false,
         role: {
           attr: 'employeeType',
-          values: {
+          /* values: {
             admin: ['administrator'],
             user: []
-          },
+          }, */
+          values: {},
           default: 'user'
         }
       }
