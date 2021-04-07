@@ -48,7 +48,7 @@
     "semver-extract": "^1.1.1"
   },
   "dependencies": {
-    "@koumoul/nuxt-config-inject": "^0.4.1",
+    "@koumoul/nuxt-config-inject": "^0.4.10",
     "@koumoul/sd-express": "^0.18.0",
     "@koumoul/sd-vue": "^0.19.2",
     "@koumoul/vue-multianalytics": "^1.10.1",
