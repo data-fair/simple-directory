@@ -90,7 +90,8 @@ module.exports = {
     ],
     link: [
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Nunito:300,400,500,700,400italic' },
-      { rel: 'icon', type: 'image/x-icon', href: config.theme.favicon }
+      // /favicon.ico is not put un config/default.js to prevent a nuxt-config-inject bug
+      { rel: 'icon', type: 'image/x-icon', href: config.theme.favicon || '/favicon.ico' }
     ],
     style: []
   }
