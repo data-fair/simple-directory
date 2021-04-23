@@ -88,6 +88,9 @@
 
         <v-spacer/>
 
+        <v-btn v-if="env.anonymousContactForm" :to="localePath('contact')" depressed>
+          Nous contacter
+        </v-btn>
         <v-btn v-if="!user" color="primary" @click="login">
           {{ $t('common.logLink') }}
         </v-btn>

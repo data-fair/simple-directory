@@ -42,9 +42,10 @@ exports.router = (keys) => {
   return router
 }
 
-exports.sign = (keys, payload, expiresIn) => jwt.sign(payload, keys.private, {
+exports.sign = (keys, payload, expiresIn, notBefore = 0) => jwt.sign(payload, keys.private, {
   algorithm: 'RS256',
   expiresIn,
+  notBefore,
   keyid: config.kid
 })
 

@@ -78,7 +78,8 @@ module.exports = {
     passwordless: config.passwordless,
     i18nLocales: config.i18nLocales,
     oauth: config.publicOAuth,
-    sessionDomain: config.sessionDomain
+    sessionDomain: config.sessionDomain,
+    anonymousContactForm: config.anonymousContactForm
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

@@ -21,6 +21,7 @@ module.exports = {
     editable: false
   },
   contact: 'contact@test.com',
+  anonymousContactForm: false,
   homePage: null,
   storage: {
     // One of 'file', 'mongo' and 'ldap'

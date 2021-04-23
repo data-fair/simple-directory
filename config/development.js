@@ -6,6 +6,7 @@ module.exports = {
   admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com'],
   adminsOrg: { id: 'admins-org', name: `Admins organization` },
   homePage: 'https://koumoul.com',
+  anonymousContactForm: true,
   jwtDurations: {
     initialToken: '1m',
     // exchangedToken: '5m',
