@@ -29,7 +29,7 @@
         name="lastName"
         @keyup.enter="save"
       />
-      <v-layout row>
+      <v-layout v-if="!env.noBirthday" row>
         <v-menu
           v-model="birthdayMenu"
           :close-on-content-click="false"

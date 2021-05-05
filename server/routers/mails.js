@@ -99,7 +99,6 @@ router.post('/contact', asyncWrap(async (req, res) => {
     text: req.body.text
   }
 
-  res.send(await req.app.get('mailTransport').sendMailAsync(mail))
-
-  res.send()
+  await req.app.get('mailTransport').sendMailAsync(mail)
+  res.send(req.body)
 }))

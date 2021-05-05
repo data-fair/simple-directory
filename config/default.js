@@ -204,5 +204,6 @@ module.exports = {
       id: '',
       secret: ''
     }
-  }
+  },
+  noBirthday: false
 }

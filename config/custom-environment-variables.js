@@ -225,5 +225,9 @@ module.exports = {
       id: 'OAUTH_LINKEDIN_ID',
       secret: 'OAUTH_LINKEDIN_SECRET'
     }
+  },
+  noBirthday: {
+    __name: 'NO_BIRTHDAY',
+    __format: 'json'
   }
 }

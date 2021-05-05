@@ -79,7 +79,8 @@ module.exports = {
     i18nLocales: config.i18nLocales,
     oauth: config.publicOAuth,
     sessionDomain: config.sessionDomain,
-    anonymousContactForm: config.anonymousContactForm
+    anonymousContactForm: config.anonymousContactForm,
+    noBirthday: config.noBirthday
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,
