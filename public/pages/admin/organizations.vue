@@ -107,7 +107,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn flat @click="deleteOrganizationDialog = false">
+          <v-btn text @click="deleteOrganizationDialog = false">
             {{ $t('common.confirmCancel') }}
           </v-btn>
           <v-btn color="warning" @click="deleteOrganizationDialog = false;deleteOrganization(currentOrganization)">
@@ -131,7 +131,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn flat @click="limitOrganizationDialog = false">
+          <v-btn text @click="limitOrganizationDialog = false">
             {{ $t('common.confirmCancel') }}
           </v-btn>
           <v-btn color="warning" @click="limitOrganizationDialog = false;saveLimits(currentOrganization, currentLimits)">

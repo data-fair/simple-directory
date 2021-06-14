@@ -4,7 +4,7 @@
       <v-app-bar
         app
         fixed
-        flat
+        text
         color="transparent"
       >
         <v-spacer />
@@ -19,74 +19,74 @@
       >
         <v-list>
           <!-- User-s profile page -->
-          <v-list-tile v-if="user" :to="localePath('me')">
-            <v-list-tile-action>
+          <v-list-item v-if="user" :to="localePath('me')">
+            <v-list-item-action>
               <v-icon>mdi-account-circle</v-icon>
-            </v-list-tile-action>
-            <v-list-tile-title>{{ $t('common.myAccount') }}</v-list-tile-title>
-          </v-list-tile>
+            </v-list-item-action>
+            <v-list-item-title>{{ $t('common.myAccount') }}</v-list-item-title>
+          </v-list-item>
 
           <!-- User's organizations pages (only admin) -->
-          <v-list-tile
+          <v-list-item
             v-for="orga in ((userDetails && userDetails.organizations) || []).filter(o => o.role === 'admin')"
             :key="orga.id"
             :to="localePath({name: 'organization-id', params: {id: orga.id}})"
           >
-            <v-list-tile-action>
+            <v-list-item-action>
               <v-icon>mdi-account-multiple</v-icon>
-            </v-list-tile-action>
-            <v-list-tile-title>{{ $t('common.organization') + ' ' + orga.name }}</v-list-tile-title>
-          </v-list-tile>
+            </v-list-item-action>
+            <v-list-item-title>{{ $t('common.organization') + ' ' + orga.name }}</v-list-item-title>
+          </v-list-item>
 
           <!-- Create organization -->
-          <v-list-tile
+          <v-list-item
             v-if="!env.readonly && userDetails && (userDetails.maxCreatedOrgs || env.defaultMaxCreatedOrgs !== 0)"
             :to="localePath('create-organization')"
             color="accent"
           >
-            <v-list-tile-action>
+            <v-list-item-action>
               <v-icon>mdi-plus</v-icon>
-            </v-list-tile-action>
-            <v-list-tile-title>
+            </v-list-item-action>
+            <v-list-item-title>
               {{ $t('common.createOrganization') }}
-            </v-list-tile-title>
-          </v-list-tile>
+            </v-list-item-title>
+          </v-list-item>
 
           <v-divider />
 
           <!-- Administration pages -->
           <v-list-group v-if="user && user.adminMode" value="true">
-            <v-list-tile slot="activator" color="admin">
-              <v-list-tile-action>
+            <v-list-item slot="activator" color="admin">
+              <v-list-item-action>
                 <v-icon color="admin">
                   mdi-shield-check
                 </v-icon>
-              </v-list-tile-action>
-              <v-list-tile-title>{{ $t('common.administration') }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile :to="localePath('admin-users')" color="admin">
-              <v-list-tile-title>{{ $t(`common.users`) }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile :to="localePath('admin-organizations')" color="admin">
-              <v-list-tile-title>{{ $t(`common.organizations`) }}</v-list-tile-title>
-            </v-list-tile>
+              </v-list-item-action>
+              <v-list-item-title>{{ $t('common.administration') }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item :to="localePath('admin-users')" color="admin">
+              <v-list-item-title>{{ $t(`common.users`) }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item :to="localePath('admin-organizations')" color="admin">
+              <v-list-item-title>{{ $t(`common.organizations`) }}</v-list-item-title>
+            </v-list-item>
           </v-list-group>
 
           <!-- Documentation pages -->
           <v-list-group v-if="!embed && docPages.length" value="true">
-            <v-list-tile slot="activator">
-              <v-list-tile-action>
+            <v-list-item slot="activator">
+              <v-list-item-action>
                 <v-icon>mdi-help-circle</v-icon>
-              </v-list-tile-action>
-              <v-list-tile-title>{{ $t('common.documentation') }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile
+              </v-list-item-action>
+              <v-list-item-title>{{ $t('common.documentation') }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item
               v-for="page in docPages"
               :key="page"
               :to="localePath({name: 'doc-id', params: {id: page}})"
             >
-              <v-list-tile-title>{{ $t(`doc.${page}.link`) }}</v-list-tile-title>
-            </v-list-tile>
+              <v-list-item-title>{{ $t(`doc.${page}.link`) }}</v-list-item-title>
+            </v-list-item>
           </v-list-group>
         </v-list>
       </v-navigation-drawer>
@@ -142,30 +142,30 @@
           {{ $t('common.logLink') }}
         </v-btn>
         <v-menu v-else-if="userDetails" offset-y>
-          <v-btn slot="activator" flat>
+          <v-btn slot="activator" text>
             {{ user.name }}
           </v-btn>
           <v-list>
-            <v-list-tile @click="logout">
-              <v-list-tile-title>{{ $t('common.logout') }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile v-if="user.asAdmin" @click="asAdmin()">
-              <v-list-tile-title>{{ $t('common.delAsAdmin') }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile
+            <v-list-item @click="logout">
+              <v-list-item-title>{{ $t('common.logout') }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item v-if="user.asAdmin" @click="asAdmin()">
+              <v-list-item-title>{{ $t('common.delAsAdmin') }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item
               v-if="user.isAdmin && !user.adminMode"
               color="admin"
               @click="setAdminMode(true)"
             >
-              <v-list-tile-title>{{ $t('common.activateAdminMode') }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile
+              <v-list-item-title>{{ $t('common.activateAdminMode') }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item
               v-if="user.isAdmin && user.adminMode"
               color="admin"
               @click="setAdminMode(false)"
             >
-              <v-list-tile-title>{{ $t('common.deactivateAdminMode') }}</v-list-tile-title>
-            </v-list-tile>
+              <v-list-item-title>{{ $t('common.deactivateAdminMode') }}</v-list-item-title>
+            </v-list-item>
           </v-list>
         </v-menu>
 
@@ -194,7 +194,7 @@
           </p>
         </div>
         <v-btn
-          flat
+          text
           icon
           @click.native="showSnackbar = false"
         >

@@ -19,12 +19,12 @@
       class="elevation-1 mt-3"
     >
       <template v-for="(department, i) in orga.departments">
-        <v-list-tile :key="department.id">
-          <v-list-tile-content>
-            <v-list-tile-title>{{ department.name }}</v-list-tile-title>
-            <v-list-tile-sub-title>{{ $t('common.id') }} = {{ department.id }}</v-list-tile-sub-title>
-          </v-list-tile-content>
-          <v-list-tile-action v-if="isAdminOrga">
+        <v-list-item :key="department.id">
+          <v-list-item-content>
+            <v-list-item-title>{{ department.name }}</v-list-item-title>
+            <v-list-item-sub-title>{{ $t('common.id') }} = {{ department.id }}</v-list-item-sub-title>
+          </v-list-item-content>
+          <v-list-item-action v-if="isAdminOrga">
             <edit-department-menu
               v-if="!env.readonly"
               :orga="orga"
@@ -39,8 +39,8 @@
               :department-label="departmentLabel"
               @change="$emit('change')"
             />
-          </v-list-tile-action>
-        </v-list-tile>
+          </v-list-item-action>
+        </v-list-item>
         <v-divider v-if="i + 1 < orga.departments.length" :key="i" />
       </template>
     </v-list>

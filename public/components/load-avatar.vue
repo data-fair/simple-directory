@@ -1,9 +1,9 @@
 <template>
-  <v-list-tile avatar>
-    <v-list-tile-avatar size="50">
+  <v-list-item avatar>
+    <v-list-item-avatar size="50">
       <v-img v-if="owner && !loading" :src="owner.avatarUrl" />
-    </v-list-tile-avatar>
-    <v-list-tile-content>
+    </v-list-item-avatar>
+    <v-list-item-content>
       <input
         :disabled="disabled"
         type="file"
@@ -36,7 +36,7 @@
           <v-card-actions>
             <v-spacer />
             <v-btn
-              flat
+              text
               @click="dialog = false"
               v-text="$t('common.confirmCancel')"
             />
@@ -49,8 +49,8 @@
           </v-card-actions>
         </v-card>
       </v-menu>
-    </v-list-tile-content>
-  </v-list-tile>
+    </v-list-item-content>
+  </v-list-item>
 </template>
 
 <script>

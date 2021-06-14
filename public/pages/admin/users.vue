@@ -119,7 +119,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn flat @click="deleteUserDialog = false">
+          <v-btn text @click="deleteUserDialog = false">
             {{ $t('common.confirmCancel') }}
           </v-btn>
           <v-btn color="warning" @click="deleteUserDialog = false;deleteUser(currentUser)">
@@ -149,7 +149,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn flat @click="editMaxCreatedOrgsDialog = false">
+          <v-btn text @click="editMaxCreatedOrgsDialog = false">
             {{ $t('common.confirmCancel') }}
           </v-btn>
           <v-btn color="warning" @click="editMaxCreatedOrgsDialog = false;saveMaxCreatedOrgs(currentUser, newMaxCreatedOrgs)">

@@ -58,24 +58,24 @@
       class="elevation-1 mt-1"
     >
       <template v-for="(member, i) in members.results">
-        <v-list-tile :key="member.id">
-          <v-list-tile-content>
-            <v-list-tile-title>{{ member.name }}</v-list-tile-title>
-            <v-list-tile-sub-title>{{ member.email }}</v-list-tile-sub-title>
-            <v-list-tile-sub-title>
+        <v-list-item :key="member.id">
+          <v-list-item-content>
+            <v-list-item-title>{{ member.name }}</v-list-item-title>
+            <v-list-item-sub-title>{{ member.email }}</v-list-item-sub-title>
+            <v-list-item-sub-title>
               <span>{{ $t('common.role') }} = {{ member.role }}</span>
               <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
-            </v-list-tile-sub-title>
-          </v-list-tile-content>
-          <v-list-tile-action v-if="isAdminOrga" style="min-width:0;">
+            </v-list-item-sub-title>
+          </v-list-item-content>
+          <v-list-item-action v-if="isAdminOrga" style="min-width:0;">
             <edit-member-menu
               v-if="!env.readonly"
               :orga="orga"
               :member="member"
               @save="saveMember"
             />
-          </v-list-tile-action>
-          <v-list-tile-action v-if="user.adminMode" style="min-width:0;">
+          </v-list-item-action>
+          <v-list-item-action v-if="user.adminMode" style="min-width:0;">
             <v-btn
               :title="$t('common.asAdmin')"
               icon
@@ -86,15 +86,15 @@
                 mdi-account-switch
               </v-icon>
             </v-btn>
-          </v-list-tile-action>
-          <v-list-tile-action v-if="isAdminOrga" style="min-width:0;">
+          </v-list-item-action>
+          <v-list-item-action v-if="isAdminOrga" style="min-width:0;">
             <delete-member-menu
               v-if="!env.readonly"
               :member="member"
               @delete="deleteMember"
             />
-          </v-list-tile-action>
-        </v-list-tile>
+          </v-list-item-action>
+        </v-list-item>
         <v-divider v-if="i + 1 < members.results.length" :key="i" />
       </template>
     </v-list>

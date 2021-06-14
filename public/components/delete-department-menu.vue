@@ -7,7 +7,7 @@
     <template #activator="{on}">
       <v-btn
         :title="$t('pages.organization.deleteDepartment', {departmentLabel})"
-        flat
+        text
         icon
         color="warning"
         v-on="on"
@@ -25,7 +25,7 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn flat @click="menu = false">
+        <v-btn text @click="menu = false">
           {{ $t('common.confirmCancel') }}
         </v-btn>
         <v-btn color="warning" @click="confirmDelete">

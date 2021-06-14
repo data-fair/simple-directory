@@ -43,7 +43,7 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn flat @click="menu = false">
+        <v-btn text @click="menu = false">
           {{ $t('common.confirmCancel') }}
         </v-btn>
         <v-btn
