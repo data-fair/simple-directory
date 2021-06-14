@@ -1,5 +1,5 @@
 <template>
-  <v-row>
+  <v-row class="mb-6 mx-0">
     <v-btn
       v-for="oauth of env.oauth"
       :key="oauth.id"
@@ -8,11 +8,10 @@
       dark
       small
       rounded
-      depressed
-      class="pl-1 text-none pr-3 mx-1"
+      class="pl-1 pr-3 mr-2 text-none"
     >
       <v-icon>{{ oauth.icon }}</v-icon>
-      &nbsp;&nbsp;{{ oauth.title }}
+      &nbsp;{{ oauth.title }}
     </v-btn>
   </v-row>
 </template>

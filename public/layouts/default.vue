@@ -269,31 +269,31 @@
 </script>
 
 <style>
-body .application.embed {
+body .v-application.embed {
   background: transparent;
 }
 
-body .application .logo-container {
+body .v-application .logo-container {
   height: 100%;
   padding: 4px;
   margin-left: 4px !important;
   margin-right: 4px;
   width: 64px;
 }
-body .application .logo-container img, body .application .logo-container svg {
+body .v-application .logo-container img, body .v-application .logo-container svg {
   height:100%;
 }
 
-body .application .notification .v-snack__content {
+body .v-application .notification .v-snack__content {
   height: auto;
 }
-body .application .notification .v-snack__content p {
+body .v-application .notification .v-snack__content p {
   margin-bottom: 4px;
   margin-top: 4px;
 }
 
 /* No need to prevent users from selecting (and copying) the texts in lists */
-body .application .v-list__tile {
+body .v-application .v-list__tile {
   user-select: text;
 }
 

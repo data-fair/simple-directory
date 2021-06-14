@@ -137,7 +137,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     },
     login: {
       title: 'Identifiez vous',
-      emailLabel: 'Votre adresse mail',
+      emailLabel: 'Adresse mail',
       emailCaption: 'En savoir plus sur l\'authentification <a href="https://koumoul.com/blog/passwordless">sans mot de passe</a>',
       success: 'Vous allez recevoir un email à l\'adresse renseignée qui contiendra un lien. Veuillez ouvrir ce lien pour terminer votre identification.',
       maildevLink: 'Accédez à la boite mail de développement',

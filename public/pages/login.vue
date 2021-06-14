@@ -7,12 +7,16 @@
       lg="4"
       xl="3"
     >
-      <v-card raised class="pa-2">
+      <v-card
+        outlined
+        shaped
+        class="pa-2"
+      >
         <v-card-title primary-title>
           <h3 :class="{headline: true, 'mb-0': true, 'warning--text': adminMode}">
             {{ stepsTitles[step] || email }}
           </h3>
-          <div :class="`v-card v-card--raised theme--${$vuetify.theme.dark ? 'dark' : 'light'} login-logo-container`">
+          <div :class="`v-card v-sheet v-sheet--outlined theme--${$vuetify.theme.dark ? 'dark' : 'light'} login-logo-container`">
             <img v-if="env.theme.logo" :src="env.theme.logo">
             <logo v-else />
           </div>
@@ -20,47 +24,52 @@
         <v-window v-model="step">
           <v-window-item value="login">
             <v-card-text>
-              <v-row v-if="adminMode">
-                <p class="warning--text">
-                  {{ $t('pages.login.adminMode') }}
-                </p>
-              </v-row>
+              <p v-if="adminMode" class="warning--text">
+                {{ $t('pages.login.adminMode') }}
+              </p>
 
               <template v-if="env.oauth.length && !adminMode">
                 <!--<v-layout row>
                   <p class="mb-0">{{ $t('pages.login.oauth') }}</p>
                 </v-layout>-->
-                <oauth-login-links :redirect="redirectUrl" class="mb-3" />
+                <oauth-login-links :redirect="redirectUrl" />
               </template>
 
               <v-text-field
                 id="email"
                 v-model="email"
+                dense
+                rounded
+                outlined
+                hide-details
                 :autofocus="true"
                 :label="$t('pages.login.emailLabel')"
                 name="email"
+                class="mb-3 hide-autofill"
               />
-              <v-row v-if="env.passwordless && !adminMode" class="text-caption">
-                <p class="mb-2">
-                  {{ $t('pages.login.passwordlessMsg1') }} <a @click="passwordlessAuth">{{ $t('pages.login.passwordlessMsg2') }}</a>
-                </p>
-              </v-row>
+              <p v-if="env.passwordless && !adminMode" class="mb-2 text-caption">
+                {{ $t('pages.login.passwordlessMsg1') }} <a @click="passwordlessAuth">{{ $t('pages.login.passwordlessMsg2') }}</a>
+              </p>
 
               <v-text-field
                 id="password"
                 v-model="password"
+                dense
+                rounded
+                outlined
                 :label="$t('common.password')"
                 :error-messages="passwordErrors"
                 name="password"
                 type="password"
+                class="mt-4 hide-autofill"
                 @keyup.enter="passwordAuth"
               />
-              <v-row v-if="!env.onlyCreateInvited && !adminMode">
+              <v-row v-if="!env.onlyCreateInvited && !adminMode" class="mx-0">
                 <p class="mb-2">
                   <a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a>
                 </p>
               </v-row>
-              <v-row v-if="!env.readonly && !adminMode">
+              <v-row v-if="!env.readonly && !adminMode" class="mx-0">
                 <p class="mb-0">
                   <a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a>
                 </p>
@@ -72,7 +81,6 @@
               <v-btn
                 :disabled="!email || !password"
                 :color="adminMode ? 'warning' : 'primary'"
-                depressed
                 @click="passwordAuth"
               >
                 {{ $t('common.login') }}
@@ -82,21 +90,17 @@
 
           <v-window-item value="tos">
             <v-card-text>
-              <v-row>
-                <p v-html="$t('pages.login.tosMsg', {tosUrl: env.tosUrl})" />
-              </v-row>
-              <v-row>
-                <v-checkbox
-                  v-model="tosAccepted"
-                  :label="$t('pages.login.tosConfirm')"
-                />
-              </v-row>
+              <p v-html="$t('pages.login.tosMsg', {tosUrl: env.tosUrl})" />
+              <v-checkbox
+                v-model="tosAccepted"
+                :label="$t('pages.login.tosConfirm')"
+              />
             </v-card-text>
 
             <v-card-actions>
               <v-btn
                 v-if="step !== 1"
-                flat
+                text
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -105,7 +109,6 @@
               <v-btn
                 :disabled="!tosAccepted"
                 color="primary"
-                depressed
                 @click="step='createUser'"
               >
                 {{ $t('common.next') }}
@@ -145,7 +148,7 @@
                   v-model="newUser.password"
                   :label="$t('common.password')"
                   :error-messages="createUserErrors"
-                  name="password"
+                  name="newUserPassword"
                   type="password"
                   @keyup.enter="createUser"
                 />
@@ -163,7 +166,7 @@
             <v-card-actions>
               <v-btn
                 v-if="step !== 1"
-                flat
+                text
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -171,7 +174,6 @@
               <v-spacer />
               <v-btn
                 :disabled="!newUser.password || newUser.password !== newUserPassword2"
-                depressed
                 color="primary"
                 @click="createUser"
               >
@@ -190,7 +192,7 @@
             <v-card-actions>
               <v-btn
                 v-if="step !== 1"
-                flat
+                text
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -208,7 +210,7 @@
             <v-card-actions>
               <v-btn
                 v-if="step !== 1"
-                flat
+                text
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -226,7 +228,7 @@
             <v-card-actions>
               <v-btn
                 v-if="step !== 1"
-                flat
+                text
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -244,6 +246,9 @@
                 :error-messages="newPasswordErrors"
                 name="newPassword"
                 type="password"
+                outlined
+                dense
+                rounded
               />
               <v-text-field
                 v-model="newPassword2"
@@ -251,6 +256,9 @@
                 :error-messages="newPassword !== newPassword2 ? ['Les mots de passe sont différents'] : []"
                 name="newPassword2"
                 type="password"
+                outlined
+                dense
+                rounded
               />
             </v-card-text>
             <v-card-actions>
@@ -258,7 +266,6 @@
               <v-btn
                 :disabled="!newPassword || newPassword !== newPassword2"
                 color="primary"
-                depressed
                 @click="changePassword"
               >
                 {{ $t('common.validate') }}
@@ -281,7 +288,7 @@
       </v-card>
       <p v-if="env.maildev.active">
         <br>
-        <a :href="env.maildev.url" flat>{{ $t('pages.login.maildevLink') }}</a>
+        <a :href="env.maildev.url" text>{{ $t('pages.login.maildevLink') }}</a>
       </p>
     </v-col>
   </v-row>
@@ -411,7 +418,7 @@
 
 <style>
 
-.application.page-login .login-logo-container {
+.v-application.page-login .login-logo-container {
   position: absolute;
   right: -20px;
   top: -20px;
@@ -421,7 +428,23 @@
   padding: 8px;
   overflow: hidden;
 }
-.application.page-login .login-logo-container img, .application.page-login .login-logo-container svg {
+.v-application.page-login .login-logo-container img, .v-application.page-login .login-logo-container svg {
   width: 100%;
+}
+
+/* https://stackoverflow.com/a/37432260 */
+.hide-autofill.theme--dark input:-webkit-autofill,
+.hide-autofill.theme--dark input:-webkit-autofill:hover,
+.hide-autofill.theme--dark input:-webkit-autofill:focus,
+.hide-autofill.theme--dark input:-webkit-autofill:active {
+    transition: background-color 5000s ease-in-out 0s;
+    -webkit-text-fill-color: white !important;
+}
+.hide-autofill.theme--light input:-webkit-autofill,
+.hide-autofill.theme--light input:-webkit-autofill:hover,
+.hide-autofill.theme--light input:-webkit-autofill:focus,
+.hide-autofill.theme--light input:-webkit-autofill:active {
+    transition: background-color 5000s ease-in-out 0s;
+    -webkit-text-fill-color: rgba(0, 0, 0, 0.87) !important;
 }
 </style>
