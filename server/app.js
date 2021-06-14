@@ -14,7 +14,7 @@ const session = require('@koumoul/sd-express')({
   directoryUrl: config.publicUrl,
   publicUrl: config.publicUrl,
   privateDirectoryUrl: 'http://localhost:' + config.port,
-  cookieDomain: config.sessionDomain
+  cookieDomain: config.sessionDomain,
 })
 const i18n = require('../i18n')
 
@@ -37,7 +37,7 @@ const fullUser = asyncWrap(async (req, res, next) => {
     req.user = {
       ...await req.app.get('storage').getUser({ id: req.user.id }),
       isAdmin: req.user.isAdmin,
-      adminMode: req.user.adminMode
+      adminMode: req.user.adminMode,
     }
   }
 
@@ -51,7 +51,7 @@ const fullUser = asyncWrap(async (req, res, next) => {
         isAdmin: true,
         adminMode: true,
         id: 'readAll',
-        organizations: []
+        organizations: [],
       }
     }
   }

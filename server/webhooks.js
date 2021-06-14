@@ -5,7 +5,7 @@ const debug = require('debug')('webhooks')
 
 exports.postIdentity = async (type, identity) => {
   const name = type === 'user' ? userName(identity) : identity.name
-  for (let webhook of config.webhooks.identities) {
+  for (const webhook of config.webhooks.identities) {
     const url = `${webhook.base}/${type}/${identity.id}`
     const body = { name }
     debug(`Send identity name webhook to ${url} : `, body)
@@ -18,7 +18,7 @@ exports.postIdentity = async (type, identity) => {
 }
 
 exports.deleteIdentity = async (type, id) => {
-  for (let webhook of config.webhooks.identities) {
+  for (const webhook of config.webhooks.identities) {
     const url = `${webhook.base}/${type}/${id}`
     debug(`Send identity delete webhook to ${url}`)
     try {

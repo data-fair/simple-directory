@@ -10,14 +10,14 @@ const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 const mails = require('../mails')
 
-let router = express.Router()
+const router = express.Router()
 
 // Get the list of users
 router.get('', asyncWrap(async (req, res, next) => {
   if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
   if (config.listEntitiesMode === 'admin' && !(req.user && req.user.isAdmin)) return res.send({ results: [], count: 0 })
 
-  let params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
+  const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
@@ -28,7 +28,7 @@ router.get('', asyncWrap(async (req, res, next) => {
   }
 
   if (req.query) {
-    if (req.query['ids']) params.ids = req.query['ids'].split(',')
+    if (req.query.ids) params.ids = req.query.ids.split(',')
     if (req.query.q) params.q = req.query.q
   }
   const users = await req.app.get('storage').findUsers(params)
@@ -50,7 +50,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     id: shortid.generate(),
     firstName: req.body.firstName,
     lastName: req.body.lastName,
-    emailConfirmed: false
+    emailConfirmed: false,
   }
   newUser.name = userName(newUser)
 
@@ -72,7 +72,7 @@ router.post('', asyncWrap(async (req, res, next) => {
       key: 'conflict',
       messages: req.messages,
       to: req.body.email,
-      params: { host: linkUrl.host, origin: linkUrl.origin }
+      params: { host: linkUrl.host, origin: linkUrl.origin },
     })
     return res.status(204).send()
   }
@@ -95,7 +95,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     key: 'creation',
     messages: req.messages,
     to: req.body.email,
-    params: { link, host: linkUrl.host, origin: linkUrl.origin }
+    params: { link, host: linkUrl.host, origin: linkUrl.origin },
   })
   return res.status(204).send()
 }))

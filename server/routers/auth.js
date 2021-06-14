@@ -15,7 +15,7 @@ const oauth = require('../utils/oauth')
 const userName = require('../utils/user-name')
 const debug = require('debug')('auth')
 
-let router = exports.router = express.Router()
+const router = exports.router = express.Router()
 
 // these routes accept url encoded form data so that they can be used from basic
 // html forms
@@ -26,7 +26,7 @@ let _limiter
 const limiterOptions = {
   keyPrefix: 'sd-rate-limiter-auth',
   points: config.authRateLimit.attempts,
-  duration: config.authRateLimit.duration
+  duration: config.authRateLimit.duration,
 }
 const limiter = (req) => {
   if (config.storage.type === 'mongo') {
@@ -52,7 +52,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   }
 
   const storage = req.app.get('storage')
-  let user = await storage.getUserByEmail(req.body.email)
+  const user = await storage.getUserByEmail(req.body.email)
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
     const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
@@ -62,7 +62,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
       key: 'noCreation',
       messages: req.messages,
       to: req.body.email,
-      params: { link, host: linkUrl.host, origin: linkUrl.origin }
+      params: { link, host: linkUrl.host, origin: linkUrl.origin },
     })
     return res.status(204).send()
   }
@@ -77,7 +77,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     key: 'login',
     messages: req.messages,
     to: user.email,
-    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
+    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin },
   })
   res.status(204).send()
 }))
@@ -177,7 +177,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   }
 
   const storage = req.app.get('storage')
-  let user = await storage.getUserByEmail(req.body.email)
+  const user = await storage.getUserByEmail(req.body.email)
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
     const link = req.body.target || config.defaultLoginRedirect || (config.publicUrl + '/login')
@@ -187,7 +187,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
       key: 'noCreation',
       messages: req.messages,
       to: req.body.email,
-      params: { link, host: linkUrl.host, origin: linkUrl.origin }
+      params: { link, host: linkUrl.host, origin: linkUrl.origin },
     })
     return res.status(204).send()
   }
@@ -203,7 +203,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
     key: 'action',
     messages: req.messages,
     to: user.email,
-    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
+    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin },
   })
   res.status(204).send()
 }))
@@ -217,7 +217,7 @@ router.get('/anonymous-action', asyncWrap(async (req, res, next) => {
     console.error('Rate limit error for /anonymous-action route', requestIp.getClientIp(req), req.body.email, err)
     return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
-  const payload = { 'anonymousAction': true, validation: 'wait' }
+  const payload = { anonymousAction: true, validation: 'wait' }
   const token = jwt.sign(req.app.get('keys'), payload, '1d', '8s')
   res.send(token)
 }))
@@ -323,8 +323,8 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
       lastName: userInfo.lastName || '',
       emailConfirmed: true,
       oauth: {
-        [req.params.oauthId]: oauthInfo
-      }
+        [req.params.oauthId]: oauthInfo,
+      },
     }
     user.name = userName(user)
     debug('Create user authenticated through oauth', user)

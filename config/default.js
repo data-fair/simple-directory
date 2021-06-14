@@ -6,19 +6,19 @@ module.exports = {
   kid: 'simple-directory',
   secret: {
     public: './security/simple-directory.key.pub',
-    private: './security/simple-directory.key'
+    private: './security/simple-directory.key',
   },
   sessionDomain: null,
   jwtDurations: {
     initialToken: '15m',
     exchangedToken: '30d',
-    invitationToken: '10d'
+    invitationToken: '10d',
   },
   admins: ['admin@test.com'],
   adminsOrg: null,
   roles: {
     defaults: ['admin', 'user'],
-    editable: false
+    editable: false,
   },
   contact: 'contact@test.com',
   anonymousContactForm: false,
@@ -28,10 +28,10 @@ module.exports = {
     type: 'mongo',
     file: {
       users: './data/users.json',
-      organizations: './data/organizations.json'
+      organizations: './data/organizations.json',
     },
     mongo: {
-      url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
+      url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development'),
     },
     ldap: {
       url: 'ldap://ldap:389',
@@ -50,8 +50,8 @@ module.exports = {
           firstName: 'givenName',
           lastName: 'sn',
           birthday: null,
-          avatarUrl: null
-        }
+          avatarUrl: null,
+        },
       },
       // map entities in ldap to SD organizations
       organizations: {
@@ -62,8 +62,8 @@ module.exports = {
         dnKey: 'dc',
         mapping: {
           id: 'dc',
-          name: 'o'
-        }
+          name: 'o',
+        },
       },
       // manage the link between users and organizations
       members: {
@@ -78,21 +78,21 @@ module.exports = {
             user: []
           }, */
           values: {},
-          default: 'user'
-        }
-      }
-    }
+          default: 'user',
+        },
+      },
+    },
   },
   info: {
     termsOfService: 'https://koumoul.com/term-of-service',
     contact: {
       name: 'Koumoul',
       url: 'https://koumoul.com',
-      email: 'support@koumoul.com'
-    }
+      email: 'support@koumoul.com',
+    },
   },
   webhooks: {
-    identities: []
+    identities: [],
   },
   analytics: {}, // a "modules" definition for @koumoul/vue-multianalytics
   theme: {
@@ -108,17 +108,17 @@ module.exports = {
       info: '#2196F3', // blue.base
       success: '#4CAF50', // green.base
       warning: '#E91E63', // pink.base
-      admin: '#E53935' // red.darken1
+      admin: '#E53935', // red.darken1
     },
     darkColors: {
       primary: '#2196F3', // blue.base
-      success: '#00E676' // green.accent3
+      success: '#00E676', // green.accent3
     },
     cssUrl: null,
-    cssText: ''
+    cssText: '',
   },
   i18n: {
-    locales: ['fr', 'en', 'es', 'pt', 'it', 'de']
+    locales: ['fr', 'en', 'es', 'pt', 'it', 'de'],
   },
   mails: {
     from: 'no-reply@test.com',
@@ -127,18 +127,18 @@ module.exports = {
     transport: {
       port: 1025,
       ignoreTLS: true,
-      default: 'localhost'
-    }
+      default: 'localhost',
+    },
   },
   maildev: {
     url: 'http://localhost:1080',
     active: false,
     smtp: 1025,
-    web: 1080
+    web: 1080,
   },
   quotas: {
     defaultMaxCreatedOrgs: -1,
-    defaultMaxNbMembers: 0
+    defaultMaxNbMembers: 0,
   },
   // Restricts who can use the find endpoints on users and organizations
   // One of 'anonymous', 'authenticated' or 'admin'
@@ -156,7 +156,7 @@ module.exports = {
   secretKeys: {
     sendMails: null,
     limits: null,
-    readAll: null
+    readAll: null,
   },
   // A link to the terms of services for the site
   tosUrl: null,
@@ -165,7 +165,7 @@ module.exports = {
   passwordless: true,
   authRateLimit: {
     attempts: 5,
-    duration: 60
+    duration: 60,
   },
   // Example of oauth configuration
   // oauth: [{
@@ -190,20 +190,20 @@ module.exports = {
     statesDir: './security',
     github: {
       id: '',
-      secret: ''
+      secret: '',
     },
     facebook: {
       id: '',
-      secret: ''
+      secret: '',
     },
     google: {
       id: '',
-      secret: ''
+      secret: '',
     },
     linkedin: {
       id: '',
-      secret: ''
-    }
+      secret: '',
+    },
   },
-  noBirthday: false
+  noBirthday: false,
 }

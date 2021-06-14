@@ -10,12 +10,12 @@ export default () => {
     modules: { session: sessionStoreBuilder() },
     state: {
       userDetails: null,
-      env: {}
+      env: {},
     },
     mutations: {
       setAny(state, params) {
         Object.assign(state, params)
-      }
+      },
     },
     actions: {
       async fetchUserDetails({ state, commit, dispatch }) {
@@ -38,14 +38,6 @@ export default () => {
           eventBus.$emit('notification', { error })
         }
       },
-      nuxtServerInit({ commit, dispatch }, { req, env, app }) {
-        commit('setAny', { env: { ...env } })
-        dispatch('session/init', {
-          cookies: this.$cookies,
-          baseUrl: env.publicUrl + '/api/session',
-          cookieDomain: env.sessionDomain
-        })
-      }
-    }
+    },
   })
 }

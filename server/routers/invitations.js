@@ -10,7 +10,7 @@ const limits = require('../utils/limits')
 const emailValidator = require('email-validator')
 const debug = require('debug')('invitations')
 
-let router = module.exports = express.Router()
+const router = module.exports = express.Router()
 
 // Invitation for a user to join an organization from an admin of this organization
 router.post('', asyncWrap(async (req, res, next) => {
@@ -22,7 +22,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (storage.db) {
     const limit = await limits.get(storage.db, { type: 'organization', id: req.body.id }, 'store_nb_members')
     if (limit.consumption >= limit.limit && limit.limit > 0) {
-      return res.status(429).send(`L'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.`)
+      return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
     }
   }
 
@@ -38,7 +38,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     key: 'invitation',
     messages: req.messages,
     to: req.body.email,
-    params: { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin }
+    params: { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin },
   })
   res.status(201).send()
 }))

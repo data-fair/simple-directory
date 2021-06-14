@@ -20,7 +20,7 @@ test('create and find users in static single org', async t => {
     firstName: 'Alban',
     lastName: 'Mouton',
     email: 'alban.mouton@koumoul.com',
-    organizations: [{ id: 'test-single-org', role: 'admin' }]
+    organizations: [{ id: 'test-single-org', role: 'admin' }],
   })
   let res = await storage.findUsers({ skip: 0, size: 10 })
   t.is(res.count, 1)

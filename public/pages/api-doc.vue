@@ -1,19 +1,23 @@
 <template lang="html">
-  <iframe :src="src" :height="height" width="100%"/>
+  <iframe
+    :src="src"
+    :height="height"
+    width="100%"
+  />
 </template>
 
 <script>
-export default {
-  props: ['url'],
-  computed: {
-    height() {
-      return Math.max(window.innerHeight, 1000)
+  export default {
+    props: ['url'],
+    computed: {
+      height() {
+        return Math.max(window.innerHeight, 1000)
+      },
+      src() {
+        return 'https://koumoul.com/openapi-viewer/?proxy=false&hide-toolbar=true&url=' + encodeURIComponent(this.url)
+      },
     },
-    src() {
-      return 'https://koumoul.com/openapi-viewer/?proxy=false&hide-toolbar=true&url=' + encodeURIComponent(this.url)
-    }
   }
-}
 </script>
 
 <style lang="css">

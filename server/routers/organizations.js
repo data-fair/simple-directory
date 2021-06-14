@@ -6,7 +6,7 @@ const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
 const limits = require('../utils/limits')
 
-let router = module.exports = express.Router()
+const router = module.exports = express.Router()
 
 // Either a super admin, or an admin of the current organization
 function isAdmin(req) {
@@ -23,7 +23,7 @@ router.get('', asyncWrap(async (req, res, next) => {
   if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
   if (config.listEntitiesMode === 'admin' && !(req.user && req.user.isAdmin)) return res.send({ results: [], count: 0 })
 
-  let params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
+  const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
@@ -33,7 +33,7 @@ router.get('', asyncWrap(async (req, res, next) => {
     params.select = ['id', 'name']
   }
 
-  if (req.query['ids']) params.ids = req.query['ids'].split(',')
+  if (req.query.ids) params.ids = req.query.ids.split(',')
   if (req.query.q) params.q = req.query.q
   if (req.query.creator) params.creator = req.query.creator
 
@@ -119,7 +119,7 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   }
   const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
   if (req.query.q) params.q = req.query.q
-  if (req.query['ids'] || req.query['id']) params.ids = (req.query['ids'] || req.query['id']).split(',')
+  if (req.query.ids || req.query.id) params.ids = (req.query.ids || req.query.id).split(',')
   if (req.query.role) params.roles = req.query.role.split(',')
   if (req.query.department) params.departments = req.query.department.split(',')
   const members = await req.app.get('storage').findMembers(req.params.organizationId, params)

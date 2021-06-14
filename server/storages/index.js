@@ -15,14 +15,14 @@ exports.init = async () => {
         await storage.createOrganization(config.adminsOrg, { id: 'init', name: 'init' })
       }
     }
-    for (let adminEmail of config.admins) {
+    for (const adminEmail of config.admins) {
       const admin = await storage.getUserByEmail(adminEmail)
       if (!admin) {
         const newAdmin = {
           email: adminEmail,
           id: shortid.generate(),
           maxCreatedOrgs: -1,
-          organizations: []
+          organizations: [],
         }
         newAdmin.name = userName(newAdmin)
         if (config.adminsOrg) {

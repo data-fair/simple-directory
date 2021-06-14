@@ -37,7 +37,7 @@ exports.router = (keys) => {
   publicKey.alg = 'RS256'
   publicKey.use = 'sig'
   router.get('/.well-known/jwks.json', (req, res) => {
-    res.json({ 'keys': [publicKey.toJSON()] })
+    res.json({ keys: [publicKey.toJSON()] })
   })
   return router
 }
@@ -46,7 +46,7 @@ exports.sign = (keys, payload, expiresIn, notBefore = 0) => jwt.sign(payload, ke
   algorithm: 'RS256',
   expiresIn,
   notBefore,
-  keyid: config.kid
+  keyid: config.kid,
 })
 
 exports.verify = async (keys, token) => asyncVerify(token, keys.public)
@@ -59,7 +59,7 @@ exports.getPayload = (user) => {
     email: user.email,
     name: user.name,
     organizations: user.organizations,
-    isAdmin: config.admins.includes(user.email)
+    isAdmin: config.admins.includes(user.email),
   }
   if (user.department) payload.department = user.department
   return payload

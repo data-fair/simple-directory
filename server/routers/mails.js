@@ -6,7 +6,7 @@ const requestIp = require('request-ip')
 const asyncWrap = require('../utils/async-wrap')
 const jwt = require('../utils/jwt')
 
-let router = module.exports = express.Router()
+const router = module.exports = express.Router()
 
 // Used by the users' directory to notify name updates
 router.post('/', asyncWrap(async (req, res) => {
@@ -18,7 +18,7 @@ router.post('/', asyncWrap(async (req, res) => {
   const transport = req.app.get('mailTransport')
 
   const to = []
-  for (let t of req.body.to) {
+  for (const t of req.body.to) {
     if (t.type === 'user') {
       const user = (await storage.getUser({ id: t.id }))
       if (user) to.push(user.email)
@@ -34,7 +34,7 @@ router.post('/', asyncWrap(async (req, res) => {
     from: config.mails.from,
     bcc: to.join(', '),
     subject: req.body.subject,
-    text: req.body.text
+    text: req.body.text,
   }
 
   if (req.body.html) {
@@ -49,7 +49,7 @@ let _limiter
 const limiterOptions = {
   keyPrefix: 'sd-rate-limiter-contact',
   points: 1,
-  duration: 60
+  duration: 60,
 }
 const limiter = (req) => {
   if (config.storage.type === 'mongo') {
@@ -69,7 +69,7 @@ router.post('/contact', asyncWrap(async (req, res) => {
     if (!req.body.token) return res.status(401).send()
 
     // 1rst level of anti-spam prevention, no cross origin requests on this route
-    if (req.headers['origin'] && !config.publicUrl.startsWith(req.headers['origin'])) {
+    if (req.headers.origin && !config.publicUrl.startsWith(req.headers.origin)) {
       return res.status(405).send('Appel depuis un domaine extérieur non supporté')
     }
 
@@ -78,7 +78,7 @@ router.post('/contact', asyncWrap(async (req, res) => {
       await jwt.verify(req.app.get('keys'), req.body.token)
     } catch (err) {
       if (err.name === 'NotBeforeError') {
-        return res.status(429).send(`Message refusé, l'activité ressemble à celle d'un robot spammeur.`)
+        return res.status(429).send('Message refusé, l\'activité ressemble à celle d\'un robot spammeur.')
       } else {
         return res.status(401).send('Invalid id_token')
       }
@@ -96,7 +96,7 @@ router.post('/contact', asyncWrap(async (req, res) => {
     from: req.body.from,
     to: config.contact,
     subject: req.body.subject,
-    text: req.body.text
+    text: req.body.text,
   }
 
   await req.app.get('mailTransport').sendMailAsync(mail)

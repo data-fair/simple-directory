@@ -27,13 +27,13 @@ test('Get organization list when authenticated with api key', async t => {
 
 test('Get organization roles', async t => {
   const ax = await testUtils.axios(test, 'dmeadus0@answers.com')
-  let res = await ax.get('/api/organizations/3sSi7xDIK/roles')
+  const res = await ax.get('/api/organizations/3sSi7xDIK/roles')
   t.is(res.status, 200)
   t.is(res.data.length, 2)
 })
 
 test('Cannot get organization roles when non member', async t => {
   const ax = await testUtils.axios(test, 'dmeadus0@answers.com')
-  let res = await ax.get('/api/organizations/ihMQiGTaY/roles')
+  const res = await ax.get('/api/organizations/ihMQiGTaY/roles')
   t.is(res.status, 403)
 })

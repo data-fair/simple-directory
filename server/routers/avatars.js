@@ -7,7 +7,7 @@ const seedrandom = require('seedrandom')
 const colorKeys = Object.keys(colors).filter(c => colors[c] && colors[c]['600'])
 const multer = require('multer')
 
-let router = module.exports = express.Router()
+const router = module.exports = express.Router()
 
 const randomColor = (seed) => colors[colorKeys[Math.floor(seedrandom(seed)() * colorKeys.length)]]['600']
 
@@ -57,7 +57,7 @@ router.get('/:type/:id/avatar.png', asyncWrap(async (req, res, next) => {
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 200000, files: 1, fields: 0 }
+  limits: { fileSize: 200000, files: 1, fields: 0 },
 })
 
 const isAdmin = (req, res, next) => {
@@ -71,7 +71,7 @@ const isAdmin = (req, res, next) => {
 router.post('/:type/:id/avatar.png', isAdmin, upload.single('avatar'), asyncWrap(async (req, res, next) => {
   await req.app.get('storage').setAvatar({
     owner: { id: req.params.id, type: req.params.type },
-    buffer: req.file.buffer
+    buffer: req.file.buffer,
   })
   res.status(201).send()
 }))

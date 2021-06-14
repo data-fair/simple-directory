@@ -18,40 +18,48 @@
     version="1.0"
     y="0"
     x="0"
-    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)">
+    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
+  >
     <defs
-      id="defs10">
+      id="defs10"
+    >
       <filter
         id="filter4918"
         style="color-interpolation-filters:sRGB;"
-        inkscape:label="Drop Shadow">
+        inkscape:label="Drop Shadow"
+      >
         <feFlood
           id="feFlood4908"
           flood-opacity="0.5"
           flood-color="rgb(0,0,0)"
-          result="flood" />
+          result="flood"
+        />
         <feComposite
           id="feComposite4910"
           in="flood"
           in2="SourceGraphic"
           operator="in"
-          result="composite1" />
+          result="composite1"
+        />
         <feGaussianBlur
           id="feGaussianBlur4912"
           in="composite1"
           stdDeviation="1"
-          result="blur" />
+          result="blur"
+        />
         <feOffset
           id="feOffset4914"
           dx="1"
           dy="1"
-          result="offset" />
+          result="offset"
+        />
         <feComposite
           id="feComposite4916"
           in="SourceGraphic"
           in2="offset"
           operator="over"
-          result="composite2" />
+          result="composite2"
+        />
       </filter>
     </defs>
     <sodipodi:namedview
@@ -70,35 +78,43 @@
       inkscape:pageopacity="0.0"
       showgrid="false"
       inkscape:window-maximized="1"
-      inkscape:current-layer="g844" />
+      inkscape:current-layer="g844"
+    />
     <g
-      id="g844">
+      id="g844"
+    >
       <path
         id="path849-0"
-        :style="`fill:${env.theme.colors.secondary};fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:6.73885536;stroke-linecap:round;stroke-linejoin:round;filter:url(#filter4918)`"
+        :style="`fill:${$vuetify.theme.themes.light.secondary};fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:6.73885536;stroke-linecap:round;stroke-linejoin:round;filter:url(#filter4918)`"
         d="M 42.6875,35.970703 A 19.059981,19.059981 0 0 1 29.966797,40.8125 19.059981,19.059981 0 0 1 17.742188,36.322266 28.071067,28.071067 0 0 0 7.4277344,45.390625 30.902608,30.188471 0 0 0 29.763672,54.732422 30.902608,30.188471 0 0 0 53.001953,44.408203 28.071067,28.071067 0 0 0 42.6875,35.970703 Z"
-        inkscape:connector-curvature="0" />
+        inkscape:connector-curvature="0"
+      />
       <circle
         id="path849-6"
-        :style="`fill:${env.theme.colors.primary};fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.95910001;stroke-linecap:round;stroke-linejoin:round;filter:url(#filter4918)`"
+        :style="`fill:${$vuetify.theme.themes.light.primary};fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.95910001;stroke-linecap:round;stroke-linejoin:round;filter:url(#filter4918)`"
         transform="matrix(1.213572,0.00387111,-0.00387111,1.213572,6.217673,-5.9946115)"
         sodipodi:stroke-cmyk="(0 0 0 0.8)"
         cx="19.524126"
         cy="22.301342"
-        r="12.326291" />
+        r="12.326291"
+      />
     </g>
     <metadata
-      id="metadata7">
+      id="metadata7"
+    >
       <rdf:RDF>
         <cc:Work>
           <dc:format>image/svg+xml</dc:format>
           <dc:type
-            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+            rdf:resource="http://purl.org/dc/dcmitype/StillImage"
+          />
           <cc:license
-            rdf:resource="http://creativecommons.org/licenses/publicdomain/" />
+            rdf:resource="http://creativecommons.org/licenses/publicdomain/"
+          />
           <dc:publisher>
             <cc:Agent
-              rdf:about="http://openclipart.org/">
+              rdf:about="http://openclipart.org/"
+            >
               <dc:title>Openclipart</dc:title>
             </cc:Agent>
           </dc:publisher>
@@ -120,27 +136,30 @@
           </dc:subject>
         </cc:Work>
         <cc:License
-          rdf:about="http://creativecommons.org/licenses/publicdomain/">
+          rdf:about="http://creativecommons.org/licenses/publicdomain/"
+        >
           <cc:permits
-            rdf:resource="http://creativecommons.org/ns#Reproduction" />
+            rdf:resource="http://creativecommons.org/ns#Reproduction"
+          />
           <cc:permits
-            rdf:resource="http://creativecommons.org/ns#Distribution" />
+            rdf:resource="http://creativecommons.org/ns#Distribution"
+          />
           <cc:permits
-            rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+            rdf:resource="http://creativecommons.org/ns#DerivativeWorks"
+          />
         </cc:License>
       </rdf:RDF>
     </metadata>
   </svg>
-
 </template>
 
 <script>
-import { mapState } from 'vuex'
-export default {
-  computed: {
-    ...mapState(['env'])
+  import { mapState } from 'vuex'
+  export default {
+    computed: {
+      ...mapState(['env']),
+    },
   }
-}
 </script>
 
 <style lang="css">
