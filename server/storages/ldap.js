@@ -174,7 +174,7 @@ class LdapStorage {
   }
 
   async createUser(user) {
-    const entry = this._userMapping.to(user)
+    const entry = this._userMapping.to({ ...user, lastName: user.lastName || 'missing' })
     const dn = this._userDN(user)
     if (user.organizations.length && this.ldapParams.members.role.attr) {
       const roleValues = this.ldapParams.members.role.values[user.organizations[0].role]
