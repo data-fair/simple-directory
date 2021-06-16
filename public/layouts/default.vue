@@ -48,7 +48,7 @@
 
         <v-spacer />
         <v-toolbar-items>
-          <template v-if="user.adminMode" value="true">
+          <template v-if="user && user.adminMode" value="true">
             <v-btn
               :to="localePath('admin-users')"
               color="admin"
@@ -188,7 +188,7 @@
                   </v-list-item-title>
                 </v-list-item>
 
-                <v-list-item @click="logout">
+                <v-list-item @click="logout();reload()">
                   <v-list-item-action><v-icon>mdi-logout</v-icon></v-list-item-action>
                   <v-list-item-title>Se déconnecter</v-list-item-title>
                 </v-list-item>
