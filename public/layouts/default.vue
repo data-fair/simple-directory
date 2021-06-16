@@ -1,10 +1,11 @@
 <template>
-  <v-app :class="appClass">
+  <v-app :class="appClass" :style="localePath('login') === $route.path && 'background-color: rgb(245, 245, 245);'">
     <template v-if="localePath('login') === $route.path">
       <v-app-bar
         app
         fixed
-        text
+        dense
+        flat
         color="transparent"
       >
         <v-spacer />
@@ -12,93 +13,13 @@
       </v-app-bar>
     </template>
     <template v-else>
-      <v-navigation-drawer
-        v-model="drawer"
-        fixed
-        app
-      >
-        <v-list>
-          <!-- User-s profile page -->
-          <v-list-item v-if="user" :to="localePath('me')">
-            <v-list-item-action>
-              <v-icon>mdi-account-circle</v-icon>
-            </v-list-item-action>
-            <v-list-item-title>{{ $t('common.myAccount') }}</v-list-item-title>
-          </v-list-item>
-
-          <!-- User's organizations pages (only admin) -->
-          <v-list-item
-            v-for="orga in ((userDetails && userDetails.organizations) || []).filter(o => o.role === 'admin')"
-            :key="orga.id"
-            :to="localePath({name: 'organization-id', params: {id: orga.id}})"
-          >
-            <v-list-item-action>
-              <v-icon>mdi-account-multiple</v-icon>
-            </v-list-item-action>
-            <v-list-item-title>{{ $t('common.organization') + ' ' + orga.name }}</v-list-item-title>
-          </v-list-item>
-
-          <!-- Create organization -->
-          <v-list-item
-            v-if="!env.readonly && userDetails && (userDetails.maxCreatedOrgs || env.defaultMaxCreatedOrgs !== 0)"
-            :to="localePath('create-organization')"
-            color="accent"
-          >
-            <v-list-item-action>
-              <v-icon>mdi-plus</v-icon>
-            </v-list-item-action>
-            <v-list-item-title>
-              {{ $t('common.createOrganization') }}
-            </v-list-item-title>
-          </v-list-item>
-
-          <v-divider />
-
-          <!-- Administration pages -->
-          <v-list-group v-if="user && user.adminMode" value="true">
-            <v-list-item slot="activator" color="admin">
-              <v-list-item-action>
-                <v-icon color="admin">
-                  mdi-shield-check
-                </v-icon>
-              </v-list-item-action>
-              <v-list-item-title>{{ $t('common.administration') }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item :to="localePath('admin-users')" color="admin">
-              <v-list-item-title>{{ $t(`common.users`) }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item :to="localePath('admin-organizations')" color="admin">
-              <v-list-item-title>{{ $t(`common.organizations`) }}</v-list-item-title>
-            </v-list-item>
-          </v-list-group>
-
-          <!-- Documentation pages -->
-          <v-list-group v-if="!embed && docPages.length" value="true">
-            <v-list-item slot="activator">
-              <v-list-item-action>
-                <v-icon>mdi-help-circle</v-icon>
-              </v-list-item-action>
-              <v-list-item-title>{{ $t('common.documentation') }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item
-              v-for="page in docPages"
-              :key="page"
-              :to="localePath({name: 'doc-id', params: {id: page}})"
-            >
-              <v-list-item-title>{{ $t(`doc.${page}.link`) }}</v-list-item-title>
-            </v-list-item>
-          </v-list-group>
-        </v-list>
-      </v-navigation-drawer>
-
       <v-app-bar
         v-if="showToolbar"
-        :color="(user && user.adminMode) ? 'admin' : 'default'"
-        :dark="user && user.adminMode"
         app
+        dense
+        flat
         scroll-off-screen
       >
-        <v-toolbar-side-icon v-if="user" @click.stop="drawer = !drawer" />
         <template v-if="localePath('index') !== $route.path">
           <div class="logo-container">
             <a
@@ -126,52 +47,157 @@
         </template>
 
         <v-spacer />
-
-        <v-btn
-          v-if="env.anonymousContactForm"
-          :to="localePath('contact')"
-          depressed
-        >
-          Nous contacter
-        </v-btn>
-        <v-btn
-          v-if="!user"
-          color="primary"
-          @click="login"
-        >
-          {{ $t('common.logLink') }}
-        </v-btn>
-        <v-menu v-else-if="userDetails" offset-y>
-          <v-btn slot="activator" text>
-            {{ user.name }}
+        <v-toolbar-items>
+          <template v-if="user.adminMode" value="true">
+            <v-btn
+              :to="localePath('admin-users')"
+              color="admin"
+              dark
+              depressed
+            >
+              {{ $t(`common.users`) }}
+            </v-btn>
+            <v-btn
+              :to="localePath('admin-organizations')"
+              color="admin"
+              dark
+              depressed
+            >
+              {{ $t(`common.organizations`) }}
+            </v-btn>
+          </template>
+          <v-btn
+            v-if="env.anonymousContactForm"
+            :to="localePath('contact')"
+            depressed
+          >
+            Nous contacter
           </v-btn>
-          <v-list>
-            <v-list-item @click="logout">
-              <v-list-item-title>{{ $t('common.logout') }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item v-if="user.asAdmin" @click="asAdmin()">
-              <v-list-item-title>{{ $t('common.delAsAdmin') }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item
-              v-if="user.isAdmin && !user.adminMode"
-              color="admin"
-              @click="setAdminMode(true)"
+          <template v-if="initialized">
+            <v-btn
+              v-if="!user"
+              depressed
+              color="primary"
+              @click="login"
             >
-              <v-list-item-title>{{ $t('common.activateAdminMode') }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item
-              v-if="user.isAdmin && user.adminMode"
-              color="admin"
-              @click="setAdminMode(false)"
+              {{ $t('common.logLink') }}
+            </v-btn>
+            <v-menu
+              v-else
+              offset-y
+              nudge-left
+              max-height="510"
             >
-              <v-list-item-title>{{ $t('common.deactivateAdminMode') }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
+              <template #activator="{on}">
+                <v-btn
+                  text
+                  class="px-0"
+                  v-on="on"
+                >
+                  <v-avatar :size="36">
+                    <img :src="`${env.publicUrl}/api/avatars/${activeAccount.type}/${activeAccount.id}/avatar.png`">
+                  </v-avatar>
+                </v-btn>
+              </template>
 
+              <v-list outlined>
+                <v-list-item disabled>
+                  <v-list-item-avatar class="ml-0 my-0">
+                    <v-avatar :size="28">
+                      <img :src="activeAccount.type === 'user' ? `${env.publicUrl}/api/avatars/user/${user.id}/avatar.png` : `${env.publicUrl}/api/avatars/organization/${activeAccount.id}/avatar.png`">
+                    </v-avatar>
+                  </v-list-item-avatar>
+                  <v-list-item-title>{{ activeAccount.type === 'user' ? 'Compte personnel' : activeAccount.name }}</v-list-item-title>
+                </v-list-item>
+
+                <template v-if="user.organizations.length">
+                  <v-subheader>Changer de compte</v-subheader>
+                  <v-list-item
+                    v-if="activeAccount.type !== 'user'"
+                    id="toolbar-menu-switch-user"
+                    @click="switchOrganization()"
+                  >
+                    <v-list-item-avatar class="ml-0 my-0">
+                      <v-avatar :size="28">
+                        <img :src="`${env.publicUrl}/api/avatars/user/${user.id}/avatar.png`">
+                      </v-avatar>
+                    </v-list-item-avatar>
+                    <v-list-item-title>Compte personnel</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item
+                    v-for="organization in user.organizations.filter(o => activeAccount.type === 'user' || activeAccount.id !== o.id)"
+                    :id="'toolbar-menu-switch-orga-' + organization.id"
+                    :key="organization.id"
+                    @click="switchOrganization(organization.id)"
+                  >
+                    <v-list-item-avatar class="ml-0 my-0">
+                      <v-avatar :size="28">
+                        <img :src="`${env.publicUrl}/api/avatars/organization/${organization.id}/avatar.png`">
+                      </v-avatar>
+                    </v-list-item-avatar>
+                    <v-list-item-title>{{ organization.name }}</v-list-item-title>
+                  </v-list-item>
+                  <v-divider />
+                </template>
+                <v-list-item :to="'/me'" :nuxt="true">
+                  <v-list-item-content>
+                    <v-list-item-title>Mon compte</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item
+                  v-if="user.organization"
+                  :to="'/organization/' + user.organization.id"
+                  :nuxt="true"
+                >
+                  <v-list-item-content>
+                    <v-list-item-title>Gestion de l'organisation</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+
+                <!-- toggle admin mode -->
+                <template v-if="user.isAdmin">
+                  <v-divider />
+                  <v-list-item dense>
+                    <v-list-item-action><v-icon>mdi-shield-alert</v-icon></v-list-item-action>
+                    <v-list-item-title style="overflow: visible;">
+                      <v-switch
+                        v-model="user.adminMode"
+                        color="admin"
+                        hide-details
+                        class="mt-0"
+                        label="mode admin"
+                        @change="setAdminMode"
+                      />
+                    </v-list-item-title>
+                  </v-list-item>
+                </template>
+
+                <v-divider />
+
+                <v-list-item v-if="env.darkModeSwitch" dense>
+                  <v-list-item-action><v-icon>mdi-weather-night</v-icon></v-list-item-action>
+                  <v-list-item-title style="overflow: visible;">
+                    <v-switch
+                      v-model="$vuetify.theme.dark"
+                      hide-details
+                      class="mt-0"
+                      label="mode nuit"
+                      color="white"
+                      @change="setDarkCookie"
+                    />
+                  </v-list-item-title>
+                </v-list-item>
+
+                <v-list-item @click="logout">
+                  <v-list-item-action><v-icon>mdi-logout</v-icon></v-list-item-action>
+                  <v-list-item-title>Se déconnecter</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </template>
+        </v-toolbar-items>
         <lang-switcher />
       </v-app-bar>
-      <v-toolbar-side-icon v-else-if="showNav" @click.stop="drawer = !drawer" />
     </template>
 
     <v-content>
@@ -213,7 +239,7 @@
   import eventBus from '../event-bus'
   import logo from '../components/logo.vue'
   import langSwitcher from '../components/lang-switcher.vue'
-  const { mapState, mapActions } = require('vuex')
+  const { mapState, mapGetters, mapActions } = require('vuex')
 
   export default {
     components: { logo, langSwitcher },
@@ -222,15 +248,15 @@
         notification: null,
         showSnackbar: false,
         showNav: this.$route.query && this.$route.query.showNav === 'true',
-        drawer: this.$route.query && this.$route.query.showNav === 'true',
       }
     },
     computed: {
-      ...mapState('session', ['user']),
+      ...mapState('session', ['user', 'initialized']),
       ...mapState(['env', 'userDetails']),
-      docPages() {
+      ...mapGetters('session', ['activeAccount']),
+      /* docPages() {
         return this.user && this.user.isAdmin ? ['about', 'install', 'config', 'use'] : []// ['use']
-      },
+      }, */
       embed() {
         return this.$route.query && this.$route.query.embed === 'true'
       },
@@ -263,7 +289,17 @@
         this.showSnackbar = true
       })
     },
-    methods: mapActions('session', ['logout', 'login', 'setAdminMode', 'asAdmin']),
+    methods: {
+      reload() {
+        window.location.reload()
+      },
+      switchOrganization(orgId) {
+        this.$store.dispatch('session/switchOrganization', orgId)
+        if (!orgId) this.$router.replace('/me')
+        else this.$router.replace(`/organization/${orgId}`)
+      },
+      ...mapActions('session', ['logout', 'login', 'setAdminMode', 'asAdmin']),
+    },
   }
 
 </script>

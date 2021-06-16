@@ -1,5 +1,9 @@
 <template>
-  <v-row justify="space-around" data-iframe-height>
+  <v-row
+    justify="space-around"
+    data-iframe-height
+    class="mt-6"
+  >
     <v-col
       cols="12"
       sm="8"
@@ -8,7 +12,6 @@
       xl="3"
     >
       <v-card
-        outlined
         shaped
         class="pa-2"
       >
@@ -16,7 +19,7 @@
           <h3 :class="{headline: true, 'mb-0': true, 'warning--text': adminMode}">
             {{ stepsTitles[step] || email }}
           </h3>
-          <div :class="`v-card v-sheet v-sheet--outlined theme--${$vuetify.theme.dark ? 'dark' : 'light'} login-logo-container`">
+          <div :class="`v-card v-sheet theme--${$vuetify.theme.dark ? 'dark' : 'light'} login-logo-container`">
             <img v-if="env.theme.logo" :src="env.theme.logo">
             <logo v-else />
           </div>
@@ -81,6 +84,7 @@
               <v-btn
                 :disabled="!email || !password"
                 :color="adminMode ? 'warning' : 'primary'"
+                depressed
                 @click="passwordAuth"
               >
                 {{ $t('common.login') }}
@@ -109,6 +113,7 @@
               <v-btn
                 :disabled="!tosAccepted"
                 color="primary"
+                depressed
                 @click="step='createUser'"
               >
                 {{ $t('common.next') }}
@@ -175,6 +180,7 @@
               <v-btn
                 :disabled="!newUser.password || newUser.password !== newUserPassword2"
                 color="primary"
+                depressed
                 @click="createUser"
               >
                 {{ $t('pages.login.createUserConfirm') }}
@@ -266,6 +272,7 @@
               <v-btn
                 :disabled="!newPassword || newPassword !== newPassword2"
                 color="primary"
+                depressed
                 @click="changePassword"
               >
                 {{ $t('common.validate') }}

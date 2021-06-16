@@ -1,12 +1,12 @@
 <template lang="html">
   <v-container fluid data-iframe-height>
-    <v-row class="mt-3">
+    <v-row class="mt-3 mx-0">
       <h2 class="text-h6 mb-3">
         {{ $t('common.organizations') }} <span v-if="organizations">({{ $n(organizations.count) }})</span>
       </h2>
     </v-row>
 
-    <v-row class="mb-3">
+    <v-row class="mb-3 mx-0">
       <v-text-field
         v-model="q"
         :label="$t('common.search')"

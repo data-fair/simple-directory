@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="pa-0">
-    <v-row class="mt-3">
+    <v-row class="mt-3 mx-0">
       <h3 class="text-h6 my-3">
         {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
       </h3>
@@ -24,16 +24,16 @@
             <v-list-item-title>{{ department.name }}</v-list-item-title>
             <v-list-item-sub-title>{{ $t('common.id') }} = {{ department.id }}</v-list-item-sub-title>
           </v-list-item-content>
-          <v-list-item-action v-if="isAdminOrga">
+          <v-list-item-action v-if="isAdminOrga && !env.readonly">
             <edit-department-menu
-              v-if="!env.readonly"
               :orga="orga"
               :department="department"
               :department-label="departmentLabel"
               @change="$emit('change')"
             />
+          </v-list-item-action>
+          <v-list-item-action v-if="isAdminOrga && !env.readonly" class="ml-0">
             <delete-department-menu
-              v-if="!env.readonly"
               :orga="orga"
               :department="department"
               :department-label="departmentLabel"

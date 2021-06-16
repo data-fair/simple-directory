@@ -17,6 +17,7 @@
       :key="locale"
       :to="switchLocalePath(locale)"
       fab
+      elevation="1"
       small
       nuxt
     >

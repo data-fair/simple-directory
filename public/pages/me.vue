@@ -35,7 +35,7 @@
         name="lastName"
         @keyup.enter="save"
       />
-      <v-row v-if="!env.noBirthday">
+      <v-row v-if="!env.noBirthday" class="mx-0">
         <v-menu
           v-model="birthdayMenu"
           :close-on-content-click="false"
@@ -67,11 +67,11 @@
         </v-menu>
       </v-row>
 
-      <v-row v-if="!env.readonly">
+      <v-row v-if="!env.readonly" class="mx-0">
         <p><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
       </v-row>
 
-      <v-row v-if="userDetails && userDetails.oauth && Object.keys(userDetails.oauth).length">
+      <v-row v-if="userDetails && userDetails.oauth && Object.keys(userDetails.oauth).length" class="mx-0">
         <v-btn
           v-for="oauth of env.oauth.filter(oauth => !!userDetails.oauth[oauth.id])"
           :key="oauth.id"
@@ -88,7 +88,7 @@
         </v-btn>
       </v-row>
 
-      <v-row v-if="!env.readonly">
+      <v-row v-if="!env.readonly" class="mx-0">
         <v-spacer />
         <v-btn color="primary" @click="save">
           {{ $t('common.save') }}

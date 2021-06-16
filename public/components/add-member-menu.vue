@@ -8,8 +8,10 @@
     <template #activator="{on}">
       <v-btn
         :title="$t('pages.organization.addMember')"
-        icon
+        fab
+        small
         color="primary"
+        class="mx-2 mt-2"
         v-on="on"
       >
         <v-icon>mdi-plus</v-icon>

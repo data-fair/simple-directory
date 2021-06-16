@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="pa-0">
-    <v-row class="mt-3">
+    <v-row class="mt-3 mx-0">
       <h3 class="text-h6 my-3">
         {{ $t('common.members') }} <span v-if="members">({{ $n(members.count) }})</span>
       </h3>
@@ -13,7 +13,7 @@
       />
     </v-row>
 
-    <v-row>
+    <v-row class="mx-0">
       <v-text-field
         v-model="q"
         :label="$t('common.search')"
@@ -60,26 +60,23 @@
       <template v-for="(member, i) in members.results">
         <v-list-item :key="member.id">
           <v-list-item-content>
-            <v-list-item-title>{{ member.name }}</v-list-item-title>
-            <v-list-item-sub-title>{{ member.email }}</v-list-item-sub-title>
+            <v-list-item-title>{{ member.name }} ({{ member.email }})</v-list-item-title>
             <v-list-item-sub-title>
               <span>{{ $t('common.role') }} = {{ member.role }}</span>
               <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
             </v-list-item-sub-title>
           </v-list-item-content>
-          <v-list-item-action v-if="isAdminOrga" style="min-width:0;">
+          <v-list-item-action v-if="isAdminOrga && !env.readonly">
             <edit-member-menu
-              v-if="!env.readonly"
               :orga="orga"
               :member="member"
               @save="saveMember"
             />
           </v-list-item-action>
-          <v-list-item-action v-if="user.adminMode" style="min-width:0;">
+          <v-list-item-action v-if="user.adminMode">
             <v-btn
               :title="$t('common.asAdmin')"
               icon
-              class="mx-0"
               @click="asAdmin(member)"
             >
               <v-icon color="warning">
@@ -87,9 +84,8 @@
               </v-icon>
             </v-btn>
           </v-list-item-action>
-          <v-list-item-action v-if="isAdminOrga" style="min-width:0;">
+          <v-list-item-action v-if="isAdminOrga && !env.readonly" class="ml-0">
             <delete-member-menu
-              v-if="!env.readonly"
               :member="member"
               @delete="deleteMember"
             />
