@@ -17,6 +17,7 @@ const session = require('@koumoul/sd-express')({
   cookieDomain: config.sessionDomain,
 })
 const i18n = require('../i18n')
+const debug = require('debug')('app')
 
 const app = express()
 const server = http.createServer(app)
@@ -83,18 +84,23 @@ app.use((err, req, res, next) => {
 })
 
 exports.run = async() => {
+  debug('start run method')
   if (!config.listenWhenReady) {
+    debug('start server')
     server.listen(config.port)
     await eventToPromise(server, 'listening')
   }
 
+  debug('prepare keys')
   const keys = await jwt.init()
   app.set('keys', keys)
   app.use(jwt.router(keys))
 
+  debug('prepare storage')
   const storage = await storages.init()
   app.set('storage', storage)
 
+  debug('prepare mail transport')
   const mailTransport = await mails.init()
   app.set('mailTransport', mailTransport)
 
@@ -115,6 +121,7 @@ exports.run = async() => {
       else next()
     })
 
+    debug('prepare nuxt')
     const nuxt = await require('./nuxt')()
     app.use(session.loginCallback)
     app.use(session.decode)
@@ -123,6 +130,7 @@ exports.run = async() => {
   }
 
   if (config.listenWhenReady) {
+    debug('start server')
     server.listen(config.port)
     await eventToPromise(server, 'listening')
   }
