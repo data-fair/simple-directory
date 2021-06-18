@@ -37,17 +37,20 @@ exports.router = (keys) => {
   publicKey.alg = 'RS256'
   publicKey.use = 'sig'
   router.get('/.well-known/jwks.json', (req, res) => {
-    res.json({ 'keys': [publicKey.toJSON()] })
+    res.json({ keys: [publicKey.toJSON()] })
   })
   return router
 }
 
-exports.sign = (keys, payload, expiresIn, notBefore = 0) => jwt.sign(payload, keys.private, {
-  algorithm: 'RS256',
-  expiresIn,
-  notBefore,
-  keyid: config.kid
-})
+exports.sign = (keys, payload, expiresIn, notBefore) => {
+  const params = {
+    algorithm: 'RS256',
+    expiresIn,
+    keyid: config.kid
+  }
+  if (notBefore) params.notBefore = notBefore
+  return jwt.sign(payload, keys.private, params)
+}
 
 exports.verify = async (keys, token) => asyncVerify(token, keys.public)
 
