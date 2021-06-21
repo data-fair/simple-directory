@@ -42,8 +42,8 @@
   },
   "dependencies": {
     "@koumoul/nuxt-config-inject": "^0.4.10",
-    "@koumoul/sd-express": "^0.18.0",
-    "@koumoul/sd-vue": "^0.19.2",
+    "@koumoul/sd-express": "1.0.0-beta.0",
+    "@koumoul/sd-vue": "1.0.0-beta.0",
     "@koumoul/vue-multianalytics": "^1.10.1",
     "@mdi/font": "^5.1.45",
     "@nuxtjs/axios": "^5.13.6",
