@@ -56,6 +56,7 @@
     "config": "^1.31.0",
     "cookie-parser": "^1.4.3",
     "cookie-universal-nuxt": "^2.1.5",
+    "cookies": "^0.7.3",
     "debug": "^3.2.6",
     "email-validator": "^2.0.4",
     "event-to-promise": "^0.8.0",

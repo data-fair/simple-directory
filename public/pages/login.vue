@@ -395,7 +395,10 @@
       async passwordAuth() {
         try {
           const link = await this.$axios.$post('api/auth/password', { email: this.email, password: this.password, adminMode: this.adminMode }, { params: { redirect: this.redirectUrl } })
-          window.location.href = link
+          // NOTE: this will not be necessary anylonger if we remove the deprecated id_token query param
+          const linkUrl = new URL(link)
+          linkUrl.searchParams.delete('id_token')
+          window.location.href = linkUrl.href
         } catch (error) {
           if (error.response.status >= 500) eventBus.$emit('notification', { error })
           else this.passwordErrors = [error.response.data || error.message]

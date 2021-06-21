@@ -12,9 +12,7 @@ const jwt = require('./utils/jwt')
 const limits = require('./utils/limits')
 const session = require('@koumoul/sd-express')({
   directoryUrl: config.publicUrl,
-  publicUrl: config.publicUrl,
   privateDirectoryUrl: 'http://localhost:' + config.port,
-  cookieDomain: config.sessionDomain,
 })
 const i18n = require('../i18n')
 const debug = require('debug')('app')
@@ -22,7 +20,6 @@ const debug = require('debug')('app')
 const app = express()
 const server = http.createServer(app)
 
-app.use(session.cors({}))
 app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))
 app.use(i18n.middleware)
@@ -61,14 +58,13 @@ const fullUser = asyncWrap(async (req, res, next) => {
 
 const apiDocs = require('../contract/api-docs')
 app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))
-app.use('/api/auth', require('./routers/auth').router)
+app.use('/api/auth', session.auth, require('./routers/auth').router)
 app.use('/api/mails', require('./routers/mails'))
 app.use('/api/users', session.auth, fullUser, require('./routers/users'))
 app.use('/api/organizations', session.auth, fullUser, require('./routers/organizations'))
 app.use('/api/invitations', session.auth, fullUser, require('./routers/invitations'))
 app.use('/api/avatars', session.auth, fullUser, require('./routers/avatars'))
 app.use('/api/limits', session.auth, limits.router)
-app.use('/api/session', session.router)
 
 app.use((err, req, res, next) => {
   err.statusCode = err.statusCode || err.status
@@ -123,8 +119,7 @@ exports.run = async() => {
 
     debug('prepare nuxt')
     const nuxt = await require('./nuxt')()
-    app.use(session.loginCallback)
-    app.use(session.decode)
+    app.use(session.auth)
     app.use(nuxt)
     app.set('ui-ready', true)
   }
