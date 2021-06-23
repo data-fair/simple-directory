@@ -330,6 +330,11 @@ router.delete('/asadmin', asyncWrap(async (req, res, next) => {
   res.status(204).send()
 }))
 
+router.get('/me', (req, res) => {
+  if (!req.user) return res.status(404).send()
+  else res.send(req.user)
+})
+
 router.get('/oauth/providers', (req, res) => {
   res.send(oauth.publicProviders)
 })

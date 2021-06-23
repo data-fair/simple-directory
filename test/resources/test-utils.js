@@ -46,7 +46,8 @@ exports.axios = async (test, email) => {
         }
       })
     })
-    axOpts.headers = { Cookie: `id_token=${token};` }
+    const parts = token.split('.')
+    axOpts.headers = { Cookie: `id_token=${parts[0]}.${parts[1]};id_token_sign=${parts[2]}` }
   }
 
   const ax = axios.create(axOpts)
