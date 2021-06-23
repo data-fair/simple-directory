@@ -32,15 +32,14 @@
       v-if="users"
       :headers="headers"
       :items="users.results"
-      :pagination.sync="pagination"
-      :total-items="pagination.totalItems"
+      :options.sync="pagination"
+      :server-items-length="pagination.totalItems"
       :loading="loading"
-      :rows-per-page-items="[10, 25, 100]"
       class="elevation-1"
       item-key="id"
-      rows-per-page-text=""
+      :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
     >
-      <template slot="items" slot-scope="props">
+      <tr slot="item" slot-scope="props">
         <td>
           <v-avatar :size="40">
             <img :src="env.publicUrl + '/api/avatars/user/' + props.item.id + '/avatar.png'">
@@ -106,7 +105,7 @@
             </v-icon>
           </v-btn>
         </template>
-      </template>
+      </tr>
     </v-data-table>
 
     <v-dialog v-model="deleteUserDialog" max-width="500px">
@@ -171,7 +170,7 @@
       deleteUserDialog: false,
       editMaxCreatedOrgsDialog: false,
       q: '',
-      pagination: { page: 1, rowsPerPage: 10, totalItems: 0, descending: false, sortBy: 'email' },
+      pagination: { page: 1, itemsPerPage: 10, totalItems: 0, sortBy: ['email'], sortDesc: [false], multiSort: false, mustSort: true },
       loading: false,
       headers: null,
       newMaxCreatedOrgs: null,
@@ -179,16 +178,16 @@
     }),
     computed: {
       sort() {
-        if (!this.pagination.sortBy) return ''
-        return (this.pagination.descending ? '-' : '') + this.pagination.sortBy
+        if (!this.pagination.sortBy.length) return ''
+        return (this.pagination.sortDesc[0] ? '-' : '') + this.pagination.sortBy[0]
       },
       ...mapState(['env']),
     },
     watch: {
       'pagination.page'() { this.fetchUsers() },
-      'pagination.rowsPerPage'() { this.fetchUsers() },
+      'pagination.itemsPerPage'() { this.fetchUsers() },
       'pagination.sortBy'() { this.fetchUsers() },
-      'pagination.descending'() { this.fetchUsers() },
+      'pagination.sortDesc'() { this.fetchUsers() },
     },
     async mounted() {
       this.fetchUsers()
@@ -218,7 +217,7 @@
         this.loading = true
         try {
           this.users = await this.$axios.$get('api/users',
-                                              { params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.rowsPerPage, sort: this.sort } })
+                                              { params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.itemsPerPage, sort: this.sort } })
           this.pagination.totalItems = this.users.count
         } catch (error) {
           eventBus.$emit('notification', { error })

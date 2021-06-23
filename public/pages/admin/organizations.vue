@@ -23,15 +23,14 @@
       v-if="organizations"
       :headers="headers"
       :items="organizations.results"
-      :pagination.sync="pagination"
-      :total-items="pagination.totalItems"
+      :options.sync="pagination"
+      :server-items-length="pagination.totalItems"
       :loading="loading"
-      :rows-per-page-items="[10, 25, 100]"
       class="elevation-1"
       item-key="id"
-      rows-per-page-text=""
+      :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
     >
-      <template slot="items" slot-scope="props">
+      <tr slot="item" slot-scope="props">
         <td>
           <v-avatar :size="40">
             <img :src="env.publicUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
@@ -49,7 +48,7 @@
               :color="!props.item.limits ? 'default' : (props.item.limits.store_nb_members.consumption >= props.item.limits.store_nb_members.limit ? 'warning' : 'primary')"
               :dark="!!props.item.limits"
               small
-              round
+              rounded
               class="mt-2 text-lowercase"
               @click="currentOrganization = props.item;currentLimits = JSON.parse(JSON.stringify(props.item.limits));limitOrganizationDialog = true"
             >
@@ -94,7 +93,7 @@
             </v-btn>
           </td>
         </template>
-      </template>
+      </tr>
     </v-data-table>
 
     <v-dialog v-model="deleteOrganizationDialog" max-width="500px">
@@ -154,22 +153,22 @@
       deleteOrganizationDialog: false,
       limitOrganizationDialog: false,
       q: '',
-      pagination: { page: 1, rowsPerPage: 10, totalItems: 0, descending: false, sortBy: 'name' },
+      pagination: { page: 1, itemsPerPage: 10, totalItems: 0, sortDesc: [false], sortBy: ['name'], multiSort: false, mustSort: true },
       loading: false,
       headers: null,
     }),
     computed: {
       sort() {
-        if (!this.pagination.sortBy) return ''
-        return (this.pagination.descending ? '-' : '') + this.pagination.sortBy
+        if (!this.pagination.sortBy.length) return ''
+        return (this.pagination.sortDesc[0] ? '-' : '') + this.pagination.sortBy[0]
       },
       ...mapState(['env']),
     },
     watch: {
       'pagination.page'() { this.fetchOrganizations() },
-      'pagination.rowsPerPage'() { this.fetchOrganizations() },
+      'pagination.itemsPerPage'() { this.fetchOrganizations() },
       'pagination.sortBy'() { this.fetchOrganizations() },
-      'pagination.descending'() { this.fetchOrganizations() },
+      'pagination.sortDesc'() { this.fetchOrganizations() },
     },
     async mounted() {
       this.fetchOrganizations()
@@ -191,8 +190,9 @@
       async fetchOrganizations() {
         this.loading = true
         try {
-          this.organizations = await this.$axios.$get('api/organizations',
-                                                      { params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.rowsPerPage, sort: this.sort } })
+          this.organizations = await this.$axios.$get('api/organizations', {
+            params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.itemsPerPage, sort: this.sort },
+          })
           this.pagination.totalItems = this.organizations.count
         } catch (error) {
           eventBus.$emit('notification', { error })

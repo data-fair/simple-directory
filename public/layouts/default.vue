@@ -172,6 +172,16 @@
                   </v-list-item>
                 </template>
 
+                <!-- leave admin impersonification of a user -->
+                <template v-if="user.asAdmin">
+                  <v-divider />
+                  <v-list-item dense @click="asAdmin()">
+                    <v-list-item-title style="overflow: visible;">
+                      {{ $t('common.delAsAdmin') }}
+                    </v-list-item-title>
+                  </v-list-item>
+                </template>
+
                 <v-divider />
 
                 <v-list-item v-if="env.darkModeSwitch" dense>
@@ -200,7 +210,7 @@
       </v-app-bar>
     </template>
 
-    <v-content>
+    <v-main>
       <v-container fluid>
         <nuxt />
       </v-container>
@@ -227,7 +237,7 @@
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </v-snackbar>
-    </v-content>
+    </v-main>
     <v-footer v-if="!embed" class="pa-3">
       <v-spacer />
       <div>Powered by <a href="https://koumoul-dev.github.io/simple-directory/">Simple Directory</a></div>

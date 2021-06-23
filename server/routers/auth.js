@@ -299,49 +299,35 @@ router.get('/anonymous-action', asyncWrap(async (req, res, next) => {
 
 // create a session has a user but from a super admin session
 router.post('/asadmin', asyncWrap(async (req, res, next) => {
-  const idToken = (req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop())
-  if (!idToken) {
-    return res.status(401).send('No id_token cookie provided')
-  }
-  let decoded
-  try {
-    decoded = await jwt.verify(req.app.get('keys'), idToken)
-  } catch (err) {
-    return res.status(401).send('Invalid id_token')
-  }
-  if (!decoded.isAdmin) return res.status(403).send('This functionality is for admins only')
+  if (!req.user) return res.status(401).send('No active session to keep alive')
+  if (!req.user.isAdmin) return res.status(403).send('This functionality is for admins only')
   const storage = req.app.get('storage')
   const user = await storage.getUser({ id: req.body.id })
   if (!user) return res.status(404).send('User does not exist')
   const payload = jwt.getPayload(user)
   payload.name += ' (administration)'
-  payload.asAdmin = { id: decoded.id, name: decoded.name }
+  payload.asAdmin = { id: req.user.id, name: req.user.name }
   payload.isAdmin = false
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
-  res.send(token)
+  setCookieToken(req, res, token)
+
+  res.status(204).send()
 }))
 
 router.delete('/asadmin', asyncWrap(async (req, res, next) => {
-  const idToken = (req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop())
-  if (!idToken) {
-    return res.status(401).send('No id_token cookie provided')
-  }
-  let decoded
-  try {
-    decoded = await jwt.verify(req.app.get('keys'), idToken)
-  } catch (err) {
-    return res.status(401).send('Invalid id_token')
-  }
-  if (!decoded.asAdmin) return res.status(403).send('This functionality is for admins only')
+  if (!req.user) return res.status(401).send('No active session to keep alive')
+  if (!req.user.asAdmin) return res.status(403).send('This functionality is for admins only')
   const storage = req.app.get('storage')
-  const user = await storage.getUser({ id: decoded.asAdmin.id })
+  const user = await storage.getUser({ id: req.user.asAdmin.id })
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = jwt.getPayload(user)
   payload.adminMode = true
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
-  res.send(token)
+  setCookieToken(req, res, token)
+
+  res.status(204).send()
 }))
 
 router.get('/oauth/providers', (req, res) => {

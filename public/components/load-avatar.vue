@@ -1,5 +1,5 @@
 <template>
-  <v-list-item avatar>
+  <v-list-item>
     <v-list-item-avatar size="50">
       <v-img v-if="owner && !loading" :src="owner.avatarUrl" />
     </v-list-item-avatar>

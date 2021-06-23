@@ -6,10 +6,7 @@
   >
     <v-col
       cols="12"
-      sm="8"
-      md="6"
-      lg="4"
-      xl="3"
+      style="max-width: 500px;"
     >
       <v-card
         shaped

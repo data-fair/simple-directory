@@ -55,6 +55,7 @@ module.exports = {
     checkInbox: 'Vérifiez votre boite mail',
     spamWarning: 'Si vous n\'avez pas reçu de mail, vérifiez qu\'il n\'a pas été classé automatiquement en tant que spam.',
     validate: 'Valider',
+    delete: 'Supprimer',
     department: 'Département',
     departments: 'Départements',
     autoAdmin: 'M\'ajouter automatiquement comme administrateur',

@@ -22,7 +22,7 @@
         <v-list-item :key="department.id">
           <v-list-item-content>
             <v-list-item-title>{{ department.name }}</v-list-item-title>
-            <v-list-item-sub-title>{{ $t('common.id') }} = {{ department.id }}</v-list-item-sub-title>
+            <v-list-item-subtitle>{{ $t('common.id') }} = {{ department.id }}</v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action v-if="isAdminOrga && !env.readonly">
             <edit-department-menu

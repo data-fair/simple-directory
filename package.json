@@ -88,6 +88,7 @@
     "seedrandom": "^3.0.5",
     "shortid": "^2.2.13",
     "simple-oauth2": "^3.4.0",
+    "tinycolor2": "^1.4.2",
     "vue-cropperjs": "^4.1.0",
     "vue-moment": "^4.1.0",
     "vuetify": "^2.5.3"

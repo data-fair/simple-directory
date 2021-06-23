@@ -61,10 +61,10 @@
         <v-list-item :key="member.id">
           <v-list-item-content>
             <v-list-item-title>{{ member.name }} ({{ member.email }})</v-list-item-title>
-            <v-list-item-sub-title>
+            <v-list-item-subtitle>
               <span>{{ $t('common.role') }} = {{ member.role }}</span>
               <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
-            </v-list-item-sub-title>
+            </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action v-if="isAdminOrga && !env.readonly">
             <edit-member-menu
