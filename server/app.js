@@ -61,8 +61,8 @@ const fullUser = asyncWrap(async (req, res, next) => {
 const basePath = new URL(config.publicUrl).pathname
 app.use('/api', (req, res, next) => {
   const u = originalUrl(req)
-  req.baseUrl = u.full ? formatUrl({ protocol: u.protocol, hostname: u.hostname, port: u.port, pathname: basePath.slice(0, -1) }) : config.publicUrl
-  req.basePath = basePath
+  req.publicBaseUrl = u.full ? formatUrl({ protocol: u.protocol, hostname: u.hostname, port: u.port, pathname: basePath.slice(0, -1) }) : config.publicUrl
+  req.publicBasePath = basePath
   next()
 })
 const apiDocs = require('../contract/api-docs')

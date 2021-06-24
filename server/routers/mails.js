@@ -69,7 +69,7 @@ router.post('/contact', asyncWrap(async (req, res) => {
     if (!req.body.token) return res.status(401).send()
 
     // 1rst level of anti-spam prevention, no cross origin requests on this route
-    if (req.headers.origin && !req.baseUrl.startsWith(req.headers.origin)) {
+    if (req.headers.origin && !req.publicBaseUrl.startsWith(req.headers.origin)) {
       return res.status(405).send('Appel depuis un domaine extérieur non supporté')
     }
 
