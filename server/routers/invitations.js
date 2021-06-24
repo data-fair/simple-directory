@@ -31,7 +31,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (!req.user.isAdmin && (!orga || orga.role !== 'admin')) return res.status(403).send(req.messages.errors.permissionDenied)
   const token = jwt.sign(req.app.get('keys'), invitation, config.jwtDurations.invitationToken)
 
-  const linkUrl = new URL(config.publicUrl + '/api/invitations/_accept')
+  const linkUrl = new URL(req.baseUrl + '/api/invitations/_accept')
   linkUrl.searchParams.set('invit_token', token)
   await mails.send({
     transport: req.app.get('mailTransport'),
@@ -46,7 +46,7 @@ router.post('', asyncWrap(async (req, res, next) => {
 router.get('/_accept', asyncWrap(async (req, res, next) => {
   let invit
   let verified
-  const errorUrl = new URL(`${config.publicUrl}/login`)
+  const errorUrl = new URL(`${req.baseUrl}/login`)
   try {
     invit = await jwt.verify(req.app.get('keys'), req.query.invit_token)
     verified = true
@@ -79,7 +79,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
     return res.redirect(errorUrl.href)
   }
 
-  let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${config.publicUrl}/invitation`)
+  let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${req.baseUrl}/invitation`)
   redirectUrl.searchParams.set('email', invit.email)
   redirectUrl.searchParams.set('id_token_org', invit.id)
 
@@ -92,7 +92,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
       payload.action = 'changePassword'
       const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
       const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${config.publicUrl}/login`)
+      redirectUrl = new URL(`${req.baseUrl}/login`)
       redirectUrl.searchParams.set('step', 'changePassword')
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
@@ -103,7 +103,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
     }
     if (!req.user || req.user.email !== invit.email) {
       const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${config.publicUrl}/login`)
+      redirectUrl = new URL(`${req.baseUrl}/login`)
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
@@ -136,7 +136,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
       payload.action = 'changePassword'
       const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
       const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${config.publicUrl}/login`)
+      redirectUrl = new URL(`${req.baseUrl}/login`)
       redirectUrl.searchParams.set('step', 'changePassword')
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)

@@ -56,7 +56,7 @@ router.get('/:organizationId', asyncWrap(async (req, res, next) => {
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   orga.roles = orga.roles || config.roles.defaults
-  orga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
+  orga.avatarUrl = req.baseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
   res.send(orga)
 }))
 
@@ -88,7 +88,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   await storage.createOrganization(orga, req.user)
   if (!req.user.isAdmin || req.query.autoAdmin !== 'false') await storage.addMember(orga, req.user, 'admin')
   webhooks.postIdentity('organization', orga)
-  orga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
+  orga.avatarUrl = req.baseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
   res.status(201).send(orga)
 }))
 
@@ -106,7 +106,7 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body, req.user)
   if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
   webhooks.postIdentity('organization', patchedOrga)
-  patchedOrga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + patchedOrga.id + '/avatar.png'
+  patchedOrga.avatarUrl = req.baseUrl + '/api/avatars/organization/' + patchedOrga.id + '/avatar.png'
   res.send(patchedOrga)
 }))
 

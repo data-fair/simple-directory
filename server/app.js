@@ -5,6 +5,8 @@ const bodyParser = require('body-parser')
 const http = require('http')
 const util = require('util')
 const eventToPromise = require('event-to-promise')
+const originalUrl = require('original-url')
+const { format: formatUrl } = require('url')
 const storages = require('./storages')
 const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
@@ -27,7 +29,6 @@ app.use((req, res, next) => {
   if (!req.app.get('api-ready')) res.status(503).send(req.messages.errors.serviceUnavailable)
   else next()
 })
-
 // Replaces req.user from session with full and fresh user object from storage
 // also minimalist api key management
 const fullUser = asyncWrap(async (req, res, next) => {
@@ -56,9 +57,17 @@ const fullUser = asyncWrap(async (req, res, next) => {
   next()
 })
 
+// set current baseUrl, i.e. the url of simple-directory on the current user's domain
+const basePath = new URL(config.publicUrl).pathname
+app.use('/api', (req, res, next) => {
+  const u = originalUrl(req)
+  req.baseUrl = u.full ? formatUrl({ protocol: u.protocol, hostname: u.hostname, port: u.port, pathname: basePath.slice(0, -1) }) : config.publicUrl
+  req.basePath = basePath
+  next()
+})
 const apiDocs = require('../contract/api-docs')
 app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))
-app.use('/api/auth', session.auth, require('./routers/auth').router)
+app.use('/api/auth', session.auth, fullUser, require('./routers/auth').router)
 app.use('/api/mails', require('./routers/mails'))
 app.use('/api/users', session.auth, fullUser, require('./routers/users'))
 app.use('/api/organizations', session.auth, fullUser, require('./routers/organizations'))
@@ -129,6 +138,14 @@ exports.run = async() => {
     server.listen(config.port)
     await eventToPromise(server, 'listening')
   }
+
+  if (process.env.NODE_ENV === 'development') {
+    const server2 = http.createServer(app)
+    console.log(`listen on secondary port ${config.port + 1} to simulate multi-domain exposition`)
+    server2.listen(config.port + 1)
+    await eventToPromise(server2, 'listening')
+  }
+
   return app
 }
 

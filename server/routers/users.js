@@ -65,7 +65,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   // email is already taken, send a conflict email
   const user = await req.app.get('storage').getUserByEmail(req.body.email)
   if (user && user.emailConfirmed !== false) {
-    const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
+    const link = req.query.redirect || config.defaultLoginRedirect || req.baseUrl
     const linkUrl = new URL(link)
     await mails.send({
       transport: req.app.get('mailTransport'),
@@ -88,7 +88,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   // the user will be validated and authenticated at the same time by the exchange route
   const payload = jwt.getPayload(newUser)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-  const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
+  const link = (req.query.redirect || config.defaultLoginRedirect || req.baseUrl + '/me?id_token=') + encodeURIComponent(token)
   const linkUrl = new URL(link)
   await mails.send({
     transport: req.app.get('mailTransport'),
@@ -106,7 +106,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
   const user = await req.app.get('storage').getUser({ id: req.params.userId })
   if (!user) return res.status(404).send()
   user.isAdmin = config.admins.includes(user.email)
-  user.avatarUrl = config.publicUrl + '/api/avatars/user/' + user.id + '/avatar.png'
+  user.avatarUrl = req.baseUrl + '/api/avatars/user/' + user.id + '/avatar.png'
   res.json(user)
 }))
 
@@ -130,7 +130,7 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
   }
   const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
   if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
-  patchedUser.avatarUrl = config.publicUrl + '/api/avatars/user/' + patchedUser.id + '/avatar.png'
+  patchedUser.avatarUrl = req.baseUrl + '/api/avatars/user/' + patchedUser.id + '/avatar.png'
   res.send(patchedUser)
 }))
 

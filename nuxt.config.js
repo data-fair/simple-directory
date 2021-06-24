@@ -62,8 +62,7 @@ module.exports = {
   }]],
   buildModules: ['@nuxtjs/vuetify'],
   axios: {
-    browserBaseURL: config.publicUrl + '/',
-    baseURL: `http://localhost:${config.port}/`,
+    browserBaseURL: config.basePath,
   },
   vuetify: {
     theme: {
@@ -85,6 +84,7 @@ module.exports = {
   },
   env: {
     publicUrl: config.publicUrl,
+    basePath: config.basePath,
     theme: config.theme,
     homePage: config.homePage,
     maildev: config.maildev,

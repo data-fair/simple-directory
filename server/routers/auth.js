@@ -68,7 +68,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
 
   const returnError = (error, errorCode) => {
-    if (req.is('application/x-www-form-urlencoded')) res.redirect(`${config.publicUrl}/login?error=${error}`)
+    if (req.is('application/x-www-form-urlencoded')) res.redirect(`${req.baseUrl}/login?error=${error}`)
     else res.status(errorCode).send(req.messages.errors[error])
   }
 
@@ -100,7 +100,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   setCookieToken(req, res, token)
 
-  const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me')
+  const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || req.baseUrl + '/me')
 
   // WARNING: setting new token in query param is deprecated and will be removed soon
   linkUrl.searchParams.set('id_token', token)
@@ -127,7 +127,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   const user = await storage.getUserByEmail(req.body.email)
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
-    const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
+    const link = req.query.redirect || config.defaultLoginRedirect || req.baseUrl
     const linkUrl = new URL(link)
     await mails.send({
       transport: req.app.get('mailTransport'),
@@ -142,7 +142,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   const payload = jwt.getPayload(user)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
 
-  const linkUrl = new URL(config.publicUrl + '/api/auth/passwordless_callback')
+  const linkUrl = new URL(req.baseUrl + '/api/auth/token_callback')
   linkUrl.searchParams.set('id_token', token)
   if (req.query.redirect) linkUrl.searchParams.set('redirect', req.query.redirect)
   debug(`Passwordless authentication of user ${user.name}`)
@@ -156,14 +156,14 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   res.status(204).send()
 }))
 
-router.get('/passwordless_callback', asyncWrap(async (req, res, next) => {
+router.get('/token_callback', asyncWrap(async (req, res, next) => {
   const payload = jwt.decode(req.query.id_token, { complete: true })
   const storage = req.app.get('storage')
   const user = await storage.getUserById(payload.id)
   if (!user || user.emailConfirmed === false) return res.status(400, req.messages.errors.badCredentials)
   await confirmLog(storage, user)
   setCookieToken(req, res, req.query.id_token)
-  res.redirect(req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me')
+  res.redirect(req.query.redirect || config.defaultLoginRedirect || req.baseUrl + '/me')
 }))
 
 // Used to extend an older but still valid token from a user
@@ -255,7 +255,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   const user = await storage.getUserByEmail(req.body.email)
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
-    const link = req.body.target || config.defaultLoginRedirect || (config.publicUrl + '/login')
+    const link = req.body.target || config.defaultLoginRedirect || (req.baseUrl + '/login')
     const linkUrl = new URL(link)
     await mails.send({
       transport: req.app.get('mailTransport'),
@@ -270,7 +270,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   const payload = jwt.getPayload(user)
   payload.action = req.body.action
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-  const linkUrl = new URL(req.body.target || config.defaultLoginRedirect || config.publicUrl + '/login')
+  const linkUrl = new URL(req.body.target || config.defaultLoginRedirect || req.baseUrl + '/login')
   linkUrl.searchParams.set('action_token', token)
 
   await mails.send({
@@ -341,8 +341,11 @@ router.get('/oauth/providers', (req, res) => {
 
 router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
-  if (!provider) return res.redirect(`${config.publicUrl}/login?error=unknownOAuthProvider`)
-  res.redirect(provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || config.publicUrl))
+  if (!provider) return res.redirect(`${req.baseUrl}/login?error=unknownOAuthProvider`)
+  if (req.query.redirect && new URL(req.query.redirect).host !== new URL(req.baseUrl).host) {
+    return res.status(401).send('redirect host does not match authentication domain')
+  }
+  res.redirect(provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || req.baseUrl))
 }))
 
 router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
@@ -409,9 +412,10 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   setCookieToken(req, res, token)
 
-  // WARNING: setting new token in query param is deprecated and will be removed soon
-  const linkUrl = new URL(target)
+  const tokenCallbackUrl = new URL(target).host + req.basePath + '/api/auth/token_callback'
+  const linkUrl = new URL(tokenCallbackUrl)
   linkUrl.searchParams.set('id_token', token)
+  linkUrl.searchParams.set('redirect', target)
   debug(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 }))
