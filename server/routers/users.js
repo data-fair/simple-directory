@@ -36,6 +36,7 @@ router.get('', asyncWrap(async (req, res, next) => {
 }))
 
 const createKeys = ['firstName', 'lastName', 'email', 'password', 'birthday']
+// TODO: block when onlyCreateInvited is true ?
 router.post('', asyncWrap(async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
@@ -97,6 +98,8 @@ router.post('', asyncWrap(async (req, res, next) => {
     to: req.body.email,
     params: { link, host: linkUrl.host, origin: linkUrl.origin },
   })
+
+  // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
   return res.status(204).send()
 }))
 
