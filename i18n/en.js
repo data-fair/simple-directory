@@ -179,7 +179,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       confirmEditDepartmentTitle: 'Edit {name}',
       confirmDeleteDepartmentTitle: 'Delete {name}',
       confirmDeleteDepartmentMsg: `Are you you want to delete {name} from your organization ?`,
-      departmentIdInvalid: 'Identifier should contain anly letters, numbers and spaces'
+      departmentIdInvalid: 'Identifier should contain anly letters, numbers and spaces',
+      inviteLink: 'In case of problem in the communication by email you can send the confirmation link below by another means. Warning ! You risk inserting an incorrect or non-functional email address in the user database. This email address may cause multiple problems later: change of password, sending alerts, etc.'
     },
     invitation: {
       title: 'Invitation validated',

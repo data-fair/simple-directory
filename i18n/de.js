@@ -179,7 +179,8 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       confirmEditDepartmentTitle: 'Bearbeiten {name}',
       confirmDeleteDepartmentTitle: '{name} entfernen',
       confirmDeleteDepartmentMsg: `Möchten Sie {name} wirklich aus Ihrer Organisation entfernen?`,
-      departmentIdInvalid: 'Der Bezeichner darf nur Buchstaben, Zahlen und Leerzeichen enthalten.'
+      departmentIdInvalid: 'Der Bezeichner darf nur Buchstaben, Zahlen und Leerzeichen enthalten.',
+      inviteLink: 'Bei Problemen bei der Kommunikation per E-Mail können Sie den untenstehenden Bestätigungslink auf andere Weise senden. Warnung ! Sie riskieren das Einfügen einer falschen oder nicht funktionierenden E-Mail-Adresse in die Benutzerdatenbank. Diese E-Mail-Adresse kann später mehrere Probleme verursachen: Passwortänderung, Senden von Benachrichtigungen usw.'
     },
     invitation: {
       title: 'Einladung validiert',

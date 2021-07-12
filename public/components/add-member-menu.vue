@@ -1,5 +1,5 @@
 <template>
-  <v-menu v-if="isAdminOrga && members && members.results" v-model="menu" :close-on-content-click="false" max-width="500px">
+  <v-menu v-if="isAdminOrga && members && members.results" v-model="menu" :close-on-content-click="false" :max-width="link ? '800px' : '500px'">
     <template v-slot:activator="{on}">
       <v-btn :title="$t('pages.organization.addMember')" icon color="primary" v-on="on">
         <v-icon>mdi-plus</v-icon>
@@ -40,11 +40,15 @@
             clearable
           />
         </v-form>
+        <v-alert :value="!!link" type="warning" outline>
+          <p>{{ $t('pages.organization.inviteLink') }}</p>
+          <p style="word-break: break-all;">{{ link }}</p>
+        </v-alert>
       </v-card-text>
       <v-card-actions>
         <v-spacer/>
         <v-btn flat @click="menu=false">{{ $t('common.confirmCancel') }}</v-btn>
-        <v-btn :disabled="disableInvite || !invitation.email || !invitation.role" color="warning" @click="menu = false; confirmInvitation()">{{ $t('common.confirmOk') }}</v-btn>
+        <v-btn :disabled="disableInvite || !invitation.email || !invitation.role" color="warning" @click="confirmInvitation()">{{ $t('common.confirmOk') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-menu>
@@ -59,7 +63,8 @@ export default {
   data: () => ({
     menu: false,
     invitation: { id: null, email: null, role: null, department: null, redirect: null },
-    validInvitation: true
+    validInvitation: true,
+    link: null
   }),
   computed: {
     ...mapState(['env'])
@@ -68,15 +73,22 @@ export default {
     menu() {
       if (!this.menu) return
       this.invitation = { id: this.orga.id, name: this.orga.name, email: '', role: null, department: null, redirect: this.$route.query.redirect }
+      this.link = null
       if (this.$refs.inviteForm) this.$refs.inviteForm.reset()
     }
   },
   methods: {
     async confirmInvitation() {
       if (this.$refs.inviteForm.validate()) {
-        this.menu = false
         try {
-          await this.$axios.$post(`api/invitations/`, this.invitation)
+          const res = await this.$axios.$post(`api/invitations/`, this.invitation)
+          console.log(res)
+          console.log(!!res.link)
+          if (res && res.link) {
+            this.link = res.link
+          } else {
+            this.menu = false
+          }
           eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', { email: this.invitation.email }))
         } catch (error) {
           eventBus.$emit('notification', { error })

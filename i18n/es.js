@@ -179,7 +179,8 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       confirmEditDepartmentTitle: 'Editar {name}',
       confirmDeleteDepartmentTitle: 'Eliminar {name}',
       confirmDeleteDepartmentMsg: `¿Está seguro de que desea eliminar a {name} de su organización?`,
-      departmentIdInvalid: 'El identificador debe contener solo letras, números y espacios.'
+      departmentIdInvalid: 'El identificador debe contener solo letras, números y espacios.',
+      inviteLink: 'En caso de problema en la comunicación por correo electrónico puede enviar el enlace de confirmación a continuación por otro medio. Atención ! Corre el riesgo de insertar una dirección de correo electrónico incorrecta o no funcional en la base de datos de usuarios. Esta dirección de correo electrónico puede causar varios problemas posteriormente: cambio de contraseña, envío de alertas, etc.'
     },
     invitation: {
       title: 'Invitación validada',
