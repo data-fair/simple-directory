@@ -127,7 +127,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       users: {
         noCreatedOrgsLimit: `Les utilisateurs peuvent créer un nombre indéfini d'organisations.`,
         createdOrgsLimit: `Les utilisateurs peuvent créer {defaultMaxCreatedOrgs} organisation(s) par défaut.`,
-        explainLimit: `Définissez une valeur pour limiter le nombre d'organisations que cet utilisateur peut créer. -1 pour un nombre indéterminé. Videz le champs pour retomber sur la valeur par défaut ({defaultMaxCreatedOrgs}).`
+        explainLimit: `Définissez une valeur pour limiter le nombre d'organisations que cet utilisateur peut créer. -1 pour un nombre indéterminé. Videz le champs pour retomber sur la valeur par défaut ({defaultMaxCreatedOrgs}).`,
+        editUserEmailTitle: `Changez l'adresse email de l'utilisateur {name}`,
+        editUserEmailText: `Attention ! L'email est une clé importante de l'utilisateur, en modifiant cette information vous courez le risque d'insérer une adresse erronée, non fonctionnelle ou incohérente avec d'autres saisies. Cette fonctionnalité est présentée uniquement aux administrateurs pour débloquer un utilisateur dont la boite mail devient inaccessible.`
       },
       organizations: {
         limitOrganizationTitle: `Modifiez les limites de l'organisation`,

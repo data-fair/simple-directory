@@ -126,7 +126,9 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       users: {
         noCreatedOrgsLimit: 'Gli utenti possono creare un numero qualsiasi di organizzazioni.',
         createdOrgsLimit: 'Gli utenti possono creare organizzazioni predefinite {defaultMaxCreatedOrgs}.',
-        explainLimit: 'Impostare un valore per limitare il numero di organizzazioni che questo utente può creare. -1 per qualsiasi numero. Cancellare il campo per tornare al valore di default ({defaultMaxCreatedOrgs}).'
+        explainLimit: 'Impostare un valore per limitare il numero di organizzazioni che questo utente può creare. -1 per qualsiasi numero. Cancellare il campo per tornare al valore di default ({defaultMaxCreatedOrgs}).',
+        editUserEmailTitle: `Cambia l'indirizzo email dell'utente {name}`,
+        editUserEmailText: `Attenzione! La posta elettronica è una chiave utente importante, modificando queste informazioni si corre il rischio di inserire un indirizzo errato, non funzionante o incoerente con altre voci. Questa funzione viene presentata solo agli amministratori per sbloccare un utente la cui casella di posta diventa inaccessibile.`
       },
       organizations: {
         limitOrganizationTitle: "Cambiare i confini dell'organizzazione.",

@@ -126,7 +126,9 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       users: {
         noCreatedOrgsLimit: `The users can create an indeterminate number of organizations.`,
         createdOrgsLimit: `The users can create {defaultMaxCreatedOrgs} organization(s) by default.`,
-        explainLimit: `Define a value to limit the number of organizations the user can create. -1 for an indeterminate value. Empty the field to fallback on the default value ({defaultMaxCreatedOrgs}).`
+        explainLimit: `Define a value to limit the number of organizations the user can create. -1 for an indeterminate value. Empty the field to fallback on the default value ({defaultMaxCreatedOrgs}).`,
+        editUserEmailTitle: `Change the email address of the user {name}`,
+        editUserEmailText: `Warning! Email is an important user key, by modifying this information you run the risk of inserting an incorrect, non-functional or inconsistent address with other entries. This feature is only presented to administrators to unblock a user whose mailbox becomes inaccessible.`
       },
       organizations: {
         limitOrganizationTitle: `Edit the limits of the organization`,

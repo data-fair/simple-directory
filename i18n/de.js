@@ -126,7 +126,9 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       users: {
         noCreatedOrgsLimit: `Benutzer können eine beliebige Anzahl von Organisationen erstellen.`,
         createdOrgsLimit: `Benutzer können {defaultMaxCreatedOrgs} Standardorganisation(en) erstellen.`,
-        explainLimit: `Legen Sie einen Wert fest, um die Anzahl der Organisationen zu begrenzen, die dieser Benutzer erstellen kann. -1 für eine beliebige Anzahl. Löschen Sie das Feld, um zum Standardwert zurückzukehren ({defaultMaxCreatedOrgs}).`
+        explainLimit: `Legen Sie einen Wert fest, um die Anzahl der Organisationen zu begrenzen, die dieser Benutzer erstellen kann. -1 für eine beliebige Anzahl. Löschen Sie das Feld, um zum Standardwert zurückzukehren ({defaultMaxCreatedOrgs}).`,
+        editUserEmailTitle: `Ändere die E-Mail-Adresse des Benutzers {name}`,
+        editUserEmailText: `Warnung! E-Mail ist ein wichtiger Benutzerschlüssel. Durch das Ändern dieser Informationen laufen Sie Gefahr, eine falsche, nicht funktionierende oder inkonsistente Adresse mit anderen Einträgen einzufügen. Diese Funktion wird nur Administratoren angeboten, um die Blockierung eines Benutzers aufzuheben, auf dessen Postfach nicht mehr zugegriffen werden kann.`
       },
       organizations: {
         limitOrganizationTitle: `Organisatorische Grenzen ändern`,

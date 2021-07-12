@@ -112,7 +112,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
 
 // Update some parts of a user as himself
 const patchKeys = ['firstName', 'lastName', 'birthday']
-const adminKeys = ['maxCreatedOrgs']
+const adminKeys = ['maxCreatedOrgs', 'email']
 router.patch('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (!req.user.isAdmin && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
