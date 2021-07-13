@@ -42,7 +42,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     params
   })
 
-  if (req.user.adminMode || req.user.asAdmin) {
+  if (req.user.isAdmin || req.user.asAdmin) {
     return res.send(params)
   }
   res.status(201).send()
