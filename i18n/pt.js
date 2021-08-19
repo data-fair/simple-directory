@@ -124,9 +124,11 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
   pages: {
     admin: {
       users: {
-        noCreatedOrgsLimit: 'Os utilizadores podem criar qualquer número de organizações.',
-        createdOrgsLimit: 'Os utilizadores podem criar {defaultMaxCreatedOrgs} organização(ões) predefinida(s).',
-        explainLimit: 'Definir um valor para limitar o número de organizações que este utilizador pode criar. -1 para qualquer número. Limpar o campo para voltar ao valor por defeito ({defaultMaxCreatedOrgs}).',
+        noCreatedOrgsLimit: `Os utilizadores podem criar qualquer número de organizações.`,
+        createdOrgsLimit: `Os utilizadores podem criar {defaultMaxCreatedOrgs} organização(ões) predefinida(s).`,
+        explainLimit: `Definir um valor para limitar o número de organizações que este utilizador pode criar. -1 para qualquer número. Limpar o campo para voltar ao valor por defeito ({defaultMaxCreatedOrgs}).`,
+        editUserEmailTitle: `Altere o endereço de e-mail do usuário {name}`,
+        editUserEmailText: `Aviso! O e-mail é uma chave de usuário importante, ao modificar essas informações você corre o risco de inserir um endereço incorreto, não funcional ou inconsistente com outras entradas. Este recurso é apresentado apenas aos administradores para desbloquear um usuário cuja caixa de correio se torna inacessível.`
       },
       organizations: {
         limitOrganizationTitle: 'Mudar os limites organizacionais',
@@ -180,6 +182,7 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       confirmDeleteDepartmentTitle: 'Apagar {name}',
       confirmDeleteDepartmentMsg: 'Quer mesmo apagar o {name} da sua organização?',
       departmentIdInvalid: 'O identificador deve conter apenas letras, números e espaços.',
+      inviteLink: 'Em caso de problema na comunicação por e-mail você pode enviar o link de confirmação abaixo por outro meio. Aviso ! Você corre o risco de inserir um endereço de e-mail incorreto ou não funcional no banco de dados do usuário. Este endereço de e-mail pode causar vários problemas posteriormente: alteração de senha, envio de alertas, etc.'
     },
     invitation: {
       title: 'Convite validado',

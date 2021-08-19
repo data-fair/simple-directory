@@ -42,12 +42,15 @@ exports.router = (keys) => {
   return router
 }
 
-exports.sign = (keys, payload, expiresIn, notBefore = 0) => jwt.sign(payload, keys.private, {
-  algorithm: 'RS256',
-  expiresIn,
-  notBefore,
-  keyid: config.kid,
-})
+exports.sign = (keys, payload, expiresIn, notBefore) => {
+  const params = {
+    algorithm: 'RS256',
+    expiresIn,
+    keyid: config.kid
+  }
+  if (notBefore) params.notBefore = notBefore
+  return jwt.sign(payload, keys.private, params)
+}
 
 exports.verify = async (keys, token) => asyncVerify(token, keys.public)
 

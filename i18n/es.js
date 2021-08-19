@@ -124,9 +124,11 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
   pages: {
     admin: {
       users: {
-        noCreatedOrgsLimit: 'Los usuarios pueden crear cualquier número de organizaciones.',
-        createdOrgsLimit: 'Los usuarios pueden crear {defaultMaxCreatedOrgs} organizacione(s) predeterminadas.',
-        explainLimit: 'Establezca un valor para limitar la cantidad de organizaciones que este usuario puede crear. -1 para un número no especificado. Vacíe el campo para volver al valor predeterminado ({defaultMaxCreatedOrgs}).',
+        noCreatedOrgsLimit: `Los usuarios pueden crear cualquier número de organizaciones.`,
+        createdOrgsLimit: `Los usuarios pueden crear {defaultMaxCreatedOrgs} organizacione(s) predeterminadas.`,
+        explainLimit: `Establezca un valor para limitar la cantidad de organizaciones que este usuario puede crear. -1 para un número no especificado. Vacíe el campo para volver al valor predeterminado ({defaultMaxCreatedOrgs}).`,
+        editUserEmailTitle: `Cambiar la dirección de correo electrónico del usuario {nombre}`,
+        editUserEmailText: `¡Advertencia! El correo electrónico es una clave de usuario importante, al modificar esta información, corre el riesgo de insertar una dirección incorrecta, no funcional o inconsistente con otras entradas. Esta función solo se presenta a los administradores para desbloquear a un usuario cuyo buzón se vuelve inaccesible.`
       },
       organizations: {
         limitOrganizationTitle: 'Cambiar los límites organizacionales',
@@ -178,8 +180,9 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       deleteDepartment: 'Eliminar {departmentLabel}',
       confirmEditDepartmentTitle: 'Editar {name}',
       confirmDeleteDepartmentTitle: 'Eliminar {name}',
-      confirmDeleteDepartmentMsg: '¿Está seguro de que desea eliminar a {name} de su organización?',
+      confirmDeleteDepartmentMsg: `¿Está seguro de que desea eliminar a {name} de su organización?`,
       departmentIdInvalid: 'El identificador debe contener solo letras, números y espacios.',
+      inviteLink: 'En caso de problema en la comunicación por correo electrónico puede enviar el enlace de confirmación a continuación por otro medio. Atención ! Corre el riesgo de insertar una dirección de correo electrónico incorrecta o no funcional en la base de datos de usuarios. Esta dirección de correo electrónico puede causar varios problemas posteriormente: cambio de contraseña, envío de alertas, etc.'
     },
     invitation: {
       title: 'Invitación validada',

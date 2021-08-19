@@ -45,7 +45,15 @@
             <img :src="env.publicUrl + '/api/avatars/user/' + props.item.id + '/avatar.png'">
           </v-avatar>
         </td>
-        <td>{{ props.item.email }}</td>
+        <td>
+          <span style="white-space: nowrap;">
+            {{ props.item.email }}
+            <v-btn icon class="mx-0" @click="showEditUserEmailDialog(props.item)">
+              <v-icon small>mdi-pencil</v-icon>
+            </v-btn>
+          </span>
+
+        </td>
         <td>{{ props.item.id }}</td>
         <td>{{ props.item.firstName }}</td>
         <td>{{ props.item.lastName }}</td>
@@ -63,7 +71,7 @@
             class="mx-0"
             @click="showEditMaxCreatedOrgsDialog(props.item)"
           >
-            <v-icon>mdi-pencil</v-icon>
+            <v-icon small>mdi-pencil</v-icon>
           </v-btn>
         </td>
         <template v-if="!env.readonly">
@@ -128,6 +136,25 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="editUserEmailDialog" max-width="500px">
+      <v-card v-if="currentUser">
+        <v-card-title class="title">
+          {{ $t('pages.admin.users.editUserEmailTitle', {name: currentUser.name}) }}
+        </v-card-title>
+        <v-card-text>
+          <v-alert :value="true" type="error">
+            {{ $t('pages.admin.users.editUserEmailText') }}
+          </v-alert>
+          <v-text-field v-model="email" />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn flat @click="editUserEmailDialog = false">{{ $t('common.confirmCancel') }}</v-btn>
+          <v-btn color="warning" @click="editUserEmailDialog = false;saveUserEmail(currentUser, email)">{{ $t('common.confirmOk') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="editMaxCreatedOrgsDialog" max-width="500px">
       <v-card v-if="currentUser">
         <v-card-title class="text-h6">
@@ -167,8 +194,10 @@
     data: () => ({
       users: null,
       currentUser: null,
+      email: null,
       deleteUserDialog: false,
       editMaxCreatedOrgsDialog: false,
+      editUserEmailDialog: false,
       q: '',
       pagination: { page: 1, itemsPerPage: 10, totalItems: 0, sortBy: ['email'], sortDesc: [false], multiSort: false, mustSort: true },
       loading: false,
@@ -245,6 +274,19 @@
         try {
           await this.$axios.$patch(`api/users/${user.id}`, { maxCreatedOrgs: newMaxCreatedOrgs })
           this.$set(user, 'maxCreatedOrgs', newMaxCreatedOrgs)
+        } catch (error) {
+          eventBus.$emit('notification', { error })
+        }
+      },
+      async showEditUserEmailDialog(user) {
+        this.currentUser = user
+        this.email = user.email
+        this.editUserEmailDialog = true
+      },
+      async saveUserEmail(user, email) {
+        try {
+          await this.$axios.$patch(`api/users/${user.id}`, { email })
+          this.$set(user, 'email', email)
         } catch (error) {
           eventBus.$emit('notification', { error })
         }

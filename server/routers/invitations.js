@@ -33,13 +33,18 @@ router.post('', asyncWrap(async (req, res, next) => {
 
   const linkUrl = new URL(req.publicBaseUrl + '/api/invitations/_accept')
   linkUrl.searchParams.set('invit_token', token)
+  const params = { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin }
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'invitation',
     messages: req.messages,
     to: req.body.email,
-    params: { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin },
+    params
   })
+
+  if (req.user.isAdmin || req.user.asAdmin) {
+    return res.send(params)
+  }
   res.status(201).send()
 }))
 

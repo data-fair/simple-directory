@@ -1,4 +1,11 @@
 <mjml>
+  <mj-head>
+    <mj-style>
+      .raw-link div {
+        word-break: break-all !important;
+      }
+    </mj-style>
+  </mj-head>
   <mj-body>
     <mj-section>
       <mj-column>
@@ -12,7 +19,7 @@
         <mj-text font-size="14px" font-weight="500" line-height="21px" color="#212121" font-family="helvetica" padding-top="25px">
           {htmlAlternativeLink}
         </mj-text>
-        <mj-text font-size="10px" font-weight="400" line-height="14px" color="#424242" font-family="helvetica" padding-top="0px">
+        <mj-text font-size="10px" font-weight="400" line-height="14px" color="#424242" font-family="helvetica" padding-top="0px" css-class="raw-link">
           {link}
         </mj-text>
         <mj-divider border-width="1px" border-color="#757575" padding-top="20px"></mj-divider>
