@@ -54,9 +54,15 @@
             clearable
           />
         </v-form>
-        <v-alert :value="!!link" type="warning" outline>
+        <v-alert
+          :value="!!link"
+          type="warning"
+          outline
+        >
           <p>{{ $t('pages.organization.inviteLink') }}</p>
-          <p style="word-break: break-all;">{{ link }}</p>
+          <p style="word-break: break-all;">
+            {{ link }}
+          </p>
         </v-alert>
       </v-card-text>
       <v-card-actions>
@@ -86,7 +92,7 @@
       menu: false,
       invitation: { id: null, email: null, role: null, department: null, redirect: null },
       validInvitation: true,
-      link: null
+      link: null,
     }),
     computed: {
       ...mapState(['env']),
@@ -103,7 +109,7 @@
       async confirmInvitation() {
         if (this.$refs.inviteForm.validate()) {
           try {
-            await this.$axios.$post('api/invitations/', this.invitation)
+            const res = await this.$axios.$post('api/invitations/', this.invitation)
             if (res && res.link) {
               this.link = res.link
             } else {

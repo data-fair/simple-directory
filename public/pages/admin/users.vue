@@ -48,11 +48,14 @@
         <td>
           <span style="white-space: nowrap;">
             {{ props.item.email }}
-            <v-btn icon class="mx-0" @click="showEditUserEmailDialog(props.item)">
+            <v-btn
+              icon
+              class="mx-0"
+              @click="showEditUserEmailDialog(props.item)"
+            >
               <v-icon small>mdi-pencil</v-icon>
             </v-btn>
           </span>
-
         </td>
         <td>{{ props.item.id }}</td>
         <td>{{ props.item.firstName }}</td>
@@ -71,7 +74,9 @@
             class="mx-0"
             @click="showEditMaxCreatedOrgsDialog(props.item)"
           >
-            <v-icon small>mdi-pencil</v-icon>
+            <v-icon small>
+              mdi-pencil
+            </v-icon>
           </v-btn>
         </td>
         <template v-if="!env.readonly">
@@ -138,7 +143,7 @@
 
     <v-dialog v-model="editUserEmailDialog" max-width="500px">
       <v-card v-if="currentUser">
-        <v-card-title class="title">
+        <v-card-title class="text-h6">
           {{ $t('pages.admin.users.editUserEmailTitle', {name: currentUser.name}) }}
         </v-card-title>
         <v-card-text>
@@ -148,9 +153,13 @@
           <v-text-field v-model="email" />
         </v-card-text>
         <v-card-actions>
-          <v-spacer/>
-          <v-btn flat @click="editUserEmailDialog = false">{{ $t('common.confirmCancel') }}</v-btn>
-          <v-btn color="warning" @click="editUserEmailDialog = false;saveUserEmail(currentUser, email)">{{ $t('common.confirmOk') }}</v-btn>
+          <v-spacer />
+          <v-btn flat @click="editUserEmailDialog = false">
+            {{ $t('common.confirmCancel') }}
+          </v-btn>
+          <v-btn color="warning" @click="editUserEmailDialog = false;saveUserEmail(currentUser, email)">
+            {{ $t('common.confirmOk') }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

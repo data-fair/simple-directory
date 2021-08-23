@@ -124,11 +124,11 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
   pages: {
     admin: {
       users: {
-        noCreatedOrgsLimit: `The users can create an indeterminate number of organizations.`,
-        createdOrgsLimit: `The users can create {defaultMaxCreatedOrgs} organization(s) by default.`,
-        explainLimit: `Define a value to limit the number of organizations the user can create. -1 for an indeterminate value. Empty the field to fallback on the default value ({defaultMaxCreatedOrgs}).`,
-        editUserEmailTitle: `Change the email address of the user {name}`,
-        editUserEmailText: `Warning! Email is an important user key, by modifying this information you run the risk of inserting an incorrect, non-functional or inconsistent address with other entries. This feature is only presented to administrators to unblock a user whose mailbox becomes inaccessible.`
+        noCreatedOrgsLimit: 'The users can create an indeterminate number of organizations.',
+        createdOrgsLimit: 'The users can create {defaultMaxCreatedOrgs} organization(s) by default.',
+        explainLimit: 'Define a value to limit the number of organizations the user can create. -1 for an indeterminate value. Empty the field to fallback on the default value ({defaultMaxCreatedOrgs}).',
+        editUserEmailTitle: 'Change the email address of the user {name}',
+        editUserEmailText: 'Warning! Email is an important user key, by modifying this information you run the risk of inserting an incorrect, non-functional or inconsistent address with other entries. This feature is only presented to administrators to unblock a user whose mailbox becomes inaccessible.',
       },
       organizations: {
         limitOrganizationTitle: 'Edit the limits of the organization',
@@ -180,9 +180,9 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       deleteDepartment: 'Delete {departmentLabel}',
       confirmEditDepartmentTitle: 'Edit {name}',
       confirmDeleteDepartmentTitle: 'Delete {name}',
-      confirmDeleteDepartmentMsg: `Are you you want to delete {name} from your organization ?`,
+      confirmDeleteDepartmentMsg: 'Are you you want to delete {name} from your organization ?',
       departmentIdInvalid: 'Identifier should contain anly letters, numbers and spaces',
-      inviteLink: 'In case of problem in the communication by email you can send the confirmation link below by another means. Warning ! You risk inserting an incorrect or non-functional email address in the user database. This email address may cause multiple problems later: change of password, sending alerts, etc.'
+      inviteLink: 'In case of problem in the communication by email you can send the confirmation link below by another means. Warning ! You risk inserting an incorrect or non-functional email address in the user database. This email address may cause multiple problems later: change of password, sending alerts, etc.',
     },
     invitation: {
       title: 'Invitation validated',

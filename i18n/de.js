@@ -124,11 +124,11 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
   pages: {
     admin: {
       users: {
-        noCreatedOrgsLimit: `Benutzer können eine beliebige Anzahl von Organisationen erstellen.`,
-        createdOrgsLimit: `Benutzer können {defaultMaxCreatedOrgs} Standardorganisation(en) erstellen.`,
-        explainLimit: `Legen Sie einen Wert fest, um die Anzahl der Organisationen zu begrenzen, die dieser Benutzer erstellen kann. -1 für eine beliebige Anzahl. Löschen Sie das Feld, um zum Standardwert zurückzukehren ({defaultMaxCreatedOrgs}).`,
-        editUserEmailTitle: `Ändere die E-Mail-Adresse des Benutzers {name}`,
-        editUserEmailText: `Warnung! E-Mail ist ein wichtiger Benutzerschlüssel. Durch das Ändern dieser Informationen laufen Sie Gefahr, eine falsche, nicht funktionierende oder inkonsistente Adresse mit anderen Einträgen einzufügen. Diese Funktion wird nur Administratoren angeboten, um die Blockierung eines Benutzers aufzuheben, auf dessen Postfach nicht mehr zugegriffen werden kann.`
+        noCreatedOrgsLimit: 'Benutzer können eine beliebige Anzahl von Organisationen erstellen.',
+        createdOrgsLimit: 'Benutzer können {defaultMaxCreatedOrgs} Standardorganisation(en) erstellen.',
+        explainLimit: 'Legen Sie einen Wert fest, um die Anzahl der Organisationen zu begrenzen, die dieser Benutzer erstellen kann. -1 für eine beliebige Anzahl. Löschen Sie das Feld, um zum Standardwert zurückzukehren ({defaultMaxCreatedOrgs}).',
+        editUserEmailTitle: 'Ändere die E-Mail-Adresse des Benutzers {name}',
+        editUserEmailText: 'Warnung! E-Mail ist ein wichtiger Benutzerschlüssel. Durch das Ändern dieser Informationen laufen Sie Gefahr, eine falsche, nicht funktionierende oder inkonsistente Adresse mit anderen Einträgen einzufügen. Diese Funktion wird nur Administratoren angeboten, um die Blockierung eines Benutzers aufzuheben, auf dessen Postfach nicht mehr zugegriffen werden kann.',
       },
       organizations: {
         limitOrganizationTitle: 'Organisatorische Grenzen ändern',
@@ -180,9 +180,9 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       deleteDepartment: 'Löschen {departmentLabel}',
       confirmEditDepartmentTitle: 'Bearbeiten {name}',
       confirmDeleteDepartmentTitle: '{name} entfernen',
-      confirmDeleteDepartmentMsg: `Möchten Sie {name} wirklich aus Ihrer Organisation entfernen?`,
+      confirmDeleteDepartmentMsg: 'Möchten Sie {name} wirklich aus Ihrer Organisation entfernen?',
       departmentIdInvalid: 'Der Bezeichner darf nur Buchstaben, Zahlen und Leerzeichen enthalten.',
-      inviteLink: 'Bei Problemen bei der Kommunikation per E-Mail können Sie den untenstehenden Bestätigungslink auf andere Weise senden. Warnung ! Sie riskieren das Einfügen einer falschen oder nicht funktionierenden E-Mail-Adresse in die Benutzerdatenbank. Diese E-Mail-Adresse kann später mehrere Probleme verursachen: Passwortänderung, Senden von Benachrichtigungen usw.'
+      inviteLink: 'Bei Problemen bei der Kommunikation per E-Mail können Sie den untenstehenden Bestätigungslink auf andere Weise senden. Warnung ! Sie riskieren das Einfügen einer falschen oder nicht funktionierenden E-Mail-Adresse in die Benutzerdatenbank. Diese E-Mail-Adresse kann später mehrere Probleme verursachen: Passwortänderung, Senden von Benachrichtigungen usw.',
     },
     invitation: {
       title: 'Einladung validiert',

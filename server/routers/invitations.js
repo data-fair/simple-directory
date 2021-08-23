@@ -39,7 +39,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     key: 'invitation',
     messages: req.messages,
     to: req.body.email,
-    params
+    params,
   })
 
   if (req.user.isAdmin || req.user.asAdmin) {

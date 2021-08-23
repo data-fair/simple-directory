@@ -17,9 +17,9 @@
         :close-on-content-click="false"
         :close-on-click="false"
       >
-        <template #activator="{on}">
+        <!--<template #activator="{on}">
           <span />
-        </template>
+        </template>-->
         <v-card width="700">
           <v-card-title class="text-h6" v-text="$t('pages.avatar.prepare')" />
           <v-card-text class="py-0">
