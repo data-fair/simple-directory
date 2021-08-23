@@ -3,30 +3,28 @@ const path = require('path')
 const util = require('util')
 const { exec } = require('child_process')
 const execAsync = util.promisify(exec)
-const fs = require('fs')
-const readFileAsync = util.promisify(fs.readFile)
-const accessAsync = util.promisify(fs.access)
+const fs = require('fs-extra')
 const express = require('express')
 const jwt = require('jsonwebtoken')
 const asyncVerify = util.promisify(jwt.verify)
 const JSONWebKey = require('json-web-key')
-const mkdirp = require('mkdirp-promise')
 
 exports.init = async () => {
   const keys = {}
   const privateKeyPath = path.resolve(__dirname, '../..', config.secret.private)
   const publicKeyPath = path.resolve(__dirname, '../..', config.secret.public)
   try {
-    await accessAsync(privateKeyPath, fs.constants.F_OK)
+    await fs.access(privateKeyPath, fs.constants.F_OK)
   } catch (err) {
     if (err.code !== 'ENOENT') throw (err)
     console.log(`Private key ${privateKeyPath} doesn't exist. Create it with openssl.`)
-    await mkdirp(path.dirname(privateKeyPath))
+    await fs.ensureDir(path.dirname(privateKeyPath))
+    await fs.ensureDir(path.dirname(publicKeyPath))
     await execAsync(`openssl genpkey -algorithm RSA -out ${privateKeyPath} -pkeyopt rsa_keygen_bits:2048`)
     await execAsync(`openssl rsa -in ${privateKeyPath} -outform PEM -pubout -out  ${publicKeyPath}`)
   }
-  keys.private = await readFileAsync(privateKeyPath)
-  keys.public = await readFileAsync(publicKeyPath)
+  keys.private = await fs.readFile(privateKeyPath)
+  keys.public = await fs.readFile(publicKeyPath)
   return keys
 }
 
@@ -46,7 +44,7 @@ exports.sign = (keys, payload, expiresIn, notBefore) => {
   const params = {
     algorithm: 'RS256',
     expiresIn,
-    keyid: config.kid
+    keyid: config.kid,
   }
   if (notBefore) params.notBefore = notBefore
   return jwt.sign(payload, keys.private, params)

@@ -75,7 +75,6 @@
     "material-design-icons-iconfont": "^5.0.1",
     "memoizee": "^0.4.15",
     "mjml": "^4.8.1",
-    "mkdirp-promise": "^5.0.1",
     "mongodb": "^3.6.4",
     "multer": "^1.4.2",
     "no-avatar": "^1.0.1",
