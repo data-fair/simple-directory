@@ -206,7 +206,7 @@
             </v-menu>
           </template>
         </v-toolbar-items>
-        <lang-switcher />
+        <lang-switcher class="ml-2" />
       </v-app-bar>
     </template>
 

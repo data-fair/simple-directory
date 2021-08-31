@@ -62,7 +62,15 @@
                 name="password"
                 type="password"
                 class="mt-4 hide-autofill"
+                hide-details="auto"
                 @keyup.enter="passwordAuth"
+              />
+              <v-checkbox
+                id="rememberMe"
+                v-model="rememberMe"
+                :class="passwordErrors.length ? 'mt-0' : 'mt-1'"
+                dense
+                :label="$t('pages.login.rememberMe')"
               />
               <v-row v-if="!env.onlyCreateInvited && !adminMode" class="mx-0">
                 <p class="mb-2">
@@ -341,6 +349,7 @@
         createUserErrors: [],
         newUserPassword2: null,
         error: this.$route.query.error,
+        rememberMe: true,
       }
     },
     computed: {
@@ -381,7 +390,10 @@
       },
       async passwordlessAuth() {
         try {
-          await this.$axios.$post('api/auth/passwordless', { email: this.email }, { params: { redirect: this.redirectUrl } })
+          await this.$axios.$post('api/auth/passwordless', {
+            email: this.email,
+            rememberMe: this.rememberMe,
+          }, { params: { redirect: this.redirectUrl } })
           this.emailErrors = []
           this.step = 'emailConfirmed'
         } catch (error) {
@@ -391,7 +403,12 @@
       },
       async passwordAuth() {
         try {
-          const link = await this.$axios.$post('api/auth/password', { email: this.email, password: this.password, adminMode: this.adminMode }, { params: { redirect: this.redirectUrl } })
+          const link = await this.$axios.$post('api/auth/password', {
+            email: this.email,
+            password: this.password,
+            adminMode: this.adminMode,
+            rememberMe: this.rememberMe,
+          }, { params: { redirect: this.redirectUrl } })
           // NOTE: this will not be necessary anylonger if we remove the deprecated id_token query param
           const linkUrl = new URL(link)
           linkUrl.searchParams.delete('id_token')

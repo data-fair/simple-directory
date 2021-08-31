@@ -46,9 +46,17 @@ function setCookieToken (req, res, token) {
   const cookies = new Cookies(req, res)
   const parts = token.split('.')
   const opts = { sameSite: 'lax' }
-  if (!payload.adminMode) opts.expires = new Date(payload.exp * 1000)
+  if (payload.rememberMe) opts.expires = new Date(payload.exp * 1000)
   cookies.set('id_token', parts[0] + '.' + parts[1], { ...opts, httpOnly: false })
   cookies.set('id_token_sign', parts[2], { ...opts, httpOnly: true })
+  // set the same params to id_token_org cookie so that it doesn't expire before the rest
+  if (cookies.get('id_token_org')) {
+    if (payload.organizations.find(o => o.id === cookies.get('id_token_org'))) {
+      cookies.set('id_token_org', cookies.get('id_token_org'), { ...opts, httpOnly: false })
+    } else {
+      cookies.set('id_token_org', null)
+    }
+  }
 }
 
 async function confirmLog (storage, user) {
@@ -95,6 +103,8 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (req.body.adminMode) {
     if (payload.isAdmin) payload.adminMode = true
     else return returnError('adminModeOnly', 403)
+  } else if (req.body.rememberMe) {
+    payload.rememberMe = true
   }
   await confirmLog(storage, user)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
@@ -140,6 +150,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   }
 
   const payload = jwt.getPayload(user)
+  if (req.body.rememberMe) payload.rememberMe = true
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
 
   const linkUrl = new URL(req.publicBaseUrl + '/api/auth/token_callback')
@@ -199,6 +210,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
       }
     }
   }
+  if (decoded.rememberMe) payload.rememberMe = true
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name}`)
 
@@ -235,6 +247,7 @@ router.delete('/', (req, res) => {
   const cookies = new Cookies(req, res)
   cookies.set('id_token', null)
   cookies.set('id_token_sign', null)
+  cookies.set('id_token_org', null)
   res.status(204).send()
 })
 

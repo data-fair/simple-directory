@@ -162,6 +162,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       adminMode: 'Confirmez votre identité pour passer en mode administration.',
       oauth: 'Connectez vous avec :',
       error: 'Erreur',
+      rememberMe: 'se souvenir de moi',
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
