@@ -100,6 +100,7 @@
 
           <v-window-item value="tos">
             <v-card-text>
+              <p v-if="host !== mainHost" v-html="$t('pages.login.separateDomain', {host, mainHost})" />
               <p v-html="$t('pages.login.tosMsg', {tosUrl: env.tosUrl})" />
               <v-checkbox
                 v-model="tosAccepted"
@@ -368,6 +369,12 @@
         if (this.org) return `${this.env.publicUrl}/api/avatars/organization/${this.org}/avatar.png`
         if (this.env.theme.logo) return this.env.theme.logo
         return null
+      },
+      host() {
+        return window.location.host
+      },
+      mainHost() {
+        return new URL(this.env.publicUrl).host
       },
     },
     created() {
