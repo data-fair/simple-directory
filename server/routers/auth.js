@@ -41,7 +41,7 @@ const limiter = (req) => {
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
 // the header and payload are not httpOnly to be readable by client
 // all cookies use sameSite for CSRF prevention
-function setCookieToken (req, res, token) {
+function setCookieToken (req, res, token, org) {
   const payload = jwt.decode(token, { complete: true })
   const cookies = new Cookies(req, res)
   const parts = token.split('.')
@@ -50,9 +50,10 @@ function setCookieToken (req, res, token) {
   cookies.set('id_token', parts[0] + '.' + parts[1], { ...opts, httpOnly: false })
   cookies.set('id_token_sign', parts[2], { ...opts, httpOnly: true })
   // set the same params to id_token_org cookie so that it doesn't expire before the rest
-  if (cookies.get('id_token_org')) {
-    if (payload.organizations.find(o => o.id === cookies.get('id_token_org'))) {
-      cookies.set('id_token_org', cookies.get('id_token_org'), { ...opts, httpOnly: false })
+  org = org || cookies.get('id_token_org')
+  if (org) {
+    if (payload.organizations.find(o => o.id === org)) {
+      cookies.set('id_token_org', org, { ...opts, httpOnly: false })
     } else {
       cookies.set('id_token_org', null)
     }
@@ -108,7 +109,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   }
   await confirmLog(storage, user)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-  setCookieToken(req, res, token)
+  setCookieToken(req, res, token, req.body.org)
 
   const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
 
@@ -155,6 +156,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 
   const linkUrl = new URL(req.publicBaseUrl + '/api/auth/token_callback')
   linkUrl.searchParams.set('id_token', token)
+  if (req.body.org) linkUrl.searchParams.set('id_token_org', req.body.org)
   if (req.query.redirect) linkUrl.searchParams.set('redirect', req.query.redirect)
   debug(`Passwordless authentication of user ${user.name}`)
   await mails.send({
@@ -173,7 +175,7 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
   const user = await storage.getUserById(payload.id)
   if (!user || user.emailConfirmed === false) return res.status(400, req.messages.errors.badCredentials)
   await confirmLog(storage, user)
-  setCookieToken(req, res, req.query.id_token)
+  setCookieToken(req, res, req.query.id_token, req.query.id_token_org)
   res.redirect(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
 }))
 

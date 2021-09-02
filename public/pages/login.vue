@@ -17,7 +17,7 @@
             {{ stepsTitles[step] || email }}
           </h3>
           <div :class="`v-card v-sheet theme--${$vuetify.theme.dark ? 'dark' : 'light'} login-logo-container`">
-            <img v-if="env.theme.logo" :src="env.theme.logo">
+            <img v-if="logoUrl" :src="logoUrl">
             <logo v-else />
           </div>
         </v-card-title>
@@ -338,6 +338,7 @@
         passwordErrors: [],
         actionToken: this.$route.query.action_token,
         adminMode: this.$route.query.adminMode === 'true',
+        org: this.$route.query.org,
         newPassword: null,
         newPassword2: null,
         newPasswordErrors: [],
@@ -362,6 +363,11 @@
       actionPayload() {
         if (!this.actionToken) return
         return jwtDecode(this.actionToken)
+      },
+      logoUrl() {
+        if (this.org) return `${this.env.publicUrl}/api/avatars/organization/${this.org}/avatar.png`
+        if (this.env.theme.logo) return this.env.theme.logo
+        return null
       },
     },
     created() {
@@ -394,6 +400,7 @@
           await this.$axios.$post('api/auth/passwordless', {
             email: this.email,
             rememberMe: this.rememberMe,
+            org: this.org,
           }, { params: { redirect: this.redirectUrl } })
           this.emailErrors = []
           this.step = 'emailConfirmed'
@@ -409,6 +416,7 @@
             password: this.password,
             adminMode: this.adminMode,
             rememberMe: this.rememberMe && !this.adminMode,
+            org: this.org,
           }, { params: { redirect: this.redirectUrl } })
           // NOTE: this will not be necessary anylonger if we remove the deprecated id_token query param
           const linkUrl = new URL(link)
@@ -421,7 +429,11 @@
       },
       async changePasswordAction() {
         try {
-          await this.$axios.$post('api/auth/action', { email: this.email, action: 'changePassword', target: window.location.href })
+          await this.$axios.$post('api/auth/action', {
+            email: this.email,
+            action: 'changePassword',
+            target: window.location.href,
+          })
           this.step = 'changePasswordSent'
         } catch (error) {
           eventBus.$emit('notification', { error })
@@ -429,7 +441,9 @@
       },
       async changePassword() {
         try {
-          await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, { password: this.newPassword }, { params: { action_token: this.actionToken } })
+          await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, {
+            password: this.newPassword,
+          }, { params: { action_token: this.actionToken } })
           const link = await this.$axios.$post('api/auth/password', { email: this.email, password: this.newPassword }, { params: { redirect: this.redirectUrl } })
           window.location.href = link
         } catch (error) {
