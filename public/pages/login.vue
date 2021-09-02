@@ -66,6 +66,7 @@
                 @keyup.enter="passwordAuth"
               />
               <v-checkbox
+                v-if="!adminMode"
                 id="rememberMe"
                 v-model="rememberMe"
                 :class="passwordErrors.length ? 'mt-0' : 'mt-1'"
@@ -407,7 +408,7 @@
             email: this.email,
             password: this.password,
             adminMode: this.adminMode,
-            rememberMe: this.rememberMe,
+            rememberMe: this.rememberMe && !this.adminMode,
           }, { params: { redirect: this.redirectUrl } })
           // NOTE: this will not be necessary anylonger if we remove the deprecated id_token query param
           const linkUrl = new URL(link)
