@@ -5,9 +5,8 @@ const emailValidator = require('email-validator')
 const bodyParser = require('body-parser')
 const requestIp = require('request-ip')
 const shortid = require('shortid')
-const Cookies = require('cookies')
 const { RateLimiterMongo, RateLimiterMemory } = require('rate-limiter-flexible')
-const jwt = require('../utils/jwt')
+const tokens = require('../utils/tokens')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
 const passwords = require('../utils/passwords')
@@ -36,28 +35,6 @@ const limiter = (req) => {
     _limiter = _limiter || new RateLimiterMemory(limiterOptions)
   }
   return _limiter
-}
-
-// Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
-// the header and payload are not httpOnly to be readable by client
-// all cookies use sameSite for CSRF prevention
-function setCookieToken (req, res, token, org) {
-  const payload = jwt.decode(token, { complete: true })
-  const cookies = new Cookies(req, res)
-  const parts = token.split('.')
-  const opts = { sameSite: 'lax' }
-  if (payload.rememberMe) opts.expires = new Date(payload.exp * 1000)
-  cookies.set('id_token', parts[0] + '.' + parts[1], { ...opts, httpOnly: false })
-  cookies.set('id_token_sign', parts[2], { ...opts, httpOnly: true })
-  // set the same params to id_token_org cookie so that it doesn't expire before the rest
-  org = org || cookies.get('id_token_org')
-  if (org) {
-    if (payload.organizations.find(o => o.id === org)) {
-      cookies.set('id_token_org', org, { ...opts, httpOnly: false })
-    } else {
-      cookies.set('id_token_org', null)
-    }
-  }
 }
 
 async function confirmLog (storage, user) {
@@ -100,7 +77,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
       return returnError('badCredentials', 400)
     }
   }
-  const payload = jwt.getPayload(user)
+  const payload = tokens.getPayload(user)
   if (req.body.adminMode) {
     if (payload.isAdmin) payload.adminMode = true
     else return returnError('adminModeOnly', 403)
@@ -108,8 +85,8 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     payload.rememberMe = true
   }
   await confirmLog(storage, user)
-  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-  setCookieToken(req, res, token, req.body.org)
+  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  tokens.setCookieToken(req, res, token, req.body.org)
 
   const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
 
@@ -150,9 +127,9 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     return res.status(204).send()
   }
 
-  const payload = jwt.getPayload(user)
+  const payload = tokens.getPayload(user)
   if (req.body.rememberMe) payload.rememberMe = true
-  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
 
   const linkUrl = new URL(req.publicBaseUrl + '/api/auth/token_callback')
   linkUrl.searchParams.set('id_token', token)
@@ -170,12 +147,12 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 }))
 
 router.get('/token_callback', asyncWrap(async (req, res, next) => {
-  const payload = jwt.decode(req.query.id_token, { complete: true })
+  const payload = tokens.decode(req.query.id_token, { complete: true })
   const storage = req.app.get('storage')
   const user = await storage.getUserById(payload.id)
   if (!user || user.emailConfirmed === false) return res.status(400, req.messages.errors.badCredentials)
   await confirmLog(storage, user)
-  setCookieToken(req, res, req.query.id_token, req.query.id_token_org)
+  tokens.setCookieToken(req, res, req.query.id_token, req.query.id_token_org)
   res.redirect(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
 }))
 
@@ -188,7 +165,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   }
   let decoded
   try {
-    decoded = await jwt.verify(req.app.get('keys'), idToken)
+    decoded = await tokens.verify(req.app.get('keys'), idToken)
   } catch (err) {
     return res.status(401).send('Invalid id_token')
   }
@@ -197,7 +174,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   const user = await storage.getUser({ id: decoded.id })
   if (!user) return res.status(401).send('User does not exist anymore')
-  const payload = jwt.getPayload(user)
+  const payload = tokens.getPayload(user)
   if (decoded.adminMode && req.query.noAdmin !== 'true') payload.adminMode = true
   if (decoded.asAdmin) {
     payload.asAdmin = decoded.asAdmin
@@ -213,7 +190,7 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
     }
   }
   if (decoded.rememberMe) payload.rememberMe = true
-  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name}`)
 
   // TODO: sending token in response is deprecated and will be removed ?
@@ -223,25 +200,8 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
 
 router.post('/keepalive', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send('No active session to keep alive')
-  // User may have new organizations since last renew
-  const storage = req.app.get('storage')
-  const user = await storage.getUser({ id: req.user.id })
-  if (!user) return res.status(401).send('User does not exist anymore')
-  const payload = jwt.getPayload(user)
-  if (req.user.adminMode && req.query.noAdmin !== 'true') payload.adminMode = true
-  if (req.user.asAdmin) {
-    payload.asAdmin = req.user.asAdmin
-    payload.name = req.user.name
-    payload.isAdmin = false
-  } else {
-    if (!storage.readonly) {
-      await storage.updateLogged(req.user.id)
-    }
-  }
-  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-  debug(`Exchange session token for user ${user.name}`)
-  setCookieToken(req, res, token)
-
+  debug(`Exchange session token for user ${req.user.name}`)
+  await tokens.keepalive(req, res)
   res.status(204).send()
 }))
 
@@ -282,9 +242,9 @@ router.post('/action', asyncWrap(async (req, res, next) => {
     return res.status(204).send()
   }
 
-  const payload = jwt.getPayload(user)
+  const payload = tokens.getPayload(user)
   payload.action = req.body.action
-  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(req.body.target || config.defaultLoginRedirect || req.publicBaseUrl + '/login')
   linkUrl.searchParams.set('action_token', token)
 
@@ -308,7 +268,7 @@ router.get('/anonymous-action', asyncWrap(async (req, res, next) => {
     return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
   const payload = { anonymousAction: true, validation: 'wait' }
-  const token = jwt.sign(req.app.get('keys'), payload, '1d', '8s')
+  const token = tokens.sign(req.app.get('keys'), payload, '1d', '8s')
   res.send(token)
 }))
 
@@ -319,13 +279,13 @@ router.post('/asadmin', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   const user = await storage.getUser({ id: req.body.id })
   if (!user) return res.status(404).send('User does not exist')
-  const payload = jwt.getPayload(user)
+  const payload = tokens.getPayload(user)
   payload.name += ' (administration)'
   payload.asAdmin = { id: req.user.id, name: req.user.name }
   payload.isAdmin = false
-  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
-  setCookieToken(req, res, token)
+  tokens.setCookieToken(req, res, token)
 
   res.status(204).send()
 }))
@@ -336,11 +296,11 @@ router.delete('/asadmin', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   const user = await storage.getUser({ id: req.user.asAdmin.id })
   if (!user) return res.status(401).send('User does not exist anymore')
-  const payload = jwt.getPayload(user)
+  const payload = tokens.getPayload(user)
   payload.adminMode = true
-  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
-  setCookieToken(req, res, token)
+  tokens.setCookieToken(req, res, token)
 
   res.status(204).send()
 }))
@@ -422,10 +382,10 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
     await storage.patchUser(user.id, patch)
   }
 
-  const payload = jwt.getPayload(user)
+  const payload = tokens.getPayload(user)
   await confirmLog(storage, user)
-  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-  setCookieToken(req, res, token)
+  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  tokens.setCookieToken(req, res, token)
 
   const tokenCallbackUrl = new URL(target).host + req.publicBasePath + '/api/auth/token_callback'
   const linkUrl = new URL(tokenCallbackUrl)

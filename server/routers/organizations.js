@@ -5,6 +5,7 @@ const asyncWrap = require('../utils/async-wrap')
 const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
 const limits = require('../utils/limits')
+const tokens = require('../utils/tokens')
 
 const router = module.exports = express.Router()
 
@@ -89,6 +90,10 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (!req.user.isAdmin || req.query.autoAdmin !== 'false') await storage.addMember(orga, req.user, 'admin')
   webhooks.postIdentity('organization', orga)
   orga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.status(201).send(orga)
 }))
 
@@ -107,6 +112,10 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
   webhooks.postIdentity('organization', patchedOrga)
   patchedOrga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + patchedOrga.id + '/avatar.png'
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.send(patchedOrga)
 }))
 
@@ -138,6 +147,10 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   if (storage.db) {
     await limits.setNbMembers(storage.db, req.params.organizationId)
   }
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.status(204).send()
 }))
 
@@ -153,6 +166,10 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
   const roles = orga.roles || config.roles.defaults
   if (!roles.includes(req.body.role)) return res.status(400).send(req.messages.errors.replace('{role}', req.body.role))
   await req.app.get('storage').setMemberRole(req.params.organizationId, req.params.userId, req.body.role, req.body.department)
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.status(204).send()
 }))
 
@@ -164,5 +181,9 @@ router.delete('/:organizationId', asyncWrap(async (req, res, next) => {
   if (count > 1) return res.status(400).send(req.messages.errors.nonEmptyOrganization)
   await req.app.get('storage').deleteOrganization(req.params.organizationId)
   webhooks.deleteIdentity('organization', req.params.organizationId)
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.status(204).send()
 }))

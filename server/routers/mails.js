@@ -4,7 +4,7 @@ const emailValidator = require('email-validator')
 const { RateLimiterMongo, RateLimiterMemory } = require('rate-limiter-flexible')
 const requestIp = require('request-ip')
 const asyncWrap = require('../utils/async-wrap')
-const jwt = require('../utils/jwt')
+const tokens = require('../utils/tokens')
 
 const router = module.exports = express.Router()
 
@@ -75,7 +75,7 @@ router.post('/contact', asyncWrap(async (req, res) => {
 
     try {
       // 2nd level of anti-spam protection, validate that the user was present on the page for a few seconds before sending
-      await jwt.verify(req.app.get('keys'), req.body.token)
+      await tokens.verify(req.app.get('keys'), req.body.token)
     } catch (err) {
       if (err.name === 'NotBeforeError') {
         return res.status(429).send('Message refusé, l\'activité ressemble à celle d\'un robot spammeur.')

@@ -10,7 +10,7 @@ const { format: formatUrl } = require('url')
 const storages = require('./storages')
 const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
-const jwt = require('./utils/jwt')
+const tokens = require('./utils/tokens')
 const limits = require('./utils/limits')
 const session = require('@koumoul/sd-express')({
   directoryUrl: config.publicUrl,
@@ -97,9 +97,9 @@ exports.run = async() => {
   }
 
   debug('prepare keys')
-  const keys = await jwt.init()
+  const keys = await tokens.init()
   app.set('keys', keys)
-  app.use(jwt.router(keys))
+  app.use(tokens.router(keys))
 
   debug('prepare storage')
   const storage = await storages.init()

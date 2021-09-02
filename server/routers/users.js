@@ -5,7 +5,7 @@ const emailValidator = require('email-validator')
 const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const findUtils = require('../utils/find')
-const jwt = require('../utils/jwt')
+const tokens = require('../utils/tokens')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 const mails = require('../mails')
@@ -87,8 +87,8 @@ router.post('', asyncWrap(async (req, res, next) => {
 
   // prepare same link and payload as for a passwordless authentication
   // the user will be validated and authenticated at the same time by the exchange route
-  const payload = jwt.getPayload(newUser)
-  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+  const payload = tokens.getPayload(newUser)
+  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const link = (req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me?id_token=') + encodeURIComponent(token)
   const linkUrl = new URL(link)
   await mails.send({
@@ -134,6 +134,10 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
   const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
   if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
   patchedUser.avatarUrl = req.publicBaseUrl + '/api/avatars/user/' + patchedUser.id + '/avatar.png'
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.send(patchedUser)
 }))
 
@@ -158,7 +162,7 @@ router.post('/:userId/password', asyncWrap(async (req, res, next) => {
   if (!actionToken) return res.status(401).send()
   let decoded
   try {
-    decoded = await jwt.verify(req.app.get('keys'), actionToken)
+    decoded = await tokens.verify(req.app.get('keys'), actionToken)
   } catch (err) {
     return res.status(401).send(req.messages.errors.invalidToken)
   }

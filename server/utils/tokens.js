@@ -8,6 +8,7 @@ const express = require('express')
 const jwt = require('jsonwebtoken')
 const asyncVerify = util.promisify(jwt.verify)
 const JSONWebKey = require('json-web-key')
+const Cookies = require('cookies')
 
 exports.init = async () => {
   const keys = {}
@@ -64,4 +65,46 @@ exports.getPayload = (user) => {
   }
   if (user.department) payload.department = user.department
   return payload
+}
+
+// Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
+// the header and payload are not httpOnly to be readable by client
+// all cookies use sameSite for CSRF prevention
+exports.setCookieToken = (req, res, token, org) => {
+  const payload = exports.decode(token, { complete: true })
+  const cookies = new Cookies(req, res)
+  const parts = token.split('.')
+  const opts = { sameSite: 'lax' }
+  if (payload.rememberMe) opts.expires = new Date(payload.exp * 1000)
+  cookies.set('id_token', parts[0] + '.' + parts[1], { ...opts, httpOnly: false })
+  cookies.set('id_token_sign', parts[2], { ...opts, httpOnly: true })
+  // set the same params to id_token_org cookie so that it doesn't expire before the rest
+  org = org || cookies.get('id_token_org')
+  if (org) {
+    if (payload.organizations.find(o => o.id === org)) {
+      cookies.set('id_token_org', org, { ...opts, httpOnly: false })
+    } else {
+      cookies.set('id_token_org', null)
+    }
+  }
+}
+
+exports.keepalive = async (req, res) => {
+  // User may have new organizations since last renew
+  const storage = req.app.get('storage')
+  const user = await storage.getUser({ id: req.user.id })
+  if (!user) return res.status(401).send('User does not exist anymore')
+  const payload = exports.getPayload(user)
+  if (req.user.adminMode && req.query.noAdmin !== 'true') payload.adminMode = true
+  if (req.user.asAdmin) {
+    payload.asAdmin = req.user.asAdmin
+    payload.name = req.user.name
+    payload.isAdmin = false
+  } else {
+    if (!storage.readonly) {
+      await storage.updateLogged(req.user.id)
+    }
+  }
+  const token = exports.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  exports.setCookieToken(req, res, token)
 }
