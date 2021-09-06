@@ -16,11 +16,17 @@ async function ensureIndex(db, collection, key, options = {}) {
   }
 }
 
-function cleanResource(resource) {
+function cleanUser(resource) {
   resource.id = resource._id
   delete resource._id
   delete resource.password
-  delete resource.twoFA
+  delete resource['2FA']
+  return resource
+}
+
+function cleanOrganization(resource) {
+  resource.id = resource._id
+  delete resource._id
   return resource
 }
 
@@ -70,7 +76,7 @@ class MongodbStorage {
     }
     const user = await this.db.collection('users').findOne(filter)
     if (!user) return null
-    return cleanResource(user)
+    return cleanUser(user)
   }
 
   async hasPassword(email) {
@@ -81,7 +87,7 @@ class MongodbStorage {
   async getUserByEmail(email) {
     const user = (await this.db.collection('users').find({ email }).collation(collation).toArray())[0]
     if (!user) return null
-    return cleanResource(user)
+    return cleanUser(user)
   }
 
   async getPassword(userId) {
@@ -107,7 +113,7 @@ class MongodbStorage {
       { $set: patch },
       { returnOriginal: false }
     )
-    const user = cleanResource(mongoRes.value)
+    const user = cleanUser(mongoRes.value)
     // "name" was modified, also update all references in created and updated events
     if (patch.name) {
       this.db.collection('users').updateMany({ 'created.id': id }, { $set: { 'created.name': patch.name } })
@@ -148,7 +154,7 @@ class MongodbStorage {
       .limit(params.size)
       .toArray()
     const count = await countPromise
-    return { count, results: users.map(cleanResource) }
+    return { count, results: users.map(cleanUser) }
   }
 
   async findMembers(organizationId, params = {}) {
@@ -185,7 +191,7 @@ class MongodbStorage {
   async getOrganization(id) {
     const organization = await this.db.collection('organizations').findOne({ _id: id })
     if (!organization) return null
-    return cleanResource(organization)
+    return cleanOrganization(organization)
   }
 
   async createOrganization(orga, user) {
@@ -204,7 +210,7 @@ class MongodbStorage {
       { $set: patch },
       { returnOriginal: false }
     )
-    const orga = cleanResource(mongoRes.value)
+    const orga = cleanOrganization(mongoRes.value)
     // "name" was modified, also update all organizations references in users
     if (patch.name) {
       const cursor = this.db.collection('users').find({ organizations: { $elemMatch: { id } } })
@@ -248,7 +254,7 @@ class MongodbStorage {
       .limit(params.size)
       .toArray()
     const count = await countPromise
-    return { count, results: organizations.map(cleanResource) }
+    return { count, results: organizations.map(cleanOrganization) }
   }
 
   async addMember(orga, user, role, department) {
@@ -289,13 +295,19 @@ class MongodbStorage {
   }
 
   async required2FA(user) {
-    if (user.isAdmin && config.admins2FA) return true
+    // if (user.isAdmin && config.admins2FA) return true
+    for (const org of user.organizations) {
+      if (await this.db.collection('organizations').findOne({ '2FA.roles': org.role })) {
+        return true
+      }
+    }
+
     return false
   }
 
   async get2FA(userId) {
     const user = await this.db.collection('users').findOne({ _id: userId })
-    return user && user.twoFA
+    return user && user['2FA']
   }
 }
 

@@ -145,21 +145,21 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     else return returnError('adminModeOnly', 403)
   }
   // 2FA management
-  if (await storage.required2FA(payload)) {
-    const userTwoFA = await storage.get2FA(user.id)
+  const user2FA = await storage.get2FA(user.id)
+  if (user2FA || await storage.required2FA(payload)) {
     if (await twoFA.checkSession(req)) {
       // 2FA was already validated earlier and present in a cookie
     } else if (req.body['2fa']) {
-      if (!await twoFA.isValid(userTwoFA, req.body['2fa'])) {
+      if (!await twoFA.isValid(user2FA, req.body['2fa'])) {
         return returnError('bad2FAToken', 403)
       } else {
         // 2FA token sent alongside email/password
         const cookies = new Cookies(req, res)
-        cookies.set('id_token_2fa', jwt.sign(req.app.get('keys'), { user: user.id }, config.jwtDurations.twoFAToken))
+        cookies.set('id_token_2fa', jwt.sign(req.app.get('keys'), { user: user.id }, config.jwtDurations['2FAToken']))
       }
     } else {
-      if (!userTwoFA || !userTwoFA.active) {
-        return returnError('twoFANotConfigured', 403)
+      if (!user2FA || !user2FA.active) {
+        return returnError('2FANotConfigured', 403)
       } else {
         return returnError('2fa-required', 403)
       }

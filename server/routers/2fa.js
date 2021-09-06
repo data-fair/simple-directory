@@ -57,9 +57,8 @@ router.post('/', asyncWrap(async (req, res, next) => {
     }
   }
 
-  const twoFA = await storage.get2FA(user.id)
-  console.log(twoFA)
-  if (twoFA && twoFA.active) {
+  const user2FA = await storage.get2FA(user.id)
+  if (user2FA && user2FA.active) {
     return res.status(400).send(req.messages.errors.conflict2FA)
   }
 
@@ -67,13 +66,13 @@ router.post('/', asyncWrap(async (req, res, next) => {
     // initialize secret
     const secret = authenticator.generateSecret()
     const otpauth = authenticator.keyuri(user.name, new URL(config.publicUrl).origin, secret)
-    await storage.patchUser(user.id, { twoFA: { secret, active: false } })
+    await storage.patchUser(user.id, { '2FA': { secret, active: false } })
     res.send({ otpauth, qrcode: await qrcode.toDataURL(otpauth) })
   } else {
     // validate secret with initial token
-    const isValid = authenticator.check(req.body.token, twoFA.secret)
+    const isValid = authenticator.check(req.body.token, user2FA.secret)
     if (!isValid) return res.status(400).send(req.messages.errors.bad2FAToken)
-    await storage.patchUser(user.id, { twoFA: { ...twoFA, active: true } })
+    await storage.patchUser(user.id, { '2FA': { ...user2FA, active: true } })
     res.send()
   }
 }))

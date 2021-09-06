@@ -1,5 +1,5 @@
 <template lang="html">
-  <v-container v-if="orga" data-iframe-height>
+  <v-container v-if="user && orga" data-iframe-height>
     <h2 class="headline mb-3">{{ $t('common.organization') + ' ' + orga.name }}</h2>
     <v-subheader v-if="orga.created">{{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}</v-subheader>
     <load-avatar v-if="orga" :owner="{...orga, type: 'organization'}" :disabled="env.readonly" />
@@ -33,6 +33,16 @@
           <div v-html="$t('pages.organization.departmentLabelHelp')" />
         </v-tooltip>
       </v-text-field>
+      <v-select
+        :items="orga.roles"
+        v-model="orga['2FA'].roles"
+        :messages="[$t('pages.organization.2FARolesMsg')]"
+        :rules="[v => !!v || '']"
+        :placeholder="$t('pages.organization.2FARoles')"
+        multiple
+        name="2FARoles"
+        style="max-width:600px"
+      />
       <v-layout row wrap>
         <v-spacer/>
         <v-btn v-if="isAdminOrga && !env.readonly" color="primary" type="submit">{{ $t('common.save') }}</v-btn>
@@ -72,7 +82,10 @@ export default {
   methods: {
     ...mapActions(['patchOrganization']),
     async fetchOrganization() {
-      this.orga = await this.$axios.$get(`api/organizations/${this.$route.params.id}`)
+      const orga = await this.$axios.$get(`api/organizations/${this.$route.params.id}`)
+      orga['2FA'] = orga['2FA'] || {}
+      orga['2FA'].roles = orga['2FA'].roles || []
+      this.orga = orga
     },
     async fetchLimits() {
       if (!this.env.readonly) {
@@ -82,7 +95,7 @@ export default {
     async save(e) {
       e.preventDefault()
       if (!this.$refs.form.validate()) return
-      const patch = { name: this.orga.name, description: this.orga.description }
+      const patch = { name: this.orga.name, description: this.orga.description, '2FA': this.orga['2FA'] }
       if (this.env.manageDepartments) patch.departmentLabel = this.orga.departmentLabel
       this.patchOrganization({ id: this.orga.id, patch, msg: this.$t('common.modificationOk') })
     }

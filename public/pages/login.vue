@@ -310,7 +310,8 @@ export default {
         createUser: this.$t('pages.login.createUserMsg2'),
         createUserConfirmed: this.$t('pages.login.createUserConfirm'),
         changePasswordSent: this.$t('pages.login.changePassword'),
-        error: this.$t('pages.login.error')
+        error: this.$t('pages.login.error'),
+        configure2FA: this.$t('pages.login.configure2FA')
       },
       password: '',
       passwordErrors: [],

@@ -187,7 +187,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       confirmDeleteDepartmentTitle: 'Supprimer {name}',
       confirmDeleteDepartmentMsg: `Voulez vous vraiment supprimer {name} de votre organisation ?`,
       departmentIdInvalid: 'L\'identifiant ne doit contenir que des lettres, nombres et espaces.',
-      inviteLink: `En cas de problème dans la communication par email vous pouvez envoyer le lien de confirmation ci-dessous par un autre moyen. Attention ! Vous risquez d'insérer dans la base utilisateur une adresse mail erronée ou non fonctionnelle. Cette adresse mail pourra poser de multiples problèmes par la suite : changement de mot de passe, envoi d'alertes, etc.`
+      inviteLink: `En cas, de problème dans la communication par email vous pouvez envoyer le lien de confirmation ci-dessous par un autre moyen. Attention ! Vous risquez d'insérer dans la base utilisateur une adresse mail erronée ou non fonctionnelle. Cette adresse mail pourra poser de multiples problèmes par la suite : changement de mot de passe, envoi d'alertes, etc.`,
+      '2FARoles': `Authentification à 2 facteurs.`,
+      '2FARolesMsg': `Rendre obligatoire l'authentification à 2 facteurs pour les utilisateurs possédant ces rôles.`
     },
     invitation: {
       title: 'Invitation validée',
@@ -225,7 +227,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     maxNbMembers: `L'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.`,
     unknownOAuthProvider: 'Identification OAuth non supportée.',
     adminModeOnly: 'Fonctionnalité réservée aux super-administrateurs.',
-    twoFANotConfigured: 'L\'authentification à 2 facteurs est nécessaire pour ce compte et n\'est pas encore configurée.',
+    '2FANotConfigured': 'L\'authentification à 2 facteurs est nécessaire pour ce compte et n\'est pas encore configurée.',
     passwordless2FA: 'L\'authentification sans mot de passe est incompatible avec l\'authentification à 2 facteurs requise pour ce compte.',
     bad2FAToken: 'Mauvais code pour l\'authentification à 2 facteurs'
   },

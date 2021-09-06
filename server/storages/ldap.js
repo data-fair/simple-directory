@@ -443,6 +443,10 @@ class LdapStorage {
     if (user.adminMode && config.admins2FA) return true
     return false
   }
+
+  async get2FA(userId) {
+    return null
+  }
 }
 
 exports.init = async (params) => new LdapStorage().init(params)
