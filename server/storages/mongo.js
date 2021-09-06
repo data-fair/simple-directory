@@ -1,3 +1,5 @@
+const config = require('config')
+
 const collation = { locale: 'en', strength: 1 }
 
 async function ensureIndex(db, collection, key, options = {}) {
@@ -18,6 +20,7 @@ function cleanResource(resource) {
   resource.id = resource._id
   delete resource._id
   delete resource.password
+  delete resource.twoFA
   return resource
 }
 
@@ -283,6 +286,16 @@ class MongodbStorage {
     const avatar = await this.db.collection('avatars').findOne({ 'owner.type': owner.type, 'owner.id': owner.id })
     if (avatar && avatar.buffer) avatar.buffer = avatar.buffer.buffer
     return avatar
+  }
+
+  async required2FA(user) {
+    if (user.isAdmin && config.admins2FA) return true
+    return false
+  }
+
+  async get2FA(userId) {
+    const user = await this.db.collection('users').findOne({ _id: userId })
+    return user && user.twoFA
   }
 }
 

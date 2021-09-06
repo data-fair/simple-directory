@@ -10,6 +10,7 @@ const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
 const jwt = require('./utils/jwt')
 const limits = require('./utils/limits')
+const twoFA = require('./routers/2fa.js')
 const session = require('@koumoul/sd-express')({
   directoryUrl: config.publicUrl,
   publicUrl: config.publicUrl,
@@ -67,6 +68,7 @@ app.use('/api/organizations', session.auth, fullUser, require('./routers/organiz
 app.use('/api/invitations', session.auth, fullUser, require('./routers/invitations'))
 app.use('/api/avatars', session.auth, fullUser, require('./routers/avatars'))
 app.use('/api/limits', session.auth, limits.router)
+app.use('/api/2fa', twoFA.router)
 app.use('/api/session', session.router)
 
 app.use((err, req, res, next) => {

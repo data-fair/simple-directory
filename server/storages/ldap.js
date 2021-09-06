@@ -1,5 +1,6 @@
 const { promisify } = require('util')
 const ldap = require('ldapjs')
+const { config } = require('process')
 const debug = require('debug')('ldap')
 
 function sortCompare(sort) {
@@ -436,6 +437,11 @@ class LdapStorage {
         params
       )
     })
+  }
+
+  async required2FA(user) {
+    if (user.adminMode && config.admins2FA) return true
+    return false
   }
 }
 

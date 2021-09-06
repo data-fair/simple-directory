@@ -6,7 +6,8 @@ module.exports = {
   jwtDurations: {
     initialToken: 'JWT_DURATION_INITIAL',
     exchangedToken: 'JWT_DURATION_EXCHANGED',
-    invitationToken: 'JWT_DURATION_INVIT'
+    invitationToken: 'JWT_DURATION_INVIT',
+    twoFAToken: 'JWT_DURATION_2FA'
   },
   admins: {
     __name: 'ADMINS',
@@ -14,6 +15,10 @@ module.exports = {
   },
   adminsOrg: {
     __name: 'ADMINS_ORG',
+    __format: 'json'
+  },
+  admins2FA: {
+    __name: 'ADMINS_2FA',
     __format: 'json'
   },
   roles: {

@@ -5,7 +5,7 @@ const emailValidator = require('email-validator')
 const bodyParser = require('body-parser')
 const requestIp = require('request-ip')
 const shortid = require('shortid')
-const { RateLimiterMongo, RateLimiterMemory } = require('rate-limiter-flexible')
+const Cookies = require('cookies')
 const jwt = require('../utils/jwt')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
@@ -13,6 +13,8 @@ const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 const oauth = require('../utils/oauth')
 const userName = require('../utils/user-name')
+const twoFA = require('./2fa.js')
+const limiter = require('../utils/limiter')
 const debug = require('debug')('auth')
 
 let router = exports.router = express.Router()
@@ -20,22 +22,6 @@ let router = exports.router = express.Router()
 // these routes accept url encoded form data so that they can be used from basic
 // html forms
 router.use(bodyParser.urlencoded({ limit: '100kb' }))
-
-// protect authentication routes with rate limiting to prevent brute force attacks
-let _limiter
-const limiterOptions = {
-  keyPrefix: 'sd-rate-limiter-auth',
-  points: config.authRateLimit.attempts,
-  duration: config.authRateLimit.duration
-}
-const limiter = (req) => {
-  if (config.storage.type === 'mongo') {
-    _limiter = _limiter || new RateLimiterMongo({ storeClient: req.app.get('storage').client, ...limiterOptions })
-  } else {
-    _limiter = _limiter || new RateLimiterMemory(limiterOptions)
-  }
-  return _limiter
-}
 
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
@@ -65,6 +51,10 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
       params: { link, host: linkUrl.host, origin: linkUrl.origin }
     })
     return res.status(204).send()
+  }
+
+  if (await storage.required2FA(user)) {
+    return res.status(400).send(req.messages.errors.passwordless2FA)
   }
 
   const payload = jwt.getPayload(user)
@@ -127,7 +117,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
 
   const returnError = (error, errorCode) => {
     if (req.is('application/x-www-form-urlencoded')) res.redirect(`${config.publicUrl}/login?error=${error}`)
-    else res.status(errorCode).send(req.messages.errors[error])
+    else res.status(errorCode).send(req.messages.errors[error] || error)
   }
 
   try {
@@ -154,6 +144,28 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     if (payload.isAdmin) payload.adminMode = true
     else return returnError('adminModeOnly', 403)
   }
+  // 2FA management
+  if (await storage.required2FA(payload)) {
+    const userTwoFA = await storage.get2FA(user.id)
+    if (await twoFA.checkSession(req)) {
+      // 2FA was already validated earlier and present in a cookie
+    } else if (req.body['2fa']) {
+      if (!await twoFA.isValid(userTwoFA, req.body['2fa'])) {
+        return returnError('bad2FAToken', 403)
+      } else {
+        // 2FA token sent alongside email/password
+        const cookies = new Cookies(req, res)
+        cookies.set('id_token_2fa', jwt.sign(req.app.get('keys'), { user: user.id }, config.jwtDurations.twoFAToken))
+      }
+    } else {
+      if (!userTwoFA || !userTwoFA.active) {
+        return returnError('twoFANotConfigured', 403)
+      } else {
+        return returnError('2fa-required', 403)
+      }
+    }
+  }
+
   if (!storage.readonly) await storage.updateLogged(user.id)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me')

@@ -43,11 +43,25 @@
                 type="password"
                 @keyup.enter="passwordAuth"
               />
+
+              <v-text-field
+                v-if="twoFARequired"
+                id="2fa"
+                v-model="twoFACode"
+                :placeholder="$t('pages.login.configure2FACode')"
+                outline
+                single-line
+                style="max-width: 170px;"
+              />
+
               <v-layout v-if="!env.onlyCreateInvited && !adminMode" row>
                 <p class="mb-2"><a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a></p>
               </v-layout>
               <v-layout v-if="!env.readonly && !adminMode" row>
-                <p class="mb-0"><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
+                <p class="mb-2"><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
+              </v-layout>
+              <v-layout row>
+                <p class="mb-0"><a @click="step = 'configure2FA'">{{ $t('pages.login.configure2FA') }}</a></p>
               </v-layout>
 
             </v-card-text>
@@ -205,6 +219,49 @@
             </v-card-actions>
           </v-window-item>
 
+          <v-window-item value="configure2FA">
+            <v-card-text>
+              <v-text-field
+                id="email"
+                :autofocus="true"
+                :label="$t('pages.login.emailLabel')"
+                v-model="email"
+                name="email"
+              />
+
+              <v-text-field
+                id="password"
+                :label="$t('common.password')"
+                v-model="password"
+                :error-messages="passwordErrors"
+                name="password"
+                type="password"
+                @keyup.enter="passwordAuth"
+              />
+
+              <template v-if="qrcode">
+                <p class="mb-1">{{ $t('pages.login.configure2FAQRCodeMsg') }}</p>
+                <v-img v-if="qrcode" :src="qrcode" :title="$t('pages.login.configure2FAQRCode')" max-width="170" />
+                <v-text-field
+                  v-model="configure2FACode"
+                  :placeholder="$t('pages.login.configure2FACode')"
+                  outline
+                  single-line
+                  style="max-width: 170px;" />
+              </template>
+            </v-card-text>
+
+            <v-card-actions>
+              <v-btn v-if="step !== 1" flat @click="step='login'">
+                {{ $t('common.back') }}
+              </v-btn>
+              <v-spacer/>
+              <v-btn :disabled="!email || !password || (qrcode && !configure2FACode)" color="primary" depressed @click="init2FA">
+                {{ $t('common.validate') }}
+              </v-btn>
+            </v-card-actions>
+          </v-window-item>
+
           <v-window-item value="error">
             <v-card-text v-if="error">
               <v-alert
@@ -270,7 +327,11 @@ export default {
       },
       createUserErrors: [],
       newUserPassword2: null,
-      error: this.$route.query.error
+      error: this.$route.query.error,
+      qrcode: null,
+      configure2FACode: null,
+      twoFARequired: false,
+      twoFACode: null
     }
   },
   computed: {
@@ -321,11 +382,23 @@ export default {
     },
     async passwordAuth() {
       try {
-        const link = await this.$axios.$post('api/auth/password', { email: this.email, password: this.password, adminMode: this.adminMode }, { params: { redirect: this.redirectUrl } })
+        const link = await this.$axios.$post('api/auth/password', {
+          email: this.email,
+          password: this.password,
+          adminMode: this.adminMode,
+          '2fa': this.twoFACode
+        }, { params: { redirect: this.redirectUrl } })
         window.location.href = link
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
-        else this.passwordErrors = [error.response.data || error.message]
+        else {
+          if (error.response.data === '2fa-required') {
+            this.passwordErrors = []
+            this.twoFARequired = true
+          } else {
+            this.passwordErrors = [error.response.data || error.message]
+          }
+        }
       }
     },
     async changePasswordAction() {
@@ -344,6 +417,30 @@ export default {
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
         else this.newPasswordErrors = [error.response.data || error.message]
+      }
+    },
+    async init2FA() {
+      this.passwordErrors = null
+      try {
+        if (!this.qrcode) {
+          // initialize secret
+          const res = await this.$axios.$post(`api/2fa`, {
+            email: this.email,
+            password: this.password
+          })
+          this.qrcode = res.qrcode
+        } else {
+          // validate secret with initial token
+          await this.$axios.$post(`api/2fa`, {
+            email: this.email,
+            password: this.password,
+            token: this.configure2FACode
+          })
+          this.step = 'login'
+        }
+      } catch (error) {
+        if (error.response.status >= 500) eventBus.$emit('notification', { error })
+        else this.passwordErrors = [error.response.data || error.message]
       }
     }
   }

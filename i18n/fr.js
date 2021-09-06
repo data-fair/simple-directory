@@ -160,7 +160,11 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       createUserConfirmed: `Un email vous a été envoyé à l'adresse {email}. Cet email contient un lien pour valider la création du compte.`,
       adminMode: 'Confirmez votre identité pour passer en mode administration.',
       oauth: 'Connectez vous avec :',
-      error: 'Erreur'
+      error: 'Erreur',
+      configure2FA: 'Configurer l\'authentification à 2 facteurs',
+      configure2FAQRCode: 'qr code de configuration de l\'authentification 2 facteurs',
+      configure2FAQRCodeMsg: 'Scannez ce QR code dans une application comme Google Authenticator puis saisissez le code à 6 chiffres proposé par cette application.',
+      configure2FACode: 'Code à 6 chiffres'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
@@ -220,7 +224,10 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     expiredInvitationToken: `Le lien d'invitation que vous avez reçu est expiré, vous ne pouvez plus accepter cette invitation.`,
     maxNbMembers: `L'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.`,
     unknownOAuthProvider: 'Identification OAuth non supportée.',
-    adminModeOnly: 'Fonctionnalité réservée aux super-administrateurs.'
+    adminModeOnly: 'Fonctionnalité réservée aux super-administrateurs.',
+    twoFANotConfigured: 'L\'authentification à 2 facteurs est nécessaire pour ce compte et n\'est pas encore configurée.',
+    passwordless2FA: 'L\'authentification sans mot de passe est incompatible avec l\'authentification à 2 facteurs requise pour ce compte.',
+    bad2FAToken: 'Mauvais code pour l\'authentification à 2 facteurs'
   },
   mails: {
     creation: {

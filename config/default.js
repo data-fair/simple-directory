@@ -12,10 +12,12 @@ module.exports = {
   jwtDurations: {
     initialToken: '15m',
     exchangedToken: '30d',
-    invitationToken: '10d'
+    invitationToken: '10d',
+    twoFAToken: '30d'
   },
   admins: ['admin@test.com'],
   adminsOrg: null,
+  admins2FA: false,
   roles: {
     defaults: ['admin', 'user'],
     editable: false
@@ -206,4 +208,5 @@ module.exports = {
     }
   },
   noBirthday: false
+
 }
