@@ -273,6 +273,15 @@ router.get('/anonymous-action', asyncWrap(async (req, res, next) => {
   res.send(token)
 }))
 
+router.delete('/adminmode', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send('No active session')
+  if (!req.user.adminMode) return res.status(403).send('This route is only available in admin mode')
+  debug(`Exchange session token without adminMode for user ${req.user.name}`)
+  req.query.noAdmin = 'true'
+  await tokens.keepalive(req, res)
+  res.status(204).send()
+}))
+
 // create a session has a user but from a super admin session
 router.post('/asadmin', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send('No active session to keep alive')
