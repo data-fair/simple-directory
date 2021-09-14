@@ -4,27 +4,28 @@ const qrcode = require('qrcode')
 const express = require('express')
 const requestIp = require('request-ip')
 const emailValidator = require('email-validator')
+const { v4: uuidv4 } = require('uuid')
 const jwt = require('../utils/jwt')
 const asyncWrap = require('../utils/async-wrap')
 const limiter = require('../utils/limiter')
 const passwords = require('../utils/passwords')
-const debug = require('debug')('2fa')
+// const debug = require('debug')('2fa')
 
 const router = exports.router = express.Router()
 
 // TODO: apply some rate limiting
 
-exports.checkSession = async (req) => {
+exports.checkSession = async (req, userId) => {
   const token = req.cookies.id_token_2fa
   if (!token) return false
   let decoded
   try {
-    decoded = await jwt.verify(req.app.get('keys'))
+    decoded = await jwt.verify(req.app.get('keys'), token)
   } catch (err) {
     console.error('invalid 2fa token', err)
     return false
   }
-  if (decoded.user !== req.user.id) return false
+  if (decoded.user !== userId) return false
   return true
 }
 
@@ -72,13 +73,8 @@ router.post('/', asyncWrap(async (req, res, next) => {
     // validate secret with initial token
     const isValid = authenticator.check(req.body.token, user2FA.secret)
     if (!isValid) return res.status(400).send(req.messages.errors.bad2FAToken)
-    await storage.patchUser(user.id, { '2FA': { ...user2FA, active: true } })
-    res.send()
+    const recovery = uuidv4()
+    await storage.patchUser(user.id, { '2FA': { ...user2FA, active: true, recovery: await passwords.hashPassword(recovery) } })
+    res.send({ recovery })
   }
 }))
-
-/* TODO code récupération
-  - persisté sous forme de hash
-  - si passé dans la route de config 2FA ça ignore l'erreur "déjà configuré" et ça reinit
-  - peut être re-créé par une route qui demande à la fois une session active (avec 2FA) et rappel du login/pass
-*/

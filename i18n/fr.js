@@ -62,7 +62,8 @@ module.exports = {
     delAsAdmin: 'Revenir à ma session administrateur',
     avatar: 'Avatar',
     birthday: 'Anniversaire',
-    missingInfo: 'Information manquante'
+    missingInfo: 'Information manquante',
+    '2FA': 'Authentification 2 facteurs'
   },
   doc: {
     about: {
@@ -129,7 +130,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         createdOrgsLimit: 'Les utilisateurs peuvent créer {defaultMaxCreatedOrgs} organisation(s) par défaut.',
         explainLimit: 'Définissez une valeur pour limiter le nombre d\'organisations que cet utilisateur peut créer. -1 pour un nombre indéterminé. Videz le champs pour retomber sur la valeur par défaut ({defaultMaxCreatedOrgs}).',
         editUserEmailTitle: 'Changez l\'adresse email de l\'utilisateur {name}',
-        editUserEmailText: 'Attention ! L\'email est une clé importante de l\'utilisateur, en modifiant cette information vous courez le risque d\'insérer une adresse erronée, non fonctionnelle ou incohérente avec d\'autres saisies. Cette fonctionnalité est présentée uniquement aux administrateurs pour débloquer un utilisateur dont la boite mail devient inaccessible.'
+        editUserEmailText: 'Attention ! L\'email est une clé importante de l\'utilisateur, en modifiant cette information vous courez le risque d\'insérer une adresse erronée, non fonctionnelle ou incohérente avec d\'autres saisies. Cette fonctionnalité est présentée uniquement aux administrateurs pour débloquer un utilisateur dont la boite mail devient inaccessible.',
+        drop2FATitle: 'Effacer la configuration d\'authentification 2 facteurs de l\'utilisateur {name}',
+        drop2FAExplain: 'Attention ! Cette opération est réservée au débloquage d\'un utilisateur qui a à la fois perdu son appareil et son code de récupération pour l\'authentification 2 facteurs. Avant de continuer il est fortement recommandé de s\'assurer d\'une manière ou d\'une autre de l\'identité de la personne qui fait la demande (contacter un collègue membre d\'une même organisation par exemple).'
       },
       organizations: {
         limitOrganizationTitle: 'Modifiez les limites de l\'organisation',
@@ -161,10 +164,16 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       adminMode: 'Confirmez votre identité pour passer en mode administration.',
       oauth: 'Connectez vous avec :',
       error: 'Erreur',
+      '2FACode': 'Code à 6 chiffres ou code de récupération',
+      '2FAInfo': 'Saisissez un code de vérification pour continuer. Vous pouvez obtenir ce code depuis l\'application de vérification sur votre téléphone. En cas de perte de votre appareil vous pouvez utiliser le code récupération téléchargé à la configuration de l\'authentification à 2 facteurs.',
       configure2FA: 'Configurer l\'authentification à 2 facteurs',
       configure2FAQRCode: 'qr code de configuration de l\'authentification 2 facteurs',
       configure2FAQRCodeMsg: 'Scannez ce QR code dans une application comme Google Authenticator puis saisissez le code à 6 chiffres proposé par cette application.',
-      configure2FACode: 'Code de vérification à 6 chiffres'
+      configure2FACode: 'Code à 6 chiffres',
+      recovery2FA: 'Code de récupération',
+      recovery2FAInfo: 'Attention ! Le code de récupération ci-dessous est à conserver précieusement. Sans lui vous ne pourrez pas récupérer votre compte en cas de perte de l\'appareil sur lequel vous venez de configurer l\'authentification à 2 facteurs.',
+      recovery2FACode: 'code de récupération : ',
+      recovery2FADownload: 'télécharger un fichier contenant le code de récupération'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',

@@ -20,7 +20,10 @@ function cleanUser(resource) {
   resource.id = resource._id
   delete resource._id
   delete resource.password
-  delete resource['2FA']
+  if (resource['2FA']) {
+    delete resource['2FA'].secret
+    delete resource['2FA'].recovery
+  }
   return resource
 }
 
@@ -295,7 +298,7 @@ class MongodbStorage {
   }
 
   async required2FA(user) {
-    // if (user.isAdmin && config.admins2FA) return true
+    if (user.isAdmin && config.admins2FA) return true
     for (const org of user.organizations) {
       if (await this.db.collection('organizations').findOne({ '2FA.roles': org.role })) {
         return true

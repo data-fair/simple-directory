@@ -100,6 +100,7 @@
     "style-loader": "^0.23.1",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.2",
+    "uuid": "^8.3.2",
     "vue-cropperjs": "^4.1.0",
     "vue-moment": "^4.1.0",
     "vuetify": "^1.5.24",

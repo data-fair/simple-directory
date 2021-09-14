@@ -22,6 +22,8 @@ const i18n = require('../i18n')
 const app = express()
 const server = http.createServer(app)
 
+app.set('json spaces', 2)
+
 app.use(session.cors({}))
 app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))

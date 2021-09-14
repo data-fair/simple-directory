@@ -147,19 +147,28 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   // 2FA management
   const user2FA = await storage.get2FA(user.id)
   if (user2FA || await storage.required2FA(payload)) {
-    if (await twoFA.checkSession(req)) {
+    if (await twoFA.checkSession(req, user.id)) {
       // 2FA was already validated earlier and present in a cookie
     } else if (req.body['2fa']) {
-      if (!await twoFA.isValid(user2FA, req.body['2fa'])) {
+      if (!await twoFA.isValid(user2FA, req.body['2fa'].trim())) {
+        // a token was sent but it is not an actual 2FA token, instead it is the special recovery token
+        if (user2FA) {
+          const validRecovery = await passwords.checkPassword(req.body['2fa'].trim(), user2FA.recovery)
+          if (validRecovery) {
+            await req.app.get('storage').patchUser(user.id, { '2FA': { active: false } })
+            return returnError('2fa-missing', 403)
+          }
+        }
         return returnError('2fa-bad-token', 403)
       } else {
         // 2FA token sent alongside email/password
         const cookies = new Cookies(req, res)
-        cookies.set('id_token_2fa', jwt.sign(req.app.get('keys'), { user: user.id }, config.jwtDurations['2FAToken']))
+        const token = jwt.sign(req.app.get('keys'), { user: user.id }, config.jwtDurations['2FAToken'])
+        cookies.set('id_token_2fa', token, { expires: new Date(jwt.decode(token).exp * 1000), sameSite: 'lax', httpOnly: true })
       }
     } else {
       if (!user2FA || !user2FA.active) {
-        return returnError('2FANotConfigured', 403)
+        return returnError('2fa-missing', 403)
       } else {
         return returnError('2fa-required', 403)
       }

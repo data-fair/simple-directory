@@ -51,6 +51,15 @@
         <td>{{ props.item.id }}</td>
         <td>{{ props.item.firstName }}</td>
         <td>{{ props.item.lastName }}</td>
+        <td>
+          <template v-if="props.item['2FA'] && props.item['2FA'].active">
+            oui
+            <v-btn icon class="mx-0" @click="showDrop2FADialog(props.item)">
+              <v-icon small>mdi-delete</v-icon>
+            </v-btn>
+          </template>
+          <span v-else>non</span>
+        </td>
         <td><span v-for="orga in props.item.organizations" :key="orga.id">
           <nuxt-link :to="localePath({name: 'organization-id', params: {id: orga.id}})">{{ orga.name }} ({{ orga.role }})</nuxt-link>
           &nbsp;
@@ -134,6 +143,24 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="drop2FADialog" max-width="500px">
+      <v-card v-if="currentUser">
+        <v-card-title class="title">
+          {{ $t('pages.admin.users.drop2FATitle', {name: currentUser.name}) }}
+        </v-card-title>
+        <v-card-text>
+          <v-alert :value="true" type="error">
+            {{ $t('pages.admin.users.drop2FAExplain') }}
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn flat @click="drop2FADialog = false">{{ $t('common.confirmCancel') }}</v-btn>
+          <v-btn color="warning" @click="drop2FADialog = false;drop2FA(currentUser)">{{ $t('common.confirmOk') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -148,6 +175,7 @@ export default {
     deleteUserDialog: false,
     editMaxCreatedOrgsDialog: false,
     editUserEmailDialog: false,
+    drop2FADialog: false,
     q: '',
     pagination: { page: 1, rowsPerPage: 10, totalItems: 0, descending: false, sortBy: 'email' },
     loading: false,
@@ -176,6 +204,7 @@ export default {
       { text: this.$t('common.id'), value: 'id', sortable: false },
       { text: this.$t('common.firstName'), value: 'firstName' },
       { text: this.$t('common.lastName'), value: 'lastName' },
+      { text: this.$t('common.2FA'), value: '2FA', sortable: false },
       { text: this.$t('common.organizations'), value: 'organizations', sortable: false }
     ]
     if (this.env.defaultMaxCreatedOrgs !== -1 && !this.env.readonly) {
@@ -231,12 +260,24 @@ export default {
       this.editMaxCreatedOrgsDialog = true
       this.nbCreatedOrgs = (await this.$axios.$get(`api/organizations`, { params: { creator: user.id, size: 0 } })).count
     },
+    showDrop2FADialog(user) {
+      this.currentUser = user
+      this.drop2FADialog = true
+    },
     async saveMaxCreatedOrgs(user, newMaxCreatedOrgs) {
       if (newMaxCreatedOrgs === '' || newMaxCreatedOrgs === undefined) newMaxCreatedOrgs = null
       if (newMaxCreatedOrgs !== null) newMaxCreatedOrgs = Number(newMaxCreatedOrgs)
       try {
         await this.$axios.$patch(`api/users/${user.id}`, { maxCreatedOrgs: newMaxCreatedOrgs })
         this.$set(user, 'maxCreatedOrgs', newMaxCreatedOrgs)
+      } catch (error) {
+        eventBus.$emit('notification', { error })
+      }
+    },
+    async drop2FA(user) {
+      try {
+        await this.$axios.$patch(`api/users/${user.id}`, { '2FA': { active: false } })
+        this.$set(user, '2FA', { active: false })
       } catch (error) {
         eventBus.$emit('notification', { error })
       }

@@ -45,15 +45,21 @@
               />
 
               <template v-if="twoFARequired">
-                <p>Saisissez un code de vérification pour continuer. Vous pouvez obtenir ce code depuis l'application de vérification sur votre téléphone.</p>
                 <v-text-field
                   id="2fa"
                   v-model="twoFACode"
-                  :placeholder="$t('pages.login.configure2FACode')"
+                  :placeholder="$t('pages.login.2FACode')"
                   :error-messages="twoFAErrors"
                   outline
                   single-line
-                />
+                >
+                  <v-tooltip slot="append-outer" left max-width="400">
+                    <template v-slot:activator="{on}">
+                      <v-icon v-on="on">mdi-information</v-icon>
+                    </template>
+                    <div v-html="$t('pages.login.2FAInfo')" />
+                  </v-tooltip>
+                </v-text-field>
               </template>
 
               <v-layout v-if="!env.onlyCreateInvited && !adminMode" row>
@@ -62,9 +68,10 @@
               <v-layout v-if="!env.readonly && !adminMode" row>
                 <p class="mb-2"><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
               </v-layout>
-              <v-layout row>
+
+              <!--<v-layout row>
                 <p class="mb-0"><a @click="step = 'configure2FA'">{{ $t('pages.login.configure2FA') }}</a></p>
-              </v-layout>
+              </v-layout>-->
 
             </v-card-text>
 
@@ -223,23 +230,7 @@
 
           <v-window-item value="configure2FA">
             <v-card-text>
-              <v-text-field
-                id="email"
-                v-model="email"
-                :autofocus="true"
-                :label="$t('pages.login.emailLabel')"
-                name="email"
-              />
-
-              <v-text-field
-                id="password"
-                v-model="password"
-                :label="$t('common.password')"
-                :error-messages="passwordErrors"
-                name="password"
-                type="password"
-                @keyup.enter="passwordAuth"
-              />
+              <v-alert :value="true" type="warning" outline class="mb-3">{{ $t('errors.2FANotConfigured') }}</v-alert>
 
               <template v-if="qrcode">
                 <p class="mb-1">{{ $t('pages.login.configure2FAQRCodeMsg') }}</p>
@@ -249,7 +240,8 @@
                   :placeholder="$t('pages.login.configure2FACode')"
                   outline
                   single-line
-                  style="max-width: 170px;" />
+                  style="max-width: 170px;"
+                  @keyup.enter="validate2FA" />
               </template>
             </v-card-text>
 
@@ -258,9 +250,29 @@
                 {{ $t('common.back') }}
               </v-btn>
               <v-spacer/>
-              <v-btn :disabled="!email || !password || (qrcode && !configure2FACode)" color="primary" depressed @click="init2FA">
+              <v-btn :disabled="!configure2FACode" color="primary" depressed @click="validate2FA">
                 {{ $t('common.validate') }}
               </v-btn>
+            </v-card-actions>
+          </v-window-item>
+
+          <v-window-item value="recovery2FA">
+            <v-card-text>
+              <v-alert :value="true" type="warning" outline class="mb-3">{{ $t('pages.login.recovery2FAInfo') }}</v-alert>
+
+              <p>{{ $t('pages.login.recovery2FACode') }}{{ recovery }}
+                <v-btn :title="$t('pages.login.recovery2FADownload')" icon class="mx-0" @click="downloadRecovery">
+                  <v-icon>mdi-download</v-icon>
+                </v-btn>
+              </p>
+
+            </v-card-text>
+
+            <v-card-actions>
+              <v-btn v-if="step !== 1" flat @click="step='login'">
+                {{ $t('common.back') }}
+              </v-btn>
+              <v-spacer/>
             </v-card-actions>
           </v-window-item>
 
@@ -313,7 +325,8 @@ export default {
         createUserConfirmed: this.$t('pages.login.createUserConfirm'),
         changePasswordSent: this.$t('pages.login.changePassword'),
         error: this.$t('pages.login.error'),
-        configure2FA: this.$t('pages.login.configure2FA')
+        configure2FA: this.$t('pages.login.configure2FA'),
+        recovery2FA: this.$t('pages.login.recovery2FA')
       },
       password: '',
       passwordErrors: [],
@@ -335,6 +348,7 @@ export default {
       configure2FACode: null,
       twoFARequired: false,
       twoFACode: null,
+      recovery: null,
       twoFAErrors: []
     }
   },
@@ -396,7 +410,11 @@ export default {
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
         else {
-          if (error.response.data === '2fa-required') {
+          if (error.response.data === '2fa-missing') {
+            this.step = 'configure2FA'
+            this.passwordErrors = []
+            this.init2FA()
+          } else if (error.response.data === '2fa-required') {
             this.passwordErrors = []
             this.twoFARequired = true
             this.twoFAErrors = []
@@ -429,28 +447,45 @@ export default {
       }
     },
     async init2FA() {
-      this.passwordErrors = null
       try {
-        if (!this.qrcode) {
-          // initialize secret
-          const res = await this.$axios.$post('api/2fa', {
-            email: this.email,
-            password: this.password
-          })
-          this.qrcode = res.qrcode
-        } else {
-          // validate secret with initial token
-          await this.$axios.$post('api/2fa', {
-            email: this.email,
-            password: this.password,
-            token: this.configure2FACode
-          })
-          this.step = 'login'
-        }
+        // initialize secret
+        const res = await this.$axios.$post('api/2fa', {
+          email: this.email,
+          password: this.password
+        })
+        this.qrcode = res.qrcode
+        this.configure2FACode = null
       } catch (error) {
-        if (error.response.status >= 500) eventBus.$emit('notification', { error })
-        else this.passwordErrors = [error.response.data || error.message]
+        eventBus.$emit('notification', { error })
       }
+    },
+    async validate2FA() {
+      try {
+        // validate secret with initial token
+        const res = await this.$axios.$post('api/2fa', {
+          email: this.email,
+          password: this.password,
+          token: this.configure2FACode
+        })
+        this.configure2FACode = null
+        this.recovery = res.recovery
+        this.step = 'recovery2FA'
+        this.twoFARequired = true
+      } catch (error) {
+        eventBus.$emit('notification', { error })
+      }
+    },
+    downloadRecovery() {
+      var element = document.createElement('a')
+      const content = `Code de récupération authentification 2 facteurs ${window.location.host}
+
+${this.recovery}`
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content))
+      element.setAttribute('download', window.location.host.replace(/\./g, '-') + '-2fa-recovery.txt')
+      element.style.display = 'none'
+      document.body.appendChild(element)
+      element.click()
+      document.body.removeChild(element)
     }
   }
 }
