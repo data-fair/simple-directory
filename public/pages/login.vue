@@ -25,9 +25,9 @@
 
               <v-text-field
                 id="email"
+                v-model="email"
                 :autofocus="true"
                 :label="$t('pages.login.emailLabel')"
-                v-model="email"
                 name="email"
               />
               <v-layout v-if="env.passwordless && !adminMode" row class="caption">
@@ -36,23 +36,25 @@
 
               <v-text-field
                 id="password"
-                :label="$t('common.password')"
                 v-model="password"
+                :label="$t('common.password')"
                 :error-messages="passwordErrors"
                 name="password"
                 type="password"
                 @keyup.enter="passwordAuth"
               />
 
-              <v-text-field
-                v-if="twoFARequired"
-                id="2fa"
-                v-model="twoFACode"
-                :placeholder="$t('pages.login.configure2FACode')"
-                outline
-                single-line
-                style="max-width: 170px;"
-              />
+              <template v-if="twoFARequired">
+                <p>Saisissez un code de vérification pour continuer. Vous pouvez obtenir ce code depuis l'application de vérification sur votre téléphone.</p>
+                <v-text-field
+                  id="2fa"
+                  v-model="twoFACode"
+                  :placeholder="$t('pages.login.configure2FACode')"
+                  :error-messages="twoFAErrors"
+                  outline
+                  single-line
+                />
+              </template>
 
               <v-layout v-if="!env.onlyCreateInvited && !adminMode" row>
                 <p class="mb-2"><a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a></p>
@@ -81,8 +83,8 @@
               </v-layout>
               <v-layout row>
                 <v-checkbox
-                  :label="$t('pages.login.tosConfirm')"
                   v-model="tosAccepted"
+                  :label="$t('pages.login.tosConfirm')"
                 />
               </v-layout>
             </v-card-text>
@@ -103,32 +105,32 @@
               <v-form ref="createUserForm">
                 <v-text-field
                   id="createuser-email"
+                  v-model="email"
                   :autofocus="true"
                   :label="$t('pages.login.emailLabel')"
-                  v-model="email"
                   :rules="[v => !!v || '']"
                   name="createuser-email"
                   required
                 />
 
                 <v-text-field
-                  :label="$t('common.firstName')"
                   v-model="newUser.firstName"
+                  :label="$t('common.firstName')"
                   name="firstname"
                   @keyup.enter="createUser"
                 />
 
                 <v-text-field
-                  :label="$t('common.lastName')"
                   v-model="newUser.lastName"
+                  :label="$t('common.lastName')"
                   name="lastname"
                   @keyup.enter="createUser"
                 />
 
                 <v-text-field
                   id="password"
-                  :label="$t('common.password')"
                   v-model="newUser.password"
+                  :label="$t('common.password')"
                   :error-messages="createUserErrors"
                   name="password"
                   type="password"
@@ -136,8 +138,8 @@
                 />
 
                 <v-text-field
-                  :label="$t('pages.login.newPassword2')"
                   v-model="newUserPassword2"
+                  :label="$t('pages.login.newPassword2')"
                   :error-messages="newUser.password !== newUserPassword2 ? ['Les mots de passe sont différents'] : []"
                   name="newUserPassword2"
                   type="password"
@@ -196,16 +198,16 @@
             <v-card-text>
               <p>{{ $t('pages.login.newPasswordMsg') }}</p>
               <v-text-field
+                v-model="newPassword"
                 :autofocus="true"
                 :label="$t('pages.login.newPassword')"
-                v-model="newPassword"
                 :error-messages="newPasswordErrors"
                 name="newPassword"
                 type="password"
               />
               <v-text-field
-                :label="$t('pages.login.newPassword2')"
                 v-model="newPassword2"
+                :label="$t('pages.login.newPassword2')"
                 :error-messages="newPassword !== newPassword2 ? ['Les mots de passe sont différents'] : []"
                 name="newPassword2"
                 type="password"
@@ -223,16 +225,16 @@
             <v-card-text>
               <v-text-field
                 id="email"
+                v-model="email"
                 :autofocus="true"
                 :label="$t('pages.login.emailLabel')"
-                v-model="email"
                 name="email"
               />
 
               <v-text-field
                 id="password"
-                :label="$t('common.password')"
                 v-model="password"
+                :label="$t('common.password')"
                 :error-messages="passwordErrors"
                 name="password"
                 type="password"
@@ -332,7 +334,8 @@ export default {
       qrcode: null,
       configure2FACode: null,
       twoFARequired: false,
-      twoFACode: null
+      twoFACode: null,
+      twoFAErrors: []
     }
   },
   computed: {
@@ -396,8 +399,13 @@ export default {
           if (error.response.data === '2fa-required') {
             this.passwordErrors = []
             this.twoFARequired = true
+            this.twoFAErrors = []
+          } else if (error.response.data === '2fa-bad-token') {
+            this.passwordErrors = []
+            this.twoFAErrors = [this.$t('errors.bad2FAToken')]
           } else {
             this.passwordErrors = [error.response.data || error.message]
+            this.twoFAErrors = []
           }
         }
       }
@@ -412,7 +420,7 @@ export default {
     },
     async changePassword() {
       try {
-        await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, { password: this.newPassword }, { params: { 'action_token': this.actionToken } })
+        await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, { password: this.newPassword }, { params: { action_token: this.actionToken } })
         const link = await this.$axios.$post('api/auth/password', { email: this.email, password: this.newPassword }, { params: { redirect: this.redirectUrl } })
         window.location.href = link
       } catch (error) {
@@ -425,14 +433,14 @@ export default {
       try {
         if (!this.qrcode) {
           // initialize secret
-          const res = await this.$axios.$post(`api/2fa`, {
+          const res = await this.$axios.$post('api/2fa', {
             email: this.email,
             password: this.password
           })
           this.qrcode = res.qrcode
         } else {
           // validate secret with initial token
-          await this.$axios.$post(`api/2fa`, {
+          await this.$axios.$post('api/2fa', {
             email: this.email,
             password: this.password,
             token: this.configure2FACode

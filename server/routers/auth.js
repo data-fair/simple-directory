@@ -17,7 +17,7 @@ const twoFA = require('./2fa.js')
 const limiter = require('../utils/limiter')
 const debug = require('debug')('auth')
 
-let router = exports.router = express.Router()
+const router = exports.router = express.Router()
 
 // these routes accept url encoded form data so that they can be used from basic
 // html forms
@@ -38,7 +38,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   }
 
   const storage = req.app.get('storage')
-  let user = await storage.getUserByEmail(req.body.email)
+  const user = await storage.getUserByEmail(req.body.email)
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
     const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
@@ -151,7 +151,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
       // 2FA was already validated earlier and present in a cookie
     } else if (req.body['2fa']) {
       if (!await twoFA.isValid(user2FA, req.body['2fa'])) {
-        return returnError('bad2FAToken', 403)
+        return returnError('2fa-bad-token', 403)
       } else {
         // 2FA token sent alongside email/password
         const cookies = new Cookies(req, res)
@@ -189,7 +189,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   }
 
   const storage = req.app.get('storage')
-  let user = await storage.getUserByEmail(req.body.email)
+  const user = await storage.getUserByEmail(req.body.email)
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
     const link = req.body.target || config.defaultLoginRedirect || (config.publicUrl + '/login')
@@ -229,7 +229,7 @@ router.get('/anonymous-action', asyncWrap(async (req, res, next) => {
     console.error('Rate limit error for /anonymous-action route', requestIp.getClientIp(req), req.body.email, err)
     return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
-  const payload = { 'anonymousAction': true, validation: 'wait' }
+  const payload = { anonymousAction: true, validation: 'wait' }
   const token = jwt.sign(req.app.get('keys'), payload, '1d', '8s')
   res.send(token)
 }))

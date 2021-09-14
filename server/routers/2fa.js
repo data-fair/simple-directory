@@ -10,7 +10,7 @@ const limiter = require('../utils/limiter')
 const passwords = require('../utils/passwords')
 const debug = require('debug')('2fa')
 
-let router = exports.router = express.Router()
+const router = exports.router = express.Router()
 
 // TODO: apply some rate limiting
 
@@ -76,3 +76,9 @@ router.post('/', asyncWrap(async (req, res, next) => {
     res.send()
   }
 }))
+
+/* TODO code récupération
+  - persisté sous forme de hash
+  - si passé dans la route de config 2FA ça ignore l'erreur "déjà configuré" et ça reinit
+  - peut être re-créé par une route qui demande à la fois une session active (avec 2FA) et rappel du login/pass
+*/
