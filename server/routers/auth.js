@@ -53,11 +53,13 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     return res.status(204).send()
   }
 
-  if (await storage.required2FA(user)) {
+  const payload = jwt.getPayload(user)
+
+  // passwordless is not compatible with 2FA for now
+  if (await storage.get2FA(user.id) || await storage.required2FA(payload)) {
     return res.status(400).send(req.messages.errors.passwordless2FA)
   }
 
-  const payload = jwt.getPayload(user)
   const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me')
   linkUrl.searchParams.set('id_token', token)
