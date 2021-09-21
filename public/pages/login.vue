@@ -439,8 +439,10 @@ export default {
     async changePassword() {
       try {
         await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, { password: this.newPassword }, { params: { action_token: this.actionToken } })
-        const link = await this.$axios.$post('api/auth/password', { email: this.email, password: this.newPassword }, { params: { redirect: this.redirectUrl } })
-        window.location.href = link
+        this.password = this.newPassword
+        this.step = 'login'
+        this.$router.replace({ query: { ...this.$route.query, action_token: undefined } })
+        this.passwordAuth()
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
         else this.newPasswordErrors = [error.response.data || error.message]
