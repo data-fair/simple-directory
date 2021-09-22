@@ -1,3 +1,4 @@
+const config = require('config')
 const path = require('path')
 const fs = require('fs')
 const util = require('util')
@@ -147,6 +148,15 @@ class FileStorage {
       count: filteredOrganizations.length,
       results: filteredOrganizations.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size),
     }
+  }
+
+  async required2FA(user) {
+    if (user.adminMode && config.admins2FA) return true
+    return false
+  }
+
+  async get2FA(userId) {
+    return null
   }
 }
 

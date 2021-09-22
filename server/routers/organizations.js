@@ -98,7 +98,7 @@ router.post('', asyncWrap(async (req, res, next) => {
 }))
 
 // Update some parts of an organization as admin of it
-const patchKeys = ['name', 'description', 'departments', 'departmentLabel']
+const patchKeys = ['name', 'description', 'departments', 'departmentLabel', '2FA']
 router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only allowed for the organizations that the user is admin of

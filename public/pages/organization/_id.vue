@@ -48,6 +48,16 @@
           <div v-html="$t('pages.organization.departmentLabelHelp')" />
         </v-tooltip>
       </v-text-field>
+      <v-select
+        :items="orga.roles"
+        v-model="orga['2FA'].roles"
+        :messages="[$t('pages.organization.2FARolesMsg')]"
+        :rules="[v => !!v || '']"
+        :placeholder="$t('pages.organization.2FARoles')"
+        multiple
+        name="2FARoles"
+        style="max-width:600px"
+      />
       <v-row>
         <v-spacer />
         <v-btn
@@ -84,7 +94,7 @@
     data: () => ({
       orga: null,
       limits: null,
-      valid: true,
+      valid: true
     }),
     computed: {
       ...mapState(['userDetails', 'env']),
@@ -93,7 +103,7 @@
         if (!this.user || !this.userDetails) return false
         if (this.user.adminMode) return true
         return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin'))
-      },
+      }
     },
     async mounted() {
       this.fetchOrganization()
@@ -102,7 +112,10 @@
     methods: {
       ...mapActions(['patchOrganization']),
       async fetchOrganization() {
-        this.orga = await this.$axios.$get(`api/organizations/${this.$route.params.id}`)
+        const orga = await this.$axios.$get(`api/organizations/${this.$route.params.id}`)
+        orga['2FA'] = orga['2FA'] || {}
+        orga['2FA'].roles = orga['2FA'].roles || []
+        this.orga = orga
       },
       async fetchLimits() {
         if (!this.env.readonly) {
@@ -112,7 +125,7 @@
       async save(e) {
         e.preventDefault()
         if (!this.$refs.form.validate()) return
-        const patch = { name: this.orga.name, description: this.orga.description }
+        const patch = { name: this.orga.name, description: this.orga.description, '2FA': this.orga['2FA'] }
         if (this.env.manageDepartments) patch.departmentLabel = this.orga.departmentLabel
         this.patchOrganization({ id: this.orga.id, patch, msg: this.$t('common.modificationOk') })
       },

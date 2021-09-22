@@ -13,9 +13,11 @@ module.exports = {
     initialToken: '15m',
     exchangedToken: '30d',
     invitationToken: '10d',
+    '2FAToken': '30d'
   },
   admins: ['admin@test.com'],
   adminsOrg: null,
+  admins2FA: false,
   roles: {
     defaults: ['admin', 'user'],
     editable: false,

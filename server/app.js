@@ -5,13 +5,13 @@ const bodyParser = require('body-parser')
 const http = require('http')
 const util = require('util')
 const eventToPromise = require('event-to-promise')
-const originalUrl = require('original-url')
-const { format: formatUrl } = require('url')
+const cors = require('cors')
 const storages = require('./storages')
 const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
 const tokens = require('./utils/tokens')
 const limits = require('./utils/limits')
+const twoFA = require('./routers/2fa.js')
 const session = require('@koumoul/sd-express')({
   directoryUrl: config.publicUrl,
   privateDirectoryUrl: 'http://localhost:' + config.port,
@@ -21,6 +21,8 @@ const debug = require('debug')('app')
 
 const app = express()
 const server = http.createServer(app)
+
+app.set('json spaces', 2)
 
 app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))
@@ -66,14 +68,16 @@ app.use('/api', (req, res, next) => {
   next()
 })
 const apiDocs = require('../contract/api-docs')
-app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))
-app.use('/api/auth', session.auth, fullUser, require('./routers/auth').router)
-app.use('/api/mails', require('./routers/mails'))
-app.use('/api/users', session.auth, fullUser, require('./routers/users'))
-app.use('/api/organizations', session.auth, fullUser, require('./routers/organizations'))
-app.use('/api/invitations', session.auth, fullUser, require('./routers/invitations'))
-app.use('/api/avatars', session.auth, fullUser, require('./routers/avatars'))
-app.use('/api/limits', session.auth, limits.router)
+app.get('/api/api-docs.json', cors(), (req, res) => res.json(apiDocs))
+app.get('/api/auth/anonymous-action', cors(), require('./routers/anonymous-action'))
+app.use('/api/auth', sessionCors, session.auth, require('./routers/auth').router)
+app.use('/api/mails', sessionCors, require('./routers/mails'))
+app.use('/api/users', sessionCors, session.auth, fullUser, require('./routers/users'))
+app.use('/api/organizations', sessionCors, session.auth, fullUser, require('./routers/organizations'))
+app.use('/api/invitations', sessionCors, session.auth, fullUser, require('./routers/invitations'))
+app.use('/api/avatars', sessionCors, session.auth, fullUser, require('./routers/avatars'))
+app.use('/api/limits', sessionCors, session.auth, limits.router)
+app.use('/api/2fa', sessionCors, twoFA.router)
 
 app.use((err, req, res, next) => {
   err.statusCode = err.statusCode || err.status

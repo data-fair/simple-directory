@@ -65,6 +65,23 @@
                 hide-details="auto"
                 @keyup.enter="passwordAuth"
               />
+              <template v-if="twoFARequired">
+                <v-text-field
+                  id="2fa"
+                  v-model="twoFACode"
+                  :placeholder="$t('pages.login.2FACode')"
+                  :error-messages="twoFAErrors"
+                  outline
+                  single-line
+                >
+                  <v-tooltip slot="append-outer" left max-width="400">
+                    <template v-slot:activator="{on}">
+                      <v-icon v-on="on">mdi-information</v-icon>
+                    </template>
+                    <div v-html="$t('pages.login.2FAInfo')" />
+                  </v-tooltip>
+                </v-text-field>
+              </template>
               <v-checkbox
                 v-if="!adminMode"
                 id="rememberMe"
@@ -287,6 +304,54 @@
             </v-card-actions>
           </v-window-item>
 
+          <v-window-item value="configure2FA">
+            <v-card-text>
+              <v-alert :value="true" type="warning" outline class="mb-3">{{ $t('errors.2FANotConfigured') }}</v-alert>
+
+              <template v-if="qrcode">
+                <p class="mb-1">{{ $t('pages.login.configure2FAQRCodeMsg') }}</p>
+                <v-img v-if="qrcode" :src="qrcode" :title="$t('pages.login.configure2FAQRCode')" max-width="170" />
+                <v-text-field
+                  v-model="configure2FACode"
+                  :placeholder="$t('pages.login.configure2FACode')"
+                  outline
+                  single-line
+                  style="max-width: 170px;"
+                  @keyup.enter="validate2FA" />
+              </template>
+            </v-card-text>
+
+            <v-card-actions>
+              <v-btn v-if="step !== 1" flat @click="step='login'">
+                {{ $t('common.back') }}
+              </v-btn>
+              <v-spacer/>
+              <v-btn :disabled="!configure2FACode" color="primary" depressed @click="validate2FA">
+                {{ $t('common.validate') }}
+              </v-btn>
+            </v-card-actions>
+          </v-window-item>
+
+          <v-window-item value="recovery2FA">
+            <v-card-text>
+              <v-alert :value="true" type="warning" outline class="mb-3">{{ $t('pages.login.recovery2FAInfo') }}</v-alert>
+
+              <p>{{ $t('pages.login.recovery2FACode') }}{{ recovery }}
+                <v-btn :title="$t('pages.login.recovery2FADownload')" icon class="mx-0" @click="downloadRecovery">
+                  <v-icon>mdi-download</v-icon>
+                </v-btn>
+              </p>
+
+            </v-card-text>
+
+            <v-card-actions>
+              <v-btn v-if="step !== 1" flat @click="step='login'">
+                {{ $t('common.back') }}
+              </v-btn>
+              <v-spacer/>
+            </v-card-actions>
+          </v-window-item>
+
           <v-window-item value="error">
             <v-card-text v-if="error">
               <v-alert
@@ -334,6 +399,8 @@
           createUserConfirmed: this.$t('pages.login.createUserConfirm'),
           changePasswordSent: this.$t('pages.login.changePassword'),
           error: this.$t('pages.login.error'),
+          configure2FA: this.$t('pages.login.configure2FA'),
+          recovery2FA: this.$t('pages.login.recovery2FA')
         },
         password: '',
         passwordErrors: [],
@@ -347,12 +414,18 @@
         newUser: {
           firstName: null,
           lastName: null,
-          password: null,
+          password: null
         },
         createUserErrors: [],
         newUserPassword2: null,
         error: this.$route.query.error,
         rememberMe: true,
+        qrcode: null,
+        configure2FACode: null,
+        twoFARequired: false,
+        twoFACode: null,
+        recovery: null,
+        twoFAErrors: []
       }
     },
     computed: {
@@ -424,6 +497,7 @@
             adminMode: this.adminMode,
             rememberMe: this.rememberMe && !this.adminMode,
             org: this.org,
+            '2fa': this.twoFACode
           }, { params: { redirect: this.redirectUrl } })
           // NOTE: this will not be necessary anylonger if we remove the deprecated id_token query param
           const linkUrl = new URL(link)
@@ -431,7 +505,23 @@
           window.location.href = linkUrl.href
         } catch (error) {
           if (error.response.status >= 500) eventBus.$emit('notification', { error })
-          else this.passwordErrors = [error.response.data || error.message]
+          else {
+            if (error.response.data === '2fa-missing') {
+              this.step = 'configure2FA'
+              this.passwordErrors = []
+              this.init2FA()
+            } else if (error.response.data === '2fa-required') {
+              this.passwordErrors = []
+              this.twoFARequired = true
+              this.twoFAErrors = []
+            } else if (error.response.data === '2fa-bad-token') {
+              this.passwordErrors = []
+              this.twoFAErrors = [this.$t('errors.bad2FAToken')]
+            } else {
+              this.passwordErrors = [error.response.data || error.message]
+              this.twoFAErrors = []
+            }
+          }
         }
       },
       async changePasswordAction() {
@@ -449,16 +539,59 @@
       async changePassword() {
         try {
           await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, {
-            password: this.newPassword,
+            password: this.newPassword
           }, { params: { action_token: this.actionToken } })
-          const link = await this.$axios.$post('api/auth/password', { email: this.email, password: this.newPassword }, { params: { redirect: this.redirectUrl } })
-          window.location.href = link
+          this.password = this.newPassword
+          this.step = 'login'
+          this.$router.replace({ query: { ...this.$route.query, action_token: undefined } })
+          this.passwordAuth()
         } catch (error) {
           if (error.response.status >= 500) eventBus.$emit('notification', { error })
           else this.newPasswordErrors = [error.response.data || error.message]
         }
       },
-    },
+      async init2FA() {
+        try {
+          // initialize secret
+          const res = await this.$axios.$post('api/2fa', {
+            email: this.email,
+            password: this.password
+          })
+          this.qrcode = res.qrcode
+          this.configure2FACode = null
+        } catch (error) {
+          eventBus.$emit('notification', { error })
+        }
+      },
+      async validate2FA() {
+        try {
+          // validate secret with initial token
+          const res = await this.$axios.$post('api/2fa', {
+            email: this.email,
+            password: this.password,
+            token: this.configure2FACode
+          })
+          this.configure2FACode = null
+          this.recovery = res.recovery
+          this.step = 'recovery2FA'
+          this.twoFARequired = true
+        } catch (error) {
+          eventBus.$emit('notification', { error })
+        }
+      },
+      downloadRecovery() {
+        var element = document.createElement('a')
+        const content = `Code de récupération authentification 2 facteurs ${window.location.host}
+
+  ${this.recovery}`
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content))
+        element.setAttribute('download', window.location.host.replace(/\./g, '-') + '-2fa-recovery.txt')
+        element.style.display = 'none'
+        document.body.appendChild(element)
+        element.click()
+        document.body.removeChild(element)
+      }
+    }
   }
 </script>
 

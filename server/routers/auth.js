@@ -14,6 +14,8 @@ const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 const oauth = require('../utils/oauth')
 const userName = require('../utils/user-name')
+const twoFA = require('./2fa.js')
+const limiter = require('../utils/limiter')
 const debug = require('debug')('auth')
 
 const router = exports.router = express.Router()
@@ -56,7 +58,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
 
   const returnError = (error, errorCode) => {
     if (req.is('application/x-www-form-urlencoded')) res.redirect(`${req.publicBaseUrl}/login?error=${error}`)
-    else res.status(errorCode).send(req.messages.errors[error])
+    else res.status(errorCode).send(req.messages.errors[error] || error)
   }
 
   try {
@@ -85,6 +87,37 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   } else if (req.body.rememberMe) {
     payload.rememberMe = true
   }
+  // 2FA management
+  const user2FA = await storage.get2FA(user.id)
+  if (user2FA || await storage.required2FA(payload)) {
+    if (await twoFA.checkSession(req, user.id)) {
+      // 2FA was already validated earlier and present in a cookie
+    } else if (req.body['2fa']) {
+      if (!await twoFA.isValid(user2FA, req.body['2fa'].trim())) {
+        // a token was sent but it is not an actual 2FA token, instead it is the special recovery token
+        if (user2FA) {
+          const validRecovery = await passwords.checkPassword(req.body['2fa'].trim(), user2FA.recovery)
+          if (validRecovery) {
+            await req.app.get('storage').patchUser(user.id, { '2FA': { active: false } })
+            return returnError('2fa-missing', 403)
+          }
+        }
+        return returnError('2fa-bad-token', 403)
+      } else {
+        // 2FA token sent alongside email/password
+        const cookies = new Cookies(req, res)
+        const token = jwt.sign(req.app.get('keys'), { user: user.id }, config.jwtDurations['2FAToken'])
+        cookies.set('id_token_2fa', token, { expires: new Date(jwt.decode(token).exp * 1000), sameSite: 'lax', httpOnly: true })
+      }
+    } else {
+      if (!user2FA || !user2FA.active) {
+        return returnError('2fa-missing', 403)
+      } else {
+        return returnError('2fa-required', 403)
+      }
+    }
+  }
+
   await confirmLog(storage, user)
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   tokens.setCookieToken(req, res, token, req.body.org)
@@ -130,6 +163,12 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 
   const payload = tokens.getPayload(user)
   if (req.body.rememberMe) payload.rememberMe = true
+
+  // passwordless is not compatible with 2FA for now
+  if (await storage.get2FA(user.id) || await storage.required2FA(payload)) {
+    return res.status(400).send(req.messages.errors.passwordless2FA)
+  }
+  
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
 
   const linkUrl = new URL(req.publicBaseUrl + '/api/auth/token_callback')
@@ -257,20 +296,6 @@ router.post('/action', asyncWrap(async (req, res, next) => {
     params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin },
   })
   res.status(204).send()
-}))
-
-// simply get a token to perform an anonymous action in the close future
-// useful to ensure that the user is human and waits for a little while before submitting a form
-router.get('/anonymous-action', asyncWrap(async (req, res, next) => {
-  try {
-    await limiter(req).consume(requestIp.getClientIp(req), 1)
-  } catch (err) {
-    console.error('Rate limit error for /anonymous-action route', requestIp.getClientIp(req), req.body.email, err)
-    return res.status(429).send(req.messages.errors.rateLimitAuth)
-  }
-  const payload = { anonymousAction: true, validation: 'wait' }
-  const token = tokens.sign(req.app.get('keys'), payload, '1d', '8s')
-  res.send(token)
 }))
 
 router.delete('/adminmode', asyncWrap(async (req, res, next) => {

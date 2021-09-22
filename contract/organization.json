@@ -22,6 +22,17 @@
         "type": "string"
       }
     },
+    "2FA": {
+      "properties": {
+        "roles": {
+          "description": "The list of roles that require 2FA inside this organization",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "departmentLabel": {
       "description": "How the department concept is named in the context of this organization",
       "type": "string"
