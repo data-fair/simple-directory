@@ -2,6 +2,7 @@ const URL = require('url').URL
 const i18n = require('./i18n')
 let config = require('config')
 config.basePath = new URL(config.publicUrl + '/').pathname
+console.log('basePath', config.basePath)
 config.i18nMessages = i18n.messages
 config.i18nLocales = config.i18n.locales.join(',')
 config.readonly = require('./server/storages').readonly()
@@ -14,6 +15,7 @@ if (process.env.NODE_ENV === 'production') {
   if (process.argv.slice(-1)[0] === 'build') config = nuxtConfigInject.prepare(config)
   else nuxtConfigInject.replace(config, ['nuxt-dist/**/*', 'public/static/**/*'])
 }
+console.log('basePath 2', config.basePath)
 
 const webpack = require('webpack')
 
