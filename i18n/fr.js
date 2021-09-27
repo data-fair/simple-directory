@@ -64,7 +64,7 @@ module.exports = {
     avatar: 'Avatar',
     birthday: 'Anniversaire',
     missingInfo: 'Information manquante',
-    '2FA': 'Authentification 2 facteurs'
+    '2FA': 'Authentification 2 facteurs',
   },
   doc: {
     about: {
@@ -133,7 +133,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         editUserEmailTitle: 'Changez l\'adresse email de l\'utilisateur {name}',
         editUserEmailText: 'Attention ! L\'email est une clé importante de l\'utilisateur, en modifiant cette information vous courez le risque d\'insérer une adresse erronée, non fonctionnelle ou incohérente avec d\'autres saisies. Cette fonctionnalité est présentée uniquement aux administrateurs pour débloquer un utilisateur dont la boite mail devient inaccessible.',
         drop2FATitle: 'Effacer la configuration d\'authentification 2 facteurs de l\'utilisateur {name}',
-        drop2FAExplain: 'Attention ! Cette opération est réservée au débloquage d\'un utilisateur qui a à la fois perdu son appareil et son code de récupération pour l\'authentification 2 facteurs. Avant de continuer il est fortement recommandé de s\'assurer d\'une manière ou d\'une autre de l\'identité de la personne qui fait la demande (contacter un collègue membre d\'une même organisation par exemple).'
+        drop2FAExplain: 'Attention ! Cette opération est réservée au débloquage d\'un utilisateur qui a à la fois perdu son appareil et son code de récupération pour l\'authentification 2 facteurs. Avant de continuer il est fortement recommandé de s\'assurer d\'une manière ou d\'une autre de l\'identité de la personne qui fait la demande (contacter un collègue membre d\'une même organisation par exemple).',
       },
       organizations: {
         limitOrganizationTitle: 'Modifiez les limites de l\'organisation',
@@ -176,7 +176,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       recovery2FA: 'Code de récupération',
       recovery2FAInfo: 'Attention ! Le code de récupération ci-dessous est à conserver précieusement. Sans lui vous ne pourrez pas récupérer votre compte en cas de perte de l\'appareil sur lequel vous venez de configurer l\'authentification à 2 facteurs.',
       recovery2FACode: 'code de récupération : ',
-      recovery2FADownload: 'télécharger un fichier contenant le code de récupération'
+      recovery2FADownload: 'télécharger un fichier contenant le code de récupération',
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
@@ -201,7 +201,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       departmentIdInvalid: 'L\'identifiant ne doit contenir que des lettres, nombres et espaces.',
       inviteLink: 'En cas de problème dans la communication par email vous pouvez envoyer le lien de confirmation ci-dessous par un autre moyen. Attention ! Vous risquez d\'insérer dans la base utilisateur une adresse mail erronée ou non fonctionnelle. Cette adresse mail pourra poser de multiples problèmes par la suite : changement de mot de passe, envoi d\'alertes, etc.',
       '2FARoles': 'Authentification à 2 facteurs.',
-      '2FARolesMsg': 'Rendre obligatoire l\'authentification à 2 facteurs pour les utilisateurs possédant ces rôles.'
+      '2FARolesMsg': 'Rendre obligatoire l\'authentification à 2 facteurs pour les utilisateurs possédant ces rôles.',
     },
     invitation: {
       title: 'Invitation validée',
@@ -241,7 +241,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     adminModeOnly: 'Fonctionnalité réservée aux super-administrateurs.',
     '2FANotConfigured': 'L\'authentification à 2 facteurs est nécessaire pour ce compte et n\'est pas encore configurée.',
     passwordless2FA: 'L\'authentification sans mot de passe est incompatible avec l\'authentification à 2 facteurs requise pour ce compte.',
-    bad2FAToken: 'Code de vérification erroné ou périmé pour l\'authentification à 2 facteurs'
+    bad2FAToken: 'Code de vérification erroné ou périmé pour l\'authentification à 2 facteurs',
   },
   mails: {
     creation: {

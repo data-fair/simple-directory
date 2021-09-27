@@ -7,7 +7,7 @@ module.exports = {
     initialToken: 'JWT_DURATION_INITIAL',
     exchangedToken: 'JWT_DURATION_EXCHANGED',
     invitationToken: 'JWT_DURATION_INVIT',
-    '2FAToken': 'JWT_DURATION_2FA'
+    '2FAToken': 'JWT_DURATION_2FA',
   },
   admins: {
     __name: 'ADMINS',
@@ -19,7 +19,7 @@ module.exports = {
   },
   admins2FA: {
     __name: 'ADMINS_2FA',
-    __format: 'json'
+    __format: 'json',
   },
   roles: {
     defaults: {

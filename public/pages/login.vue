@@ -74,9 +74,15 @@
                   outline
                   single-line
                 >
-                  <v-tooltip slot="append-outer" left max-width="400">
-                    <template v-slot:activator="{on}">
-                      <v-icon v-on="on">mdi-information</v-icon>
+                  <v-tooltip
+                    slot="append-outer"
+                    left
+                    max-width="400"
+                  >
+                    <template #activator="{on}">
+                      <v-icon v-on="on">
+                        mdi-information
+                      </v-icon>
                     </template>
                     <div v-html="$t('pages.login.2FAInfo')" />
                   </v-tooltip>
@@ -306,27 +312,51 @@
 
           <v-window-item value="configure2FA">
             <v-card-text>
-              <v-alert :value="true" type="warning" outline class="mb-3">{{ $t('errors.2FANotConfigured') }}</v-alert>
+              <v-alert
+                :value="true"
+                type="warning"
+                outline
+                class="mb-3"
+              >
+                {{ $t('errors.2FANotConfigured') }}
+              </v-alert>
 
               <template v-if="qrcode">
-                <p class="mb-1">{{ $t('pages.login.configure2FAQRCodeMsg') }}</p>
-                <v-img v-if="qrcode" :src="qrcode" :title="$t('pages.login.configure2FAQRCode')" max-width="170" />
+                <p class="mb-1">
+                  {{ $t('pages.login.configure2FAQRCodeMsg') }}
+                </p>
+                <v-img
+                  v-if="qrcode"
+                  :src="qrcode"
+                  :title="$t('pages.login.configure2FAQRCode')"
+                  max-width="170"
+                />
                 <v-text-field
                   v-model="configure2FACode"
                   :placeholder="$t('pages.login.configure2FACode')"
                   outline
                   single-line
                   style="max-width: 170px;"
-                  @keyup.enter="validate2FA" />
+                  @keyup.enter="validate2FA"
+                />
               </template>
             </v-card-text>
 
             <v-card-actions>
-              <v-btn v-if="step !== 1" flat @click="step='login'">
+              <v-btn
+                v-if="step !== 1"
+                flat
+                @click="step='login'"
+              >
                 {{ $t('common.back') }}
               </v-btn>
-              <v-spacer/>
-              <v-btn :disabled="!configure2FACode" color="primary" depressed @click="validate2FA">
+              <v-spacer />
+              <v-btn
+                :disabled="!configure2FACode"
+                color="primary"
+                depressed
+                @click="validate2FA"
+              >
                 {{ $t('common.validate') }}
               </v-btn>
             </v-card-actions>
@@ -334,21 +364,37 @@
 
           <v-window-item value="recovery2FA">
             <v-card-text>
-              <v-alert :value="true" type="warning" outline class="mb-3">{{ $t('pages.login.recovery2FAInfo') }}</v-alert>
+              <v-alert
+                :value="true"
+                type="warning"
+                outline
+                class="mb-3"
+              >
+                {{ $t('pages.login.recovery2FAInfo') }}
+              </v-alert>
 
-              <p>{{ $t('pages.login.recovery2FACode') }}{{ recovery }}
-                <v-btn :title="$t('pages.login.recovery2FADownload')" icon class="mx-0" @click="downloadRecovery">
+              <p>
+                {{ $t('pages.login.recovery2FACode') }}{{ recovery }}
+                <v-btn
+                  :title="$t('pages.login.recovery2FADownload')"
+                  icon
+                  class="mx-0"
+                  @click="downloadRecovery"
+                >
                   <v-icon>mdi-download</v-icon>
                 </v-btn>
               </p>
-
             </v-card-text>
 
             <v-card-actions>
-              <v-btn v-if="step !== 1" flat @click="step='login'">
+              <v-btn
+                v-if="step !== 1"
+                flat
+                @click="step='login'"
+              >
                 {{ $t('common.back') }}
               </v-btn>
-              <v-spacer/>
+              <v-spacer />
             </v-card-actions>
           </v-window-item>
 
@@ -400,7 +446,7 @@
           changePasswordSent: this.$t('pages.login.changePassword'),
           error: this.$t('pages.login.error'),
           configure2FA: this.$t('pages.login.configure2FA'),
-          recovery2FA: this.$t('pages.login.recovery2FA')
+          recovery2FA: this.$t('pages.login.recovery2FA'),
         },
         password: '',
         passwordErrors: [],
@@ -414,7 +460,7 @@
         newUser: {
           firstName: null,
           lastName: null,
-          password: null
+          password: null,
         },
         createUserErrors: [],
         newUserPassword2: null,
@@ -425,7 +471,7 @@
         twoFARequired: false,
         twoFACode: null,
         recovery: null,
-        twoFAErrors: []
+        twoFAErrors: [],
       }
     },
     computed: {
@@ -497,7 +543,7 @@
             adminMode: this.adminMode,
             rememberMe: this.rememberMe && !this.adminMode,
             org: this.org,
-            '2fa': this.twoFACode
+            '2fa': this.twoFACode,
           }, { params: { redirect: this.redirectUrl } })
           // NOTE: this will not be necessary anylonger if we remove the deprecated id_token query param
           const linkUrl = new URL(link)
@@ -539,7 +585,7 @@
       async changePassword() {
         try {
           await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, {
-            password: this.newPassword
+            password: this.newPassword,
           }, { params: { action_token: this.actionToken } })
           this.password = this.newPassword
           this.step = 'login'
@@ -555,7 +601,7 @@
           // initialize secret
           const res = await this.$axios.$post('api/2fa', {
             email: this.email,
-            password: this.password
+            password: this.password,
           })
           this.qrcode = res.qrcode
           this.configure2FACode = null
@@ -569,7 +615,7 @@
           const res = await this.$axios.$post('api/2fa', {
             email: this.email,
             password: this.password,
-            token: this.configure2FACode
+            token: this.configure2FACode,
           })
           this.configure2FACode = null
           this.recovery = res.recovery
@@ -590,8 +636,8 @@
         document.body.appendChild(element)
         element.click()
         document.body.removeChild(element)
-      }
-    }
+      },
+    },
   }
 </script>
 

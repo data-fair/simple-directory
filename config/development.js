@@ -4,7 +4,7 @@ module.exports = {
   // use this host when debugging a data-fair inside a virtualbox vm
   // publicUrl: 'http://10.0.2.2:5689',
   admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com'],
-  adminsOrg: { id: 'admins-org', name: `Admins organization` },
+  adminsOrg: { id: 'admins-org', name: 'Admins organization' },
   admins2FA: true,
   homePage: 'https://koumoul.com',
   anonymousContactForm: true,

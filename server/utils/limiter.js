@@ -6,7 +6,7 @@ let _limiter
 const limiterOptions = {
   keyPrefix: 'sd-rate-limiter-auth',
   points: config.authRateLimit.attempts,
-  duration: config.authRateLimit.duration
+  duration: config.authRateLimit.duration,
 }
 module.exports = (req) => {
   if (config.storage.type === 'mongo') {

@@ -6,7 +6,6 @@ const bodyParser = require('body-parser')
 const requestIp = require('request-ip')
 const shortid = require('shortid')
 const Cookies = require('cookies')
-const { RateLimiterMongo, RateLimiterMemory } = require('rate-limiter-flexible')
 const tokens = require('../utils/tokens')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
@@ -23,22 +22,6 @@ const router = exports.router = express.Router()
 // these routes accept url encoded form data so that they can be used from basic
 // html forms
 router.use(bodyParser.urlencoded({ limit: '100kb' }))
-
-// protect authentication routes with rate limiting to prevent brute force attacks
-let _limiter
-const limiterOptions = {
-  keyPrefix: 'sd-rate-limiter-auth',
-  points: config.authRateLimit.attempts,
-  duration: config.authRateLimit.duration,
-}
-const limiter = (req) => {
-  if (config.storage.type === 'mongo') {
-    _limiter = _limiter || new RateLimiterMongo({ storeClient: req.app.get('storage').client, ...limiterOptions })
-  } else {
-    _limiter = _limiter || new RateLimiterMemory(limiterOptions)
-  }
-  return _limiter
-}
 
 async function confirmLog (storage, user) {
   if (!storage.readonly) {
@@ -106,8 +89,8 @@ router.post('/password', asyncWrap(async (req, res, next) => {
       } else {
         // 2FA token sent alongside email/password
         const cookies = new Cookies(req, res)
-        const token = jwt.sign(req.app.get('keys'), { user: user.id }, config.jwtDurations['2FAToken'])
-        cookies.set('id_token_2fa', token, { expires: new Date(jwt.decode(token).exp * 1000), sameSite: 'lax', httpOnly: true })
+        const token = tokens.sign(req.app.get('keys'), { user: user.id }, config.jwtDurations['2FAToken'])
+        cookies.set('id_token_2fa', token, { expires: new Date(tokens.decode(token).exp * 1000), sameSite: 'lax', httpOnly: true })
       }
     } else {
       if (!user2FA || !user2FA.active) {
@@ -168,7 +151,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   if (await storage.get2FA(user.id) || await storage.required2FA(payload)) {
     return res.status(400).send(req.messages.errors.passwordless2FA)
   }
-  
+
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
 
   const linkUrl = new URL(req.publicBaseUrl + '/api/auth/token_callback')

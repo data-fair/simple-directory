@@ -13,7 +13,7 @@ module.exports = {
     initialToken: '15m',
     exchangedToken: '30d',
     invitationToken: '10d',
-    '2FAToken': '30d'
+    '2FAToken': '30d',
   },
   admins: ['admin@test.com'],
   adminsOrg: null,

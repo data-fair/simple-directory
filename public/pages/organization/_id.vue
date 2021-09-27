@@ -49,8 +49,8 @@
         </v-tooltip>
       </v-text-field>
       <v-select
-        :items="orga.roles"
         v-model="orga['2FA'].roles"
+        :items="orga.roles"
         :messages="[$t('pages.organization.2FARolesMsg')]"
         :rules="[v => !!v || '']"
         :placeholder="$t('pages.organization.2FARoles')"
@@ -94,7 +94,7 @@
     data: () => ({
       orga: null,
       limits: null,
-      valid: true
+      valid: true,
     }),
     computed: {
       ...mapState(['userDetails', 'env']),
@@ -103,7 +103,7 @@
         if (!this.user || !this.userDetails) return false
         if (this.user.adminMode) return true
         return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin'))
-      }
+      },
     },
     async mounted() {
       this.fetchOrganization()

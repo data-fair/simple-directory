@@ -63,8 +63,14 @@
         <td>
           <template v-if="props.item['2FA'] && props.item['2FA'].active">
             oui
-            <v-btn icon class="mx-0" @click="showDrop2FADialog(props.item)">
-              <v-icon small>mdi-delete</v-icon>
+            <v-btn
+              icon
+              class="mx-0"
+              @click="showDrop2FADialog(props.item)"
+            >
+              <v-icon small>
+                mdi-delete
+              </v-icon>
             </v-btn>
           </template>
           <span v-else>non</span>
@@ -205,7 +211,7 @@
 
     <v-dialog v-model="drop2FADialog" max-width="500px">
       <v-card v-if="currentUser">
-        <v-card-title class="title">
+        <v-card-title class="text-h6">
           {{ $t('pages.admin.users.drop2FATitle', {name: currentUser.name}) }}
         </v-card-title>
         <v-card-text>
@@ -214,9 +220,13 @@
           </v-alert>
         </v-card-text>
         <v-card-actions>
-          <v-spacer/>
-          <v-btn flat @click="drop2FADialog = false">{{ $t('common.confirmCancel') }}</v-btn>
-          <v-btn color="warning" @click="drop2FADialog = false;drop2FA(currentUser)">{{ $t('common.confirmOk') }}</v-btn>
+          <v-spacer />
+          <v-btn flat @click="drop2FADialog = false">
+            {{ $t('common.confirmCancel') }}
+          </v-btn>
+          <v-btn color="warning" @click="drop2FADialog = false;drop2FA(currentUser)">
+            {{ $t('common.confirmOk') }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -247,13 +257,13 @@
         if (!this.pagination.sortBy.length) return ''
         return (this.pagination.sortDesc[0] ? '-' : '') + this.pagination.sortBy[0]
       },
-      ...mapState(['env'])
+      ...mapState(['env']),
     },
     watch: {
       'pagination.page'() { this.fetchUsers() },
       'pagination.itemsPerPage'() { this.fetchUsers() },
       'pagination.sortBy'() { this.fetchUsers() },
-      'pagination.sortDesc'() { this.fetchUsers() }
+      'pagination.sortDesc'() { this.fetchUsers() },
     },
     async mounted() {
       this.fetchUsers()
@@ -264,7 +274,7 @@
         { text: this.$t('common.firstName'), value: 'firstName' },
         { text: this.$t('common.lastName'), value: 'lastName' },
         { text: this.$t('common.2FA'), value: '2FA', sortable: false },
-        { text: this.$t('common.organizations'), value: 'organizations', sortable: false }
+        { text: this.$t('common.organizations'), value: 'organizations', sortable: false },
       ]
       if (this.env.defaultMaxCreatedOrgs !== -1 && !this.env.readonly) {
         this.headers.push({ text: this.$t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs', sortable: false })
@@ -273,7 +283,7 @@
         this.headers = this.headers.concat([
           { text: this.$t('common.createdAt'), value: 'created.date' },
           { text: this.$t('common.updatedAt'), value: 'updated.date' },
-          { text: this.$t('common.loggedAt'), value: 'logged' }
+          { text: this.$t('common.loggedAt'), value: 'logged' },
         ])
       }
       this.headers.push({ text: '', value: 'actions', sortable: false })
@@ -283,8 +293,8 @@
       async fetchUsers() {
         this.loading = true
         try {
-          this.users = await this.$axios.$get(`api/users`,
-            { params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.itemsPerPage, sort: this.sort } })
+          this.users = await this.$axios.$get('api/users',
+                                              { params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.itemsPerPage, sort: this.sort } })
           this.pagination.totalItems = this.users.count
         } catch (error) {
           eventBus.$emit('notification', { error })
@@ -351,7 +361,7 @@
       } catch (error) {
         eventBus.$emit('notification', { error })
       }
-    }
+    },
   }
 </script>
 
