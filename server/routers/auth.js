@@ -233,6 +233,14 @@ router.delete('/', (req, res) => {
   cookies.set('id_token', null)
   cookies.set('id_token_sign', null)
   cookies.set('id_token_org', null)
+
+  // remove cookies on deprecated domain (stop using wildcard domain cookies)
+  if (config.oldSessionDomain) {
+    cookies.set('id_token', null, { domain: config.oldSessionDomain })
+    cookies.set('id_token_sign', null, { domain: config.oldSessionDomain })
+    cookies.set('id_token_org', null, { domain: config.oldSessionDomain })
+    cookies.set('id_token_2fa', null, { domain: config.oldSessionDomain })
+  }
   res.status(204).send()
 })
 
