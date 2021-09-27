@@ -83,7 +83,7 @@ module.exports = {
     },
   },
   env: {
-    publicUrl: config.publicUrl,
+    mainPublicUrl: config.publicUrl,
     basePath: config.basePath,
     theme: config.theme,
     homePage: config.homePage,
