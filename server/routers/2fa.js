@@ -5,7 +5,7 @@ const express = require('express')
 const requestIp = require('request-ip')
 const emailValidator = require('email-validator')
 const { v4: uuidv4 } = require('uuid')
-const jwt = require('../utils/jwt')
+const tokens = require('../utils/tokens')
 const asyncWrap = require('../utils/async-wrap')
 const limiter = require('../utils/limiter')
 const passwords = require('../utils/passwords')
@@ -20,7 +20,7 @@ exports.checkSession = async (req, userId) => {
   if (!token) return false
   let decoded
   try {
-    decoded = await jwt.verify(req.app.get('keys'), token)
+    decoded = await tokens.verify(req.app.get('keys'), token)
   } catch (err) {
     console.error('invalid 2fa token', err)
     return false

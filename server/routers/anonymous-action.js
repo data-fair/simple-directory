@@ -1,7 +1,7 @@
 const limiter = require('../utils/limiter')
 const asyncWrap = require('../utils/async-wrap')
 const requestIp = require('request-ip')
-const jwt = require('../utils/jwt')
+const tokens = require('../utils/tokens')
 
 // simply get a token to perform an anonymous action in the close future
 // useful to ensure that the user is human and waits for a little while before submitting a form
@@ -13,6 +13,6 @@ module.exports = asyncWrap(async (req, res, next) => {
     return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
   const payload = { anonymousAction: true, validation: 'wait' }
-  const token = jwt.sign(req.app.get('keys'), payload, '1d', '8s')
+  const token = tokens.sign(req.app.get('keys'), payload, '1d', '8s')
   res.send(token)
 })

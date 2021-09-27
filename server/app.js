@@ -26,7 +26,6 @@ const server = http.createServer(app)
 
 app.set('json spaces', 2)
 
-const sessionCors = session.cors({})
 app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))
 app.use(i18n.middleware)
@@ -73,14 +72,14 @@ app.use('/api', (req, res, next) => {
 const apiDocs = require('../contract/api-docs')
 app.get('/api/api-docs.json', cors(), (req, res) => res.json(apiDocs))
 app.get('/api/auth/anonymous-action', cors(), require('./routers/anonymous-action'))
-app.use('/api/auth', sessionCors, session.auth, fullUser, require('./routers/auth').router)
-app.use('/api/mails', sessionCors, require('./routers/mails'))
-app.use('/api/users', sessionCors, session.auth, fullUser, require('./routers/users'))
-app.use('/api/organizations', sessionCors, session.auth, fullUser, require('./routers/organizations'))
-app.use('/api/invitations', sessionCors, session.auth, fullUser, require('./routers/invitations'))
-app.use('/api/avatars', sessionCors, session.auth, fullUser, require('./routers/avatars'))
-app.use('/api/limits', sessionCors, session.auth, limits.router)
-app.use('/api/2fa', sessionCors, twoFA.router)
+app.use('/api/auth', session.auth, require('./routers/auth').router)
+app.use('/api/mails', session.auth, require('./routers/mails'))
+app.use('/api/users', session.auth, fullUser, require('./routers/users'))
+app.use('/api/organizations', session.auth, fullUser, require('./routers/organizations'))
+app.use('/api/invitations', session.auth, fullUser, require('./routers/invitations'))
+app.use('/api/avatars', session.auth, fullUser, require('./routers/avatars'))
+app.use('/api/limits', session.auth, limits.router)
+app.use('/api/2fa', twoFA.router)
 
 app.use((err, req, res, next) => {
   err.statusCode = err.statusCode || err.status

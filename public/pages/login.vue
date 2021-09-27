@@ -69,14 +69,17 @@
                 <v-text-field
                   id="2fa"
                   v-model="twoFACode"
-                  :placeholder="$t('pages.login.2FACode')"
+                  :label="$t('pages.login.2FACode')"
                   :error-messages="twoFAErrors"
-                  outline
-                  single-line
+                  outlined
+                  dense
+                  rounded
+                  class="mt-4 hide-autofill"
+                  hide-details="auto"
                 >
                   <v-tooltip
                     slot="append-outer"
-                    left
+                    right
                     max-width="400"
                   >
                     <template #activator="{on}">
@@ -333,10 +336,11 @@
                 />
                 <v-text-field
                   v-model="configure2FACode"
-                  :placeholder="$t('pages.login.configure2FACode')"
-                  outline
-                  single-line
-                  style="max-width: 170px;"
+                  :label="$t('pages.login.configure2FACode')"
+                  dense
+                  outlined
+                  rounded
+                  style="max-width: 210px;"
                   @keyup.enter="validate2FA"
                 />
               </template>
@@ -345,7 +349,7 @@
             <v-card-actions>
               <v-btn
                 v-if="step !== 1"
-                flat
+                text
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -374,7 +378,9 @@
               </v-alert>
 
               <p>
-                {{ $t('pages.login.recovery2FACode') }}{{ recovery }}
+                {{ $t('pages.login.recovery2FACode') }}
+                <br>
+                {{ recovery }}
                 <v-btn
                   :title="$t('pages.login.recovery2FADownload')"
                   icon
@@ -389,7 +395,7 @@
             <v-card-actions>
               <v-btn
                 v-if="step !== 1"
-                flat
+                text
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
