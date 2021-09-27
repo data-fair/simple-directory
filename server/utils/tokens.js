@@ -71,8 +71,17 @@ exports.getPayload = (user) => {
 // the header and payload are not httpOnly to be readable by client
 // all cookies use sameSite for CSRF prevention
 exports.setCookieToken = (req, res, token, org) => {
-  const payload = exports.decode(token, { complete: true })
   const cookies = new Cookies(req, res)
+
+  // remove cookies on deprecated domain (stop using wildcard domain cookies)
+  if (config.oldSessionDomain) {
+    cookies.set('id_token', null, { domain: config.oldSessionDomain })
+    cookies.set('id_token_sign', null, { domain: config.oldSessionDomain })
+    cookies.set('id_token_org', null, { domain: config.oldSessionDomain })
+    cookies.set('id_token_2fa', null, { domain: config.oldSessionDomain })
+  }
+
+  const payload = exports.decode(token, { complete: true })
   const parts = token.split('.')
   const opts = { sameSite: 'lax' }
   if (payload.rememberMe) opts.expires = new Date(payload.exp * 1000)
@@ -94,6 +103,7 @@ exports.keepalive = async (req, res) => {
   const storage = req.app.get('storage')
   const user = await storage.getUser({ id: req.user.id })
   if (!user) return res.status(401).send('User does not exist anymore')
+
   const payload = exports.getPayload(user)
   if (req.user.isAdmin && req.user.adminMode && req.query.noAdmin !== 'true') payload.adminMode = true
   if (req.user.asAdmin) {

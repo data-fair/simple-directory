@@ -8,7 +8,7 @@ module.exports = {
     public: './security/simple-directory.key.pub',
     private: './security/simple-directory.key',
   },
-  sessionDomain: null,
+  oldSessionDomain: null, // used to cleanup cookies from older domain
   jwtDurations: {
     initialToken: '15m',
     exchangedToken: '30d',

@@ -99,7 +99,6 @@ module.exports = {
     passwordless: config.passwordless,
     i18nLocales: config.i18nLocales,
     oauth: config.publicOAuth,
-    sessionDomain: config.sessionDomain,
     anonymousContactForm: config.anonymousContactForm,
     noBirthday: config.noBirthday,
   },
