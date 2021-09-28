@@ -66,7 +66,7 @@ router.post('/', asyncWrap(async (req, res, next) => {
   if (!req.body.token) {
     // initialize secret
     const secret = authenticator.generateSecret()
-    const otpauth = authenticator.keyuri(user.name, new URL(config.publicUrl).origin, secret)
+    const otpauth = authenticator.keyuri(user.name, new URL(config.publicUrl).host, secret)
     await storage.patchUser(user.id, { '2FA': { secret, active: false } })
     res.send({ otpauth, qrcode: await qrcode.toDataURL(otpauth) })
   } else {
