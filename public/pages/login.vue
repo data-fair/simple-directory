@@ -76,6 +76,8 @@
                   rounded
                   class="mt-4 hide-autofill"
                   hide-details="auto"
+                  autofocus
+                  @keyup.enter="passwordAuth"
                 >
                   <v-tooltip
                     slot="append-outer"
