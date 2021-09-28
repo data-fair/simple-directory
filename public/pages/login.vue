@@ -41,11 +41,12 @@
                 dense
                 rounded
                 outlined
-                hide-details
                 :autofocus="true"
                 :label="$t('pages.login.emailLabel')"
+                :error-messages="emailErrors"
                 name="email"
                 class="mb-3 hide-autofill"
+                hide-details="auto"
               />
               <p v-if="env.passwordless && !adminMode" class="mb-2 text-caption">
                 {{ $t('pages.login.passwordlessMsg1') }} <a @click="passwordlessAuth">{{ $t('pages.login.passwordlessMsg2') }}</a>
@@ -544,6 +545,7 @@
         }
       },
       async passwordAuth() {
+        this.emailErrors = []
         try {
           const link = await this.$axios.$post('api/auth/password', {
             email: this.email,
