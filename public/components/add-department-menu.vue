@@ -1,13 +1,25 @@
 <template>
-  <v-menu v-if="isAdminOrga" v-model="menu" :close-on-content-click="false" max-width="500px">
-    <template v-slot:activator="{on}">
-      <v-btn :title="$t('pages.organization.addDepartment', {departmentLabel})" icon color="primary" v-on="on">
+  <v-menu
+    v-if="isAdminOrga"
+    v-model="menu"
+    :close-on-content-click="false"
+    max-width="500px"
+  >
+    <template #activator="{on}">
+      <v-btn
+        :title="$t('pages.organization.addDepartment', {departmentLabel})"
+        fab
+        small
+        color="primary"
+        class="mx-2 mt-2"
+        v-on="on"
+      >
         <v-icon>mdi-plus</v-icon>
       </v-btn>
     </template>
 
     <v-card v-if="editDepartment">
-      <v-card-title class="title">
+      <v-card-title class="text-h6">
         {{ $t('pages.organization.addDepartment', {departmentLabel}) }}
       </v-card-title>
       <v-card-text>
@@ -29,9 +41,13 @@
         </v-form>
       </v-card-text>
       <v-card-actions>
-        <v-spacer/>
-        <v-btn flat @click="menu = false">{{ $t('common.confirmCancel') }}</v-btn>
-        <v-btn color="primary" @click="confirmCreate">{{ $t('common.confirmOk') }}</v-btn>
+        <v-spacer />
+        <v-btn text @click="menu = false">
+          {{ $t('common.confirmCancel') }}
+        </v-btn>
+        <v-btn color="primary" @click="confirmCreate">
+          {{ $t('common.confirmOk') }}
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-menu>
@@ -39,30 +55,30 @@
 
 <script>
 
-import { mapActions } from 'vuex'
+  import { mapActions } from 'vuex'
 
-export default {
-  props: ['orga', 'departmentLabel', 'isAdminOrga'],
-  data: () => ({ menu: false, editDepartment: null }),
-  watch: {
-    menu() {
-      if (!this.menu) return
-      this.editDepartment = { id: '', name: '' }
-      if (this.$refs.createForm) this.$refs.createForm.reset()
-    }
-  },
-  methods: {
-    ...mapActions(['patchOrganization']),
-    async confirmCreate() {
-      if (this.$refs.createForm.validate()) {
-        this.menu = false
-        const departments = this.orga.departments.concat([this.editDepartment])
-        await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
-        this.$emit('change')
-      }
-    }
+  export default {
+    props: ['orga', 'departmentLabel', 'isAdminOrga'],
+    data: () => ({ menu: false, editDepartment: null }),
+    watch: {
+      menu() {
+        if (!this.menu) return
+        this.editDepartment = { id: '', name: '' }
+        if (this.$refs.createForm) this.$refs.createForm.reset()
+      },
+    },
+    methods: {
+      ...mapActions(['patchOrganization']),
+      async confirmCreate() {
+        if (this.$refs.createForm.validate()) {
+          this.menu = false
+          const departments = this.orga.departments.concat([this.editDepartment])
+          await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
+          this.$emit('change')
+        }
+      },
+    },
   }
-}
 </script>
 
 <style lang="css" scoped>

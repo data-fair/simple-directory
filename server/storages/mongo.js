@@ -50,7 +50,7 @@ class MongodbStorage {
     const MongoClient = require('mongodb').MongoClient
     const opts = {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
     }
     try {
       this.client = await MongoClient.connect(params.url, opts)
@@ -114,7 +114,7 @@ class MongodbStorage {
     const mongoRes = await this.db.collection('users').findOneAndUpdate(
       { _id: id },
       { $set: patch },
-      { returnOriginal: false }
+      { returnOriginal: false },
     )
     const user = cleanUser(mongoRes.value)
     // "name" was modified, also update all references in created and updated events
@@ -161,7 +161,7 @@ class MongodbStorage {
   }
 
   async findMembers(organizationId, params = {}) {
-    const filter = { 'organizations': { $elemMatch: { id: organizationId } } }
+    const filter = { organizations: { $elemMatch: { id: organizationId } } }
     if (params.ids && params.ids.length) {
       filter._id = { $in: params.ids }
     }
@@ -187,7 +187,7 @@ class MongodbStorage {
       results: users.map(user => {
         const userOrga = user.organizations.find(o => o.id === organizationId)
         return { id: user._id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department }
-      })
+      }),
     }
   }
 
@@ -211,7 +211,7 @@ class MongodbStorage {
     const mongoRes = await this.db.collection('organizations').findOneAndUpdate(
       { _id: id },
       { $set: patch },
-      { returnOriginal: false }
+      { returnOriginal: false },
     )
     const orga = cleanOrganization(mongoRes.value)
     // "name" was modified, also update all organizations references in users
@@ -263,7 +263,7 @@ class MongodbStorage {
   async addMember(orga, user, role, department) {
     await this.db.collection('users').updateOne(
       { _id: user.id },
-      { $push: { organizations: { id: orga.id, name: orga.name, role, department } } }
+      { $push: { organizations: { id: orga.id, name: orga.name, role, department } } },
     )
   }
 
@@ -274,7 +274,7 @@ class MongodbStorage {
   async setMemberRole(organizationId, userId, role, department) {
     await this.db.collection('users').updateOne(
       { _id: userId, 'organizations.id': organizationId },
-      { $set: { 'organizations.$.role': role, 'organizations.$.department': department } }
+      { $set: { 'organizations.$.role': role, 'organizations.$.department': department } },
     )
   }
 
@@ -287,7 +287,7 @@ class MongodbStorage {
     await this.db.collection('avatars').replaceOne(
       { 'owner.type': avatar.owner.type, 'owner.id': avatar.owner.id },
       avatar,
-      { upsert: true }
+      { upsert: true },
     )
   }
 

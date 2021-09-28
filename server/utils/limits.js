@@ -12,8 +12,8 @@ const schema = {
     id: { type: 'string' },
     name: { type: 'string' },
     lastUpdate: { type: 'string', format: 'date-time' },
-    store_nb_members: limitTypeSchema
-  }
+    store_nb_members: limitTypeSchema,
+  },
 }
 const validate = ajv.compile(schema)
 
@@ -26,7 +26,7 @@ exports.getLimits = async (db, consumer) => {
       id: consumer.id,
       name: consumer.name || consumer.id,
       lastUpdate: new Date().toISOString(),
-      store_nb_members: { limit: config.quotas.defaultMaxNbMembers }
+      store_nb_members: { limit: config.quotas.defaultMaxNbMembers },
     }
     await coll.replaceOne({ type: consumer.type, id: consumer.id }, limit, { upsert: true })
   }

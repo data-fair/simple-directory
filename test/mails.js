@@ -14,7 +14,7 @@ test('Send email to a user', async t => {
   const res = await ax.post('/api/mails', {
     to: [{ type: 'user', id: 'dmeadus0' }],
     subject: 'test',
-    text: 'test mail content'
+    text: 'test mail content',
   }, { params: { key: 'testkey' } })
   t.is(res.status, 200)
   await new Promise(resolve => setTimeout(resolve, 50))
@@ -29,7 +29,7 @@ test('Send email to members of an organization', async t => {
   const res = await ax.post('/api/mails', {
     to: [{ type: 'organization', id: 'ihMQiGTaY' }],
     subject: 'test2',
-    text: 'test mail content 2'
+    text: 'test mail content 2',
   }, { params: { key: 'testkey' } })
   t.is(res.status, 200)
   await new Promise(resolve => setTimeout(resolve, 50))
@@ -44,7 +44,7 @@ test('Send email to members of an organization with a certain role', async t => 
   const res = await ax.post('/api/mails', {
     to: [{ type: 'organization', id: 'ihMQiGTaY', role: 'user' }],
     subject: 'test3',
-    text: 'test mail content 2'
+    text: 'test mail content 2',
   }, { params: { key: 'testkey' } })
   t.is(res.status, 200)
   await new Promise(resolve => setTimeout(resolve, 50))

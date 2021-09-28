@@ -4,7 +4,7 @@
 module.exports = {
   root: {
     title: 'Simple Directory',
-    description: 'Gestion simplifiée de vos utilisateurs et vos organisations dans une architecture moderne orientée Web.'
+    description: 'Gestion simplifiée de vos utilisateurs et vos organisations dans une architecture moderne orientée Web.',
   },
   common: {
     home: 'Accueil',
@@ -55,6 +55,7 @@ module.exports = {
     checkInbox: 'Vérifiez votre boite mail',
     spamWarning: 'Si vous n\'avez pas reçu de mail, vérifiez qu\'il n\'a pas été classé automatiquement en tant que spam.',
     validate: 'Valider',
+    delete: 'Supprimer',
     department: 'Département',
     departments: 'Départements',
     autoAdmin: 'M\'ajouter automatiquement comme administrateur',
@@ -63,14 +64,14 @@ module.exports = {
     avatar: 'Avatar',
     birthday: 'Anniversaire',
     missingInfo: 'Information manquante',
-    '2FA': 'Authentification 2 facteurs'
+    '2FA': 'Authentification 2 facteurs',
   },
   doc: {
     about: {
-      link: 'À propos'
+      link: 'À propos',
     },
     install: {
-      link: 'Installation'
+      link: 'Installation',
     },
     config: {
       link: 'Configuration',
@@ -89,11 +90,11 @@ module.exports = {
           logo: 'L\'URL du logo à utiliser pour remplacer le logo par défaut de <i>Simple Directory</i>.',
           dark: 'Rendre l\'apparence complète des pages sombre.<br>Notez que les couleurs par défaut sont plus adaptées à un thème clair. Si vous passez en sombre vous allez devoir également modifier ces couleurs.',
           cssUrl: 'Lien vers une feuille de style pour compléter les variables de personnalisation.<br>ATTENTION: la structure HTML peut varier de manière importante entre 2 versions. Maintenir cette feuille de style va vous créer du travail supplémentaire à chaque montée en version.',
-          cssText: 'Contenu CSS textuel.<br>ATTENTION: la structure HTML peut varier de manière importante entre 2 versions. Maintenir cette feuille de style va vous créer du travail supplémentaire à chaque montée en version.'
+          cssText: 'Contenu CSS textuel.<br>ATTENTION: la structure HTML peut varier de manière importante entre 2 versions. Maintenir cette feuille de style va vous créer du travail supplémentaire à chaque montée en version.',
         },
         secret: {
           public: '<b>IMPORTANT.</b> Le chemin vers la clé publique de chiffrement RSA. Voir la documentation d\'installation du service.',
-          private: '<b>IMPORTANT.</b> Le chemin vers la clé privée de chiffrement RSA. Voir la documentation d\'installation du service.'
+          private: '<b>IMPORTANT.</b> Le chemin vers la clé privée de chiffrement RSA. Voir la documentation d\'installation du service.',
         },
         analytics: 'JSON de configuration des analytics, correspond à la partie "modules" de configuration de la librairie <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
@@ -102,26 +103,26 @@ Le type "file" par défaut est lecture seule et est adapté en développement/te
 Le type "mongo" dépend d'un accès à une base de données MongoDB, c'est le mode approprié pour la plupart des installations en production.`,
           file: {
             users: 'Uniquement pour storage.type=file. Le chemin du fichier JSON contenant les définitions d\'utilisateurs',
-            organizations: 'Uniquement pour storage.type=file. Le chemin du fichier JSON contenant les définitions d\'organisations'
+            organizations: 'Uniquement pour storage.type=file. Le chemin du fichier JSON contenant les définitions d\'organisations',
           },
           mongo: {
-            url: 'Uniquement pour storage.type=mongo. La chaine de connexion complète à la base de données mongodb.'
-          }
+            url: 'Uniquement pour storage.type=mongo. La chaine de connexion complète à la base de données mongodb.',
+          },
         },
         mails: {
           transport: '<b>IMPORTANT.</b> Un objet JSON de configuration du transport mail compatible avec la librairie <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
-          from: '\'<b>IMPORTANT.</b> L\'adresse à renseigner comme expéditeur des mails émis par le service.'
+          from: '\'<b>IMPORTANT.</b> L\'adresse à renseigner comme expéditeur des mails émis par le service.',
         },
         listEntitiesMode: `Permet de restreindre de manière globale l'accès aux listes d'utilisateurs et d'organisations.<br>
 Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         defaultLoginRedirect: 'Redirection par défaut après login. Si non spécifié l\'utilisateur sera redirigé vers son profil.',
         onlyCreateInvited: 'Si vrai les utilisateurs ne seront pas créés au premier email envoyé. Ils doivent être invités dans une organisation.',
-        tosUrl: '<b>IMPORTANT.</b> Une URL vers vos conditions générales d\'utilisation. Si ce paramètre n\'est pas défini et ne pointe pas vers une page Web correcte vous risquez de ne pas respecter vos obligations vis à vis de vos utilisateurs.'
-      }
+        tosUrl: '<b>IMPORTANT.</b> Une URL vers vos conditions générales d\'utilisation. Si ce paramètre n\'est pas défini et ne pointe pas vers une page Web correcte vous risquez de ne pas respecter vos obligations vis à vis de vos utilisateurs.',
+      },
     },
     use: {
-      link: 'Utilisation'
-    }
+      link: 'Utilisation',
+    },
   },
   pages: {
     admin: {
@@ -132,17 +133,17 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         editUserEmailTitle: 'Changez l\'adresse email de l\'utilisateur {name}',
         editUserEmailText: 'Attention ! L\'email est une clé importante de l\'utilisateur, en modifiant cette information vous courez le risque d\'insérer une adresse erronée, non fonctionnelle ou incohérente avec d\'autres saisies. Cette fonctionnalité est présentée uniquement aux administrateurs pour débloquer un utilisateur dont la boite mail devient inaccessible.',
         drop2FATitle: 'Effacer la configuration d\'authentification 2 facteurs de l\'utilisateur {name}',
-        drop2FAExplain: 'Attention ! Cette opération est réservée au débloquage d\'un utilisateur qui a à la fois perdu son appareil et son code de récupération pour l\'authentification 2 facteurs. Avant de continuer il est fortement recommandé de s\'assurer d\'une manière ou d\'une autre de l\'identité de la personne qui fait la demande (contacter un collègue membre d\'une même organisation par exemple).'
+        drop2FAExplain: 'Attention ! Cette opération est réservée au débloquage d\'un utilisateur qui a à la fois perdu son appareil et son code de récupération pour l\'authentification 2 facteurs. Avant de continuer il est fortement recommandé de s\'assurer d\'une manière ou d\'une autre de l\'identité de la personne qui fait la demande (contacter un collègue membre d\'une même organisation par exemple).',
       },
       organizations: {
         limitOrganizationTitle: 'Modifiez les limites de l\'organisation',
         members: 'membre(s)',
-        nbMembers: 'Nombre maximal de membres (0 pour aucune limite)'
-      }
+        nbMembers: 'Nombre maximal de membres (0 pour aucune limite)',
+      },
     },
     login: {
       title: 'Identifiez vous',
-      emailLabel: 'Votre adresse mail',
+      emailLabel: 'Adresse mail',
       emailCaption: 'En savoir plus sur l\'authentification <a href="https://koumoul.com/blog/passwordless">sans mot de passe</a>',
       success: 'Vous allez recevoir un email à l\'adresse renseignée qui contiendra un lien. Veuillez ouvrir ce lien pour terminer votre identification.',
       maildevLink: 'Accédez à la boite mail de développement',
@@ -158,12 +159,14 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       createUserMsg1: 'Si vous ne vous êtes pas encore connecté à notre plateforme veuillez créer un compte.',
       createUserMsg2: 'Créer un compte',
       tosMsg: 'Avant de créer votre compte veuillez prendre connaissance de <a href="{tosUrl}" target="_blank">nos conditions générales d\'utilisation</a>.',
+      separateDomain: 'Vous vous apprêtez à créer un compte sur <a href="{host}">{host}</a>, ce site fait partie de la plateforme <a href="host">{mainHost}</a>. Le compte sera mutualisé avec tous les sites de cette plateforme.',
       tosConfirm: 'Je confirme avoir lu les conditions générales d\'utilisation pour ce site.',
       createUserConfirm: 'Créer le compte',
       createUserConfirmed: 'Un email vous a été envoyé à l\'adresse {email}. Cet email contient un lien pour valider la création du compte.',
       adminMode: 'Confirmez votre identité pour passer en mode administration.',
       oauth: 'Connectez vous avec :',
       error: 'Erreur',
+      rememberMe: 'se souvenir de moi',
       '2FACode': 'Code à 6 chiffres ou code de récupération',
       '2FAInfo': 'Saisissez un code de vérification pour continuer. Vous pouvez obtenir ce code depuis l\'application de vérification sur votre téléphone. En cas de perte de votre appareil vous pouvez utiliser le code récupération téléchargé à la configuration de l\'authentification à 2 facteurs.',
       configure2FA: 'Configurer l\'authentification à 2 facteurs',
@@ -173,7 +176,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       recovery2FA: 'Code de récupération',
       recovery2FAInfo: 'Attention ! Le code de récupération ci-dessous est à conserver précieusement. Sans lui vous ne pourrez pas récupérer votre compte en cas de perte de l\'appareil sur lequel vous venez de configurer l\'authentification à 2 facteurs.',
       recovery2FACode: 'code de récupération : ',
-      recovery2FADownload: 'télécharger un fichier contenant le code de récupération'
+      recovery2FADownload: 'télécharger un fichier contenant le code de récupération',
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
@@ -196,25 +199,25 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       confirmDeleteDepartmentTitle: 'Supprimer {name}',
       confirmDeleteDepartmentMsg: 'Voulez vous vraiment supprimer {name} de votre organisation ?',
       departmentIdInvalid: 'L\'identifiant ne doit contenir que des lettres, nombres et espaces.',
-      inviteLink: 'En cas, de problème dans la communication par email vous pouvez envoyer le lien de confirmation ci-dessous par un autre moyen. Attention ! Vous risquez d\'insérer dans la base utilisateur une adresse mail erronée ou non fonctionnelle. Cette adresse mail pourra poser de multiples problèmes par la suite : changement de mot de passe, envoi d\'alertes, etc.',
+      inviteLink: 'En cas de problème dans la communication par email vous pouvez envoyer le lien de confirmation ci-dessous par un autre moyen. Attention ! Vous risquez d\'insérer dans la base utilisateur une adresse mail erronée ou non fonctionnelle. Cette adresse mail pourra poser de multiples problèmes par la suite : changement de mot de passe, envoi d\'alertes, etc.',
       '2FARoles': 'Authentification à 2 facteurs.',
-      '2FARolesMsg': 'Rendre obligatoire l\'authentification à 2 facteurs pour les utilisateurs possédant ces rôles.'
+      '2FARolesMsg': 'Rendre obligatoire l\'authentification à 2 facteurs pour les utilisateurs possédant ces rôles.',
     },
     invitation: {
       title: 'Invitation validée',
       msgSameUser: 'Votre invitation à être membre d\'une organisation a bien été acceptée. Vous pouvez consulter <a href="{profileUrl}">votre profil</a>.',
-      msgDifferentUser: 'Cette invitation à être membre d\'une organisation a bien été acceptée. Vous pouvez <a href="{loginUrl}">vous connecter</a> avec le compte invité.'
+      msgDifferentUser: 'Cette invitation à être membre d\'une organisation a bien été acceptée. Vous pouvez <a href="{loginUrl}">vous connecter</a> avec le compte invité.',
     },
     avatar: {
-      prepare: 'Préparez l\'image'
+      prepare: 'Préparez l\'image',
     },
     me: {
       noOrganization: 'Vous n\'êtes membre d\'aucune organisation.',
       operations: 'Opérations sensibles',
       deleteMyself: 'Supprimer ce compte',
       deleteMyselfAlert: 'Si vous supprimez votre compte les données associées seront également supprimées et ne pourront pas être récupérées.',
-      deleteMyselfCheck: 'cochez cette case et cliquez sur OK pour confirmer la suppression.'
-    }
+      deleteMyselfCheck: 'cochez cette case et cliquez sur OK pour confirmer la suppression.',
+    },
   },
   errors: {
     badEmail: 'Adresse mail non renseignée ou malformée.',
@@ -238,7 +241,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     adminModeOnly: 'Fonctionnalité réservée aux super-administrateurs.',
     '2FANotConfigured': 'L\'authentification à 2 facteurs est nécessaire pour ce compte et n\'est pas encore configurée.',
     passwordless2FA: 'L\'authentification sans mot de passe est incompatible avec l\'authentification à 2 facteurs requise pour ce compte.',
-    bad2FAToken: 'Code de vérification erroné ou périmé pour l\'authentification à 2 facteurs'
+    bad2FAToken: 'Code de vérification erroné ou périmé pour l\'authentification à 2 facteurs',
   },
   mails: {
     creation: {
@@ -253,7 +256,7 @@ Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à cr
       htmlMsg: 'Une demande de création de compte a été faite depuis <a href="{origin}">{host}</a> pour cette adresse email. Pour la confirmer cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.',
       htmlButton: 'Valider la création de compte',
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
-      htmlCaption: 'Si vous avez un problème avec votre compte ou si vous n\'avez pas demandé à vous connecter à <a href="{origin}">{host}</a>, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'Si vous avez un problème avec votre compte ou si vous n\'avez pas demandé à vous connecter à <a href="{origin}">{host}</a>, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.',
     },
     login: {
       subject: 'Identification sur {host}',
@@ -267,7 +270,7 @@ Si vous avez un problème avec votre compte ou si vous n'avez pas demandé à vo
       htmlMsg: 'Une demande d\'identification a été faite depuis <a href="{origin}">{host}</a>. Pour la confirmer cliquez sur le bouton ci-dessous. Le lien est valide 15 minutes.',
       htmlButton: 'Connexion à {host}',
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
-      htmlCaption: 'Si vous avez un problème avec votre compte ou si vous n\'avez pas demandé à vous connecter à <a href="{origin}">{host}</a>, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'Si vous avez un problème avec votre compte ou si vous n\'avez pas demandé à vous connecter à <a href="{origin}">{host}</a>, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.',
     },
     noCreation: {
       subject: 'Échec d\'authentification sur {host}',
@@ -277,7 +280,7 @@ Une demande d'identification a été faite depuis {host}, mais elle a été reje
 N'hésitez pas à nous contacter à {contact}.
       `,
       htmlMsg: 'Une demande d\'identification a été faite depuis <a href="{origin}">{host}</a>, mais elle a été rejetée car cette adresse email est inconnue ou n\'a pas été validée.',
-      htmlCaption: 'N\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'N\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.',
     },
     conflict: {
       subject: 'Échec de création de compte sur {host}',
@@ -287,7 +290,7 @@ Une demande de création de compte a été faite depuis {host}, mais elle a ét�
 N'hésitez pas à nous contacter à {contact}.
       `,
       htmlMsg: 'Une demande de création de compte a été faite depuis <a href="{origin}">{host}</a>, mais elle a été rejetée car cette adresse email est déjà associée à un compte.',
-      htmlCaption: 'N\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'N\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.',
     },
     invitation: {
       subject: 'Rejoignez l\'organisation {organization} sur {host}',
@@ -305,7 +308,7 @@ Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
       `,
       htmlButton: 'Accepter l\'invitation',
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
-      htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.',
     },
     action: {
       subject: 'Effectuez une action sur votre compte sur {host}',
@@ -321,7 +324,7 @@ Une action demandant une confirmation par email a été déclenchée sur cette a
       `,
       htmlButton: 'Valider',
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
-      htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez ce message suspect, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
-    }
-  }
+      htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez ce message suspect, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.',
+    },
+  },
 }

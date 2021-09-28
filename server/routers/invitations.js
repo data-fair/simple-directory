@@ -2,7 +2,7 @@ const express = require('express')
 const config = require('config')
 const URL = require('url').URL
 const shortid = require('shortid')
-const jwt = require('../utils/jwt')
+const tokens = require('../utils/tokens')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
 const userName = require('../utils/user-name')
@@ -10,7 +10,7 @@ const limits = require('../utils/limits')
 const emailValidator = require('email-validator')
 const debug = require('debug')('invitations')
 
-let router = module.exports = express.Router()
+const router = module.exports = express.Router()
 
 // Invitation for a user to join an organization from an admin of this organization
 router.post('', asyncWrap(async (req, res, next) => {
@@ -22,16 +22,16 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (storage.db) {
     const limit = await limits.get(storage.db, { type: 'organization', id: req.body.id }, 'store_nb_members')
     if (limit.consumption >= limit.limit && limit.limit > 0) {
-      return res.status(429).send(`L'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.`)
+      return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
     }
   }
 
   const invitation = req.body
   const orga = req.user.organizations.find(o => o.id === invitation.id)
   if (!req.user.isAdmin && (!orga || orga.role !== 'admin')) return res.status(403).send(req.messages.errors.permissionDenied)
-  const token = jwt.sign(req.app.get('keys'), invitation, config.jwtDurations.invitationToken)
+  const token = tokens.sign(req.app.get('keys'), invitation, config.jwtDurations.invitationToken)
 
-  const linkUrl = new URL(config.publicUrl + '/api/invitations/_accept')
+  const linkUrl = new URL(req.publicBaseUrl + '/api/invitations/_accept')
   linkUrl.searchParams.set('invit_token', token)
   const params = { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin }
   await mails.send({
@@ -39,7 +39,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     key: 'invitation',
     messages: req.messages,
     to: req.body.email,
-    params
+    params,
   })
 
   if (req.user.isAdmin || req.user.asAdmin) {
@@ -51,9 +51,9 @@ router.post('', asyncWrap(async (req, res, next) => {
 router.get('/_accept', asyncWrap(async (req, res, next) => {
   let invit
   let verified
-  const errorUrl = new URL(`${config.publicUrl}/login`)
+  const errorUrl = new URL(`${req.publicBaseUrl}/login`)
   try {
-    invit = await jwt.verify(req.app.get('keys'), req.query.invit_token)
+    invit = await tokens.verify(req.app.get('keys'), req.query.invit_token)
     verified = true
   } catch (err) {
     if (err.name !== 'TokenExpiredError') {
@@ -66,7 +66,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
     // if the token was once valid, but deprecated we accept it partially
     // meaning that we will not perform writes base on it
     // but we accept to check the user's existence and create the best redirect for him
-    invit = jwt.decode(req.query.invit_token)
+    invit = tokens.decode(req.query.invit_token)
     verified = false
   }
   debug('accept invitation', invit, verified)
@@ -84,7 +84,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
     return res.redirect(errorUrl.href)
   }
 
-  let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${config.publicUrl}/invitation`)
+  let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${req.publicBaseUrl}/invitation`)
   redirectUrl.searchParams.set('email', invit.email)
   redirectUrl.searchParams.set('id_token_org', invit.id)
 
@@ -93,11 +93,11 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
     debug('invitation was already accepted, redirect', redirectUrl.href)
     // missing password, invitation must have been accepted without completing account creation
     if (!await storage.hasPassword(invit.email) && !config.passwordless) {
-      const payload = jwt.getPayload(user)
+      const payload = tokens.getPayload(user)
       payload.action = 'changePassword'
-      const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+      const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
       const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${config.publicUrl}/login`)
+      redirectUrl = new URL(`${req.publicBaseUrl}/login`)
       redirectUrl.searchParams.set('step', 'changePassword')
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
@@ -108,7 +108,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
     }
     if (!req.user || req.user.email !== invit.email) {
       const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${config.publicUrl}/login`)
+      redirectUrl = new URL(`${req.publicBaseUrl}/login`)
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
@@ -137,11 +137,11 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
     debug('create invited user', userInit)
     user = await storage.createUser(userInit)
     if (!config.passwordless) {
-      const payload = jwt.getPayload(user)
+      const payload = tokens.getPayload(user)
       payload.action = 'changePassword'
-      const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+      const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
       const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${config.publicUrl}/login`)
+      redirectUrl = new URL(`${req.publicBaseUrl}/login`)
       redirectUrl.searchParams.set('step', 'changePassword')
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)

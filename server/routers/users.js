@@ -5,19 +5,19 @@ const emailValidator = require('email-validator')
 const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const findUtils = require('../utils/find')
-const jwt = require('../utils/jwt')
+const tokens = require('../utils/tokens')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 const mails = require('../mails')
 
-let router = express.Router()
+const router = express.Router()
 
 // Get the list of users
 router.get('', asyncWrap(async (req, res, next) => {
   if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
   if (config.listEntitiesMode === 'admin' && !(req.user && req.user.isAdmin)) return res.send({ results: [], count: 0 })
 
-  let params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
+  const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
@@ -28,7 +28,7 @@ router.get('', asyncWrap(async (req, res, next) => {
   }
 
   if (req.query) {
-    if (req.query['ids']) params.ids = req.query['ids'].split(',')
+    if (req.query.ids) params.ids = req.query.ids.split(',')
     if (req.query.q) params.q = req.query.q
   }
   const users = await req.app.get('storage').findUsers(params)
@@ -36,6 +36,7 @@ router.get('', asyncWrap(async (req, res, next) => {
 }))
 
 const createKeys = ['firstName', 'lastName', 'email', 'password', 'birthday']
+// TODO: block when onlyCreateInvited is true ?
 router.post('', asyncWrap(async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
@@ -50,7 +51,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     id: shortid.generate(),
     firstName: req.body.firstName,
     lastName: req.body.lastName,
-    emailConfirmed: false
+    emailConfirmed: false,
   }
   newUser.name = userName(newUser)
 
@@ -65,14 +66,14 @@ router.post('', asyncWrap(async (req, res, next) => {
   // email is already taken, send a conflict email
   const user = await req.app.get('storage').getUserByEmail(req.body.email)
   if (user && user.emailConfirmed !== false) {
-    const link = req.query.redirect || config.defaultLoginRedirect || config.publicUrl
+    const link = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl
     const linkUrl = new URL(link)
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'conflict',
       messages: req.messages,
       to: req.body.email,
-      params: { host: linkUrl.host, origin: linkUrl.origin }
+      params: { host: linkUrl.host, origin: linkUrl.origin },
     })
     return res.status(204).send()
   }
@@ -86,17 +87,19 @@ router.post('', asyncWrap(async (req, res, next) => {
 
   // prepare same link and payload as for a passwordless authentication
   // the user will be validated and authenticated at the same time by the exchange route
-  const payload = jwt.getPayload(newUser)
-  const token = jwt.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-  const link = (req.query.redirect || config.defaultLoginRedirect || config.publicUrl + '/me?id_token=') + encodeURIComponent(token)
+  const payload = tokens.getPayload(newUser)
+  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+  const link = (req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me?id_token=') + encodeURIComponent(token)
   const linkUrl = new URL(link)
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'creation',
     messages: req.messages,
     to: req.body.email,
-    params: { link, host: linkUrl.host, origin: linkUrl.origin }
+    params: { link, host: linkUrl.host, origin: linkUrl.origin },
   })
+
+  // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
   return res.status(204).send()
 }))
 
@@ -106,7 +109,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
   const user = await req.app.get('storage').getUser({ id: req.params.userId })
   if (!user) return res.status(404).send()
   user.isAdmin = config.admins.includes(user.email)
-  user.avatarUrl = config.publicUrl + '/api/avatars/user/' + user.id + '/avatar.png'
+  user.avatarUrl = req.publicBaseUrl + '/api/avatars/user/' + user.id + '/avatar.png'
   res.json(user)
 }))
 
@@ -130,7 +133,11 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
   }
   const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
   if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
-  patchedUser.avatarUrl = config.publicUrl + '/api/avatars/user/' + patchedUser.id + '/avatar.png'
+  patchedUser.avatarUrl = req.publicBaseUrl + '/api/avatars/user/' + patchedUser.id + '/avatar.png'
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.send(patchedUser)
 }))
 
@@ -155,7 +162,7 @@ router.post('/:userId/password', asyncWrap(async (req, res, next) => {
   if (!actionToken) return res.status(401).send()
   let decoded
   try {
-    decoded = await jwt.verify(req.app.get('keys'), actionToken)
+    decoded = await tokens.verify(req.app.get('keys'), actionToken)
   } catch (err) {
     return res.status(401).send(req.messages.errors.invalidToken)
   }

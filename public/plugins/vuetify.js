@@ -1,18 +1,15 @@
-import '@mdi/font/css/materialdesignicons.css'
-import Vue from 'vue'
-import Vuetify from 'vuetify/lib'
-require('../stylus/main.styl')
+import tinycolor from 'tinycolor2'
 
-export default ({ env, app, route }) => {
-  if (app.$cookies.get('theme_dark') !== undefined) env.theme.dark = app.$cookies.get('theme_dark')
-  if (route.query.dark) env.theme.dark = route.query.dark === 'true'
-  const theme = env.theme.dark ? { ...env.theme.colors, ...env.theme.darkColors } : env.theme.colors
+export default ({ app, route, $vuetify }) => {
+  if (app.$cookies.get('theme_dark') !== undefined) $vuetify.theme.dark = app.$cookies.get('theme_dark')
+  if (route.query.dark) $vuetify.theme.dark = route.query.dark === 'true'
   if (route.query && route.query.primary) {
-    theme.primary = route.query.primary
+    // ensure the color will provide a readable contrast with white text in buttons
+    const c = tinycolor(route.query.primary)
+    while (!tinycolor.isReadable('#FFFFFF', c)) {
+      c.darken(2)
+    }
+    $vuetify.theme.themes.dark.primary = route.query.primary
+    $vuetify.theme.themes.light.primary = route.query.primary
   }
-
-  Vue.use(Vuetify, {
-    iconfont: 'mdi',
-    theme
-  })
 }

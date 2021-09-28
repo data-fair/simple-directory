@@ -17,7 +17,7 @@ test('Find members', async t => {
 })
 
 test('Get user', async t => {
-  let res = await test.app.get('storage').getUser({ id: 'dmeadus0' })
+  const res = await test.app.get('storage').getUser({ id: 'dmeadus0' })
   t.truthy(res)
   t.truthy(res.email)
   t.truthy(res.organizations)

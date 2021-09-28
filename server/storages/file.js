@@ -16,13 +16,13 @@ function getUserOrgas(organizations, user) {
     .map(orga => ({
       ...orga.members.find(m => m.id === user.id),
       id: orga.id,
-      name: orga.name
+      name: orga.name,
     }))
 }
 
 function sortCompare(sort) {
   return function(a, b) {
-    for (let key of Object.keys(sort || {})) {
+    for (const key of Object.keys(sort || {})) {
       if (a[key] < b[key]) return sort[key]
     }
     return 0
@@ -88,7 +88,7 @@ class FileStorage {
 
     return {
       count: filteredUsers.length,
-      results: filteredUsers.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size)
+      results: filteredUsers.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size),
     }
   }
 
@@ -114,7 +114,7 @@ class FileStorage {
     }
     return {
       count: members.length,
-      results: members.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size)
+      results: members.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size),
     }
   }
 
@@ -146,7 +146,7 @@ class FileStorage {
 
     return {
       count: filteredOrganizations.length,
-      results: filteredOrganizations.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size)
+      results: filteredOrganizations.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size),
     }
   }
 

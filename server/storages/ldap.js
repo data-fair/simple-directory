@@ -5,7 +5,7 @@ const debug = require('debug')('ldap')
 
 function sortCompare(sort) {
   return function(a, b) {
-    for (let key of Object.keys(sort || {})) {
+    for (const key of Object.keys(sort || {})) {
       if (a.item[key] < b.item[key]) return sort[key]
     }
     return 0
@@ -56,7 +56,7 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
       }
       if (filters.length === 1) return filters[0]
       return new ldap.AndFilter({ filters })
-    }
+    },
   }
 }
 
@@ -71,14 +71,14 @@ class LdapStorage {
       this.ldapParams.users.mapping,
       ['email'],
       [],
-      this.ldapParams.users.objectClass
+      this.ldapParams.users.objectClass,
     )
     this._orgMapping = buildMappingFn(
       this.ldapParams.organizations.mapping,
       ['id'],
       [],
       this.ldapParams.organizations.objectClass,
-      this.ldapParams.members.organizationAsDC ? 'dcObject' : null
+      this.ldapParams.members.organizationAsDC ? 'dcObject' : null,
     )
 
     return this
@@ -106,7 +106,7 @@ class LdapStorage {
         filter,
         attributes: attributes.filter(key => !!key),
         scope: 'sub',
-        paged: true
+        paged: true,
       }, (err, res) => {
         if (err) return reject(err)
         const results = []
@@ -144,7 +144,7 @@ class LdapStorage {
       results: results
         .sort(sortCompare(params.sort))
         .slice(skip, skip + size)
-        .map(result => onlyItem ? result.item : result)
+        .map(result => onlyItem ? result.item : result),
     }
   }
 
@@ -156,7 +156,7 @@ class LdapStorage {
       return `${dnKey}=${entry[dnKey]}, ${this.ldapParams.baseDN}`
     } else if (this.ldapParams.members.organizationAsDC) {
       if (!user.organizations || !user.organizations.length) {
-        throw new Error(`L'utilisateur doit être associé à une organisation dès la création`)
+        throw new Error('L\'utilisateur doit être associé à une organisation dès la création')
       }
       const orgEntry = this._orgMapping.to(user.organizations[0])
       const orgDNKey = this.ldapParams.organizations.dnKey
@@ -175,7 +175,7 @@ class LdapStorage {
   }
 
   async createUser(user) {
-    const entry = this._userMapping.to(user)
+    const entry = this._userMapping.to({ ...user, lastName: user.lastName || 'missing' })
     const dn = this._userDN(user)
     if (user.organizations.length && this.ldapParams.members.role.attr) {
       const roleValues = this.ldapParams.members.role.values[user.organizations[0].role]
@@ -242,7 +242,7 @@ class LdapStorage {
         attributes,
         this._userMapping.from,
         {},
-        false
+        false,
       )
       if (!res.results[0]) return
       if (!onlyItem) return res.results[0]
@@ -298,7 +298,7 @@ class LdapStorage {
         attributes,
         this._userMapping.from,
         params,
-        false
+        false,
       )
       const orgCache = {}
       for (let i = 0; i < res.results.length; i++) {
@@ -359,7 +359,7 @@ class LdapStorage {
           attributes,
           this._userMapping.from,
           params,
-          false
+          false,
         )
         const orgCache = {}
         for (let i = 0; i < res.results.length; i++) {
@@ -408,7 +408,7 @@ class LdapStorage {
       this.ldapParams.baseDN,
       this._orgMapping.filter({ id }, this.ldapParams.organizations.objectClass),
       Object.values(this.ldapParams.organizations.mapping),
-      this._orgMapping.from
+      this._orgMapping.from,
     )
     return res.results[0]
   }
@@ -424,7 +424,7 @@ class LdapStorage {
     if (this.ldapParams.organizations.staticSingleOrg) {
       return {
         count: 1,
-        results: [this.ldapParams.organizations.staticSingleOrg]
+        results: [this.ldapParams.organizations.staticSingleOrg],
       }
     }
     return this._client(async (client) => {
@@ -434,7 +434,7 @@ class LdapStorage {
         this._orgMapping.filter({ q: params.q }, this.ldapParams.organizations.objectClass),
         Object.values(this.ldapParams.organizations.mapping),
         this._orgMapping.from,
-        params
+        params,
       )
     })
   }

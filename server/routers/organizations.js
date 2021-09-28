@@ -5,8 +5,9 @@ const asyncWrap = require('../utils/async-wrap')
 const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
 const limits = require('../utils/limits')
+const tokens = require('../utils/tokens')
 
-let router = module.exports = express.Router()
+const router = module.exports = express.Router()
 
 // Either a super admin, or an admin of the current organization
 function isAdmin(req) {
@@ -23,7 +24,7 @@ router.get('', asyncWrap(async (req, res, next) => {
   if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
   if (config.listEntitiesMode === 'admin' && !(req.user && req.user.isAdmin)) return res.send({ results: [], count: 0 })
 
-  let params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
+  const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
@@ -33,7 +34,7 @@ router.get('', asyncWrap(async (req, res, next) => {
     params.select = ['id', 'name']
   }
 
-  if (req.query['ids']) params.ids = req.query['ids'].split(',')
+  if (req.query.ids) params.ids = req.query.ids.split(',')
   if (req.query.q) params.q = req.query.q
   if (req.query.creator) params.creator = req.query.creator
 
@@ -56,7 +57,7 @@ router.get('/:organizationId', asyncWrap(async (req, res, next) => {
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   orga.roles = orga.roles || config.roles.defaults
-  orga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
+  orga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
   res.send(orga)
 }))
 
@@ -88,7 +89,11 @@ router.post('', asyncWrap(async (req, res, next) => {
   await storage.createOrganization(orga, req.user)
   if (!req.user.isAdmin || req.query.autoAdmin !== 'false') await storage.addMember(orga, req.user, 'admin')
   webhooks.postIdentity('organization', orga)
-  orga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
+  orga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.status(201).send(orga)
 }))
 
@@ -106,7 +111,11 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body, req.user)
   if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
   webhooks.postIdentity('organization', patchedOrga)
-  patchedOrga.avatarUrl = config.publicUrl + '/api/avatars/organization/' + patchedOrga.id + '/avatar.png'
+  patchedOrga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + patchedOrga.id + '/avatar.png'
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.send(patchedOrga)
 }))
 
@@ -119,7 +128,7 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   }
   const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
   if (req.query.q) params.q = req.query.q
-  if (req.query['ids'] || req.query['id']) params.ids = (req.query['ids'] || req.query['id']).split(',')
+  if (req.query.ids || req.query.id) params.ids = (req.query.ids || req.query.id).split(',')
   if (req.query.role) params.roles = req.query.role.split(',')
   if (req.query.department) params.departments = req.query.department.split(',')
   const members = await req.app.get('storage').findMembers(req.params.organizationId, params)
@@ -138,6 +147,10 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   if (storage.db) {
     await limits.setNbMembers(storage.db, req.params.organizationId)
   }
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.status(204).send()
 }))
 
@@ -153,6 +166,10 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
   const roles = orga.roles || config.roles.defaults
   if (!roles.includes(req.body.role)) return res.status(400).send(req.messages.errors.replace('{role}', req.body.role))
   await req.app.get('storage').setMemberRole(req.params.organizationId, req.params.userId, req.body.role, req.body.department)
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.status(204).send()
 }))
 
@@ -164,5 +181,9 @@ router.delete('/:organizationId', asyncWrap(async (req, res, next) => {
   if (count > 1) return res.status(400).send(req.messages.errors.nonEmptyOrganization)
   await req.app.get('storage').deleteOrganization(req.params.organizationId)
   webhooks.deleteIdentity('organization', req.params.organizationId)
+
+  // update session info
+  await tokens.keepalive(req, res)
+
   res.status(204).send()
 }))

@@ -5,27 +5,27 @@ const bodyParser = require('body-parser')
 const http = require('http')
 const util = require('util')
 const eventToPromise = require('event-to-promise')
+const originalUrl = require('original-url')
+const { format: formatUrl } = require('url')
 const cors = require('cors')
 const storages = require('./storages')
 const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
-const jwt = require('./utils/jwt')
+const tokens = require('./utils/tokens')
 const limits = require('./utils/limits')
 const twoFA = require('./routers/2fa.js')
 const session = require('@koumoul/sd-express')({
   directoryUrl: config.publicUrl,
-  publicUrl: config.publicUrl,
   privateDirectoryUrl: 'http://localhost:' + config.port,
-  cookieDomain: config.sessionDomain
 })
 const i18n = require('../i18n')
+const debug = require('debug')('app')
 
 const app = express()
 const server = http.createServer(app)
 
 app.set('json spaces', 2)
 
-const sessionCors = session.cors({})
 app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))
 app.use(i18n.middleware)
@@ -33,7 +33,6 @@ app.use((req, res, next) => {
   if (!req.app.get('api-ready')) res.status(503).send(req.messages.errors.serviceUnavailable)
   else next()
 })
-
 // Replaces req.user from session with full and fresh user object from storage
 // also minimalist api key management
 const fullUser = asyncWrap(async (req, res, next) => {
@@ -41,7 +40,7 @@ const fullUser = asyncWrap(async (req, res, next) => {
     req.user = {
       ...await req.app.get('storage').getUser({ id: req.user.id }),
       isAdmin: req.user.isAdmin,
-      adminMode: req.user.adminMode
+      adminMode: req.user.adminMode,
     }
   }
 
@@ -55,25 +54,32 @@ const fullUser = asyncWrap(async (req, res, next) => {
         isAdmin: true,
         adminMode: true,
         id: 'readAll',
-        organizations: []
+        organizations: [],
       }
     }
   }
   next()
 })
 
+// set current baseUrl, i.e. the url of simple-directory on the current user's domain
+const basePath = new URL(config.publicUrl).pathname
+app.use('/api', (req, res, next) => {
+  const u = originalUrl(req)
+  req.publicBaseUrl = u.full ? formatUrl({ protocol: u.protocol, hostname: u.hostname, port: u.port, pathname: basePath.slice(0, -1) }) : config.publicUrl
+  req.publicBasePath = basePath
+  next()
+})
 const apiDocs = require('../contract/api-docs')
-app.get('/api/api-docs.json', sessionCors, (req, res) => res.json(apiDocs))
+app.get('/api/api-docs.json', cors(), (req, res) => res.json(apiDocs))
 app.get('/api/auth/anonymous-action', cors(), require('./routers/anonymous-action'))
-app.use('/api/auth', sessionCors, require('./routers/auth').router)
-app.use('/api/mails', sessionCors, require('./routers/mails'))
-app.use('/api/users', sessionCors, session.auth, fullUser, require('./routers/users'))
-app.use('/api/organizations', sessionCors, session.auth, fullUser, require('./routers/organizations'))
-app.use('/api/invitations', sessionCors, session.auth, fullUser, require('./routers/invitations'))
-app.use('/api/avatars', sessionCors, session.auth, fullUser, require('./routers/avatars'))
-app.use('/api/limits', sessionCors, session.auth, limits.router)
-app.use('/api/2fa', sessionCors, twoFA.router)
-app.use('/api/session', sessionCors, session.router)
+app.use('/api/auth', session.auth, require('./routers/auth').router)
+app.use('/api/mails', session.auth, require('./routers/mails'))
+app.use('/api/users', session.auth, fullUser, require('./routers/users'))
+app.use('/api/organizations', session.auth, fullUser, require('./routers/organizations'))
+app.use('/api/invitations', session.auth, fullUser, require('./routers/invitations'))
+app.use('/api/avatars', session.auth, fullUser, require('./routers/avatars'))
+app.use('/api/limits', session.auth, limits.router)
+app.use('/api/2fa', twoFA.router)
 
 app.use((err, req, res, next) => {
   err.statusCode = err.statusCode || err.status
@@ -89,18 +95,23 @@ app.use((err, req, res, next) => {
 })
 
 exports.run = async() => {
+  debug('start run method')
   if (!config.listenWhenReady) {
+    debug('start server')
     server.listen(config.port)
     await eventToPromise(server, 'listening')
   }
 
-  const keys = await jwt.init()
+  debug('prepare keys')
+  const keys = await tokens.init()
   app.set('keys', keys)
-  app.use(jwt.router(keys))
+  app.use(tokens.router(keys))
 
+  debug('prepare storage')
   const storage = await storages.init()
   app.set('storage', storage)
 
+  debug('prepare mail transport')
   const mailTransport = await mails.init()
   app.set('mailTransport', mailTransport)
 
@@ -121,17 +132,26 @@ exports.run = async() => {
       else next()
     })
 
+    debug('prepare nuxt')
     const nuxt = await require('./nuxt')()
-    app.use(session.loginCallback)
-    app.use(session.decode)
+    app.use(session.auth)
     app.use(nuxt)
     app.set('ui-ready', true)
   }
 
   if (config.listenWhenReady) {
+    debug('start server')
     server.listen(config.port)
     await eventToPromise(server, 'listening')
   }
+
+  if (process.env.NODE_ENV === 'development') {
+    const server2 = http.createServer(app)
+    console.log(`listen on secondary port ${config.port + 1} to simulate multi-domain exposition`)
+    server2.listen(config.port + 1)
+    await eventToPromise(server2, 'listening')
+  }
+
   return app
 }
 

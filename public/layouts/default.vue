@@ -1,230 +1,346 @@
 <template>
-  <v-app :dark="env.theme.dark" :class="appClass">
+  <v-app :class="appClass" :style="localePath('login') === $route.path && 'background-color: rgb(245, 245, 245);'">
     <template v-if="localePath('login') === $route.path">
-      <v-toolbar app fixed flat color="transparent">
-        <v-spacer/>
+      <v-app-bar
+        app
+        fixed
+        dense
+        flat
+        color="transparent"
+      >
+        <v-spacer />
         <lang-switcher />
-      </v-toolbar>
+      </v-app-bar>
     </template>
     <template v-else>
-      <v-navigation-drawer v-model="drawer" fixed app>
-        <v-list>
-
-          <!-- User-s profile page -->
-          <v-list-tile v-if="user" :to="localePath('me')">
-            <v-list-tile-action>
-              <v-icon>mdi-account-circle</v-icon>
-            </v-list-tile-action>
-            <v-list-tile-title>{{ $t('common.myAccount') }}</v-list-tile-title>
-          </v-list-tile>
-
-          <!-- User's organizations pages (only admin) -->
-          <v-list-tile v-for="orga in userDetails && userDetails.organizations" v-if="orga.role === 'admin'" :key="orga.id" :to="localePath({name: 'organization-id', params: {id: orga.id}})">
-            <v-list-tile-action>
-              <v-icon>mdi-account-multiple</v-icon>
-            </v-list-tile-action>
-            <v-list-tile-title>{{ $t('common.organization') + ' ' + orga.name }}</v-list-tile-title>
-          </v-list-tile>
-
-          <!-- Create organization -->
-          <v-list-tile v-if="!env.readonly && userDetails && (userDetails.maxCreatedOrgs || env.defaultMaxCreatedOrgs !== 0)" :to="localePath('create-organization')" color="accent">
-            <v-list-tile-action>
-              <v-icon>mdi-plus</v-icon>
-            </v-list-tile-action>
-            <v-list-tile-title>
-              {{ $t('common.createOrganization') }}
-            </v-list-tile-title>
-
-          </v-list-tile>
-
-          <v-divider/>
-
-          <!-- Administration pages -->
-          <v-list-group v-if="user && user.adminMode" value="true">
-            <v-list-tile slot="activator" color="admin">
-              <v-list-tile-action>
-                <v-icon color="admin">mdi-shield-check</v-icon>
-              </v-list-tile-action>
-              <v-list-tile-title>{{ $t('common.administration') }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile :to="localePath('admin-users')" color="admin">
-              <v-list-tile-title>{{ $t(`common.users`) }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile :to="localePath('admin-organizations')" color="admin">
-              <v-list-tile-title>{{ $t(`common.organizations`) }}</v-list-tile-title>
-            </v-list-tile>
-          </v-list-group>
-
-          <!-- Documentation pages -->
-          <v-list-group v-if="!embed && docPages.length" value="true">
-            <v-list-tile slot="activator">
-              <v-list-tile-action>
-                <v-icon>mdi-help-circle</v-icon>
-              </v-list-tile-action>
-              <v-list-tile-title>{{ $t('common.documentation') }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile v-for="page in docPages" :key="page" :to="localePath({name: 'doc-id', params: {id: page}})">
-              <v-list-tile-title>{{ $t(`doc.${page}.link`) }}</v-list-tile-title>
-            </v-list-tile>
-          </v-list-group>
-        </v-list>
-      </v-navigation-drawer>
-
-      <v-toolbar v-if="showToolbar" :color="(user && user.adminMode) ? 'admin' : 'default'" :dark="user && user.adminMode" app scroll-off-screen>
-        <v-toolbar-side-icon v-if="user" @click.stop="drawer = !drawer"/>
+      <v-app-bar
+        v-if="showToolbar"
+        app
+        dense
+        flat
+        scroll-off-screen
+      >
         <template v-if="localePath('index') !== $route.path">
           <div class="logo-container">
-            <a v-if="env.homePage" :href="env.homePage" :title="$t('common.home')">
+            <a
+              v-if="env.homePage"
+              :href="env.homePage"
+              :title="$t('common.home')"
+            >
               <img v-if="env.theme.logo" :src="env.theme.logo">
-              <logo v-else/>
+              <logo v-else />
             </a>
-            <nuxt-link v-else :to="localePath('index')" :title="$t('common.home')">
+            <nuxt-link
+              v-else
+              :to="localePath('index')"
+              :title="$t('common.home')"
+            >
               <img v-if="env.theme.logo" :src="env.theme.logo">
-              <logo v-else/>
+              <logo v-else />
             </nuxt-link>
           </div>
-          <v-toolbar-title><h1 class="headline hidden-xs-only">{{ $t('root.title') }}</h1></v-toolbar-title>
+          <v-toolbar-title>
+            <h1 class="text-h5 hidden-xs-only">
+              {{ $t('root.title') }}
+            </h1>
+          </v-toolbar-title>
         </template>
 
-        <v-spacer/>
+        <v-spacer />
+        <v-toolbar-items>
+          <template v-if="user && user.adminMode" value="true">
+            <v-btn
+              :to="localePath('admin-users')"
+              color="admin"
+              dark
+              depressed
+            >
+              {{ $t(`common.users`) }}
+            </v-btn>
+            <v-btn
+              :to="localePath('admin-organizations')"
+              color="admin"
+              dark
+              depressed
+            >
+              {{ $t(`common.organizations`) }}
+            </v-btn>
+          </template>
+          <v-btn
+            v-if="env.anonymousContactForm"
+            :to="localePath('contact')"
+            depressed
+          >
+            Nous contacter
+          </v-btn>
+          <template v-if="initialized">
+            <v-btn
+              v-if="!user"
+              depressed
+              color="primary"
+              @click="login"
+            >
+              {{ $t('common.logLink') }}
+            </v-btn>
+            <v-menu
+              v-else
+              offset-y
+              nudge-left
+              max-height="510"
+            >
+              <template #activator="{on}">
+                <v-btn
+                  text
+                  class="px-0"
+                  v-on="on"
+                >
+                  <v-avatar :size="36">
+                    <img :src="`${env.publicUrl}/api/avatars/${activeAccount.type}/${activeAccount.id}/avatar.png`">
+                  </v-avatar>
+                </v-btn>
+              </template>
 
-        <v-btn v-if="env.anonymousContactForm" :to="localePath('contact')" depressed>
-          Nous contacter
-        </v-btn>
-        <v-btn v-if="!user" color="primary" @click="login">
-          {{ $t('common.logLink') }}
-        </v-btn>
-        <v-menu v-else-if="userDetails" offset-y>
-          <v-btn slot="activator" flat>{{ user.name }}</v-btn>
-          <v-list>
-            <v-list-tile @click="logout">
-              <v-list-tile-title>{{ $t('common.logout') }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile v-if="user.asAdmin" @click="asAdmin()">
-              <v-list-tile-title>{{ $t('common.delAsAdmin') }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile v-if="user.isAdmin && !user.adminMode" color="admin" @click="setAdminMode(true)">
-              <v-list-tile-title>{{ $t('common.activateAdminMode') }}</v-list-tile-title>
-            </v-list-tile>
-            <v-list-tile v-if="user.isAdmin && user.adminMode" color="admin" @click="setAdminMode(false)">
-              <v-list-tile-title>{{ $t('common.deactivateAdminMode') }}</v-list-tile-title>
-            </v-list-tile>
-          </v-list>
-        </v-menu>
+              <v-list outlined>
+                <v-list-item disabled>
+                  <v-list-item-avatar class="ml-0 my-0">
+                    <v-avatar :size="28">
+                      <img :src="activeAccount.type === 'user' ? `${env.publicUrl}/api/avatars/user/${user.id}/avatar.png` : `${env.publicUrl}/api/avatars/organization/${activeAccount.id}/avatar.png`">
+                    </v-avatar>
+                  </v-list-item-avatar>
+                  <v-list-item-title>{{ activeAccount.type === 'user' ? 'Compte personnel' : activeAccount.name }}</v-list-item-title>
+                </v-list-item>
 
-        <lang-switcher />
-      </v-toolbar>
-      <v-toolbar-side-icon v-else-if="showNav" @click.stop="drawer = !drawer"/>
+                <template v-if="user.organizations.length">
+                  <v-subheader>Changer de compte</v-subheader>
+                  <v-list-item
+                    v-if="activeAccount.type !== 'user'"
+                    id="toolbar-menu-switch-user"
+                    @click="switchOrganization()"
+                  >
+                    <v-list-item-avatar class="ml-0 my-0">
+                      <v-avatar :size="28">
+                        <img :src="`${env.publicUrl}/api/avatars/user/${user.id}/avatar.png`">
+                      </v-avatar>
+                    </v-list-item-avatar>
+                    <v-list-item-title>Compte personnel</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item
+                    v-for="organization in user.organizations.filter(o => activeAccount.type === 'user' || activeAccount.id !== o.id)"
+                    :id="'toolbar-menu-switch-orga-' + organization.id"
+                    :key="organization.id"
+                    @click="switchOrganization(organization.id)"
+                  >
+                    <v-list-item-avatar class="ml-0 my-0">
+                      <v-avatar :size="28">
+                        <img :src="`${env.publicUrl}/api/avatars/organization/${organization.id}/avatar.png`">
+                      </v-avatar>
+                    </v-list-item-avatar>
+                    <v-list-item-title>{{ organization.name }}</v-list-item-title>
+                  </v-list-item>
+                  <v-divider />
+                </template>
+                <v-list-item :to="'/me'" :nuxt="true">
+                  <v-list-item-content>
+                    <v-list-item-title>Mon compte</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item
+                  v-if="user.organization"
+                  :to="'/organization/' + user.organization.id"
+                  :nuxt="true"
+                >
+                  <v-list-item-content>
+                    <v-list-item-title>Gestion de l'organisation</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+
+                <!-- toggle admin mode -->
+                <template v-if="user.isAdmin">
+                  <v-divider />
+                  <v-list-item dense>
+                    <v-list-item-action><v-icon>mdi-shield-alert</v-icon></v-list-item-action>
+                    <v-list-item-title style="overflow: visible;">
+                      <v-switch
+                        v-model="user.adminMode"
+                        color="admin"
+                        hide-details
+                        class="mt-0"
+                        label="mode admin"
+                        @change="setAdminMode"
+                      />
+                    </v-list-item-title>
+                  </v-list-item>
+                </template>
+
+                <!-- leave admin impersonification of a user -->
+                <template v-if="user.asAdmin">
+                  <v-divider />
+                  <v-list-item dense @click="asAdmin()">
+                    <v-list-item-title style="overflow: visible;">
+                      {{ $t('common.delAsAdmin') }}
+                    </v-list-item-title>
+                  </v-list-item>
+                </template>
+
+                <v-divider />
+
+                <v-list-item v-if="env.darkModeSwitch" dense>
+                  <v-list-item-action><v-icon>mdi-weather-night</v-icon></v-list-item-action>
+                  <v-list-item-title style="overflow: visible;">
+                    <v-switch
+                      v-model="$vuetify.theme.dark"
+                      hide-details
+                      class="mt-0"
+                      label="mode nuit"
+                      color="white"
+                      @change="setDarkCookie"
+                    />
+                  </v-list-item-title>
+                </v-list-item>
+
+                <v-list-item @click="logout();reload()">
+                  <v-list-item-action><v-icon>mdi-logout</v-icon></v-list-item-action>
+                  <v-list-item-title>Se déconnecter</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </template>
+        </v-toolbar-items>
+        <lang-switcher class="ml-2" />
+      </v-app-bar>
     </template>
 
-    <v-content>
+    <v-main>
       <v-container fluid>
-        <nuxt/>
+        <nuxt />
       </v-container>
-      <v-snackbar v-if="notification" ref="notificationSnackbar" v-model="showSnackbar" :color="notification.type" :timeout="notification.type === 'error' ? 30000 : 6000" class="notification" bottom>
+      <v-snackbar
+        v-if="notification"
+        ref="notificationSnackbar"
+        v-model="showSnackbar"
+        :color="notification.type"
+        :timeout="notification.type === 'error' ? 30000 : 6000"
+        class="notification"
+        bottom
+      >
         <div>
           <p>{{ notification.msg }}</p>
-          <p v-if="notification.errorMsg" class="ml-3">{{ notification.errorMsg }}</p>
+          <p v-if="notification.errorMsg" class="ml-3">
+            {{ notification.errorMsg }}
+          </p>
         </div>
-        <v-btn flat icon @click.native="showSnackbar = false"><v-icon>mdi-close</v-icon></v-btn>
+        <v-btn
+          text
+          icon
+          @click.native="showSnackbar = false"
+        >
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
       </v-snackbar>
-    </v-content>
+    </v-main>
     <v-footer v-if="!embed" class="pa-3">
-      <v-spacer/>
+      <v-spacer />
       <div>Powered by <a href="https://koumoul-dev.github.io/simple-directory/">Simple Directory</a></div>
     </v-footer>
   </v-app>
 </template>
 
 <script>
-import eventBus from '../event-bus'
-import logo from '../components/logo.vue'
-import langSwitcher from '../components/lang-switcher.vue'
-const { mapState, mapActions } = require('vuex')
+  import eventBus from '../event-bus'
+  import logo from '../components/logo.vue'
+  import langSwitcher from '../components/lang-switcher.vue'
+  const { mapState, mapGetters, mapActions } = require('vuex')
 
-export default {
-  components: { logo, langSwitcher },
-  data() {
-    return {
-      notification: null,
-      showSnackbar: false,
-      showNav: this.$route.query && this.$route.query.showNav === 'true',
-      drawer: this.$route.query && this.$route.query.showNav === 'true'
-    }
-  },
-  computed: {
-    ...mapState('session', ['user']),
-    ...mapState(['env', 'userDetails']),
-    docPages() {
-      return this.user && this.user.isAdmin ? ['about', 'install', 'config', 'use'] : []// ['use']
-    },
-    embed() {
-      return this.$route.query && this.$route.query.embed === 'true'
-    },
-    showToolbar() {
-      return !this.embed || (this.$route.query && this.$route.query.showToolbar === 'true')
-    },
-    appClass() {
-      const classes = []
-      if (this.$route.name) classes.push('page-' + this.$route.name.replace('___' + this.$i18n.locale, ''))
-      if (this.embed) classes.push('embed')
-      return classes.join(' ')
-    }
-  },
-  watch: {
-    user() {
-      if (!this.userDetails) this.$store.dispatch('fetchUserDetails')
-    }
-  },
-  mounted() {
-    this.$store.dispatch('fetchUserDetails')
-    eventBus.$on('notification', async notif => {
-      this.showSnackbar = false
-      await this.$nextTick()
-      if (typeof notif === 'string') notif = { msg: notif }
-      if (notif.error) {
-        notif.type = 'error'
-        notif.errorMsg = (notif.error.response && (notif.error.response.data || notif.error.response.status)) || notif.error.message || notif.error
+  export default {
+    components: { logo, langSwitcher },
+    data() {
+      return {
+        notification: null,
+        showSnackbar: false,
+        showNav: this.$route.query && this.$route.query.showNav === 'true',
       }
-      this.notification = notif
-      this.showSnackbar = true
-    })
-  },
-  methods: mapActions('session', ['logout', 'login', 'setAdminMode', 'asAdmin'])
-}
+    },
+    computed: {
+      ...mapState('session', ['user', 'initialized']),
+      ...mapState(['env', 'userDetails']),
+      ...mapGetters('session', ['activeAccount']),
+      /* docPages() {
+        return this.user && this.user.isAdmin ? ['about', 'install', 'config', 'use'] : []// ['use']
+      }, */
+      embed() {
+        return this.$route.query && this.$route.query.embed === 'true'
+      },
+      showToolbar() {
+        return !this.embed || (this.$route.query && this.$route.query.showToolbar === 'true')
+      },
+      appClass() {
+        const classes = []
+        if (this.$route.name) classes.push('page-' + this.$route.name.replace('___' + this.$i18n.locale, ''))
+        if (this.embed) classes.push('embed')
+        return classes.join(' ')
+      },
+    },
+    watch: {
+      user() {
+        if (!this.userDetails) this.$store.dispatch('fetchUserDetails')
+      },
+    },
+    mounted() {
+      this.$store.dispatch('fetchUserDetails')
+      eventBus.$on('notification', async notif => {
+        this.showSnackbar = false
+        await this.$nextTick()
+        if (typeof notif === 'string') notif = { msg: notif }
+        if (notif.error) {
+          notif.type = 'error'
+          notif.errorMsg = (notif.error.response && (notif.error.response.data || notif.error.response.status)) || notif.error.message || notif.error
+        }
+        this.notification = notif
+        this.showSnackbar = true
+      })
+    },
+    methods: {
+      reload() {
+        window.location.reload()
+      },
+      switchOrganization(orgId) {
+        this.$store.dispatch('session/switchOrganization', orgId)
+        if (!orgId) this.$router.replace('/me')
+        else this.$router.replace(`/organization/${orgId}`)
+      },
+      ...mapActions('session', ['logout', 'login', 'setAdminMode', 'asAdmin']),
+    },
+  }
 
 </script>
 
-<style lang="less">
-body .application.embed {
+<style>
+body .v-application.embed {
   background: transparent;
 }
 
-body .application {
+body .v-application .logo-container {
+  height: 100%;
+  padding: 4px;
+  margin-left: 4px !important;
+  margin-right: 4px;
+  width: 64px;
+}
+body .v-application .logo-container img, body .v-application .logo-container svg {
+  height:100%;
+}
 
-  .logo-container {
-    height: 100%;
-    padding: 4px;
-    margin-left: 4px !important;
-    margin-right: 4px;
-    width: 64px;
-    img, svg {
-      height:100%;
-    }
-  }
+body .v-application .notification .v-snack__content {
+  height: auto;
+}
+body .v-application .notification .v-snack__content p {
+  margin-bottom: 4px;
+  margin-top: 4px;
+}
 
-  .notification .v-snack__content {
-    height: auto;
-    p {
-      margin-bottom: 4px;
-      margin-top: 4px;
-    }
-  }
-
-  // No need to prevent users from selecting (and copying) the texts in lists
-  .v-list__tile {
-    user-select: text;
-  }
+/* No need to prevent users from selecting (and copying) the texts in lists */
+body .v-application .v-list__tile {
+  user-select: text;
 }
 
 </style>
