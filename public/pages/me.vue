@@ -1,5 +1,5 @@
 <template lang="html">
-  <v-container>
+  <v-container data-iframe-height>
     <h2 class="text-h5 mb-3">
       {{ $t('common.myAccount') }}
     </h2>

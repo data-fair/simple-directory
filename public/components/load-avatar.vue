@@ -20,7 +20,7 @@
         <!--<template #activator="{on}">
           <span />
         </template>-->
-        <v-card width="700">
+        <v-card width="700" data-iframe-height>
           <v-card-title class="text-h6" v-text="$t('pages.avatar.prepare')" />
           <v-card-text class="py-0">
             <vue-cropper

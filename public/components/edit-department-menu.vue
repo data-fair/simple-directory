@@ -15,7 +15,7 @@
       </v-btn>
     </template>
 
-    <v-card v-if="editDepartment">
+    <v-card v-if="editDepartment" data-iframe-height>
       <v-card-title class="text-h6">
         {{ $t('pages.organization.confirmEditDepartmentTitle', {name: department.name, departmentLabel}) }}
       </v-card-title>

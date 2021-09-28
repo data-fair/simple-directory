@@ -15,7 +15,7 @@
         <v-icon>mdi-delete</v-icon>
       </v-btn>
     </template>
-    <v-card>
+    <v-card data-iframe-height>
       <v-card-title class="text-h6">
         {{ $t('pages.organization.confirmDeleteMemberTitle', {name: member.name}) }}
       </v-card-title>

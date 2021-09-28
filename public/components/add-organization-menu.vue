@@ -14,7 +14,11 @@
       </v-btn>
     </template>
 
-    <v-card v-if="editOrganization" :width="500">
+    <v-card
+      v-if="editOrganization"
+      :width="500"
+      data-iframe-height
+    >
       <v-card-title class="text-h6">
         {{ $t('common.createOrganization') }}
       </v-card-title>

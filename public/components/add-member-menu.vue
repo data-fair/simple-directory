@@ -17,7 +17,7 @@
         <v-icon>mdi-plus</v-icon>
       </v-btn>
     </template>
-    <v-card v-if="orga">
+    <v-card v-if="orga" data-iframe-height>
       <v-card-title class="text-h6">
         {{ $t('pages.organization.addMember') }}
       </v-card-title>
