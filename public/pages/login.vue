@@ -62,6 +62,7 @@
                 :error-messages="passwordErrors"
                 name="password"
                 type="password"
+                autocomplete="current-password"
                 class="mt-4 hide-autofill"
                 hide-details="auto"
                 @keyup.enter="passwordAuth"
@@ -72,12 +73,13 @@
                   v-model="twoFACode"
                   :label="$t('pages.login.2FACode')"
                   :error-messages="twoFAErrors"
+                  name="2fa"
                   outlined
                   dense
                   rounded
                   class="mt-4 hide-autofill"
                   hide-details="auto"
-                  autofocus
+                  :autofocus="true"
                   @keyup.enter="passwordAuth"
                 >
                   <v-tooltip
@@ -191,6 +193,7 @@
                   :error-messages="createUserErrors"
                   name="newUserPassword"
                   type="password"
+                  autocomplete="new-password"
                   @keyup.enter="createUser"
                 />
 
@@ -200,6 +203,8 @@
                   :error-messages="newUser.password !== newUserPassword2 ? ['Les mots de passe sont différents'] : []"
                   name="newUserPassword2"
                   type="password"
+                  autocomplete="new-password"
+                  @keyup.enter="createUser"
                 />
               </v-form>
             </v-card-text>
@@ -288,6 +293,7 @@
                 :error-messages="newPasswordErrors"
                 name="newPassword"
                 type="password"
+                autocomplete="new-password"
                 outlined
                 dense
                 rounded
@@ -298,6 +304,7 @@
                 :error-messages="newPassword !== newPassword2 ? ['Les mots de passe sont différents'] : []"
                 name="newPassword2"
                 type="password"
+                autocomplete="new-password"
                 outlined
                 dense
                 rounded
@@ -321,7 +328,7 @@
               <v-alert
                 :value="true"
                 type="warning"
-                outline
+                outlined
                 class="mb-3"
               >
                 {{ $t('errors.2FANotConfigured') }}
@@ -344,6 +351,7 @@
                   outlined
                   rounded
                   style="max-width: 210px;"
+                  :autofocus="true"
                   @keyup.enter="validate2FA"
                 />
               </template>
@@ -374,7 +382,7 @@
               <v-alert
                 :value="true"
                 type="warning"
-                outline
+                outlined
                 class="mb-3"
               >
                 {{ $t('pages.login.recovery2FAInfo') }}
@@ -412,7 +420,7 @@
               <v-alert
                 :value="true"
                 type="error"
-                outline
+                outlined
               >
                 {{ $t('errors.' + error) }}
               </v-alert>
@@ -637,7 +645,8 @@
       },
       downloadRecovery() {
         var element = document.createElement('a')
-        const content = `Code de récupération authentification 2 facteurs ${window.location.host}
+        const contentHeader = this.$t('recovery2FAContent', { name: `${window.location.host}` })
+        const content = `${contentHeader}
 
   ${this.recovery}`
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content))

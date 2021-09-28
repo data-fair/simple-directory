@@ -177,6 +177,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       recovery2FAInfo: 'Attention ! Le code de récupération ci-dessous est à conserver précieusement. Sans lui vous ne pourrez pas récupérer votre compte en cas de perte de l\'appareil sur lequel vous venez de configurer l\'authentification à 2 facteurs.',
       recovery2FACode: 'code de récupération : ',
       recovery2FADownload: 'télécharger un fichier contenant le code de récupération',
+      recovery2FAContent: 'Code de récupération authentification 2 facteurs {name}',
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
