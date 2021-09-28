@@ -222,19 +222,21 @@
         class="notification"
         bottom
       >
-        <div>
-          <p>{{ notification.msg }}</p>
-          <p v-if="notification.errorMsg" class="ml-3">
-            {{ notification.errorMsg }}
-          </p>
-        </div>
-        <v-btn
-          text
-          icon
-          @click.native="showSnackbar = false"
-        >
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
+        <p>{{ notification.msg }}</p>
+        <p
+          v-if="notification.errorMsg"
+          class="ml-3"
+          v-html="notification.errorMsg"
+        />
+
+        <template #action="{ }">
+          <v-btn
+            icon
+            @click.native="showSnackbar = false"
+          >
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </template>
       </v-snackbar>
     </v-main>
     <v-footer v-if="!embed" class="pa-3">
@@ -329,10 +331,13 @@ body .v-application .logo-container img, body .v-application .logo-container svg
   height:100%;
 }
 
-body .v-application .notification .v-snack__content {
+.notification.v-snack .v-snack__wrapper {
+  min-width: 256px;
+}
+.notification.v-snack .v-snack__content {
   height: auto;
 }
-body .v-application .notification .v-snack__content p {
+.notification.v-snack .v-snack__content p {
   margin-bottom: 4px;
   margin-top: 4px;
 }
