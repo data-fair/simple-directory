@@ -62,10 +62,11 @@ const fullUser = asyncWrap(async (req, res, next) => {
 })
 
 // set current baseUrl, i.e. the url of simple-directory on the current user's domain
-const basePath = new URL(config.publicUrl).pathname
+let basePath = new URL(config.publicUrl).pathname
+if (basePath.endsWith('/')) basePath = basePath.slice(0, -1)
 app.use('/api', (req, res, next) => {
   const u = originalUrl(req)
-  req.publicBaseUrl = u.full ? formatUrl({ protocol: u.protocol, hostname: u.hostname, port: u.port, pathname: basePath.slice(0, -1) }) : config.publicUrl
+  req.publicBaseUrl = u.full ? formatUrl({ protocol: u.protocol, hostname: u.hostname, port: u.port, pathname: basePath }) : config.publicUrl
   req.publicBasePath = basePath
   next()
 })
