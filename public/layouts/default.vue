@@ -100,17 +100,64 @@
                 </v-btn>
               </template>
 
-              <v-list outlined>
+              <v-list outlined class="pb-0">
                 <v-list-item disabled>
                   <v-list-item-avatar class="ml-0 my-0">
-                    <v-avatar :size="28">
+                    <v-avatar :size="36">
                       <img :src="activeAccount.type === 'user' ? `${env.publicUrl}/api/avatars/user/${user.id}/avatar.png` : `${env.publicUrl}/api/avatars/organization/${activeAccount.id}/avatar.png`">
                     </v-avatar>
                   </v-list-item-avatar>
                   <v-list-item-title>{{ activeAccount.type === 'user' ? 'Compte personnel' : activeAccount.name }}</v-list-item-title>
                 </v-list-item>
 
+                <v-list-item :to="'/me'" :nuxt="true">
+                  <v-list-item-content>
+                    <v-list-item-title>Mon compte</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item
+                  v-if="user.organization"
+                  :to="'/organization/' + user.organization.id"
+                  :nuxt="true"
+                >
+                  <v-list-item-content>
+                    <v-list-item-title>Gestion de l'organisation</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+
+                <!-- toggle admin mode -->
+                <template v-if="user.isAdmin">
+                  <v-list-item dense>
+                    <v-list-item-action><v-icon>mdi-shield-alert</v-icon></v-list-item-action>
+                    <v-list-item-title style="overflow: visible;">
+                      <v-switch
+                        v-model="user.adminMode"
+                        color="admin"
+                        hide-details
+                        class="mt-0"
+                        label="mode admin"
+                        @change="setAdminMode"
+                      />
+                    </v-list-item-title>
+                  </v-list-item>
+                </template>
+
+                <v-list-item v-if="env.darkModeSwitch" dense>
+                  <v-list-item-action><v-icon>mdi-weather-night</v-icon></v-list-item-action>
+                  <v-list-item-title style="overflow: visible;">
+                    <v-switch
+                      v-model="$vuetify.theme.dark"
+                      hide-details
+                      class="mt-0"
+                      label="mode nuit"
+                      color="white"
+                      @change="setDarkCookie"
+                    />
+                  </v-list-item-title>
+                </v-list-item>
+
                 <template v-if="user.organizations.length">
+                  <v-divider />
                   <v-subheader>Changer de compte</v-subheader>
                   <v-list-item
                     v-if="activeAccount.type !== 'user'"
@@ -137,39 +184,6 @@
                     </v-list-item-avatar>
                     <v-list-item-title>{{ organization.name }}</v-list-item-title>
                   </v-list-item>
-                  <v-divider />
-                </template>
-                <v-list-item :to="'/me'" :nuxt="true">
-                  <v-list-item-content>
-                    <v-list-item-title>Mon compte</v-list-item-title>
-                  </v-list-item-content>
-                </v-list-item>
-                <v-list-item
-                  v-if="user.organization"
-                  :to="'/organization/' + user.organization.id"
-                  :nuxt="true"
-                >
-                  <v-list-item-content>
-                    <v-list-item-title>Gestion de l'organisation</v-list-item-title>
-                  </v-list-item-content>
-                </v-list-item>
-
-                <!-- toggle admin mode -->
-                <template v-if="user.isAdmin">
-                  <v-divider />
-                  <v-list-item dense>
-                    <v-list-item-action><v-icon>mdi-shield-alert</v-icon></v-list-item-action>
-                    <v-list-item-title style="overflow: visible;">
-                      <v-switch
-                        v-model="user.adminMode"
-                        color="admin"
-                        hide-details
-                        class="mt-0"
-                        label="mode admin"
-                        @change="setAdminMode"
-                      />
-                    </v-list-item-title>
-                  </v-list-item>
                 </template>
 
                 <!-- leave admin impersonification of a user -->
@@ -183,21 +197,6 @@
                 </template>
 
                 <v-divider />
-
-                <v-list-item v-if="env.darkModeSwitch" dense>
-                  <v-list-item-action><v-icon>mdi-weather-night</v-icon></v-list-item-action>
-                  <v-list-item-title style="overflow: visible;">
-                    <v-switch
-                      v-model="$vuetify.theme.dark"
-                      hide-details
-                      class="mt-0"
-                      label="mode nuit"
-                      color="white"
-                      @change="setDarkCookie"
-                    />
-                  </v-list-item-title>
-                </v-list-item>
-
                 <v-list-item @click="logout();reload()">
                   <v-list-item-action><v-icon>mdi-logout</v-icon></v-list-item-action>
                   <v-list-item-title>Se déconnecter</v-list-item-title>
