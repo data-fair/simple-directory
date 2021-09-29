@@ -308,6 +308,7 @@
                 outlined
                 dense
                 rounded
+                @keyup.enter="changePassword"
               />
             </v-card-text>
             <v-card-actions>

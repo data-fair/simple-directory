@@ -103,12 +103,10 @@ router.post('/password', asyncWrap(async (req, res, next) => {
 
   await confirmLog(storage, user)
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-  tokens.setCookieToken(req, res, token, req.body.org)
+  tokens.setCookieToken(req, res, token, req.body.org || req.query.org)
 
   const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
 
-  // WARNING: setting new token in query param is deprecated and will be removed soon
-  linkUrl.searchParams.set('id_token', token)
   debug(`Password based authentication of user ${user.name}`)
   if (req.is('application/x-www-form-urlencoded')) res.redirect(linkUrl.href)
   else res.send(linkUrl.href)
