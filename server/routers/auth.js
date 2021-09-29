@@ -170,24 +170,29 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 }))
 
 router.get('/token_callback', asyncWrap(async (req, res, next) => {
-  const payload = tokens.decode(req.query.id_token)
-  const storage = req.app.get('storage')
-  const user = await storage.getUser(({ id: payload.id }))
+  if (!req.query.id_token) {
+    return res.status(401).send('No id_token cookie provided')
+  }
+  let decoded
+  try {
+    decoded = await tokens.verify(req.app.get('keys'), req.query.id_token)
+  } catch (err) {
+    return res.status(401).send('Invalid id_token')
+  }
 
-  if (!user || (payload.emailConfirmed !== true && user.emailConfirmed === false)) {
+  const storage = req.app.get('storage')
+  const user = await storage.getUser({ id: decoded.id })
+
+  if (!user || (decoded.emailConfirmed !== true && user.emailConfirmed === false)) {
     return res.status(400).send(req.messages.errors.badCredentials)
   }
 
-  if (!storage.readonly) {
-    await storage.updateLogged(user.id)
-    if (user.emailConfirmed === false) {
-      await storage.confirmEmail(user.id)
-      webhooks.postIdentity('user', user)
-    }
-  }
+  const payload = tokens.getPayload(user)
+  if (decoded.rememberMe) payload.rememberMe = true
+  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
 
   await confirmLog(storage, user)
-  tokens.setCookieToken(req, res, req.query.id_token, req.query.id_token_org)
+  tokens.setCookieToken(req, res, token, req.query.id_token_org)
   res.redirect(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
 }))
 
