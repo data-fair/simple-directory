@@ -81,7 +81,7 @@ exports.setCookieToken = (req, res, token, org) => {
     cookies.set('id_token_2fa', null, { domain: config.oldSessionDomain })
   }
 
-  const payload = exports.decode(token, { complete: true })
+  const payload = exports.decode(token)
   const parts = token.split('.')
   const opts = { sameSite: 'lax' }
   if (payload.rememberMe) opts.expires = new Date(payload.exp * 1000)

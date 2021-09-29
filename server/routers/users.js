@@ -88,15 +88,18 @@ router.post('', asyncWrap(async (req, res, next) => {
   // prepare same link and payload as for a passwordless authentication
   // the user will be validated and authenticated at the same time by the exchange route
   const payload = tokens.getPayload(newUser)
-  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-  const link = (req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me?id_token=') + encodeURIComponent(token)
-  const linkUrl = new URL(link)
+  const token = tokens.sign(req.app.get('keys'), { ...payload, emailConfirmed: true }, config.jwtDurations.initialToken)
+
+  const linkUrl = new URL(req.publicBaseUrl + '/api/auth/token_callback')
+  linkUrl.searchParams.set('id_token', token)
+  if (req.body.org) linkUrl.searchParams.set('id_token_org', req.query.org)
+  if (req.query.redirect) linkUrl.searchParams.set('redirect', req.query.redirect)
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'creation',
     messages: req.messages,
     to: req.body.email,
-    params: { link, host: linkUrl.host, origin: linkUrl.origin },
+    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin },
   })
 
   // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc

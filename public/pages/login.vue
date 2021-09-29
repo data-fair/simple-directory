@@ -510,7 +510,7 @@
         return window.location.host
       },
       mainHost() {
-        return new URL(this.env.publicUrl).host
+        return new URL(this.env.mainPublicUrl).host
       },
     },
     created() {
@@ -530,7 +530,7 @@
       async createUser() {
         if (!this.$refs.createUserForm.validate()) return
         try {
-          await this.$axios.$post('api/users', { email: this.email, ...this.newUser }, { params: { redirect: this.redirectUrl } })
+          await this.$axios.$post('api/users', { email: this.email, ...this.newUser }, { params: { redirect: this.redirectUrl, org: this.org } })
           this.createUserErrors = []
           this.step = 'createUserConfirmed'
         } catch (error) {
