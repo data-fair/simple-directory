@@ -40,8 +40,13 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
 
   const returnError = (error, errorCode) => {
-    if (req.is('application/x-www-form-urlencoded')) res.redirect(`${req.publicBaseUrl}/login?error=${error}`)
-    else res.status(errorCode).send(req.messages.errors[error] || error)
+    if (req.is('application/x-www-form-urlencoded')) {
+      const refererUrl = new URL(req.headers.referer || req.headers.referrer)
+      refererUrl.searchParams.set('error', error)
+      res.redirect(refererUrl.href)
+    } else {
+      res.status(errorCode).send(req.messages.errors[error] || error)
+    }
   }
 
   try {
