@@ -111,6 +111,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   tokens.setCookieToken(req, res, token, req.body.org || req.query.org)
 
   const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
+  if (linkUrl.searchParams.has('id_token')) linkUrl.searchParams.set('id_token', token) // this should not be used anymore
 
   debug(`Password based authentication of user ${user.name}`)
   if (req.is('application/x-www-form-urlencoded')) res.redirect(linkUrl.href)
