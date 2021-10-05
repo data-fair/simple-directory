@@ -3,6 +3,7 @@
     <h2 class="text-h5 mb-3">
       {{ $t('common.myAccount') }}
     </h2>
+    <p v-if="host !== mainHost" v-html="$t('pages.me.separateDomain', {host, mainHost})" />
     <v-form
       v-if="user"
       ref="form"
@@ -96,30 +97,32 @@
       </v-row>
       <br>
 
-      <h2 class="text-h5 mb-3">
-        {{ $t('common.myOrganizations') }}
-      </h2>
+      <template v-if="host === mainHost">
+        <h2 class="text-h5 mb-3">
+          {{ $t('common.myOrganizations') }}
+        </h2>
 
-      <div v-if="userDetails">
-        <template v-if="userDetails.organizations.length">
-          <span v-for="orga in userDetails.organizations" :key="orga.id">
-            {{ orga.name }} ({{ orga.role }})
-            &nbsp;
+        <div v-if="userDetails">
+          <template v-if="userDetails.organizations.length">
+            <span v-for="orga in userDetails.organizations" :key="orga.id">
+              {{ orga.name }} ({{ orga.role }})
+              &nbsp;
+            </span>
+          </template>
+          <span v-else>
+            {{ $t('pages.me.noOrganization') }}
           </span>
-        </template>
-        <span v-else>
-          {{ $t('pages.me.noOrganization') }}
-        </span>
-      </div>
-      <br>
-      <div v-if="showMaxCreatedOrgs">
-        <p v-if="nbCreatedOrgs !== null">
-          {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
-        </p>
-        <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
-      </div>
+        </div>
+        <br>
+        <div v-if="showMaxCreatedOrgs">
+          <p v-if="nbCreatedOrgs !== null">
+            {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
+          </p>
+          <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
+        </div>
 
-      <add-organization-menu v-if="!env.readonly && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
+        <add-organization-menu v-if="!env.readonly && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
+      </template>
 
       <template v-if="env.userSelfDelete && !env.readonly">
         <h2 class="text-h5 mt-4 mb-3">
@@ -167,6 +170,12 @@
         if (this.env.defaultMaxCreatedOrgs === -1) return false
         if (this.env.defaultMaxCreatedOrgs === 0 && !this.userDetails.maxCreatedOrgs) return false
         return this.maxCreatedOrgs === -1 ? 'illimité' : ('' + this.maxCreatedOrgs)
+      },
+      host() {
+        return window.location.host
+      },
+      mainHost() {
+        return new URL(this.env.mainPublicUrl).host
       },
     },
     watch: {
