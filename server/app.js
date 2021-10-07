@@ -81,6 +81,7 @@ app.use('/api/invitations', session.auth, fullUser, require('./routers/invitatio
 app.use('/api/avatars', session.auth, fullUser, require('./routers/avatars'))
 app.use('/api/limits', session.auth, limits.router)
 app.use('/api/2fa', twoFA.router)
+app.get('/api/metrics', require('./routers/metrics'))
 
 app.use((err, req, res, next) => {
   err.statusCode = err.statusCode || err.status

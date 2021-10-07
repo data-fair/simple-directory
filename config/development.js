@@ -53,4 +53,10 @@ module.exports = {
   },
   passwordless: true,
   userSelfDelete: true,
+  secretKeys: {
+    sendMails: 'testkey',
+    limits: 'testkey',
+    readAll: 'testkey',
+    metrics: 'testkey',
+  },
 }

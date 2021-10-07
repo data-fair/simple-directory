@@ -159,6 +159,7 @@ module.exports = {
     sendMails: null,
     limits: null,
     readAll: null,
+    metrics: null,
   },
   // A link to the terms of services for the site
   tosUrl: null,

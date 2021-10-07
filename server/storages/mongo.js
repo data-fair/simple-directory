@@ -64,6 +64,7 @@ class MongodbStorage {
     this.db = this.client.db()
     // An index for comparison case and diacritics insensitive
     await ensureIndex(this.db, 'users', { email: 1 }, { unique: true, collation })
+    await ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
     await ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
     await ensureIndex(this.db, 'invitations', { email: 1, id: 1 }, { unique: true })
     await ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1 }, { unique: true })
