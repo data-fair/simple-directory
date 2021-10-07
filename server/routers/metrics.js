@@ -6,22 +6,22 @@ const dayjs = require('dayjs')
 const asyncWrap = require('../utils/async-wrap')
 
 const orgsGauge = new promClient.Gauge({
-  name: 'organizations',
+  name: 'sd_organizations',
   help: 'Nombre d\'organisations',
 })
 
 const usersGauge = new promClient.Gauge({
-  name: 'users',
+  name: 'sd_users',
   help: 'Nombre d\'utilisateurs',
 })
 
 const loggedUsers24HGauge = new promClient.Gauge({
-  name: 'loggedUsers24H',
+  name: 'sd_logged_users_24h',
   help: 'Nombre d\'utilisateurs connectés dans les dernières 24 heures',
 })
 
 const membersGauge = new promClient.Gauge({
-  name: 'members',
+  name: 'sd_members',
   help: 'Nombre de membres par organisation',
   labelNames: ['org', 'role'],
 })
