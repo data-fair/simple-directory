@@ -23,17 +23,11 @@ const loggedUsers24HGauge = new promClient.Gauge({
 const membersGauge = new promClient.Gauge({
   name: 'members',
   help: 'Nombre de membres par organisation',
-  labelNames: ['org'],
-})
-
-const loggedMembers24HGauge = new promClient.Gauge({
-  name: 'loggedMembers24H',
-  help: 'Nombre de membres connectés dans les dernières 24 heures par organisation',
-  labelNames: ['org'],
+  labelNames: ['org', 'role'],
 })
 
 module.exports = asyncWrap(async (req, res, next) => {
-  if (req.query.apiKey !== config.secretKeys.metrics) return res.status(401).send()
+  if (!config.secretKeys.metrics || req.query.apiKey !== config.secretKeys.metrics) return res.status(401).send()
   const storage = req.app.get('storage')
   if (!storage.db) return res.status(404).send('no metrics for this storage mode')
   const db = storage.db
@@ -50,17 +44,12 @@ module.exports = asyncWrap(async (req, res, next) => {
 
   // some metrics that grouped by organization
   for await (const org of db.collection('organizations').find()) {
-    membersGauge.set(
-      { org: org._id },
-      await db.collection('users').countDocuments({ 'organizations.id': org._id }),
-    )
-    loggedMembers24HGauge.set(
-      { org: org._id },
-      await db.collection('users').countDocuments({
-        'organizations.id': org._id,
-        logged: { $gt: dayjs().subtract(1, 'days').toDate() },
-      }),
-    )
+    for (const role of config.roles.defaults) {
+      membersGauge.set(
+        { org: org._id, role },
+        await db.collection('users').countDocuments({ organizations: { $elemMatch: { id: org._id, role: role } } }),
+      )
+    }
   }
 
   res.set('Content-Type', promClient.register.contentType)
