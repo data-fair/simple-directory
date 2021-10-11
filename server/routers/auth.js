@@ -360,9 +360,6 @@ router.get('/oauth/providers', (req, res) => {
 router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
   if (!provider) return res.redirect(`${req.publicBaseUrl}/login?error=unknownOAuthProvider`)
-  if (req.query.redirect && new URL(req.query.redirect).host !== new URL(req.publicBaseUrl).host) {
-    return res.status(401).send('redirect host does not match authentication domain')
-  }
   res.redirect(provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl))
 }))
 
@@ -372,12 +369,12 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
   if (!provider) return res.status(404).send('Unknown OAuth provider')
 
-  if (!req.query.state.startsWith(provider.state + '-')) {
+  if (!req.query.state.startsWith(provider.state + '/')) {
     console.error('Bad state in oauth query, CSRF attack ?', provider.state, req.query.state)
     throw new Error('Bad OAuth state')
   }
   // TODO: also a way to send org ?
-  const redirect = decodeURIComponent(req.query.state.replace(provider.state + '-', ''))
+  const [_, redirect, org] = req.query.state.split('/').map(p => decodeURIComponent(p)) // eslint-disable-line no-unused-vars
   const target = redirect || config.defaultLoginRedirect || config.publicUrl + '/me'
 
   if (req.query.error) {
@@ -427,7 +424,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   }
 
   const payload = tokens.getPayload(user)
-  const linkUrl = tokens.prepareCallbackUrl(req, payload, target)
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, target, org)
   debug(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 }))
