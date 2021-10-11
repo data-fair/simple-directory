@@ -67,7 +67,9 @@ let basePath = publicUrl.pathname
 if (basePath.endsWith('/')) basePath = basePath.slice(0, -1)
 app.use((req, res, next) => {
   const u = originalUrl(req)
-  req.publicBaseUrl = u.full ? formatUrl({ protocol: u.protocol, hostname: u.hostname, port: u.port, pathname: basePath }) : config.publicUrl
+  const urlParts = { protocol: u.protocol, hostname: u.hostname, pathname: basePath }
+  if (u.port !== 443 && u.port !== 80) urlParts.port = u.port
+  req.publicBaseUrl = u.full ? formatUrl(urlParts) : config.publicUrl
   req.publicBasePath = basePath
   next()
 })
