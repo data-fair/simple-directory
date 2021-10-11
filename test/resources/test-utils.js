@@ -1,7 +1,7 @@
 const test = require('ava')
-const axios = require('axios')
 const fs = require('fs-extra')
 const path = require('path')
+const sdExpress = require('@koumoul/sd-express')
 
 const testDir = path.join(__dirname, '../')
 const testFiles = fs.readdirSync(testDir).map(f => path.join(testDir, f))
@@ -33,24 +33,7 @@ exports.prepare = (testFile) => {
 
 exports.axios = async (test, email) => {
   const config = require('config')
-  const axOpts = { baseURL: config.publicUrl }
-  if (email) {
-    await axios.post(config.publicUrl + '/api/auth/passwordless', { email })
-    // TODO get id_token
-    const token = await new Promise((resolve, reject) => {
-      test.app.get('maildev').on('new', emailObj => {
-        if (emailObj.subject.indexOf('localhost:' + config.port) !== -1 && emailObj.to[0].address.toLowerCase() === email.toLowerCase()) {
-          const match = emailObj.text.match(/id_token=(.*)\s/)
-          if (!match) return reject(new Error('Failed to extract id_token from mail content'))
-          resolve(match[1])
-        }
-      })
-    })
-    const parts = token.split('.')
-    axOpts.headers = { Cookie: `id_token=${parts[0]}.${parts[1]};id_token_sign=${parts[2]}` }
-  }
-
-  const ax = axios.create(axOpts)
+  const ax = await sdExpress.axiosAuth(email, null, { baseURL: config.publicUrl }, config.publicUrl, config.maildev.url)
 
   // Simpler data associated to failure for cleaner logs
   ax.interceptors.response.use(response => response, error => {

@@ -7,7 +7,7 @@ const { test } = testUtils.prepare(__filename)
 
 const mails = require('../server/mails')
 
-test('Create a user', async t => {
+test.skip('Create a user', async t => {
   const adminAx = await testUtils.axios(test, 'alban.mouton@koumoul.com')
   let res = await adminAx.get('/api/users')
   t.is(res.data.count, 1) // only the super admin at first

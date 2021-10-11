@@ -10,7 +10,7 @@ test('Get user list when not authenticated', async t => {
 })
 
 test('Get user list when authenticated', async t => {
-  const ax = await testUtils.axios(test, 'dmeadus0@answers.com')
+  const ax = await testUtils.axios(test, 'dmeadus0@answers.com:testpasswd')
   const res = await ax.get('/api/users')
   t.is(res.status, 200)
   t.is(res.data.count, 12)
@@ -18,20 +18,20 @@ test('Get user list when authenticated', async t => {
 })
 
 test('Get filtered user list', async t => {
-  const ax = await testUtils.axios(test, 'dmeadus0@answers.com')
+  const ax = await testUtils.axios(test, 'dmeadus0@answers.com:testpasswd')
   const res = await ax.get('/api/users?q=Al')
   t.is(res.status, 200)
   t.is(res.data.count, 3)
 })
 
 test('Get user list with all fields when not admin', async t => {
-  const ax = await testUtils.axios(test, 'dmeadus0@answers.com')
+  const ax = await testUtils.axios(test, 'dmeadus0@answers.com:testpasswd')
   const res = await ax.get('/api/users?allFields=true')
   t.is(res.status, 403)
 })
 
 test('Get user list with all fields as admin', async t => {
-  const ax = await testUtils.axios(test, 'alban.mouton@koumoul.com')
+  const ax = await testUtils.axios(test, 'alban.mouton@koumoul.com:testpasswd')
   const res = await ax.get('/api/users?allFields=true')
   t.is(res.status, 200)
   t.is(res.data.count, 12)
@@ -45,13 +45,13 @@ test('Get user info when not authenticated', async t => {
 })
 
 test('Get user info when authenticated as another user', async t => {
-  const ax = await testUtils.axios(test, 'dmeadus0@answers.com')
+  const ax = await testUtils.axios(test, 'dmeadus0@answers.com:testpasswd')
   const res = await ax.get('/api/users/ccherryholme1')
   t.is(res.status, 403)
 })
 
 test('Get user infos', async t => {
-  const ax = await testUtils.axios(test, 'dmeadus0@answers.com')
+  const ax = await testUtils.axios(test, 'dmeadus0@answers.com:testpasswd')
   const res = await ax.get('/api/users/dmeadus0')
   t.is(res.status, 200)
   t.is(res.data.email, 'dmeadus0@answers.com')
