@@ -62,13 +62,28 @@ const fullUser = asyncWrap(async (req, res, next) => {
 })
 
 // set current baseUrl, i.e. the url of simple-directory on the current user's domain
-let basePath = new URL(config.publicUrl).pathname
+const publicUrl = new URL(config.publicUrl)
+let basePath = publicUrl.pathname
 if (basePath.endsWith('/')) basePath = basePath.slice(0, -1)
-app.use('/api', (req, res, next) => {
+app.use((req, res, next) => {
   const u = originalUrl(req)
   req.publicBaseUrl = u.full ? formatUrl({ protocol: u.protocol, hostname: u.hostname, port: u.port, pathname: basePath }) : config.publicUrl
   req.publicBasePath = basePath
   next()
+})
+
+// login is always done on the main domain with a redirect to the child domain
+app.use('/login', (req, res, next) => {
+  if (req.baseUrl === '/login' && req.publicBaseUrl !== config.publicUrl) {
+    const url = new URL(config.publicUrl + '/login')
+    for (const key in req.query) {
+      url.searchParams.set(key, req.query[key])
+    }
+    url.searchParams.set('redirect', req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
+    res.redirect(url.href)
+  } else {
+    next()
+  }
 })
 const apiDocs = require('../contract/api-docs')
 app.get('/api/api-docs.json', cors(), (req, res) => res.json(apiDocs))

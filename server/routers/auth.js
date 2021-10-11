@@ -106,16 +106,15 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     }
   }
 
-  await confirmLog(storage, user)
-  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-  tokens.setCookieToken(req, res, token, req.body.org || req.query.org)
-
-  const linkUrl = new URL(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
-  if (linkUrl.searchParams.has('id_token')) linkUrl.searchParams.set('id_token', token) // this should not be used anymore
-
-  debug(`Password based authentication of user ${user.name}`)
-  if (req.is('application/x-www-form-urlencoded')) res.redirect(linkUrl.href)
-  else res.send(linkUrl.href)
+  // this is used by data-fair app integrated login
+  if (req.is('application/x-www-form-urlencoded')) {
+    const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+    tokens.setCookieToken(req, res, token, req.body.org || req.query.org)
+    debug(`Password based authentication of user ${user.name}`)
+    res.redirect(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
+  } else {
+    res.send(tokens.prepareCallbackUrl(req, payload, req.query.redirect, req.body.org || req.query.org).href)
+  }
 }))
 
 // Either find or create an user based on an email address then send a mail with a link and a token
@@ -134,34 +133,31 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 
   const storage = req.app.get('storage')
   const user = await storage.getUserByEmail(req.body.email)
+  const redirect = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl
+  const redirectUrl = new URL(redirect)
+
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
-    const link = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl
-    const linkUrl = new URL(link)
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'noCreation',
       messages: req.messages,
       to: req.body.email,
-      params: { link, host: linkUrl.host, origin: linkUrl.origin },
+      params: { link: redirect, host: redirectUrl.host, origin: redirectUrl.origin },
     })
     return res.status(204).send()
   }
 
   const payload = tokens.getPayload(user)
   if (req.body.rememberMe) payload.rememberMe = true
+  payload.temporary = true
 
   // passwordless is not compatible with 2FA for now
   if (await storage.get2FA(user.id) || await storage.required2FA(payload)) {
     return res.status(400).send(req.messages.errors.passwordless2FA)
   }
 
-  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-
-  const linkUrl = new URL(req.publicBaseUrl + '/api/auth/token_callback')
-  linkUrl.searchParams.set('id_token', token)
-  if (req.body.org) linkUrl.searchParams.set('id_token_org', req.body.org)
-  if (req.query.redirect) linkUrl.searchParams.set('redirect', req.query.redirect)
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, req.body.org || req.query.org)
   debug(`Passwordless authentication of user ${user.name}`)
   await mails.send({
     transport: req.app.get('mailTransport'),
@@ -175,7 +171,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 
 router.get('/token_callback', asyncWrap(async (req, res, next) => {
   if (!req.query.id_token) {
-    return res.status(401).send('No id_token cookie provided')
+    return res.status(401).send('No id_token parameter provided')
   }
   let decoded
   try {
@@ -380,6 +376,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
     console.error('Bad state in oauth query, CSRF attack ?', provider.state, req.query.state)
     throw new Error('Bad OAuth state')
   }
+  // TODO: also a way to send org ?
   const redirect = decodeURIComponent(req.query.state.replace(provider.state + '-', ''))
   const target = redirect || config.defaultLoginRedirect || config.publicUrl + '/me'
 
@@ -430,14 +427,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   }
 
   const payload = tokens.getPayload(user)
-  await confirmLog(storage, user)
-  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-  tokens.setCookieToken(req, res, token)
-
-  const tokenCallbackUrl = new URL(target).host + req.publicBasePath + '/api/auth/token_callback'
-  const linkUrl = new URL(tokenCallbackUrl)
-  linkUrl.searchParams.set('id_token', token)
-  linkUrl.searchParams.set('redirect', target)
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, target)
   debug(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 }))

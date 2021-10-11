@@ -118,3 +118,17 @@ exports.keepalive = async (req, res) => {
   const token = exports.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   exports.setCookieToken(req, res, token)
 }
+
+// after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
+// this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
+exports.prepareCallbackUrl = (req, payload, redirect, org) => {
+  redirect = redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me'
+  const redirectUrl = new URL(redirect)
+  const token = exports.sign(req.app.get('keys'), { ...payload, temporary: true }, config.jwtDurations.initialToken)
+  const tokenCallback = redirectUrl.origin + req.publicBasePath + '/api/auth/token_callback'
+  const tokenCallbackUrl = new URL(tokenCallback)
+  tokenCallbackUrl.searchParams.set('id_token', token)
+  if (org) tokenCallbackUrl.searchParams.set('id_token_org', org)
+  if (redirect) tokenCallbackUrl.searchParams.set('redirect', redirect)
+  return tokenCallbackUrl
+}

@@ -88,7 +88,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   // prepare same link and payload as for a passwordless authentication
   // the user will be validated and authenticated at the same time by the exchange route
   const payload = tokens.getPayload(newUser)
-  const token = tokens.sign(req.app.get('keys'), { ...payload, emailConfirmed: true }, config.jwtDurations.initialToken)
+  const token = tokens.sign(req.app.get('keys'), { ...payload, emailConfirmed: true, temporary: true }, config.jwtDurations.initialToken)
 
   const linkUrl = new URL(req.publicBaseUrl + '/api/auth/token_callback')
   linkUrl.searchParams.set('id_token', token)

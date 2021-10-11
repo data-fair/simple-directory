@@ -27,7 +27,11 @@
               <p v-if="adminMode" class="warning--text">
                 {{ $t('pages.login.adminMode') }}
               </p>
-
+              <p
+                v-if="redirectHost && redirectHost !== mainHost"
+                class="mb-6"
+                v-html="$t('pages.login.separateDomain', {redirectHost, mainHost})"
+              />
               <template v-if="env.oauth.length && !adminMode">
                 <!--<v-layout row>
                   <p class="mb-0">{{ $t('pages.login.oauth') }}</p>
@@ -131,7 +135,6 @@
 
           <v-window-item value="tos">
             <v-card-text>
-              <p v-if="host !== mainHost" v-html="$t('pages.login.separateDomain', {host, mainHost})" />
               <p v-html="$t('pages.login.tosMsg', {tosUrl: env.tosUrl})" />
               <v-checkbox
                 v-model="tosAccepted"
@@ -513,8 +516,17 @@
       mainHost() {
         return new URL(this.env.mainPublicUrl).host
       },
+      redirectHost() {
+        return this.redirectUrl && new URL(this.redirectUrl).host
+      },
     },
     created() {
+      // this should not be necessary, see redirect in server/app.js
+      if (this.host !== this.mainHost) {
+        const url = new URL(window.location.href)
+        url.host = this.mainHost
+        window.location = url.href
+      }
       if (this.actionPayload) {
         this.step = 'changePassword'
         this.email = this.actionPayload.email
@@ -564,11 +576,9 @@
             org: this.org,
             '2fa': this.twoFACode,
           }, { params: { redirect: this.redirectUrl } })
-          // NOTE: this will not be necessary anylonger if we remove the deprecated id_token query param
-          const linkUrl = new URL(link)
-          linkUrl.searchParams.delete('id_token')
-          window.location.href = linkUrl.href
+          window.location.href = link
         } catch (error) {
+          if (!error.response) return console.error(error)
           if (error.response.status >= 500) eventBus.$emit('notification', { error })
           else {
             if (error.response.data === '2fa-missing') {
