@@ -360,7 +360,7 @@ router.get('/oauth/providers', (req, res) => {
 router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
   if (!provider) return res.redirect(`${req.publicBaseUrl}/login?error=unknownOAuthProvider`)
-  res.redirect(provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl))
+  res.redirect(provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl, req.query.org))
 }))
 
 router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
