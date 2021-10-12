@@ -189,6 +189,7 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
 
   const payload = tokens.getPayload(user)
   if (decoded.rememberMe) payload.rememberMe = true
+  if (decoded.adminMode && user.isAdmin) payload.adminMode = true
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
 
   await confirmLog(storage, user)
