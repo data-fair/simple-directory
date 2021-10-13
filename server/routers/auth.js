@@ -259,7 +259,6 @@ router.delete('/', (req, res) => {
     cookies.set('id_token_org', null, { domain: config.oldSessionDomain })
     cookies.set('id_token_2fa', null, { domain: config.oldSessionDomain })
     if (req.user) cookies.set(twoFA.cookieName(req.user.id), null, { domain: config.oldSessionDomain })
-    
   }
   res.status(204).send()
 })
