@@ -29,7 +29,7 @@ exports.checkSession = async (req, userId) => {
   return true
 }
 
-exports.cookieName = (userId) => 'id_token_2fa_' + Buffer.from(userId).toString('base64')
+exports.cookieName = (userId) => 'id_token_2fa_' + Buffer.from(userId).toString('base64url').replace(/=/g, '')
 
 exports.isValid = (twoFA, token) => {
   return authenticator.check(token, twoFA.secret)
