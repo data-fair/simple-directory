@@ -30,7 +30,7 @@
               <p
                 v-if="redirectHost && redirectHost !== mainHost"
                 class="mb-6"
-                v-html="$t('pages.login.separateDomain', {redirectHost, mainHost})"
+                v-html="$t('pages.login.separateDomain', {redirectHost, mainHost, mainOrigin})"
               />
               <template v-if="env.oauth.length && !adminMode">
                 <!--<v-layout row>
@@ -515,6 +515,9 @@
       },
       mainHost() {
         return new URL(this.env.mainPublicUrl).host
+      },
+      mainOrigin() {
+        return new URL(this.env.mainPublicUrl).origin
       },
       redirectHost() {
         return this.redirectUrl && new URL(this.redirectUrl).host
