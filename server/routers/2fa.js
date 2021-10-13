@@ -16,7 +16,7 @@ const router = exports.router = express.Router()
 // TODO: apply some rate limiting
 
 exports.checkSession = async (req, userId) => {
-  const token = req.cookies.id_token_2fa
+  const token = req.cookies[exports.cookieName(userId)]
   if (!token) return false
   let decoded
   try {
@@ -32,6 +32,8 @@ exports.checkSession = async (req, userId) => {
 exports.isValid = (twoFA, token) => {
   return authenticator.check(token, twoFA.secret)
 }
+
+exports.cookieName = (userId) => 'id_token_2fa_' + Buffer.from(userId).toString('base64')
 
 router.post('/', asyncWrap(async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)

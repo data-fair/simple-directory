@@ -95,7 +95,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
         // 2FA token sent alongside email/password
         const cookies = new Cookies(req, res)
         const token = tokens.sign(req.app.get('keys'), { user: user.id }, config.jwtDurations['2FAToken'])
-        cookies.set('id_token_2fa', token, { expires: new Date(tokens.decode(token).exp * 1000), sameSite: 'lax', httpOnly: true })
+        cookies.set(twoFA.cookieName(user.id), token, { expires: new Date(tokens.decode(token).exp * 1000), sameSite: 'lax', httpOnly: true })
       }
     } else {
       if (!user2FA || !user2FA.active) {
@@ -258,6 +258,8 @@ router.delete('/', (req, res) => {
     cookies.set('id_token_sign', null, { domain: config.oldSessionDomain })
     cookies.set('id_token_org', null, { domain: config.oldSessionDomain })
     cookies.set('id_token_2fa', null, { domain: config.oldSessionDomain })
+    if (req.user) cookies.set(twoFA.cookieName(req.user.id), null, { domain: config.oldSessionDomain })
+    
   }
   res.status(204).send()
 })
