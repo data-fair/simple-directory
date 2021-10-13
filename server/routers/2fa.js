@@ -33,7 +33,7 @@ exports.isValid = (twoFA, token) => {
   return authenticator.check(token, twoFA.secret)
 }
 
-exports.cookieName = (userId) => 'id_token_2fa_' + Buffer.from(userId).toString('base64')
+exports.cookieName = (userId) => 'id_token_2fa_' + userId
 
 router.post('/', asyncWrap(async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
