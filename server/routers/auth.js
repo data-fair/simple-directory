@@ -171,7 +171,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 
 router.get('/token_callback', asyncWrap(async (req, res, next) => {
   const redirectError = (error) => res.redirect(`${req.publicBaseUrl}/login?error=${encodeURIComponent(error)}`)
-  
+
   if (!req.query.id_token) return redirectError('missingToken')
   let decoded
   try {
