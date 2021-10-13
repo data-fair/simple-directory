@@ -16,6 +16,7 @@ module.exports = {
     documentation: 'Documentation',
     administration: 'Administration',
     myAccount: 'My account',
+    myOrganizations: 'My organizations',
     organization: 'Organization',
     organizations: 'Organizations',
     user: 'User',
