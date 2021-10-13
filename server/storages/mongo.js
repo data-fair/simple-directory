@@ -300,7 +300,7 @@ class MongodbStorage {
   async required2FA(user) {
     if (user.isAdmin && config.admins2FA) return true
     for (const org of user.organizations) {
-      if (await this.db.collection('organizations').findOne({ '2FA.roles': org.role })) {
+      if (await this.db.collection('organizations').findOne({ _id: org.id, '2FA.roles': org.role })) {
         return true
       }
     }
