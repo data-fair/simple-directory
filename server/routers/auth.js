@@ -166,7 +166,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
         // 2FA token sent alongside email/password
         const cookies = new Cookies(req, res)
         const token = jwt.sign(req.app.get('keys'), { user: user.id }, config.jwtDurations['2FAToken'])
-        cookies.set('id_token_2fa', token, { expires: new Date(jwt.decode(token).exp * 1000), sameSite: 'lax', httpOnly: true })
+        cookies.set(twoFA.cookieName(user.id), token, { expires: new Date(jwt.decode(token).exp * 1000), sameSite: 'lax', httpOnly: true })
       }
     } else {
       if (!user2FA || !user2FA.active) {

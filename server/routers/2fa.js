@@ -16,7 +16,7 @@ const router = exports.router = express.Router()
 // TODO: apply some rate limiting
 
 exports.checkSession = async (req, userId) => {
-  const token = req.cookies.id_token_2fa
+  const token = req.cookies[exports.cookieName(userId)]
   if (!token) return false
   let decoded
   try {
@@ -28,6 +28,8 @@ exports.checkSession = async (req, userId) => {
   if (decoded.user !== userId) return false
   return true
 }
+
+exports.cookieName = (userId) => 'id_token_2fa_' + Buffer.from(userId).toString('base64')
 
 exports.isValid = (twoFA, token) => {
   return authenticator.check(token, twoFA.secret)
