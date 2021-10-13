@@ -170,21 +170,21 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 }))
 
 router.get('/token_callback', asyncWrap(async (req, res, next) => {
-  if (!req.query.id_token) {
-    return res.status(401).send('No id_token parameter provided')
-  }
+  const redirectError = (error) => res.redirect(`${req.publicBaseUrl}/login?error=${encodeURIComponent(error)}`)
+  
+  if (!req.query.id_token) return redirectError('missingToken')
   let decoded
   try {
     decoded = await tokens.verify(req.app.get('keys'), req.query.id_token)
   } catch (err) {
-    return res.status(401).send('Invalid id_token')
+    return redirectError('invalidToken')
   }
 
   const storage = req.app.get('storage')
   const user = await storage.getUser({ id: decoded.id })
 
   if (!user || (decoded.emailConfirmed !== true && user.emailConfirmed === false)) {
-    return res.status(400).send(req.messages.errors.badCredentials)
+    return redirectError('badCredentials')
   }
 
   const payload = tokens.getPayload(user)

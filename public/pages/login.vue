@@ -426,9 +426,20 @@
                 type="error"
                 outlined
               >
-                {{ $t('errors.' + error) }}
+                {{ $te('errors.' + error) ? $t('errors.' + error) : error }}
               </v-alert>
             </v-card-text>
+
+            <v-card-actions>
+              <v-btn
+                v-if="step !== 1"
+                text
+                @click="clearError"
+              >
+                {{ $t('common.back') }}
+              </v-btn>
+              <v-spacer />
+            </v-card-actions>
           </v-window-item>
         </v-window>
       </v-card>
@@ -627,6 +638,10 @@
           if (error.response.status >= 500) eventBus.$emit('notification', { error })
           else this.newPasswordErrors = [error.response.data || error.message]
         }
+      },
+      async clearError() {
+        this.step = 'login'
+        this.$router.replace({ query: { ...this.$route.query, error: undefined } })
       },
       async init2FA() {
         try {

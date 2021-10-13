@@ -64,7 +64,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
       debug('old invalid invitation accepted only to present good redirect to the user')
     }
     // if the token was once valid, but deprecated we accept it partially
-    // meaning that we will not perform writes base on it
+    // meaning that we will not perform writes based on it
     // but we accept to check the user's existence and create the best redirect for him
     invit = tokens.decode(req.query.invit_token)
     verified = false
