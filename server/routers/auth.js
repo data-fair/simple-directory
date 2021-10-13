@@ -148,7 +148,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   }
   // 2FA management
   const user2FA = await storage.get2FA(user.id)
-  if (user2FA || await storage.required2FA(payload)) {
+  if ((user2FA && user2FA.active) || await storage.required2FA(payload)) {
     if (await twoFA.checkSession(req, user.id)) {
       // 2FA was already validated earlier and present in a cookie
     } else if (req.body['2fa']) {
