@@ -58,6 +58,10 @@ module.exports = {
         mapping: {
           __name: 'STORAGE_LDAP_USERS_MAPPING',
           __format: 'json'
+        },
+        overwrite: {
+          __name: 'STORAGE_LDAP_USERS_OVERWRITE',
+          __format: 'json'
         }
       },
       organizations: {
@@ -69,6 +73,10 @@ module.exports = {
         dnKey: 'STORAGE_LDAP_ORGS_DN_KEY',
         mapping: {
           __name: 'STORAGE_LDAP_ORGS_MAPPING',
+          __format: 'json'
+        },
+        overwrite: {
+          __name: 'STORAGE_LDAP_ORGS_OVERWRITE',
           __format: 'json'
         }
       },
@@ -88,6 +96,10 @@ module.exports = {
             __format: 'json'
           },
           default: 'STORAGE_LDAP_MEMBERS_ROLE_DEFAULT'
+        },
+        overwrite: {
+          __name: 'STORAGE_LDAP_MEMBERS_OVERWRITE',
+          __format: 'json'
         }
       }
     }
