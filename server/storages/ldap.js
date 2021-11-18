@@ -221,12 +221,13 @@ class LdapStorage {
       if (this.ldapParams.members.role.attr) {
         const ldapRoles = attrs[this.ldapParams.members.role.attr]
         if (ldapRoles) {
-          role = Object.keys(this.ldapParams.members.role.values).find(role => {
-            return !!ldapRoles.find(ldapRole => this.ldapParams.members.role.values[role].includes(ldapRole))
-          })
+          role = Object.keys(this.ldapParams.members.role.values)
+            .find(role => !!ldapRoles.find(ldapRole => this.ldapParams.members.role.values[role].includes(ldapRole)))
         }
       }
-      role = role || this.ldapParams.members.role.default
+      const overwrite = this.ldapParams.members.overwrite
+        .find(o => (o.orgId === org.id || !o.orgId) && o.email === user.email)
+      role = (overwrite && overwrite.role) || role || this.ldapParams.members.role.default
       user.organizations = [{ ...org, role }]
     }
   }
@@ -248,6 +249,8 @@ class LdapStorage {
       if (!onlyItem) return res.results[0]
       const user = res.results[0].item
       await this._setUserOrg(client, user, res.results[0].entry, res.results[0].attrs)
+      const overwrite = this.ldapParams.users.overwrite.find(o => o.email === user.email)
+      if (overwrite) Object.assign(user, overwrite)
       return user
     })
   }
@@ -304,6 +307,8 @@ class LdapStorage {
       for (let i = 0; i < res.results.length; i++) {
         const user = res.results[i].item
         await this._setUserOrg(client, user, res.results[i].entry, res.results[i].attrs, orgCache)
+        const overwrite = this.ldapParams.users.overwrite.find(o => o.email === user.email)
+        if (overwrite) Object.assign(user, overwrite)
         res.results[i] = user
       }
       return res
@@ -366,6 +371,7 @@ class LdapStorage {
           const user = res.results[i].item
           await this._setUserOrg(client, user, res.results[i].entry, res.results[i].attrs, orgCache)
           const userOrga = user.organizations.find(o => o.id === organizationId)
+
           res.results[i] = { id: user.id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department }
         }
         return res
@@ -410,6 +416,11 @@ class LdapStorage {
       Object.values(this.ldapParams.organizations.mapping),
       this._orgMapping.from,
     )
+    const org = res.results[0]
+    if (org) {
+      const overwrite = this.ldapParams.organizations.overwrite.find(o => o.id === org.id)
+      Object.assign(org, overwrite)
+    }
     return res.results[0]
   }
 

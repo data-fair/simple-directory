@@ -52,8 +52,10 @@ module.exports = {
           firstName: 'givenName',
           lastName: 'sn',
           birthday: null,
-          avatarUrl: null,
+          avatarUrl: null
         },
+        // an array of objects that can be used to overwrite any user properties based on matching "email" property
+        overwrite: []
       },
       // map entities in ldap to SD organizations
       organizations: {
@@ -64,8 +66,10 @@ module.exports = {
         dnKey: 'dc',
         mapping: {
           id: 'dc',
-          name: 'o',
+          name: 'o'
         },
+        // an array of objects that can be used to overwrite any org properties based on matching "id" property
+        overwrite: []
       },
       // manage the link between users and organizations
       members: {
@@ -80,10 +84,13 @@ module.exports = {
             user: []
           }, */
           values: {},
-          default: 'user',
+          default: 'user'
         },
-      },
-    },
+        // an array of objects that can be used to overwrite member role based on matching "orgId" and "email" properties
+        // leave orgId empty to overwrite role for all organizations of the user
+        overwrite: []
+      }
+    }
   },
   info: {
     termsOfService: 'https://koumoul.com/term-of-service',
