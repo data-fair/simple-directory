@@ -57,12 +57,12 @@ module.exports = {
         dnKey: 'STORAGE_LDAP_USERS_DN_KEY',
         mapping: {
           __name: 'STORAGE_LDAP_USERS_MAPPING',
-          __format: 'json'
+          __format: 'json',
         },
         overwrite: {
           __name: 'STORAGE_LDAP_USERS_OVERWRITE',
-          __format: 'json'
-        }
+          __format: 'json',
+        },
       },
       organizations: {
         staticSingleOrg: {
@@ -73,12 +73,12 @@ module.exports = {
         dnKey: 'STORAGE_LDAP_ORGS_DN_KEY',
         mapping: {
           __name: 'STORAGE_LDAP_ORGS_MAPPING',
-          __format: 'json'
+          __format: 'json',
         },
         overwrite: {
           __name: 'STORAGE_LDAP_ORGS_OVERWRITE',
-          __format: 'json'
-        }
+          __format: 'json',
+        },
       },
       members: {
         organizationAsDC: {
@@ -95,14 +95,14 @@ module.exports = {
             __name: 'STORAGE_LDAP_MEMBERS_ROLE_VALUES',
             __format: 'json',
           },
-          default: 'STORAGE_LDAP_MEMBERS_ROLE_DEFAULT'
+          default: 'STORAGE_LDAP_MEMBERS_ROLE_DEFAULT',
         },
         overwrite: {
           __name: 'STORAGE_LDAP_MEMBERS_OVERWRITE',
-          __format: 'json'
-        }
-      }
-    }
+          __format: 'json',
+        },
+      },
+    },
   },
   analytics: {
     __name: 'ANALYTICS',

@@ -3,16 +3,16 @@ const testUtils = require('./resources/test-utils')
 process.env.STORAGE_TYPE = 'ldap'
 process.env.STORAGE_LDAP_ONLY_WITH_ROLE = 'true'
 process.env.STORAGE_LDAP_MEMBERS_ROLE_VALUES = JSON.stringify(
-  { admin: ['cn=administrator,dc=test', 'cn=superadmin,dc=test'], user: ['cn=users,dc=test'] }
+  { admin: ['cn=administrator,dc=test', 'cn=superadmin,dc=test'], user: ['cn=users,dc=test'] },
 )
 process.env.STORAGE_LDAP_USERS_OVERWRITE = JSON.stringify(
-  [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }]
+  [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }],
 )
 process.env.STORAGE_LDAP_ORGS_OVERWRITE = JSON.stringify(
-  [{ id: 'myorg', name: 'Org overwritten' }]
+  [{ id: 'myorg', name: 'Org overwritten' }],
 )
 process.env.STORAGE_LDAP_MEMBERS_OVERWRITE = JSON.stringify(
-  [{ email: 'alban.mouton@koumoul.com', role: 'overwritten' }]
+  [{ email: 'alban.mouton@koumoul.com', role: 'overwritten' }],
 )
 const { test } = testUtils.prepare(__filename)
 
@@ -24,7 +24,7 @@ test.before('clean ldap directory', async t => {
   if (org) await test.app.get('storage').deleteOrganization(org.id)
 })
 
-test.only('create and find users', async t => {
+test('create and find users', async t => {
   const storage = test.app.get('storage')
   await storage.createOrganization({ id: 'myorg', name: 'My Org' })
   await storage.createUser({
