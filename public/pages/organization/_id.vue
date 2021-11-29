@@ -1,5 +1,10 @@
 <template lang="html">
-  <v-container v-if="orga" data-iframe-height>
+  <v-container
+    v-if="orga"
+    data-iframe-height
+    :fluid="$route.query.fluid === 'true'"
+    :class="{'pa-0': $route.query.fluid === 'true'}"
+  >
     <h2 class="text-h5 mb-3">
       {{ $t('common.organization') + ' ' + orga.name }}
     </h2>
