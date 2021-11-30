@@ -50,7 +50,7 @@
     "@nuxtjs/markdownit": "^2.0.0",
     "@nuxtjs/vuetify": "^1.12.1",
     "accept-language-parser": "^1.5.0",
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "babel-plugin-transform-imports": "^1.5.1",
     "body-parser": "^1.18.3",
     "config": "^1.31.0",
