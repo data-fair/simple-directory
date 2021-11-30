@@ -1,4 +1,4 @@
-export default ({ store, app, env, req }) => {
+export default ({ store, app, env, req, route }) => {
   let publicUrl = window.location.origin + env.basePath
   if (publicUrl.endsWith('/')) publicUrl = publicUrl.substr(0, publicUrl.length - 1)
   store.commit('setAny', {
@@ -12,5 +12,8 @@ export default ({ store, app, env, req }) => {
     cookies: app.$cookies,
     directoryUrl: publicUrl,
   })
-  store.dispatch('session/loop', app.$cookies)
+  if (route.query.embed !== 'true') {
+    // in case of iframe integration better to let the main page handle the session loop
+    store.dispatch('session/loop', app.$cookies)
+  }
 }
