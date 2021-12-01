@@ -16,9 +16,11 @@ router.post('/', asyncWrap(async (req, res) => {
   }
   const storage = req.app.get('storage')
   const transport = req.app.get('mailTransport')
-
-  const to = []
+  const results = []
   for (const t of req.body.to) {
+    // separte mail per recipient, prevents showing email addresses from other users
+    // but a single mail per orgs/members, showing emails is not a problem in this case
+    const to = []
     if (t.type === 'user') {
       const user = (await storage.getUser({ id: t.id }))
       if (user) to.push(user.email)
@@ -28,20 +30,20 @@ router.post('/', asyncWrap(async (req, res) => {
       const members = await storage.findMembers(t.id, { roles: t.role && [t.role], size: 10000, skip: 0 })
       members.results.forEach(member => to.push(member.email))
     }
-  }
 
-  const mail = {
-    from: config.mails.from,
-    bcc: to.join(', '),
-    subject: req.body.subject,
-    text: req.body.text,
-  }
+    const mail = {
+      from: config.mails.from,
+      to: to.join(', '),
+      subject: req.body.subject,
+      text: req.body.text,
+    }
 
-  if (req.body.html) {
-    mail.html = req.body.html
+    if (req.body.html) {
+      mail.html = req.body.html
+    }
+    results.push(await transport.sendMailAsync(mail))
   }
-
-  res.send(await transport.sendMailAsync(mail))
+  res.send(results)
 }))
 
 // protect contact route with rate limiting to prevent spam
