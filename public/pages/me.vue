@@ -31,14 +31,14 @@
         :label="$t('common.firstName')"
         :disabled="!userDetails || env.readonly"
         name="firstName"
-        @keyup.enter="save"
+        @change="save"
       />
       <v-text-field
         v-model="patch.lastName"
         :label="$t('common.lastName')"
         :disabled="!userDetails || env.readonly"
         name="lastName"
-        @keyup.enter="save"
+        @change="save"
       />
       <v-row v-if="!env.noBirthday" class="mx-0">
         <v-menu
@@ -67,7 +67,7 @@
             :max="maxBirthday"
             :picker-date="patch.birthday || maxBirthday"
             no-title
-            @input="birthdayMenu = false"
+            @input="birthdayMenu = false; save()"
           />
         </v-menu>
       </v-row>
@@ -93,12 +93,6 @@
         </v-btn>
       </v-row>
 
-      <v-row v-if="!env.readonly" class="mx-0">
-        <v-spacer />
-        <v-btn color="primary" @click="save">
-          {{ $t('common.save') }}
-        </v-btn>
-      </v-row>
       <br>
 
       <template v-if="host === mainHost">
