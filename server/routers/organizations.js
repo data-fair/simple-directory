@@ -11,25 +11,25 @@ const router = module.exports = express.Router()
 
 // Either a super admin, or an admin of the current organization
 function isAdmin(req) {
-  return req.user.isAdmin || (req.user.organizations || []).find(o => o.id === req.params.organizationId && o.role === 'admin')
+  return req.user.adminMode || (req.user.organizations || []).find(o => o.id === req.params.organizationId && o.role === 'admin')
 }
 
 // Either a super admin, or a member of the current organization
 function isMember(req) {
-  return req.user.isAdmin || (req.user.organizations || []).find(o => o.id === req.params.organizationId)
+  return req.user.adminMode || (req.user.organizations || []).find(o => o.id === req.params.organizationId)
 }
 
 // Get the list of organizations
 router.get('', asyncWrap(async (req, res, next) => {
   if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
-  if (config.listEntitiesMode === 'admin' && !(req.user && req.user.isAdmin)) return res.send({ results: [], count: 0 })
+  if (config.listEntitiesMode === 'admin' && !(req.user && req.user.adminMode)) return res.send({ results: [], count: 0 })
 
   const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
   if (allFields) {
-    if (!req.user || !req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
+    if (!req.user || !req.user.adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
   } else {
     params.select = ['id', 'name']
   }
@@ -87,7 +87,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   const orga = req.body
   orga.id = orga.id || shortid.generate()
   await storage.createOrganization(orga, req.user)
-  if (!req.user.isAdmin || req.query.autoAdmin !== 'false') await storage.addMember(orga, req.user, 'admin')
+  if (!req.user.adminMode || req.query.autoAdmin !== 'false') await storage.addMember(orga, req.user, 'admin')
   webhooks.postIdentity('organization', orga)
   orga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
 

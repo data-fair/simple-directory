@@ -15,14 +15,14 @@ const router = express.Router()
 // Get the list of users
 router.get('', asyncWrap(async (req, res, next) => {
   if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
-  if (config.listEntitiesMode === 'admin' && !(req.user && req.user.isAdmin)) return res.send({ results: [], count: 0 })
+  if (config.listEntitiesMode === 'admin' && !(req.user && req.user.adminMode)) return res.send({ results: [], count: 0 })
 
   const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
   if (allFields) {
-    if (!req.user || !req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
+    if (!req.user || !req.user.adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
   } else {
     params.select = ['id', 'name']
   }
@@ -103,7 +103,7 @@ router.post('', asyncWrap(async (req, res, next) => {
 
 router.get('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (!req.user.isAdmin && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
   const user = await req.app.get('storage').getUser({ id: req.params.userId })
   if (!user) return res.status(404).send()
   user.isAdmin = config.admins.includes(user.email)
@@ -116,12 +116,12 @@ const patchKeys = ['firstName', 'lastName', 'birthday']
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 router.patch('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (!req.user.isAdmin && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
 
   const unpatchableKey = Object.keys(req.body).find(key => !patchKeys.concat(adminKeys).includes(key))
   if (unpatchableKey) return res.status(400).send('Only some parts of the user can be modified through this route')
   const adminKey = Object.keys(req.body).find(key => adminKeys.includes(key))
-  if (adminKey && !req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (adminKey && !req.user.adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
 
   const patch = req.body
   const name = userName({ ...req.user, ...patch }, true)
@@ -143,9 +143,9 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
 router.delete('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (config.userSelfDelete) {
-    if (!req.user.isAdmin && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+    if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
   } else {
-    if (!req.user.isAdmin) return res.status(403).send(req.messages.errors.permissionDenied)
+    if (!req.user.adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
   }
 
   await req.app.get('storage').deleteUser(req.params.userId)
