@@ -131,7 +131,7 @@
                   </v-list-item-content>
                 </v-list-item>
                 <v-list-item
-                  v-if="user.organization"
+                  v-if="user.organization && user.organization.role === 'admin'"
                   :to="'/organization/' + user.organization.id"
                   :nuxt="true"
                 >

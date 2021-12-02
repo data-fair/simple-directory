@@ -1,6 +1,6 @@
 <template lang="html">
   <v-container
-    v-if="orga"
+    v-if="orga && userDetails"
     data-iframe-height
     :fluid="$route.query.fluid === 'true'"
     :class="{'pa-0': $route.query.fluid === 'true'}"
@@ -108,6 +108,14 @@
         if (!this.user || !this.userDetails) return false
         if (this.user.adminMode) return true
         return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin'))
+      },
+    },
+    watch: {
+      userDetails() {
+        if (!this.userDetails) return
+        // TODO: this is debatable, API allows to show all info on this page
+        // but in term of functionality it doesn't make much sense
+        if (!this.isAdminOrga) throw new Error(this.$t('errors.permissionDenied'))
       },
     },
     async mounted() {

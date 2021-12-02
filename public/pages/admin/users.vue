@@ -261,6 +261,7 @@
         return (this.pagination.sortDesc[0] ? '-' : '') + this.pagination.sortBy[0]
       },
       ...mapState(['env']),
+      ...mapState('session', ['user']),
     },
     watch: {
       'pagination.page'() { this.fetchUsers() },
@@ -269,6 +270,7 @@
       'pagination.sortDesc'() { this.fetchUsers() },
     },
     async mounted() {
+      if (!this.user.adminMode) throw new Error(this.$t('errors.permissionDenied'))
       this.fetchUsers()
       this.headers = []
       if (this.env.avatars.users) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
