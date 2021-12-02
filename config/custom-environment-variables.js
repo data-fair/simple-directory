@@ -248,4 +248,8 @@ module.exports = {
     __name: 'NO_BIRTHDAY',
     __format: 'json',
   },
+  showCreatedUserHost: {
+    __name: 'SHOW_CREATED_USER_HOST',
+    __format: 'json',
+  },
 }

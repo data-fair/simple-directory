@@ -135,7 +135,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
     const userInit = { email: invit.email, id: shortid.generate(), name: userName({ email: invit.email }), emailConfirmed: true }
     if (invit.department) userInit.department = invit.department
     debug('create invited user', userInit)
-    user = await storage.createUser(userInit)
+    user = await storage.createUser(userInit, null, new URL(redirectUrl).host)
     if (!config.passwordless) {
       const payload = tokens.getPayload(user)
       payload.action = 'changePassword'

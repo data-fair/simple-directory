@@ -216,4 +216,5 @@ module.exports = {
     },
   },
   noBirthday: false,
+  showCreatedUserHost: false,
 }

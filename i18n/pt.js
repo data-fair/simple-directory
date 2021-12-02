@@ -44,6 +44,7 @@ module.exports = {
     editTitle: 'Modificar {name}',
     loggedAt: 'Último login',
     createdAt: 'Criado em',
+    createdHost: 'Criado a partir do site',
     createdPhrase: 'Criado por {name} em {date}.',
     updatedAt: 'Actualizado em',
     maxCreatedOrgs: 'Número máximo de organizações a serem criadas',

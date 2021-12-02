@@ -99,12 +99,13 @@ class MongodbStorage {
     return user && user.password
   }
 
-  async createUser(user, byUser) {
+  async createUser(user, byUser, host) {
     byUser = byUser || user
+    host = host || new URL(config.publicUrl).host
     const clonedUser = cloneWithId(user)
     clonedUser.organizations = clonedUser.organizations || []
     const date = new Date()
-    clonedUser.created = { id: byUser.id, name: byUser.name, date }
+    clonedUser.created = { id: byUser.id, name: byUser.name, date, host }
     clonedUser.updated = { id: byUser.id, name: byUser.name, date }
     await this.db.collection('users').findOneAndReplace({ _id: user.id }, clonedUser, { upsert: true })
     return user

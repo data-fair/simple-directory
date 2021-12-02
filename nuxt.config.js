@@ -101,6 +101,7 @@ module.exports = {
     oauth: config.publicOAuth,
     anonymousContactForm: config.anonymousContactForm,
     noBirthday: config.noBirthday,
+    showCreatedUserHost: config.showCreatedUserHost,
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

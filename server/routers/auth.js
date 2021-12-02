@@ -416,7 +416,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
     }
     user.name = userName(user)
     debug('Create user authenticated through oauth', user)
-    await storage.createUser(user)
+    await storage.createUser(user, null, new URL(target).host)
   } else {
     debug('Existing user authenticated through oauth', user, userInfo)
     const patch = { oauth: { ...user.oauth, [req.params.oauthId]: oauthInfo } }

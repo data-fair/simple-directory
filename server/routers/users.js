@@ -65,8 +65,8 @@ router.post('', asyncWrap(async (req, res, next) => {
 
   // email is already taken, send a conflict email
   const user = await req.app.get('storage').getUserByEmail(req.body.email)
+  const link = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl
   if (user && user.emailConfirmed !== false) {
-    const link = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl
     const linkUrl = new URL(link)
     await mails.send({
       transport: req.app.get('mailTransport'),
@@ -83,7 +83,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     await storage.deleteUser(user.id)
   }
 
-  await storage.createUser(newUser)
+  await storage.createUser(newUser, null, new URL(link).host)
 
   // prepare same link and payload as for a passwordless authentication
   // the user will be validated and authenticated at the same time by the exchange route

@@ -45,6 +45,7 @@ module.exports = {
     editTitle: 'Edit {name}',
     loggedAt: 'Logged at',
     createdAt: 'Created on',
+    createdHost: 'Created from the site',
     createdPhrase: 'Created by {name} on {date}',
     updatedAt: 'Updated on',
     maxCreatedOrgs: 'Max number of created organizations',

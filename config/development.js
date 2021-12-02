@@ -59,4 +59,5 @@ module.exports = {
     readAll: 'testkey',
     metrics: 'testkey',
   },
+  showCreatedUserHost: true,
 }

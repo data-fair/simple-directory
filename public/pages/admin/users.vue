@@ -96,6 +96,9 @@
         </td>
         <template v-if="!env.readonly">
           <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
+          <td v-if="env.showCreatedUserHost">
+            {{ props.item.created && props.item.created.host }}
+          </td>
           <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
           <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
           <td class="justify-center layout px-0">
@@ -280,11 +283,12 @@
         this.headers.push({ text: this.$t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs', sortable: false })
       }
       if (!this.env.readonly) {
-        this.headers = this.headers.concat([
-          { text: this.$t('common.createdAt'), value: 'created.date' },
-          { text: this.$t('common.updatedAt'), value: 'updated.date' },
-          { text: this.$t('common.loggedAt'), value: 'logged' },
-        ])
+        this.headers.push({ text: this.$t('common.createdAt'), value: 'created.date' })
+        if (this.env.showCreatedUserHost) {
+          this.headers.push({ text: this.$t('common.createdHost'), value: 'created.host' })
+        }
+        this.headers.push({ text: this.$t('common.updatedAt'), value: 'updated.date' })
+        this.headers.push({ text: this.$t('common.loggedAt'), value: 'logged' })
       }
       this.headers.push({ text: '', value: 'actions', sortable: false })
     },
