@@ -21,7 +21,7 @@
       />
 
       <load-avatar
-        v-if="userDetails"
+        v-if="userDetails && env.avatars.users"
         :owner="{...userDetails, type: 'user'}"
         :disabled="!userDetails || env.readonly"
       />

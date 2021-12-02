@@ -102,6 +102,7 @@ module.exports = {
     anonymousContactForm: config.anonymousContactForm,
     noBirthday: config.noBirthday,
     showCreatedUserHost: config.showCreatedUserHost,
+    avatars: config.avatars,
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

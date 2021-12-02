@@ -95,7 +95,13 @@
                   v-on="on"
                 >
                   <v-avatar :size="36">
-                    <img :src="`${env.publicUrl}/api/avatars/${activeAccount.type}/${activeAccount.id}/avatar.png`">
+                    <img
+                      v-if="(activeAccount.type === 'user' && env.avatars.users) || (activeAccount.type === 'organization' && env.avatars.orgs)"
+                      :src="`${env.publicUrl}/api/avatars/${activeAccount.type}/${activeAccount.id}/avatar.png`"
+                    >
+                    <v-icon v-else>
+                      mdi-account
+                    </v-icon>
                   </v-avatar>
                 </v-btn>
               </template>
@@ -104,7 +110,16 @@
                 <v-list-item disabled>
                   <v-list-item-avatar class="ml-0 my-0">
                     <v-avatar :size="36">
-                      <img :src="activeAccount.type === 'user' ? `${env.publicUrl}/api/avatars/user/${user.id}/avatar.png` : `${env.publicUrl}/api/avatars/organization/${activeAccount.id}/avatar.png`">
+                      <img
+                        v-if="(activeAccount.type === 'user' && env.avatars.users) || (activeAccount.type === 'organization' && env.avatars.orgs)"
+                        :src="`${env.publicUrl}/api/avatars/${activeAccount.type}/${activeAccount.id}/avatar.png`"
+                      >
+                      <v-icon v-else-if="activeAccount.type === 'user'">
+                        mdi-account
+                      </v-icon>
+                      <v-icon v-else>
+                        mdi-account-multiple
+                      </v-icon>
                     </v-avatar>
                   </v-list-item-avatar>
                   <v-list-item-title>{{ activeAccount.type === 'user' ? 'Compte personnel' : activeAccount.name }}</v-list-item-title>
@@ -166,7 +181,10 @@
                   >
                     <v-list-item-avatar class="ml-0 my-0">
                       <v-avatar :size="28">
-                        <img :src="`${env.publicUrl}/api/avatars/user/${user.id}/avatar.png`">
+                        <img v-if="env.avatars.users" :src="`${env.publicUrl}/api/avatars/user/${user.id}/avatar.png`">
+                        <v-icon v-else>
+                          mdi-account
+                        </v-icon>
                       </v-avatar>
                     </v-list-item-avatar>
                     <v-list-item-title>Compte personnel</v-list-item-title>
@@ -179,7 +197,10 @@
                   >
                     <v-list-item-avatar class="ml-0 my-0">
                       <v-avatar :size="28">
-                        <img :src="`${env.publicUrl}/api/avatars/organization/${organization.id}/avatar.png`">
+                        <img v-if="env.avatars.orgs" :src="`${env.publicUrl}/api/avatars/organization/${organization.id}/avatar.png`">
+                        <v-icon v-else>
+                          mdi-account-multiple
+                        </v-icon>
                       </v-avatar>
                     </v-list-item-avatar>
                     <v-list-item-title>{{ organization.name }}</v-list-item-title>

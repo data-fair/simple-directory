@@ -252,4 +252,14 @@ module.exports = {
     __name: 'SHOW_CREATED_USER_HOST',
     __format: 'json',
   },
+  avatars: {
+    users: {
+      __name: 'AVATARS_USERS',
+      __format: 'json',
+    },
+    orgs: {
+      __name: 'AVATARS_ORGS',
+      __format: 'json',
+    },
+  },
 }

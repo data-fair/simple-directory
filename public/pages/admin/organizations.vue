@@ -31,7 +31,7 @@
       :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
     >
       <tr slot="item" slot-scope="props">
-        <td>
+        <td v-if="env.avatars.orgs">
           <v-avatar :size="40">
             <img :src="env.publicUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
           </v-avatar>
@@ -172,12 +172,13 @@
     },
     async mounted() {
       this.fetchOrganizations()
-      this.headers = [
-        { text: this.$t('common.avatar'), sortable: false },
+      this.headers = []
+      if (this.env.avatars.orgs) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
+      this.headers = this.headers.concat([
         { text: this.$t('common.name'), value: 'name' },
         { text: this.$t('common.id'), value: 'id', sortable: false },
         { text: this.$t('common.description'), value: 'description', sortable: false },
-      ]
+      ])
       if (!this.env.readonly) {
         this.headers = this.headers.concat([
           { text: this.$t('common.createdAt'), value: 'created.date' },

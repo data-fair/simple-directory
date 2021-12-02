@@ -217,4 +217,8 @@ module.exports = {
   },
   noBirthday: false,
   showCreatedUserHost: false,
+  avatars: {
+    users: true,
+    orgs: true,
+  },
 }

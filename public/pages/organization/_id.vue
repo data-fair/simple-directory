@@ -12,7 +12,7 @@
       {{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}
     </v-subheader>
     <load-avatar
-      v-if="orga"
+      v-if="orga && env.avatars.orgs"
       :owner="{...orga, type: 'organization'}"
       :disabled="env.readonly"
     />

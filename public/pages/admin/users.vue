@@ -40,7 +40,7 @@
       :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
     >
       <tr slot="item" slot-scope="props">
-        <td>
+        <td v-if="env.avatars.users">
           <v-avatar :size="40">
             <img :src="env.publicUrl + '/api/avatars/user/' + props.item.id + '/avatar.png'">
           </v-avatar>
@@ -270,15 +270,16 @@
     },
     async mounted() {
       this.fetchUsers()
-      this.headers = [
-        { text: this.$t('common.avatar'), sortable: false },
+      this.headers = []
+      if (this.env.avatars.users) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
+      this.headers = this.headers.concat([
         { text: this.$t('common.email'), value: 'email' },
         { text: this.$t('common.id'), value: 'id', sortable: false },
         { text: this.$t('common.firstName'), value: 'firstName' },
         { text: this.$t('common.lastName'), value: 'lastName' },
         { text: this.$t('common.2FA'), value: '2FA', sortable: false },
         { text: this.$t('common.organizations'), value: 'organizations', sortable: false },
-      ]
+      ])
       if (this.env.defaultMaxCreatedOrgs !== -1 && !this.env.readonly) {
         this.headers.push({ text: this.$t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs', sortable: false })
       }
