@@ -31,7 +31,7 @@ test('Get user list with all fields when not admin', async t => {
 })
 
 test('Get user list with all fields as admin', async t => {
-  const ax = await testUtils.axios(test, 'alban.mouton@koumoul.com:testpasswd')
+  const ax = await testUtils.axios(test, 'alban.mouton@koumoul.com:testpasswd:adminMode')
   const res = await ax.get('/api/users?allFields=true')
   t.is(res.status, 200)
   t.is(res.data.count, 12)
