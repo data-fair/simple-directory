@@ -100,6 +100,19 @@ app.use('/api/limits', session.auth, limits.router)
 app.use('/api/2fa', twoFA.router)
 app.get('/api/metrics', require('./routers/metrics'))
 
+/*
+*  WARNING:
+*  the next few lines are here only to maintain compatibility for installed clients
+*  that have an older version of sd-vue
+*/
+const axios = require('axios')
+app.post('/api/session/keepalive', asyncWrap(async (req, res, next) => {
+  const sdRes = await axios.post(config.publicUrl + '/api/auth/keepalive', null, { headers: { cookie: req.get('cookie') } })
+  res.setHeader('set-cookie', sdRes.headers['set-cookie'])
+  res.send(sdRes.data)
+}))
+// end of compatibility only section
+
 app.use((err, req, res, next) => {
   err.statusCode = err.statusCode || err.status
   if (err.statusCode === 500 || !err.statusCode) console.error('Error in express route', err)
