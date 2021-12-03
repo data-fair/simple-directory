@@ -23,7 +23,7 @@ module.exports = {
   srcDir: 'public/',
   buildDir: 'nuxt-dist',
   build: {
-    transpile: [/@koumoul/], // Necessary for "à la carte" import of vuetify components
+    transpile: [/@koumoul/],
     publicPath: config.publicUrl + '/_nuxt/',
     extend (config, { isServer, isDev, isClient }) {
       // config.optimization.minimize = false

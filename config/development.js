@@ -60,4 +60,5 @@ module.exports = {
     metrics: 'testkey',
   },
   showCreatedUserHost: true,
+  proxyNuxt: true,
 }

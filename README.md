@@ -32,6 +32,13 @@ Run the 2 development servers with these commands et separate shells:
 
 When both servers are ready, go to [http://localhost:5689](http://localhost:5689).
 
+
+Test built nuxt distributable in dev:
+
+   # first set proxyNuxt to false in config/development.js
+   NODE_ENV=development npm run build
+   npm run dev-server
+
 ## Design
 
 The application applies the material design recommendations and uses vue and vuetify

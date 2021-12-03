@@ -171,8 +171,8 @@
       'pagination.sortBy'() { this.fetchOrganizations() },
       'pagination.sortDesc'() { this.fetchOrganizations() },
     },
-    async mounted() {
-      if (!this.user.adminMode) throw new Error(this.$t('errors.permissionDenied'))
+    async created() {
+      if (!this.user.adminMode) return this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
       this.fetchOrganizations()
       this.headers = []
       if (this.env.avatars.orgs) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
