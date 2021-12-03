@@ -1,6 +1,5 @@
 const config = require('config')
 const { Nuxt } = require('nuxt')
-const { createProxyMiddleware } = require('http-proxy-middleware')
 const nuxtConfig = require('../nuxt.config.js')
 
 module.exports = async () => {
