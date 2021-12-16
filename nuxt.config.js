@@ -54,10 +54,10 @@ module.exports = {
       fallbackLocale: i18n.defaultLocale,
       messages: config.i18nMessages,
     },
+    strategy: 'no_prefix',
     detectBrowserLanguage: {
       useCookie: true,
       cookieKey: 'i18n_lang',
-      alwaysRedirect: true,
     },
   }]],
   buildModules: ['@nuxtjs/vuetify'],
