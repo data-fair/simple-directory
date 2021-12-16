@@ -14,19 +14,19 @@ ADD package-lock.json .
 RUN npm install --production && node-prune
 ADD nodemon.json .
 
-# Adding UI files
-ADD i18n i18n
-ADD public public
-ADD doc doc
-ADD nuxt.config.js .
-RUN npm run build
-
 # Adding server files
 ADD scripts scripts
 ADD server server
 ADD config config
 ADD contract contract
 ADD README.md VERSION.json* ./
+
+# Adding UI files
+ADD i18n i18n
+ADD public public
+ADD doc doc
+ADD nuxt.config.js .
+RUN npm run build
 
 VOLUME /webapp/security
 VOLUME /webapp/data
