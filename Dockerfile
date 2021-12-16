@@ -19,7 +19,7 @@ ADD scripts scripts
 ADD server server
 ADD config config
 ADD contract contract
-ADD README.md VERSION.json* ./
+ADD README.md BUILD.json* ./
 
 # Adding UI files
 ADD i18n i18n

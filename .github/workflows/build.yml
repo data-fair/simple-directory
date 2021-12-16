@@ -70,10 +70,10 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Prepare VERSION.json
+    - name: Prepare BUILD.json
       run: |
-        echo '{"version": "${{github.ref_name}}", "commit": "${{github.sha}}", "repository": "${{github.server_url}}/${{github.repository}}"}' > VERSION.json
-        cat VERSION.json
+        echo '{"version": "${{github.ref_name}}", "repository": "${{github.server_url}}/${{github.repository}}", "commit": "${{github.sha}}"}' > BUILD.json
+        cat BUILD.json
 
     - name: Build and push
       id: docker_build

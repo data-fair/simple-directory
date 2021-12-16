@@ -100,6 +100,16 @@ app.use('/api/limits', session.auth, limits.router)
 app.use('/api/2fa', twoFA.router)
 app.get('/api/metrics', require('./routers/metrics'))
 
+let info = { version: require('../package.json').version }
+try { info = require('./BUILD.json') } catch (err) {}
+app.get('/api/info', session.requiredAuth, (req, res) => {
+  res.send(info)
+})
+app.get('/api/admin/info', session.requiredAuth, (req, res) => {
+  if (!req.user.adminMode) return res.status(403).send()
+  res.send({ ...info, config })
+})
+
 /*
 *  WARNING:
 *  the next few lines are here only to maintain compatibility for installed clients
