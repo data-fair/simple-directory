@@ -3,8 +3,6 @@ MAINTAINER "contact@koumoul.com"
 
 RUN apk add --update openssl graphicsmagick
 
-ARG VERSION
-ENV VERSION=$VERSION
 ENV NODE_ENV production
 WORKDIR /webapp
 ADD package.json .
@@ -16,7 +14,7 @@ ADD scripts scripts
 ADD server server
 ADD config config
 ADD contract contract
-ADD README.md VERSION.json* .
+ADD README.md VERSION.json* ./
 
 # Adding UI files
 ADD i18n i18n
