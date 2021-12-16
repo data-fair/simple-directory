@@ -100,7 +100,7 @@ app.use('/api/limits', session.auth, limits.router)
 app.use('/api/2fa', twoFA.router)
 app.get('/api/metrics', require('./routers/metrics'))
 
-let info = { version: require('../package.json').version }
+let info = { version: process.env.NODE_ENV }
 try { info = require('../BUILD.json') } catch (err) {}
 app.get('/api/info', session.requiredAuth, (req, res) => {
   res.send(info)
