@@ -1,7 +1,7 @@
 FROM node:16.13.0-alpine3.13
 MAINTAINER "contact@koumoul.com"
 
-RUN apk add --update openssl graphicsmagick
+RUN apk add --update openssl graphicsmagick curl
 
 # Install node-prune to reduce size of node_modules
 RUN curl -sfL https://install.goreleaser.com/github.com/tj/node-prune.sh | sh -s -- -b /usr/local/bin
