@@ -101,7 +101,7 @@ app.use('/api/2fa', twoFA.router)
 app.get('/api/metrics', require('./routers/metrics'))
 
 let info = { version: require('../package.json').version }
-try { info = require('./BUILD.json') } catch (err) {}
+try { info = require('../BUILD.json') } catch (err) {}
 app.get('/api/info', session.requiredAuth, (req, res) => {
   res.send(info)
 })
