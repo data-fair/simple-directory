@@ -106,6 +106,7 @@ exports.keepalive = async (req, res) => {
 
   const payload = exports.getPayload(user)
   if (req.user.isAdmin && req.user.adminMode && req.query.noAdmin !== 'true') payload.adminMode = true
+  if (req.user.rememberMe) payload.rememberMe = true
   if (req.user.asAdmin) {
     payload.asAdmin = req.user.asAdmin
     payload.name = req.user.name
