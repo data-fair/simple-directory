@@ -81,5 +81,19 @@
       "id": "dhannan8",
       "role": "user"
     }]
+  }, {
+    "id": "test-ldap",
+    "name": "test ldap",
+    "members": [{
+      "id": "dmeadus0",
+      "role": "admin"
+    }],
+    "orgStorage": {
+      "type": "ldap",
+      "active": true,
+      "config": {
+        "url": "ldap://localhost:389"
+      }
+    }
   }
 ]

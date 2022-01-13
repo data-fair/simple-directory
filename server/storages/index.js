@@ -2,10 +2,15 @@ const config = require('config')
 const shortid = require('shortid')
 const userName = require('../utils/user-name')
 
-exports.init = async () => {
-  const factory = require('./' + config.storage.type)
-  const storage = await factory.init(config.storage[config.storage.type])
+exports.init = async (type, conf, org) => {
+  const factory = require('./' + type)
+  const storage = await factory.init(conf, org)
   storage.readonly = factory.readonly
+  return storage
+}
+
+exports.initGlobal = async () => {
+  const storage = await exports.init(config.storage.type, config.storage[config.storage.type])
 
   // Create admins and their orga at startup
   if (!storage.readonly) {

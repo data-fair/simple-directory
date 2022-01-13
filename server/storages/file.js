@@ -30,7 +30,8 @@ function sortCompare(sort) {
 }
 
 class FileStorage {
-  async init(params) {
+  async init(params, org) {
+    if (this.org) throw new Error('mongo storage is not compatible with per-org storage')
     this.users = JSON.parse(await readFile(path.resolve(__dirname, '../..', params.users), 'utf-8'))
     this.users.forEach(user => {
       user.name = userName(user)
@@ -160,5 +161,5 @@ class FileStorage {
   }
 }
 
-exports.init = async (params) => new FileStorage().init(params)
+exports.init = async (params, org) => new FileStorage().init(params, org)
 exports.readonly = true

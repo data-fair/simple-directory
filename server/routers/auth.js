@@ -15,6 +15,8 @@ const oauth = require('../utils/oauth')
 const userName = require('../utils/user-name')
 const twoFA = require('./2fa.js')
 const limiter = require('../utils/limiter')
+const storages = require('../storages')
+const defaultConfig = require('../../config/default.js')
 const debug = require('debug')('auth')
 
 const router = exports.router = express.Router()
@@ -56,7 +58,16 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     return returnError('rateLimitAuth', 429)
   }
 
-  const storage = req.app.get('storage')
+  let org
+  if (req.body.org || req.query.org) {
+    org = await req.app.get('storage').getOrganization(req.body.org || req.query.org)
+    if (!org) return returnError('orgaUnknown', 404)
+  }
+
+  let storage = req.app.get('storage')
+  if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
+    storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+  }
   const user = await storage.getUserByEmail(req.body.email)
   if (!user || user.emailConfirmed === false) return returnError('badCredentials', 400)
   if (storage.getPassword) {
@@ -67,6 +78,9 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     if (!await storage.checkPassword(user.id, req.body.password)) {
       return returnError('badCredentials', 400)
     }
+  }
+  if (org && req.body.membersOnly && !user.organizations.find(o => o.id === org.id)) {
+    return returnError('orgaUnknown', 404)
   }
   const payload = tokens.getPayload(user)
   if (req.body.adminMode) {
@@ -109,11 +123,12 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   // this is used by data-fair app integrated login
   if (req.is('application/x-www-form-urlencoded')) {
     const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-    tokens.setCookieToken(req, res, token, req.body.org || req.query.org)
+    tokens.setCookieToken(req, res, token, org && org.id)
     debug(`Password based authentication of user ${user.name}`)
     res.redirect(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
   } else {
-    res.send(tokens.prepareCallbackUrl(req, payload, req.query.redirect, req.body.org || req.query.org).href)
+    console.log(tokens.prepareCallbackUrl(req, payload, req.query.redirect, org && org.id, req.body.orgStorage).href)
+    res.send(tokens.prepareCallbackUrl(req, payload, req.query.redirect, org && org.id, req.body.orgStorage).href)
   }
 }))
 
@@ -131,8 +146,18 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
 
-  const storage = req.app.get('storage')
+  let org
+  if (req.body.org) {
+    org = await req.app.get('storage').getOrganization(req.body.org)
+    if (!org) return res.status(404).send(req.messages.errors.orgaUnknown)
+  }
+
+  let storage = req.app.get('storage')
+  if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
+    storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+  }
   const user = await storage.getUserByEmail(req.body.email)
+
   const redirect = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl
   const redirectUrl = new URL(redirect)
 
@@ -148,6 +173,10 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     return res.status(204).send()
   }
 
+  if (org && req.body.membersOnly === 'true' && !user.organizations.find(o => o.id === org.id)) {
+    if (!org) return res.status(404).send(req.messages.errors.orgaUnknown)
+  }
+
   const payload = tokens.getPayload(user)
   if (req.body.rememberMe) payload.rememberMe = true
   payload.temporary = true
@@ -157,7 +186,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     return res.status(400).send(req.messages.errors.passwordless2FA)
   }
 
-  const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, req.body.org || req.query.org)
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, req.body.org, req.body.orgStorage)
   debug(`Passwordless authentication of user ${user.name}`)
   await mails.send({
     transport: req.app.get('mailTransport'),
@@ -180,7 +209,15 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
     return redirectError('invalidToken')
   }
 
-  const storage = req.app.get('storage')
+  let org
+  if (req.query.id_token_org) {
+    org = await req.app.get('storage').getOrganization(req.query.id_token_org)
+    if (!org) return redirectError('orgaUnknown')
+  }
+  let storage = req.app.get('storage')
+  if (req.query.org_storage === 'true' && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
+    storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+  }
   const user = await storage.getUser({ id: decoded.id })
 
   if (!user || (decoded.emailConfirmed !== true && user.emailConfirmed === false)) {

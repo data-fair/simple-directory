@@ -45,7 +45,8 @@ function prepareSelect(select) {
 }
 
 class MongodbStorage {
-  async init(params) {
+  async init(params, org) {
+    if (this.org) throw new Error('mongo storage is not compatible with per-org storage')
     console.log('Connecting to mongodb ' + params.url)
     const MongoClient = require('mongodb').MongoClient
     const opts = {
@@ -316,5 +317,5 @@ class MongodbStorage {
   }
 }
 
-exports.init = async (params) => new MongodbStorage().init(params)
+exports.init = async (params, org) => new MongodbStorage().init(params, org)
 exports.readonly = false

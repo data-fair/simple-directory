@@ -19,7 +19,7 @@ const webpack = require('webpack')
 
 module.exports = {
   ssr: false,
-  // components: true,
+  components: true,
   srcDir: 'public/',
   buildDir: 'nuxt-dist',
   build: {
@@ -103,6 +103,7 @@ module.exports = {
     noBirthday: config.noBirthday,
     showCreatedUserHost: config.showCreatedUserHost,
     avatars: config.avatars,
+    perOrgStorageTypes: config.perOrgStorageTypes,
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

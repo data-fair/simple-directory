@@ -56,3 +56,16 @@ npm run doc
 ```
 
 Then open http://localhost:3000/simple-directory/
+
+## Work on LDAP storage
+
+Edit config/development.js to use LDAP storage.
+
+Open https://localhost:6443 and login using "cn=admin,dc=example,dc=org" and "admin".
+
+Add a test user:
+
+```
+apt-get install ldap-utils
+ldapadd -x -W -D "cn=admin,dc=example,dc=org" -f test/resources/ldap-user.ldif
+```

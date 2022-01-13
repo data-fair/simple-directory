@@ -9,6 +9,8 @@ const jwt = require('jsonwebtoken')
 const asyncVerify = util.promisify(jwt.verify)
 const JSONWebKey = require('json-web-key')
 const Cookies = require('cookies')
+const defaultConfig = require('../../config/default.js')
+const storages = require('../storages')
 
 exports.init = async () => {
   const keys = {}
@@ -64,6 +66,8 @@ exports.getPayload = (user) => {
     isAdmin: config.admins.includes(user.email),
   }
   if (user.department) payload.department = user.department
+  if (user.orgStorage) payload.orgStorage = user.orgStorage
+  if (user.readonly) payload.readonly = user.readonly
   return payload
 }
 
@@ -82,13 +86,13 @@ exports.setCookieToken = (req, res, token, org) => {
   }
 
   const payload = exports.decode(token)
+  console.log('ppp', payload)
   const parts = token.split('.')
   const opts = { sameSite: 'lax' }
   if (payload.rememberMe) opts.expires = new Date(payload.exp * 1000)
   cookies.set('id_token', parts[0] + '.' + parts[1], { ...opts, httpOnly: false })
   cookies.set('id_token_sign', parts[2], { ...opts, httpOnly: true })
   // set the same params to id_token_org cookie so that it doesn't expire before the rest
-  org = org || cookies.get('id_token_org')
   if (org) {
     if (payload.organizations.find(o => o.id === org)) {
       cookies.set('id_token_org', org, { ...opts, httpOnly: false })
@@ -100,7 +104,15 @@ exports.setCookieToken = (req, res, token, org) => {
 
 exports.keepalive = async (req, res) => {
   // User may have new organizations since last renew
-  const storage = req.app.get('storage')
+  let org
+  if (req.user.organization) {
+    org = await req.app.get('storage').getOrganization(req.user.organization.id)
+    if (!org) return res.status(401).send('Organization does not exist anymore')
+  }
+  let storage = req.app.get('storage')
+  if (req.user.orgStorage && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
+    storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+  }
   const user = await storage.getUser({ id: req.user.id })
   if (!user) return res.status(401).send('User does not exist anymore')
 
@@ -117,19 +129,21 @@ exports.keepalive = async (req, res) => {
     }
   }
   const token = exports.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-  exports.setCookieToken(req, res, token)
+  const cookies = new Cookies(req, res)
+  exports.setCookieToken(req, res, token, cookies.get('id_token_org'))
 }
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
 // this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
-exports.prepareCallbackUrl = (req, payload, redirect, org) => {
+exports.prepareCallbackUrl = (req, payload, redirect, org, orgStorage) => {
   redirect = redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me'
   const redirectUrl = new URL(redirect)
   const token = exports.sign(req.app.get('keys'), { ...payload, temporary: true }, config.jwtDurations.initialToken)
   const tokenCallback = redirectUrl.origin + req.publicBasePath + '/api/auth/token_callback'
   const tokenCallbackUrl = new URL(tokenCallback)
   tokenCallbackUrl.searchParams.set('id_token', token)
-  if (org) tokenCallbackUrl.searchParams.set('id_token_org', org)
   if (redirect) tokenCallbackUrl.searchParams.set('redirect', redirect)
+  if (org) tokenCallbackUrl.searchParams.set('id_token_org', org)
+  if (orgStorage) tokenCallbackUrl.searchParams.set('org_storage', 'true')
   return tokenCallbackUrl
 }

@@ -262,4 +262,8 @@ module.exports = {
       __format: 'json',
     },
   },
+  perOrgStorageTypes: {
+    __name: 'PER_ORG_STORAGE_TYPES',
+    __format: 'json',
+  },
 }

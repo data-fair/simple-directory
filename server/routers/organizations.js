@@ -6,6 +6,8 @@ const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
 const limits = require('../utils/limits')
 const tokens = require('../utils/tokens')
+const storages = require('../storages')
+const defaultConfig = require('../../config/default.js')
 
 const router = module.exports = express.Router()
 
@@ -58,6 +60,7 @@ router.get('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!orga) return res.status(404).send()
   orga.roles = orga.roles || config.roles.defaults
   orga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
+  if (!req.user.adminMode) delete orga.orgStorage
   res.send(orga)
 }))
 
@@ -105,8 +108,8 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!isAdmin(req)) {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
-
-  const forbiddenKey = Object.keys(req.body).find(key => !patchKeys.includes(key))
+  const fullPatchKeys = req.user.adminMode ? [...patchKeys, 'orgStorage'] : patchKeys
+  const forbiddenKey = Object.keys(req.body).find(key => !fullPatchKeys.includes(key))
   if (forbiddenKey) return res.status(400).send('Only some parts of the organization can be modified through this route')
   const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body, req.user)
   if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
@@ -126,12 +129,24 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (!isMember(req)) {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
+  const org = await req.app.get('storage').getOrganization(req.params.organizationId)
+  if (!org) return res.status(404).send('organization not found')
+
   const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
   if (req.query.q) params.q = req.query.q
   if (req.query.ids || req.query.id) params.ids = (req.query.ids || req.query.id).split(',')
   if (req.query.role) params.roles = req.query.role.split(',')
   if (req.query.department) params.departments = req.query.department.split(',')
   const members = await req.app.get('storage').findMembers(req.params.organizationId, params)
+
+  if (org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
+    const secondaryStorage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+    const otherMembers = await secondaryStorage.findMembers(req.params.organizationId, params)
+    if (otherMembers && otherMembers.count) {
+      members.count += otherMembers.count
+      members.results = members.results.concat(otherMembers.results.map(r => ({ ...r, orgStorage: true })))
+    }
+  }
   res.send(members)
 }))
 

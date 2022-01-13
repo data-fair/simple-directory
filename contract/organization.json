@@ -80,6 +80,19 @@
       "description": "URL of this organization's avatar",
       "type": "string",
       "readOnly": true
+    },
+    "orgStorage": {
+      "type": "object",
+      "description": "Manage a secondary user storage per-organization (super admin only)",
+      "properties": {
+        "active": {"type": "boolean"},
+        "type": {
+          "type": "string",
+          "enum": ["ldap"]
+        },
+        "readonly": {"type": "boolean"},
+        "config": {"type": "object"}
+      }
     }
   }
 }

@@ -1,0 +1,5 @@
+dn: cn=alban,dc=example,dc=org
+objectClass: inetOrgPerson
+cn: alban
+sn: alban
+mail: alban.mouton@koumoul.com

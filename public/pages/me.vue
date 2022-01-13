@@ -23,20 +23,20 @@
       <load-avatar
         v-if="userDetails && env.avatars.users"
         :owner="{...userDetails, type: 'user'}"
-        :disabled="!userDetails || env.readonly"
+        :disabled="!userDetails || readonly"
       />
 
       <v-text-field
         v-model="patch.firstName"
         :label="$t('common.firstName')"
-        :disabled="!userDetails || env.readonly"
+        :disabled="!userDetails || readonly"
         name="firstName"
         @change="save"
       />
       <v-text-field
         v-model="patch.lastName"
         :label="$t('common.lastName')"
-        :disabled="!userDetails || env.readonly"
+        :disabled="!userDetails || readonly"
         name="lastName"
         @change="save"
       />
@@ -55,7 +55,7 @@
             <v-text-field
               v-model="patch.birthday"
               :label="$t('common.birthday')"
-              :disabled="!userDetails || env.readonly"
+              :disabled="!userDetails || readonly"
               prepend-icon="mdi-calendar"
               readonly
               clearable
@@ -72,7 +72,7 @@
         </v-menu>
       </v-row>
 
-      <v-row v-if="!env.readonly" class="mx-0">
+      <v-row v-if="!readonly" class="mx-0">
         <p><a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a></p>
       </v-row>
 
@@ -119,10 +119,10 @@
           <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
         </div>
 
-        <add-organization-menu v-if="!env.readonly && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
+        <add-organization-menu v-if="!readonly && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
       </template>
 
-      <template v-if="env.userSelfDelete && !env.readonly">
+      <template v-if="env.userSelfDelete && !readonly">
         <h2 class="text-h5 mt-4 mb-3">
           {{ $t('pages.me.operations') }}
         </h2>
@@ -159,6 +159,9 @@
     computed: {
       ...mapState('session', ['user', 'initialized']),
       ...mapState(['userDetails', 'env']),
+      readonly() {
+        return this.env.readonly || this.user.orgStorage
+      },
       maxCreatedOrgs() {
         if (!this.userDetails) return 0
         return this.userDetails.maxCreatedOrgs !== undefined && this.userDetails.maxCreatedOrgs !== null ? this.userDetails.maxCreatedOrgs : this.env.defaultMaxCreatedOrgs

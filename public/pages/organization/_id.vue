@@ -85,17 +85,19 @@
       :is-admin-orga="isAdminOrga"
       :nb-members-limits="limits && limits.store_nb_members"
     />
+    <organization-storage
+      v-if="user.adminMode && env.perOrgStorageTypes.length"
+      :orga="orga"
+    />
   </v-container>
 </template>
 
 <script>
   import { mapActions, mapState } from 'vuex'
-  import OrganizationMembers from '~/components/organization-members.vue'
-  import OrganizationDepartments from '~/components/organization-departments.vue'
   import LoadAvatar from '~/components/load-avatar.vue'
 
   export default {
-    components: { OrganizationMembers, OrganizationDepartments, LoadAvatar },
+    components: { LoadAvatar },
     data: () => ({
       orga: null,
       limits: null,

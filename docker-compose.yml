@@ -8,6 +8,7 @@ services:
     image: osixia/openldap:1.4.0
     volumes:
       - ./data/ldap:/var/lib/ldap
+      - ./test/resources:/test-resources
     ports:
       - 389:389
       - 636:636

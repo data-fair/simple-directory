@@ -9,6 +9,8 @@ const tokens = require('../utils/tokens')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 const mails = require('../mails')
+const storages = require('../storages')
+const defaultConfig = require('../../config/default.js')
 
 const router = express.Router()
 
@@ -104,7 +106,13 @@ router.post('', asyncWrap(async (req, res, next) => {
 router.get('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
-  const user = await req.app.get('storage').getUser({ id: req.params.userId })
+  let storage = req.app.get('storage')
+  if (req.user.id === req.params.userId && req.user.orgStorage && req.user.organization) {
+    const org = await req.app.get('storage').getOrganization(req.user.organization.id)
+    if (!org) return res.status(401).send('Organization does not exist anymore')
+    storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+  }
+  const user = await storage.getUser({ id: req.params.userId })
   if (!user) return res.status(404).send()
   user.isAdmin = config.admins.includes(user.email)
   user.avatarUrl = req.publicBaseUrl + '/api/avatars/user/' + user.id + '/avatar.png'

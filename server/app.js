@@ -36,7 +36,7 @@ app.use((req, res, next) => {
 // Replaces req.user from session with full and fresh user object from storage
 // also minimalist api key management
 const fullUser = asyncWrap(async (req, res, next) => {
-  if (req.user) {
+  if (req.user && !req.user.orgStorage) {
     req.user = {
       ...await req.app.get('storage').getUser({ id: req.user.id }),
       isAdmin: req.user.isAdmin,
@@ -150,7 +150,7 @@ exports.run = async() => {
   app.use(tokens.router(keys))
 
   debug('prepare storage')
-  const storage = await storages.init()
+  const storage = await storages.initGlobal()
   app.set('storage', storage)
 
   debug('prepare mail transport')

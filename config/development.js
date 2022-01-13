@@ -61,4 +61,5 @@ module.exports = {
   },
   showCreatedUserHost: true,
   proxyNuxt: true,
+  perOrgStorageTypes: ['ldap'],
 }

@@ -11,7 +11,7 @@ module.exports = {
       organizations: './test/resources/organizations.json',
     },
     mongo: {
-      url: 'mongodb://localhost:27017/data-fair-' + (process.env.NODE_ENV || 'development'),
+      url: 'mongodb://localhost:27017/data-fair-' + (process.env.NODE_ENV || 'test'),
     },
     ldap: {
       url: 'ldap://localhost:389',

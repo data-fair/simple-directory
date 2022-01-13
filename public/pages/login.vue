@@ -32,7 +32,7 @@
                 class="mb-6"
                 v-html="$t('pages.login.separateDomain', {redirectHost, mainHost, mainOrigin})"
               />
-              <template v-if="env.oauth.length && !adminMode">
+              <template v-if="env.oauth.length && !adminMode && !orgStorage">
                 <!--<v-layout row>
                   <p class="mb-0">{{ $t('pages.login.oauth') }}</p>
                 </v-layout>-->
@@ -108,12 +108,12 @@
                 dense
                 :label="$t('pages.login.rememberMe')"
               />
-              <v-row v-if="!env.onlyCreateInvited && !adminMode" class="mx-0">
+              <v-row v-if="!readonly && !env.onlyCreateInvited && !adminMode" class="mx-0">
                 <p class="mb-2">
                   <a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a>
                 </p>
               </v-row>
-              <v-row v-if="!env.readonly && !adminMode" class="mx-0">
+              <v-row v-if="!readonly && !adminMode" class="mx-0">
                 <p class="mb-0">
                   <a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a>
                 </p>
@@ -485,6 +485,8 @@
         actionToken: this.$route.query.action_token,
         adminMode: this.$route.query.adminMode === 'true',
         org: this.$route.query.org,
+        orgStorage: this.$route.query.org_storage === 'true',
+        membersOnly: this.$route.query.members_only === 'true',
         newPassword: null,
         newPassword2: null,
         newPasswordErrors: [],
@@ -509,6 +511,9 @@
     computed: {
       ...mapState('session', ['user']),
       ...mapState(['env']),
+      readonly() {
+        return this.env.readonly || this.$route.query.readonly === 'true'
+      },
       redirectUrl() {
         return this.$route.query && this.$route.query.redirect
       },
@@ -571,6 +576,8 @@
             email: this.email,
             rememberMe: this.rememberMe,
             org: this.org,
+            membersOnly: this.membersOnly,
+            orgStorage: this.orgStorage,
           }, { params: { redirect: this.redirectUrl } })
           this.emailErrors = []
           this.step = 'emailConfirmed'
@@ -589,6 +596,8 @@
             rememberMe: this.rememberMe && !this.adminMode,
             org: this.org,
             '2fa': this.twoFACode,
+            membersOnly: this.membersOnly,
+            orgStorage: this.orgStorage,
           }, { params: { redirect: this.redirectUrl } })
           window.location.href = link
         } catch (error) {

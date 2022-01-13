@@ -221,4 +221,6 @@ module.exports = {
     users: true,
     orgs: true,
   },
+  // allow configuring external storages per organization
+  perOrgStorageTypes: [],
 }

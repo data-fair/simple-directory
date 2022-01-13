@@ -12,16 +12,19 @@ function sortCompare(sort) {
   }
 }
 
-function buildMappingFn(mapping, required, multiValued, objectClass, secondaryObjectClass) {
+function buildMappingFn(mapping, required, multiValued, objectClass, secondaryObjectClass, prefixes) {
   return {
     from (attrs) {
       const result = {}
       Object.keys(mapping).forEach(key => {
         if (attrs[mapping[key]] && attrs[mapping[key]][0]) {
+          const values = attrs[mapping[key]].map(v => {
+            return (prefixes[key] || '') + v
+          })
           if (multiValued.includes(key)) {
-            result[key] = attrs[mapping[key]]
+            result[key] = values
           } else {
-            result[key] = attrs[mapping[key]][0]
+            result[key] = values[0]
           }
         } else if (required.includes(key)) {
           throw new Error(`${key} attribute is required, ldap attr=${mapping[key]}`)
@@ -33,7 +36,7 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
       const entry = { objectClass: secondaryObjectClass ? [objectClass, secondaryObjectClass] : objectClass }
       Object.keys(mapping).forEach(key => {
         if (obj[key] && (!multiValued.includes(key) || obj[key].length)) {
-          entry[mapping[key]] = obj[key]
+          entry[mapping[key]] = obj[key] && obj[key].replace(prefixes[key] || '', '')
         } else if (required.includes(key)) {
           throw new Error(`${key} attribute is required`)
         }
@@ -46,7 +49,7 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
         .filter(key => !!obj[key])
         .filter(key => !!mapping[key])
         .forEach(key => {
-          filters.push(new ldap.EqualityFilter({ attribute: mapping[key], value: obj[key] }))
+          filters.push(new ldap.EqualityFilter({ attribute: mapping[key], value: obj[key].replace(prefixes[key] || '', '') }))
         })
       if (obj.q) {
         filters.push(new ldap.SubstringFilter({ attribute: mapping.name, any: [obj.q] }))
@@ -61,25 +64,31 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
 }
 
 class LdapStorage {
-  async init(params) {
+  async init(params, org) {
     this.ldapParams = params
+    this.org = org
     console.log('Connecting to ldap ' + params.url)
     // check connexion at startup
     await this._client(async (client) => {})
-
+    const prefixes = org ? { id: `ldap_${org.id}_` } : {}
     this._userMapping = buildMappingFn(
       this.ldapParams.users.mapping,
       ['email'],
       [],
       this.ldapParams.users.objectClass,
+      null,
+      prefixes,
     )
-    this._orgMapping = buildMappingFn(
-      this.ldapParams.organizations.mapping,
-      ['id'],
-      [],
-      this.ldapParams.organizations.objectClass,
-      this.ldapParams.members.organizationAsDC ? 'dcObject' : null,
-    )
+    if (!this.org) {
+      this._orgMapping = buildMappingFn(
+        this.ldapParams.organizations.mapping,
+        ['id'],
+        [],
+        this.ldapParams.organizations.objectClass,
+        this.ldapParams.members.organizationAsDC ? 'dcObject' : null,
+        {},
+      )
+    }
 
     return this
   }
@@ -152,7 +161,7 @@ class LdapStorage {
     const entry = this._userMapping.to(user)
     const dnKey = this.ldapParams.users.dnKey
     if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
-    if (this.ldapParams.organizations.staticSingleOrg) {
+    if (this.ldapParams.organizations.staticSingleOrg || this.org) {
       return `${dnKey}=${entry[dnKey]}, ${this.ldapParams.baseDN}`
     } else if (this.ldapParams.members.organizationAsDC) {
       if (!user.organizations || !user.organizations.length) {
@@ -207,6 +216,8 @@ class LdapStorage {
     let org
     if (this.ldapParams.organizations.staticSingleOrg) {
       org = this.ldapParams.organizations.staticSingleOrg
+    } else if (this.org) {
+      org = { id: this.org.id, name: this.org.name }
     } else if (this.ldapParams.members.organizationAsDC) {
       const dn = ldap.parseDN(entry.objectName)
       const orgDC = dn.rdns[1].attrs.dc.value
@@ -225,7 +236,7 @@ class LdapStorage {
             .find(role => !!ldapRoles.find(ldapRole => this.ldapParams.members.role.values[role].includes(ldapRole)))
         }
       }
-      const overwrite = this.ldapParams.members.overwrite
+      const overwrite = (this.ldapParams.members.overwrite || [])
         .find(o => (o.orgId === org.id || !o.orgId) && o.email === user.email)
       role = (overwrite && overwrite.role) || role || this.ldapParams.members.role.default
       user.organizations = [{ ...org, role }]
@@ -249,8 +260,9 @@ class LdapStorage {
       if (!onlyItem) return res.results[0]
       const user = res.results[0].item
       await this._setUserOrg(client, user, res.results[0].entry, res.results[0].attrs)
-      const overwrite = this.ldapParams.users.overwrite.find(o => o.email === user.email)
+      const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email === user.email)
       if (overwrite) Object.assign(user, overwrite)
+      if (this.org) user.orgStorage = true
       return user
     })
   }
@@ -337,7 +349,7 @@ class LdapStorage {
   async findMembers(organizationId, params = {}) {
     debug('find members', params)
     let dn
-    if (this.ldapParams.organizations.staticSingleOrg) {
+    if (this.ldapParams.organizations.staticSingleOrg || this.org) {
       dn = this.ldapParams.baseDN
     } else if (this.ldapParams.members.organizationAsDC) {
       dn = this._orgDN({ id: organizationId })
@@ -460,5 +472,5 @@ class LdapStorage {
   }
 }
 
-exports.init = async (params) => new LdapStorage().init(params)
+exports.init = async (params, org) => new LdapStorage().init(params, org)
 exports.readonly = require('config').storage.ldap.readonly
