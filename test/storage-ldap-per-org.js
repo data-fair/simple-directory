@@ -28,7 +28,7 @@ test.before('clean ldap directory', async t => {
   })
 })
 
-test('find org members from secondary ldap storage', async t => {
+test.skip('find org members from secondary ldap storage', async t => {
   const ax = await testUtils.axios(test, 'dmeadus0@answers.com:testpasswd')
   let res = await ax.get('/api/organizations/test-ldap')
   t.is(res.status, 200)

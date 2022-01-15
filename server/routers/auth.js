@@ -127,7 +127,6 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     debug(`Password based authentication of user ${user.name}`)
     res.redirect(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
   } else {
-    console.log(tokens.prepareCallbackUrl(req, payload, req.query.redirect, org && org.id, req.body.orgStorage).href)
     res.send(tokens.prepareCallbackUrl(req, payload, req.query.redirect, org && org.id, req.body.orgStorage).href)
   }
 }))

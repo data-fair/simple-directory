@@ -21,7 +21,7 @@ test('Get user', async t => {
   t.truthy(res)
   t.truthy(res.email)
   t.truthy(res.organizations)
-  t.is(res.organizations.length, 2)
+  t.is(res.organizations.length, 3)
   t.is(res.organizations[0].name, 'Fivechat')
   t.is(res.organizations[0].role, 'admin')
 })
