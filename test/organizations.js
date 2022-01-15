@@ -13,7 +13,7 @@ test('Get organization list when authenticated', async t => {
   const ax = await testUtils.axios(test, 'dmeadus0@answers.com:testpasswd')
   let res = await ax.get('/api/organizations')
   t.is(res.status, 200)
-  t.is(res.data.count, 6)
+  t.is(res.data.count, 7)
   res = await ax.get('/api/organizations?q=li')
   t.is(res.data.count, 2)
 })
