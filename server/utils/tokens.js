@@ -86,7 +86,6 @@ exports.setCookieToken = (req, res, token, org) => {
   }
 
   const payload = exports.decode(token)
-  console.log('ppp', payload)
   const parts = token.split('.')
   const opts = { sameSite: 'lax' }
   if (payload.rememberMe) opts.expires = new Date(payload.exp * 1000)
