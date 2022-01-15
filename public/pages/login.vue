@@ -522,6 +522,7 @@
         return jwtDecode(this.actionToken)
       },
       logoUrl() {
+        if (this.$route.query.logo) return this.$route.query.logo
         if (this.org) return `${this.env.publicUrl}/api/avatars/organization/${this.org}/avatar.png`
         if (this.env.theme.logo) return this.env.theme.logo
         return null
