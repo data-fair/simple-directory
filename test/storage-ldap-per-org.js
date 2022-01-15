@@ -2,7 +2,6 @@ process.env.PER_ORG_STORAGE_TYPES = '["ldap"]'
 
 const testUtils = require('./resources/test-utils')
 const ldapStorage = require('../server/storages/ldap')
-const { get } = require('config')
 const { test, config } = testUtils.prepare(__filename)
 
 const ldapConfig = config.storage.ldap

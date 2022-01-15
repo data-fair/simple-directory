@@ -14,7 +14,7 @@
       hide-details
     />
     <div class="py-3">
-      <a :href="loginOrg">Lien de connexion pour utiliser ce stockage secondaire</a></v-col>
+      <a :href="loginOrg">Lien de connexion pour utiliser ce stockage secondaire</a>
     </div>
     <v-textarea
       v-if="orgStorage.active"
