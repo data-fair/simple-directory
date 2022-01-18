@@ -27,7 +27,11 @@
         </v-alert>
       </v-card-text>
       <v-card-text v-else>
-        <v-form ref="inviteForm" v-model="validInvitation">
+        <v-form
+          v-if="!link"
+          ref="inviteForm"
+          v-model="validInvitation"
+        >
           <v-text-field
             id="id"
             v-model="invitation.email"
@@ -67,7 +71,11 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text @click="menu=false">
+        <v-btn
+          v-if="!link"
+          text
+          @click="menu=false"
+        >
           {{ $t('common.confirmCancel') }}
         </v-btn>
         <v-btn
@@ -107,6 +115,10 @@
     },
     methods: {
       async confirmInvitation() {
+        if (this.link) {
+          this.menu = false
+          return
+        }
         if (this.$refs.inviteForm.validate()) {
           try {
             const res = await this.$axios.$post('api/invitations/', this.invitation)
