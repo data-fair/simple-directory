@@ -57,7 +57,7 @@
         <v-alert
           :value="!!link"
           type="warning"
-          outline
+          outlined
         >
           <p>{{ $t('pages.organization.inviteLink') }}</p>
           <p style="word-break: break-all;">

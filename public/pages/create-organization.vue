@@ -19,7 +19,7 @@
         v-model="newOrga.description"
         :label="$t('common.description')"
         name="description"
-        outline
+        outlines
       />
       <v-checkbox
         v-if="user && user.adminMode"

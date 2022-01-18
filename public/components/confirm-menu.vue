@@ -29,7 +29,7 @@
           v-if="alert"
           :value="true"
           :type="yesColor"
-          outline
+          outlined
         >
           {{ alert }}
         </v-alert>

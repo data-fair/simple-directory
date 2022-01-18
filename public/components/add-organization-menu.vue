@@ -35,7 +35,7 @@
             v-model="editOrganization.description"
             :label="$t('common.description')"
             name="description"
-            outline
+            outlined
           />
         </v-form>
       </v-card-text>

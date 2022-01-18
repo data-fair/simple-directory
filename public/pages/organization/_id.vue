@@ -35,7 +35,7 @@
         :label="$t('common.description')"
         :disabled="!isAdminOrga || env.readonly"
         name="description"
-        outline
+        outlined
       />
       <v-text-field
         v-if="env.manageDepartments && env.manageDepartmentLabel"
