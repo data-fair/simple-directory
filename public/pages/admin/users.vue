@@ -350,16 +350,6 @@
         this.currentUser = user
         this.drop2FADialog = true
       },
-      async saveMaxCreatedOrgs(user, newMaxCreatedOrgs) {
-        if (newMaxCreatedOrgs === '' || newMaxCreatedOrgs === undefined) newMaxCreatedOrgs = null
-        if (newMaxCreatedOrgs !== null) newMaxCreatedOrgs = Number(newMaxCreatedOrgs)
-        try {
-          await this.$axios.$patch(`api/users/${user.id}`, { maxCreatedOrgs: newMaxCreatedOrgs })
-          this.$set(user, 'maxCreatedOrgs', newMaxCreatedOrgs)
-        } catch (error) {
-          eventBus.$emit('notification', { error })
-        }
-      },
       async drop2FA(user) {
         try {
           await this.$axios.$patch(`api/users/${user.id}`, { '2FA': { active: false } })
