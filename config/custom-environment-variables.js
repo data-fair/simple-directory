@@ -266,4 +266,5 @@ module.exports = {
     __name: 'PER_ORG_STORAGE_TYPES',
     __format: 'json',
   },
+  cipherPassword: 'CIPHER_PASSWORD',
 }

@@ -1,4 +1,5 @@
 const crypto = require('crypto')
+const config = require('config')
 const util = require('util')
 const randomBytes = util.promisify(crypto.randomBytes)
 const pbkdf2 = util.promisify(crypto.pbkdf2)
@@ -30,4 +31,37 @@ exports.checkPassword = async (password, storedPassword) => {
   }
   const newHash = await pbkdf2(password, Buffer.from(storedPassword.salt, 'hex'), storedPassword.iterations, storedPassword.size, storedPassword.alg)
   return newHash.toString('hex') === storedPassword.hash
+}
+
+// the secret key for cipher/decipher is a simple hash of config.cipherPassword
+let securityKey
+if (config.cipherPassword) {
+  const hash = crypto.createHash('sha256')
+  hash.update(config.cipherPassword)
+  securityKey = hash.digest()
+}
+
+// contrary to a hash password the ciphered password can be read,
+// we use this to store ldap credentials for example
+exports.cipherPassword = (password) => {
+  const initVector = crypto.randomBytes(16)
+  if (!config.cipherPassword) throw new Error('cipherPassword config option is missing')
+  const algo = 'aes256'
+  const cipher = crypto.createCipheriv(algo, securityKey, initVector)
+  let encryptedData = cipher.update(password, 'utf-8', 'hex')
+  encryptedData += cipher.final('hex')
+  return {
+    iv: initVector.toString('hex'),
+    alg: algo,
+    data: encryptedData,
+  }
+}
+
+exports.decipherPassword = (storedPassword) => {
+  if (typeof storedPassword === 'string') return storedPassword
+  if (!config.cipherPassword) throw new Error('cipherPassword config option is missing')
+  const decipher = crypto.createDecipheriv(storedPassword.alg, securityKey, Buffer.from(storedPassword.iv, 'hex'))
+  let password = decipher.update(storedPassword.data, 'hex', 'utf-8')
+  password += decipher.final('utf8')
+  return password
 }

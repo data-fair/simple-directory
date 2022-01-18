@@ -7,6 +7,7 @@ const webhooks = require('../webhooks')
 const limits = require('../utils/limits')
 const tokens = require('../utils/tokens')
 const storages = require('../storages')
+const passwordsUtils = require('../utils/passwords')
 const defaultConfig = require('../../config/default.js')
 
 const router = module.exports = express.Router()
@@ -111,6 +112,9 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   const fullPatchKeys = req.user.adminMode ? [...patchKeys, 'orgStorage'] : patchKeys
   const forbiddenKey = Object.keys(req.body).find(key => !fullPatchKeys.includes(key))
   if (forbiddenKey) return res.status(400).send('Only some parts of the organization can be modified through this route')
+  if (req.body.orgStorage?.config?.searchUserPassword && typeof req.body.orgStorage.config.searchUserPassword === 'string') {
+    req.body.orgStorage.config.searchUserPassword = passwordsUtils.cipherPassword(req.body.orgStorage.config.searchUserPassword)
+  }
   const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body, req.user)
   if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
   webhooks.postIdentity('organization', patchedOrga)

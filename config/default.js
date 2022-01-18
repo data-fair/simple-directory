@@ -223,4 +223,5 @@ module.exports = {
   },
   // allow configuring external storages per organization
   perOrgStorageTypes: [],
+  cipherPassword: null,
 }

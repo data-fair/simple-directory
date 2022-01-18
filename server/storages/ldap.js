@@ -1,6 +1,7 @@
+const config = require('config')
 const { promisify } = require('util')
 const ldap = require('ldapjs')
-const { config } = require('process')
+const passwordsUtils = require('../utils/passwords')
 const debug = require('debug')('ldap')
 
 function sortCompare(sort) {
@@ -102,7 +103,7 @@ class LdapStorage {
     client.add = promisify(client.add)
     client.del = promisify(client.del)
     debug('bind service account', this.ldapParams.url, this.ldapParams.searchUserDN)
-    await client.bind(this.ldapParams.searchUserDN, this.ldapParams.searchUserPassword)
+    await client.bind(this.ldapParams.searchUserDN, passwordsUtils.decipherPassword(this.ldapParams.searchUserPassword))
     const promise = fn(client)
     promise.finally(() => client.unbind())
     return promise
@@ -473,4 +474,4 @@ class LdapStorage {
 }
 
 exports.init = async (params, org) => new LdapStorage().init(params, org)
-exports.readonly = require('config').storage.ldap.readonly
+exports.readonly = config.storage.ldap.readonly
