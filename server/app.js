@@ -105,11 +105,11 @@ app.get('/api/metrics', require('./routers/metrics'))
 *  the next few lines are here only to maintain compatibility for installed clients
 *  that have an older version of sd-vue
 */
-const axios = require('axios')
-app.post('/api/session/keepalive', asyncWrap(async (req, res, next) => {
-  const sdRes = await axios.post(config.publicUrl + '/api/auth/keepalive', null, { headers: { cookie: req.get('cookie') } })
-  res.setHeader('set-cookie', sdRes.headers['set-cookie'])
-  res.send(sdRes.data)
+app.post('/api/session/keepalive', session.auth, asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send('No active session to keep alive')
+  debug(`Exchange session token for user ${req.user.name}`)
+  await tokens.keepalive(req, res)
+  res.status(204).send()
 }))
 // end of compatibility only section
 
