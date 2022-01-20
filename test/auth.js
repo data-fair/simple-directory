@@ -27,6 +27,14 @@ test('Do not create session for unknown user', async t => {
 
 test('Refresh token', async t => {
   const ax = await testUtils.axios(test, 'dmeadus0@answers.com:testpasswd')
-  const res = await ax.post('/api/auth/keepalive')
+  let res = await ax.post('/api/auth/keepalive')
   t.is(res.status, 204)
+  t.true(res.headers['set-cookie'][0].startsWith('id_token='))
+  t.true(res.headers['set-cookie'][1].startsWith('id_token_sign='))
+
+  // same thing using retrocompatibility route
+  res = await ax.post('/api/session/keepalive')
+  t.is(res.status, 204)
+  t.true(res.headers['set-cookie'][0].startsWith('id_token='))
+  t.true(res.headers['set-cookie'][1].startsWith('id_token_sign='))
 })
