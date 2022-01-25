@@ -58,6 +58,9 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
       if (extraFilter) {
         filters.push(extraFilter)
       }
+      for (const key of required) {
+        filters.push(new ldap.PresenceFilter({ attribute: mapping[key] }))
+      }
       if (filters.length === 1) return filters[0]
       return new ldap.AndFilter({ filters })
     },
@@ -128,7 +131,7 @@ class LdapStorage {
           try {
             results.push({ entry, attrs, item: mappingFn(attrs) })
           } catch (err) {
-            console.error(err)
+            debug(err.message, entry)
           }
         })
         res.on('error', (err) => {
@@ -146,7 +149,8 @@ class LdapStorage {
   - base: ${base}
   - filter: ${filter}
   - attributes: ${JSON.stringify(attributes)}
-  - result: `, results)
+  - nb results: ${results.length}
+  - first result: `, results[0])
     const skip = params.skip || 0
     const size = params.size || 20
     return {
@@ -245,6 +249,7 @@ class LdapStorage {
   }
 
   async _getUser(filter, onlyItem = true) {
+    debug('search single user', filter)
     const attributes = Object.values(this.ldapParams.users.mapping)
     if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
     return this._client(async (client) => {
@@ -285,6 +290,7 @@ class LdapStorage {
     client.bind = promisify(client.bind)
     client.unbind = promisify(client.unbind)
     try {
+      debug('try to bind user', dn)
       await client.bind(dn, password)
       return true
     } catch (err) {
