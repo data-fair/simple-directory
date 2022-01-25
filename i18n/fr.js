@@ -28,6 +28,7 @@ module.exports = {
     name: 'Nom',
     save: 'Enregistrer',
     members: 'Membres',
+    orgStorageMembers: 'Membres dans le stockage secondaire',
     role: 'Rôle',
     search: 'Rechercher',
     confirmOk: 'Ok',

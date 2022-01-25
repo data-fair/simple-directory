@@ -84,10 +84,21 @@
       :orga="orga"
       :is-admin-orga="isAdminOrga"
       :nb-members-limits="limits && limits.store_nb_members"
+      :org-storage="'false'"
+      :readonly="env.readonly"
     />
     <organization-storage
       v-if="user.adminMode && env.perOrgStorageTypes.length"
       :orga="orga"
+    />
+
+    <organization-members
+      v-if="orga.orgStorage && orga.orgStorage.active"
+      :orga="orga"
+      :is-admin-orga="isAdminOrga"
+      :nb-members-limits="limits && limits.store_nb_members"
+      :org-storage="'true'"
+      :readonly="orga.orgStorage.readonly"
     />
   </v-container>
 </template>

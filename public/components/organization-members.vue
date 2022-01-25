@@ -2,7 +2,7 @@
   <v-container fluid class="pa-0">
     <v-row class="mt-3 mx-0">
       <h3 class="text-h6 my-3">
-        {{ $t('common.members') }} <span v-if="members">({{ $n(members.count) }})</span>
+        {{ orgStorage === 'true' ? $t('common.orgStorageMembers') : $t('common.members') }} <span v-if="members">({{ $n(members.count) }})</span>
       </h3>
       <add-member-menu
         v-if="!env.readonly"
@@ -66,14 +66,14 @@
               <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
             </v-list-item-subtitle>
           </v-list-item-content>
-          <v-list-item-action v-if="isAdminOrga && !env.readonly">
+          <v-list-item-action v-if="isAdminOrga && !readonly">
             <edit-member-menu
               :orga="orga"
               :member="member"
               @save="saveMember"
             />
           </v-list-item-action>
-          <v-list-item-action v-if="user.adminMode">
+          <v-list-item-action v-if="user.adminMode && !member.orgStorage">
             <v-btn
               :title="$t('common.asAdmin')"
               icon
@@ -84,7 +84,7 @@
               </v-icon>
             </v-btn>
           </v-list-item-action>
-          <v-list-item-action v-if="isAdminOrga && !env.readonly" class="ml-0">
+          <v-list-item-action v-if="isAdminOrga && !readonly" class="ml-0">
             <delete-member-menu
               :member="member"
               @delete="deleteMember"
@@ -128,6 +128,14 @@
         type: Object,
         default: null,
       },
+      orgStorage: {
+        type: String,
+        default: 'both',
+      },
+      readonly: {
+        type: Boolean,
+        default: false,
+      },
     },
     data: () => ({
       members: null,
@@ -152,8 +160,16 @@
       ...mapActions('session', ['asAdmin']),
       async fetchMembers() {
         try {
-          this.members = await this.$axios.$get(`api/organizations/${this.orga.id}/members`,
-                                                { params: { q: this.q, page: this.membersPage, size: this.membersPageSize, department: this.department, role: this.role } })
+          this.members = await this.$axios.$get(`api/organizations/${this.orga.id}/members`, {
+            params: {
+              q: this.q,
+              page: this.membersPage,
+              size: this.membersPageSize,
+              department: this.department,
+              role: this.role,
+              org_storage: this.orgStorage,
+            },
+          })
         } catch (error) {
           eventBus.$emit('notification', { error })
         }

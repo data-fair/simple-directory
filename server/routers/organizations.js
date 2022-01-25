@@ -6,7 +6,7 @@ const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
 const limits = require('../utils/limits')
 const tokens = require('../utils/tokens')
-const storages = require('../storages')
+const storageFactory = require('../storages')
 const passwordsUtils = require('../utils/passwords')
 const defaultConfig = require('../../config/default.js')
 
@@ -136,19 +136,41 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   const org = await req.app.get('storage').getOrganization(req.params.organizationId)
   if (!org) return res.status(404).send('organization not found')
 
+  const storages = [req.app.get('storage')]
+  if (org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
+    // org_storage can be yes, no or both (both is default)
+    if (req.query.org_storage === 'false') {
+      // nothing todo
+    } else {
+      const secondaryStorage = await storageFactory.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+      secondaryStorage.orgStorage = true
+      if (req.query.org_storage === 'true') {
+        storages[0] = secondaryStorage
+      } else {
+        storages.push(secondaryStorage)
+      }
+    }
+  }
+
   const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
   if (req.query.q) params.q = req.query.q
   if (req.query.ids || req.query.id) params.ids = (req.query.ids || req.query.id).split(',')
   if (req.query.role) params.roles = req.query.role.split(',')
   if (req.query.department) params.departments = req.query.department.split(',')
-  const members = await req.app.get('storage').findMembers(req.params.organizationId, params)
-
-  if (org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    const secondaryStorage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
-    const otherMembers = await secondaryStorage.findMembers(req.params.organizationId, params)
-    if (otherMembers && otherMembers.count) {
-      members.count += otherMembers.count
-      members.results = members.results.concat(otherMembers.results.map(r => ({ ...r, orgStorage: true })))
+  const members = { count: 0, results: [] }
+  for (const storage of storages) {
+    // do our best to mix results in "org_storage=both" mode
+    if (members.count < (params.skip + params.size)) {
+      params.skip -= members.count
+      if (params.skip < 0) {
+        params.size += params.skip
+        params.skip = 0
+      }
+      const storageMembers = await storage.findMembers(req.params.organizationId, params)
+      if (storageMembers && storageMembers.count) {
+        members.count += storageMembers.count
+        members.results = members.results.concat(storageMembers.results.map(r => ({ ...r, orgStorage: storage.orgStorage })))
+      }
     }
   }
   res.send(members)
