@@ -1,6 +1,6 @@
 <template>
   <v-app :class="appClass" :style="localePath('login') === $route.path && 'background-color: rgb(245, 245, 245);'">
-    <template v-if="localePath('login') === $route.path">
+    <template v-if="isLoginPage">
       <v-app-bar
         app
         fixed
@@ -260,7 +260,7 @@
         </template>
       </v-snackbar>
     </v-main>
-    <v-footer v-if="!embed" class="pa-3">
+    <v-footer v-if="!embed && !isLoginPage" class="pa-3">
       <v-spacer />
       <div>Powered by <a href="https://koumoul-dev.github.io/simple-directory/">Simple Directory</a></div>
     </v-footer>
@@ -291,6 +291,9 @@
       }, */
       embed() {
         return this.$route.query && this.$route.query.embed === 'true'
+      },
+      isLoginPage() {
+        return this.localePath('login') === this.$route.path
       },
       showToolbar() {
         return !this.embed || (this.$route.query && this.$route.query.showToolbar === 'true')
