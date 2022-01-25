@@ -14,12 +14,12 @@
       hide-details
     />
     <div v-if="orgStorage.active" class="py-3">
-      <a :href="loginOrg">Lien de connexion pour utiliser ce stockage secondaire</a>
+      <a :href="loginOrg" target="top">Lien de connexion pour utiliser ce stockage secondaire</a>
     </div>
     <v-textarea
       v-if="orgStorage.active"
       v-model="ldapConfig"
-      label="Configration LDAP"
+      label="Configuration LDAP"
       :error-messages="configParsingError"
     />
     <v-btn
