@@ -49,6 +49,7 @@
           <span style="white-space: nowrap;">
             {{ props.item.email }}
             <v-btn
+              v-if="!env.readonly"
               icon
               class="mx-0"
               @click="showEditUserEmailDialog(props.item)"
