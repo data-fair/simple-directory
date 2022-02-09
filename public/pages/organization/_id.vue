@@ -88,7 +88,7 @@
       :readonly="env.readonly"
     />
     <organization-storage
-      v-if="user.adminMode && env.perOrgStorageTypes.length"
+      v-if="(user.adminMode && env.perOrgStorageTypes.length) || (orga.orgStorage && orga.orgStorage.active)"
       :orga="orga"
     />
 

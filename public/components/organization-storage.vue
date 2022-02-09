@@ -12,12 +12,13 @@
       class="mt-0"
       color="admin"
       hide-details
+      :disabled="!user.adminMode"
     />
     <div v-if="orgStorage.active" class="py-3">
       <a :href="loginOrg" target="top">Lien de connexion pour utiliser ce stockage secondaire</a>
     </div>
     <v-textarea
-      v-if="orgStorage.active"
+      v-if="orgStorage.active && user.adminMode"
       v-model="ldapConfig"
       label="Configuration LDAP"
       :error-messages="configParsingError"
@@ -45,6 +46,7 @@
     },
     computed: {
       ...mapState(['env']),
+      ...mapState('session', ['user']),
       ldapConfig: {
         get() { return JSON.stringify(this.orgStorage.config, null, 2) },
         set(val) {

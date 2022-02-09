@@ -61,7 +61,7 @@ router.get('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!orga) return res.status(404).send()
   orga.roles = orga.roles || config.roles.defaults
   orga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
-  if (!req.user.adminMode) delete orga.orgStorage
+  if (!req.user.adminMode && orga.orgStorage) delete orga.orgStorage.config
   res.send(orga)
 }))
 
