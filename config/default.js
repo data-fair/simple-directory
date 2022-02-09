@@ -56,6 +56,8 @@ module.exports = {
         },
         // an array of objects that can be used to overwrite any user properties based on matching "email" property
         overwrite: [],
+        // an array of string filters to add to the filters generated dy our ldap storage
+        extraFilters: [],
       },
       // map entities in ldap to SD organizations
       organizations: {
@@ -70,6 +72,8 @@ module.exports = {
         },
         // an array of objects that can be used to overwrite any org properties based on matching "id" property
         overwrite: [],
+        // an array of string filters to add to the filters generated dy our ldap storage
+        extraFilters: [],
       },
       // manage the link between users and organizations
       members: {

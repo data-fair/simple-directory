@@ -44,7 +44,7 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
       })
       return entry
     },
-    filter (obj, objectClass, extraFilter) {
+    filter (obj, objectClass, extraFilters = []) {
       const filters = [new ldap.EqualityFilter({ attribute: 'objectClass', value: objectClass })]
       Object.keys(obj)
         .filter(key => !!obj[key])
@@ -55,8 +55,8 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
       if (obj.q) {
         filters.push(new ldap.SubstringFilter({ attribute: mapping.name, any: [obj.q] }))
       }
-      if (extraFilter) {
-        filters.push(extraFilter)
+      for (const extraFilter of extraFilters) {
+        filters.push(typeof extraFilter === 'string' ? ldap.parseFilter(extraFilter) : extraFilter)
       }
       for (const key of required) {
         filters.push(new ldap.PresenceFilter({ attribute: mapping[key] }))
@@ -256,7 +256,7 @@ class LdapStorage {
       const res = await this._search(
         client,
         this.ldapParams.baseDN,
-        this._userMapping.filter(filter, this.ldapParams.users.objectClass),
+        this._userMapping.filter(filter, this.ldapParams.users.objectClass, this.ldapParams.users.extraFilters),
         attributes,
         this._userMapping.from,
         {},
@@ -305,18 +305,18 @@ class LdapStorage {
   async findUsers(params = {}) {
     debug('find users', params)
     const attributes = Object.values(this.ldapParams.users.mapping)
-    let roleFilter
+    const extraFilters = [...(this.ldapParams.users.extraFilters || [])]
     if (this.ldapParams.members.role.attr) {
       attributes.push(this.ldapParams.members.role.attr)
       if (this.ldapParams.members.onlyWithRole) {
-        roleFilter = this._getRoleFilter(Object.keys(this.ldapParams.members.role.values))
+        extraFilters.push(this._getRoleFilter(Object.keys(this.ldapParams.members.role.values)))
       }
     }
     return this._client(async (client) => {
       const res = await this._search(
         client,
         this.ldapParams.baseDN,
-        this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass, roleFilter),
+        this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass, extraFilters),
         attributes,
         this._userMapping.from,
         params,
@@ -335,22 +335,19 @@ class LdapStorage {
   }
 
   _getRoleFilter(roles) {
-    let roleFilter
     let roleAttrValues = []
     roles.forEach(role => {
       roleAttrValues = roleAttrValues.concat(this.ldapParams.members.role.values[role] || (role === this.ldapParams.members.role.default ? [] : [role]))
     })
     if (roleAttrValues.length) {
-      // const roleAttrFilters = roleAttrValues.map(val => `(${this.ldapParams.members.role.attr}=${val})`)
       const roleAttrFilters = roleAttrValues.map(value => new ldap.EqualityFilter({ attribute: this.ldapParams.members.role.attr, value }))
       if (roleAttrFilters.length > 1) {
         // roleFilter = `(|${roleAttrFilters.join('')})`
-        roleFilter = new ldap.OrFilter({ filters: roleAttrFilters })
+        return new ldap.OrFilter({ filters: roleAttrFilters })
       } else {
-        roleFilter = roleAttrFilters[0]
+        return roleAttrFilters[0]
       }
     }
-    return roleFilter
   }
 
   async findMembers(organizationId, params = {}) {
@@ -366,21 +363,21 @@ class LdapStorage {
     }
 
     if (dn) {
+      const extraFilters = [...(this.ldapParams.users.extraFilters || [])]
       const attributes = Object.values(this.ldapParams.users.mapping)
-      let roleFilter
       if (this.ldapParams.members.role.attr) {
         attributes.push(this.ldapParams.members.role.attr)
         if (params.roles && params.roles.length) {
-          roleFilter = this._getRoleFilter(params.roles)
+          extraFilters.push(this._getRoleFilter(params.roles))
         } else if (this.ldapParams.members.onlyWithRole) {
-          roleFilter = this._getRoleFilter(Object.keys(this.ldapParams.members.role.values))
+          extraFilters.push(this._getRoleFilter(Object.keys(this.ldapParams.members.role.values)))
         }
       }
       return this._client(async (client) => {
         const res = await this._search(
           client,
           dn,
-          this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass, roleFilter),
+          this._userMapping.filter({ q: params.q }, this.ldapParams.users.objectClass, extraFilters),
           attributes,
           this._userMapping.from,
           params,
@@ -432,7 +429,7 @@ class LdapStorage {
     const res = await this._search(
       client,
       this.ldapParams.baseDN,
-      this._orgMapping.filter({ id }, this.ldapParams.organizations.objectClass),
+      this._orgMapping.filter({ id }, this.ldapParams.organizations.objectClass, this.ldapParams.organizations.extraFilters),
       Object.values(this.ldapParams.organizations.mapping),
       this._orgMapping.from,
     )
@@ -458,11 +455,12 @@ class LdapStorage {
         results: [this.ldapParams.organizations.staticSingleOrg],
       }
     }
+    const extraFilters = [...(this.ldapParams.organizations.extraFilters || [])]
     return this._client(async (client) => {
       return this._search(
         client,
         this.ldapParams.baseDN,
-        this._orgMapping.filter({ q: params.q }, this.ldapParams.organizations.objectClass),
+        this._orgMapping.filter({ q: params.q }, this.ldapParams.organizations.objectClass, extraFilters),
         Object.values(this.ldapParams.organizations.mapping),
         this._orgMapping.from,
         params,

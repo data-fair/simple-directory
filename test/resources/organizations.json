@@ -92,7 +92,19 @@
       "type": "ldap",
       "active": true,
       "config": {
-        "url": "ldap://localhost:389"
+        "url": "ldap://localhost:389",
+        "users": {
+          "objectClass": "inetOrgPerson",
+          "dnKey": "cn",
+          "mapping": {
+            "id": "cn",
+            "name": "cn",
+            "email": "mail",
+            "firstName": "givenName",
+            "lastName": "sn"
+          },
+          "extraFilters": ["sn=Mouton"]
+        }
       }
     }
   }
