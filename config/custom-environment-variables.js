@@ -42,6 +42,10 @@ module.exports = {
     },
     mongo: {
       url: 'STORAGE_MONGO_URL',
+      readonly: {
+        __name: 'STORAGE_MONGO_READONLY',
+        __format: 'json',
+      },
     },
     ldap: {
       url: 'STORAGE_LDAP_URL',

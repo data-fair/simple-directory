@@ -34,6 +34,7 @@ module.exports = {
     },
     mongo: {
       url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development'),
+      readonly: false,
     },
     ldap: {
       url: 'ldap://ldap:389',
