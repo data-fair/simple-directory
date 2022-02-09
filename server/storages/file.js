@@ -122,7 +122,7 @@ class FileStorage {
   async getOrganization(id) {
     const orga = this.organizations.find(o => o.id === id)
     if (!orga) return null
-    const cloneOrga = { ...orga }
+    const cloneOrga = JSON.parse(JSON.stringify(orga))
     delete cloneOrga.members
     return cloneOrga
   }
