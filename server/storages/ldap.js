@@ -362,6 +362,7 @@ class LdapStorage {
       dn = this._orgDN({ id: organizationId })
     } else {
       // TODO
+      throw new Error('Other type of link between user and organization is not implemented.')
     }
 
     if (dn) {
