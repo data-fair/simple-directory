@@ -32,7 +32,7 @@ router.get('/:type/:id/avatar.png', asyncWrap(async (req, res, next) => {
 
   // TODO: what happens if someone outside of the org requests an avatar ?
   // TODO: other type of org storage than ldap ?
-  if (req.params.type === 'user' && req.user.organization && req.params.id.startsWith('ldap_' + req.user.organization.id + '_')) {
+  if (req.params.type === 'user' && req.user && req.user.organization && req.params.id.startsWith('ldap_' + req.user.organization.id + '_')) {
     const org = await req.app.get('storage').getOrganization(req.user.organization.id)
     if (!org) return res.status(401).send('Organization does not exist anymore')
     storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
