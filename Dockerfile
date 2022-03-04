@@ -14,7 +14,7 @@ ADD package.json .
 ADD package-lock.json .
 # use clean-modules on the same line as npm ci to be lighter in the cache
 RUN npm ci && \
-    ./node_modules/.bin/clean-modules --yes --exclude ava/lib/test.js --exclude "**/*.mustache"
+    ./node_modules/.bin/clean-modules --yes --exclude mocha/lib/test.js --exclude "**/*.mustache"
 
 # Adding UI files
 ADD public public
@@ -27,16 +27,16 @@ ADD i18n i18n
 ADD server server
 ADD scripts scripts
 
-# Build UI
-ENV NODE_ENV production
-RUN npm run build && \
-    rm -rf dist
-
 # Check quality
 ADD .gitignore .gitignore
 RUN npm run lint
 ADD test test
 RUN npm run test
+
+# Build UI
+ENV NODE_ENV production
+RUN npm run build && \
+    rm -rf dist
 
 # Cleanup /webapp/node_modules so it can be copied by next stage
 RUN npm prune --production
