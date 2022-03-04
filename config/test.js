@@ -27,5 +27,9 @@ module.exports = {
   authRateLimit: {
     attempts: 100,
     duration: 60
+  },
+  perOrgStorageTypes: ['ldap'],
+  maildev: {
+    active: true
   }
 }
