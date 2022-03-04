@@ -133,7 +133,10 @@ module.exports = {
       { rel: 'icon', type: 'image/x-icon', href: config.theme.favicon || '/favicon.ico' }
     ],
     style: []
-  }
+  },
+  css: [
+    '@mdi/font/css/materialdesignicons.min.css'
+  ]
 }
 
 if (config.theme.cssUrl) {
