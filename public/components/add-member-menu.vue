@@ -17,12 +17,18 @@
         <v-icon>mdi-plus</v-icon>
       </v-btn>
     </template>
-    <v-card v-if="orga" data-iframe-height>
+    <v-card
+      v-if="orga"
+      data-iframe-height
+    >
       <v-card-title class="text-h6">
         {{ $t('pages.organization.addMember') }}
       </v-card-title>
       <v-card-text v-if="disableInvite">
-        <v-alert :value="true" type="warning">
+        <v-alert
+          :value="true"
+          type="warning"
+        >
           {{ $t('pages.organization.disableInvite') }}
         </v-alert>
       </v-card-text>
@@ -91,50 +97,50 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
-  import eventBus from '../event-bus'
+import { mapState } from 'vuex'
+import eventBus from '../event-bus'
 
-  export default {
-    props: ['orga', 'isAdminOrga', 'members', 'disableInvite'],
-    data: () => ({
-      menu: false,
-      invitation: { id: null, email: null, role: null, department: null, redirect: null },
-      validInvitation: true,
-      link: null,
-    }),
-    computed: {
-      ...mapState(['env']),
-    },
-    watch: {
-      menu() {
-        if (!this.menu) return
-        this.invitation = { id: this.orga.id, name: this.orga.name, email: '', role: null, department: null, redirect: this.$route.query.redirect }
-        this.link = null
-        if (this.$refs.inviteForm) this.$refs.inviteForm.reset()
-      },
-    },
-    methods: {
-      async confirmInvitation() {
-        if (this.link) {
-          this.menu = false
-          return
-        }
-        if (this.$refs.inviteForm.validate()) {
-          try {
-            const res = await this.$axios.$post('api/invitations/', this.invitation)
-            if (res && res.link) {
-              this.link = res.link
-            } else {
-              this.menu = false
-            }
-            eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', { email: this.invitation.email }))
-          } catch (error) {
-            eventBus.$emit('notification', { error })
+export default {
+  props: ['orga', 'isAdminOrga', 'members', 'disableInvite'],
+  data: () => ({
+    menu: false,
+    invitation: { id: null, email: null, role: null, department: null, redirect: null },
+    validInvitation: true,
+    link: null
+  }),
+  computed: {
+    ...mapState(['env'])
+  },
+  watch: {
+    menu () {
+      if (!this.menu) return
+      this.invitation = { id: this.orga.id, name: this.orga.name, email: '', role: null, department: null, redirect: this.$route.query.redirect }
+      this.link = null
+      if (this.$refs.inviteForm) this.$refs.inviteForm.reset()
+    }
+  },
+  methods: {
+    async confirmInvitation () {
+      if (this.link) {
+        this.menu = false
+        return
+      }
+      if (this.$refs.inviteForm.validate()) {
+        try {
+          const res = await this.$axios.$post('api/invitations/', this.invitation)
+          if (res && res.link) {
+            this.link = res.link
+          } else {
+            this.menu = false
           }
+          eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', { email: this.invitation.email }))
+        } catch (error) {
+          eventBus.$emit('notification', { error })
         }
-      },
-    },
+      }
+    }
   }
+}
 </script>
 
 <style lang="css" scoped>

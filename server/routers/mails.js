@@ -35,7 +35,7 @@ router.post('/', asyncWrap(async (req, res) => {
       from: config.mails.from,
       to: to.join(', '),
       subject: req.body.subject,
-      text: req.body.text,
+      text: req.body.text
     }
 
     if (req.body.html) {
@@ -51,7 +51,7 @@ let _limiter
 const limiterOptions = {
   keyPrefix: 'sd-rate-limiter-contact',
   points: 1,
-  duration: 60,
+  duration: 60
 }
 const limiter = (req) => {
   if (config.storage.type === 'mongo') {
@@ -98,7 +98,7 @@ router.post('/contact', asyncWrap(async (req, res) => {
     from: req.body.from,
     to: config.contact,
     subject: req.body.subject,
-    text: req.body.text,
+    text: req.body.text
   }
 
   await req.app.get('mailTransport').sendMailAsync(mail)

@@ -24,10 +24,16 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text @click="menu = false">
+        <v-btn
+          text
+          @click="menu = false"
+        >
           {{ $t('common.confirmCancel') }}
         </v-btn>
-        <v-btn color="warning" @click="menu = false;$emit('delete', member)">
+        <v-btn
+          color="warning"
+          @click="menu = false;$emit('delete', member)"
+        >
           {{ $t('common.confirmOk') }}
         </v-btn>
       </v-card-actions>
@@ -36,10 +42,10 @@
 </template>
 
 <script>
-  export default {
-    props: ['member'],
-    data: () => ({ menu: false }),
-  }
+export default {
+  props: ['member'],
+  data: () => ({ menu: false })
+}
 </script>
 
 <style lang="css" scoped>

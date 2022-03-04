@@ -16,7 +16,7 @@ const limits = require('./utils/limits')
 const twoFA = require('./routers/2fa.js')
 const session = require('@koumoul/sd-express')({
   directoryUrl: config.publicUrl,
-  privateDirectoryUrl: 'http://localhost:' + config.port,
+  privateDirectoryUrl: 'http://localhost:' + config.port
 })
 const i18n = require('../i18n')
 const debug = require('debug')('app')
@@ -29,10 +29,6 @@ app.set('json spaces', 2)
 app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))
 app.use(i18n.middleware)
-app.use((req, res, next) => {
-  if (!req.app.get('api-ready')) res.status(503).send(req.messages.errors.serviceUnavailable)
-  else next()
-})
 // Replaces req.user from session with full and fresh user object from storage
 // also minimalist api key management
 const fullUser = asyncWrap(async (req, res, next) => {
@@ -40,7 +36,7 @@ const fullUser = asyncWrap(async (req, res, next) => {
     req.user = {
       ...await req.app.get('storage').getUser({ id: req.user.id }),
       isAdmin: req.user.isAdmin,
-      adminMode: req.user.adminMode,
+      adminMode: req.user.adminMode
     }
   }
 
@@ -54,7 +50,7 @@ const fullUser = asyncWrap(async (req, res, next) => {
         isAdmin: true,
         adminMode: true,
         id: 'readAll',
-        organizations: [],
+        organizations: []
       }
     }
   }
@@ -136,13 +132,8 @@ app.use((err, req, res, next) => {
   }
 })
 
-exports.run = async() => {
+exports.run = async () => {
   debug('start run method')
-  if (!config.listenWhenReady) {
-    debug('start server')
-    server.listen(config.port)
-    await eventToPromise(server, 'listening')
-  }
 
   debug('prepare keys')
   const keys = await tokens.init()
@@ -166,26 +157,19 @@ exports.run = async() => {
     await maildev.listenAsync()
     app.set('maildev', maildev)
   }
-  app.set('api-ready', true)
 
   if (!config.noUI) {
-    app.use((req, res, next) => {
-      if (!req.app.get('ui-ready')) res.status(503).send(req.messages.errors.serviceUnavailable)
-      else next()
-    })
+    app.use(session.auth)
 
     debug('prepare nuxt')
     const nuxt = await require('./nuxt')()
-    app.use(session.auth)
-    app.use(nuxt)
-    app.set('ui-ready', true)
+    app.set('nuxt', nuxt.instance)
+    app.use(nuxt.render)
   }
 
-  if (config.listenWhenReady) {
-    debug('start server')
-    server.listen(config.port)
-    await eventToPromise(server, 'listening')
-  }
+  debug('start server')
+  server.listen(config.port)
+  await eventToPromise(server, 'listening')
 
   if (process.env.NODE_ENV === 'development') {
     const server2 = http.createServer(app)
@@ -197,7 +181,7 @@ exports.run = async() => {
   return app
 }
 
-exports.stop = async() => {
+exports.stop = async () => {
   server.close()
   await eventToPromise(server, 'close')
 

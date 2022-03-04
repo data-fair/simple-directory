@@ -17,14 +17,20 @@
             {{ stepsTitles[step] || email }}
           </h3>
           <div :class="`v-card v-sheet theme--${$vuetify.theme.dark ? 'dark' : 'light'} login-logo-container`">
-            <img v-if="logoUrl" :src="logoUrl">
+            <img
+              v-if="logoUrl"
+              :src="logoUrl"
+            >
             <logo v-else />
           </div>
         </v-card-title>
         <v-window v-model="step">
           <v-window-item value="login">
             <v-card-text>
-              <p v-if="adminMode" class="warning--text">
+              <p
+                v-if="adminMode"
+                class="warning--text"
+              >
                 {{ $t('pages.login.adminMode') }}
               </p>
               <p
@@ -52,7 +58,10 @@
                 class="mb-3 hide-autofill"
                 hide-details="auto"
               />
-              <p v-if="env.passwordless && !adminMode" class="mb-2 text-caption">
+              <p
+                v-if="env.passwordless && !adminMode"
+                class="mb-2 text-caption"
+              >
                 {{ $t('pages.login.passwordlessMsg1') }} <a @click="passwordlessAuth">{{ $t('pages.login.passwordlessMsg2') }}</a>
               </p>
 
@@ -108,14 +117,23 @@
                 dense
                 :label="$t('pages.login.rememberMe')"
               />
-              <v-row v-if="!readonly && !env.onlyCreateInvited && !adminMode" class="mx-0">
+              <v-row
+                v-if="!readonly && !env.onlyCreateInvited && !adminMode"
+                class="mx-0"
+              >
                 <p class="mb-2">
                   <a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a>
                 </p>
               </v-row>
-              <v-row v-if="!readonly && !adminMode" class="mx-0">
+              <v-row
+                v-if="!readonly && !adminMode"
+                class="mx-0"
+              >
                 <p class="mb-0">
-                  <a :title="$t('pages.login.changePasswordTooltip')" @click="changePasswordAction">{{ $t('pages.login.changePassword') }}</a>
+                  <a
+                    :title="$t('pages.login.changePasswordTooltip')"
+                    @click="changePasswordAction"
+                  >{{ $t('pages.login.changePassword') }}</a>
                 </p>
               </v-row>
             </v-card-text>
@@ -445,7 +463,10 @@
       </v-card>
       <p v-if="env.maildev.active">
         <br>
-        <a :href="env.maildev.url" text>{{ $t('pages.login.maildevLink') }}</a>
+        <a
+          :href="env.maildev.url"
+          text
+        >{{ $t('pages.login.maildevLink') }}</a>
       </p>
     </v-col>
   </v-row>
@@ -453,250 +474,250 @@
 
 <script>
 
-  import { mapState } from 'vuex'
-  import jwtDecode from 'jwt-decode'
-  import logo from '../components/logo.vue'
-  import OauthLoginLinks from '../components/oauth-login-links.vue'
-  import eventBus from '../event-bus'
+import { mapState } from 'vuex'
+import jwtDecode from 'jwt-decode'
+import logo from '../components/logo.vue'
+import OauthLoginLinks from '../components/oauth-login-links.vue'
+import eventBus from '../event-bus'
 
-  export default {
-    components: {
-      logo,
-      OauthLoginLinks,
+export default {
+  components: {
+    logo,
+    OauthLoginLinks
+  },
+  data () {
+    return {
+      dialog: true,
+      email: this.$route.query.email,
+      emailErrors: [],
+      step: this.$route.query.step || 'login',
+      stepsTitles: {
+        login: this.$t('pages.login.title'),
+        emailConfirmed: this.$t('common.checkInbox'),
+        createUser: this.$t('pages.login.createUserMsg2'),
+        createUserConfirmed: this.$t('pages.login.createUserConfirm'),
+        changePasswordSent: this.$t('pages.login.changePassword'),
+        error: this.$t('pages.login.error'),
+        configure2FA: this.$t('pages.login.configure2FA'),
+        recovery2FA: this.$t('pages.login.recovery2FA')
+      },
+      password: '',
+      passwordErrors: [],
+      actionToken: this.$route.query.action_token,
+      adminMode: this.$route.query.adminMode === 'true',
+      org: this.$route.query.org,
+      orgStorage: this.$route.query.org_storage === 'true',
+      membersOnly: this.$route.query.members_only === 'true',
+      newPassword: null,
+      newPassword2: null,
+      newPasswordErrors: [],
+      tosAccepted: false,
+      newUser: {
+        firstName: null,
+        lastName: null,
+        password: null
+      },
+      createUserErrors: [],
+      newUserPassword2: null,
+      error: this.$route.query.error,
+      rememberMe: true,
+      qrcode: null,
+      configure2FACode: null,
+      twoFARequired: false,
+      twoFACode: null,
+      recovery: null,
+      twoFAErrors: []
+    }
+  },
+  computed: {
+    ...mapState('session', ['user']),
+    ...mapState(['env']),
+    readonly () {
+      return this.env.readonly || this.$route.query.readonly === 'true'
     },
-    data() {
-      return {
-        dialog: true,
-        email: this.$route.query.email,
-        emailErrors: [],
-        step: this.$route.query.step || 'login',
-        stepsTitles: {
-          login: this.$t('pages.login.title'),
-          emailConfirmed: this.$t('common.checkInbox'),
-          createUser: this.$t('pages.login.createUserMsg2'),
-          createUserConfirmed: this.$t('pages.login.createUserConfirm'),
-          changePasswordSent: this.$t('pages.login.changePassword'),
-          error: this.$t('pages.login.error'),
-          configure2FA: this.$t('pages.login.configure2FA'),
-          recovery2FA: this.$t('pages.login.recovery2FA'),
-        },
-        password: '',
-        passwordErrors: [],
-        actionToken: this.$route.query.action_token,
-        adminMode: this.$route.query.adminMode === 'true',
-        org: this.$route.query.org,
-        orgStorage: this.$route.query.org_storage === 'true',
-        membersOnly: this.$route.query.members_only === 'true',
-        newPassword: null,
-        newPassword2: null,
-        newPasswordErrors: [],
-        tosAccepted: false,
-        newUser: {
-          firstName: null,
-          lastName: null,
-          password: null,
-        },
-        createUserErrors: [],
-        newUserPassword2: null,
-        error: this.$route.query.error,
-        rememberMe: true,
-        qrcode: null,
-        configure2FACode: null,
-        twoFARequired: false,
-        twoFACode: null,
-        recovery: null,
-        twoFAErrors: [],
+    redirectUrl () {
+      return this.$route.query && this.$route.query.redirect
+    },
+    actionPayload () {
+      if (!this.actionToken) return
+      return jwtDecode(this.actionToken)
+    },
+    logoUrl () {
+      if (this.$route.query.logo) return this.$route.query.logo
+      if (this.org) return `${this.env.publicUrl}/api/avatars/organization/${this.org}/avatar.png`
+      if (this.env.theme.logo) return this.env.theme.logo
+      return null
+    },
+    host () {
+      return window.location.host
+    },
+    mainHost () {
+      return new URL(this.env.mainPublicUrl).host
+    },
+    mainOrigin () {
+      return new URL(this.env.mainPublicUrl).origin
+    },
+    redirectHost () {
+      return this.redirectUrl && new URL(this.redirectUrl).host
+    }
+  },
+  created () {
+    // this should not be necessary, see redirect in server/app.js
+    if (this.host !== this.mainHost) {
+      const url = new URL(window.location.href)
+      url.host = this.mainHost
+      window.location = url.href
+    }
+    if (this.actionPayload) {
+      this.step = 'changePassword'
+      this.email = this.actionPayload.email
+    } else if (this.error) {
+      this.step = 'error'
+    } else {
+      this.step = 'login'
+    }
+  },
+  methods: {
+    createUserStep () {
+      this.step = this.env.tosUrl ? 'tos' : 'createUser'
+    },
+    async createUser () {
+      if (!this.$refs.createUserForm.validate()) return
+      try {
+        await this.$axios.$post('api/users', { email: this.email, ...this.newUser }, { params: { redirect: this.redirectUrl, org: this.org } })
+        this.createUserErrors = []
+        this.step = 'createUserConfirmed'
+      } catch (error) {
+        if (error.response.status >= 500) eventBus.$emit('notification', { error })
+        else this.createUserErrors = [error.response.data || error.message]
       }
     },
-    computed: {
-      ...mapState('session', ['user']),
-      ...mapState(['env']),
-      readonly() {
-        return this.env.readonly || this.$route.query.readonly === 'true'
-      },
-      redirectUrl() {
-        return this.$route.query && this.$route.query.redirect
-      },
-      actionPayload() {
-        if (!this.actionToken) return
-        return jwtDecode(this.actionToken)
-      },
-      logoUrl() {
-        if (this.$route.query.logo) return this.$route.query.logo
-        if (this.org) return `${this.env.publicUrl}/api/avatars/organization/${this.org}/avatar.png`
-        if (this.env.theme.logo) return this.env.theme.logo
-        return null
-      },
-      host() {
-        return window.location.host
-      },
-      mainHost() {
-        return new URL(this.env.mainPublicUrl).host
-      },
-      mainOrigin() {
-        return new URL(this.env.mainPublicUrl).origin
-      },
-      redirectHost() {
-        return this.redirectUrl && new URL(this.redirectUrl).host
-      },
-    },
-    created() {
-      // this should not be necessary, see redirect in server/app.js
-      if (this.host !== this.mainHost) {
-        const url = new URL(window.location.href)
-        url.host = this.mainHost
-        window.location = url.href
-      }
-      if (this.actionPayload) {
-        this.step = 'changePassword'
-        this.email = this.actionPayload.email
-      } else if (this.error) {
-        this.step = 'error'
-      } else {
-        this.step = 'login'
-      }
-    },
-    methods: {
-      createUserStep() {
-        this.step = this.env.tosUrl ? 'tos' : 'createUser'
-      },
-      async createUser() {
-        if (!this.$refs.createUserForm.validate()) return
-        try {
-          await this.$axios.$post('api/users', { email: this.email, ...this.newUser }, { params: { redirect: this.redirectUrl, org: this.org } })
-          this.createUserErrors = []
-          this.step = 'createUserConfirmed'
-        } catch (error) {
-          if (error.response.status >= 500) eventBus.$emit('notification', { error })
-          else this.createUserErrors = [error.response.data || error.message]
-        }
-      },
-      async passwordlessAuth() {
-        try {
-          await this.$axios.$post('api/auth/passwordless', {
-            email: this.email,
-            rememberMe: this.rememberMe,
-            org: this.org,
-            membersOnly: this.membersOnly,
-            orgStorage: this.orgStorage,
-          }, { params: { redirect: this.redirectUrl } })
-          this.emailErrors = []
-          this.step = 'emailConfirmed'
-        } catch (error) {
-          if (error.response.status >= 500) eventBus.$emit('notification', { error })
-          else this.emailErrors = [error.response.data || error.message]
-        }
-      },
-      async passwordAuth() {
+    async passwordlessAuth () {
+      try {
+        await this.$axios.$post('api/auth/passwordless', {
+          email: this.email,
+          rememberMe: this.rememberMe,
+          org: this.org,
+          membersOnly: this.membersOnly,
+          orgStorage: this.orgStorage
+        }, { params: { redirect: this.redirectUrl } })
         this.emailErrors = []
-        try {
-          const link = await this.$axios.$post('api/auth/password', {
-            email: this.email,
-            password: this.password,
-            adminMode: this.adminMode,
-            rememberMe: this.rememberMe && !this.adminMode,
-            org: this.org,
-            '2fa': this.twoFACode,
-            membersOnly: this.membersOnly,
-            orgStorage: this.orgStorage,
-          }, { params: { redirect: this.redirectUrl } })
-          window.location.href = link
-        } catch (error) {
-          if (!error.response) return console.error(error)
-          if (error.response.status >= 500) eventBus.$emit('notification', { error })
-          else {
-            if (error.response.data === '2fa-missing') {
-              this.step = 'configure2FA'
-              this.passwordErrors = []
-              this.init2FA()
-            } else if (error.response.data === '2fa-required') {
-              this.passwordErrors = []
-              this.twoFARequired = true
-              this.twoFAErrors = []
-            } else if (error.response.data === '2fa-bad-token') {
-              this.passwordErrors = []
-              this.twoFAErrors = [this.$t('errors.bad2FAToken')]
-            } else {
-              this.passwordErrors = [error.response.data || error.message]
-              this.twoFAErrors = []
-            }
+        this.step = 'emailConfirmed'
+      } catch (error) {
+        if (error.response.status >= 500) eventBus.$emit('notification', { error })
+        else this.emailErrors = [error.response.data || error.message]
+      }
+    },
+    async passwordAuth () {
+      this.emailErrors = []
+      try {
+        const link = await this.$axios.$post('api/auth/password', {
+          email: this.email,
+          password: this.password,
+          adminMode: this.adminMode,
+          rememberMe: this.rememberMe && !this.adminMode,
+          org: this.org,
+          '2fa': this.twoFACode,
+          membersOnly: this.membersOnly,
+          orgStorage: this.orgStorage
+        }, { params: { redirect: this.redirectUrl } })
+        window.location.href = link
+      } catch (error) {
+        if (!error.response) return console.error(error)
+        if (error.response.status >= 500) eventBus.$emit('notification', { error })
+        else {
+          if (error.response.data === '2fa-missing') {
+            this.step = 'configure2FA'
+            this.passwordErrors = []
+            this.init2FA()
+          } else if (error.response.data === '2fa-required') {
+            this.passwordErrors = []
+            this.twoFARequired = true
+            this.twoFAErrors = []
+          } else if (error.response.data === '2fa-bad-token') {
+            this.passwordErrors = []
+            this.twoFAErrors = [this.$t('errors.bad2FAToken')]
+          } else {
+            this.passwordErrors = [error.response.data || error.message]
+            this.twoFAErrors = []
           }
         }
-      },
-      async changePasswordAction() {
-        try {
-          await this.$axios.$post('api/auth/action', {
-            email: this.email,
-            action: 'changePassword',
-            target: window.location.href,
-          })
-          this.step = 'changePasswordSent'
-        } catch (error) {
-          eventBus.$emit('notification', { error })
-        }
-      },
-      async changePassword() {
-        try {
-          await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, {
-            password: this.newPassword,
-          }, { params: { action_token: this.actionToken } })
-          this.password = this.newPassword
-          this.step = 'login'
-          this.$router.replace({ query: { ...this.$route.query, action_token: undefined } })
-          this.passwordAuth()
-        } catch (error) {
-          if (error.response.status >= 500) eventBus.$emit('notification', { error })
-          else this.newPasswordErrors = [error.response.data || error.message]
-        }
-      },
-      async clearError() {
+      }
+    },
+    async changePasswordAction () {
+      try {
+        await this.$axios.$post('api/auth/action', {
+          email: this.email,
+          action: 'changePassword',
+          target: window.location.href
+        })
+        this.step = 'changePasswordSent'
+      } catch (error) {
+        eventBus.$emit('notification', { error })
+      }
+    },
+    async changePassword () {
+      try {
+        await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, {
+          password: this.newPassword
+        }, { params: { action_token: this.actionToken } })
+        this.password = this.newPassword
         this.step = 'login'
-        this.$router.replace({ query: { ...this.$route.query, error: undefined } })
-      },
-      async init2FA() {
-        try {
-          // initialize secret
-          const res = await this.$axios.$post('api/2fa', {
-            email: this.email,
-            password: this.password,
-          })
-          this.qrcode = res.qrcode
-          this.configure2FACode = null
-        } catch (error) {
-          eventBus.$emit('notification', { error })
-        }
-      },
-      async validate2FA() {
-        try {
-          // validate secret with initial token
-          const res = await this.$axios.$post('api/2fa', {
-            email: this.email,
-            password: this.password,
-            token: this.configure2FACode,
-          })
-          this.configure2FACode = null
-          this.recovery = res.recovery
-          this.step = 'recovery2FA'
-          this.twoFARequired = true
-        } catch (error) {
-          eventBus.$emit('notification', { error })
-        }
-      },
-      downloadRecovery() {
-        var element = document.createElement('a')
-        const contentHeader = this.$t('recovery2FAContent', { name: `${window.location.host}` })
-        const content = `${contentHeader}
+        this.$router.replace({ query: { ...this.$route.query, action_token: undefined } })
+        this.passwordAuth()
+      } catch (error) {
+        if (error.response.status >= 500) eventBus.$emit('notification', { error })
+        else this.newPasswordErrors = [error.response.data || error.message]
+      }
+    },
+    async clearError () {
+      this.step = 'login'
+      this.$router.replace({ query: { ...this.$route.query, error: undefined } })
+    },
+    async init2FA () {
+      try {
+        // initialize secret
+        const res = await this.$axios.$post('api/2fa', {
+          email: this.email,
+          password: this.password
+        })
+        this.qrcode = res.qrcode
+        this.configure2FACode = null
+      } catch (error) {
+        eventBus.$emit('notification', { error })
+      }
+    },
+    async validate2FA () {
+      try {
+        // validate secret with initial token
+        const res = await this.$axios.$post('api/2fa', {
+          email: this.email,
+          password: this.password,
+          token: this.configure2FACode
+        })
+        this.configure2FACode = null
+        this.recovery = res.recovery
+        this.step = 'recovery2FA'
+        this.twoFARequired = true
+      } catch (error) {
+        eventBus.$emit('notification', { error })
+      }
+    },
+    downloadRecovery () {
+      const element = document.createElement('a')
+      const contentHeader = this.$t('recovery2FAContent', { name: `${window.location.host}` })
+      const content = `${contentHeader}
 
   ${this.recovery}`
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content))
-        element.setAttribute('download', window.location.host.replace(/\./g, '-') + '-2fa-recovery.txt')
-        element.style.display = 'none'
-        document.body.appendChild(element)
-        element.click()
-        document.body.removeChild(element)
-      },
-    },
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content))
+      element.setAttribute('download', window.location.host.replace(/\./g, '-') + '-2fa-recovery.txt')
+      element.style.display = 'none'
+      document.body.appendChild(element)
+      element.click()
+      document.body.removeChild(element)
+    }
   }
+}
 </script>
 
 <style>

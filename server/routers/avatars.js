@@ -70,7 +70,7 @@ router.get('/:type/:id/avatar.png', asyncWrap(async (req, res, next) => {
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 200000, files: 1, fields: 0 },
+  limits: { fileSize: 200000, files: 1, fields: 0 }
 })
 
 const isAdmin = (req, res, next) => {
@@ -84,7 +84,7 @@ const isAdmin = (req, res, next) => {
 router.post('/:type/:id/avatar.png', isAdmin, upload.single('avatar'), asyncWrap(async (req, res, next) => {
   await req.app.get('storage').setAvatar({
     owner: { id: req.params.id, type: req.params.type },
-    buffer: req.file.buffer,
+    buffer: req.file.buffer
   })
   res.status(201).send()
 }))

@@ -2,7 +2,7 @@ const config = require('config')
 
 const collation = { locale: 'en', strength: 1 }
 
-async function ensureIndex(db, collection, key, options = {}) {
+async function ensureIndex (db, collection, key, options = {}) {
   try {
     await db.collection(collection).createIndex(key, options)
   } catch (error) {
@@ -16,7 +16,7 @@ async function ensureIndex(db, collection, key, options = {}) {
   }
 }
 
-function cleanUser(resource) {
+function cleanUser (resource) {
   resource.id = resource._id
   delete resource._id
   delete resource.password
@@ -27,31 +27,31 @@ function cleanUser(resource) {
   return resource
 }
 
-function cleanOrganization(resource) {
+function cleanOrganization (resource) {
   resource.id = resource._id
   delete resource._id
   return resource
 }
 
-function cloneWithId(resource) {
+function cloneWithId (resource) {
   const resourceClone = { ...resource, _id: resource.id }
   delete resourceClone.id
   return resourceClone
 }
 
-function prepareSelect(select) {
+function prepareSelect (select) {
   if (!select) return {}
   return select.reduce((a, key) => { a[key] = true; return a }, {})
 }
 
 class MongodbStorage {
-  async init(params, org) {
+  async init (params, org) {
     if (this.org) throw new Error('mongo storage is not compatible with per-org storage')
     console.log('Connecting to mongodb ' + params.url)
     const MongoClient = require('mongodb').MongoClient
     const opts = {
       useNewUrlParser: true,
-      useUnifiedTopology: true,
+      useUnifiedTopology: true
     }
     try {
       this.client = await MongoClient.connect(params.url, opts)
@@ -74,7 +74,7 @@ class MongodbStorage {
     return this
   }
 
-  async getUser(filter) {
+  async getUser (filter) {
     if ('id' in filter) {
       filter._id = filter.id
       delete filter.id
@@ -84,23 +84,23 @@ class MongodbStorage {
     return cleanUser(user)
   }
 
-  async hasPassword(email) {
+  async hasPassword (email) {
     const user = (await this.db.collection('users').find({ email }).collation(collation).toArray())[0]
     return !!(user && user.password)
   }
 
-  async getUserByEmail(email) {
+  async getUserByEmail (email) {
     const user = (await this.db.collection('users').find({ email }).collation(collation).toArray())[0]
     if (!user) return null
     return cleanUser(user)
   }
 
-  async getPassword(userId) {
+  async getPassword (userId) {
     const user = await this.db.collection('users').findOne({ _id: userId })
     return user && user.password
   }
 
-  async createUser(user, byUser, host) {
+  async createUser (user, byUser, host) {
     byUser = byUser || user
     host = host || new URL(config.publicUrl).host
     const clonedUser = cloneWithId(user)
@@ -112,12 +112,12 @@ class MongodbStorage {
     return user
   }
 
-  async patchUser(id, patch, byUser) {
+  async patchUser (id, patch, byUser) {
     if (byUser) patch.updated = { id: byUser.id, name: byUser.name, date: new Date() }
     const mongoRes = await this.db.collection('users').findOneAndUpdate(
       { _id: id },
       { $set: patch },
-      { returnOriginal: false },
+      { returnOriginal: false }
     )
     const user = cleanUser(mongoRes.value)
     // "name" was modified, also update all references in created and updated events
@@ -130,19 +130,19 @@ class MongodbStorage {
     return user
   }
 
-  async updateLogged(id) {
+  async updateLogged (id) {
     this.db.collection('users').updateOne({ _id: id }, { $set: { logged: new Date() } })
   }
 
-  async confirmEmail(id) {
+  async confirmEmail (id) {
     this.db.collection('users').updateOne({ _id: id }, { $set: { emailConfirmed: true } })
   }
 
-  async deleteUser(userId) {
+  async deleteUser (userId) {
     await this.db.collection('users').removeOne({ _id: userId })
   }
 
-  async findUsers(params = {}) {
+  async findUsers (params = {}) {
     const filter = {}
     if (params.ids) {
       filter._id = { $in: params.ids }
@@ -163,7 +163,7 @@ class MongodbStorage {
     return { count, results: users.map(cleanUser) }
   }
 
-  async findMembers(organizationId, params = {}) {
+  async findMembers (organizationId, params = {}) {
     const filter = { organizations: { $elemMatch: { id: organizationId } } }
     if (params.ids && params.ids.length) {
       filter._id = { $in: params.ids }
@@ -190,17 +190,17 @@ class MongodbStorage {
       results: users.map(user => {
         const userOrga = user.organizations.find(o => o.id === organizationId)
         return { id: user._id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department }
-      }),
+      })
     }
   }
 
-  async getOrganization(id) {
+  async getOrganization (id) {
     const organization = await this.db.collection('organizations').findOne({ _id: id })
     if (!organization) return null
     return cleanOrganization(organization)
   }
 
-  async createOrganization(orga, user) {
+  async createOrganization (orga, user) {
     const clonedOrga = cloneWithId(orga)
     const date = new Date()
     clonedOrga.created = { id: user.id, name: user.name, date }
@@ -209,12 +209,12 @@ class MongodbStorage {
     return orga
   }
 
-  async patchOrganization(id, patch, user) {
+  async patchOrganization (id, patch, user) {
     patch.updated = { id: user.id, name: user.name, date: new Date() }
     const mongoRes = await this.db.collection('organizations').findOneAndUpdate(
       { _id: id },
       { $set: patch },
-      { returnOriginal: false },
+      { returnOriginal: false }
     )
     const orga = cleanOrganization(mongoRes.value)
     // "name" was modified, also update all organizations references in users
@@ -233,13 +233,13 @@ class MongodbStorage {
     return orga
   }
 
-  async deleteOrganization(organizationId) {
+  async deleteOrganization (organizationId) {
     await this.db.collection('users')
       .updateMany({}, { $pull: { organizations: { id: organizationId } } })
     await this.db.collection('organizations').removeOne({ _id: organizationId })
   }
 
-  async findOrganizations(params = {}) {
+  async findOrganizations (params = {}) {
     const filter = {}
     if (params.ids) {
       filter._id = { $in: params.ids }
@@ -263,44 +263,44 @@ class MongodbStorage {
     return { count, results: organizations.map(cleanOrganization) }
   }
 
-  async addMember(orga, user, role, department) {
+  async addMember (orga, user, role, department) {
     await this.db.collection('users').updateOne(
       { _id: user.id },
-      { $push: { organizations: { id: orga.id, name: orga.name, role, department } } },
+      { $push: { organizations: { id: orga.id, name: orga.name, role, department } } }
     )
   }
 
-  async countMembers(organizationId) {
+  async countMembers (organizationId) {
     return this.db.collection('users').countDocuments({ 'organizations.id': organizationId })
   }
 
-  async setMemberRole(organizationId, userId, role, department) {
+  async setMemberRole (organizationId, userId, role, department) {
     await this.db.collection('users').updateOne(
       { _id: userId, 'organizations.id': organizationId },
-      { $set: { 'organizations.$.role': role, 'organizations.$.department': department } },
+      { $set: { 'organizations.$.role': role, 'organizations.$.department': department } }
     )
   }
 
-  async removeMember(organizationId, userId) {
+  async removeMember (organizationId, userId) {
     await this.db.collection('users')
       .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId } } })
   }
 
-  async setAvatar(avatar) {
+  async setAvatar (avatar) {
     await this.db.collection('avatars').replaceOne(
       { 'owner.type': avatar.owner.type, 'owner.id': avatar.owner.id },
       avatar,
-      { upsert: true },
+      { upsert: true }
     )
   }
 
-  async getAvatar(owner) {
+  async getAvatar (owner) {
     const avatar = await this.db.collection('avatars').findOne({ 'owner.type': owner.type, 'owner.id': owner.id })
     if (avatar && avatar.buffer) avatar.buffer = avatar.buffer.buffer
     return avatar
   }
 
-  async required2FA(user) {
+  async required2FA (user) {
     if (user.isAdmin && config.admins2FA) return true
     for (const org of user.organizations) {
       if (await this.db.collection('organizations').findOne({ _id: org.id, '2FA.roles': org.role })) {
@@ -311,7 +311,7 @@ class MongodbStorage {
     return false
   }
 
-  async get2FA(userId) {
+  async get2FA (userId) {
     const user = await this.db.collection('users').findOne({ _id: userId })
     return user && user['2FA']
   }

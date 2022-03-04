@@ -1,7 +1,7 @@
 const webhooks = require('../server/webhooks')
 const storages = require('../server/storages')
 
-async function main() {
+async function main () {
   const storage = await storages.init()
   const users = await storage.findUsers({ skip: 0, size: 100000 })
   for (const user of users.results) {

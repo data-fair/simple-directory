@@ -11,27 +11,27 @@ const authenticationParams = [{
   description: '"Bearer" followed with a white space and a JWT',
   required: false,
   schema: {
-    type: 'string',
-  },
+    type: 'string'
+  }
 }, {
   name: 'id_token',
   in: 'cookie',
   description: 'JWT',
   required: false,
   schema: {
-    type: 'string',
-  },
+    type: 'string'
+  }
 }]
 
 module.exports = {
   openapi: '3.0.0',
   info: Object.assign({
     title: 'API documentation',
-    version: version,
+    version: version
   }, config.info),
   servers: [{
     url: config.publicUrl,
-    description: process.env.NODE_ENV || 'development' + ' server.',
+    description: process.env.NODE_ENV || 'development' + ' server.'
   }],
   paths: {
     '/.well-known/jwks.json': {
@@ -48,9 +48,9 @@ module.exports = {
                   properties: {
                     keys: {
                       type: 'array',
-                      items: JWK,
-                    },
-                  },
+                      items: JWK
+                    }
+                  }
                 },
                 examples: [{
                   keys: [{
@@ -59,14 +59,14 @@ module.exports = {
                     e: 'AQAB',
                     kid: 'simple-directory-default',
                     alg: 'RS256',
-                    use: 'sig',
-                  }],
-                }],
-              },
-            },
-          },
-        },
-      },
+                    use: 'sig'
+                  }]
+                }]
+              }
+            }
+          }
+        }
+      }
     },
     '/api/auth/passwordless': {
       post: {
@@ -79,8 +79,8 @@ module.exports = {
           description: 'A redirect URL',
           required: false,
           schema: {
-            type: 'string',
-          },
+            type: 'string'
+          }
         }],
         requestBody: {
           description: 'Email of the account',
@@ -93,25 +93,25 @@ module.exports = {
                   email: {
                     description: 'The main email of the account',
                     type: 'string',
-                    format: 'email',
-                  },
-                },
-              },
-            },
-          },
+                    format: 'email'
+                  }
+                }
+              }
+            }
+          }
         },
         responses: {
           200: {
-            description: 'A JWT, or the input redirect URL concatenated with a JWT',
+            description: 'A JWT, or the input redirect URL concatenated with a JWT'
           },
           400: {
-            description: 'Input data has wrong format',
+            description: 'Input data has wrong format'
           },
           404: {
-            description: 'There is no user associated with this email',
-          },
-        },
-      },
+            description: 'There is no user associated with this email'
+          }
+        }
+      }
     },
     '/api/auth/exchange': {
       post: {
@@ -121,13 +121,13 @@ module.exports = {
         parameters: authenticationParams,
         responses: {
           200: {
-            description: 'A JWT',
+            description: 'A JWT'
           },
           401: {
-            description: 'Authentication error',
-          },
-        },
-      },
+            description: 'Authentication error'
+          }
+        }
+      }
     },
     '/api/users/{id}': {
       get: {
@@ -139,29 +139,29 @@ module.exports = {
           description: 'Unique identifier of the user',
           required: true,
           schema: {
-            type: 'string',
-          },
+            type: 'string'
+          }
         }]),
         responses: {
           200: {
             description: 'The requested user',
             content: {
               'application/json': {
-                schema: user,
-              },
-            },
+                schema: user
+              }
+            }
           },
           401: {
-            description: 'Authentication error',
+            description: 'Authentication error'
           },
           403: {
-            description: 'Not enough permissions',
+            description: 'Not enough permissions'
           },
           404: {
-            description: 'There is no user associated with this id',
-          },
-        },
-      },
+            description: 'There is no user associated with this id'
+          }
+        }
+      }
     },
     '/api/organizations': {
       get: {
@@ -173,16 +173,16 @@ module.exports = {
           description: 'Unique identifier of organizations to filter',
           required: false,
           schema: {
-            type: 'string',
-          },
+            type: 'string'
+          }
         }, {
           name: 'is-member',
           in: 'query',
           description: 'Filter organizations the user belong to',
           required: false,
           schema: {
-            type: 'boolean',
-          },
+            type: 'boolean'
+          }
         }]),
         responses: {
           200: {
@@ -193,22 +193,22 @@ module.exports = {
                   type: 'object',
                   properties: {
                     count: {
-                      type: 'number',
+                      type: 'number'
                     },
                     results: {
                       type: 'array',
-                      items: organization,
-                    },
-                  },
-                },
-              },
-            },
+                      items: organization
+                    }
+                  }
+                }
+              }
+            }
           },
           401: {
-            description: 'Authentication error',
-          },
-        },
-      },
+            description: 'Authentication error'
+          }
+        }
+      }
     },
     '/api/mails': {
       post: {
@@ -220,27 +220,27 @@ module.exports = {
           description: 'A secret from the config to secure this specific operation.',
           required: true,
           schema: {
-            type: 'string',
-          },
+            type: 'string'
+          }
         }],
         requestBody: {
           description: 'The email definition',
           required: true,
           content: {
             'application/json': {
-              schema: mail,
-            },
-          },
+              schema: mail
+            }
+          }
         },
         responses: {
           200: {
-            description: 'A JWT, or the input redirect URL concatenated with a JWT',
+            description: 'A JWT, or the input redirect URL concatenated with a JWT'
           },
           400: {
-            description: 'Input data has wrong format',
-          },
-        },
-      },
-    },
-  },
+            description: 'Input data has wrong format'
+          }
+        }
+      }
+    }
+  }
 }

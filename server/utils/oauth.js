@@ -15,12 +15,12 @@ const providers = {
     auth: {
       tokenHost: 'https://github.com',
       tokenPath: '/login/oauth/access_token',
-      authorizePath: '/login/oauth/authorize',
+      authorizePath: '/login/oauth/authorize'
     },
     userInfo: async (accessToken) => {
       const res = await Promise.all([
         axios.get('https://api.github.com/user', { headers: { Authorization: `token ${accessToken}` } }),
-        axios.get('https://api.github.com/user/emails', { headers: { Authorization: `token ${accessToken}` } }),
+        axios.get('https://api.github.com/user/emails', { headers: { Authorization: `token ${accessToken}` } })
       ])
       debug('user info from github', res[0].data, res[1].data)
       const userInfo = {
@@ -28,14 +28,14 @@ const providers = {
         id: res[0].data.id,
         name: res[0].data.name,
         url: res[0].data.html_url,
-        avatarUrl: res[0].data.avatar_url,
+        avatarUrl: res[0].data.avatar_url
       }
       let email = res[1].data.find(e => e.primary)
       if (!email) email = res[1].data.find(e => e.verified)
       if (!email) email = res[1].data[0]
       if (email) userInfo.email = email.email
       return userInfo
-    },
+    }
   },
   facebook: {
     title: 'Facebook',
@@ -46,7 +46,7 @@ const providers = {
       tokenHost: 'https://graph.facebook.com',
       tokenPath: '/v6.0/oauth/access_token',
       authorizeHost: 'https://www.facebook.com',
-      authorizePath: '/v6.0/dialog/oauth',
+      authorizePath: '/v6.0/dialog/oauth'
     },
     userInfo: async (accessToken) => {
       // TOFO: fetch picture, but it is a temporary URL we should store the result if we want to use it
@@ -58,9 +58,9 @@ const providers = {
         firstName: res.data.first_name,
         lastName: res.data.last_name,
         email: res.data.email,
-        url: 'https://www.facebook.com',
+        url: 'https://www.facebook.com'
       }
-    },
+    }
   },
   google: {
     title: 'Google',
@@ -71,7 +71,7 @@ const providers = {
       tokenHost: 'https://www.googleapis.com',
       tokenPath: '/oauth2/v4/token',
       authorizeHost: 'https://accounts.google.com',
-      authorizePath: '/o/oauth2/v2/auth',
+      authorizePath: '/o/oauth2/v2/auth'
     },
     userInfo: async (accessToken) => {
       const res = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', { params: { alt: 'json', access_token: accessToken } })
@@ -83,9 +83,9 @@ const providers = {
         lastName: res.data.family_name,
         email: res.data.email,
         avatarUrl: res.data.picture, // is this URL temporary ?
-        url: 'https://www.google.com',
+        url: 'https://www.google.com'
       }
-    },
+    }
   },
   /*
   Problem with instagram provider.. it does not return an email for the user
@@ -118,23 +118,23 @@ const providers = {
     auth: {
       tokenHost: 'https://www.linkedin.com',
       tokenPath: '/oauth/v2/accessToken',
-      authorizePath: '/oauth/v2/authorization',
+      authorizePath: '/oauth/v2/authorization'
     },
     userInfo: async (accessToken) => {
       const res = await Promise.all([
         axios.get('https://api.linkedin.com/v2/me', {
           params: {
-            projection: '(id,localizedFirstName,localizedLastName,profilePicture(displayImage~digitalmediaAsset:playableStreams))',
+            projection: '(id,localizedFirstName,localizedLastName,profilePicture(displayImage~digitalmediaAsset:playableStreams))'
           },
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: { Authorization: `Bearer ${accessToken}` }
         }),
         axios.get('https://api.linkedin.com/v2/clientAwareMemberHandles', {
           params: {
             q: 'members',
-            projection: '(elements*(primary,type,handle~))',
+            projection: '(elements*(primary,type,handle~))'
           },
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }),
+          headers: { Authorization: `Bearer ${accessToken}` }
+        })
       ])
 
       debug('user info from linkedin', res[0].data, res[1].data)
@@ -145,7 +145,7 @@ const providers = {
         lastName: res[0].data.localizedLastName,
         email: res[1].data.elements[0]['handle~'].emailAddress,
         // building profile url would require the r_basicprofile authorization, but it is possible only after requesting special authorization by linkein
-        url: 'https://www.linkedin.com',
+        url: 'https://www.linkedin.com'
       }
       userInfo.name = userInfo.firstName + ' ' + userInfo.lastName
 
@@ -157,8 +157,8 @@ const providers = {
       }
 
       return userInfo
-    },
-  },
+    }
+  }
 }
 
 config.oauth.providers.forEach(p => {
@@ -168,7 +168,7 @@ config.oauth.providers.forEach(p => {
 exports.providers = config.oauth.providers.map(p => ({
   ...providers[p],
   id: p,
-  client: oauth2.create({ client: config.oauth[p], auth: providers[p].auth }),
+  client: oauth2.create({ client: config.oauth[p], auth: providers[p].auth })
 }))
 
 const statesDir = path.resolve(__dirname, '../..', config.oauth.statesDir)
@@ -193,7 +193,7 @@ exports.providers.forEach(p => {
     return p.client.authorizationCode.authorizeURL({
       redirect_uri: callbackUri,
       scope: p.scope,
-      state,
+      state
     })
   }
 
@@ -204,7 +204,7 @@ exports.providers.forEach(p => {
       redirect_uri: callbackUri,
       scope: p.scope,
       client_id: config.oauth[p.id].id,
-      client_secret: config.oauth[p.id].secret,
+      client_secret: config.oauth[p.id].secret
     })
     if (token.error) {
       console.error('Bad OAuth code', token)

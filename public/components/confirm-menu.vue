@@ -1,5 +1,8 @@
 <template>
-  <v-menu v-model="menu" :close-on-content-click="false">
+  <v-menu
+    v-model="menu"
+    :close-on-content-click="false"
+  >
     <template #activator="{ on }">
       <!--<v-tooltip v-if="icon" top>
         <template v-slot:activator="{ on: onTooltip }">
@@ -43,7 +46,10 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text @click="menu = false">
+        <v-btn
+          text
+          @click="menu = false"
+        >
           {{ $t('common.confirmCancel') }}
         </v-btn>
         <v-btn
@@ -59,46 +65,46 @@
 </template>
 
 <script>
-  export default {
-    props: {
-      title: {
-        type: String,
-        default: '',
-      },
-      alert: {
-        type: String,
-        default: '',
-      },
-      buttonText: {
-        type: String,
-        default: '',
-      },
-      checkText: {
-        type: String,
-        default: '',
-      },
-      icon: {
-        type: String,
-        default: '',
-      },
-      tooltip: {
-        type: String,
-        default: '',
-      },
-      yesColor: {
-        type: String,
-        default: 'primary',
-      },
+export default {
+  props: {
+    title: {
+      type: String,
+      default: ''
     },
-    data() {
-      return { menu: false, checked: false }
+    alert: {
+      type: String,
+      default: ''
     },
-    watch: {
-      menu() {
-        this.checked = false
-      },
+    buttonText: {
+      type: String,
+      default: ''
     },
+    checkText: {
+      type: String,
+      default: ''
+    },
+    icon: {
+      type: String,
+      default: ''
+    },
+    tooltip: {
+      type: String,
+      default: ''
+    },
+    yesColor: {
+      type: String,
+      default: 'primary'
+    }
+  },
+  data () {
+    return { menu: false, checked: false }
+  },
+  watch: {
+    menu () {
+      this.checked = false
+    }
   }
+}
 </script>
 
 <style lang="css" scoped>

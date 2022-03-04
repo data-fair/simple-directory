@@ -41,10 +41,16 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text @click="menu = false">
+        <v-btn
+          text
+          @click="menu = false"
+        >
           {{ $t('common.confirmCancel') }}
         </v-btn>
-        <v-btn color="primary" @click="confirmCreate">
+        <v-btn
+          color="primary"
+          @click="confirmCreate"
+        >
           {{ $t('common.confirmOk') }}
         </v-btn>
       </v-card-actions>
@@ -54,33 +60,33 @@
 
 <script>
 
-  import { mapActions } from 'vuex'
+import { mapActions } from 'vuex'
 
-  export default {
-    props: [],
-    data: () => ({ menu: false, editOrganization: null }),
-    watch: {
-      menu() {
-        if (!this.menu) return
-        this.editOrganization = { name: '', description: '' }
-        if (this.$refs.createForm) this.$refs.createForm.reset()
-      },
-    },
-    methods: {
-      ...mapActions(['fetchUserDetails']),
-      ...mapActions('session', ['switchOrganization', 'keepalive']),
-      async confirmCreate() {
-        if (this.$refs.createForm.validate()) {
-          this.menu = false
-          const res = await this.$axios.$post('api/organizations', this.editOrganization, { params: { autoAdmin: true } })
-          await this.keepalive()
-          this.switchOrganization(res.id)
-          // reloading top page, so that limits are re-fetched, etc.
-          window.top.location.reload()
-        }
-      },
-    },
+export default {
+  props: [],
+  data: () => ({ menu: false, editOrganization: null }),
+  watch: {
+    menu () {
+      if (!this.menu) return
+      this.editOrganization = { name: '', description: '' }
+      if (this.$refs.createForm) this.$refs.createForm.reset()
+    }
+  },
+  methods: {
+    ...mapActions(['fetchUserDetails']),
+    ...mapActions('session', ['switchOrganization', 'keepalive']),
+    async confirmCreate () {
+      if (this.$refs.createForm.validate()) {
+        this.menu = false
+        const res = await this.$axios.$post('api/organizations', this.editOrganization, { params: { autoAdmin: true } })
+        await this.keepalive()
+        this.switchOrganization(res.id)
+        // reloading top page, so that limits are re-fetched, etc.
+        window.top.location.reload()
+      }
+    }
   }
+}
 </script>
 
 <style lang="css" scoped>

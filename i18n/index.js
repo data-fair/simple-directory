@@ -12,7 +12,7 @@ exports.locales = [
   { code: 'de' },
   { code: 'it' },
   { code: 'es' },
-  { code: 'pt' },
+  { code: 'pt' }
 ]
 
 // Build a map of messages of this form

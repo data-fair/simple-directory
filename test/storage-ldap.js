@@ -3,16 +3,16 @@ const testUtils = require('./resources/test-utils')
 process.env.STORAGE_TYPE = 'ldap'
 process.env.STORAGE_LDAP_ONLY_WITH_ROLE = 'true'
 process.env.STORAGE_LDAP_MEMBERS_ROLE_VALUES = JSON.stringify(
-  { admin: ['cn=administrator,dc=test', 'cn=superadmin,dc=test'], user: ['cn=users,dc=test'] },
+  { admin: ['cn=administrator,dc=test', 'cn=superadmin,dc=test'], user: ['cn=users,dc=test'] }
 )
 process.env.STORAGE_LDAP_USERS_OVERWRITE = JSON.stringify(
-  [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }],
+  [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }]
 )
 process.env.STORAGE_LDAP_ORGS_OVERWRITE = JSON.stringify(
-  [{ id: 'myorg', name: 'Org overwritten' }],
+  [{ id: 'myorg', name: 'Org overwritten' }]
 )
 process.env.STORAGE_LDAP_MEMBERS_OVERWRITE = JSON.stringify(
-  [{ email: 'alban.mouton@koumoul.com', role: 'overwritten' }],
+  [{ email: 'alban.mouton@koumoul.com', role: 'overwritten' }]
 )
 const { test } = testUtils.prepare(__filename)
 
@@ -32,7 +32,7 @@ test('create and find users', async t => {
     firstName: 'Alban',
     lastName: 'Mouton',
     email: 'alban.mouton@koumoul.com',
-    organizations: [{ id: 'myorg', role: 'admin' }],
+    organizations: [{ id: 'myorg', role: 'admin' }]
   })
   let res = await storage.findUsers({ skip: 0, size: 10 })
   t.is(res.count, 1)

@@ -4,7 +4,7 @@
 module.exports = {
   root: {
     title: 'Simple Directory',
-    description: 'Vereinfachte Verwaltung Ihrer Benutzer und Organisationen in einer modernen weborientierten Architektur.',
+    description: 'Vereinfachte Verwaltung Ihrer Benutzer und Organisationen in einer modernen weborientierten Architektur.'
   },
   common: {
     home: 'Startseite',
@@ -62,14 +62,14 @@ module.exports = {
     delAsAdmin: 'Zurück zu meiner Administratorsitzung',
     avatar: 'Avatar',
     birthday: 'Geburtstag',
-    missingInfo: 'Fehlende Informationen',
+    missingInfo: 'Fehlende Informationen'
   },
   doc: {
     about: {
-      link: 'Über uns',
+      link: 'Über uns'
     },
     install: {
-      link: 'Installation',
+      link: 'Installation'
     },
     config: {
       link: 'Konfiguration',
@@ -88,11 +88,11 @@ module.exports = {
           logo: 'Die Logo-URL, die verwendet werden soll, um das Standardlogo des <i>Simple Directory</i> zu ersetzen.',
           dark: 'Verdunkeln Sie das gesamte Erscheinungsbild der Seiten.<br>Beachten Sie, dass die Standardfarben für ein klares Thema besser geeignet sind. Wenn Sie zu dunkel wechseln, müssen Sie auch diese Farben ändern.',
           cssUrl: 'Verknüpfung mit einer Stilvorlage, um die Anpassungsvariablen zu vervollständigen.<br>WARNUNG: die HTML-Struktur kann zwischen 2 Versionen erheblich variieren. Die Beibehaltung dieses Stylesheets wird bei jedem Upgrade zusätzliche Arbeit für Sie bedeuten.',
-          cssText: 'Textlicher CSS-Inhalt.<br>WARNUNG: die HTML-Struktur kann zwischen 2 Versionen erheblich variieren. Die Beibehaltung dieses Stylesheets wird bei jedem Upgrade zusätzliche Arbeit für Sie bedeuten.',
+          cssText: 'Textlicher CSS-Inhalt.<br>WARNUNG: die HTML-Struktur kann zwischen 2 Versionen erheblich variieren. Die Beibehaltung dieses Stylesheets wird bei jedem Upgrade zusätzliche Arbeit für Sie bedeuten.'
         },
         secret: {
           public: '<b>WICHTIG.</b> Der Pfad zum öffentlichen RSA-Verschlüsselungsschlüssel. Siehe die Dokumentation zur Dienstinstallation.',
-          private: '<b>WICHTIG.</b> Der Pfad zum privaten RSA-Verschlüsselungsschlüssel. Siehe die Dokumentation zur Dienstinstallation.',
+          private: '<b>WICHTIG.</b> Der Pfad zum privaten RSA-Verschlüsselungsschlüssel. Siehe die Dokumentation zur Dienstinstallation.'
         },
         analytics: 'JSON für die Analysekonfiguration, entspricht dem Konfigurationsteil "Module" der Bibliothek <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
@@ -101,26 +101,26 @@ Der voreingestellte "Datei"-Typ ist schreibgeschützt und eignet sich für Entwi
 Der "Mongo"-Typ hängt vom Zugriff auf eine MongoDB-Datenbank ab, er ist der geeignete Modus für die meisten Installationen in der Produktion.`,
           file: {
             users: 'Nur für storage.type=file. Der Pfad zu der JSON-Datei mit den Benutzerdefinitionen',
-            organizations: 'Nur für storage.type=file. Der Pfad zur JSON-Datei mit den Organisationsdefinitionen',
+            organizations: 'Nur für storage.type=file. Der Pfad zur JSON-Datei mit den Organisationsdefinitionen'
           },
           mongo: {
-            url: 'Nur für storage.type=mongo. Die vollständige Verbindungszeichenfolge zur mongodb-Datenbank.',
-          },
+            url: 'Nur für storage.type=mongo. Die vollständige Verbindungszeichenfolge zur mongodb-Datenbank.'
+          }
         },
         mails: {
           transport: '<b>WICHTIG.</b> Ein mit der Bibliothek kompatibles JSON-Mail-Transport-Konfigurationsobjekt <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
-          from: '\'<b>WICHTIG.</b> Die Adresse, die als Absender der von der Dienststelle ausgegebenen E-Mails anzugeben ist.',
+          from: '\'<b>WICHTIG.</b> Die Adresse, die als Absender der von der Dienststelle ausgegebenen E-Mails anzugeben ist.'
         },
         listEntitiesMode: `Ermöglicht es Ihnen, den Zugriff auf Listen von Benutzern und Organisationen global einzuschränken.<br>
 Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
         defaultLoginRedirect: 'Standardumleitung nach Anmeldung. Wenn nicht angegeben, wird der Benutzer zu seinem Profil umgeleitet.',
         onlyCreateInvited: 'Wenn echte Benutzer nicht bei der ersten gesendeten E-Mail erstellt werden. Sie müssen in eine Organisation eingeladen werden.',
-        tosUrl: '<b>WICHTIG.</b> Wenn echte Benutzer nicht bei der ersten gesendeten E-Mail erstellt werden. Sie müssen in eine Organisation eingeladen werden.',
-      },
+        tosUrl: '<b>WICHTIG.</b> Wenn echte Benutzer nicht bei der ersten gesendeten E-Mail erstellt werden. Sie müssen in eine Organisation eingeladen werden.'
+      }
     },
     use: {
-      link: 'Verwenden Sie',
-    },
+      link: 'Verwenden Sie'
+    }
   },
   pages: {
     admin: {
@@ -129,13 +129,13 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
         createdOrgsLimit: 'Benutzer können {defaultMaxCreatedOrgs} Standardorganisation(en) erstellen.',
         explainLimit: 'Legen Sie einen Wert fest, um die Anzahl der Organisationen zu begrenzen, die dieser Benutzer erstellen kann. -1 für eine beliebige Anzahl. Löschen Sie das Feld, um zum Standardwert zurückzukehren ({defaultMaxCreatedOrgs}).',
         editUserEmailTitle: 'Ändere die E-Mail-Adresse des Benutzers {name}',
-        editUserEmailText: 'Warnung! E-Mail ist ein wichtiger Benutzerschlüssel. Durch das Ändern dieser Informationen laufen Sie Gefahr, eine falsche, nicht funktionierende oder inkonsistente Adresse mit anderen Einträgen einzufügen. Diese Funktion wird nur Administratoren angeboten, um die Blockierung eines Benutzers aufzuheben, auf dessen Postfach nicht mehr zugegriffen werden kann.',
+        editUserEmailText: 'Warnung! E-Mail ist ein wichtiger Benutzerschlüssel. Durch das Ändern dieser Informationen laufen Sie Gefahr, eine falsche, nicht funktionierende oder inkonsistente Adresse mit anderen Einträgen einzufügen. Diese Funktion wird nur Administratoren angeboten, um die Blockierung eines Benutzers aufzuheben, auf dessen Postfach nicht mehr zugegriffen werden kann.'
       },
       organizations: {
         limitOrganizationTitle: 'Organisatorische Grenzen ändern',
         members: 'mitglied(er)',
-        nbMembers: 'Maximale Anzahl von Mitgliedern (0 für keine Begrenzung)',
-      },
+        nbMembers: 'Maximale Anzahl von Mitgliedern (0 für keine Begrenzung)'
+      }
     },
     login: {
       title: 'Identifizieren Sie sich',
@@ -160,7 +160,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       createUserConfirmed: 'Ihnen wurde eine E-Mail an {email} geschickt. Diese E-Mail enthält einen Link zur Validierung der Erstellung des Kontos.',
       adminMode: 'Bestätigen Sie Ihre Identität, um in den Verwaltungsmodus zu wechseln.',
       oauth: 'Anmeldung mit :',
-      error: 'Error',
+      error: 'Error'
     },
     organization: {
       addMember: 'Laden Sie einen Benutzer zum Beitritt zur Organisation ein',
@@ -183,23 +183,23 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       confirmDeleteDepartmentTitle: '{name} entfernen',
       confirmDeleteDepartmentMsg: 'Möchten Sie {name} wirklich aus Ihrer Organisation entfernen?',
       departmentIdInvalid: 'Der Bezeichner darf nur Buchstaben, Zahlen und Leerzeichen enthalten.',
-      inviteLink: 'Bei Problemen bei der Kommunikation per E-Mail können Sie den untenstehenden Bestätigungslink auf andere Weise senden. Warnung ! Sie riskieren das Einfügen einer falschen oder nicht funktionierenden E-Mail-Adresse in die Benutzerdatenbank. Diese E-Mail-Adresse kann später mehrere Probleme verursachen: Passwortänderung, Senden von Benachrichtigungen usw.',
+      inviteLink: 'Bei Problemen bei der Kommunikation per E-Mail können Sie den untenstehenden Bestätigungslink auf andere Weise senden. Warnung ! Sie riskieren das Einfügen einer falschen oder nicht funktionierenden E-Mail-Adresse in die Benutzerdatenbank. Diese E-Mail-Adresse kann später mehrere Probleme verursachen: Passwortänderung, Senden von Benachrichtigungen usw.'
     },
     invitation: {
       title: 'Einladung validiert',
       msgSameUser: 'Ihre Einladung, Mitglied einer Organisation zu werden, wurde angenommen. Sie können Ihr <a href="{profileUrl}">Profil einsehen</a>.',
-      msgDifferentUser: 'Diese Einladung, Mitglied einer Organisation zu werden, wurde gut angenommen. Sie können <a href="{loginUrl}">Anmelden</a> mit dem Gastkonto.',
+      msgDifferentUser: 'Diese Einladung, Mitglied einer Organisation zu werden, wurde gut angenommen. Sie können <a href="{loginUrl}">Anmelden</a> mit dem Gastkonto.'
     },
     avatar: {
-      prepare: 'Das Bild vorbereiten',
+      prepare: 'Das Bild vorbereiten'
     },
     me: {
       noOrganization: 'Sie sind nicht Mitglied einer Organisation.',
       operations: 'Sensible Operationen',
       deleteMyself: 'Dieses Konto löschen',
       deleteMyselfAlert: 'Wenn Sie Ihr Konto löschen, werden auch die zugehörigen Daten gelöscht und können nicht wiederhergestellt werden.',
-      deleteMyselfCheck: 'Markieren Sie dieses Kästchen und klicken Sie auf OK, um das Löschen zu bestätigen.',
-    },
+      deleteMyselfCheck: 'Markieren Sie dieses Kästchen und klicken Sie auf OK, um das Löschen zu bestätigen.'
+    }
   },
   errors: {
     badEmail: 'Die E-Mail-Adresse ist leer oder fehlerhaft.',
@@ -220,7 +220,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
     expiredInvitationToken: 'Der Einladungslink, den Sie erhalten haben, ist abgelaufen. Sie können diese Einladung nicht mehr annehmen.',
     maxNbMembers: 'Die Organisation enthält bereits die maximale Anzahl von Mitgliedern, die durch ihre Quoten zulässig sind.',
     unknownOAuthProvider: 'OAuth-Identifizierung wird nicht unterstützt.',
-    adminModeOnly: 'Funktionalität für Superadministratoren reserviert.',
+    adminModeOnly: 'Funktionalität für Superadministratoren reserviert.'
   },
   mails: {
     creation: {
@@ -234,7 +234,7 @@ Wenn Sie ein Problem mit Ihrem Konto haben oder nicht beantragt haben, ein Konto
       htmlMsg: 'Ein Antrag auf Einrichtung eines Kontos wurde gestellt seit <a href="{origin}">{host}</a> für diese E-Mail-Adresse. Zur Bestätigung klicken Sie auf die Schaltfläche unten. Der Link ist 15 Minuten lang gültig.',
       htmlButton: 'Kontoerstellung bestätigen',
       htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
-      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder wenn Sie nicht beantragt haben, sich unter <a href="{origin}">{host}</a>, zögern Sie nicht, uns zu kontaktieren unter <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder wenn Sie nicht beantragt haben, sich unter <a href="{origin}">{host}</a>, zögern Sie nicht, uns zu kontaktieren unter <a href="mailto:{contact}">{contact}</a>.'
     },
     login: {
       subject: 'Identifikation auf {host}',
@@ -248,7 +248,7 @@ Wenn Sie ein Problem mit Ihrem Konto haben oder nicht darum gebeten haben, sich 
       htmlMsg: 'Seitdem wurde ein Ausweisantrag gestellt <a href="{origin}">{host}</a>. Um dies zu bestätigen, klicken Sie auf die Schaltfläche unten. Der Link ist 15 Minuten gültig.',
       htmlButton: 'Verbindung zu {host} herstellen',
       htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
-      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder keine Verbindung zu <a href="{origin}">{host}</a>, hergestellt haben, zögern Sie bitte nicht, uns unter <a href="mailto:{contact}">{contact}</a> zu kontaktieren.',
+      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder keine Verbindung zu <a href="{origin}">{host}</a>, hergestellt haben, zögern Sie bitte nicht, uns unter <a href="mailto:{contact}">{contact}</a> zu kontaktieren.'
     },
     noCreation: {
       subject: 'Authentifizierungsfehler ein {host}',
@@ -258,7 +258,7 @@ Eine Identifikationsanfrage wurde von {host} gestellt, aber abgelehnt, da diese 
 Zögern Sie nicht, uns unter {contact} zu kontaktieren.
       `,
       htmlMsg: 'Seitdem wurde ein Ausweisantrag gestellt <a href="{origin}">{host}</a>, Es wurde jedoch abgelehnt, da diese E-Mail-Adresse unbekannt ist oder nicht validiert wurde.',
-      htmlCaption: 'Zögern Sie nicht, uns unter zu kontaktieren <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Zögern Sie nicht, uns unter zu kontaktieren <a href="mailto:{contact}">{contact}</a>.'
     },
     conflict: {
       subject: 'Fehler beim Erstellen eines Kontos am {host}',
@@ -268,7 +268,7 @@ Eine Kontoerstellungsanforderung wurde von {host} gestellt, aber abgelehnt, da d
 führt Sie nicht, uns zu gehören unter {contact}.
       `,
       htmlMsg: 'Ein Antrag auf Einrichtung eines Kontos wurde gestellt seit <a href="{origin}">{host}</a>, aber es wurde abgelehnt, weil diese E-Mail-Adresse bereits mit einem Konto verknüpft ist.',
-      htmlCaption: 'führt Sie nicht, uns zu gehören unter <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'führt Sie nicht, uns zu gehören unter <a href="mailto:{contact}">{contact}</a>.'
     },
     invitation: {
       subject: 'Treten Sie der {organization} am {host} bei.',
@@ -286,7 +286,7 @@ Wenn Sie noch kein Konto haben, wird es automatisch erstellt.
       `,
       htmlButton: 'Nehmen Sie die Einladung an',
       htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
-      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.'
     },
     action: {
       subject: 'Führen Sie eine Aktion auf Ihrem Konto bei {host} aus.',
@@ -302,7 +302,7 @@ Auf dieser Adresse wurde eine Aktion ausgelöst, die eine Bestätigung per E-Mai
       `,
       htmlButton: 'Validieren Sie',
       htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
-      htmlCaption: 'Wenn Sie auf ein Problem mit Ihrem Konto stoßen oder diese Nachricht verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.',
-    },
-  },
+      htmlCaption: 'Wenn Sie auf ein Problem mit Ihrem Konto stoßen oder diese Nachricht verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.'
+    }
+  }
 }

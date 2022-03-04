@@ -18,7 +18,10 @@
       </v-btn>
     </template>
 
-    <v-card v-if="editDepartment" data-iframe-height>
+    <v-card
+      v-if="editDepartment"
+      data-iframe-height
+    >
       <v-card-title class="text-h6">
         {{ $t('pages.organization.addDepartment', {departmentLabel}) }}
       </v-card-title>
@@ -42,10 +45,16 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text @click="menu = false">
+        <v-btn
+          text
+          @click="menu = false"
+        >
           {{ $t('common.confirmCancel') }}
         </v-btn>
-        <v-btn color="primary" @click="confirmCreate">
+        <v-btn
+          color="primary"
+          @click="confirmCreate"
+        >
           {{ $t('common.confirmOk') }}
         </v-btn>
       </v-card-actions>
@@ -55,30 +64,30 @@
 
 <script>
 
-  import { mapActions } from 'vuex'
+import { mapActions } from 'vuex'
 
-  export default {
-    props: ['orga', 'departmentLabel', 'isAdminOrga'],
-    data: () => ({ menu: false, editDepartment: null }),
-    watch: {
-      menu() {
-        if (!this.menu) return
-        this.editDepartment = { id: '', name: '' }
-        if (this.$refs.createForm) this.$refs.createForm.reset()
-      },
-    },
-    methods: {
-      ...mapActions(['patchOrganization']),
-      async confirmCreate() {
-        if (this.$refs.createForm.validate()) {
-          this.menu = false
-          const departments = this.orga.departments.concat([this.editDepartment])
-          await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
-          this.$emit('change')
-        }
-      },
-    },
+export default {
+  props: ['orga', 'departmentLabel', 'isAdminOrga'],
+  data: () => ({ menu: false, editDepartment: null }),
+  watch: {
+    menu () {
+      if (!this.menu) return
+      this.editDepartment = { id: '', name: '' }
+      if (this.$refs.createForm) this.$refs.createForm.reset()
+    }
+  },
+  methods: {
+    ...mapActions(['patchOrganization']),
+    async confirmCreate () {
+      if (this.$refs.createForm.validate()) {
+        this.menu = false
+        const departments = this.orga.departments.concat([this.editDepartment])
+        await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
+        this.$emit('change')
+      }
+    }
   }
+}
 </script>
 
 <style lang="css" scoped>

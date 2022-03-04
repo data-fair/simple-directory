@@ -42,31 +42,31 @@
 </template>
 
 <script>
-  import { mapState, mapActions } from 'vuex'
-  import eventBus from '../event-bus'
-  export default {
-    data: () => ({
-      valid: true,
-      newOrga: { name: '', description: '' },
-      autoAdmin: true,
-    }),
-    computed: {
-      ...mapState('session', ['user']),
-    },
-    methods: {
-      ...mapActions(['fetchUserDetails']),
-      async create() {
-        if (!this.$refs.form.validate()) return
-        try {
-          const res = await this.$axios.$post('api/organizations', this.newOrga, { params: { autoAdmin: this.autoAdmin } })
-          this.fetchUserDetails()
-          this.$router.push(this.localePath({ name: 'organization-id', params: { id: res.id } }))
-        } catch (error) {
-          eventBus.$emit('notification', { error })
-        }
-      },
-    },
+import { mapState, mapActions } from 'vuex'
+import eventBus from '../event-bus'
+export default {
+  data: () => ({
+    valid: true,
+    newOrga: { name: '', description: '' },
+    autoAdmin: true
+  }),
+  computed: {
+    ...mapState('session', ['user'])
+  },
+  methods: {
+    ...mapActions(['fetchUserDetails']),
+    async create () {
+      if (!this.$refs.form.validate()) return
+      try {
+        const res = await this.$axios.$post('api/organizations', this.newOrga, { params: { autoAdmin: this.autoAdmin } })
+        this.fetchUserDetails()
+        this.$router.push(this.localePath({ name: 'organization-id', params: { id: res.id } }))
+      } catch (error) {
+        eventBus.$emit('notification', { error })
+      }
+    }
   }
+}
 </script>
 
 <style lang="css">

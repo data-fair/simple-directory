@@ -11,27 +11,28 @@ const ldapConfig = config.storage.ldap
 // see test/resources/organizations.json to see that the org "test-ldap" has a specific configuration
 
 test.before('prepare ldap directory', async t => {
+  console.log(1)
   const storage = await ldapStorage.init(ldapConfig)
 
   const user = await storage.getUser({ email: 'alban.mouton@koumoul.com' })
   if (user) await storage.deleteUser(user.id)
   const user2 = await storage.getUser({ email: 'alban.mouton@gmail.com' })
   if (user2) await storage.deleteUser(user2.id)
-
+  console.log(2)
   await storage.createUser({
     name: 'Alban Mouton',
     firstName: 'Alban',
     lastName: 'Mouton',
     email: 'alban.mouton@koumoul.com',
-    organizations: [{ id: 'test-ldap', role: 'admin' }],
+    organizations: [{ id: 'test-ldap', role: 'admin' }]
   })
-
+  console.log(3)
   await storage.createUser({
     name: 'Alban',
     firstName: 'Alban',
     lastName: '',
     email: 'alban.mouton@gmail.com',
-    organizations: [{ id: 'test-ldap', role: 'admin' }],
+    organizations: [{ id: 'test-ldap', role: 'admin' }]
   })
 })
 
@@ -45,6 +46,7 @@ test.after('clean ldap', async () => {
 })
 
 test('find org members from secondary ldap storage', async t => {
+  console.log('BIM')
   const ax = await testUtils.axios(test, 'dmeadus0@answers.com:testpasswd')
   let res = await ax.get('/api/organizations/test-ldap')
   t.is(res.status, 200)

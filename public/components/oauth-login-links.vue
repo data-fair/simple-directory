@@ -18,18 +18,18 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
+import { mapState } from 'vuex'
 
-  export default {
-    props: ['redirect'],
-    computed: {
-      ...mapState(['env']),
-      redirectParam() {
-        if (!this.redirect) return ''
-        return `?redirect=${encodeURIComponent(this.redirect)}`
-      },
-    },
+export default {
+  props: ['redirect'],
+  computed: {
+    ...mapState(['env']),
+    redirectParam () {
+      if (!this.redirect) return ''
+      return `?redirect=${encodeURIComponent(this.redirect)}`
+    }
   }
+}
 </script>
 
 <style lang="css" scoped>

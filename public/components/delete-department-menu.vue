@@ -25,10 +25,16 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text @click="menu = false">
+        <v-btn
+          text
+          @click="menu = false"
+        >
           {{ $t('common.confirmCancel') }}
         </v-btn>
-        <v-btn color="warning" @click="confirmDelete">
+        <v-btn
+          color="warning"
+          @click="confirmDelete"
+        >
           {{ $t('common.confirmOk') }}
         </v-btn>
       </v-card-actions>
@@ -37,21 +43,21 @@
 </template>
 
 <script>
-  import { mapActions } from 'vuex'
+import { mapActions } from 'vuex'
 
-  export default {
-    props: ['orga', 'department', 'departmentLabel'],
-    data: () => ({ menu: false }),
-    methods: {
-      ...mapActions(['patchOrganization']),
-      async confirmDelete() {
-        this.menu = false
-        const departments = this.orga.departments.filter(d => d.id !== this.department.id)
-        await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
-        this.$emit('change')
-      },
-    },
+export default {
+  props: ['orga', 'department', 'departmentLabel'],
+  data: () => ({ menu: false }),
+  methods: {
+    ...mapActions(['patchOrganization']),
+    async confirmDelete () {
+      this.menu = false
+      const departments = this.orga.departments.filter(d => d.id !== this.department.id)
+      await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
+      this.$emit('change')
+    }
   }
+}
 </script>
 
 <style lang="css" scoped>

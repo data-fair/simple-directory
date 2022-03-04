@@ -53,7 +53,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     id: shortid.generate(),
     firstName: req.body.firstName,
     lastName: req.body.lastName,
-    emailConfirmed: false,
+    emailConfirmed: false
   }
   newUser.name = userName(newUser)
 
@@ -75,7 +75,7 @@ router.post('', asyncWrap(async (req, res, next) => {
       key: 'conflict',
       messages: req.messages,
       to: req.body.email,
-      params: { host: linkUrl.host, origin: linkUrl.origin },
+      params: { host: linkUrl.host, origin: linkUrl.origin }
     })
     return res.status(204).send()
   }
@@ -96,7 +96,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     key: 'creation',
     messages: req.messages,
     to: req.body.email,
-    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin },
+    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
   })
 
   // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc

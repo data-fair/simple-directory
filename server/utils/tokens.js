@@ -47,7 +47,7 @@ exports.sign = (keys, payload, expiresIn, notBefore) => {
   const params = {
     algorithm: 'RS256',
     expiresIn,
-    keyid: config.kid,
+    keyid: config.kid
   }
   if (notBefore) params.notBefore = notBefore
   return jwt.sign(payload, keys.private, params)
@@ -63,7 +63,7 @@ exports.getPayload = (user) => {
     email: user.email,
     name: user.name,
     organizations: user.organizations,
-    isAdmin: config.admins.includes(user.email),
+    isAdmin: config.admins.includes(user.email)
   }
   if (user.department) payload.department = user.department
   if (user.orgStorage) payload.orgStorage = user.orgStorage

@@ -52,37 +52,37 @@
 </template>
 
 <script>
-  import eventBus from '../event-bus'
-  const newMessage = { from: '', subject: '', text: '' }
-  export default {
-    data: () => ({
-      valid: true,
-      message: { ...newMessage },
-      token: null,
-      tokenError: null,
-    }),
-    async mounted() {
+import eventBus from '../event-bus'
+const newMessage = { from: '', subject: '', text: '' }
+export default {
+  data: () => ({
+    valid: true,
+    message: { ...newMessage },
+    token: null,
+    tokenError: null
+  }),
+  async mounted () {
+    try {
+      this.token = await this.$axios.$get('api/auth/anonymous-action')
+    } catch (error) {
+      this.tokenError = error
+      eventBus.$emit('notification', { error })
+    }
+  },
+  methods: {
+    async send () {
+      if (!this.$refs.form.validate()) return
       try {
-        this.token = await this.$axios.$get('api/auth/anonymous-action')
+        await this.$axios.$post('api/mails/contact', { ...this.message, token: this.token })
+        this.message = { ...newMessage }
+        this.$refs.form.resetValidation()
+        eventBus.$emit('notification', { type: 'success', msg: 'Votre demande a été envoyée' })
       } catch (error) {
-        this.tokenError = error
         eventBus.$emit('notification', { error })
       }
-    },
-    methods: {
-      async send() {
-        if (!this.$refs.form.validate()) return
-        try {
-          await this.$axios.$post('api/mails/contact', { ...this.message, token: this.token })
-          this.message = { ...newMessage }
-          this.$refs.form.resetValidation()
-          eventBus.$emit('notification', { type: 'success', msg: 'Votre demande a été envoyée' })
-        } catch (error) {
-          eventBus.$emit('notification', { error })
-        }
-      },
-    },
+    }
   }
+}
 </script>
 
 <style lang="css">

@@ -16,7 +16,7 @@ module.exports = {
   build: { extractCSS: true },
   generate: {
     dir: 'doc-dist',
-    routes,
+    routes
   },
   loading: { color: '#1e88e5' }, // Customize the progress bar color
   plugins: [{ src: '~plugins/vuetify' }],
@@ -25,13 +25,13 @@ module.exports = {
   modules: ['@nuxtjs/markdownit', ['nuxt-i18n', {
     locales: [
       { code: 'fr' },
-      { code: 'en' },
+      { code: 'en' }
     ],
     defaultLocale: 'fr',
     vueI18n: {
       fallbackLocale: 'fr',
-      messages,
-    },
+      messages
+    }
   }]],
   head: {
     title: 'Simple Directory',
@@ -39,11 +39,11 @@ module.exports = {
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { hid: 'application', name: 'application-name', content: 'Simple Directory' },
-      { hid: 'description', name: 'description', content: 'Simple Directory - Documentation' },
+      { hid: 'description', name: 'description', content: 'Simple Directory - Documentation' }
     ],
     link: [
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Nunito:300,400,500,700,400italic|Material+Icons' },
-      { rel: 'icon', type: 'image/x-icon', href: 'favicon.ico' },
-    ],
-  },
+      { rel: 'icon', type: 'image/x-icon', href: 'favicon.ico' }
+    ]
+  }
 }

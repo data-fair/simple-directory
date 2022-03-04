@@ -4,7 +4,7 @@
 module.exports = {
   root: {
     title: 'Simple Directory',
-    description: 'Gestión simplificada de sus usuarios y organizaciones en una moderna arquitectura orientada a la web.',
+    description: 'Gestión simplificada de sus usuarios y organizaciones en una moderna arquitectura orientada a la web.'
   },
   common: {
     home: 'Página inicial',
@@ -62,14 +62,14 @@ module.exports = {
     delAsAdmin: 'Regresar a mi sesión de administrador',
     avatar: 'Avatar',
     birthday: 'Aniversario',
-    missingInfo: 'Falta información',
+    missingInfo: 'Falta información'
   },
   doc: {
     about: {
-      link: 'A proposito',
+      link: 'A proposito'
     },
     install: {
-      link: 'Instalación',
+      link: 'Instalación'
     },
     config: {
       link: 'Configuración',
@@ -88,11 +88,11 @@ module.exports = {
           logo: 'La URL del logotipo que se utilizará para reemplazar el logotipo predeterminado para <i>Simple Directory</i>.',
           dark: 'Haga que la apariencia completa de las páginas sea oscura.<br>Tenga en cuenta que los colores predeterminados son más adecuados para un tema claro. Si te oscureces también tendrás que cambiar estos colores.',
           cssUrl: 'Enlace a una hoja de estilo para completar las variables de personalización.<br>PRECAUCIÓN: la estructura HTML puede variar significativamente entre 2 versiones. Mantener esta hoja de estilo creará trabajo adicional para usted cada vez que actualice.',
-          cssText: 'Contenido CSS textual.<br>PRECAUCIÓN: la estructura HTML puede variar significativamente entre 2 versiones. Mantener esta hoja de estilo creará trabajo adicional para usted cada vez que actualice.',
+          cssText: 'Contenido CSS textual.<br>PRECAUCIÓN: la estructura HTML puede variar significativamente entre 2 versiones. Mantener esta hoja de estilo creará trabajo adicional para usted cada vez que actualice.'
         },
         secret: {
           public: '<b>IMPORTANTE.</b> La ruta a la clave pública de cifrado RSA. Consulte la documentación de instalación del servicio.',
-          private: '<b>IMPORTANTE.</b> La ruta a la clave privada de cifrado RSA. Consulte la documentación de instalación del servicio.',
+          private: '<b>IMPORTANTE.</b> La ruta a la clave privada de cifrado RSA. Consulte la documentación de instalación del servicio.'
         },
         analytics: 'JSON de configuración de análisis, corresponde a la parte de "módulos" de la configuración de la biblioteca <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
@@ -101,26 +101,26 @@ El tipo de "archivo" predeterminado es de solo lectura y es adecuado para desarr
 El tipo "mongo" depende del acceso a una base de datos MongoDB, este es el modo apropiado para la mayoría de las instalaciones de producción.`,
           file: {
             users: 'Solo para storage.type=file. La ruta del archivo JSON que contiene las definiciones de usuario',
-            organizations: 'Solo para storage.type=file. La ruta del archivo JSON que contiene las definiciones de la organización',
+            organizations: 'Solo para storage.type=file. La ruta del archivo JSON que contiene las definiciones de la organización'
           },
           mongo: {
-            url: 'Solo para storage.type=mongo. La cadena de conexión completa a la base de datos mongodb.',
-          },
+            url: 'Solo para storage.type=mongo. La cadena de conexión completa a la base de datos mongodb.'
+          }
         },
         mails: {
           transport: '<b>IMPORTANTE.</b> Un objeto JSON de configuración de transporte de correo compatible con la biblioteca <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
-          from: '<b>IMPORTANTE.</b> La dirección que se ingresará como remitente de los correos electrónicos enviados por el servicio.',
+          from: '<b>IMPORTANTE.</b> La dirección que se ingresará como remitente de los correos electrónicos enviados por el servicio.'
         },
         listEntitiesMode: `Le permite restringir globalmente el acceso a listas de usuarios y organizaciones.<br>
 Puede ser 'anonymous', 'authenticated' o 'admin'.`,
         defaultLoginRedirect: 'Redirección predeterminada después de iniciar sesión. Si no se especifica, el usuario será redirigido a su perfil.',
         onlyCreateInvited: 'Si es verdadero, los usuarios no se crearán en el primer correo electrónico enviado. Deben ser invitados a una organización.',
-        tosUrl: '<b>IMPORTANTE.</b> Una URL a sus términos de uso. Si este parámetro no está definido y no apunta a una página web correcta, corre el riesgo de no cumplir con sus obligaciones para con sus usuarios.',
-      },
+        tosUrl: '<b>IMPORTANTE.</b> Una URL a sus términos de uso. Si este parámetro no está definido y no apunta a una página web correcta, corre el riesgo de no cumplir con sus obligaciones para con sus usuarios.'
+      }
     },
     use: {
-      link: 'Utilizar',
-    },
+      link: 'Utilizar'
+    }
   },
   pages: {
     admin: {
@@ -129,13 +129,13 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
         createdOrgsLimit: 'Los usuarios pueden crear {defaultMaxCreatedOrgs} organizacione(s) predeterminadas.',
         explainLimit: 'Establezca un valor para limitar la cantidad de organizaciones que este usuario puede crear. -1 para un número no especificado. Vacíe el campo para volver al valor predeterminado ({defaultMaxCreatedOrgs}).',
         editUserEmailTitle: 'Cambiar la dirección de correo electrónico del usuario {nombre}',
-        editUserEmailText: '¡Advertencia! El correo electrónico es una clave de usuario importante, al modificar esta información, corre el riesgo de insertar una dirección incorrecta, no funcional o inconsistente con otras entradas. Esta función solo se presenta a los administradores para desbloquear a un usuario cuyo buzón se vuelve inaccesible.',
+        editUserEmailText: '¡Advertencia! El correo electrónico es una clave de usuario importante, al modificar esta información, corre el riesgo de insertar una dirección incorrecta, no funcional o inconsistente con otras entradas. Esta función solo se presenta a los administradores para desbloquear a un usuario cuyo buzón se vuelve inaccesible.'
       },
       organizations: {
         limitOrganizationTitle: 'Cambiar los límites organizacionales',
         members: 'miembro(s)',
-        nbMembers: 'Número máximo de miembros (0 sin límite)',
-      },
+        nbMembers: 'Número máximo de miembros (0 sin límite)'
+      }
     },
     login: {
       title: 'Identifícate',
@@ -160,7 +160,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       createUserConfirmed: 'Se ha enviado un correo electrónico a la dirección {email}. Este correo electrónico contiene un enlace para validar la creación de la cuenta.',
       adminMode: 'Confirme su identidad para cambiar al modo de administración.',
       oauth: 'Conectar con:',
-      error: 'Error',
+      error: 'Error'
     },
     organization: {
       addMember: 'Invitar a un usuario a unirse a la organización',
@@ -183,23 +183,23 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       confirmDeleteDepartmentTitle: 'Eliminar {name}',
       confirmDeleteDepartmentMsg: '¿Está seguro de que desea eliminar a {name} de su organización?',
       departmentIdInvalid: 'El identificador debe contener solo letras, números y espacios.',
-      inviteLink: 'En caso de problema en la comunicación por correo electrónico puede enviar el enlace de confirmación a continuación por otro medio. Atención ! Corre el riesgo de insertar una dirección de correo electrónico incorrecta o no funcional en la base de datos de usuarios. Esta dirección de correo electrónico puede causar varios problemas posteriormente: cambio de contraseña, envío de alertas, etc.',
+      inviteLink: 'En caso de problema en la comunicación por correo electrónico puede enviar el enlace de confirmación a continuación por otro medio. Atención ! Corre el riesgo de insertar una dirección de correo electrónico incorrecta o no funcional en la base de datos de usuarios. Esta dirección de correo electrónico puede causar varios problemas posteriormente: cambio de contraseña, envío de alertas, etc.'
     },
     invitation: {
       title: 'Invitación validada',
       msgSameUser: 'Se ha aceptado su invitación para ser miembro de una organización. Puedes consultar <a href="{profileUrl}">tu perfil</a>.',
-      msgDifferentUser: 'Esta invitación a ser miembro de una organización ha sido aceptada. Usted puede <a href="{loginUrl}">iniciar sesión</a> con la cuenta de invitado.',
+      msgDifferentUser: 'Esta invitación a ser miembro de una organización ha sido aceptada. Usted puede <a href="{loginUrl}">iniciar sesión</a> con la cuenta de invitado.'
     },
     avatar: {
-      prepare: 'Prepara la imagen',
+      prepare: 'Prepara la imagen'
     },
     me: {
       noOrganization: 'No eres miembro de ninguna organización.',
       operations: 'Operaciones sensibles',
       deleteMyself: 'Eliminar esta cuenta',
       deleteMyselfAlert: 'Si elimina su cuenta, los datos asociados también serán eliminados y no podrán ser recuperados.',
-      deleteMyselfCheck: 'marque esta casilla y haga clic en OK para confirmar la eliminación.',
-    },
+      deleteMyselfCheck: 'marque esta casilla y haga clic en OK para confirmar la eliminación.'
+    }
   },
   errors: {
     badEmail: 'La dirección de correo electrónico está vacía o mal formada.',
@@ -220,7 +220,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
     expiredInvitationToken: 'El enlace de invitación que recibió ha caducado, ya no puede aceptar esta invitación.',
     maxNbMembers: 'La organización ya contiene el número máximo de miembros permitidos por sus cuotas.',
     unknownOAuthProvider: 'No se admite la identificación OAuth.',
-    adminModeOnly: 'Funcionalidad reservada para superadministradores.',
+    adminModeOnly: 'Funcionalidad reservada para superadministradores.'
   },
   mails: {
     creation: {
@@ -235,7 +235,7 @@ Si tiene un problema con su cuenta o si no ha solicitado crear una cuenta en {ho
       htmlMsg: 'Se ha realizado una solicitud de creación de cuenta desde <a href="{origin}">{host}</a> para esta dirección de correo electrónico. Para confirmarlo, haga clic en el botón de abajo. El enlace es válido por 15 minutos.',
       htmlButton: 'Validar la creación de la cuenta',
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
-      htmlCaption: 'Si tiene un problema con su cuenta o no ha solicitado iniciar sesión en <a href="{origin}">{host}</a>, no dudes en contactarnos en <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Si tiene un problema con su cuenta o no ha solicitado iniciar sesión en <a href="{origin}">{host}</a>, no dudes en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },
     login: {
       subject: 'Identificación en {host}',
@@ -249,7 +249,7 @@ Si tiene un problema con su cuenta o si no ha solicitado iniciar sesión en {hos
       htmlMsg: 'Se ha realizado una solicitud de identificación desde <a href="{origin}">{host}</a>. Para confirmarlo, haga clic en el botón de abajo. El enlace es válido por 15 minutos.',
       htmlButton: 'Conectado a {host}',
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
-      htmlCaption: 'Si tiene un problema con su cuenta o no ha solicitado iniciar sesión en <a href="{origin}">{host}</a>, no dudes en contactarnos en <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Si tiene un problema con su cuenta o no ha solicitado iniciar sesión en <a href="{origin}">{host}</a>, no dudes en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },
     noCreation: {
       subject: 'Fallo de autenticación en {host}',
@@ -259,7 +259,7 @@ Se realizó una solicitud de identificación de {host}, pero fue rechazada porqu
 No dude en contactarnos en {contact}.
       `,
       htmlMsg: 'Se ha realizado una solicitud de identificación desde <a href="{origin}">{host}</a>, pero fue rechazado porque esta dirección de correo electrónico es desconocida o no ha sido validada.',
-      htmlCaption: 'No dudes en contactarnos en <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'No dudes en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },
     conflict: {
       subject: 'No se pudo crear una cuenta en {host}',
@@ -269,7 +269,7 @@ Se realizó una solicitud de creación de cuenta desde {host}, pero fue rechazad
 No dude en contactarnos en {contact}.
       `,
       htmlMsg: 'Se ha realizado una solicitud de creación de cuenta desde <a href="{origin}">{host}</a>, pero fue rechazado porque esta dirección de correo electrónico ya está asociada a una cuenta.',
-      htmlCaption: 'No dudes en contactarnos en <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'No dudes en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },
     invitation: {
       subject: 'Únase a la organización {organization} en {host}',
@@ -287,7 +287,7 @@ Si aún no tiene una cuenta, se creará automáticamente.
       `,
       htmlButton: 'Aceptar la invitacion',
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
-      htmlCaption: 'Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },
     action: {
       subject: 'Realice una acción en su cuenta el {host}',
@@ -303,7 +303,7 @@ Se ha activado una acción solicitando confirmación por correo electrónico en 
       `,
       htmlButton: 'Validar',
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
-      htmlCaption: 'Si tiene un problema con su cuenta o encuentra este mensaje sospechoso, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.',
-    },
-  },
+      htmlCaption: 'Si tiene un problema con su cuenta o encuentra este mensaje sospechoso, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
+    }
+  }
 }

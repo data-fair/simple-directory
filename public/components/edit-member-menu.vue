@@ -14,7 +14,10 @@
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
     </template>
-    <v-card v-if="editMember" data-iframe-height>
+    <v-card
+      v-if="editMember"
+      data-iframe-height
+    >
       <v-card-title class="text-h6">
         {{ $t('pages.organization.confirmEditMemberTitle', {name: member.name}) }}
       </v-card-title>
@@ -36,10 +39,16 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn text @click="menu = false">
+        <v-btn
+          text
+          @click="menu = false"
+        >
           {{ $t('common.confirmCancel') }}
         </v-btn>
-        <v-btn color="warning" @click="menu = false;$emit('save', editMember)">
+        <v-btn
+          color="warning"
+          @click="menu = false;$emit('save', editMember)"
+        >
           {{ $t('common.confirmOk') }}
         </v-btn>
       </v-card-actions>
@@ -48,21 +57,21 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
+import { mapState } from 'vuex'
 
-  export default {
-    props: ['orga', 'member'],
-    data: () => ({ menu: false, editMember: null }),
-    computed: {
-      ...mapState(['env']),
-    },
-    watch: {
-      menu() {
-        if (!this.menu) return
-        this.editMember = JSON.parse(JSON.stringify(this.member))
-      },
-    },
+export default {
+  props: ['orga', 'member'],
+  data: () => ({ menu: false, editMember: null }),
+  computed: {
+    ...mapState(['env'])
+  },
+  watch: {
+    menu () {
+      if (!this.menu) return
+      this.editMember = JSON.parse(JSON.stringify(this.member))
+    }
   }
+}
 </script>
 
 <style lang="css" scoped>

@@ -1,5 +1,8 @@
 <template>
-  <v-responsive class="index" data-iframe-height>
+  <v-responsive
+    class="index"
+    data-iframe-height
+  >
     <v-container class="fill-height">
       <v-row align="center">
         <v-col class="text-center">
@@ -8,7 +11,10 @@
             :src="env.theme.logo"
             class="logo"
           >
-          <logo v-else class="logo" />
+          <logo
+            v-else
+            class="logo"
+          />
 
           <h3 class="text-h2">
             {{ $t('root.title') }}
@@ -24,15 +30,15 @@
 </template>
 
 <script>
-  import logo from '../components/logo.vue'
-  const { mapState } = require('vuex')
+import logo from '../components/logo.vue'
+const { mapState } = require('vuex')
 
-  export default {
-    components: { logo },
-    computed: {
-      ...mapState(['env']),
-    },
+export default {
+  components: { logo },
+  computed: {
+    ...mapState(['env'])
   }
+}
 </script>
 
 <style>

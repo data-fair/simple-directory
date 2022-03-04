@@ -4,8 +4,8 @@ const ldap = require('ldapjs')
 const passwordsUtils = require('../utils/passwords')
 const debug = require('debug')('ldap')
 
-function sortCompare(sort) {
-  return function(a, b) {
+function sortCompare (sort) {
+  return function (a, b) {
     for (const key of Object.keys(sort || {})) {
       if (a.item[key] < b.item[key]) return sort[key]
     }
@@ -13,7 +13,7 @@ function sortCompare(sort) {
   }
 }
 
-function buildMappingFn(mapping, required, multiValued, objectClass, secondaryObjectClass, prefixes) {
+function buildMappingFn (mapping, required, multiValued, objectClass, secondaryObjectClass, prefixes) {
   return {
     from (attrs) {
       const result = {}
@@ -63,12 +63,12 @@ function buildMappingFn(mapping, required, multiValued, objectClass, secondaryOb
       }
       if (filters.length === 1) return filters[0]
       return new ldap.AndFilter({ filters })
-    },
+    }
   }
 }
 
 class LdapStorage {
-  async init(params, org) {
+  async init (params, org) {
     this.ldapParams = params
     this.org = org
     console.log('Connecting to ldap ' + params.url)
@@ -81,7 +81,7 @@ class LdapStorage {
       [],
       this.ldapParams.users.objectClass,
       null,
-      prefixes,
+      prefixes
     )
     if (!this.org) {
       this._orgMapping = buildMappingFn(
@@ -90,14 +90,14 @@ class LdapStorage {
         [],
         this.ldapParams.organizations.objectClass,
         this.ldapParams.members.organizationAsDC ? 'dcObject' : null,
-        {},
+        {}
       )
     }
 
     return this
   }
 
-  async _client(fn) {
+  async _client (fn) {
     const client = ldap.createClient({ url: this.ldapParams.url, timeout: 4000 })
     client.on('error', err => console.error(err.message))
 
@@ -119,7 +119,7 @@ class LdapStorage {
         filter,
         attributes: attributes.filter(key => !!key),
         scope: 'sub',
-        paged: true,
+        paged: true
       }, (err, res) => {
         if (err) return reject(err)
         const results = []
@@ -158,11 +158,11 @@ class LdapStorage {
       results: results
         .sort(sortCompare(params.sort))
         .slice(skip, skip + size)
-        .map(result => onlyItem ? result.item : result),
+        .map(result => onlyItem ? result.item : result)
     }
   }
 
-  _userDN(user) {
+  _userDN (user) {
     const entry = this._userMapping.to(user)
     const dnKey = this.ldapParams.users.dnKey
     if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
@@ -181,14 +181,14 @@ class LdapStorage {
     }
   }
 
-  _orgDN(org) {
+  _orgDN (org) {
     const entry = this._orgMapping.to(org)
     const dnKey = this.ldapParams.organizations.dnKey
     if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
     return `${dnKey}=${entry[dnKey]}, ${this.ldapParams.baseDN}`
   }
 
-  async createUser(user) {
+  async createUser (user) {
     const entry = this._userMapping.to({ ...user, lastName: user.lastName || 'missing' })
     const dn = this._userDN(user)
     if (user.organizations.length && this.ldapParams.members.role.attr) {
@@ -204,7 +204,7 @@ class LdapStorage {
     return user
   }
 
-  async deleteUser(id) {
+  async deleteUser (id) {
     const user = await this._getUser({ id }, false)
     if (!user) {
       debug('delete user not found')
@@ -217,7 +217,7 @@ class LdapStorage {
     })
   }
 
-  async _setUserOrg(client, user, entry, attrs, orgCache = {}) {
+  async _setUserOrg (client, user, entry, attrs, orgCache = {}) {
     let org
     if (this.ldapParams.organizations.staticSingleOrg) {
       org = this.ldapParams.organizations.staticSingleOrg
@@ -248,7 +248,7 @@ class LdapStorage {
     }
   }
 
-  async _getUser(filter, onlyItem = true) {
+  async _getUser (filter, onlyItem = true) {
     debug('search single user', filter)
     const attributes = Object.values(this.ldapParams.users.mapping)
     if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
@@ -260,7 +260,7 @@ class LdapStorage {
         attributes,
         this._userMapping.from,
         {},
-        false,
+        false
       )
       if (!res.results[0]) return
       if (!onlyItem) return res.results[0]
@@ -273,15 +273,15 @@ class LdapStorage {
     })
   }
 
-  async getUser(filter) {
+  async getUser (filter) {
     return this._getUser(filter)
   }
 
-  async getUserByEmail(email) {
+  async getUserByEmail (email) {
     return this._getUser({ email })
   }
 
-  async checkPassword(id, password) {
+  async checkPassword (id, password) {
     const user = await this._getUser({ id }, false)
     if (!user) return
     const dn = user.entry.objectName
@@ -302,7 +302,7 @@ class LdapStorage {
   }
 
   // ids, q, sort, select, skip, size
-  async findUsers(params = {}) {
+  async findUsers (params = {}) {
     debug('find users', params)
     const attributes = Object.values(this.ldapParams.users.mapping)
     const extraFilters = [...(this.ldapParams.users.extraFilters || [])]
@@ -320,7 +320,7 @@ class LdapStorage {
         attributes,
         this._userMapping.from,
         params,
-        false,
+        false
       )
       const orgCache = {}
       for (let i = 0; i < res.results.length; i++) {
@@ -334,7 +334,7 @@ class LdapStorage {
     })
   }
 
-  _getRoleFilter(roles) {
+  _getRoleFilter (roles) {
     let roleAttrValues = []
     roles.forEach(role => {
       roleAttrValues = roleAttrValues.concat(this.ldapParams.members.role.values[role] || (role === this.ldapParams.members.role.default ? [] : [role]))
@@ -350,7 +350,7 @@ class LdapStorage {
     }
   }
 
-  async findMembers(organizationId, params = {}) {
+  async findMembers (organizationId, params = {}) {
     debug('find members', params)
     let dn
     if (this.ldapParams.organizations.staticSingleOrg || this.org) {
@@ -381,7 +381,7 @@ class LdapStorage {
           attributes,
           this._userMapping.from,
           params,
-          false,
+          false
         )
         const orgCache = {}
         for (let i = 0; i < res.results.length; i++) {
@@ -396,7 +396,7 @@ class LdapStorage {
     }
   }
 
-  async createOrganization(org) {
+  async createOrganization (org) {
     const entry = this._orgMapping.to(org)
     const dn = this._orgDN(org)
 
@@ -410,7 +410,7 @@ class LdapStorage {
     return org
   }
 
-  async deleteOrganization(id) {
+  async deleteOrganization (id) {
     const dn = this._orgDN({ id })
     debug('delete org from ldap', dn)
     await this._client(async (client) => {
@@ -418,7 +418,7 @@ class LdapStorage {
     })
   }
 
-  async _getOrganization(client, id) {
+  async _getOrganization (client, id) {
     if (this.ldapParams.organizations.staticSingleOrg) {
       if (this.ldapParams.organizations.staticSingleOrg.id === id) {
         return this.ldapParams.organizations.staticSingleOrg
@@ -431,7 +431,7 @@ class LdapStorage {
       this.ldapParams.baseDN,
       this._orgMapping.filter({ id }, this.ldapParams.organizations.objectClass, this.ldapParams.organizations.extraFilters),
       Object.values(this.ldapParams.organizations.mapping),
-      this._orgMapping.from,
+      this._orgMapping.from
     )
     const org = res.results[0]
     if (org) {
@@ -441,18 +441,18 @@ class LdapStorage {
     return res.results[0]
   }
 
-  async getOrganization(id) {
+  async getOrganization (id) {
     return this._client(async (client) => {
       return this._getOrganization(client, id)
     })
   }
 
-  async findOrganizations(params = {}) {
+  async findOrganizations (params = {}) {
     debug('find orgs', params)
     if (this.ldapParams.organizations.staticSingleOrg) {
       return {
         count: 1,
-        results: [this.ldapParams.organizations.staticSingleOrg],
+        results: [this.ldapParams.organizations.staticSingleOrg]
       }
     }
     const extraFilters = [...(this.ldapParams.organizations.extraFilters || [])]
@@ -463,17 +463,17 @@ class LdapStorage {
         this._orgMapping.filter({ q: params.q }, this.ldapParams.organizations.objectClass, extraFilters),
         Object.values(this.ldapParams.organizations.mapping),
         this._orgMapping.from,
-        params,
+        params
       )
     })
   }
 
-  async required2FA(user) {
+  async required2FA (user) {
     if (user.adminMode && config.admins2FA) return true
     return false
   }
 
-  async get2FA(userId) {
+  async get2FA (userId) {
     return null
   }
 }

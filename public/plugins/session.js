@@ -5,12 +5,12 @@ export default ({ store, app, env, req, route }) => {
     env: {
       ...env,
       // reconstruct this env var that we used to have but lost when implementing multi-domain exposition
-      publicUrl,
-    },
+      publicUrl
+    }
   })
   store.dispatch('session/init', {
     cookies: app.$cookies,
-    directoryUrl: publicUrl,
+    directoryUrl: publicUrl
   })
   if (route.query.embed !== 'true') {
     // in case of iframe integration better to let the main page handle the session loop

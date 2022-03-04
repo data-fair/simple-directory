@@ -3,7 +3,10 @@
     <v-container class="fill-height">
       <v-row align="center">
         <v-col class="text-center">
-          <img src="../../public/assets/logo.svg" style="max-width: 150px;">
+          <img
+            src="../../public/assets/logo.svg"
+            style="max-width: 150px;"
+          >
           <h3 class="text-h2">
             {{ $t("root.title") }}
           </h3>
@@ -24,5 +27,5 @@
 </template>
 
 <script>
-  export default {}
+export default {}
 </script>

@@ -1,10 +1,16 @@
 version: '3'
 services:
   mongo:
+    profiles:
+      - dev
+      - test
     image: mvertes/alpine-mongo:3.4.9-0
     ports:
       - 27017:27017
   ldap:
+    profiles:
+      - dev
+      - test
     image: osixia/openldap:1.4.0
     volumes:
       - ./data/ldap:/var/lib/ldap
@@ -13,6 +19,8 @@ services:
       - 389:389
       - 636:636
   ldap-admin:
+    profiles:
+      - dev
     image: osixia/phpldapadmin:0.9.0
     ports:
       - 6443:443

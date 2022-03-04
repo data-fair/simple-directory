@@ -1,26 +1,25 @@
 module.exports = {
   port: 8080,
-  listenWhenReady: false,
   noUI: false,
   publicUrl: 'http://localhost:8080',
   kid: 'simple-directory',
   secret: {
     public: './security/simple-directory.key.pub',
-    private: './security/simple-directory.key',
+    private: './security/simple-directory.key'
   },
   oldSessionDomain: null, // used to cleanup cookies from older domain
   jwtDurations: {
     initialToken: '15m',
     exchangedToken: '30d',
     invitationToken: '10d',
-    '2FAToken': '30d',
+    '2FAToken': '30d'
   },
   admins: ['admin@test.com'],
   adminsOrg: null,
   admins2FA: false,
   roles: {
     defaults: ['admin', 'user'],
-    editable: false,
+    editable: false
   },
   contact: 'contact@test.com',
   anonymousContactForm: false,
@@ -30,11 +29,11 @@ module.exports = {
     type: 'mongo',
     file: {
       users: './data/users.json',
-      organizations: './data/organizations.json',
+      organizations: './data/organizations.json'
     },
     mongo: {
       url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development'),
-      readonly: false,
+      readonly: false
     },
     ldap: {
       url: 'ldap://ldap:389',
@@ -53,12 +52,12 @@ module.exports = {
           firstName: 'givenName',
           lastName: 'sn',
           birthday: null,
-          avatarUrl: null,
+          avatarUrl: null
         },
         // an array of objects that can be used to overwrite any user properties based on matching "email" property
         overwrite: [],
         // an array of string filters to add to the filters generated dy our ldap storage
-        extraFilters: [],
+        extraFilters: []
       },
       // map entities in ldap to SD organizations
       organizations: {
@@ -69,12 +68,12 @@ module.exports = {
         dnKey: 'dc',
         mapping: {
           id: 'dc',
-          name: 'o',
+          name: 'o'
         },
         // an array of objects that can be used to overwrite any org properties based on matching "id" property
         overwrite: [],
         // an array of string filters to add to the filters generated dy our ldap storage
-        extraFilters: [],
+        extraFilters: []
       },
       // manage the link between users and organizations
       members: {
@@ -89,24 +88,24 @@ module.exports = {
             user: []
           }, */
           values: {},
-          default: 'user',
+          default: 'user'
         },
         // an array of objects that can be used to overwrite member role based on matching "orgId" and "email" properties
         // leave orgId empty to overwrite role for all organizations of the user
-        overwrite: [],
-      },
-    },
+        overwrite: []
+      }
+    }
   },
   info: {
     termsOfService: 'https://koumoul.com/term-of-service',
     contact: {
       name: 'Koumoul',
       url: 'https://koumoul.com',
-      email: 'support@koumoul.com',
-    },
+      email: 'support@koumoul.com'
+    }
   },
   webhooks: {
-    identities: [],
+    identities: []
   },
   analytics: {}, // a "modules" definition for @koumoul/vue-multianalytics
   theme: {
@@ -122,17 +121,17 @@ module.exports = {
       info: '#2196F3', // blue.base
       success: '#4CAF50', // green.base
       warning: '#E91E63', // pink.base
-      admin: '#E53935', // red.darken1
+      admin: '#E53935' // red.darken1
     },
     darkColors: {
       primary: '#2196F3', // blue.base
-      success: '#00E676', // green.accent3
+      success: '#00E676' // green.accent3
     },
     cssUrl: null,
-    cssText: '',
+    cssText: ''
   },
   i18n: {
-    locales: ['fr', 'en', 'es', 'pt', 'it', 'de'],
+    locales: ['fr', 'en', 'es', 'pt', 'it', 'de']
   },
   mails: {
     from: 'no-reply@test.com',
@@ -141,18 +140,18 @@ module.exports = {
     transport: {
       port: 1025,
       ignoreTLS: true,
-      default: 'localhost',
-    },
+      default: 'localhost'
+    }
   },
   maildev: {
     url: 'http://localhost:1080',
     active: false,
     smtp: 1025,
-    web: 1080,
+    web: 1080
   },
   quotas: {
     defaultMaxCreatedOrgs: -1,
-    defaultMaxNbMembers: 0,
+    defaultMaxNbMembers: 0
   },
   // Restricts who can use the find endpoints on users and organizations
   // One of 'anonymous', 'authenticated' or 'admin'
@@ -171,7 +170,7 @@ module.exports = {
     sendMails: null,
     limits: null,
     readAll: null,
-    metrics: null,
+    metrics: null
   },
   // A link to the terms of services for the site
   tosUrl: null,
@@ -180,7 +179,7 @@ module.exports = {
   passwordless: true,
   authRateLimit: {
     attempts: 5,
-    duration: 60,
+    duration: 60
   },
   // Example of oauth configuration
   // oauth: [{
@@ -205,28 +204,28 @@ module.exports = {
     statesDir: './security',
     github: {
       id: '',
-      secret: '',
+      secret: ''
     },
     facebook: {
       id: '',
-      secret: '',
+      secret: ''
     },
     google: {
       id: '',
-      secret: '',
+      secret: ''
     },
     linkedin: {
       id: '',
-      secret: '',
-    },
+      secret: ''
+    }
   },
   noBirthday: false,
   showCreatedUserHost: false,
   avatars: {
     users: true,
-    orgs: true,
+    orgs: true
   },
   // allow configuring external storages per organization
   perOrgStorageTypes: [],
-  cipherPassword: null,
+  cipherPassword: null
 }

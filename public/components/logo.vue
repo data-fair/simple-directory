@@ -154,12 +154,12 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
-  export default {
-    computed: {
-      ...mapState(['env']),
-    },
+import { mapState } from 'vuex'
+export default {
+  computed: {
+    ...mapState(['env'])
   }
+}
 </script>
 
 <style lang="css">

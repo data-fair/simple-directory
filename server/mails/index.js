@@ -15,7 +15,7 @@ const mjmlNoButtonTemplate = fs.readFileSync(path.join(__dirname, 'mail-nobutton
 const maildevTransport = {
   port: config.maildev.smtp,
   ignoreTLS: true,
-  default: 'localhost',
+  default: 'localhost'
 }
 
 exports.init = async () => {
@@ -26,7 +26,7 @@ exports.init = async () => {
 
 // Custom micro templating to inject params into textual content with {param} syntax
 const escapeRegExp = (str) => str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-function applyParams(txt, params) {
+function applyParams (txt, params) {
   Object.keys(params).forEach(p => {
     txt = txt.replace(new RegExp(escapeRegExp(`{${p}}`), 'g'), params[p])
   })
@@ -38,7 +38,7 @@ exports.send = async ({ transport, key, messages, to, params }) => {
     ...params,
     ...flatten({ theme: config.theme }),
     contact: config.contact,
-    logo: config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/v0.12.3/public/assets/logo-150x150.png',
+    logo: config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/v0.12.3/public/assets/logo-150x150.png'
   }
   Object.keys(messages.mails[key]).forEach(k => {
     params[k] = applyParams(messages.mails[key][k], params)
@@ -55,6 +55,6 @@ exports.send = async ({ transport, key, messages, to, params }) => {
     to,
     subject: applyParams(messages.mails[key].subject, params),
     text: applyParams(messages.mails[key].text, params),
-    html: mjmlRes.html,
+    html: mjmlRes.html
   })
 }

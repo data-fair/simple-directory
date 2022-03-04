@@ -13,12 +13,12 @@ const defaultConfig = require('../../config/default.js')
 const router = module.exports = express.Router()
 
 // Either a super admin, or an admin of the current organization
-function isAdmin(req) {
+function isAdmin (req) {
   return req.user.adminMode || (req.user.organizations || []).find(o => o.id === req.params.organizationId && o.role === 'admin')
 }
 
 // Either a super admin, or a member of the current organization
-function isMember(req) {
+function isMember (req) {
   return req.user.adminMode || (req.user.organizations || []).find(o => o.id === req.params.organizationId)
 }
 

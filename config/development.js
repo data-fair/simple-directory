@@ -11,44 +11,44 @@ module.exports = {
   jwtDurations: {
     initialToken: '1m',
     // exchangedToken: '5m',
-    invitationToken: '1m',
+    invitationToken: '1m'
   },
   i18n: {
-    locales: ['fr', 'en', 'es', 'it', 'pt', 'de'],
+    locales: ['fr', 'en', 'es', 'it', 'pt', 'de']
   },
   maildev: {
-    active: true,
+    active: true
   },
   mails: {
     from: 'no-reply@test.com',
     // transport is a full configuration object for createTransport of nodemailer
     // cf https://nodemailer.com/smtp/
-    transport: {},
+    transport: {}
   },
   secret: {
     public: './test/resources/test.key.pub',
-    private: './test/resources/test.key',
+    private: './test/resources/test.key'
   },
   storage: {
     type: 'mongo',
     file: {
       users: './test/resources/users.json',
-      organizations: './test/resources/organizations.json',
+      organizations: './test/resources/organizations.json'
     },
     mongo: {
-      url: 'mongodb://localhost:27017/simple-directory-' + (process.env.NODE_ENV || 'development'),
+      url: 'mongodb://localhost:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
     },
     ldap: {
-      url: 'ldap://localhost:389',
-    },
+      url: 'ldap://localhost:389'
+    }
   },
   webhooks: {
-    identities: [{ base: 'http://test-koumoul.com/identities', key: 'somesecret' }],
+    identities: [{ base: 'http://test-koumoul.com/identities', key: 'somesecret' }]
   },
   tosUrl: 'https://test.com',
   manageDepartments: true,
   quotas: {
-    defaultMaxCreatedOrgs: 1,
+    defaultMaxCreatedOrgs: 1
     // defaultMaxNbMembers: 0
   },
   passwordless: true,
@@ -57,10 +57,10 @@ module.exports = {
     sendMails: 'testkey',
     limits: 'testkey',
     readAll: 'testkey',
-    metrics: 'testkey',
+    metrics: 'testkey'
   },
   showCreatedUserHost: true,
   proxyNuxt: true,
   perOrgStorageTypes: ['ldap'],
-  cipherPassword: 'dev',
+  cipherPassword: 'dev'
 }

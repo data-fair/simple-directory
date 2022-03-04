@@ -24,8 +24,14 @@
       <v-toolbar-side-icon @click.stop="drawer = !drawer" />
       <template v-if="$route.path !== localePath('index')">
         <div class="logo-container">
-          <nuxt-link :title="$t('home')" :to="localePath('index')">
-            <img src="../../public/assets/logo.svg" style="max-width: 150px;">
+          <nuxt-link
+            :title="$t('home')"
+            :to="localePath('index')"
+          >
+            <img
+              src="../../public/assets/logo.svg"
+              style="max-width: 150px;"
+            >
           </nuxt-link>
         </div>
         <v-toolbar-title>
@@ -75,12 +81,12 @@
 
 <script>
 
-  export default {
-    data: () => ({
-      drawer: true,
-      pages: ['about', 'install', 'config', 'use'],
-    }),
-  }
+export default {
+  data: () => ({
+    drawer: true,
+    pages: ['about', 'install', 'config', 'use']
+  })
+}
 
 </script>
 

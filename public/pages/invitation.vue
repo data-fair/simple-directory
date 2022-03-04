@@ -1,5 +1,8 @@
 <template>
-  <v-jumbotron class="index" data-iframe-height>
+  <v-jumbotron
+    class="index"
+    data-iframe-height
+  >
     <v-container class="fill-height">
       <v-row align="center">
         <v-col class="text-center">
@@ -26,22 +29,22 @@
 </template>
 
 <script>
-  const { mapState } = require('vuex')
+const { mapState } = require('vuex')
 
-  export default {
-    computed: {
-      ...mapState('session', ['user']),
-      ...mapState(['env']),
-      sameUser() {
-        return this.user && this.$route.query && (this.user.email === this.$route.query.email)
-      },
-    },
-    async mounted() {
-      if (this.sameUser) {
-        await this.$axios.$post('api/session/keepalive')
-      }
-    },
+export default {
+  computed: {
+    ...mapState('session', ['user']),
+    ...mapState(['env']),
+    sameUser () {
+      return this.user && this.$route.query && (this.user.email === this.$route.query.email)
+    }
+  },
+  async mounted () {
+    if (this.sameUser) {
+      await this.$axios.$post('api/session/keepalive')
+    }
   }
+}
 </script>
 
 <style>

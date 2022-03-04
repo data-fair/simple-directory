@@ -27,16 +27,16 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
+import { mapState } from 'vuex'
 
-  export default {
-    computed: {
-      ...mapState(['env']),
-      locales() {
-        return this.env.i18nLocales.split(',').filter(l => !!this.$i18n.locales.find(loc => loc.code === l))
-      },
-    },
+export default {
+  computed: {
+    ...mapState(['env']),
+    locales () {
+      return this.env.i18nLocales.split(',').filter(l => !!this.$i18n.locales.find(loc => loc.code === l))
+    }
   }
+}
 </script>
 
 <style lang="css">

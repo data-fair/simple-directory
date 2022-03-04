@@ -5,23 +5,23 @@ const util = require('util')
 const userName = require('../utils/user-name')
 const readFile = util.promisify(fs.readFile)
 
-function applySelect(resources, select) {
+function applySelect (resources, select) {
   if (!select || !select.length) return resources
   return resources.map(resource => select.reduce((r, key) => { r[key] = resource[key]; return r }, {}))
 }
 
-function getUserOrgas(organizations, user) {
+function getUserOrgas (organizations, user) {
   return organizations
     .filter(orga => orga.members.find(member => member.id === user.id))
     .map(orga => ({
       ...orga.members.find(m => m.id === user.id),
       id: orga.id,
-      name: orga.name,
+      name: orga.name
     }))
 }
 
-function sortCompare(sort) {
-  return function(a, b) {
+function sortCompare (sort) {
+  return function (a, b) {
     for (const key of Object.keys(sort || {})) {
       if (a[key] < b[key]) return sort[key]
     }
@@ -30,7 +30,7 @@ function sortCompare(sort) {
 }
 
 class FileStorage {
-  async init(params, org) {
+  async init (params, org) {
     if (this.org) throw new Error('mongo storage is not compatible with per-org storage')
     this.users = JSON.parse(await readFile(path.resolve(__dirname, '../..', params.users), 'utf-8'))
     this.users.forEach(user => {
@@ -44,13 +44,13 @@ class FileStorage {
     return this
   }
 
-  cleanUser(user) {
+  cleanUser (user) {
     const res = { ...user, organizations: getUserOrgas(this.organizations, user) }
     delete res.password
     return res
   }
 
-  async getUser(filter) {
+  async getUser (filter) {
     // Find user by strict equality of properties passed in filter
     const user = this.users.find(u => Object.keys(filter).reduce((a, f) => a && u[f] === filter[f], true))
     if (!user) return null
@@ -59,7 +59,7 @@ class FileStorage {
     return this.cleanUser(user)
   }
 
-  async getUserByEmail(email) {
+  async getUserByEmail (email) {
     // Case insensitive comparison
     const user = this.users.find(u => u.email.toLowerCase() === email.toLowerCase())
     if (!user) return null
@@ -68,14 +68,14 @@ class FileStorage {
     return this.cleanUser(user)
   }
 
-  async getPassword(userId) {
+  async getPassword (userId) {
     // Case insensitive comparison
     const user = this.users.find(u => u.id === userId)
     if (!user) return null
     return user && user.password
   }
 
-  async findUsers(params = {}) {
+  async findUsers (params = {}) {
     let filteredUsers = this.users.map(user => this.cleanUser(user))
     if (params.ids) {
       filteredUsers = filteredUsers.filter(user => (params.ids).find(id => user.id === id))
@@ -89,11 +89,11 @@ class FileStorage {
 
     return {
       count: filteredUsers.length,
-      results: filteredUsers.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size),
+      results: filteredUsers.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size)
     }
   }
 
-  async findMembers(organizationId, params = {}) {
+  async findMembers (organizationId, params = {}) {
     const orga = this.organizations.find(o => o.id === organizationId)
     if (!orga) return null
     let members = orga.members.map(m => {
@@ -115,11 +115,11 @@ class FileStorage {
     }
     return {
       count: members.length,
-      results: members.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size),
+      results: members.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size)
     }
   }
 
-  async getOrganization(id) {
+  async getOrganization (id) {
     const orga = this.organizations.find(o => o.id === id)
     if (!orga) return null
     const cloneOrga = JSON.parse(JSON.stringify(orga))
@@ -127,7 +127,7 @@ class FileStorage {
     return cloneOrga
   }
 
-  async findOrganizations(params = {}) {
+  async findOrganizations (params = {}) {
     let filteredOrganizations = this.organizations.map(orga => {
       const cloneOrga = { ...orga }
       delete cloneOrga.members
@@ -147,16 +147,16 @@ class FileStorage {
 
     return {
       count: filteredOrganizations.length,
-      results: filteredOrganizations.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size),
+      results: filteredOrganizations.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size)
     }
   }
 
-  async required2FA(user) {
+  async required2FA (user) {
     if (user.adminMode && config.admins2FA) return true
     return false
   }
 
-  async get2FA(userId) {
+  async get2FA (userId) {
     return null
   }
 }

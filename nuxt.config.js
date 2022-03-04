@@ -7,15 +7,36 @@ config.i18nLocales = config.i18n.locales.join(',')
 config.readonly = require('./server/storages').readonly()
 config.publicOAuth = require('./server/utils/oauth').publicProviders
 
-const fr = require('vuetify/es5/locale/fr').default
+const isBuilding = process.argv.slice(-1)[0] === 'build'
 
 if (process.env.NODE_ENV === 'production') {
   const nuxtConfigInject = require('@koumoul/nuxt-config-inject')
-  if (process.argv.slice(-1)[0] === 'build') config = nuxtConfigInject.prepare(config)
+  if (isBuilding) config = nuxtConfigInject.prepare(config)
   else nuxtConfigInject.replace(config, ['nuxt-dist/**/*', 'public/static/**/*'])
 }
 
-const webpack = require('webpack')
+let vuetifyOptions = {}
+
+if (process.env.NODE_ENV !== 'production' || isBuilding) {
+  const fr = require('vuetify/es5/locale/fr').default
+  const en = require('vuetify/es5/locale/en').default
+  vuetifyOptions = {
+    customVariables: ['~assets/variables.scss'],
+    theme: {
+      dark: config.theme.dark,
+      themes: {
+        light: config.theme.colors,
+        dark: { ...config.theme.colors, ...config.theme.darkColors }
+      }
+    },
+    treeShake: true,
+    defaultAssets: false,
+    lang: {
+      locales: { fr, en },
+      current: i18n.defaultLocale
+    }
+  }
+}
 
 module.exports = {
   ssr: false,
@@ -26,10 +47,11 @@ module.exports = {
     transpile: [/@koumoul/],
     publicPath: config.publicUrl + '/_nuxt/',
     extend (config, { isServer, isDev, isClient }) {
+      const webpack = require('webpack')
       // config.optimization.minimize = false
       // Ignore all locale files of moment.js, those we want are loaded in plugins/moment.js
       config.plugins.push(new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/))
-    },
+    }
   },
   loading: { color: '#1e88e5' }, // Customize the progress bar color
   plugins: [
@@ -39,10 +61,10 @@ module.exports = {
     { src: '~plugins/moment' },
     { src: '~plugins/axios' },
     { src: '~plugins/analytics', ssr: false },
-    { src: '~plugins/iframe-resizer', ssr: false },
+    { src: '~plugins/iframe-resizer', ssr: false }
   ],
   router: {
-    base: config.basePath,
+    base: config.basePath
   },
   modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', 'cookie-universal-nuxt', ['nuxt-i18n', {
     seo: false,
@@ -52,36 +74,28 @@ module.exports = {
     defaultLocale: i18n.defaultLocale,
     vueI18n: {
       fallbackLocale: i18n.defaultLocale,
-      messages: config.i18nMessages,
+      messages: config.i18nMessages
     },
     strategy: 'no_prefix',
     detectBrowserLanguage: {
       useCookie: true,
-      cookieKey: 'i18n_lang',
-    },
+      cookieKey: 'i18n_lang'
+    }
   }]],
-  buildModules: ['@nuxtjs/vuetify'],
   axios: {
-    browserBaseURL: config.basePath,
+    browserBaseURL: config.basePath
   },
-  vuetify: {
-    theme: {
-      dark: config.theme.dark,
-      themes: {
-        light: config.theme.colors,
-        dark: { ...config.theme.colors, ...config.theme.darkColors },
-      },
-    },
-    defaultAssets: {
-      font: {
-        family: 'Nunito',
-      },
-    },
-    lang: {
-      locales: { fr },
-      current: 'fr',
-    },
+  buildModules: [
+    'nuxt-webpack-optimisations',
+    '@nuxtjs/vuetify',
+    ['@nuxtjs/google-fonts', { download: true, display: 'swap', families: { Nunito: [100, 300, 400, 500, 700, 900] } }]
+  ],
+  webpackOptimisations: {
+    // hard source is the riskiest, if you have issues don't enable it
+    hardSourcePlugin: process.env.NODE_ENV === 'development',
+    parallelPlugin: process.env.NODE_ENV === 'development'
   },
+  vuetify: vuetifyOptions,
   env: {
     mainPublicUrl: config.publicUrl,
     basePath: config.basePath,
@@ -103,7 +117,7 @@ module.exports = {
     noBirthday: config.noBirthday,
     showCreatedUserHost: config.showCreatedUserHost,
     avatars: config.avatars,
-    perOrgStorageTypes: config.perOrgStorageTypes,
+    perOrgStorageTypes: config.perOrgStorageTypes
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,
@@ -111,15 +125,15 @@ module.exports = {
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { hid: 'application', name: 'application-name', content: i18n.messages[i18n.defaultLocale].root.title },
-      { hid: 'description', name: 'description', content: i18n.messages[i18n.defaultLocale].root.description },
+      { hid: 'description', name: 'description', content: i18n.messages[i18n.defaultLocale].root.description }
     ],
     link: [
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Nunito:300,400,500,700,400italic' },
       // /favicon.ico is not put un config/default.js to prevent a nuxt-config-inject bug
-      { rel: 'icon', type: 'image/x-icon', href: config.theme.favicon || '/favicon.ico' },
+      { rel: 'icon', type: 'image/x-icon', href: config.theme.favicon || '/favicon.ico' }
     ],
-    style: [],
-  },
+    style: []
+  }
 }
 
 if (config.theme.cssUrl) {

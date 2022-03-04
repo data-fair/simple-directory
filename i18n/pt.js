@@ -4,7 +4,7 @@
 module.exports = {
   root: {
     title: 'Simple Directory',
-    description: 'Uma gestão simplificada dos seus utilizadores e organizações numa arquitectura moderna orientada para a web.',
+    description: 'Uma gestão simplificada dos seus utilizadores e organizações numa arquitectura moderna orientada para a web.'
   },
   common: {
     home: 'Página inicial',
@@ -62,14 +62,14 @@ module.exports = {
     delAsAdmin: 'Voltar à minha sessão de administrador',
     avatar: 'Avatar',
     birthday: 'Aniversário',
-    missingInfo: 'Informação em falta',
+    missingInfo: 'Informação em falta'
   },
   doc: {
     about: {
-      link: 'Sobre nós',
+      link: 'Sobre nós'
     },
     install: {
-      link: 'Instalação',
+      link: 'Instalação'
     },
     config: {
       link: 'Configuração',
@@ -88,11 +88,11 @@ module.exports = {
           logo: 'O URL do logótipo a utilizar para substituir o logótipo padrão de <i>Simple Directory</i>.',
           dark: 'Torne toda a aparência das páginas escura.<br> Note que as cores por defeito são mais adequadas a um tema claro. Se mudar para escuro, terá também de mudar estas cores.',
           cssUrl: 'Ligação a uma folha de estilo para completar as variáveis de personalização.<br>AVISO: a estrutura HTML pode variar significativamente entre 2 versões. A manutenção desta folha de estilo irá criar trabalho extra para si cada vez que fizer uma actualização.',
-          cssText: 'Textual CSS content.<br>WARNING: a estrutura HTML pode variar significativamente entre 2 versões. A manutenção desta folha de estilo irá criar trabalho extra para si cada vez que fizer uma actualização.',
+          cssText: 'Textual CSS content.<br>WARNING: a estrutura HTML pode variar significativamente entre 2 versões. A manutenção desta folha de estilo irá criar trabalho extra para si cada vez que fizer uma actualização.'
         },
         secret: {
           public: '<b>IMPORTANTE.</b> O caminho para a chave pública de encriptação RSA. Ver a documentação de instalação do serviço.',
-          private: '<b>IMPORTANTE.</b> O caminho para a chave de encriptação privada RSA. Ver a documentação de instalação do serviço.',
+          private: '<b>IMPORTANTE.</b> O caminho para a chave de encriptação privada RSA. Ver a documentação de instalação do serviço.'
         },
         analytics: 'JSON para configuração analítica, corresponde à parte de configuração "módulos" da biblioteca <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
@@ -101,26 +101,26 @@ O tipo "ficheiro" padrão é apenas de leitura e é adequado para desenvolviment
 O tipo "mongo" depende do acesso a uma base de dados MongoDB, é o modo apropriado para a maioria das instalações em produção.`,
           file: {
             users: 'Apenas para storage.type=file. O caminho para o ficheiro JSON que contém as definições do utilizador',
-            organizations: 'Apenas para storage.type=file. O caminho para o ficheiro JSON que contém as definições da organização',
+            organizations: 'Apenas para storage.type=file. O caminho para o ficheiro JSON que contém as definições da organização'
           },
           mongo: {
-            url: 'Apenas para storage.type=mongo. A cadeia completa de ligação à base de dados mongodb.',
-          },
+            url: 'Apenas para storage.type=mongo. A cadeia completa de ligação à base de dados mongodb.'
+          }
         },
         mails: {
           transport: '<b>IMPORTANTE.</b> Um objecto de configuração de transporte de correio JSON compatível com a biblioteca <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
-          from: '<b>IMPORTANTE.</b> O endereço a ser preenchido como remetente dos correios emitidos pelo serviço.',
+          from: '<b>IMPORTANTE.</b> O endereço a ser preenchido como remetente dos correios emitidos pelo serviço.'
         },
         listEntitiesMode: `Permite-lhe restringir globalmente o acesso a listas de utilizadores e organizações.<br>
 Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
         defaultLoginRedirect: 'Reencaminhamento por defeito após login. Se não for especificado, o utilizador será redireccionado para o seu perfil.',
         onlyCreateInvited: 'Se os verdadeiros utilizadores não forem criados no primeiro e-mail enviado. Devem ser convidados para uma organização.',
-        tosUrl: '<b>IMPORTANTE.</b> Um URL para os seus termos e condições de utilização. Se este parâmetro não for definido e não apontar para uma página web correcta, arrisca-se a não respeitar as suas obrigações para com os seus utilizadores.',
-      },
+        tosUrl: '<b>IMPORTANTE.</b> Um URL para os seus termos e condições de utilização. Se este parâmetro não for definido e não apontar para uma página web correcta, arrisca-se a não respeitar as suas obrigações para com os seus utilizadores.'
+      }
     },
     use: {
-      link: 'Utilização',
-    },
+      link: 'Utilização'
+    }
   },
   pages: {
     admin: {
@@ -129,13 +129,13 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
         createdOrgsLimit: 'Os utilizadores podem criar {defaultMaxCreatedOrgs} organização(ões) predefinida(s).',
         explainLimit: 'Definir um valor para limitar o número de organizações que este utilizador pode criar. -1 para qualquer número. Limpar o campo para voltar ao valor por defeito ({defaultMaxCreatedOrgs}).',
         editUserEmailTitle: 'Altere o endereço de e-mail do usuário {name}',
-        editUserEmailText: 'Aviso! O e-mail é uma chave de usuário importante, ao modificar essas informações você corre o risco de inserir um endereço incorreto, não funcional ou inconsistente com outras entradas. Este recurso é apresentado apenas aos administradores para desbloquear um usuário cuja caixa de correio se torna inacessível.',
+        editUserEmailText: 'Aviso! O e-mail é uma chave de usuário importante, ao modificar essas informações você corre o risco de inserir um endereço incorreto, não funcional ou inconsistente com outras entradas. Este recurso é apresentado apenas aos administradores para desbloquear um usuário cuja caixa de correio se torna inacessível.'
       },
       organizations: {
         limitOrganizationTitle: 'Mudar os limites organizacionais',
         members: 'membro(s)',
-        nbMembers: 'Número máximo de membros (0 para sem limite)',
-      },
+        nbMembers: 'Número máximo de membros (0 para sem limite)'
+      }
     },
     login: {
       title: 'Faça o login na sua conta',
@@ -160,7 +160,7 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       createUserConfirmed: 'Foi-lhe enviado um e-mail para {email}. Este e-mail contém um link para validar a criação da conta.',
       adminMode: 'Confirme a sua identidade para entrar no modo de administração.',
       oauth: 'Faça login com :',
-      error: 'Erro',
+      error: 'Erro'
     },
     organization: {
       addMember: 'Convidar um utilizador para se juntar à organização...',
@@ -183,23 +183,23 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       confirmDeleteDepartmentTitle: 'Apagar {name}',
       confirmDeleteDepartmentMsg: 'Quer mesmo apagar o {name} da sua organização?',
       departmentIdInvalid: 'O identificador deve conter apenas letras, números e espaços.',
-      inviteLink: 'Em caso de problema na comunicação por e-mail você pode enviar o link de confirmação abaixo por outro meio. Aviso ! Você corre o risco de inserir um endereço de e-mail incorreto ou não funcional no banco de dados do usuário. Este endereço de e-mail pode causar vários problemas posteriormente: alteração de senha, envio de alertas, etc.',
+      inviteLink: 'Em caso de problema na comunicação por e-mail você pode enviar o link de confirmação abaixo por outro meio. Aviso ! Você corre o risco de inserir um endereço de e-mail incorreto ou não funcional no banco de dados do usuário. Este endereço de e-mail pode causar vários problemas posteriormente: alteração de senha, envio de alertas, etc.'
     },
     invitation: {
       title: 'Convite validado',
       msgSameUser: 'O seu convite para ser membro de uma organização foi aceite. Pode consultar <a href="{profileUrl}">seu perfil</a>.',
-      msgDifferentUser: 'Este convite para ser membro de uma organização foi bem aceite. Pode <a href="{loginUrl}">login</a> com a conta de convidado.',
+      msgDifferentUser: 'Este convite para ser membro de uma organização foi bem aceite. Pode <a href="{loginUrl}">login</a> com a conta de convidado.'
     },
     avatar: {
-      prepare: 'Preparar a imagem',
+      prepare: 'Preparar a imagem'
     },
     me: {
       noOrganization: 'Não é membro de nenhuma organização.',
       operations: 'Operações sensíveis',
       deleteMyself: 'Apagar esta conta',
       deleteMyselfAlert: 'Se apagar a sua conta, os dados associados também serão apagados e não poderão ser recuperados.',
-      deleteMyselfCheck: 'marque esta caixa e clique em OK para confirmar a eliminação.',
-    },
+      deleteMyselfCheck: 'marque esta caixa e clique em OK para confirmar a eliminação.'
+    }
   },
   errors: {
     badEmail: 'O endereço de email está vazio ou está incorreto.',
@@ -220,7 +220,7 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
     expiredInvitationToken: 'O link de convite que você recebeu expirou, você não pode mais aceitar este convite.',
     maxNbMembers: 'A organização já possui o número máximo de membros permitido por suas cotas.',
     unknownOAuthProvider: 'A identificação OAuth não é compatível.',
-    adminModeOnly: 'Funcionalidade reservada para superadministradores.',
+    adminModeOnly: 'Funcionalidade reservada para superadministradores.'
   },
   mails: {
     creation: {
@@ -235,7 +235,7 @@ Se tiver um problema com a sua conta ou se não tiver solicitado a criação de 
       htmlMsg: 'Foi feito um pedido de criação de conta desde <a href="{origin}">{host}</a> para este endereço de correio electrónico. Para o confirmar clique no botão abaixo. A ligação é válida por 15 minutos.',
       htmlButton: 'Confirmar a criação de conta',
       htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
-      htmlCaption: 'Se tiver um problema com a sua conta ou se não tiver pedido para iniciar sessão em <a href="{origin}">{host}</a>, não hesite em contactar-nos em <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Se tiver um problema com a sua conta ou se não tiver pedido para iniciar sessão em <a href="{origin}">{host}</a>, não hesite em contactar-nos em <a href="mailto:{contact}">{contact}</a>.'
     },
     login: {
       subject: 'Identificar no {host}',
@@ -249,7 +249,7 @@ Se tiver um problema com a sua conta ou se não tiver solicitado o login em {hos
       htmlMsg: 'Foi feito um pedido de identificação desde <a href="{origin}">{host}</a>. Para o confirmar clique no botão abaixo. A ligação é válida por 15 minutos.',
       htmlButton: 'Ligação ao {host}',
       htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
-      htmlCaption: 'Si vous avez un problème avec votre compte ou si vous n\'avez pas demandé à vous connecter à <a href="{origin}">{host}</a>, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Si vous avez un problème avec votre compte ou si vous n\'avez pas demandé à vous connecter à <a href="{origin}">{host}</a>, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
     },
     noCreation: {
       subject: 'Falha de autenticação no {host}.',
@@ -259,7 +259,7 @@ Foi feito um pedido de identificação desde {host}, mas foi rejeitado porque es
 Não hesite em contactar-nos em {contact}.
       `,
       htmlMsg: 'Foi feito um pedido de identificação desde <a href="{origin}">{host}</a>, mas foi rejeitada porque este endereço de correio electrónico é desconhecido ou não foi validado.',
-      htmlCaption: 'Não hesite em contactar-nos em <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Não hesite em contactar-nos em <a href="mailto:{contact}">{contact}</a>.'
     },
     conflict: {
       subject: 'Falha na criação de conta no {host}.',
@@ -269,7 +269,7 @@ Foi feito um pedido de criação de conta a partir de {host}, mas foi rejeitado 
 Não hesite em contactar-nos em {contact}.
       `,
       htmlMsg: 'Foi feito um pedido de criação de conta desde <a href="{origin}">{host}</a>, mas foi rejeitada porque este endereço de correio electrónico já está associado a uma conta.',
-      htmlCaption: 'Não hesite em contactar-nos em <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Não hesite em contactar-nos em <a href="mailto:{contact}">{contact}</a>.'
     },
     invitation: {
       subject: 'Junte-se à {organization} em {host}.',
@@ -287,7 +287,7 @@ Se ainda não tiver uma conta, esta será criada automaticamente.
       `,
       htmlButton: 'Aceitar o convite',
       htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
-      htmlCaption: 'Se encontrar um problema com a sua conta ou achar este convite suspeito, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Se encontrar um problema com a sua conta ou achar este convite suspeito, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.'
     },
     action: {
       subject: 'Execute uma acção na sua conta em {host}.',
@@ -303,7 +303,7 @@ Uma acção solicitando uma confirmação por correio electrónico foi desencade
       `,
       htmlButton: 'Validar',
       htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
-      htmlCaption: 'Se encontrar um problema com a sua conta ou achar esta mensagem suspeita, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.',
-    },
-  },
+      htmlCaption: 'Se encontrar um problema com a sua conta ou achar esta mensagem suspeita, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.'
+    }
+  }
 }

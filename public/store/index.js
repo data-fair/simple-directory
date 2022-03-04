@@ -10,15 +10,15 @@ export default () => {
     modules: { session: sessionStoreBuilder() },
     state: {
       userDetails: null,
-      env: {},
+      env: {}
     },
     mutations: {
-      setAny(state, params) {
+      setAny (state, params) {
         Object.assign(state, params)
-      },
+      }
     },
     actions: {
-      async fetchUserDetails({ state, commit, dispatch }) {
+      async fetchUserDetails ({ state, commit, dispatch }) {
         if (!state.session.user) return
         try {
           const userDetails = await this.$axios.$get(`api/users/${state.session.user.id}`)
@@ -29,7 +29,7 @@ export default () => {
           else eventBus.$emit('notification', { error })
         }
       },
-      async patchOrganization({ dispatch }, { id, patch, msg }) {
+      async patchOrganization ({ dispatch }, { id, patch, msg }) {
         try {
           await this.$axios.$patch(`api/organizations/${id}`, patch)
           eventBus.$emit('notification', msg)
@@ -37,7 +37,7 @@ export default () => {
         } catch (error) {
           eventBus.$emit('notification', { error })
         }
-      },
-    },
+      }
+    }
   })
 }

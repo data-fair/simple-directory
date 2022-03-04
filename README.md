@@ -14,16 +14,12 @@ You should use linters and beautifiers compliants with the ES7 syntax in your ed
 
 Install dependencies and run bundler:
 
-```
-npm install
-npm run build
-```
+    npm install
+    npm run build
 
 Run the services dependencies:
 
-```
-docker-compose up -d
-```
+    npm run dev-deps
 
 Run the 2 development servers with these commands et separate shells:
 
@@ -32,12 +28,19 @@ Run the 2 development servers with these commands et separate shells:
 
 When both servers are ready, go to [http://localhost:5689](http://localhost:5689).
 
-
 Test built nuxt distributable in dev:
 
    # first set proxyNuxt to false in config/development.js
    NODE_ENV=development npm run build
    npm run dev-server
+
+Test building the docker image:
+
+```
+docker build --network=host -t sd-dev .
+// don't expect the following line to work fully, it will be missing service dependencies, etc.
+docker run --network=host --env PORT=8081 sd-dev
+```
 
 ## Design
 

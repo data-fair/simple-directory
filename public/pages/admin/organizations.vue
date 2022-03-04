@@ -1,5 +1,8 @@
 <template lang="html">
-  <v-container fluid data-iframe-height>
+  <v-container
+    fluid
+    data-iframe-height
+  >
     <v-row class="mt-3 mx-0">
       <h2 class="text-h6 mb-3">
         {{ $t('common.organizations') }} <span v-if="organizations">({{ $n(organizations.count) }})</span>
@@ -30,7 +33,10 @@
       item-key="id"
       :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
     >
-      <tr slot="item" slot-scope="props">
+      <tr
+        slot="item"
+        slot-scope="props"
+      >
         <td v-if="env.avatars.orgs">
           <v-avatar :size="40">
             <img :src="env.publicUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
@@ -96,7 +102,10 @@
       </tr>
     </v-data-table>
 
-    <v-dialog v-model="deleteOrganizationDialog" max-width="500px">
+    <v-dialog
+      v-model="deleteOrganizationDialog"
+      max-width="500px"
+    >
       <v-card v-if="currentOrganization">
         <v-card-title class="text-h6">
           {{ $t('common.confirmDeleteTitle', {name: currentOrganization.name}) }}
@@ -106,17 +115,26 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn text @click="deleteOrganizationDialog = false">
+          <v-btn
+            text
+            @click="deleteOrganizationDialog = false"
+          >
             {{ $t('common.confirmCancel') }}
           </v-btn>
-          <v-btn color="warning" @click="deleteOrganizationDialog = false;deleteOrganization(currentOrganization)">
+          <v-btn
+            color="warning"
+            @click="deleteOrganizationDialog = false;deleteOrganization(currentOrganization)"
+          >
             {{ $t('common.confirmOk') }}
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="limitOrganizationDialog" max-width="500px">
+    <v-dialog
+      v-model="limitOrganizationDialog"
+      max-width="500px"
+    >
       <v-card v-if="currentOrganization">
         <v-card-title class="text-h6">
           {{ $t('pages.admin.organizations.limitOrganizationTitle', {name: currentOrganization.name}) }}
@@ -130,10 +148,16 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn text @click="limitOrganizationDialog = false">
+          <v-btn
+            text
+            @click="limitOrganizationDialog = false"
+          >
             {{ $t('common.confirmCancel') }}
           </v-btn>
-          <v-btn color="warning" @click="limitOrganizationDialog = false;saveLimits(currentOrganization, currentLimits)">
+          <v-btn
+            color="warning"
+            @click="limitOrganizationDialog = false;saveLimits(currentOrganization, currentLimits)"
+          >
             {{ $t('common.confirmOk') }}
           </v-btn>
         </v-card-actions>
@@ -143,88 +167,88 @@
 </template>
 
 <script>
-  import { mapState } from 'vuex'
-  import eventBus from '../../event-bus'
-  export default {
-    data: () => ({
-      organizations: null,
-      currentOrganization: null,
-      currentLimits: null,
-      deleteOrganizationDialog: false,
-      limitOrganizationDialog: false,
-      q: '',
-      pagination: { page: 1, itemsPerPage: 10, totalItems: 0, sortDesc: [false], sortBy: ['name'], multiSort: false, mustSort: true },
-      loading: false,
-      headers: null,
-    }),
-    computed: {
-      sort() {
-        if (!this.pagination.sortBy.length) return ''
-        return (this.pagination.sortDesc[0] ? '-' : '') + this.pagination.sortBy[0]
-      },
-      ...mapState(['env']),
-      ...mapState('session', ['user']),
+import { mapState } from 'vuex'
+import eventBus from '../../event-bus'
+export default {
+  data: () => ({
+    organizations: null,
+    currentOrganization: null,
+    currentLimits: null,
+    deleteOrganizationDialog: false,
+    limitOrganizationDialog: false,
+    q: '',
+    pagination: { page: 1, itemsPerPage: 10, totalItems: 0, sortDesc: [false], sortBy: ['name'], multiSort: false, mustSort: true },
+    loading: false,
+    headers: null
+  }),
+  computed: {
+    sort () {
+      if (!this.pagination.sortBy.length) return ''
+      return (this.pagination.sortDesc[0] ? '-' : '') + this.pagination.sortBy[0]
     },
-    watch: {
-      'pagination.page'() { this.fetchOrganizations() },
-      'pagination.itemsPerPage'() { this.fetchOrganizations() },
-      'pagination.sortBy'() { this.fetchOrganizations() },
-      'pagination.sortDesc'() { this.fetchOrganizations() },
-    },
-    async created() {
-      if (!this.user.adminMode) return this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
-      this.fetchOrganizations()
-      this.headers = []
-      if (this.env.avatars.orgs) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
+    ...mapState(['env']),
+    ...mapState('session', ['user'])
+  },
+  watch: {
+    'pagination.page' () { this.fetchOrganizations() },
+    'pagination.itemsPerPage' () { this.fetchOrganizations() },
+    'pagination.sortBy' () { this.fetchOrganizations() },
+    'pagination.sortDesc' () { this.fetchOrganizations() }
+  },
+  async created () {
+    if (!this.user.adminMode) return this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
+    this.fetchOrganizations()
+    this.headers = []
+    if (this.env.avatars.orgs) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
+    this.headers = this.headers.concat([
+      { text: this.$t('common.name'), value: 'name' },
+      { text: this.$t('common.id'), value: 'id', sortable: false },
+      { text: this.$t('common.description'), value: 'description', sortable: false }
+    ])
+    if (!this.env.readonly) {
       this.headers = this.headers.concat([
-        { text: this.$t('common.name'), value: 'name' },
-        { text: this.$t('common.id'), value: 'id', sortable: false },
-        { text: this.$t('common.description'), value: 'description', sortable: false },
+        { text: this.$t('common.createdAt'), value: 'created.date' },
+        { text: this.$t('common.updatedAt'), value: 'updated.date' }
       ])
-      if (!this.env.readonly) {
-        this.headers = this.headers.concat([
-          { text: this.$t('common.createdAt'), value: 'created.date' },
-          { text: this.$t('common.updatedAt'), value: 'updated.date' },
-        ])
+    }
+    this.headers.push({ text: '', value: 'actions', sortable: false })
+  },
+  methods: {
+    async fetchOrganizations () {
+      this.loading = true
+      try {
+        this.organizations = await this.$axios.$get('api/organizations', {
+          params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.itemsPerPage, sort: this.sort }
+        })
+        this.pagination.totalItems = this.organizations.count
+      } catch (error) {
+        eventBus.$emit('notification', { error })
       }
-      this.headers.push({ text: '', value: 'actions', sortable: false })
-    },
-    methods: {
-      async fetchOrganizations() {
-        this.loading = true
-        try {
-          this.organizations = await this.$axios.$get('api/organizations', {
-            params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.itemsPerPage, sort: this.sort },
-          })
-          this.pagination.totalItems = this.organizations.count
-        } catch (error) {
-          eventBus.$emit('notification', { error })
-        }
-        this.loading = false
+      this.loading = false
 
-        if (!this.env.readonly) {
-          for (const org of this.organizations.results) {
-            const limits = await this.$axios.$get(`api/limits/organization/${org.id}`)
-            this.$set(org, 'limits', limits)
-          }
+      if (!this.env.readonly) {
+        for (const org of this.organizations.results) {
+          const limits = await this.$axios.$get(`api/limits/organization/${org.id}`)
+          this.$set(org, 'limits', limits)
         }
-      },
-      async deleteOrganization(organization) {
-        try {
-          await this.$axios.$delete(`api/organizations/${organization.id}`)
-          this.fetchOrganizations()
-        } catch (error) {
-          eventBus.$emit('notification', { error })
-        }
-      },
-      async saveLimits(organization, limits) {
-        if (!limits.store_nb_members.limit) limits.store_nb_members.limit = 0
-        delete organization.limits
-        await this.$axios.$post(`api/limits/organization/${organization.id}`, limits)
-        this.$set(organization, 'limits', limits)
-      },
+      }
     },
+    async deleteOrganization (organization) {
+      try {
+        await this.$axios.$delete(`api/organizations/${organization.id}`)
+        this.fetchOrganizations()
+      } catch (error) {
+        eventBus.$emit('notification', { error })
+      }
+    },
+    async saveLimits (organization, limits) {
+      if (!limits.store_nb_members.limit) limits.store_nb_members.limit = 0
+      delete organization.limits
+      await this.$axios.$post(`api/limits/organization/${organization.id}`, limits)
+      this.$set(organization, 'limits', limits)
+    }
   }
+}
 </script>
 
 <style lang="css">

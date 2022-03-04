@@ -167,7 +167,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
       key: 'noCreation',
       messages: req.messages,
       to: req.body.email,
-      params: { link: redirect, host: redirectUrl.host, origin: redirectUrl.origin },
+      params: { link: redirect, host: redirectUrl.host, origin: redirectUrl.origin }
     })
     return res.status(204).send()
   }
@@ -192,7 +192,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     key: 'login',
     messages: req.messages,
     to: user.email,
-    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin },
+    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
   })
   res.status(204).send()
 }))
@@ -323,7 +323,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
       key: 'noCreation',
       messages: req.messages,
       to: req.body.email,
-      params: { link, host: linkUrl.host, origin: linkUrl.origin },
+      params: { link, host: linkUrl.host, origin: linkUrl.origin }
     })
     return res.status(204).send()
   }
@@ -339,7 +339,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
     key: 'action',
     messages: req.messages,
     to: user.email,
-    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin },
+    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
   })
   res.status(204).send()
 }))
@@ -447,8 +447,8 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
       lastName: userInfo.lastName || '',
       emailConfirmed: true,
       oauth: {
-        [req.params.oauthId]: oauthInfo,
-      },
+        [req.params.oauthId]: oauthInfo
+      }
     }
     user.name = userName(user)
     debug('Create user authenticated through oauth', user)

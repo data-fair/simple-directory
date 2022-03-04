@@ -53,7 +53,7 @@ exports.cipherPassword = (password) => {
   return {
     iv: initVector.toString('hex'),
     alg: algo,
-    data: encryptedData,
+    data: encryptedData
   }
 }
 

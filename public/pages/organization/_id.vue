@@ -44,7 +44,10 @@
         :disabled="!isAdminOrga || env.readonly"
         name="departmentLabel"
       >
-        <v-tooltip slot="append-outer" left>
+        <v-tooltip
+          slot="append-outer"
+          left
+        >
           <template #activator="{on}">
             <v-icon v-on="on">
               mdi-information
@@ -104,62 +107,62 @@
 </template>
 
 <script>
-  import { mapActions, mapState } from 'vuex'
-  import LoadAvatar from '~/components/load-avatar.vue'
+import { mapActions, mapState } from 'vuex'
+import LoadAvatar from '~/components/load-avatar.vue'
 
-  export default {
-    components: { LoadAvatar },
-    data: () => ({
-      orga: null,
-      limits: null,
-      valid: true,
-    }),
-    computed: {
-      ...mapState(['userDetails', 'env']),
-      ...mapState('session', ['user']),
-      isAdminOrga() {
-        if (!this.user || !this.userDetails) return false
-        if (this.user.adminMode) return true
-        return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin'))
+export default {
+  components: { LoadAvatar },
+  data: () => ({
+    orga: null,
+    limits: null,
+    valid: true
+  }),
+  computed: {
+    ...mapState(['userDetails', 'env']),
+    ...mapState('session', ['user']),
+    isAdminOrga () {
+      if (!this.user || !this.userDetails) return false
+      if (this.user.adminMode) return true
+      return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin'))
+    }
+  },
+  watch: {
+    userDetails: {
+      handler () {
+        if (!this.userDetails) return
+        // TODO: this is debatable, API allows to show all info on this page
+        // but in term of functionality it doesn't make much sense
+        if (!this.isAdminOrga) this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
       },
+      immediate: true
+    }
+  },
+  async mounted () {
+    this.fetchOrganization()
+    this.fetchLimits()
+  },
+  methods: {
+    ...mapActions(['patchOrganization']),
+    async fetchOrganization () {
+      const orga = await this.$axios.$get(`api/organizations/${this.$route.params.id}`)
+      orga['2FA'] = orga['2FA'] || {}
+      orga['2FA'].roles = orga['2FA'].roles || []
+      this.orga = orga
     },
-    watch: {
-      userDetails: {
-        handler() {
-          if (!this.userDetails) return
-          // TODO: this is debatable, API allows to show all info on this page
-          // but in term of functionality it doesn't make much sense
-          if (!this.isAdminOrga) this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
-        },
-        immediate: true,
-      },
+    async fetchLimits () {
+      if (!this.env.readonly) {
+        this.limits = await this.$axios.$get(`api/limits/organization/${this.$route.params.id}`)
+      }
     },
-    async mounted() {
-      this.fetchOrganization()
-      this.fetchLimits()
-    },
-    methods: {
-      ...mapActions(['patchOrganization']),
-      async fetchOrganization() {
-        const orga = await this.$axios.$get(`api/organizations/${this.$route.params.id}`)
-        orga['2FA'] = orga['2FA'] || {}
-        orga['2FA'].roles = orga['2FA'].roles || []
-        this.orga = orga
-      },
-      async fetchLimits() {
-        if (!this.env.readonly) {
-          this.limits = await this.$axios.$get(`api/limits/organization/${this.$route.params.id}`)
-        }
-      },
-      async save(e) {
-        e.preventDefault()
-        if (!this.$refs.form.validate()) return
-        const patch = { name: this.orga.name, description: this.orga.description, '2FA': this.orga['2FA'] }
-        if (this.env.manageDepartments) patch.departmentLabel = this.orga.departmentLabel
-        this.patchOrganization({ id: this.orga.id, patch, msg: this.$t('common.modificationOk') })
-      },
-    },
+    async save (e) {
+      e.preventDefault()
+      if (!this.$refs.form.validate()) return
+      const patch = { name: this.orga.name, description: this.orga.description, '2FA': this.orga['2FA'] }
+      if (this.env.manageDepartments) patch.departmentLabel = this.orga.departmentLabel
+      this.patchOrganization({ id: this.orga.id, patch, msg: this.$t('common.modificationOk') })
+    }
   }
+}
 </script>
 
 <style lang="css">
