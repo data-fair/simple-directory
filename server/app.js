@@ -164,7 +164,7 @@ exports.run = async () => {
     debug('prepare nuxt')
     const nuxt = await require('./nuxt')()
     app.set('nuxt', nuxt.instance)
-    app.use(nuxt.render)
+    app.use(cors(), nuxt.render)
   }
 
   debug('start server')
