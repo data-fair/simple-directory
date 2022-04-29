@@ -29,6 +29,10 @@ module.exports = {
     editable: 'ROLES_EDITABLE'
   },
   contact: 'CONTACT',
+  anonymousAction: {
+    expiresIn: 'ANONYMOUS_ACTION_EXPIRES_IN',
+    notBefore: 'ANONYMOUS_ACTION_NOT_BEFORE'
+  },
   homePage: 'HOME_PAGE',
   secret: {
     public: 'PUBLIC_KEY',

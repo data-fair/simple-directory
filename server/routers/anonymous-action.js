@@ -1,3 +1,4 @@
+const config = require('config')
 const limiter = require('../utils/limiter')
 const asyncWrap = require('../utils/async-wrap')
 const requestIp = require('request-ip')
@@ -13,6 +14,6 @@ module.exports = asyncWrap(async (req, res, next) => {
     return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
   const payload = { anonymousAction: true, validation: 'wait' }
-  const token = tokens.sign(req.app.get('keys'), payload, '1d', '8s')
+  const token = tokens.sign(req.app.get('keys'), payload, config.anonymousAction.expiresIn, config.anonymousAction.notBefore)
   res.send(token)
 })

@@ -23,6 +23,10 @@ module.exports = {
   },
   contact: 'contact@test.com',
   anonymousContactForm: false,
+  anonymousAction: {
+    expiresIn: '1d',
+    notBefore: '8s'
+  },
   homePage: null,
   storage: {
     // One of 'file', 'mongo' and 'ldap'
