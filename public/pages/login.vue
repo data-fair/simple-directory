@@ -116,18 +116,19 @@
                 :class="passwordErrors.length ? 'mt-0' : 'mt-1'"
                 dense
                 :label="$t('pages.login.rememberMe')"
+                hide-details
               />
               <v-row
                 v-if="!readonly && !env.onlyCreateInvited && !adminMode"
-                class="mx-0"
+                class="ma-0"
               >
-                <p class="mb-2">
+                <p class="my-1">
                   <a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a>
                 </p>
               </v-row>
               <v-row
                 v-if="!readonly && !adminMode"
-                class="mx-0"
+                class="ma-0"
               >
                 <p class="mb-0">
                   <a
