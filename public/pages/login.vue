@@ -319,7 +319,25 @@
                 outlined
                 dense
                 rounded
-              />
+              >
+                <template #append-outer>
+                  <v-tooltip
+                    right
+                    max-width="400"
+                    color="info"
+                  >
+                    <template #activator="{on}">
+                      <v-icon
+                        color="info"
+                        v-on="on"
+                      >
+                        mdi-information
+                      </v-icon>
+                    </template>
+                    <div v-html="$t('errors.malformedPassword')" />
+                  </v-tooltip>
+                </template>
+              </v-text-field>
               <v-text-field
                 v-model="newPassword2"
                 :label="$t('pages.login.newPassword2')"
