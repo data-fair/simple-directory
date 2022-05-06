@@ -327,9 +327,11 @@ router.post('/action', asyncWrap(async (req, res, next) => {
     })
     return res.status(204).send()
   }
-
-  const payload = tokens.getPayload(user)
-  payload.action = req.body.action
+  const payload = {
+    id: user.id,
+    email: user.email,
+    action: req.body.action
+  }
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(req.body.target || req.publicBaseUrl + '/login')
   linkUrl.searchParams.set('action_token', token)

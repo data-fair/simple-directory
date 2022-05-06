@@ -92,8 +92,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
     debug('invitation was already accepted, redirect', redirectUrl.href)
     // missing password, invitation must have been accepted without completing account creation
     if (!await storage.hasPassword(invit.email) && !config.passwordless) {
-      const payload = tokens.getPayload(user)
-      payload.action = 'changePassword'
+      const payload = { id: user.id, email: user.email, action: 'changePassword' }
       const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
       const reboundRedirect = redirectUrl.href
       redirectUrl = new URL(`${req.publicBaseUrl}/login`)
