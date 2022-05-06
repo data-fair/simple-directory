@@ -39,7 +39,7 @@ router.get('', asyncWrap(async (req, res, next) => {
   res.json(users)
 }))
 
-const createKeys = ['firstName', 'lastName', 'email', 'password', 'birthday']
+const createKeys = ['firstName', 'lastName', 'email', 'password', 'birthday', 'createOrganization']
 // TODO: block when onlyCreateInvited is true ?
 router.post('', asyncWrap(async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
@@ -117,9 +117,10 @@ router.post('', asyncWrap(async (req, res, next) => {
     // we alreayd created the user with emailConfirmed=true
   } else {
     // prepare same link and payload as for a passwordless authentication
-    // the user will be validated and authenticated at the same time by the exchange route
-    const payload = tokens.getPayload(newUser)
-    const linkUrl = tokens.prepareCallbackUrl(req, { ...payload, emailConfirmed: true, temporary: true }, req.query.redirect, req.query.org)
+    // the user will be validated and authenticated at the same time by the token_callback route
+    const payload = { ...tokens.getPayload(newUser), emailConfirmed: true, temporary: true }
+    if (req.body.createOrganization) payload.createOrganization = req.body.createOrganization
+    const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, req.query.org)
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'creation',

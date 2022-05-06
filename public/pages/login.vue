@@ -271,6 +271,38 @@
                     </v-icon>
                   </div>
                 </v-text-field>
+
+                <template v-if="!invitPayload && !org && env.defaultMaxCreatedOrgs !== 0">
+                  <v-checkbox
+                    v-model="newUserCreateOrganization"
+                    :label="$t('pages.login.createUserOrganization')"
+                  >
+                    <v-tooltip
+                      slot="append"
+                      right
+                      max-width="400"
+                    >
+                      <template #activator="{on}">
+                        <v-icon v-on="on">
+                          mdi-information
+                        </v-icon>
+                      </template>
+                      <div v-html="$t('pages.login.createUserOrganizationHelp')" />
+                    </v-tooltip>
+                  </v-checkbox>
+                  <template v-if="newUserCreateOrganization">
+                    <v-text-field
+                      v-model="newUser.createOrganization"
+                      :label="$t('common.organizationName')"
+                      :rules="[v => !!v || '']"
+                      name="organizationName"
+                      required
+                      outlined
+                      dense
+                      rounded
+                    />
+                  </template>
+                </template>
               </v-form>
             </v-card-text>
 
@@ -579,8 +611,10 @@ export default {
       newUser: {
         firstName: null,
         lastName: null,
-        password: null
+        password: null,
+        createOrganization: null
       },
+      newUserCreateOrganization: false,
       createUserErrors: [],
       newUserPassword2: null,
       error: this.$route.query.error,
@@ -656,10 +690,12 @@ export default {
     async createUser () {
       if (!this.$refs.createUserForm.validate()) return
       try {
-        await this.$axios.$post('api/users', {
+        const body = {
           email: this.email,
           ...this.newUser
-        }, {
+        }
+        if (!this.newUserCreateOrganization || !body.createOrganization) delete body.createOrganization
+        await this.$axios.$post('api/users', body, {
           params: {
             redirect: this.redirectUrl,
             org: this.org,

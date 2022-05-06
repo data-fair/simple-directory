@@ -223,6 +223,15 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
     return redirectError('badCredentials')
   }
 
+  // we just confirmed the user email after creation, and creating an organization was requested too
+  if (decoded.emailConfirmed && decoded.createOrganization) {
+    if (config.quotas.defaultMaxCreatedOrgs === 0) return redirectError('maxCreatedOrgs')
+    const orga = { id: shortid.generate(), name: decoded.createOrganization }
+    await storage.createOrganization(orga, user)
+    await storage.addMember(orga, user, 'admin')
+    webhooks.postIdentity('organization', orga)
+  }
+
   const payload = tokens.getPayload(user)
   if (decoded.rememberMe) payload.rememberMe = true
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = true
