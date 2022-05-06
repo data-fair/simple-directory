@@ -192,6 +192,9 @@
                   :rules="[v => !!v || '']"
                   name="createuser-email"
                   required
+                  outlined
+                  dense
+                  rounded
                 />
 
                 <v-text-field
@@ -216,8 +219,25 @@
                   name="newUserPassword"
                   type="password"
                   autocomplete="new-password"
+                  outlined
+                  dense
+                  rounded
+                  class="mt-6"
                   @keyup.enter="createUser"
-                />
+                >
+                  <v-tooltip
+                    slot="append-outer"
+                    right
+                    max-width="400"
+                  >
+                    <template #activator="{on}">
+                      <v-icon v-on="on">
+                        mdi-information
+                      </v-icon>
+                    </template>
+                    <div v-html="$t('errors.malformedPassword')" />
+                  </v-tooltip>
+                </v-text-field>
 
                 <v-text-field
                   v-model="newUserPassword2"
@@ -226,6 +246,9 @@
                   name="newUserPassword2"
                   type="password"
                   autocomplete="new-password"
+                  outlined
+                  dense
+                  rounded
                   @keyup.enter="createUser"
                 />
               </v-form>
@@ -320,23 +343,18 @@
                 dense
                 rounded
               >
-                <template #append-outer>
-                  <v-tooltip
-                    right
-                    max-width="400"
-                    color="info"
-                  >
-                    <template #activator="{on}">
-                      <v-icon
-                        color="info"
-                        v-on="on"
-                      >
-                        mdi-information
-                      </v-icon>
-                    </template>
-                    <div v-html="$t('errors.malformedPassword')" />
-                  </v-tooltip>
-                </template>
+                <v-tooltip
+                  slot="append-outer"
+                  right
+                  max-width="400"
+                >
+                  <template #activator="{on}">
+                    <v-icon v-on="on">
+                      mdi-information
+                    </v-icon>
+                  </template>
+                  <div v-html="$t('errors.malformedPassword')" />
+                </v-tooltip>
               </v-text-field>
               <v-text-field
                 v-model="newPassword2"
@@ -523,6 +541,7 @@ export default {
       password: '',
       passwordErrors: [],
       actionToken: this.$route.query.action_token,
+      invitToken: this.$route.query.invit_token,
       adminMode: this.$route.query.adminMode === 'true',
       org: this.$route.query.org,
       orgStorage: this.$route.query.org_storage === 'true',
@@ -561,6 +580,10 @@ export default {
       if (!this.actionToken) return
       return jwtDecode(this.actionToken)
     },
+    invitPayload () {
+      if (!this.invitToken) return
+      return jwtDecode(this.invitToken)
+    },
     logoUrl () {
       if (this.$route.query.logo) return this.$route.query.logo
       if (this.org) return `${this.env.publicUrl}/api/avatars/organization/${this.org}/avatar.png`
@@ -590,6 +613,10 @@ export default {
     if (this.actionPayload) {
       this.step = 'changePassword'
       this.email = this.actionPayload.email
+    } else if (this.invitPayload) {
+      this.createUserStep()
+      this.org = this.invitPayload.id
+      this.email = this.invitPayload.email
     } else if (this.error) {
       this.step = 'error'
     } else {
@@ -603,8 +630,26 @@ export default {
     async createUser () {
       if (!this.$refs.createUserForm.validate()) return
       try {
-        await this.$axios.$post('api/users', { email: this.email, ...this.newUser }, { params: { redirect: this.redirectUrl, org: this.org } })
+        await this.$axios.$post('api/users', {
+          email: this.email,
+          ...this.newUser
+        }, {
+          params: {
+            redirect: this.redirectUrl,
+            org: this.org,
+            invit_token: this.invitToken
+          }
+        })
+        if (this.invitToken) {
+          await this.$axios.$get('api/invitations/_accept', {
+            params: {
+              redirect: this.redirectUrl,
+              invit_token: this.invitToken
+            }
+          })
+        }
         this.createUserErrors = []
+        this.password = this.newUser.password
         this.step = 'createUserConfirmed'
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
@@ -683,7 +728,6 @@ export default {
         this.password = this.newPassword
         this.step = 'login'
         this.$router.replace({ query: { ...this.$route.query, action_token: undefined } })
-        this.passwordAuth()
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
         else this.newPasswordErrors = [error.response.data || error.message]

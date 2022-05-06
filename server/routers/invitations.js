@@ -1,11 +1,9 @@
 const express = require('express')
 const config = require('config')
 const URL = require('url').URL
-const shortid = require('shortid')
 const tokens = require('../utils/tokens')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
-const userName = require('../utils/user-name')
 const limits = require('../utils/limits')
 const emailValidator = require('email-validator')
 const debug = require('debug')('invitations')
@@ -72,7 +70,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   debug('accept invitation', invit, verified)
   const storage = req.app.get('storage')
 
-  let user = await storage.getUserByEmail(invit.email)
+  const user = await storage.getUserByEmail(invit.email)
   if (!user && storage.readonly) {
     errorUrl.searchParams.set('error', 'userUnknown')
     return res.redirect(errorUrl.href)
@@ -132,28 +130,16 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   }
 
   if (!user) {
-    const userInit = { email: invit.email, id: shortid.generate(), name: userName({ email: invit.email }), emailConfirmed: true }
-    if (invit.department) userInit.department = invit.department
-    debug('create invited user', userInit)
-    user = await storage.createUser(userInit, null, new URL(redirectUrl).host)
-    if (!config.passwordless) {
-      const payload = tokens.getPayload(user)
-      payload.action = 'changePassword'
-      const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-      const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${req.publicBaseUrl}/login`)
-      redirectUrl.searchParams.set('step', 'changePassword')
-      redirectUrl.searchParams.set('email', invit.email)
-      redirectUrl.searchParams.set('id_token_org', invit.id)
-      redirectUrl.searchParams.set('action_token', token)
-      redirectUrl.searchParams.set('redirect', reboundRedirect)
-      debug('redirect new user to changePassword step', redirectUrl.href)
-    }
+    const reboundRedirect = redirectUrl.href
+    redirectUrl = new URL(`${req.publicBaseUrl}/login`)
+    redirectUrl.searchParams.set('step', 'createUser')
+    redirectUrl.searchParams.set('invit_token', req.query.invit_token)
+    redirectUrl.searchParams.set('redirect', reboundRedirect)
+    debug('redirect to createUser step', redirectUrl.href)
+    return res.redirect(redirectUrl.href)
   }
 
   await storage.addMember(orga, user, invit.role, invit.department)
-  if (storage.db) {
-    await limits.setNbMembers(storage.db, orga.id)
-  }
+  if (storage.db) await limits.setNbMembers(storage.db, orga.id)
   res.redirect(redirectUrl.href)
 }))

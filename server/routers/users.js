@@ -10,6 +10,7 @@ const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 const mails = require('../mails')
 const storages = require('../storages')
+const limits = require('../utils/limits')
 const defaultConfig = require('../../config/default.js')
 
 const router = express.Router()
@@ -47,6 +48,19 @@ router.post('', asyncWrap(async (req, res, next) => {
 
   const storage = req.app.get('storage')
 
+  // used to create a user and accept a member invitation at the same time
+  // if the invitation is not valid, better not to proceed with the user creation
+  let invit, orga
+  if (req.query.invit_token) {
+    try {
+      invit = await tokens.verify(req.app.get('keys'), req.query.invit_token)
+    } catch (err) {
+      return res.status(400).send(err.name === 'TokenExpiredError' ? req.messages.errors.expiredInvitationToken : req.messages.errors.invalidInvitationToken)
+    }
+    orga = await storage.getOrganization(invit.id)
+    if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
+  }
+
   // create user
   const newUser = {
     email: req.body.email,
@@ -56,6 +70,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     emailConfirmed: false
   }
   newUser.name = userName(newUser)
+  if (invit) newUser.emailConfirmed = true
 
   // password is optional as we support passwordless auth
   if (![undefined, null].includes(req.body.password)) {
@@ -81,23 +96,36 @@ router.post('', asyncWrap(async (req, res, next) => {
   }
 
   // Re-create a user that was never validated.. first clean temporary user
-  if (user && user.emailConfirmed === false) {
-    await storage.deleteUser(user.id)
-  }
+  if (user && user.emailConfirmed === false) await storage.deleteUser(user.id)
 
   await storage.createUser(newUser, null, new URL(link).host)
 
-  // prepare same link and payload as for a passwordless authentication
-  // the user will be validated and authenticated at the same time by the exchange route
-  const payload = tokens.getPayload(newUser)
-  const linkUrl = tokens.prepareCallbackUrl(req, { ...payload, emailConfirmed: true, temporary: true }, req.query.redirect, req.query.org)
-  await mails.send({
-    transport: req.app.get('mailTransport'),
-    key: 'creation',
-    messages: req.messages,
-    to: req.body.email,
-    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
-  })
+  if (invit) {
+    if (storage.db) {
+      const consumer = { type: 'organization', id: orga.id }
+      const limit = await limits.get(storage.db, consumer, 'store_nb_members')
+      if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(req.messages.errors.maxNbMembers)
+    }
+    await storage.addMember(orga, newUser, invit.role, invit.department)
+    if (storage.db) await limits.setNbMembers(storage.db, orga.id)
+  }
+
+  if (invit) {
+    // no need to confirm email if the user already comes from an invitation link
+    // we alreayd created the user with emailConfirmed=true
+  } else {
+    // prepare same link and payload as for a passwordless authentication
+    // the user will be validated and authenticated at the same time by the exchange route
+    const payload = tokens.getPayload(newUser)
+    const linkUrl = tokens.prepareCallbackUrl(req, { ...payload, emailConfirmed: true, temporary: true }, req.query.redirect, req.query.org)
+    await mails.send({
+      transport: req.app.get('mailTransport'),
+      key: 'creation',
+      messages: req.messages,
+      to: req.body.email,
+      params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
+    })
+  }
 
   // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
   return res.status(204).send()

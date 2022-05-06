@@ -5,13 +5,13 @@ module.exports = {
   // publicUrl: 'http://10.0.2.2:5689',
   admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com'],
   adminsOrg: { id: 'admins-org', name: 'Admins organization' },
-  admins2FA: true,
+  admins2FA: false,
   homePage: 'https://koumoul.com',
   anonymousContactForm: true,
   jwtDurations: {
-    initialToken: '1m',
+    initialToken: '5m',
     // exchangedToken: '5m',
-    invitationToken: '1m'
+    invitationToken: '5m'
   },
   i18n: {
     locales: ['fr', 'en', 'es', 'it', 'pt', 'de']
@@ -51,7 +51,7 @@ module.exports = {
     defaultMaxCreatedOrgs: 1
     // defaultMaxNbMembers: 0
   },
-  passwordless: true,
+  passwordless: false,
   userSelfDelete: true,
   secretKeys: {
     sendMails: 'testkey',
