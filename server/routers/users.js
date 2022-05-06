@@ -11,6 +11,7 @@ const webhooks = require('../webhooks')
 const mails = require('../mails')
 const storages = require('../storages')
 const limits = require('../utils/limits')
+const { unshortenInvit } = require('../utils/invitations')
 const defaultConfig = require('../../config/default.js')
 
 const router = express.Router()
@@ -53,12 +54,13 @@ router.post('', asyncWrap(async (req, res, next) => {
   let invit, orga
   if (req.query.invit_token) {
     try {
-      invit = await tokens.verify(req.app.get('keys'), req.query.invit_token)
+      invit = unshortenInvit(await tokens.verify(req.app.get('keys'), req.query.invit_token))
     } catch (err) {
       return res.status(400).send(err.name === 'TokenExpiredError' ? req.messages.errors.expiredInvitationToken : req.messages.errors.invalidInvitationToken)
     }
     orga = await storage.getOrganization(invit.id)
     if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
+    if (invit.email !== req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   }
 
   // create user

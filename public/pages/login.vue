@@ -183,6 +183,14 @@
 
           <v-window-item value="createUser">
             <v-card-text>
+              <v-alert
+                v-if="invitPayload"
+                type="info"
+                outlined
+                class="mb-6"
+              >
+                {{ $t('pages.login.createUserInvit', {name: invitPayload.n || invitPayload.name || invitPayload.id }) }}
+              </v-alert>
               <v-form ref="createUserForm">
                 <v-text-field
                   id="createuser-email"
@@ -195,12 +203,16 @@
                   outlined
                   dense
                   rounded
+                  :disabled="!!invitPayload"
                 />
 
                 <v-text-field
                   v-model="newUser.firstName"
                   :label="$t('common.firstName')"
                   name="firstname"
+                  outlined
+                  dense
+                  rounded
                   @keyup.enter="createUser"
                 />
 
@@ -208,6 +220,9 @@
                   v-model="newUser.lastName"
                   :label="$t('common.lastName')"
                   name="lastname"
+                  outlined
+                  dense
+                  rounded
                   @keyup.enter="createUser"
                 />
 
@@ -222,7 +237,6 @@
                   outlined
                   dense
                   rounded
-                  class="mt-6"
                   @keyup.enter="createUser"
                 >
                   <v-tooltip
@@ -250,7 +264,13 @@
                   dense
                   rounded
                   @keyup.enter="createUser"
-                />
+                >
+                  <div slot="append-outer">
+                    <v-icon style="visibility:hidden">
+                      mdi-information
+                    </v-icon>
+                  </div>
+                </v-text-field>
               </v-form>
             </v-card-text>
 
@@ -367,7 +387,13 @@
                 dense
                 rounded
                 @keyup.enter="changePassword"
-              />
+              >
+                <div slot="append-outer">
+                  <v-icon style="visibility:hidden">
+                    mdi-information
+                  </v-icon>
+                </div>
+              </v-text-field>
             </v-card-text>
             <v-card-actions>
               <v-spacer />
@@ -612,11 +638,11 @@ export default {
     }
     if (this.actionPayload) {
       this.step = 'changePassword'
-      this.email = this.actionPayload.email
+      this.email = this.actionPayload.email || this.invitPayload.e
     } else if (this.invitPayload) {
       this.createUserStep()
       this.org = this.invitPayload.id
-      this.email = this.invitPayload.email
+      this.email = this.invitPayload.email || this.invitPayload.e
     } else if (this.error) {
       this.step = 'error'
     } else {
@@ -640,14 +666,6 @@ export default {
             invit_token: this.invitToken
           }
         })
-        if (this.invitToken) {
-          await this.$axios.$get('api/invitations/_accept', {
-            params: {
-              redirect: this.redirectUrl,
-              invit_token: this.invitToken
-            }
-          })
-        }
         this.createUserErrors = []
         this.password = this.newUser.password
         this.step = 'createUserConfirmed'

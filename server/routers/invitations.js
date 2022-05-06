@@ -5,6 +5,7 @@ const tokens = require('../utils/tokens')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
 const limits = require('../utils/limits')
+const { shortenInvit, unshortenInvit } = require('../utils/invitations')
 const emailValidator = require('email-validator')
 const debug = require('debug')('invitations')
 
@@ -27,7 +28,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   const invitation = req.body
   const orga = req.user.organizations.find(o => o.id === invitation.id)
   if (!req.user.isAdmin && (!orga || orga.role !== 'admin')) return res.status(403).send(req.messages.errors.permissionDenied)
-  const token = tokens.sign(req.app.get('keys'), invitation, config.jwtDurations.invitationToken)
+  const token = tokens.sign(req.app.get('keys'), shortenInvit(invitation), config.jwtDurations.invitationToken)
 
   const linkUrl = new URL(req.publicBaseUrl + '/api/invitations/_accept')
   linkUrl.searchParams.set('invit_token', token)
@@ -51,7 +52,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   let verified
   const errorUrl = new URL(`${req.publicBaseUrl}/login`)
   try {
-    invit = await tokens.verify(req.app.get('keys'), req.query.invit_token)
+    invit = unshortenInvit(await tokens.verify(req.app.get('keys'), req.query.invit_token))
     verified = true
   } catch (err) {
     if (err.name !== 'TokenExpiredError') {
