@@ -15,7 +15,7 @@ module.exports = {
     deactivateAdminMode: 'Deactivate admin mode',
     documentation: 'Documentation',
     administration: 'Administration',
-    myAccount: 'My account',
+    myAccount: 'Personal info',
     myOrganizations: 'My organizations',
     organization: 'Organization',
     organizations: 'Organizations',

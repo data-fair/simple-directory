@@ -137,7 +137,7 @@
                       </v-icon>
                     </v-avatar>
                   </v-list-item-avatar>
-                  <v-list-item-title>{{ activeAccount.type === 'user' ? 'Compte personnel' : activeAccount.name }}</v-list-item-title>
+                  <v-list-item-title>{{ activeAccount.type === 'user' ? $t('common.userAccount') : activeAccount.name }}</v-list-item-title>
                 </v-list-item>
 
                 <v-list-item
@@ -145,7 +145,7 @@
                   :nuxt="true"
                 >
                   <v-list-item-content>
-                    <v-list-item-title>Mon compte</v-list-item-title>
+                    <v-list-item-title>{{ $t('common.myAccount') }}</v-list-item-title>
                   </v-list-item-content>
                 </v-list-item>
                 <v-list-item
