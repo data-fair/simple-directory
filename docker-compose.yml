@@ -4,7 +4,7 @@ services:
     profiles:
       - dev
       - test
-    image: mvertes/alpine-mongo:3.4.9-0
+    image: mongo:4.2
     ports:
       - 27017:27017
   ldap:
@@ -26,3 +26,15 @@ services:
       - 6443:443
     environment:
       - PHPLDAPADMIN_LDAP_HOSTS=ldap
+  notify:
+    profiles:
+      - dev
+    image: ghcr.io/data-fair/notify:master
+    network_mode: host
+    environment:
+      - PORT=8088
+      - PUBLIC_URL=http://localhost:5689/notify
+      - WS_PUBLIC_URL=ws://localhost:5689/notify
+      - DIRECTORY_URL=http://localhost:5689
+      - SECRET_NOTIFICATIONS=secret-notifications
+      - SECRET_SENDMAILS=secret-sendmails

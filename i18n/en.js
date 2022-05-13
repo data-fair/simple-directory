@@ -306,5 +306,11 @@ An action requiring confirmation by email was triggered on this address. To conf
       htmlAlternativeLink: 'If the button doesn\'t work, you can copy/paste this link in the address bar of your browser:',
       htmlCaption: 'If you encounter a problem with your account or if you find this message suspicious feel free to contact us at <a href="mailto:{contact}">{contact}</a>.'
     }
+  },
+  notifications: {
+    sentInvitationTopic: 'an invitation is sent',
+    sentInvitation: 'An email was sent to {email} with your invitation to join the organization {orgName}.',
+    acceptedInvitationTopic: 'an invitation is accepted',
+    acceptedInvitation: 'The user {name} ({email}) has accepted your invitation to join the organization {orgName}.'
   }
 }

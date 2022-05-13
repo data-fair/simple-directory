@@ -704,7 +704,8 @@ export default {
         })
         this.createUserErrors = []
         this.password = this.newUser.password
-        this.step = 'createUserConfirmed'
+        if (this.invitToken) this.step = 'login'
+        else this.step = 'createUserConfirmed'
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
         else this.createUserErrors = [error.response.data || error.message]

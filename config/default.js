@@ -174,7 +174,8 @@ module.exports = {
     sendMails: null,
     limits: null,
     readAll: null,
-    metrics: null
+    metrics: null,
+    notifications: null
   },
   // A link to the terms of services for the site
   tosUrl: null,
@@ -231,5 +232,7 @@ module.exports = {
   },
   // allow configuring external storages per organization
   perOrgStorageTypes: [],
-  cipherPassword: null
+  cipherPassword: null,
+  notifyUrl: null,
+  privateNotifyUrl: null
 }

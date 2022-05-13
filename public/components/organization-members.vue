@@ -16,6 +16,13 @@
       />
     </v-row>
 
+    <div
+      v-if="isAdminOrga"
+      style="max-width:500px"
+    >
+      <v-iframe :src="notifySubscribeUrl" />
+    </div>
+
     <v-row class="mx-0">
       <v-text-field
         v-model="q"
@@ -120,13 +127,15 @@
 
 <script>
 import { mapState, mapActions } from 'vuex'
+import 'iframe-resizer/js/iframeResizer'
+import VIframe from '@koumoul/v-iframe'
 import eventBus from '../event-bus'
 import AddMemberMenu from '~/components/add-member-menu'
 import DeleteMemberMenu from '~/components/delete-member-menu'
 import EditMemberMenu from '~/components/edit-member-menu'
 
 export default {
-  components: { AddMemberMenu, DeleteMemberMenu, EditMemberMenu },
+  components: { VIframe, AddMemberMenu, DeleteMemberMenu, EditMemberMenu },
   props: {
     isAdminOrga: {
       type: Boolean,
@@ -163,6 +172,18 @@ export default {
     ...mapState('session', ['user']),
     disableInvite () {
       return !this.nbMembersLimits || (this.nbMembersLimits.limit > 0 && this.nbMembersLimits.consumption >= this.nbMembersLimits.limit)
+    },
+    notifySubscribeUrl () {
+      const keys = [
+        'simple-directory:invitation-sent',
+        'simple-directory:invitation-accepted'
+      ]
+      const titles = [
+        this.$t('notifications.sentInvitationTopic'),
+        this.$t('notifications.acceptedInvitationTopic')
+      ]
+      const sender = `organization:${this.orga.id}::admin`
+      return `${this.env.notifyUrl}/embed/subscribe?key=${encodeURIComponent(keys.join(','))}&title=${encodeURIComponent(titles.join(','))}&sender=${encodeURIComponent(sender)}&register=false`
     }
   },
   async mounted () {

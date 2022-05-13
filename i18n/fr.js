@@ -336,5 +336,11 @@ Une action demandant une confirmation par email a été déclenchée sur cette a
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
       htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez ce message suspect, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
     }
+  },
+  notifications: {
+    sentInvitationTopic: 'une invitation est envoyée',
+    sentInvitation: 'Un email a été envoyé à {email} avec votre invitation à rejoindre l\'organisation {orgName}.',
+    acceptedInvitationTopic: 'une invitation est acceptée',
+    acceptedInvitation: 'L\'utilisateur {name} ({email}) a accepté votre invitation à rejoindre l\'organisation {orgName}.'
   }
 }

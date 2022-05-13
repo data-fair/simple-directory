@@ -117,7 +117,8 @@ module.exports = {
     noBirthday: config.noBirthday,
     showCreatedUserHost: config.showCreatedUserHost,
     avatars: config.avatars,
-    perOrgStorageTypes: config.perOrgStorageTypes
+    perOrgStorageTypes: config.perOrgStorageTypes,
+    notifyUrl: config.notifyUrl
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

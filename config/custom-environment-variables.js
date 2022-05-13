@@ -274,5 +274,7 @@ module.exports = {
     __name: 'PER_ORG_STORAGE_TYPES',
     __format: 'json'
   },
-  cipherPassword: 'CIPHER_PASSWORD'
+  cipherPassword: 'CIPHER_PASSWORD',
+  notifyUrl: 'NOTIFY_URL',
+  privateNotifyUrl: 'PRIVATE_NOTIFY_URL'
 }

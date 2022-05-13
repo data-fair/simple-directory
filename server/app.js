@@ -26,6 +26,12 @@ const server = http.createServer(app)
 
 app.set('json spaces', 2)
 
+if (process.env.NODE_ENV === 'development') {
+  // Create a mono-domain environment with other services in dev
+  const { createProxyMiddleware } = require('http-proxy-middleware')
+  app.use('/notify', createProxyMiddleware({ target: 'http://localhost:8088', pathRewrite: { '^/notify': '' } }))
+}
+
 app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))
 app.use(i18n.middleware)

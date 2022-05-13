@@ -13,6 +13,7 @@ const storages = require('../storages')
 const limits = require('../utils/limits')
 const { unshortenInvit } = require('../utils/invitations')
 const defaultConfig = require('../../config/default.js')
+const { send: sendNotification } = require('../utils/notifications')
 
 const router = express.Router()
 
@@ -109,6 +110,11 @@ router.post('', asyncWrap(async (req, res, next) => {
       if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(req.messages.errors.maxNbMembers)
     }
     await storage.addMember(orga, newUser, invit.role, invit.department)
+    sendNotification({
+      sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
+      topic: { key: 'simple-directory:invitation-accepted' },
+      title: req.__all('notifications.acceptedInvitation', { name: newUser.name, email: newUser.email, orgName: orga.name })
+    })
     if (storage.db) await limits.setNbMembers(storage.db, orga.id)
   }
 

@@ -57,10 +57,13 @@ module.exports = {
     sendMails: 'testkey',
     limits: 'testkey',
     readAll: 'testkey',
-    metrics: 'testkey'
+    metrics: 'testkey',
+    notifications: 'secret-notifications'
   },
   showCreatedUserHost: true,
   proxyNuxt: true,
   perOrgStorageTypes: ['ldap'],
-  cipherPassword: 'dev'
+  cipherPassword: 'dev',
+  notifyUrl: 'http://localhost:5689/notify',
+  privateNotifyUrl: 'http://localhost:8088'
 }

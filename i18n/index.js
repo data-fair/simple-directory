@@ -45,5 +45,26 @@ exports.middleware = (req, res, next) => {
   const locales = acceptLangParser.parse(req.get('Accept-Language'))
   const localeCode = req.cookies.i18n_lang || (locales && locales[0] && locales[0].code) || exports.defaultLocale
   req.messages = exports.messages[localeCode] || exports.messages[exports.defaultLocale]
+
+  // TODO: memoize ? use standard i18n module ?
+
+  req.__ = (key, params = {}) => {
+    key = key.replace(/\./g, '_')
+    let value = flatMessages[localeCode + '_' + key] || flatMessages[exports.defaultLocale + '_' + key] || ''
+    Object.keys(params).forEach(key => { value = value.replace(`{${key}}`, params[key]) })
+    return value
+  }
+  req.__all = (key, params = {}) => {
+    key = key.replace(/\./g, '_')
+    const res = {}
+    for (const locale of exports.locales) {
+      let value = flatMessages[locale.code + '_' + key]
+      if (value) {
+        Object.keys(params).forEach(key => { value = value.replace(`{${key}}`, params[key]) })
+        res[locale.code] = value
+      }
+    }
+    return res
+  }
   next()
 }
