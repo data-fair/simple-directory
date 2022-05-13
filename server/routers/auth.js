@@ -223,15 +223,6 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
     return redirectError('badCredentials')
   }
 
-  // we just confirmed the user email after creation, and creating an organization was requested too
-  if (decoded.emailConfirmed && decoded.createOrganization) {
-    if (config.quotas.defaultMaxCreatedOrgs === 0) return redirectError('maxCreatedOrgs')
-    const orga = { id: shortid.generate(), name: decoded.createOrganization }
-    await storage.createOrganization(orga, user)
-    await storage.addMember(orga, user, 'admin')
-    webhooks.postIdentity('organization', orga)
-  }
-
   const payload = tokens.getPayload(user)
   if (decoded.rememberMe) payload.rememberMe = true
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = true
@@ -239,7 +230,18 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
 
   await confirmLog(storage, user)
   tokens.setCookieToken(req, res, token, req.query.id_token_org)
-  res.redirect(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
+
+  const reboundRedirect = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me'
+  // we just confirmed the user email after creation, he might want to create an organization
+  if (decoded.emailConfirmed && decoded.createOrganization && config.quotas.defaultMaxCreatedOrgs !== 0) {
+    const redirectUrl = new URL(`${req.publicBaseUrl}/login`)
+    redirectUrl.searchParams.set('step', 'createOrga')
+    redirectUrl.searchParams.set('redirect', reboundRedirect)
+    debug('redirect to createUser step', redirectUrl.href)
+    res.redirect(redirectUrl.href)
+  } else {
+    res.redirect(reboundRedirect)
+  }
 }))
 
 // Used to extend an older but still valid token from a user

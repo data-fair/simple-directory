@@ -68,7 +68,8 @@ module.exports = {
     birthday: 'Anniversaire',
     missingInfo: 'Information manquante',
     '2FA': 'Authentification 2 facteurs',
-    userAccount: 'Compte personnel'
+    userAccount: 'Compte personnel',
+    continue: 'Continuer'
   },
   doc: {
     about: {

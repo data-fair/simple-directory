@@ -271,38 +271,6 @@
                     </v-icon>
                   </div>
                 </v-text-field>
-
-                <template v-if="!invitPayload && !org && env.defaultMaxCreatedOrgs !== 0">
-                  <v-checkbox
-                    v-model="newUserCreateOrganization"
-                    :label="$t('pages.login.createUserOrganization')"
-                  >
-                    <v-tooltip
-                      slot="append"
-                      right
-                      max-width="400"
-                    >
-                      <template #activator="{on}">
-                        <v-icon v-on="on">
-                          mdi-information
-                        </v-icon>
-                      </template>
-                      <div v-html="$t('pages.login.createUserOrganizationHelp')" />
-                    </v-tooltip>
-                  </v-checkbox>
-                  <template v-if="newUserCreateOrganization">
-                    <v-text-field
-                      v-model="newUser.createOrganization"
-                      :label="$t('common.organizationName')"
-                      :rules="[v => !!v || '']"
-                      name="organizationName"
-                      required
-                      outlined
-                      dense
-                      rounded
-                    />
-                  </template>
-                </template>
               </v-form>
             </v-card-text>
 
@@ -532,6 +500,63 @@
             </v-card-actions>
           </v-window-item>
 
+          <v-window-item value="createOrga">
+            <v-card-text>
+              <v-alert
+                :value="true"
+                type="info"
+                outlined
+                class="mb-3"
+              >
+                {{ $t('pages.login.createUserOrganizationHelp') }}
+              </v-alert>
+
+              <v-switch
+                v-model="createOrganization.active"
+                :label="$t('pages.login.createUserOrganization')"
+              />
+              <template v-if="createOrganization.active">
+                <v-text-field
+                  v-model="createOrganization.name"
+                  :label="$t('common.organizationName')"
+                  :rules="[v => !!v || '']"
+                  name="organizationName"
+                  required
+                  outlined
+                  dense
+                  rounded
+                />
+              </template>
+            </v-card-text>
+
+            <v-card-actions>
+              <v-btn
+                v-if="step !== 1"
+                text
+                @click="step='login'"
+              >
+                {{ $t('common.back') }}
+              </v-btn>
+              <v-spacer />
+              <v-btn
+                v-if="createOrganization.active"
+                color="primary"
+                depressed
+                @click="createOrga"
+              >
+                {{ $t('common.validate') }}
+              </v-btn>
+              <v-btn
+                v-else
+                color="primary"
+                depressed
+                :href="redirectUrl"
+              >
+                {{ $t('common.continue') }}
+              </v-btn>
+            </v-card-actions>
+          </v-window-item>
+
           <v-window-item value="error">
             <v-card-text v-if="error">
               <v-alert
@@ -594,7 +619,8 @@ export default {
         changePasswordSent: this.$t('pages.login.changePassword'),
         error: this.$t('pages.login.error'),
         configure2FA: this.$t('pages.login.configure2FA'),
-        recovery2FA: this.$t('pages.login.recovery2FA')
+        recovery2FA: this.$t('pages.login.recovery2FA'),
+        createOrga: this.$t('pages.login.createOrga')
       },
       password: '',
       passwordErrors: [],
@@ -611,10 +637,12 @@ export default {
       newUser: {
         firstName: null,
         lastName: null,
-        password: null,
-        createOrganization: null
+        password: null
       },
-      newUserCreateOrganization: false,
+      createOrganization: {
+        active: false,
+        name: ''
+      },
       createUserErrors: [],
       newUserPassword2: null,
       error: this.$route.query.error,
@@ -679,8 +707,6 @@ export default {
       this.email = this.invitPayload.email || this.invitPayload.e
     } else if (this.error) {
       this.step = 'error'
-    } else {
-      this.step = 'login'
     }
   },
   methods: {
@@ -694,7 +720,6 @@ export default {
           email: this.email,
           ...this.newUser
         }
-        if (!this.newUserCreateOrganization || !body.createOrganization) delete body.createOrganization
         await this.$axios.$post('api/users', body, {
           params: {
             redirect: this.redirectUrl,
@@ -706,6 +731,17 @@ export default {
         this.password = this.newUser.password
         if (this.invitToken) this.step = 'login'
         else this.step = 'createUserConfirmed'
+      } catch (error) {
+        if (error.response.status >= 500) eventBus.$emit('notification', { error })
+        else this.createUserErrors = [error.response.data || error.message]
+      }
+    },
+    async createOrga () {
+      if (!this.createOrganization.name) return
+      try {
+        const body = { name: this.createOrganization.name }
+        await this.$axios.$post('api/organizations', body)
+        window.location.href = this.redirectUrl
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
         else this.createUserErrors = [error.response.data || error.message]
