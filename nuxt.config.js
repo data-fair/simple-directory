@@ -44,7 +44,7 @@ module.exports = {
   srcDir: 'public/',
   buildDir: 'nuxt-dist',
   build: {
-    transpile: [/@koumoul/],
+    transpile: [/@koumoul/, /@data-fair/],
     publicPath: config.publicUrl + '/_nuxt/',
     extend (config, { isServer, isDev, isClient }) {
       const webpack = require('webpack')
@@ -72,6 +72,7 @@ module.exports = {
     // we will override some of it at runtime using env.i18n
     locales: i18n.locales,
     defaultLocale: i18n.defaultLocale,
+    vueI18nLoader: true,
     vueI18n: {
       fallbackLocale: i18n.defaultLocale,
       messages: config.i18nMessages

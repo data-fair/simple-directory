@@ -80,7 +80,7 @@ exports.getPayload = (user) => {
 exports.getDefaultOrg = (user) => {
   if (!user.organizations || !user.organizations.length) return null
   if (user.defaultOrg) {
-    const defaultOrg = user.organizations.find(o => o.id === defaultOrg)
+    const defaultOrg = user.organizations.find(o => o.id === user.defaultOrg)
     if (defaultOrg) return defaultOrg.id
   }
   if (user.ignorePersonalAccount) return user.organizations[0].id

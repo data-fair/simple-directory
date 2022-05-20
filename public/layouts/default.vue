@@ -256,6 +256,39 @@
             </v-menu>
           </template>
         </v-toolbar-items>
+        <personal-menu>
+          <template #actions-before="{}">
+            <v-list-item
+              :to="'/me'"
+              :nuxt="true"
+            >
+              <v-list-item-content>
+                <v-list-item-title>{{ $t('common.myAccount') }}</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item
+              v-if="user.organization && user.organization.role === 'admin'"
+              :to="'/organization/' + user.organization.id"
+              :nuxt="true"
+            >
+              <v-list-item-content>
+                <v-list-item-title>Gestion de l'organisation</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <template v-if="user.asAdmin">
+              <!-- leave admin impersonification of a user -->
+              <v-list-item
+                dense
+                @click="asAdmin()"
+              >
+                <v-list-item-title style="overflow: visible;">
+                  {{ $t('common.delAsAdmin') }}
+                </v-list-item-title>
+              </v-list-item>
+            </template>
+            <v-divider />
+          </template>
+        </personal-menu>
         <lang-switcher class="ml-2" />
       </v-app-bar>
     </template>
@@ -303,11 +336,13 @@
 <script>
 import eventBus from '../event-bus'
 import logo from '../components/logo.vue'
-import langSwitcher from '../components/lang-switcher.vue'
+import PersonalMenu from '@data-fair/sd-vue/src/vuetify/personal-menu.vue'
+import LangSwitcher from '@data-fair/sd-vue/src/vuetify/lang-switcher.vue'
+
 const { mapState, mapGetters, mapActions } = require('vuex')
 
 export default {
-  components: { logo, langSwitcher },
+  components: { logo, PersonalMenu, LangSwitcher },
   data () {
     return {
       notification: null,
