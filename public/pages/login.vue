@@ -594,7 +594,7 @@
 
 <script>
 
-import { mapState } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 import jwtDecode from 'jwt-decode'
 import logo from '../components/logo.vue'
 import OauthLoginLinks from '../components/oauth-login-links.vue'
@@ -710,6 +710,7 @@ export default {
     }
   },
   methods: {
+    ...mapActions('session', ['switchOrganization']),
     createUserStep () {
       this.step = this.env.tosUrl ? 'tos' : 'createUser'
     },
@@ -740,7 +741,12 @@ export default {
       if (!this.createOrganization.name) return
       try {
         const body = { name: this.createOrganization.name }
-        await this.$axios.$post('api/organizations', body)
+        const orga = await this.$axios.$post('api/organizations', body)
+        await this.$axios.$patch('api/users/' + this.user.id, {
+          ignorePersonalAccount: true,
+          defaultOrg: orga.id
+        })
+        this.switchOrganization(orga.id)
         window.location.href = this.redirectUrl
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })

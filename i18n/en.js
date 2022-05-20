@@ -200,7 +200,10 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       operations: 'Sensitive operations',
       deleteMyself: 'Delete this account',
       deleteMyselfAlert: 'If your delete your account the associated data will deleted as well and cannot be recovered.',
-      deleteMyselfCheck: 'check and click on OK to confirm the deletion.'
+      deleteMyselfCheck: 'check and click on OK to confirm the deletion.',
+      accountChanges: 'Managing account switching',
+      defaultOrg: 'Activate this organization account by default after each login',
+      ignorePersonalAccount: 'Check this box if you do not wish to use this platform outside of an organization account'
     }
   },
   errors: {

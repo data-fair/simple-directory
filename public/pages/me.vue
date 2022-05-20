@@ -110,10 +110,8 @@
         </v-btn>
       </v-row>
 
-      <br>
-
       <template v-if="host === mainHost">
-        <h2 class="text-h5 mb-3">
+        <h2 class="text-h5 mt-6 mb-3">
           {{ $t('common.myOrganizations') }}
         </h2>
 
@@ -142,13 +140,38 @@
         <add-organization-menu v-if="!readonly && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
       </template>
 
+      <template v-if="!(env.onlyCreateInvited && user.organizations.length === 1)">
+        <h2 class="text-h5 mt-6 mb-3">
+          {{ $t('pages.me.accountChanges') }}
+        </h2>
+        <v-checkbox
+          v-model="patch.ignorePersonalAccount"
+          :label="$t('pages.me.ignorePersonalAccount')"
+          :disabled="!userDetails || readonly"
+          name="ignorePersonalAccount"
+          @change="save"
+        />
+        <v-select
+          v-model="patch.defaultOrg"
+          :label="$t('pages.me.defaultOrg')"
+          :disabled="!userDetails || readonly"
+          name="defaultOrg"
+          :items="(patch.ignorePersonalAccount ? [] : [{id: '', name: $t('common.userAccount')}]).concat(user.organizations)"
+          item-value="id"
+          item-text="name"
+          clearable
+          style="max-width:500px;"
+          @change="save"
+        />
+      </template>
+
       <template v-if="env.userSelfDelete && !readonly">
-        <h2 class="text-h5 mt-4 mb-3">
+        <h2 class="text-h5 mt-6 mb-3">
           {{ $t('pages.me.operations') }}
         </h2>
         <confirm-menu
-          :button-text="$t('pages.me.deleteMyself')"
-          :title="$t('pages.me.deleteMyself')"
+          :button-text="$t('pages.me.deleteMyself', {name: user.name})"
+          :title="$t('pages.me.deleteMyself', {name: user.name})"
           :alert="$t('pages.me.deleteMyselfAlert')"
           :check-text="$t('pages.me.deleteMyselfCheck')"
           yes-color="warning"
@@ -220,6 +243,8 @@ export default {
       this.patch.firstName = this.userDetails.firstName
       this.patch.lastName = this.userDetails.lastName
       this.patch.birthday = this.userDetails.birthday
+      this.patch.ignorePersonalAccount = this.userDetails.ignorePersonalAccount || false
+      this.patch.defaultOrg = this.userDetails.defaultOrg || ''
     },
     async save () {
       if (!this.$refs.form.validate()) return

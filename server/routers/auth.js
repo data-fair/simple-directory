@@ -123,7 +123,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   // this is used by data-fair app integrated login
   if (req.is('application/x-www-form-urlencoded')) {
     const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-    tokens.setCookieToken(req, res, token, org && org.id)
+    tokens.setCookieToken(req, res, token, (org && org.id) || tokens.getDefaultOrg(user))
     debug(`Password based authentication of user ${user.name}`)
     res.redirect(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
   } else {
@@ -229,7 +229,7 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
 
   await confirmLog(storage, user)
-  tokens.setCookieToken(req, res, token, req.query.id_token_org)
+  tokens.setCookieToken(req, res, token, req.query.id_token_org || tokens.getDefaultOrg(user))
 
   const reboundRedirect = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me'
   // we just confirmed the user email after creation, he might want to create an organization

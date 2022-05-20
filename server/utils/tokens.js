@@ -62,13 +62,29 @@ exports.getPayload = (user) => {
     id: user.id,
     email: user.email,
     name: user.name,
-    organizations: user.organizations,
+    organizations: user.organizations.map(o => ({ ...o })),
     isAdmin: config.admins.includes(user.email)
   }
+  if (user.defaultOrg) {
+    const defaultOrg = payload.organizations.find(o => o.id === user.defaultOrg)
+    if (defaultOrg) defaultOrg.dflt = 1
+  }
+  if (user.ignorePersonalAccount) payload.ipa = 1
   if (user.department) payload.department = user.department
   if (user.orgStorage) payload.orgStorage = user.orgStorage
   if (user.readonly) payload.readonly = user.readonly
+  if (user.ipa) payload.ipa = 1
   return payload
+}
+
+exports.getDefaultOrg = (user) => {
+  if (!user.organizations || !user.organizations.length) return null
+  if (user.defaultOrg) {
+    const defaultOrg = user.organizations.find(o => o.id === defaultOrg)
+    if (defaultOrg) return defaultOrg.id
+  }
+  if (user.ignorePersonalAccount) return user.organizations[0].id
+  return null
 }
 
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention

@@ -73,7 +73,11 @@ router.post('', asyncWrap(async (req, res, next) => {
     emailConfirmed: false
   }
   newUser.name = userName(newUser)
-  if (invit) newUser.emailConfirmed = true
+  if (invit) {
+    newUser.emailConfirmed = true
+    newUser.defaultOrg = orga.id
+    newUser.ignorePersonalAccount = true
+  }
 
   // password is optional as we support passwordless auth
   if (![undefined, null].includes(req.body.password)) {
@@ -157,7 +161,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
 }))
 
 // Update some parts of a user as himself
-const patchKeys = ['firstName', 'lastName', 'birthday']
+const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg']
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 router.patch('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()

@@ -224,9 +224,12 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       noOrganization: 'Vous n\'êtes membre d\'aucune organisation.',
       operations: 'Opérations sensibles',
       deleteMyself: 'Supprimer l\'utilisateur {name}',
-      deleteMyselfAlert: 'Si vous supprimez votre compte les données associées seront également supprimées et ne pourront pas être récupérées.',
+      deleteMyselfAlert: 'Si vous supprimez votre compte utilisateur les données associées seront également supprimées et ne pourront pas être récupérées.',
       deleteMyselfCheck: 'cochez cette case et cliquez sur OK pour confirmer la suppression.',
-      separateDomain: 'Vous utilisez ce compte sur <a href="{host}">{host}</a>, ce site fait partie de la plateforme <a href="{mainHost}">{mainHost}</a>. Le compte est mutualisé avec tous les sites de cette plateforme.'
+      separateDomain: 'Vous utilisez ce compte sur <a href="{host}">{host}</a>, ce site fait partie de la plateforme <a href="{mainHost}">{mainHost}</a>. Le compte est mutualisé avec tous les sites de cette plateforme.',
+      accountChanges: 'Gestion des changements de compte',
+      defaultOrg: 'Activer ce compte organisation par défaut à chaque connexion',
+      ignorePersonalAccount: 'Cochez cette case si vous ne souhaitez jamais utiliser la plateforme en dehors d\'une organisation'
     }
   },
   errors: {
