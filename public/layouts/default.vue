@@ -1,7 +1,7 @@
 <template>
   <v-app
     :class="appClass"
-    :style="localePath('login') === $route.path && 'background-color: rgb(245, 245, 245);'"
+    :style="localePath('login') === $route.path && $vuetify.theme.light && 'background-color: rgb(245, 245, 245);'"
   >
     <template v-if="isLoginPage">
       <v-app-bar
