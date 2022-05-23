@@ -9,7 +9,8 @@
     },
     "name": {
       "description": "Name of the organization",
-      "type": "string"
+      "type": "string",
+      "maxLength": "150"
     },
     "description": {
       "description": "Description of the organization",
