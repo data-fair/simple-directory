@@ -2,8 +2,11 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
+    max-width="600"
+    offset-y
+    top
   >
-    <template #activator="{ on }">
+    <template #activator="{ on, attrs }">
       <!--<v-tooltip v-if="icon" top>
         <template v-slot:activator="{ on: onTooltip }">
           <v-btn
@@ -18,6 +21,7 @@
       </v-tooltip>-->
       <v-btn
         :color="yesColor"
+        v-bind="attrs"
         v-on="on"
       >
         {{ buttonText }}

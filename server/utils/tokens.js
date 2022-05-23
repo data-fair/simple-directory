@@ -62,7 +62,7 @@ exports.getPayload = (user) => {
     id: user.id,
     email: user.email,
     name: user.name,
-    organizations: user.organizations.map(o => ({ ...o })),
+    organizations: (user.organizations || []).map(o => ({ ...o })),
     isAdmin: config.admins.includes(user.email)
   }
   if (user.defaultOrg) {

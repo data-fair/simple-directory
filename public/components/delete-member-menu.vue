@@ -2,7 +2,7 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    max-width="500px"
+    offset-y
   >
     <template #activator="{on}">
       <v-btn
@@ -15,7 +15,10 @@
         <v-icon>mdi-delete</v-icon>
       </v-btn>
     </template>
-    <v-card data-iframe-height>
+    <v-card
+      data-iframe-height
+      width="500"
+    >
       <v-card-title class="text-h6">
         {{ $t('pages.organization.confirmDeleteMemberTitle', {name: member.name}) }}
       </v-card-title>

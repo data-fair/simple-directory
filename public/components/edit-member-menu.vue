@@ -2,7 +2,7 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    max-width="500px"
+    offset-y
   >
     <template #activator="{on}">
       <v-btn
@@ -17,6 +17,7 @@
     <v-card
       v-if="editMember"
       data-iframe-height
+      width="500"
     >
       <v-card-title class="text-h6">
         {{ $t('pages.organization.confirmEditMemberTitle', {name: member.name}) }}

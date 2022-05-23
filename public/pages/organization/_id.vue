@@ -2,40 +2,51 @@
   <v-container
     v-if="orga && userDetails"
     data-iframe-height
-    :fluid="$route.query.fluid === 'true'"
-    :class="{'pa-0': $route.query.fluid === 'true'}"
+    style="max-width:600px;"
   >
-    <h2 class="text-h5 mb-3">
+    <h2 class="text-h4 mb-4">
+      <v-icon
+        large
+        color="primary"
+        style="top:-2px"
+      >
+        mdi-account-group
+      </v-icon>
       {{ $t('common.organization') + ' ' + orga.name }}
     </h2>
+
     <v-subheader v-if="orga.created">
       {{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}
     </v-subheader>
-    <load-avatar
-      v-if="orga && env.avatars.orgs"
-      :owner="{...orga, type: 'organization'}"
-      :disabled="env.readonly"
-    />
     <v-form
       ref="form"
-      v-model="valid"
       lazy-validation
       @submit="save"
     >
+      <load-avatar
+        v-if="orga && env.avatars.orgs"
+        :owner="{...orga, type: 'organization'}"
+        :disabled="env.readonly"
+      />
       <v-text-field
         v-model="orga.name"
         :label="$t('common.name')"
-        :rules="[v => !!v || '']"
+        :rules="[v => !!v || '', v => v.length < 150 || $t('common.tooLong')]"
         :disabled="!isAdminOrga || env.readonly"
         name="name"
         required
+        outlined
+        dense
+        @change="save"
       />
       <v-textarea
         v-model="orga.description"
         :label="$t('common.description')"
         :disabled="!isAdminOrga || env.readonly"
         name="description"
+        hide-details
         outlined
+        @change="save"
       />
       <v-text-field
         v-if="env.manageDepartments && env.manageDepartmentLabel"
@@ -43,6 +54,7 @@
         :label="$t('pages.organization.departmentLabelTitle')"
         :disabled="!isAdminOrga || env.readonly"
         name="departmentLabel"
+        @change="save"
       >
         <v-tooltip
           slot="append-outer"
@@ -65,18 +77,10 @@
         multiple
         name="2FARoles"
         style="max-width:600px"
+        @change="save"
       />
-      <v-row>
-        <v-spacer />
-        <v-btn
-          v-if="isAdminOrga && !env.readonly"
-          color="primary"
-          type="submit"
-        >
-          {{ $t('common.save') }}
-        </v-btn>
-      </v-row>
     </v-form>
+
     <organization-departments
       v-if="env.manageDepartments"
       :orga="orga"
@@ -155,7 +159,7 @@ export default {
       }
     },
     async save (e) {
-      e.preventDefault()
+      if (e.preventDefault) e.preventDefault()
       if (!this.$refs.form.validate()) return
       const patch = { name: this.orga.name, description: this.orga.description, '2FA': this.orga['2FA'] }
       if (this.env.manageDepartments) patch.departmentLabel = this.orga.departmentLabel

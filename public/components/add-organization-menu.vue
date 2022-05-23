@@ -2,12 +2,12 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    :hide-overlay="true"
   >
     <template #activator="{on}">
       <v-btn
         :title="$t('common.createOrganization')"
         color="primary"
+        text
         v-on="on"
       >
         {{ $t('common.createOrganization') }}
@@ -27,9 +27,11 @@
           <v-text-field
             v-model="editOrganization.name"
             :label="$t('common.name')"
-            :rules="[v => !!v || '']"
+            :rules="[v => !!v || '', v => v.length < 150 || $t('common.tooLong')]"
             name="name"
             required
+            outlined
+            dense
           />
           <v-textarea
             v-model="editOrganization.description"

@@ -3,7 +3,7 @@
     v-if="isAdminOrga && members && members.results"
     v-model="menu"
     :close-on-content-click="false"
-    :max-width="link ? '800px' : '500px'"
+    offset-y
   >
     <template #activator="{on}">
       <v-btn
@@ -11,7 +11,7 @@
         fab
         small
         color="primary"
-        class="mx-2 mt-2"
+        class="mx-2"
         v-on="on"
       >
         <v-icon>mdi-plus</v-icon>
@@ -20,6 +20,7 @@
     <v-card
       v-if="orga"
       data-iframe-height
+      :width="link ? '800px' : '500px'"
     >
       <v-card-title class="text-h6">
         {{ $t('pages.organization.addMember') }}
@@ -45,6 +46,8 @@
             :rules="[v => !!v || '', v => !members.results.find(m => m.email === v) || $t('pages.organization.memberConflict')]"
             name="email"
             required
+            outlined
+            dense
           />
           <v-select
             v-model="invitation.role"
@@ -52,6 +55,8 @@
             :label="$t('common.role')"
             :rules="[v => !!v || '']"
             name="role"
+            outlined
+            dense
           />
           <v-select
             v-if="env.manageDepartments && orga.departments && orga.departments.length"
@@ -62,6 +67,8 @@
             item-text="name"
             name="department"
             clearable
+            outlined
+            dense
           />
         </v-form>
         <v-alert

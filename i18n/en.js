@@ -64,7 +64,9 @@ module.exports = {
     avatar: 'Avatar',
     birthday: 'Birthday',
     missingInfo: 'Missing info',
-    continue: 'Continue'
+    continue: 'Continue',
+    tooLong: 'text is too long',
+    settings: 'settings'
   },
   doc: {
     about: {
@@ -193,6 +195,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       msgDifferentUser: 'This invitation to become member of an organization has been validated. You can <a href="{loginUrl}">login with</a> the invited account.'
     },
     avatar: {
+      load: 'load a new avatar',
       prepare: 'Prepare the image'
     },
     me: {
@@ -200,7 +203,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       operations: 'Sensitive operations',
       deleteMyself: 'Delete this account',
       deleteMyselfAlert: 'If your delete your account the associated data will deleted as well and cannot be recovered.',
-      deleteMyselfCheck: 'check and click on OK to confirm the deletion.',
+      deleteMyselfCheck: 'check and click on OK to confirm the deletion of the user {name} and all its data.',
       accountChanges: 'Managing account switching',
       defaultOrg: 'Activate this organization account by default after each login',
       ignorePersonalAccount: 'Check this box if you do not wish to use this platform outside of an organization account'

@@ -1,65 +1,62 @@
 <template>
-  <v-list-item>
-    <v-list-item-avatar size="50">
-      <v-img
-        v-if="owner && !loading"
-        :src="owner.avatarUrl"
-      />
-    </v-list-item-avatar>
-    <v-list-item-content>
-      <input
-        :disabled="disabled"
+  <v-input
+    name="avatar"
+    :label="$t('common.avatar')"
+    :disabled="disabled"
+    class="vjsf-crop-img"
+  >
+    <!--<v-icon
+      v-if="!disabled"
+      style="position: absolute; right: 0;"
+      @click="on.input(null)"
+    >
+      mdi-close
+    </v-icon>-->
+    <v-row class="mt-0 mx-0">
+      <v-avatar
+        class="mt-1 mr-1"
+      >
+        <v-img
+          v-if="owner && !loading"
+          :src="owner.avatarUrl"
+        />
+      </v-avatar>
+      <v-file-input
+        v-if="!disabled"
+        v-model="file"
         type="file"
+        class="pt-2"
         accept="image/png, image/jpeg"
-        @change="openFile($event)"
+        :placeholder="$t('pages.avatar.load')"
+        outlined
+        dense
+        :prepend-icon="false"
+        @change="change"
       >
-
-      <v-menu
-        v-model="dialog"
-        :loading="loading"
-        :close-on-content-click="false"
-        :close-on-click="false"
-      >
-        <!--<template #activator="{on}">
-          <span />
-        </template>-->
-        <v-card
-          width="700"
-          data-iframe-height
-        >
-          <v-card-title
-            class="text-h6"
-            v-text="$t('pages.avatar.prepare')"
-          />
-          <v-card-text class="py-0">
-            <vue-cropper
-              ref="cropper"
-              :src="imgSrc"
-              :aspect-ratio="1"
-              :auto-crop="true"
-              :min-container-width="668"
-              :min-container-height="400"
-              alt="Avatar"
-            />
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn
-              text
-              @click="dialog = false"
-              v-text="$t('common.confirmCancel')"
-            />
-            <v-btn
-              :disabled="loading"
-              color="primary"
-              @click="validate"
-              v-text="$t('common.validate')"
-            />
-          </v-card-actions>
-        </v-card>
-      </v-menu>
-    </v-list-item-content>
-  </v-list-item>
+        <template #append-outer>
+          <v-btn
+            v-if="file"
+            fab
+            x-small
+            color="primary"
+            :title="$t('common.validate')"
+            style="position: relative; top: -4px;"
+            @click="validate"
+          >
+            <v-icon>
+              mdi-check
+            </v-icon>
+          </v-btn>
+        </template>
+      </v-file-input>
+    </v-row>
+    <vue-cropper
+      v-if="file"
+      ref="cropper"
+      v-bind="cropperOptions"
+      :src="imgSrc"
+    />
+  </v-input>
 </template>
 
 <script>
@@ -97,23 +94,26 @@ export default {
     return {
       dialog: false,
       loading: false,
-      imgSrc: null
+      file: null,
+      imgSrc: null,
+      cropperOptions: { aspectRatio: 1, autoCrop: true }
     }
   },
   computed: {
     ...mapState(['env'])
   },
   methods: {
-    openFile (event) {
-      const target = event.target
+    change (event) {
+      if (!this.file) {
+        this.imgSrc = null
+        return
+      }
       const reader = new FileReader()
       reader.onload = (event) => {
         this.imgSrc = event.target.result
-        this.dialog = true
-        this.$refs.cropper.replace(this.imgSrc)
-        target.value = '' // empty the file input right after
+        if (this.$refs.cropper) this.$refs.cropper.replace(this.imgSrc)
       }
-      reader.readAsDataURL(event.target.files[0])
+      reader.readAsDataURL(this.file)
     },
     async validate () {
       this.loading = true
@@ -121,12 +121,15 @@ export default {
       const formData = new FormData()
       formData.append('avatar', croppedImg)
       await this.$axios.$post(`${this.env.publicUrl}/api/avatars/${this.owner.type}/${this.owner.id}/avatar.png`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-      this.dialog = false
       this.loading = false
+      this.file = null
     }
   }
 }
 </script>
 
-<style lang="css" scoped>
+<style lang="css">
+.vjsf-crop-img>.v-input__control>.v-input__slot {
+  display: block;
+}
 </style>

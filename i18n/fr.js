@@ -16,7 +16,7 @@ module.exports = {
     documentation: 'Documentation',
     administration: 'Administration',
     myAccount: 'Informations personnelles',
-    myOrganizations: 'Mes organisations',
+    myOrganizations: 'Vos organisations',
     organization: 'Organisation',
     organizations: 'Organisations',
     organizationName: 'Nom de l\'organisation',
@@ -69,7 +69,9 @@ module.exports = {
     missingInfo: 'Information manquante',
     '2FA': 'Authentification 2 facteurs',
     userAccount: 'Compte personnel',
-    continue: 'Continuer'
+    continue: 'Continuer',
+    tooLong: 'texte trop long',
+    settings: 'paramètres'
   },
   doc: {
     about: {
@@ -218,6 +220,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       msgDifferentUser: 'Cette invitation à être membre d\'une organisation a bien été acceptée. Vous pouvez <a href="{loginUrl}">vous connecter</a> avec le compte invité.'
     },
     avatar: {
+      load: 'chargez un nouvel avatar',
       prepare: 'Préparez l\'image'
     },
     me: {
@@ -225,7 +228,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       operations: 'Opérations sensibles',
       deleteMyself: 'Supprimer l\'utilisateur {name}',
       deleteMyselfAlert: 'Si vous supprimez votre compte utilisateur les données associées seront également supprimées et ne pourront pas être récupérées.',
-      deleteMyselfCheck: 'cochez cette case et cliquez sur OK pour confirmer la suppression.',
+      deleteMyselfCheck: 'cochez cette case et cliquez sur OK pour confirmer la suppression de l\'utilisateur {name} et toutes ses données.',
       separateDomain: 'Vous utilisez ce compte sur <a href="{host}">{host}</a>, ce site fait partie de la plateforme <a href="{mainHost}">{mainHost}</a>. Le compte est mutualisé avec tous les sites de cette plateforme.',
       accountChanges: 'Gestion des changements de compte',
       defaultOrg: 'Activer ce compte organisation par défaut à chaque connexion',

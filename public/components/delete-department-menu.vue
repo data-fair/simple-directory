@@ -2,7 +2,7 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    max-width="500px"
+    offset-y
   >
     <template #activator="{on}">
       <v-btn
@@ -16,7 +16,10 @@
       </v-btn>
     </template>
 
-    <v-card data-iframe-height>
+    <v-card
+      data-iframe-height
+      width="500"
+    >
       <v-card-title class="text-h6">
         {{ $t('pages.organization.confirmDeleteDepartmentTitle', {name: department.name, departmentLabel}) }}
       </v-card-title>

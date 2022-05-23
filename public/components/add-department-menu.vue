@@ -3,15 +3,14 @@
     v-if="isAdminOrga"
     v-model="menu"
     :close-on-content-click="false"
-    max-width="500px"
   >
     <template #activator="{on}">
       <v-btn
-        :title="$t('pages.organization.addDepartment', {departmentLabel})"
+        :title="$t('pages.organization.addDepartment', {departmentLabel: departmentLabel.toLowerCase()})"
         fab
         small
         color="primary"
-        class="mx-2 mt-2"
+        class="mx-2"
         v-on="on"
       >
         <v-icon>mdi-plus</v-icon>
@@ -21,9 +20,10 @@
     <v-card
       v-if="editDepartment"
       data-iframe-height
+      :width="500"
     >
       <v-card-title class="text-h6">
-        {{ $t('pages.organization.addDepartment', {departmentLabel}) }}
+        {{ $t('pages.organization.addDepartment', {departmentLabel: departmentLabel.toLowerCase()}) }}
       </v-card-title>
       <v-card-text>
         <v-form ref="createForm">
@@ -33,6 +33,8 @@
             :rules="[v => !!v || '', v => v && !!v.match(/^[ a-zA-Z0-9]*$/) || $t('pages.organization.departmentIdInvalid')]"
             name="id"
             required
+            dense
+            outlined
           />
           <v-text-field
             v-model="editDepartment.name"
@@ -40,6 +42,8 @@
             :rules="[v => !!v || '']"
             name="name"
             required
+            dense
+            outlined
           />
         </v-form>
       </v-card-text>

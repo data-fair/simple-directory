@@ -1,10 +1,16 @@
 <template lang="html">
   <v-container
     data-iframe-height
-    :fluid="$route.query.fluid === 'true'"
-    :class="{'pa-0': $route.query.fluid === 'true'}"
+    style="max-width:600px;"
   >
-    <h2 class="text-h5 mb-3">
+    <h2 class="text-h4 mb-4">
+      <v-icon
+        large
+        color="primary"
+        style="top:-2px"
+      >
+        mdi-account-circle
+      </v-icon>
       {{ $t('common.myAccount') }}
     </h2>
     <p
@@ -15,6 +21,7 @@
       v-if="user"
       ref="form"
       data-iframe-height
+      @submit="save"
     >
       <v-text-field
         v-model="user.email"
@@ -29,65 +36,78 @@
         :disabled="!userDetails || readonly"
       />
 
-      <v-text-field
-        v-model="patch.firstName"
-        :label="$t('common.firstName')"
-        :disabled="!userDetails || readonly"
-        name="firstName"
-        @change="save"
-      />
-      <v-text-field
-        v-model="patch.lastName"
-        :label="$t('common.lastName')"
-        :disabled="!userDetails || readonly"
-        name="lastName"
-        @change="save"
-      />
-      <v-row
-        v-if="!env.noBirthday"
-        class="mx-0"
-      >
-        <v-menu
-          v-model="birthdayMenu"
-          :close-on-content-click="false"
-          :nudge-right="40"
-          transition="scale-transition"
-          offset-y
-          full-width
-          max-width="290px"
-          min-width="290px"
-        >
-          <template #activator="{ on }">
-            <v-text-field
-              v-model="patch.birthday"
-              :label="$t('common.birthday')"
-              :disabled="!userDetails || readonly"
-              prepend-icon="mdi-calendar"
-              readonly
-              clearable
-              v-on="on"
-            />
-          </template>
-          <v-date-picker
-            v-model="patch.birthday"
-            :max="maxBirthday"
-            :picker-date="patch.birthday || maxBirthday"
-            no-title
-            @input="birthdayMenu = false; save()"
+      <v-row dense>
+        <v-col cols="6">
+          <v-text-field
+            v-model="patch.firstName"
+            :label="$t('common.firstName')"
+            :disabled="!userDetails || readonly"
+            name="firstName"
+            :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
+            outlined
+            dense
+            @change="save"
           />
-        </v-menu>
-      </v-row>
-
-      <v-row
-        v-if="!readonly"
-        class="mx-0"
-      >
-        <p>
-          <a
+        </v-col>
+        <v-col cols="6">
+          <v-text-field
+            v-model="patch.lastName"
+            :label="$t('common.lastName')"
+            :disabled="!userDetails || readonly"
+            name="lastName"
+            :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
+            outlined
+            dense
+            @change="save"
+          />
+        </v-col>
+        <v-col
+          v-if="!env.noBirthday"
+          cols="6"
+        >
+          <v-menu
+            v-model="birthdayMenu"
+            :close-on-content-click="false"
+            :nudge-right="40"
+            transition="scale-transition"
+            offset-y
+            full-width
+            max-width="290px"
+            min-width="290px"
+          >
+            <template #activator="{ on }">
+              <v-text-field
+                v-model="patch.birthday"
+                :label="$t('common.birthday')"
+                :disabled="!userDetails || readonly"
+                append-icon="mdi-calendar"
+                readonly
+                clearable
+                outlined
+                dense
+                hide-details
+                v-on="on"
+              />
+            </template>
+            <v-date-picker
+              v-model="patch.birthday"
+              :max="maxBirthday"
+              :picker-date="patch.birthday || maxBirthday"
+              no-title
+              @input="birthdayMenu = false; save()"
+            />
+          </v-menu>
+        </v-col>
+        <v-col v-if="!readonly">
+          <v-btn
+            color="primary"
+            text
             :title="$t('pages.login.changePasswordTooltip')"
             @click="changePasswordAction"
-          >{{ $t('pages.login.changePassword') }}</a>
-        </p>
+          >
+            {{ $t('pages.login.changePassword') }}
+          </v-btn>
+        </v-col>
       </v-row>
 
       <v-row
@@ -111,7 +131,14 @@
       </v-row>
 
       <template v-if="host === mainHost">
-        <h2 class="text-h5 mt-6 mb-3">
+        <h2 class="text-h4 mt-10 mb-4">
+          <v-icon
+            large
+            color="primary"
+            style="top:-2px"
+          >
+            mdi-account-group
+          </v-icon>
           {{ $t('common.myOrganizations') }}
         </h2>
 
@@ -140,8 +167,19 @@
         <add-organization-menu v-if="!readonly && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
       </template>
 
+      <h2 class="text-h4 mt-10 mb-4">
+        <v-icon
+          large
+          color="primary"
+          style="top:-2px"
+        >
+          mdi-cog
+        </v-icon>
+        {{ $t('common.settings') }}
+      </h2>
+
       <template v-if="!(env.onlyCreateInvited && user.organizations.length === 1)">
-        <h2 class="text-h5 mt-6 mb-3">
+        <h2 class="text-h5 mt-8 mb-4">
           {{ $t('pages.me.accountChanges') }}
         </h2>
         <v-checkbox
@@ -160,20 +198,21 @@
           item-value="id"
           item-text="name"
           clearable
-          style="max-width:500px;"
+          outlined
+          dense
           @change="save"
         />
       </template>
 
       <template v-if="env.userSelfDelete && !readonly">
-        <h2 class="text-h5 mt-6 mb-3">
+        <h2 class="text-h5 mt-8 mb-4">
           {{ $t('pages.me.operations') }}
         </h2>
         <confirm-menu
           :button-text="$t('pages.me.deleteMyself', {name: user.name})"
           :title="$t('pages.me.deleteMyself', {name: user.name})"
           :alert="$t('pages.me.deleteMyselfAlert')"
-          :check-text="$t('pages.me.deleteMyselfCheck')"
+          :check-text="$t('pages.me.deleteMyselfCheck', {name: user.name})"
           yes-color="warning"
           @confirm="deleteMyself"
         />
@@ -246,7 +285,8 @@ export default {
       this.patch.ignorePersonalAccount = this.userDetails.ignorePersonalAccount || false
       this.patch.defaultOrg = this.userDetails.defaultOrg || ''
     },
-    async save () {
+    async save (e) {
+      if (e.preventDefault) e.preventDefault()
       if (!this.$refs.form.validate()) return
       try {
         await this.$axios.$patch(`api/users/${this.user.id}`, this.patch)

@@ -4,62 +4,70 @@
     class="pa-0"
   >
     <v-row class="mt-3 mx-0">
-      <h3 class="text-h6 my-3">
+      <h2 class="text-h4 mt-10 mb-4">
+        <v-icon
+          large
+          color="primary"
+          style="top:-2px"
+        >
+          mdi-account
+        </v-icon>
         {{ orgStorage === 'true' ? $t('common.orgStorageMembers') : $t('common.members') }} <span v-if="members">({{ $n(members.count) }})</span>
-      </h3>
-      <add-member-menu
-        v-if="!env.readonly"
-        :orga="orga"
-        :is-admin-orga="isAdminOrga"
-        :members="members"
-        :disable-invite="disableInvite"
-      />
+        <add-member-menu
+          v-if="!env.readonly"
+          :orga="orga"
+          :is-admin-orga="isAdminOrga"
+          :members="members"
+          :disable-invite="disableInvite"
+        />
+        <notify-menu
+          v-if="isAdminOrga"
+          :sender="`organization:${orga.id}::admin`"
+          :topics=" [
+            {key: 'simple-directory:invitation-sent', title: $t('notifications.sentInvitationTopic')},
+            {key: 'simple-directory:invitation-accepted', title: $t('notifications.acceptedInvitationTopic')}
+          ] "
+        />
+      </h2>
     </v-row>
 
-    <div
-      v-if="isAdminOrga"
-      style="max-width:500px"
-    >
-      <v-iframe :src="notifySubscribeUrl" />
-    </div>
-
-    <v-row class="mx-0">
-      <v-text-field
-        v-model="q"
-        :label="$t('common.search')"
-        name="search"
-        solo
-        style="max-width:300px;"
-        append-icon="mdi-magnify"
-        @click:append="fetchMembers"
-        @keyup.enter="fetchMembers"
-      />
-      <v-select
-        v-model="role"
-        :items="orga.roles"
-        :label="$t('common.role')"
-        style="max-width:300px;"
-        class="ml-2"
-        name="role"
-        solo
-        clearable
-        @change="fetchMembers"
-      />
-      <v-select
-        v-if="env.manageDepartments && orga.departments && orga.departments.length"
-        v-model="department"
-        :items="orga.departments"
-        :label="orga.departmentLabel || $t('common.department')"
-        style="max-width:300px;"
-        item-value="id"
-        item-text="name"
-        clearable
-        class="ml-2"
-        name="department"
-        solo
-        @change="fetchMembers"
-      />
-      <v-spacer />
+    <v-row dense>
+      <v-col cols="4">
+        <v-text-field
+          v-model="q"
+          :label="$t('common.search')"
+          name="search"
+          solo
+          append-icon="mdi-magnify"
+          @click:append="fetchMembers"
+          @keyup.enter="fetchMembers"
+        />
+      </v-col>
+      <v-col cols="4">
+        <v-select
+          v-model="role"
+          :items="orga.roles"
+          :label="$t('common.role')"
+          name="role"
+          solo
+          clearable
+          @change="fetchMembers"
+        />
+      </v-col>
+      <v-col cols="4">
+        <v-select
+          v-if="env.manageDepartments && orga.departments && orga.departments.length"
+          v-model="department"
+          :items="orga.departments"
+          :label="orga.departmentLabel || $t('common.department')"
+          item-value="id"
+          item-text="name"
+          clearable
+          name="department"
+          solo
+          @change="fetchMembers"
+        />
+      </v-col>
     </v-row>
 
     <v-list
@@ -127,15 +135,13 @@
 
 <script>
 import { mapState, mapActions } from 'vuex'
-import 'iframe-resizer/js/iframeResizer'
-import VIframe from '@koumoul/v-iframe'
 import eventBus from '../event-bus'
 import AddMemberMenu from '~/components/add-member-menu'
 import DeleteMemberMenu from '~/components/delete-member-menu'
 import EditMemberMenu from '~/components/edit-member-menu'
 
 export default {
-  components: { VIframe, AddMemberMenu, DeleteMemberMenu, EditMemberMenu },
+  components: { AddMemberMenu, DeleteMemberMenu, EditMemberMenu },
   props: {
     isAdminOrga: {
       type: Boolean,
@@ -172,18 +178,6 @@ export default {
     ...mapState('session', ['user']),
     disableInvite () {
       return !this.nbMembersLimits || (this.nbMembersLimits.limit > 0 && this.nbMembersLimits.consumption >= this.nbMembersLimits.limit)
-    },
-    notifySubscribeUrl () {
-      const keys = [
-        'simple-directory:invitation-sent',
-        'simple-directory:invitation-accepted'
-      ]
-      const titles = [
-        this.$t('notifications.sentInvitationTopic'),
-        this.$t('notifications.acceptedInvitationTopic')
-      ]
-      const sender = `organization:${this.orga.id}::admin`
-      return `${this.env.notifyUrl}/embed/subscribe?key=${encodeURIComponent(keys.join(','))}&title=${encodeURIComponent(titles.join(','))}&sender=${encodeURIComponent(sender)}&register=false`
     }
   },
   async mounted () {

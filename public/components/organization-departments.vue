@@ -4,16 +4,23 @@
     class="pa-0"
   >
     <v-row class="mt-3 mx-0">
-      <h3 class="text-h6 my-3">
+      <h2 class="text-h4 mt-10 mb-4">
+        <v-icon
+          large
+          color="primary"
+          style="top:-2px"
+        >
+          mdi-family-tree
+        </v-icon>
         {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
-      </h3>
-      <add-department-menu
-        v-if="!env.readonly"
-        :orga="orga"
-        :is-admin-orga="isAdminOrga"
-        :department-label="departmentLabel"
-        @change="$emit('change')"
-      />
+        <add-department-menu
+          v-if="!env.readonly"
+          :orga="orga"
+          :is-admin-orga="isAdminOrga"
+          :department-label="departmentLabel"
+          @change="$emit('change')"
+        />
+      </h2>
     </v-row>
 
     <v-list
