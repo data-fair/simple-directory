@@ -44,7 +44,7 @@ router.post('/', asyncWrap(async (req, res, next) => {
     await limiter(req).consume(requestIp.getClientIp(req), 1)
   } catch (err) {
     console.error('Rate limit error for /password route', requestIp.getClientIp(req), req.body.email, err)
-    return res.status(429).send(req.messages.errors.reateLimitAuth)
+    return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
 
   const storage = req.app.get('storage')
