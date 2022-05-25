@@ -171,6 +171,14 @@ import LangSwitcher from '@data-fair/sd-vue/src/vuetify/lang-switcher.vue'
 
 const { mapState, mapGetters, mapActions } = require('vuex')
 
+function inIframe () {
+  try {
+    return window.self !== window.top
+  } catch (e) {
+    return false
+  }
+}
+
 export default {
   components: { logo, PersonalMenu, LangSwitcher },
   data () {
@@ -210,16 +218,20 @@ export default {
   },
   mounted () {
     this.$store.dispatch('fetchUserDetails')
-    eventBus.$on('notification', async notif => {
+    eventBus.$on('notification', async notification => {
       this.showSnackbar = false
       await this.$nextTick()
-      if (typeof notif === 'string') notif = { msg: notif }
-      if (notif.error) {
-        notif.type = 'error'
-        notif.errorMsg = (notif.error.response && (notif.error.response.data || notif.error.response.status)) || notif.error.message || notif.error
+      if (typeof notification === 'string') notification = { msg: notification }
+      if (notification.error) {
+        notification.type = 'error'
+        notification.errorMsg = (notification.error.response && (notification.error.response.data || notification.error.response.status)) || notification.error.message || notification.error
       }
-      this.notification = notif
-      this.showSnackbar = true
+      if (inIframe()) {
+        window.top.postMessage({ notification }, '*')
+      } else {
+        this.notification = notification
+        this.showSnackbar = true
+      }
     })
   },
   methods: {
