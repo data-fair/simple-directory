@@ -232,7 +232,7 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
 
   await confirmLog(storage, user)
-  tokens.setCookieToken(req, res, token, org.id || tokens.getDefaultOrg(user))
+  tokens.setCookieToken(req, res, token, req.query.id_token_org || tokens.getDefaultOrg(user))
 
   const reboundRedirect = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me'
   // we just confirmed the user email after creation, he might want to create an organization
