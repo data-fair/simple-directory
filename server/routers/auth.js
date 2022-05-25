@@ -42,6 +42,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
 
   const returnError = (error, errorCode) => {
+    debug('auth password return error', error, errorCode)
     if (req.is('application/x-www-form-urlencoded')) {
       const refererUrl = new URL(req.headers.referer || req.headers.referrer)
       refererUrl.searchParams.set('error', error)
@@ -124,10 +125,12 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (req.is('application/x-www-form-urlencoded')) {
     const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
     tokens.setCookieToken(req, res, token, (org && org.id) || tokens.getDefaultOrg(user))
-    debug(`Password based authentication of user ${user.name}`)
+    debug(`Password based authentication of user ${user.name}, form mode`)
     res.redirect(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
   } else {
-    res.send(tokens.prepareCallbackUrl(req, payload, req.query.redirect, org && org.id, req.body.orgStorage).href)
+    const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, org && org.id, req.body.orgStorage).href
+    debug(`Password based authentication of user ${user.name}, ajax mode`, callbackUrl)
+    res.send(callbackUrl)
   }
 }))
 
