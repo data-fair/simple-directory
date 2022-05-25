@@ -231,6 +231,7 @@
                   v-model="newUser.password"
                   :label="$t('common.password')"
                   :error-messages="createUserErrors"
+                  :rules="[v => !!v || '']"
                   name="newUserPassword"
                   type="password"
                   autocomplete="new-password"
@@ -256,7 +257,7 @@
                 <v-text-field
                   v-model="newUserPassword2"
                   :label="$t('pages.login.newPassword2')"
-                  :error-messages="newUser.password !== newUserPassword2 ? ['Les mots de passe sont différents'] : []"
+                  :rules="[v => !!v || '', v => newUser.password === v || $t('errors.differentPasswords')]"
                   name="newUserPassword2"
                   type="password"
                   autocomplete="new-password"
@@ -284,7 +285,6 @@
               </v-btn>
               <v-spacer />
               <v-btn
-                :disabled="!newUser.password || newUser.password !== newUserPassword2"
                 color="primary"
                 depressed
                 @click="createUser"
