@@ -620,7 +620,7 @@ export default {
         error: this.$t('pages.login.error'),
         configure2FA: this.$t('pages.login.configure2FA'),
         recovery2FA: this.$t('pages.login.recovery2FA'),
-        createOrga: this.$t('pages.login.createOrga')
+        createOrga: this.$t('common.createOrganization')
       },
       password: '',
       passwordErrors: [],

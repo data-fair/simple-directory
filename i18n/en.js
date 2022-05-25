@@ -283,7 +283,6 @@ Feel free to contact us at {contact}.
       subject: 'Join the organization {organization} on {host}',
       text: `
 An administrator from the organization {organization} invited you to join. To accept this invitation copy the URL below in the address bar of your Web browser.
-If you do not have an account yet it will be created automatically.
 
 {link}
 
@@ -291,7 +290,6 @@ If you encounter a problem with your account or if you find this invitation susp
       `,
       htmlMsg: `
       An administrator from the organization {organization} invited you to join. To accept this invitation click on the button below.
-      If you do not have an account yet it will be created automatically.
       `,
       htmlButton: 'Accept the invitation',
       htmlAlternativeLink: 'If the button doesn\'t work, you can copy/paste this link in the address bar of your browser:',

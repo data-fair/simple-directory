@@ -313,7 +313,6 @@ N'hésitez pas à nous contacter à {contact}.
       subject: 'Rejoignez l\'organisation {organization} sur {host}',
       text: `
 Un administrateur de l'organisation {organization} vous a invité à la rejoindre. Pour accepter cette invitation copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 10 jours.
-Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
 
 {link}
 
@@ -321,7 +320,6 @@ Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invi
       `,
       htmlMsg: `
 Un administrateur de l'organisation {organization} vous a invité à la rejoindre. Pour accepter cette invitation cliquez sur le bouton ci-dessous. Le lien est valide 10 jours.
-Si vous n'avez pas encore de compte celui-ci sera créé automatiquement.
       `,
       htmlButton: 'Accepter l\'invitation',
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
