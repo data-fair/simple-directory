@@ -124,12 +124,14 @@ router.post('', asyncWrap(async (req, res, next) => {
 
   if (invit) {
     // no need to confirm email if the user already comes from an invitation link
-    // we alreayd created the user with emailConfirmed=true
+    // we already created the user with emailConfirmed=true
+    const payload = { ...tokens.getPayload(newUser), temporary: true }
+    const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, orga.id)
+    return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication
     // the user will be validated and authenticated at the same time by the token_callback route
     const payload = { ...tokens.getPayload(newUser), emailConfirmed: true, temporary: true }
-    if (req.body.createOrganization) payload.createOrganization = req.body.createOrganization
     const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, req.query.org)
     await mails.send({
       transport: req.app.get('mailTransport'),
@@ -138,10 +140,9 @@ router.post('', asyncWrap(async (req, res, next) => {
       to: req.body.email,
       params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
     })
+    // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
+    return res.status(204).send()
   }
-
-  // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
-  return res.status(204).send()
 }))
 
 router.get('/:userId', asyncWrap(async (req, res, next) => {

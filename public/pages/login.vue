@@ -721,7 +721,7 @@ export default {
           email: this.email,
           ...this.newUser
         }
-        await this.$axios.$post('api/users', body, {
+        const link = await this.$axios.$post('api/users', body, {
           params: {
             redirect: this.redirectUrl,
             org: this.org,
@@ -730,7 +730,7 @@ export default {
         })
         this.createUserErrors = []
         this.password = this.newUser.password
-        if (this.invitToken) this.step = 'login'
+        if (this.invitToken) window.location.href = link
         else this.step = 'createUserConfirmed'
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
