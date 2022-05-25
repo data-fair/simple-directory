@@ -227,7 +227,7 @@ export default {
         notification.errorMsg = (notification.error.response && (notification.error.response.data || notification.error.response.status)) || notification.error.message || notification.error
       }
       if (inIframe()) {
-        window.top.postMessage({ notification }, '*')
+        window.top.postMessage({ vIframe: true, uiNotification: notification }, '*')
       } else {
         this.notification = notification
         this.showSnackbar = true
