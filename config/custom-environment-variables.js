@@ -197,7 +197,8 @@ module.exports = {
     sendMails: 'SECRET_SENDMAILS',
     limits: 'SECRET_LIMITS',
     readAll: 'SECRET_READ_ALL',
-    metrics: 'SECRET_METRICS'
+    metrics: 'SECRET_METRICS',
+    notifications: 'SECRET_NOTIFICATIONS'
   },
   listenWhenReady: {
     __name: 'LISTEN_WHEN_READY',
