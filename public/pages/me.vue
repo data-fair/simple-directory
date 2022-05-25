@@ -286,7 +286,7 @@ export default {
       this.patch.defaultOrg = this.userDetails.defaultOrg || ''
     },
     async save (e) {
-      if (e.preventDefault) e.preventDefault()
+      if (e && e.preventDefault) e.preventDefault()
       if (!this.$refs.form.validate()) return
       try {
         await this.$axios.$patch(`api/users/${this.user.id}`, this.patch)
