@@ -30,7 +30,7 @@
         :placeholder="$t('pages.avatar.load')"
         outlined
         dense
-        :prepend-icon="false"
+        prepend-icon=""
         @change="change"
       >
         <template #append-outer>

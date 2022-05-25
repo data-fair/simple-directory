@@ -54,7 +54,7 @@
   },
   "homepage": "https://github.com/koumoul-dev/simple-directory#readme",
   "devDependencies": {
-    "@data-fair/sd-vue": "1.4.1-beta.3",
+    "@data-fair/sd-vue": "1.4.1-beta.7",
     "@koumoul/v-iframe": "^0.10.0",
     "@koumoul/vue-multianalytics": "^1.10.1",
     "@mdi/font": "^6.5.95",
