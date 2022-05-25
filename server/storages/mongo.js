@@ -178,12 +178,14 @@ class MongodbStorage {
       filter.organizations.$elemMatch.department = { $in: params.departments }
     }
     const countPromise = this.db.collection('users').countDocuments(filter)
-    const users = await this.db.collection('users')
-      .find(filter)
-      .sort(params.sort)
-      .skip(params.skip)
-      .limit(params.size)
-      .toArray()
+    const users = params.size === 0
+      ? []
+      : (await this.db.collection('users')
+          .find(filter)
+          .sort(params.sort)
+          .skip(params.skip)
+          .limit(params.size)
+          .toArray())
     const count = await countPromise
     return {
       count,

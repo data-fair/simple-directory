@@ -24,7 +24,21 @@
         {{ $t('pages.organization.confirmDeleteDepartmentTitle', {name: department.name, departmentLabel}) }}
       </v-card-title>
       <v-card-text>
-        {{ $t('pages.organization.confirmDeleteDepartmentMsg', {name: department.name, departmentLabel}) }}
+        <v-progress-circular
+          v-if="!members"
+          indeterminate
+          color="primary"
+        />
+        <v-alert
+          v-else-if="members.count"
+          type="warning"
+          outlined
+        >
+          {{ $t('pages.organization.deleteDepartmentHasMembers', {count: members.count.toLocaleString()}) }}
+        </v-alert>
+        <p v-else>
+          {{ $t('pages.organization.confirmDeleteDepartmentMsg', {name: department.name, departmentLabel}) }}
+        </p>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -35,6 +49,7 @@
           {{ $t('common.confirmCancel') }}
         </v-btn>
         <v-btn
+          :disabled="!members || !!members.count"
           color="warning"
           @click="confirmDelete"
         >
@@ -50,7 +65,19 @@ import { mapActions } from 'vuex'
 
 export default {
   props: ['orga', 'department', 'departmentLabel'],
-  data: () => ({ menu: false }),
+  data: () => ({ menu: false, members: null }),
+  watch: {
+    async menu () {
+      this.members = null
+      if (!this.menu) return
+      this.members = await this.$axios.$get(`api/organizations/${this.orga.id}/members`, {
+        params: {
+          size: 0,
+          department: this.department.id
+        }
+      })
+    }
+  },
   methods: {
     ...mapActions(['patchOrganization']),
     async confirmDelete () {

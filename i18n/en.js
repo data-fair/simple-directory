@@ -186,6 +186,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       confirmEditDepartmentTitle: 'Edit {name}',
       confirmDeleteDepartmentTitle: 'Delete {name}',
       confirmDeleteDepartmentMsg: 'Are you you want to delete {name} from your organization ?',
+      deleteDepartmentHasMembers: 'This department is affected to {count} member(s) of the organization. You can\'t delete it in this state.',
       departmentIdInvalid: 'Identifier should contain anly letters, numbers and spaces',
       inviteLink: 'In case of problem in the communication by email you can send the confirmation link below by another means. Warning ! You risk inserting an incorrect or non-functional email address in the user database. This email address may cause multiple problems later: change of password, sending alerts, etc.'
     },
@@ -205,7 +206,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       deleteMyselfAlert: 'If your delete your account the associated data will deleted as well and cannot be recovered.',
       deleteMyselfCheck: 'check and click on OK to confirm the deletion of the user {name} and all its data.',
       accountChanges: 'Managing account switching',
-      defaultOrg: 'Activate this organization account by default after each login',
+      defaultOrg: 'Activate this account by default after each login',
       ignorePersonalAccount: 'Check this box if you do not wish to use this platform outside of an organization account'
     }
   },

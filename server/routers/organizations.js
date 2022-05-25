@@ -160,7 +160,7 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   const members = { count: 0, results: [] }
   for (const storage of storages) {
     // do our best to mix results in "org_storage=both" mode
-    if (members.count < (params.skip + params.size)) {
+    if (members.count <= (params.skip + params.size)) {
       params.skip -= members.count
       if (params.skip < 0) {
         params.size += params.skip
