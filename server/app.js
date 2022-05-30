@@ -163,21 +163,23 @@ exports.run = async () => {
     const cron = require('node-cron')
     const moment = require('moment')
     console.info('run user deletion cron loop', config.cleanupCron)
-    cron.schedule(config.cleanupCron, async () => {
+    cron.schedule(config.cleanup.cron, async () => {
       try {
         console.info('run user deletion cron task')
         await locks.acquire(storage.db, 'user-deletion-task')
         const plannedDeletion = moment().add(config.plannedDeletionDelay, 'days').format('YYYY-MM-DD')
-        for (const user of await storage.findInactiveUsers()) {
-          console.log('plan deletion of inactive user', user)
-          await storage.patchUser(user.id, { plannedDeletion })
-          await mails.send({
-            transport: mailTransport,
-            key: 'plannedDeletion',
-            messages: i18n.messages[i18n.defaultLocale], // TODO: use a locale stored on the user ?
-            to: user.email,
-            params: { host: user.created.host || new URL(config.publicBaseUrl).host, user: user.name, plannedDeletion }
-          })
+        if (config.cleanup.deleteInactive) {
+          for (const user of await storage.findInactiveUsers()) {
+            console.log('plan deletion of inactive user', user)
+            await storage.patchUser(user.id, { plannedDeletion })
+            await mails.send({
+              transport: mailTransport,
+              key: 'plannedDeletion',
+              messages: i18n.messages[i18n.defaultLocale], // TODO: use a locale stored on the user ?
+              to: user.email,
+              params: { host: user.created.host || new URL(config.publicBaseUrl).host, user: user.name, plannedDeletion }
+            })
+          }
         }
         for (const user of await storage.findUsersToDelete()) {
           console.log('execute planned deletion of user', user)

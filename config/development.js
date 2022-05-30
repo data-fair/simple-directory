@@ -67,10 +67,13 @@ module.exports = {
   notifyUrl: 'http://localhost:5689/notify',
   privateNotifyUrl: 'http://localhost:8088',
   plannedDeletionDelay: 1,
-  inactiveDeletionDelay: [1, 'days'],
   locks: {
     // in seconds
     ttl: 20
   },
-  cleanupCron: '*/1 * * * *'
+  cleanup: {
+    cron: '*/1 * * * *',
+    deleteInactive: true,
+    deleteInactiveDelay: [1, 'days']
+  }
 }

@@ -235,11 +235,14 @@ module.exports = {
   cipherPassword: null,
   notifyUrl: null,
   privateNotifyUrl: null,
-  plannedDeletionDelay: 14,
-  inactiveDeletionDelay: [3, 'years'],
   locks: {
     // in seconds
     ttl: 600
   },
-  cleanupCron: '0 5 * * *'
+  plannedDeletionDelay: 14,
+  cleanup: {
+    cron: '0 5 * * *',
+    deleteInactive: false,
+    deleteInactiveDelay: [3, 'years']
+  }
 }

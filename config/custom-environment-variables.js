@@ -282,9 +282,15 @@ module.exports = {
     __name: 'PLANNED_DELETION_DELAY',
     __format: 'json'
   },
-  inactiveDeletionDelay: {
-    __name: 'INACTIVE_DELETION_DELAY',
-    __format: 'json'
-  },
-  cleanupCron: 'CLEANUP_CRON'
+  cleanup: {
+    cron: 'CLEANUP_CRON',
+    deleteInactive: {
+      __name: 'CLEANUP_DELETE_INACTIVE',
+      __format: 'json'
+    },
+    deleteInactiveDelay: {
+      __name: 'CLEANUP_DELETE_INACTIVE_DELAY',
+      __format: 'json'
+    }
+  }
 }

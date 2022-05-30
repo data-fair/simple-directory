@@ -173,7 +173,7 @@ class MongodbStorage {
   }
 
   async findInactiveUsers () {
-    const inactiveDelayDate = moment().subtract(config.inactiveDeletionDelay[0], config.inactiveDeletionDelay[1]).toDate()
+    const inactiveDelayDate = moment().subtract(config.cleanup.deleteInactiveDelay[0], config.cleanup.deleteInactiveDelay[1]).toDate()
     return (await this.db.collection('users')
       .find({
         plannedDeletion: { $exists: false },
