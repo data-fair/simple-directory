@@ -177,7 +177,7 @@ exports.run = async () => {
               key: 'plannedDeletion',
               messages: i18n.messages[i18n.defaultLocale], // TODO: use a locale stored on the user ?
               to: user.email,
-              params: { host: user.created.host || new URL(config.publicBaseUrl).host, user: user.name, plannedDeletion }
+              params: { host: user.created.host || new URL(config.publicUrl).host, user: user.name, plannedDeletion }
             })
           }
         }
