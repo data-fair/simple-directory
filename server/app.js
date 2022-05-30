@@ -172,13 +172,15 @@ exports.run = async () => {
           for (const user of await storage.findInactiveUsers()) {
             console.log('plan deletion of inactive user', user)
             await storage.patchUser(user.id, { plannedDeletion })
-            await mails.send({
-              transport: mailTransport,
-              key: 'plannedDeletion',
-              messages: i18n.messages[i18n.defaultLocale], // TODO: use a locale stored on the user ?
-              to: user.email,
-              params: { host: user.created.host || new URL(config.publicUrl).host, user: user.name, plannedDeletion }
-            })
+            if (user.emailConfirmed || user.logged) {
+              await mails.send({
+                transport: mailTransport,
+                key: 'plannedDeletion',
+                messages: i18n.messages[i18n.defaultLocale], // TODO: use a locale stored on the user ?
+                to: user.email,
+                params: { host: user.created.host || new URL(config.publicUrl).host, user: user.name, plannedDeletion }
+              })
+            }
           }
         }
         for (const user of await storage.findUsersToDelete()) {
