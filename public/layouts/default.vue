@@ -105,17 +105,6 @@
                 <v-list-item-title>Gestion de l'organisation</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
-            <template v-if="user.asAdmin">
-              <!-- leave admin impersonification of a user -->
-              <v-list-item
-                dense
-                @click="asAdmin()"
-              >
-                <v-list-item-title style="overflow: visible;">
-                  {{ $t('common.delAsAdmin') }}
-                </v-list-item-title>
-              </v-list-item>
-            </template>
             <v-divider />
           </template>
         </personal-menu>
@@ -243,7 +232,7 @@ export default {
       if (!orgId) this.$router.replace('/me')
       else this.$router.replace(`/organization/${orgId}`)
     },
-    ...mapActions('session', ['logout', 'login', 'setAdminMode', 'asAdmin'])
+    ...mapActions('session', ['logout', 'login', 'setAdminMode'])
   }
 }
 
