@@ -557,6 +557,23 @@
             </v-card-actions>
           </v-window-item>
 
+          <v-window-item value="plannedDeletion">
+            <v-card-text>
+              <cancel-deletion @cancelled="goToRedirect" />
+            </v-card-text>
+
+            <v-card-actions>
+              <v-spacer />
+              <v-btn
+                color="primary"
+                depressed
+                :href="redirectUrl"
+              >
+                {{ $t('common.continue') }}
+              </v-btn>
+            </v-card-actions>
+          </v-window-item>
+
           <v-window-item value="error">
             <v-card-text v-if="error">
               <v-alert
@@ -620,7 +637,8 @@ export default {
         error: this.$t('pages.login.error'),
         configure2FA: this.$t('pages.login.configure2FA'),
         recovery2FA: this.$t('pages.login.recovery2FA'),
-        createOrga: this.$t('common.createOrganization')
+        createOrga: this.$t('common.createOrganization'),
+        plannedDeletion: this.$t('pages.login.plannedDeletion')
       },
       password: '',
       passwordErrors: [],
@@ -652,7 +670,8 @@ export default {
       twoFARequired: false,
       twoFACode: null,
       recovery: null,
-      twoFAErrors: []
+      twoFAErrors: [],
+      plannedDeletion: this.$route.query.planned_deletion
     }
   },
   computed: {
@@ -705,6 +724,8 @@ export default {
       this.createUserStep()
       this.org = this.invitPayload.id
       this.email = this.invitPayload.email || this.invitPayload.e
+    } else if (this.plannedDeletion) {
+      this.step = 'plannedDeletion'
     } else if (this.error) {
       this.step = 'error'
     }
@@ -747,7 +768,7 @@ export default {
           defaultOrg: orga.id
         })
         this.switchOrganization(orga.id)
-        window.location.href = this.redirectUrl
+        this.goToRedirect()
       } catch (error) {
         if (error.response.status >= 500) eventBus.$emit('notification', { error })
         else this.createUserErrors = [error.response.data || error.message]
@@ -875,6 +896,9 @@ export default {
       document.body.appendChild(element)
       element.click()
       document.body.removeChild(element)
+    },
+    goToRedirect () {
+      window.location.href = this.redirectUrl
     }
   }
 }

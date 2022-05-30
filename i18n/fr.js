@@ -187,7 +187,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       recovery2FAInfo: 'Attention ! Le code de récupération ci-dessous est à conserver précieusement. Sans lui vous ne pourrez pas récupérer votre compte en cas de perte de l\'appareil sur lequel vous venez de configurer l\'authentification à 2 facteurs.',
       recovery2FACode: 'code de récupération : ',
       recovery2FADownload: 'télécharger un fichier contenant le code de récupération',
-      recovery2FAContent: 'Code de récupération authentification 2 facteurs {name}'
+      recovery2FAContent: 'Code de récupération authentification 2 facteurs {name}',
+      plannedDeletion: 'Suppression programmée',
+      cancelDeletion: 'Annuler la suppression de l\'utilisateur'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
@@ -228,7 +230,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       noOrganization: 'Vous n\'êtes membre d\'aucune organisation.',
       operations: 'Opérations sensibles',
       deleteMyself: 'Supprimer l\'utilisateur {name}',
-      deleteMyselfAlert: 'Si vous supprimez votre compte utilisateur les données associées seront également supprimées et ne pourront pas être récupérées.',
+      deleteMyselfAlert: 'Si vous supprimez votre compte utilisateur vous disposerez d\'un délai de {plannedDeletionDelay} jours pour annuler l\'opération, après quoi toutes les données associées seront supprimées et ne pourront plus être récupérées.',
       deleteMyselfCheck: 'cochez cette case et cliquez sur OK pour confirmer la suppression de l\'utilisateur {name} et toutes ses données.',
       separateDomain: 'Vous utilisez ce compte sur <a href="{host}">{host}</a>, ce site fait partie de la plateforme <a href="{mainHost}">{mainHost}</a>. Le compte est mutualisé avec tous les sites de cette plateforme.',
       accountChanges: 'Gestion des changements de compte',
@@ -260,7 +262,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     adminModeOnly: 'Fonctionnalité réservée aux super-administrateurs.',
     '2FANotConfigured': 'L\'authentification à 2 facteurs est nécessaire pour ce compte et n\'est pas encore configurée.',
     passwordless2FA: 'L\'authentification sans mot de passe est incompatible avec l\'authentification à 2 facteurs requise pour ce compte.',
-    bad2FAToken: 'Code de vérification erroné ou périmé pour l\'authentification à 2 facteurs'
+    bad2FAToken: 'Code de vérification erroné ou périmé pour l\'authentification à 2 facteurs',
+    plannedDeletion: 'La suppression de l\'utilisateur {name} et toutes ses informations est programmée le {plannedDeletion}.'
   },
   mails: {
     creation: {
@@ -342,6 +345,16 @@ Une action demandant une confirmation par email a été déclenchée sur cette a
       htmlButton: 'Valider',
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
       htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez ce message suspect, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
+    },
+    plannedDeletion: {
+      subject: 'Suppression de compte planifiée sur {host}',
+      text: `
+L'utilisateur {user} et toutes les données qui lui sont associées seront définitivement supprimés le {plannedDeletion}.
+
+N'hésitez pas à nous contacter à {contact}.
+      `,
+      htmlMsg: 'L\'utilisateur {user} et toutes les données qui lui sont associées seront définitivement supprimés le {plannedDeletion}.',
+      htmlCaption: 'N\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
     }
   },
   notifications: {

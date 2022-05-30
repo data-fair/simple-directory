@@ -50,6 +50,10 @@
     "ignorePersonalAccount": {
       "type": "boolean",
       "default": false
+    },
+    "plannedDeletion": {
+      "type": "string",
+      "format": "date"
     }
   }
 }

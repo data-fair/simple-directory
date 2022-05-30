@@ -154,6 +154,44 @@ exports.run = async () => {
   const mailTransport = await mails.init()
   app.set('mailTransport', mailTransport)
 
+  if (storage.db) {
+    const locks = require('./utils/locks')
+    const webhooks = require('./webhooks')
+
+    await locks.init(storage.db)
+    // a simple cron to manage user deletions
+    const cron = require('node-cron')
+    const moment = require('moment')
+    console.info('run user deletion cron loop', config.cleanupCron)
+    cron.schedule(config.cleanupCron, async () => {
+      try {
+        console.info('run user deletion cron task')
+        await locks.acquire(storage.db, 'user-deletion-task')
+        const plannedDeletion = moment().add(config.plannedDeletionDelay, 'days').format('YYYY-MM-DD')
+        for (const user of await storage.findInactiveUsers()) {
+          console.log('plan deletion of inactive user', user)
+          await storage.patchUser(user.id, { plannedDeletion })
+          await mails.send({
+            transport: mailTransport,
+            key: 'plannedDeletion',
+            messages: i18n.messages[i18n.defaultLocale], // TODO: use a locale stored on the user ?
+            to: user.email,
+            params: { host: user.created.host || new URL(config.publicBaseUrl).host, user: user.name, plannedDeletion }
+          })
+        }
+        for (const user of await storage.findUsersToDelete()) {
+          console.log('execute planned deletion of user', user)
+          await storage.deleteUser(user.id)
+          webhooks.deleteIdentity('user', user.id)
+        }
+        await locks.release(storage.db, 'user-deletion-task')
+        console.info('user deletion cron task done\n\n')
+      } catch (err) {
+        console.error('problem while running user deletion cron task', err)
+      }
+    })
+  }
+
   // Run a handy development mail server
   if (config.maildev.active) {
     const MailDev = require('maildev')

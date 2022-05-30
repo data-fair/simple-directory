@@ -119,7 +119,8 @@ module.exports = {
     showCreatedUserHost: config.showCreatedUserHost,
     avatars: config.avatars,
     perOrgStorageTypes: config.perOrgStorageTypes,
-    notifyUrl: config.notifyUrl
+    notifyUrl: config.notifyUrl,
+    plannedDeletionDelay: config.plannedDeletionDelay
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

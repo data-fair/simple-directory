@@ -65,5 +65,12 @@ module.exports = {
   perOrgStorageTypes: ['ldap'],
   cipherPassword: 'dev',
   notifyUrl: 'http://localhost:5689/notify',
-  privateNotifyUrl: 'http://localhost:8088'
+  privateNotifyUrl: 'http://localhost:8088',
+  plannedDeletionDelay: 1,
+  inactiveDeletionDelay: [1, 'days'],
+  locks: {
+    // in seconds
+    ttl: 20
+  },
+  cleanupCron: '*/1 * * * *'
 }

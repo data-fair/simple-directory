@@ -234,5 +234,12 @@ module.exports = {
   perOrgStorageTypes: [],
   cipherPassword: null,
   notifyUrl: null,
-  privateNotifyUrl: null
+  privateNotifyUrl: null,
+  plannedDeletionDelay: 14,
+  inactiveDeletionDelay: [3, 'years'],
+  locks: {
+    // in seconds
+    ttl: 600
+  },
+  cleanupCron: '0 5 * * *'
 }

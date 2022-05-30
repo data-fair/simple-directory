@@ -201,7 +201,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 }))
 
 router.get('/token_callback', asyncWrap(async (req, res, next) => {
-  const redirectError = (error) => res.redirect(`${req.publicBaseUrl}/login?error=${encodeURIComponent(error)}`)
+  const redirectError = (error, withIdToken) => res.redirect(`${req.publicBaseUrl}/login?error=${encodeURIComponent(error)}`)
 
   if (!req.query.id_token) return redirectError('missingToken')
   let decoded
@@ -226,6 +226,8 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
     return redirectError('badCredentials')
   }
 
+  const reboundRedirect = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me'
+
   const payload = tokens.getPayload(user)
   if (decoded.rememberMe) payload.rememberMe = true
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = true
@@ -234,13 +236,18 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
   await confirmLog(storage, user)
   tokens.setCookieToken(req, res, token, req.query.id_token_org || tokens.getDefaultOrg(user))
 
-  const reboundRedirect = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me'
   // we just confirmed the user email after creation, he might want to create an organization
   if (decoded.emailConfirmed && config.quotas.defaultMaxCreatedOrgs !== 0 && !org) {
     const redirectUrl = new URL(`${req.publicBaseUrl}/login`)
     redirectUrl.searchParams.set('step', 'createOrga')
     redirectUrl.searchParams.set('redirect', reboundRedirect)
     debug('redirect to createUser step', redirectUrl.href)
+    res.redirect(redirectUrl.href)
+  } else if (user.plannedDeletion) {
+    const redirectUrl = new URL(`${req.publicBaseUrl}/login`)
+    redirectUrl.searchParams.set('step', 'plannedDeletion')
+    redirectUrl.searchParams.set('redirect', reboundRedirect)
+    debug('redirect to plannedDeletion step', redirectUrl.href)
     res.redirect(redirectUrl.href)
   } else {
     res.redirect(reboundRedirect)

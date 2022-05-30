@@ -277,5 +277,14 @@ module.exports = {
   },
   cipherPassword: 'CIPHER_PASSWORD',
   notifyUrl: 'NOTIFY_URL',
-  privateNotifyUrl: 'PRIVATE_NOTIFY_URL'
+  privateNotifyUrl: 'PRIVATE_NOTIFY_URL',
+  plannedDeletionDelay: {
+    __name: 'PLANNED_DELETION_DELAY',
+    __format: 'json'
+  },
+  inactiveDeletionDelay: {
+    __name: 'INACTIVE_DELETION_DELAY',
+    __format: 'json'
+  },
+  cleanupCron: 'CLEANUP_CRON'
 }

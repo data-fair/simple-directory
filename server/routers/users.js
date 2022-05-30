@@ -162,7 +162,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
 }))
 
 // Update some parts of a user as himself
-const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg']
+const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'plannedDeletion']
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 router.patch('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
@@ -179,7 +179,27 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
     patch.name = name
     webhooks.postIdentity('user', { ...req.user, ...patch })
   }
+
+  if (patch.plannedDeletion) {
+    if (config.userSelfDelete) {
+      if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+    } else {
+      if (!req.user.adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
+    }
+  }
+
   const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
+
+  if (patch.plannedDeletion) {
+    await mails.send({
+      transport: req.app.get('mailTransport'),
+      key: 'plannedDeletion',
+      messages: req.messages,
+      to: req.user.email,
+      params: { host: new URL(req.publicBaseUrl).host, user: req.user.name, plannedDeletion: req.localeDate(patch.plannedDeletion).format('l') }
+    })
+  }
+
   if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
   patchedUser.avatarUrl = req.publicBaseUrl + '/api/avatars/user/' + patchedUser.id + '/avatar.png'
 
@@ -189,7 +209,6 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
   res.send(patchedUser)
 }))
 
-// Only super admin can delete a user for now
 router.delete('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (config.userSelfDelete) {

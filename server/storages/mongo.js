@@ -1,4 +1,5 @@
 const config = require('config')
+const moment = require('moment')
 
 const collation = { locale: 'en', strength: 1 }
 
@@ -66,6 +67,7 @@ class MongodbStorage {
     // An index for comparison case and diacritics insensitive
     await ensureIndex(this.db, 'users', { email: 1 }, { unique: true, collation })
     await ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
+    await ensureIndex(this.db, 'users', { plannedDeletion: 1 }, { sparse: true })
     await ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
     await ensureIndex(this.db, 'invitations', { email: 1, id: 1 }, { unique: true })
     await ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1 }, { unique: true })
@@ -161,6 +163,27 @@ class MongodbStorage {
       .toArray()
     const count = await countPromise
     return { count, results: users.map(cleanUser) }
+  }
+
+  async findUsersToDelete () {
+    return (await this.db.collection('users')
+      .find({ plannedDeletion: { $lt: moment().format('YYYY-MM-DD') } })
+      .limit(10000)
+      .toArray()).map(cleanUser)
+  }
+
+  async findInactiveUsers () {
+    const inactiveDelayDate = moment().subtract(config.inactiveDeletionDelay[0], config.inactiveDeletionDelay[1]).toDate()
+    return (await this.db.collection('users')
+      .find({
+        plannedDeletion: { $exists: false },
+        $or: [
+          { logged: { $lt: inactiveDelayDate } },
+          { logged: { $exists: false }, 'created.date': { $lt: inactiveDelayDate } }
+        ]
+      })
+      .limit(10000)
+      .toArray()).map(cleanUser)
   }
 
   async findMembers (organizationId, params = {}) {

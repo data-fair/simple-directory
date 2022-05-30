@@ -44,6 +44,7 @@ exports.publicMessages = unflatten(
 exports.middleware = (req, res, next) => {
   const locales = acceptLangParser.parse(req.get('Accept-Language'))
   const localeCode = req.cookies.i18n_lang || (locales && locales[0] && locales[0].code) || exports.defaultLocale
+  req.locale = localeCode
   req.messages = exports.messages[localeCode] || exports.messages[exports.defaultLocale]
 
   // TODO: memoize ? use standard i18n module ?
@@ -65,6 +66,19 @@ exports.middleware = (req, res, next) => {
       }
     }
     return res
+  }
+
+  req.localeDate = (date) => {
+    const dayjs = require('dayjs')
+    require('dayjs/locale/de')
+    require('dayjs/locale/en')
+    require('dayjs/locale/es')
+    require('dayjs/locale/fr')
+    require('dayjs/locale/it')
+    require('dayjs/locale/pt')
+    const localizedFormat = require('dayjs/plugin/localizedFormat')
+    dayjs.extend(localizedFormat)
+    return dayjs(date).locale(localeCode)
   }
   next()
 }

@@ -204,17 +204,22 @@
         />
       </template>
 
-      <template v-if="env.userSelfDelete && !readonly">
+      <template v-if="env.userSelfDelete && !readonly && userDetails">
         <h2 class="text-h5 mt-8 mb-4">
           {{ $t('pages.me.operations') }}
         </h2>
         <confirm-menu
+          v-if="!userDetails.plannedDeletion"
           :button-text="$t('pages.me.deleteMyself', {name: user.name})"
           :title="$t('pages.me.deleteMyself', {name: user.name})"
-          :alert="$t('pages.me.deleteMyselfAlert')"
+          :alert="$t('pages.me.deleteMyselfAlert', {plannedDeletionDelay: env.plannedDeletionDelay})"
           :check-text="$t('pages.me.deleteMyselfCheck', {name: user.name})"
           yes-color="warning"
           @confirm="deleteMyself"
+        />
+        <cancel-deletion
+          v-else
+          @cancelled="fetchUserDetails"
         />
       </template>
     </v-form>
@@ -313,10 +318,14 @@ export default {
     },
     async deleteMyself () {
       try {
-        await this.$axios.$delete(`api/users/${this.user.id}`)
-        await this.logout()
+        await this.$axios.$patch(`api/users/${this.user.id}`, {
+          plannedDeletion: moment().add(process.env.plannedDeletionDelay, 'days').format('YYYY-MM-DD')
+        })
+        // await this.logout()
         // reloading top page, so that limits are re-fetched, etc.
-        window.top.location.reload()
+        // window.top.location.reload()
+
+        this.fetchUserDetails()
       } catch (error) {
         eventBus.$emit('notification', { error })
       }

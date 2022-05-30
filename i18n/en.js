@@ -164,7 +164,9 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       createUserConfirmed: 'An email was sent to the address {email}. This email contains a link to validate the creation of your account.',
       adminMode: 'Confirm your identity to switch to admin mode.',
       oauth: 'Connect with:',
-      error: 'Error'
+      error: 'Error',
+      plannedDeletion: 'Planned deletion',
+      cancelDeletion: 'Cancel the deletion of the user'
     },
     organization: {
       addMember: 'Invite a user to join this organization',
@@ -203,7 +205,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       noOrganization: 'Your are not a member in any organization.',
       operations: 'Sensitive operations',
       deleteMyself: 'Delete this account',
-      deleteMyselfAlert: 'If your delete your account the associated data will deleted as well and cannot be recovered.',
+      deleteMyselfAlert: 'If your delete your account you will have a {plannedDeletionDelay} days delay after which all associated data will be deleted and will not be recoverable.',
       deleteMyselfCheck: 'check and click on OK to confirm the deletion of the user {name} and all its data.',
       accountChanges: 'Managing account switching',
       defaultOrg: 'Activate this account by default after each login',
@@ -230,7 +232,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     expiredInvitationToken: 'The invitation link you received has expired, you can no longer accept this invitation.',
     maxNbMembers: 'The organization already contains the maximum number of members allowed by its quotas.',
     unknownOAuthProvider: 'OAuth identification not supported.',
-    adminModeOnly: 'Functionality reserved for super administrators.'
+    adminModeOnly: 'Functionality reserved for super administrators.',
+    plannedDeletion: 'The deletion of the user {name} and all its data is planned {plannedDeletion}.'
   },
   mails: {
     creation: {
