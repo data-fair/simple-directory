@@ -116,9 +116,19 @@ class MongodbStorage {
 
   async patchUser (id, patch, byUser) {
     if (byUser) patch.updated = { id: byUser.id, name: byUser.name, date: new Date() }
+    const unset = {}
+    Object.keys(patch).forEach(key => {
+      if (patch[key] === null) {
+        unset[key] = ''
+        delete patch[key]
+      }
+    })
+    const operation = {}
+    if (Object.keys(patch).length) operation.$set = patch
+    if (Object.keys(unset).length) operation.$unset = unset
     const mongoRes = await this.db.collection('users').findOneAndUpdate(
       { _id: id },
-      { $set: patch },
+      operation,
       { returnOriginal: false }
     )
     const user = cleanUser(mongoRes.value)
