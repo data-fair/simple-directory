@@ -57,6 +57,7 @@
                 name="email"
                 class="mb-3 hide-autofill"
                 hide-details="auto"
+                autocomplete="email"
               />
               <p
                 v-if="env.passwordless && !adminMode"
@@ -203,6 +204,7 @@
                   outlined
                   dense
                   rounded
+                  autocomplete="email"
                   :disabled="!!invitPayload"
                 />
 
@@ -213,6 +215,7 @@
                   outlined
                   dense
                   rounded
+                  autocomplete="given-name"
                   @keyup.enter="createUser"
                 />
 
@@ -223,6 +226,7 @@
                   outlined
                   dense
                   rounded
+                  autocomplete="family-name"
                   @keyup.enter="createUser"
                 />
 
@@ -350,50 +354,62 @@
 
           <v-window-item value="changePassword">
             <v-card-text>
-              <p>{{ $t('pages.login.newPasswordMsg') }}</p>
-              <v-text-field
-                v-model="newPassword"
-                :autofocus="true"
-                :label="$t('pages.login.newPassword')"
-                :error-messages="newPasswordErrors"
-                name="newPassword"
-                type="password"
-                autocomplete="new-password"
-                outlined
-                dense
-                rounded
-              >
-                <v-tooltip
-                  slot="append-outer"
-                  right
-                  max-width="400"
+              <v-form ref="changePasswordForm">
+                <p>{{ $t('pages.login.newPasswordMsg') }}</p>
+                <v-text-field
+                  id="email"
+                  v-model="email"
+                  :label="$t('pages.login.emailLabel')"
+                  name="email"
+                  autocomplete="email"
+                  style="display:none;"
+                />
+                <v-text-field
+                  id="password"
+                  v-model="newPassword"
+                  :autofocus="true"
+                  :label="$t('pages.login.newPassword')"
+                  :error-messages="newPasswordErrors"
+                  :rules="[v => !!v || '']"
+                  name="newPassword"
+                  type="password"
+                  autocomplete="new-password"
+                  outlined
+                  dense
+                  rounded
                 >
-                  <template #activator="{on}">
-                    <v-icon v-on="on">
+                  <v-tooltip
+                    slot="append-outer"
+                    right
+                    max-width="400"
+                  >
+                    <template #activator="{on}">
+                      <v-icon v-on="on">
+                        mdi-information
+                      </v-icon>
+                    </template>
+                    <div v-html="$t('errors.malformedPassword')" />
+                  </v-tooltip>
+                </v-text-field>
+                <v-text-field
+                  v-model="newPassword2"
+                  :label="$t('pages.login.newPassword2')"
+                  :rules="[v => !!v || '', v => newPassword === v || $t('errors.differentPasswords')]"
+                  name="newPassword2"
+                  type="password"
+                  autocomplete="new-password"
+                  outlined
+                  dense
+                  rounded
+                  @keyup.enter="changePassword"
+                >
+                  <div slot="append-outer">
+                    <v-icon style="visibility:hidden">
                       mdi-information
                     </v-icon>
-                  </template>
-                  <div v-html="$t('errors.malformedPassword')" />
-                </v-tooltip>
-              </v-text-field>
-              <v-text-field
-                v-model="newPassword2"
-                :label="$t('pages.login.newPassword2')"
-                :error-messages="newPassword !== newPassword2 ? ['Les mots de passe sont différents'] : []"
-                name="newPassword2"
-                type="password"
-                autocomplete="new-password"
-                outlined
-                dense
-                rounded
-                @keyup.enter="changePassword"
-              >
-                <div slot="append-outer">
-                  <v-icon style="visibility:hidden">
-                    mdi-information
-                  </v-icon>
-                </div>
-              </v-text-field>
+                  </div>
+                </v-text-field>
+              </v-form>
             </v-card-text>
             <v-card-actions>
               <v-spacer />
@@ -839,6 +855,7 @@ export default {
       }
     },
     async changePassword () {
+      if (!this.$refs.changePasswordForm.validate()) return
       try {
         await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, {
           password: this.newPassword
