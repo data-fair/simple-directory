@@ -77,7 +77,7 @@
           >
             <template #activator="{ on }">
               <v-text-field
-                v-model="patch.birthday"
+                :value="patch.birthday && $d(new Date(patch.birthday))"
                 :label="$t('common.birthday')"
                 :disabled="!userDetails || readonly"
                 append-icon="mdi-calendar"
@@ -87,14 +87,15 @@
                 dense
                 hide-details
                 v-on="on"
+                @click:clear="patch.birthday = null; save()"
               />
             </template>
             <v-date-picker
               v-model="patch.birthday"
               :max="maxBirthday"
-              :picker-date="patch.birthday || maxBirthday"
               no-title
-              @input="birthdayMenu = false; save()"
+              :active-picker.sync="activeBirthDayPicker"
+              @change="birthdayMenu = false; save()"
             />
           </v-menu>
         </v-col>
@@ -241,7 +242,8 @@ export default {
     rejectDialog: false,
     nbCreatedOrgs: null,
     birthdayMenu: false,
-    maxBirthday: moment().subtract(13, 'years').toISOString()
+    maxBirthday: moment().subtract(13, 'years').toISOString(),
+    activeBirthDayPicker: null
   }),
   computed: {
     ...mapState('session', ['user', 'initialized']),
@@ -267,6 +269,9 @@ export default {
     }
   },
   watch: {
+    birthdayMenu (val) {
+      if (val) setTimeout(() => { this.activeBirthDayPicker = 'YEAR' })
+    },
     userDetails () {
       this.initPatch()
     },
