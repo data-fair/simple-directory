@@ -1,4 +1,4 @@
-const sdExpress = require('@koumoul/sd-express')
+const sdExpress = require('@data-fair/sd-express')
 
 exports.axios = async (email) => {
   const config = require('config')
