@@ -28,7 +28,9 @@ router.post('', asyncWrap(async (req, res, next) => {
 
   const invitation = req.body
   const orga = req.user.organizations.find(o => o.id === invitation.id)
-  if (!req.user.isAdmin && (!orga || orga.role !== 'admin')) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (!req.user.isAdmin && (!orga || orga.role !== 'admin' || (orga.department && orga.department !== invitation.department))) {
+    return res.status(403).send(req.messages.errors.permissionDenied)
+  }
   const token = tokens.sign(req.app.get('keys'), shortenInvit(invitation), config.jwtDurations.invitationToken)
 
   const linkUrl = new URL(req.publicBaseUrl + '/api/invitations/_accept')
@@ -43,9 +45,9 @@ router.post('', asyncWrap(async (req, res, next) => {
   })
 
   sendNotification({
-    sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
+    sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
     topic: { key: 'simple-directory:invitation-sent' },
-    title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name })
+    title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (invitation.department ? ' / ' + invitation.department : '') })
   })
 
   if (req.user.adminMode || req.user.asAdmin) {
@@ -149,9 +151,9 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   await storage.addMember(orga, user, invit.role, invit.department)
 
   sendNotification({
-    sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
+    sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },
     topic: { key: 'simple-directory:invitation-accepted' },
-    title: req.__all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: orga.name })
+    title: req.__all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
   })
 
   if (storage.db) await limits.setNbMembers(storage.db, orga.id)

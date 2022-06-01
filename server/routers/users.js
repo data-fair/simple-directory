@@ -115,9 +115,9 @@ router.post('', asyncWrap(async (req, res, next) => {
     }
     await storage.addMember(orga, newUser, invit.role, invit.department)
     sendNotification({
-      sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
+      sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
-      title: req.__all('notifications.acceptedInvitation', { name: newUser.name, email: newUser.email, orgName: orga.name })
+      title: req.__all('notifications.acceptedInvitation', { name: newUser.name, email: newUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
     })
     if (storage.db) await limits.setNbMembers(storage.db, orga.id)
   }

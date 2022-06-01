@@ -319,8 +319,8 @@ An action requiring confirmation by email was triggered on this address. To conf
   },
   notifications: {
     sentInvitationTopic: 'an invitation is sent',
-    sentInvitation: 'An email was sent to {email} with your invitation to join the organization {orgName}.',
+    sentInvitation: 'An email was sent to {email} with an invitation to join the organization {orgName}.',
     acceptedInvitationTopic: 'an invitation is accepted',
-    acceptedInvitation: 'The user {name} ({email}) has accepted your invitation to join the organization {orgName}.'
+    acceptedInvitation: 'The user {name} ({email}) has joined the organization {orgName}.'
   }
 }

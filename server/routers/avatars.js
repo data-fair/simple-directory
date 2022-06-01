@@ -77,7 +77,7 @@ const isAdmin = (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (req.user.adminMode) return next()
   if (req.params.type === 'user' && req.params.id === req.user.id) return next()
-  if (req.params.type === 'organization' && (req.user.organizations || []).find(o => o.id === req.params.id && o.role === 'admin')) return next()
+  if (req.params.type === 'organization' && (req.user.organizations || []).find(o => o.id === req.params.id && o.role === 'admin' && !o.department)) return next()
   res.status(403).send()
 }
 

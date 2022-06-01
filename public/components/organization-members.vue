@@ -19,10 +19,11 @@
           :is-admin-orga="isAdminOrga"
           :members="members"
           :disable-invite="disableInvite"
+          :department="adminDepartment"
         />
         <notify-menu
           v-if="isAdminOrga"
-          :sender="`organization:${orga.id}::admin`"
+          :sender="`organization:${orga.id}:${department || ''}:admin`"
           :topics=" [
             {key: 'simple-directory:invitation-sent', title: $t('notifications.sentInvitationTopic')},
             {key: 'simple-directory:invitation-accepted', title: $t('notifications.acceptedInvitationTopic')}
@@ -56,7 +57,7 @@
       </v-col>
       <v-col cols="4">
         <v-select
-          v-if="env.manageDepartments && orga.departments && orga.departments.length"
+          v-if="env.manageDepartments && orga.departments && orga.departments.length && !adminDepartment"
           v-model="department"
           :items="orga.departments"
           :label="orga.departmentLabel || $t('common.department')"
@@ -88,6 +89,7 @@
             <edit-member-menu
               :orga="orga"
               :member="member"
+              :department="adminDepartment"
               @save="saveMember"
             />
           </v-list-item-action>
@@ -162,6 +164,11 @@ export default {
     readonly: {
       type: Boolean,
       default: false
+    },
+    adminDepartment: {
+      type: String,
+      required: false,
+      default: null
     }
   },
   data: () => ({
@@ -181,6 +188,7 @@ export default {
     }
   },
   async mounted () {
+    this.department = this.adminDepartment
     this.fetchMembers()
   },
   methods: {

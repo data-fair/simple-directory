@@ -359,8 +359,8 @@ N'hésitez pas à nous contacter à {contact}.
   },
   notifications: {
     sentInvitationTopic: 'une invitation est envoyée',
-    sentInvitation: 'Un email a été envoyé à {email} avec votre invitation à rejoindre l\'organisation {orgName}.',
+    sentInvitation: 'Un email a été envoyé à {email} avec une invitation à rejoindre l\'organisation {orgName}.',
     acceptedInvitationTopic: 'une invitation est acceptée',
-    acceptedInvitation: 'L\'utilisateur {name} ({email}) a accepté votre invitation à rejoindre l\'organisation {orgName}.'
+    acceptedInvitation: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.'
   }
 }

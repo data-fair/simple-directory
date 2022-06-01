@@ -12,14 +12,19 @@ const defaultConfig = require('../../config/default.js')
 
 const router = module.exports = express.Router()
 
+function getUserOrg (req) {
+  return (req.user.organizations || []).find(o => o.id === req.params.organizationId)
+}
+
 // Either a super admin, or an admin of the current organization
-function isAdmin (req) {
-  return req.user.adminMode || (req.user.organizations || []).find(o => o.id === req.params.organizationId && o.role === 'admin')
+function isOrgAdmin (req) {
+  const userOrg = getUserOrg(req)
+  return req.user.adminMode || (userOrg && userOrg.role === 'admin' && !userOrg.department)
 }
 
 // Either a super admin, or a member of the current organization
 function isMember (req) {
-  return req.user.adminMode || (req.user.organizations || []).find(o => o.id === req.params.organizationId)
+  return req.user.adminMode || getUserOrg(req)
 }
 
 // Get the list of organizations
@@ -106,7 +111,7 @@ const patchKeys = ['name', 'description', 'departments', 'departmentLabel', '2FA
 router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only allowed for the organizations that the user is admin of
-  if (!isAdmin(req)) {
+  if (!isOrgAdmin(req)) {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
   const fullPatchKeys = req.user.adminMode ? [...patchKeys, 'orgStorage'] : patchKeys
@@ -133,6 +138,11 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (!isMember(req)) {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
+  const userOrg = getUserOrg(req)
+  if (!req.user.adminMode && userOrg.department && userOrg.department !== req.query.department) {
+    return res.status(403).send(req.messages.errors.permissionDenied)
+  }
+
   const org = await req.app.get('storage').getOrganization(req.params.organizationId)
   if (!org) return res.status(404).send('organization not found')
 
@@ -179,11 +189,20 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
 // Exclude a member of the organization
 router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  // Only allowed for the organizations that the user is admin of
-  if (!isAdmin(req)) {
+  const storage = req.app.get('storage')
+
+  const member = (await storage.findMembers(req.params.organizationId, { ids: [req.params.userId] })).results[0]
+
+  // Only allowed for the organizations that the user is admin of (or admin of the member's department)
+  const userOrg = getUserOrg(req)
+  if (req.user.adminMode) {
+    // ok
+  } else if (member && userOrg && userOrg.role === 'admin' && (!userOrg.department || userOrg.department === member.department)) {
+    // ok
+  } else {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
-  const storage = req.app.get('storage')
+
   await storage.removeMember(req.params.organizationId, req.params.userId)
   if (storage.db) {
     await limits.setNbMembers(storage.db, req.params.organizationId)
@@ -198,15 +217,23 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
 // Change the role of the user in the organization
 router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  // Only allowed for the organizations that the user is admin of
-  if (!isAdmin(req)) {
+  const storage = req.app.get('storage')
+  const member = (await storage.findMembers(req.params.organizationId, { ids: [req.params.userId] })).results[0]
+
+  // Only allowed for the organizations that the user is admin of (or admin of the member's department)
+  const userOrg = getUserOrg(req)
+  if (req.user.adminMode) {
+    // ok
+  } else if (member && userOrg && userOrg.role === 'admin' && (!userOrg.department || (userOrg.department === member.department && userOrg.department === req.body.department))) {
+    // ok
+  } else {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
-  const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
+  const orga = await storage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   const roles = orga.roles || config.roles.defaults
   if (!roles.includes(req.body.role)) return res.status(400).send(req.messages.errors.replace('{role}', req.body.role))
-  await req.app.get('storage').setMemberRole(req.params.organizationId, req.params.userId, req.body.role, req.body.department)
+  await storage.setMemberRole(req.params.organizationId, req.params.userId, req.body.role, req.body.department)
 
   // update session info
   await tokens.keepalive(req, res)
@@ -217,7 +244,7 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
 // Super admin and orga admin can delete an organization for now
 router.delete('/:organizationId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  if (!isAdmin(req)) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (!isOrgAdmin(req)) return res.status(403).send(req.messages.errors.permissionDenied)
   const { count } = await req.app.get('storage').findMembers(req.params.organizationId, { size: 0, skip: 0 })
   if (count > 1) return res.status(400).send(req.messages.errors.nonEmptyOrganization)
   await req.app.get('storage').deleteOrganization(req.params.organizationId)

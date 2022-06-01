@@ -29,7 +29,7 @@
           :label="$t('common.role')"
         />
         <v-select
-          v-if="env.manageDepartments && orga.departments && orga.departments.length"
+          v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
           v-model="editMember.department"
           :items="orga.departments"
           :label="orga.departmentLabel || $t('common.department')"
@@ -61,7 +61,7 @@
 import { mapState } from 'vuex'
 
 export default {
-  props: ['orga', 'member'],
+  props: ['orga', 'member', 'department'],
   data: () => ({ menu: false, editMember: null }),
   computed: {
     ...mapState(['env'])

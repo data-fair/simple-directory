@@ -14,7 +14,7 @@ const asyncWrap = require('./utils/async-wrap')
 const tokens = require('./utils/tokens')
 const limits = require('./utils/limits')
 const twoFA = require('./routers/2fa.js')
-const session = require('@koumoul/sd-express')({
+const session = require('@data-fair/sd-express')({
   directoryUrl: config.publicUrl,
   privateDirectoryUrl: 'http://localhost:' + config.port
 })
@@ -42,7 +42,8 @@ const fullUser = asyncWrap(async (req, res, next) => {
     req.user = {
       ...await req.app.get('storage').getUser({ id: req.user.id }),
       isAdmin: req.user.isAdmin,
-      adminMode: req.user.adminMode
+      adminMode: req.user.adminMode,
+      activeAccount: req.user.activeAccount
     }
   }
 

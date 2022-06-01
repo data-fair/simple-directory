@@ -18,7 +18,7 @@
       </v-btn>
     </template>
     <v-card
-      v-if="orga"
+      v-if="orga && menu"
       data-iframe-height
       :width="link ? '800px' : '500px'"
     >
@@ -59,7 +59,7 @@
             dense
           />
           <v-select
-            v-if="env.manageDepartments && orga.departments && orga.departments.length"
+            v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
             v-model="invitation.department"
             :items="orga.departments"
             :label="orga.departmentLabel || $t('common.department')"
@@ -108,10 +108,10 @@ import { mapState } from 'vuex'
 import eventBus from '../event-bus'
 
 export default {
-  props: ['orga', 'isAdminOrga', 'members', 'disableInvite'],
+  props: ['orga', 'isAdminOrga', 'members', 'disableInvite', 'department'],
   data: () => ({
     menu: false,
-    invitation: { id: null, email: null, role: null, department: null, redirect: null },
+    invitation: null,
     validInvitation: true,
     link: null
   }),
@@ -121,7 +121,7 @@ export default {
   watch: {
     menu () {
       if (!this.menu) return
-      this.invitation = { id: this.orga.id, name: this.orga.name, email: '', role: null, department: null, redirect: this.$route.query.redirect }
+      this.invitation = { id: this.orga.id, name: this.orga.name, email: '', role: null, department: this.department, redirect: this.$route.query.redirect }
       this.link = null
       if (this.$refs.inviteForm) this.$refs.inviteForm.reset()
     }

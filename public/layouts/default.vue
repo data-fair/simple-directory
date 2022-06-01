@@ -97,12 +97,21 @@
               </v-list-item-content>
             </v-list-item>
             <v-list-item
-              v-if="user.organization && user.organization.role === 'admin'"
+              v-if="user.organization && user.organization.role === 'admin' && !user.organization.department"
               :to="'/organization/' + user.organization.id"
               :nuxt="true"
             >
               <v-list-item-content>
                 <v-list-item-title>Gestion de l'organisation</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item
+              v-if="user.organization && user.organization.role === 'admin' && user.organization.department"
+              :to="'/organization/' + user.organization.id + '/department/' + user.organization.department"
+              :nuxt="true"
+            >
+              <v-list-item-content>
+                <v-list-item-title>Gestion du département</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
             <v-divider />
