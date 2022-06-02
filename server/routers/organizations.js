@@ -207,6 +207,7 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   if (storage.db) {
     await limits.setNbMembers(storage.db, req.params.organizationId)
   }
+  webhooks.postIdentity('user', await storage.getUser({ id: req.params.userId }))
 
   // update session info
   await tokens.keepalive(req, res)
@@ -234,6 +235,7 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
   const roles = orga.roles || config.roles.defaults
   if (!roles.includes(req.body.role)) return res.status(400).send(req.messages.errors.replace('{role}', req.body.role))
   await storage.setMemberRole(req.params.organizationId, req.params.userId, req.body.role, req.body.department)
+  webhooks.postIdentity('user', await storage.getUser({ id: req.params.userId }))
 
   // update session info
   await tokens.keepalive(req, res)

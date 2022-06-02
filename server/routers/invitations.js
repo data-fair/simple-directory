@@ -7,6 +7,7 @@ const mails = require('../mails')
 const limits = require('../utils/limits')
 const { shortenInvit, unshortenInvit } = require('../utils/invitations')
 const { send: sendNotification } = require('../utils/notifications')
+const webhooks = require('../webhooks')
 const emailValidator = require('email-validator')
 const debug = require('debug')('invitations')
 
@@ -155,6 +156,8 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
     topic: { key: 'simple-directory:invitation-accepted' },
     title: req.__all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
   })
+
+  webhooks.postIdentity('user', await storage.getUser({ id: user.id }))
 
   if (storage.db) await limits.setNbMembers(storage.db, orga.id)
 

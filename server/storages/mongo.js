@@ -216,8 +216,8 @@ class MongodbStorage {
       : (await this.db.collection('users')
           .find(filter)
           .sort(params.sort)
-          .skip(params.skip)
-          .limit(params.size)
+          .skip(params.skip || 0)
+          .limit(params.size || 12)
           .toArray())
     const count = await countPromise
     return {

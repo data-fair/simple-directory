@@ -5,9 +5,10 @@ const debug = require('debug')('webhooks')
 
 exports.postIdentity = async (type, identity) => {
   const name = type === 'user' ? userName(identity) : identity.name
+  const body = { name }
+  if (type === 'user' && identity.organizations) body.organizations = identity.organizations
   for (const webhook of config.webhooks.identities) {
     const url = `${webhook.base}/${type}/${identity.id}`
-    const body = { name }
     debug(`Send identity name webhook to ${url} : `, body)
     try {
       await axios.post(url, body, { params: { key: webhook.key } })
