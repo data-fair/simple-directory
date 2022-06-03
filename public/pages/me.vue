@@ -181,7 +181,7 @@
         {{ $t('common.settings') }}
       </h2>
 
-      <template v-if="!(env.onlyCreateInvited && user.organizations.length === 1)">
+      <template v-if="user.organizations.length && !(env.onlyCreateInvited && user.organizations.length === 1)">
         <h2 class="text-h5 mt-8 mb-4">
           {{ $t('pages.me.accountChanges') }}
         </h2>
