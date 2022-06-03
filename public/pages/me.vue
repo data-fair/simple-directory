@@ -1,7 +1,9 @@
 <template lang="html">
   <v-container
     data-iframe-height
-    style="max-width:600px;"
+    :fluid="$route.query.fluid === 'true'"
+    :class="{'pa-0': $route.query.fluid === 'true'}"
+    :style="$route.query.fluid === 'true' ? '' : 'max-width:600px;'"
   >
     <h2 class="text-h4 mb-4">
       <v-icon
