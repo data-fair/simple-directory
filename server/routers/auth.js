@@ -304,19 +304,7 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
 }))
 
 router.delete('/', (req, res) => {
-  const cookies = new Cookies(req, res)
-  cookies.set('id_token', null)
-  cookies.set('id_token_sign', null)
-  cookies.set('id_token_org', null)
-
-  // remove cookies on deprecated domain (stop using wildcard domain cookies)
-  if (config.oldSessionDomain) {
-    cookies.set('id_token', null, { domain: config.oldSessionDomain })
-    cookies.set('id_token_sign', null, { domain: config.oldSessionDomain })
-    cookies.set('id_token_org', null, { domain: config.oldSessionDomain })
-    cookies.set('id_token_2fa', null, { domain: config.oldSessionDomain })
-    if (req.user) cookies.set(twoFA.cookieName(req.user.id), null, { domain: config.oldSessionDomain })
-  }
+  tokens.unsetCookies(req, res)
   res.status(204).send()
 })
 

@@ -11,6 +11,7 @@ const JSONWebKey = require('json-web-key')
 const Cookies = require('cookies')
 const defaultConfig = require('../../config/default.js')
 const storages = require('../storages')
+const twoFA = require('../routers/2fa.js')
 
 exports.init = async () => {
   const keys = {}
@@ -74,6 +75,7 @@ exports.getPayload = (user) => {
   if (user.orgStorage) payload.orgStorage = user.orgStorage
   if (user.readonly) payload.readonly = user.readonly
   if (user.ipa) payload.ipa = 1
+  if (user.plannedDeletion) payload.pd = user.plannedDeletion
   return payload
 }
 
@@ -85,6 +87,22 @@ exports.getDefaultOrg = (user) => {
   }
   if (user.ignorePersonalAccount) return user.organizations[0].id
   return null
+}
+
+exports.unsetCookies = (req, res) => {
+  const cookies = new Cookies(req, res)
+  cookies.set('id_token', null)
+  cookies.set('id_token_sign', null)
+  cookies.set('id_token_org', null)
+
+  // remove cookies on deprecated domain (stop using wildcard domain cookies)
+  if (config.oldSessionDomain) {
+    cookies.set('id_token', null, { domain: config.oldSessionDomain })
+    cookies.set('id_token_sign', null, { domain: config.oldSessionDomain })
+    cookies.set('id_token_org', null, { domain: config.oldSessionDomain })
+    cookies.set('id_token_2fa', null, { domain: config.oldSessionDomain })
+    if (req.user) cookies.set(twoFA.cookieName(req.user.id), null, { domain: config.oldSessionDomain })
+  }
 }
 
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
@@ -122,14 +140,20 @@ exports.keepalive = async (req, res) => {
   let org
   if (req.user.organization) {
     org = await req.app.get('storage').getOrganization(req.user.organization.id)
-    if (!org) return res.status(401).send('Organization does not exist anymore')
+    if (!org) {
+      exports.unsetCookies(req, res)
+      return res.status(401).send('Organization does not exist anymore')
+    }
   }
   let storage = req.app.get('storage')
   if (req.user.orgStorage && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
   const user = await storage.getUser({ id: req.user.id })
-  if (!user) return res.status(401).send('User does not exist anymore')
+  if (!user) {
+    exports.unsetCookies(req, res)
+    return res.status(401).send('User does not exist anymore')
+  }
 
   const payload = exports.getPayload(user)
   if (req.user.isAdmin && req.user.adminMode && req.query.noAdmin !== 'true') payload.adminMode = true
