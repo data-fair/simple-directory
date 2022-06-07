@@ -315,6 +315,20 @@ An action requiring confirmation by email was triggered on this address. To conf
       htmlButton: 'Confirm',
       htmlAlternativeLink: 'If the button doesn\'t work, you can copy/paste this link in the address bar of your browser:',
       htmlCaption: 'If you encounter a problem with your account or if you find this message suspicious feel free to contact us at <a href="mailto:{contact}">{contact}</a>.'
+    },
+    plannedDeletion: {
+      subject: 'Account deletion programmed on {host}',
+      text: `
+The user {user} and all the data related to him will be deleted on the {plannedDeletion}.
+
+To cancel the deletion you can login here {link}.
+
+Feel free to contact us at {contact}.
+      `,
+      htmlMsg: 'The user {user} and all the data related to him will be deleted on the {plannedDeletion}.',
+      htmlButton: 'Login to cancel the deletion',
+      htmlAlternativeLink: 'If the button doesn\'t work, you can copy/paste this link in the address bar of your browser:',
+      htmlCaption: 'If you encounter a problem with your account or if you find this message suspicious feel free to contact us at <a href="mailto:{contact}">{contact}</a>.'
     }
   },
   notifications: {

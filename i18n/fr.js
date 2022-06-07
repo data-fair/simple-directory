@@ -351,9 +351,13 @@ Une action demandant une confirmation par email a été déclenchée sur cette a
       text: `
 L'utilisateur {user} et toutes les données qui lui sont associées seront définitivement supprimés le {plannedDeletion}.
 
+Pour annuler cette suppression vous pouvez vous connecter à ce lien {link}.
+
 N'hésitez pas à nous contacter à {contact}.
       `,
       htmlMsg: 'L\'utilisateur {user} et toutes les données qui lui sont associées seront définitivement supprimés le {plannedDeletion}.',
+      htmlButton: 'Connectez vous pour annuler la suppression',
+      htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
       htmlCaption: 'N\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
     }
   },
