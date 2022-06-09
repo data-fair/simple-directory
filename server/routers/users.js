@@ -190,7 +190,7 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
 
   const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
 
-  const link = req.publicBaseUrl + '/login'
+  const link = req.publicBaseUrl + '/login?email=' + encodeURIComponent(req.user.email)
   const linkUrl = new URL(link)
   if (patch.plannedDeletion) {
     await mails.send({
@@ -198,7 +198,14 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
       key: 'plannedDeletion',
       messages: req.messages,
       to: req.user.email,
-      params: { link, host: linkUrl.host, origin: linkUrl.origin, user: req.user.name, plannedDeletion: req.localeDate(patch.plannedDeletion).format('l') }
+      params: {
+        link,
+        host: linkUrl.host,
+        origin: linkUrl.origin,
+        user: req.user.name,
+        plannedDeletion: req.localeDate(patch.plannedDeletion).format('L'),
+        cause: ''
+      }
     })
   }
 

@@ -8,6 +8,7 @@ const eventToPromise = require('event-to-promise')
 const originalUrl = require('original-url')
 const { format: formatUrl } = require('url')
 const cors = require('cors')
+const dayjs = require('./utils/dayjs')
 const storages = require('./storages')
 const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
@@ -173,7 +174,7 @@ exports.run = async () => {
           for (const user of await storage.findInactiveUsers()) {
             console.log('plan deletion of inactive user', user)
             await storage.patchUser(user.id, { plannedDeletion })
-            const link = config.publicUrl + '/login'
+            const link = config.publicUrl + '/login?email=' + encodeURIComponent(user.email)
             const linkUrl = new URL(link)
             if (user.emailConfirmed || user.logged) {
               await mails.send({
@@ -181,7 +182,14 @@ exports.run = async () => {
                 key: 'plannedDeletion',
                 messages: i18n.messages[i18n.defaultLocale], // TODO: use a locale stored on the user ?
                 to: user.email,
-                params: { link, host: linkUrl.host, origin: linkUrl.origin, user: user.name, plannedDeletion }
+                params: {
+                  link,
+                  host: linkUrl.host,
+                  origin: linkUrl.origin,
+                  user: user.name,
+                  plannedDeletion: dayjs(plannedDeletion).locale(i18n.defaultLocale).format('L'),
+                  cause: i18n.messages[i18n.defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', dayjs(user.logged || user.created.date).locale(i18n.defaultLocale).format('L'))
+                }
               })
             }
           }

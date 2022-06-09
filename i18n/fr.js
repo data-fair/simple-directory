@@ -349,16 +349,17 @@ Une action demandant une confirmation par email a été déclenchée sur cette a
     plannedDeletion: {
       subject: 'Suppression de compte planifiée sur {host}',
       text: `
-L'utilisateur {user} et toutes les données qui lui sont associées seront définitivement supprimés le {plannedDeletion}.
+L'utilisateur {user} sera définitivement supprimé le {plannedDeletion} avec toutes les données qui lui sont associées. {cause}
 
 Pour annuler cette suppression vous pouvez vous connecter à ce lien {link}.
 
 N'hésitez pas à nous contacter à {contact}.
       `,
-      htmlMsg: 'L\'utilisateur {user} et toutes les données qui lui sont associées seront définitivement supprimés le {plannedDeletion}.',
+      htmlMsg: 'L\'utilisateur {user} sera définitivement supprimé le {plannedDeletion} avec toutes les données qui lui sont associées. {cause}',
       htmlButton: 'Connectez vous pour annuler la suppression',
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
-      htmlCaption: 'N\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'N\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.',
+      causeInactivity: 'Cette opération a été déclenchée automatiquement car ce compte est inactif depuis le {date}.'
     }
   },
   notifications: {
