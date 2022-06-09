@@ -160,6 +160,8 @@ module.exports = {
   // Restricts who can use the find endpoints on users and organizations
   // One of 'anonymous', 'authenticated' or 'admin'
   listEntitiesMode: 'authenticated',
+  listUsersMode: null, // same as listEntitiesMode but only for users
+  listOrganizationsMode: null, // same as listEntitiesMode but only for users
   // Users can not be created at first email sent. They must be invited in an organization.
   onlyCreateInvited: false,
   // users cannot delete their own account by default

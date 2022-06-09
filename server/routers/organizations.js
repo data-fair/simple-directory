@@ -29,8 +29,9 @@ function isMember (req) {
 
 // Get the list of organizations
 router.get('', asyncWrap(async (req, res, next) => {
-  if (config.listEntitiesMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
-  if (config.listEntitiesMode === 'admin' && !(req.user && req.user.adminMode)) return res.send({ results: [], count: 0 })
+  const listMode = config.listOrganizationsMode || config.listEntitiesMode
+  if (listMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
+  if (listMode === 'admin' && !(req.user && req.user.adminMode)) return res.send({ results: [], count: 0 })
 
   const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
 

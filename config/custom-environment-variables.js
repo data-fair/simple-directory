@@ -183,6 +183,8 @@ module.exports = {
     }
   },
   listEntitiesMode: 'LIST_ENTITIES_MODE',
+  listUsersMode: 'LIST_USERS_MODE',
+  listOrganizationsMode: 'LIST_ORGANIZATIONS_MODE',
   onlyCreateInvited: {
     __name: 'ONLY_CREATE_INVITED',
     __format: 'json'
