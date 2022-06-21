@@ -211,6 +211,7 @@ export default {
   },
   watch: {
     user () {
+      console.log('user changed, fetch details', this.user)
       if (!this.userDetails) this.$store.dispatch('fetchUserDetails')
     }
   },
@@ -233,9 +234,6 @@ export default {
     })
   },
   methods: {
-    reload () {
-      window.location.reload()
-    },
     switchOrganization (orgId) {
       this.$store.dispatch('session/switchOrganization', orgId)
       if (!orgId) this.$router.replace('/me')

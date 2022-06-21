@@ -14,7 +14,7 @@
         class="mx-2"
         v-on="on"
       >
-        <v-icon>mdi-plus</v-icon>
+        <v-icon>mdi-pencil</v-icon>
       </v-btn>
     </template>
 

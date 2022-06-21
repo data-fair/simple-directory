@@ -20,6 +20,13 @@
           :department-label="departmentLabel"
           @change="$emit('change')"
         />
+        <!--<edit-departments-menu
+          v-if="!env.readonly"
+          :orga="orga"
+          :is-admin-orga="isAdminOrga"
+          :department-label="departmentLabel"
+          @change="$emit('change')"
+        />-->
       </h2>
     </v-row>
 
