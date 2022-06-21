@@ -91,9 +91,10 @@ exports.getDefaultOrg = (user) => {
 
 exports.unsetCookies = (req, res) => {
   const cookies = new Cookies(req, res)
-  cookies.set('id_token', null)
-  cookies.set('id_token_sign', null)
-  cookies.set('id_token_org', null)
+  // use '' instead of null because instant cookie expiration is not properly applied on all safari versions
+  cookies.set('id_token', '')
+  cookies.set('id_token_sign', '')
+  cookies.set('id_token_org', '')
 
   // remove cookies on deprecated domain (stop using wildcard domain cookies)
   if (config.oldSessionDomain) {
@@ -130,7 +131,7 @@ exports.setCookieToken = (req, res, token, org) => {
     if (payload.organizations.find(o => o.id === org)) {
       cookies.set('id_token_org', org, { ...opts, httpOnly: false })
     } else {
-      cookies.set('id_token_org', null)
+      cookies.set('id_token_org', '')
     }
   }
 }
