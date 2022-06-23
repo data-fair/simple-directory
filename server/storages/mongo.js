@@ -1,3 +1,4 @@
+const createError = require('http-errors')
 const config = require('config')
 const moment = require('moment')
 
@@ -208,7 +209,7 @@ class MongodbStorage {
       filter.organizations.$elemMatch.role = { $in: params.roles }
     }
     if (params.departments && params.departments.length) {
-      filter.organizations.$elemMatch.department = { $in: params.departments }
+      filter.organizations.$elemMatch.departments = { id: { $in: params.departments } }
     }
     const countPromise = this.db.collection('users').countDocuments(filter)
     const users = params.size === 0
@@ -224,7 +225,8 @@ class MongodbStorage {
       count,
       results: users.map(user => {
         const userOrga = user.organizations.find(o => o.id === organizationId)
-        return { id: user._id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department }
+        const member = { id: user._id, name: user.name, email: user.email, role: userOrga.role, departments: userOrga.departments }
+        return member
       })
     }
   }
@@ -299,9 +301,30 @@ class MongodbStorage {
   }
 
   async addMember (orga, user, role, department) {
+    user.organizations = user.organizations || []
+    let userOrga = user.organizations.find(o => o.id === orga.id)
+    if (userOrga) {
+      // prevent adding in a department if user as a root org role, or the contrary
+      if (!department || userOrga.role) throw createError(400, 'cet utilisateur est déjà membre de cette organisation')
+    } else {
+      userOrga = { id: orga.id, name: orga.name }
+      user.organizations.push(userOrga)
+    }
+    if (department) {
+      userOrga.departments = userOrga.departments || []
+      if (!userOrga.departments.find(d => d.id === department)) {
+        const fullDepartment = orga.departments.find(d => d.id === department)
+        userOrga.departments.push({ id: fullDepartment.id, name: fullDepartment.name, role })
+      } else {
+        const userDep = userOrga.departments.find(o => o.id === orga.id)
+        userDep.role = role
+      }
+    } else {
+      userOrga.role = role
+    }
     await this.db.collection('users').updateOne(
       { _id: user.id },
-      { $push: { organizations: { id: orga.id, name: orga.name, role, department } } }
+      { $set: { organizations: user.organizations } }
     )
   }
 
@@ -310,15 +333,36 @@ class MongodbStorage {
   }
 
   async setMemberRole (organizationId, userId, role, department) {
-    await this.db.collection('users').updateOne(
-      { _id: userId, 'organizations.id': organizationId },
-      { $set: { 'organizations.$.role': role, 'organizations.$.department': department } }
-    )
+    if (department) {
+      await this.db.collection('users').updateOne(
+        { _id: userId, 'organizations.id': organizationId, 'organizations.departments.id': department },
+        { $set: { 'organizations.$.$.role': role } }
+      )
+    } else {
+      await this.db.collection('users').updateOne(
+        { _id: userId, 'organizations.id': organizationId },
+        { $set: { 'organizations.$.role': role } }
+      )
+    }
   }
 
-  async removeMember (organizationId, userId) {
-    await this.db.collection('users')
-      .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId } } })
+  async removeMember (organizationId, userId, department) {
+    if (department) {
+      const user = this.db.collection('user').findOne({ _id: userId })
+      const userOrg = user.organizations.find(o => o.id === organizationId)
+      if (!userOrg || !userOrg.departments) return
+      userOrg.departments = userOrg.departments.filter(d => d.id !== department)
+      if (userOrg.departments.length) {
+        await this.db.collection('users')
+          .updateOne({ _id: userId }, { $set: { organizations: userOrg.organizations } })
+      } else {
+        await this.db.collection('users')
+          .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId } } })
+      }
+    } else {
+      await this.db.collection('users')
+        .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId } } })
+    }
   }
 
   async setAvatar (avatar) {

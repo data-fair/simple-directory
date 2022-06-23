@@ -15,6 +15,10 @@ const router = module.exports = express.Router()
 function getUserOrg (req) {
   return (req.user.organizations || []).find(o => o.id === req.params.organizationId)
 }
+function getUserOrgDep (req) {
+  const userOrg = getUserOrg(req)
+  return (userOrg.departments || []).find(d => d.id === req.params.departmentId || req.query.department)
+}
 
 // Either a super admin, or an admin of the current organization
 function isOrgAdmin (req) {
@@ -140,7 +144,8 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
   const userOrg = getUserOrg(req)
-  if (!req.user.adminMode && userOrg.department && userOrg.department !== req.query.department) {
+  const userDep = getUserOrgDep(req)
+  if (!req.user.adminMode && !userOrg.role && !userDep) {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
 
@@ -194,17 +199,46 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
 
   const member = (await storage.findMembers(req.params.organizationId, { ids: [req.params.userId] })).results[0]
 
-  // Only allowed for the organizations that the user is admin of (or admin of the member's department)
+  // Only allowed for the organizations that the user is admin of
   const userOrg = getUserOrg(req)
   if (req.user.adminMode) {
     // ok
-  } else if (member && userOrg && userOrg.role === 'admin' && (!userOrg.department || userOrg.department === member.department)) {
+  } else if (member && userOrg && userOrg.role === 'admin') {
     // ok
   } else {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
 
   await storage.removeMember(req.params.organizationId, req.params.userId)
+  if (storage.db) {
+    await limits.setNbMembers(storage.db, req.params.organizationId)
+  }
+  webhooks.postIdentity('user', await storage.getUser({ id: req.params.userId }))
+
+  // update session info
+  await tokens.keepalive(req, res)
+
+  res.status(204).send()
+}))
+
+// Exclude a member of a department of the organization
+router.delete('/:organizationId/members/departments/:departmentId/:userId', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send()
+  const storage = req.app.get('storage')
+
+  const member = (await storage.findMembers(req.params.organizationId, { ids: [req.params.userId], departments: [req.params.departmentId] })).results[0]
+
+  // Only allowed for the organizations that the user is admin of (or admin of the member's department)
+  const userDep = getUserOrgDep(req)
+  if (req.user.adminMode) {
+    // ok
+  } else if (member && userDep && userDep.role === 'admin') {
+    // ok
+  } else {
+    return res.status(403).send(req.messages.errors.permissionDenied)
+  }
+
+  await storage.removeMember(req.params.organizationId, req.params.userId, req.params.departmentId)
   if (storage.db) {
     await limits.setNbMembers(storage.db, req.params.organizationId)
   }
