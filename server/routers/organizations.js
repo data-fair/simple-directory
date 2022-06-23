@@ -139,10 +139,6 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (!isMember(req)) {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
-  const userOrg = getUserOrg(req)
-  if (!req.user.adminMode && userOrg.department && userOrg.department !== req.query.department) {
-    return res.status(403).send(req.messages.errors.permissionDenied)
-  }
 
   const org = await req.app.get('storage').getOrganization(req.params.organizationId)
   if (!org) return res.status(404).send('organization not found')
