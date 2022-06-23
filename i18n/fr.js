@@ -216,7 +216,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       departmentIdInvalid: 'L\'identifiant ne doit contenir que des lettres, nombres et espaces.',
       inviteLink: 'En cas de problème dans la communication par email vous pouvez envoyer le lien de confirmation ci-dessous par un autre moyen. Attention ! Vous risquez d\'insérer dans la base utilisateur une adresse mail erronée ou non fonctionnelle. Cette adresse mail pourra poser de multiples problèmes par la suite : changement de mot de passe, envoi d\'alertes, etc.',
       '2FARoles': 'Authentification à 2 facteurs.',
-      '2FARolesMsg': 'Rendre obligatoire l\'authentification à 2 facteurs pour les utilisateurs possédant ces rôles.'
+      '2FARolesMsg': 'Rendre obligatoire l\'authentification à 2 facteurs pour les utilisateurs possédant ces rôles.',
+      createUserLink: 'Renvoyer un lien d\'invitation'
     },
     invitation: {
       title: 'Invitation validée',

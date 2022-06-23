@@ -22,7 +22,10 @@
       data-iframe-height
       :width="link ? '800px' : '500px'"
     >
-      <v-card-title class="text-h6">
+      <v-card-title
+        v-if="!link"
+        class="text-h6"
+      >
         {{ $t('pages.organization.addMember') }}
       </v-card-title>
       <v-card-text v-if="disableInvite">

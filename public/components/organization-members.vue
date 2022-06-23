@@ -82,7 +82,13 @@
               <span>{{ $t('common.role') }} = {{ member.role }}</span>
               <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
               <template v-if="member.emailConfirmed === false">
-                - <span class="warning--text">{{ $t('common.emailNotConfirmed') }}</span>
+                - <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
+                  <resend-invitation
+                    :member="member"
+                    :orga="orga"
+                    :department="adminDepartment"
+                  />
+                </span>
               </template>
             </v-list-item-subtitle>
           </v-list-item-content>

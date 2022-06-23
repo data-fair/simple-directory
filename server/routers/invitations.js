@@ -42,9 +42,10 @@ router.post('', asyncWrap(async (req, res, next) => {
     // in 'always accept invitation' mode the user is not sent an email to accept the invitation
     // he is simple added to the list of members and created if needed
     const user = await storage.getUserByEmail(invitation.email)
-    if (user) {
+    if (user && user.emailConfirmed) {
       debug('in alwaysAcceptInvitation and the user already exists, immediately add it as member', invitation.email)
       await storage.addMember(orga, user, invitation.role, invitation.department)
+      if (storage.db) await limits.setNbMembers(storage.db, orga.id)
       sendNotification({
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
         topic: { key: 'simple-directory:invitation-sent' },
@@ -53,7 +54,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     } else {
       const newUser = {
         email: invitation.email,
-        id: shortid.generate(),
+        id: user ? user.id : shortid.generate(),
         emailConfirmed: false,
         defaultOrg: orga.id,
         ignorePersonalAccount: true
@@ -62,6 +63,7 @@ router.post('', asyncWrap(async (req, res, next) => {
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUser)
       await storage.createUser(newUser, req.user)
       await storage.addMember(orga, newUser, invitation.role, invitation.department)
+      if (storage.db) await limits.setNbMembers(storage.db, orga.id)
       const reboundRedirect = new URL(invitation.redirect || config.invitationRedirect || `${req.publicBaseUrl}/invitation`)
       const linkUrl = new URL(`${req.publicBaseUrl}/login`)
       linkUrl.searchParams.set('step', 'createUser')
@@ -89,8 +91,11 @@ router.post('', asyncWrap(async (req, res, next) => {
         ...notif,
         recipient: { id: newUser.id, name: newUser.name }
       })
+
+      if (req.user.adminMode || req.user.asAdmin) {
+        return res.send(params)
+      }
     }
-    if (storage.db) await limits.setNbMembers(storage.db, orga.id)
   } else {
     const linkUrl = new URL(req.publicBaseUrl + '/api/invitations/_accept')
     linkUrl.searchParams.set('invit_token', token)

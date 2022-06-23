@@ -116,7 +116,7 @@ router.post('', asyncWrap(async (req, res, next) => {
 
   await storage.createUser(newUser, null, new URL(link).host)
 
-  if (invit && !(user && user.organizations)) {
+  if (invit && !config.alwaysAcceptInvitation) {
     if (storage.db) {
       const consumer = { type: 'organization', id: orga.id }
       const limit = await limits.get(storage.db, consumer, 'store_nb_members')

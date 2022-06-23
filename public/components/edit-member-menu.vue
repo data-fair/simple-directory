@@ -27,6 +27,8 @@
           v-model="editMember.role"
           :items="orga.roles"
           :label="$t('common.role')"
+          dense
+          outlined
         />
         <v-select
           v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
@@ -36,6 +38,8 @@
           item-value="id"
           item-text="name"
           clearable
+          dense
+          outlined
         />
       </v-card-text>
       <v-card-actions>

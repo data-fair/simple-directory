@@ -191,7 +191,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       confirmDeleteDepartmentMsg: 'Are you you want to delete {name} from your organization ?',
       deleteDepartmentHasMembers: 'This department is affected to {count} member(s) of the organization. You can\'t delete it in this state.',
       departmentIdInvalid: 'Identifier should contain anly letters, numbers and spaces',
-      inviteLink: 'In case of problem in the communication by email you can send the confirmation link below by another means. Warning ! You risk inserting an incorrect or non-functional email address in the user database. This email address may cause multiple problems later: change of password, sending alerts, etc.'
+      inviteLink: 'In case of problem in the communication by email you can send the confirmation link below by another means. Warning ! You risk inserting an incorrect or non-functional email address in the user database. This email address may cause multiple problems later: change of password, sending alerts, etc.',
+      createUserLink: 'Send another invitation link'
     },
     invitation: {
       title: 'Invitation validated',
