@@ -104,11 +104,19 @@ router.post('', asyncWrap(async (req, res, next) => {
   }
 
   // Re-create a user that was never validated.. first clean temporary user
-  if (user && user.emailConfirmed === false) await storage.deleteUser(user.id)
+  if (user && user.emailConfirmed === false) {
+    if (user.organizations && invit) {
+      // This user was created empty from an invitation in 'alwaysAcceptInvitations' mode
+      newUser.id = user.id
+      newUser.organizations = user.organizations
+    } else {
+      await storage.deleteUser(user.id)
+    }
+  }
 
   await storage.createUser(newUser, null, new URL(link).host)
 
-  if (invit) {
+  if (invit && !(user && user.organizations)) {
     if (storage.db) {
       const consumer = { type: 'organization', id: orga.id }
       const limit = await limits.get(storage.db, consumer, 'store_nb_members')

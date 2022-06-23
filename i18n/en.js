@@ -66,7 +66,8 @@ module.exports = {
     missingInfo: 'Missing info',
     continue: 'Continue',
     tooLong: 'text is too long',
-    settings: 'settings'
+    settings: 'settings',
+    emailNotConfirmed: 'creation not finalized'
   },
   doc: {
     about: {

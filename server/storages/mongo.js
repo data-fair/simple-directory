@@ -224,7 +224,7 @@ class MongodbStorage {
       count,
       results: users.map(user => {
         const userOrga = user.organizations.find(o => o.id === organizationId)
-        return { id: user._id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department }
+        return { id: user._id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department, emailConfirmed: user.emailConfirmed }
       })
     }
   }

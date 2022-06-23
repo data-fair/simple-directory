@@ -140,7 +140,10 @@ export default {
           } else {
             this.menu = false
           }
-          eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', { email: this.invitation.email }))
+          this.$emit('sent', this.invitation)
+          if (!this.env.alwaysAcceptInvitation) {
+            eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', { email: this.invitation.email }))
+          }
         } catch (error) {
           eventBus.$emit('notification', { error })
         }

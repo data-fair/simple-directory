@@ -71,7 +71,8 @@ module.exports = {
     userAccount: 'Compte personnel',
     continue: 'Continuer',
     tooLong: 'texte trop long',
-    settings: 'paramètres'
+    settings: 'paramètres',
+    emailNotConfirmed: 'création non finalisée'
   },
   doc: {
     about: {
@@ -366,6 +367,8 @@ N'hésitez pas à nous contacter à {contact}.
     sentInvitationTopic: 'une invitation est envoyée',
     sentInvitation: 'Un email a été envoyé à {email} avec une invitation à rejoindre l\'organisation {orgName}.',
     acceptedInvitationTopic: 'une invitation est acceptée',
-    acceptedInvitation: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.'
+    acceptedInvitation: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.',
+    addMemberTopic: 'un membre a été ajouté',
+    addMember: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.'
   }
 }

@@ -246,5 +246,6 @@ module.exports = {
     cron: '0 5 * * *',
     deleteInactive: false,
     deleteInactiveDelay: [3, 'years']
-  }
+  },
+  alwaysAcceptInvitation: false
 }

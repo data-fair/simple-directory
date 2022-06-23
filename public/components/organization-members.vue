@@ -20,14 +20,12 @@
           :members="members"
           :disable-invite="disableInvite"
           :department="adminDepartment"
+          @sent="fetchMembers"
         />
         <notify-menu
           v-if="isAdminOrga"
           :sender="`organization:${orga.id}:${department || ''}:admin`"
-          :topics=" [
-            {key: 'simple-directory:invitation-sent', title: $t('notifications.sentInvitationTopic')},
-            {key: 'simple-directory:invitation-accepted', title: $t('notifications.acceptedInvitationTopic')}
-          ] "
+          :topics="notifyTopics"
         />
       </h2>
     </v-row>
@@ -83,6 +81,9 @@
             <v-list-item-subtitle>
               <span>{{ $t('common.role') }} = {{ member.role }}</span>
               <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
+              <template v-if="member.emailConfirmed === false">
+                - <span class="warning--text">{{ $t('common.emailNotConfirmed') }}</span>
+              </template>
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action v-if="isAdminOrga && !readonly">
@@ -185,6 +186,16 @@ export default {
     ...mapState('session', ['user']),
     disableInvite () {
       return !this.nbMembersLimits || (this.nbMembersLimits.limit > 0 && this.nbMembersLimits.consumption >= this.nbMembersLimits.limit)
+    },
+    notifyTopics () {
+      if (this.env.alwaysAcceptInvitation) {
+        return [{ key: 'simple-directory:add-member', title: this.$t('notifications.addMemberTopic') }]
+      } else {
+        return [
+          { key: 'simple-directory:invitation-sent', title: this.$t('notifications.sentInvitationTopic') },
+          { key: 'simple-directory:invitation-accepted', title: this.$t('notifications.acceptedInvitationTopic') }
+        ]
+      }
     }
   },
   async mounted () {

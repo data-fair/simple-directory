@@ -294,5 +294,9 @@ module.exports = {
       __name: 'CLEANUP_DELETE_INACTIVE_DELAY',
       __format: 'json'
     }
+  },
+  alwaysAcceptInvitation: {
+    __name: 'ALWAYS_ACCEPT_INVITATION',
+    __format: 'json'
   }
 }
