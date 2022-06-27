@@ -14,6 +14,7 @@ const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
 const tokens = require('./utils/tokens')
 const limits = require('./utils/limits')
+const prometheus = require('./utils/prometheus')
 const twoFA = require('./routers/2fa.js')
 const session = require('@data-fair/sd-express')({
   directoryUrl: config.publicUrl,
@@ -127,11 +128,16 @@ app.post('/api/session/keepalive', session.auth, asyncWrap(async (req, res, next
 }))
 // end of compatibility only section
 
+// Error management
 app.use((err, req, res, next) => {
-  err.statusCode = err.statusCode || err.status
-  if (err.statusCode === 500 || !err.statusCode) console.error('Error in express route', err)
+  if (err.code === 'ECONNRESET') err.statusCode = 400
+  const status = err.statusCode || err.status || 500
+  if (status === 500) {
+    console.error('(http) Error in express route', req.originalUrl, err)
+    prometheus.internalError.inc({ errorCode: 'http' })
+  }
   if (!res.headersSent) {
-    res.status(err.statusCode || 500)
+    res.status(status)
     if (['development', 'test'].includes(process.env.NODE_ENV)) {
       res.send(err.stack)
     } else {
@@ -226,6 +232,8 @@ exports.run = async () => {
     app.use(cors(), nuxt.render)
   }
 
+  if (config.prometheus.active) await prometheus.start(storage.db)
+
   debug('start server')
   server.listen(config.port)
   await eventToPromise(server, 'listening')
@@ -248,4 +256,6 @@ exports.stop = async () => {
   if (config.maildev.active) {
     await app.get('maildev').closeAsync()
   }
+
+  if (config.prometheus.active) await prometheus.stop()
 }

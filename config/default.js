@@ -249,5 +249,9 @@ module.exports = {
     deleteInactive: false,
     deleteInactiveDelay: [3, 'years']
   },
-  alwaysAcceptInvitation: false
+  alwaysAcceptInvitation: false,
+  prometheus: {
+    active: true,
+    port: 9090
+  }
 }

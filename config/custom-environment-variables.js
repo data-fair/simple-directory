@@ -298,5 +298,12 @@ module.exports = {
   alwaysAcceptInvitation: {
     __name: 'ALWAYS_ACCEPT_INVITATION',
     __format: 'json'
+  },
+  prometheus: {
+    active: {
+      __name: 'PROMETHEUS_ACTIVE',
+      __format: 'json'
+    },
+    port: 'PROMETHEUS_PORT'
   }
 }
