@@ -1,8 +1,8 @@
 process.env.PER_ORG_STORAGE_TYPES = '["ldap"]'
 
 const assert = require('assert').strict
-const testUtils = require('./resources/test-utils')
-const ldapStorage = require('../server/storages/ldap')
+const testUtils = require('../utils')
+const ldapStorage = require('../../server/storages/ldap')
 
 const ldapConfig = JSON.parse(JSON.stringify(require('config').storage.ldap))
 ldapConfig.organizations.staticSingleOrg = { id: 'test-ldap', name: 'Test single org' }

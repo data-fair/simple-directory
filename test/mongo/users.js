@@ -1,20 +1,22 @@
 const assert = require('assert').strict
 const eventToPromise = require('event-to-promise')
 
-const testUtils = require('./resources/test-utils')
+const testUtils = require('../utils')
 
-process.env.STORAGE_TYPE = 'mongo'
+const mails = require('../../server/mails')
 
-const mails = require('../server/mails')
-
-describe.skip('user changes', () => {
+/* describe('users api', () => {
   it('Create a user', async () => {
-    const adminAx = await testUtils.axios('alban.mouton@koumoul.com')
+    console.log(0)
+    const adminAx = await testUtils.axios('alban.mouton@koumoul.com:testpasswd:adminMode')
+    console.log(1)
     let res = await adminAx.get('/api/users')
     assert.equal(res.data.count, 1) // only the super admin at first
 
-    const ax = await testUtils.axios(test)
+    const ax = await testUtils.axios()
+    console.log(2)
     res = await ax.post('/api/users', {})
+    console.log(3)
     assert.equal(res.status, 400)
     const mailPromise = eventToPromise(mails.events, 'send')
     res = await ax.post('/api/users', { email: 'user1@test.com' })
@@ -32,5 +34,15 @@ describe.skip('user changes', () => {
     res = await ax.post('/api/auth/exchange', null, { params: { id_token: sessionToken } })
     const sessionToken2 = res.data
     assert.ok(sessionToken2)
+  })
+}) */
+
+describe('users api', () => {
+  it('Create a user', async () => {
+    const ax = await testUtils.axios()
+    const mailPromise = eventToPromise(mails.events, 'send')
+    await ax.post('/api/users', { email: 'alban.mouton@koumoul.com' })
+    const mail = await mailPromise
+    console.log(mail)
   })
 })

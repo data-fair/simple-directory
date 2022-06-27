@@ -1,6 +1,6 @@
 const assert = require('assert').strict
 const util = require('util')
-const testUtils = require('./resources/test-utils')
+const testUtils = require('../utils')
 
 describe('mails', () => {
   it('Try to send mail whithout the secret', async () => {

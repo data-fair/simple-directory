@@ -1,5 +1,5 @@
 const assert = require('assert').strict
-const testUtils = require('./resources/test-utils')
+const testUtils = require('../utils')
 
 describe('auth', () => {
   it('Create session for known user', async () => {

@@ -1,5 +1,5 @@
 const assert = require('assert').strict
-const testUtils = require('./resources/test-utils')
+const testUtils = require('../utils')
 
 describe('users API', () => {
   it('Get user list when not authenticated', async () => {

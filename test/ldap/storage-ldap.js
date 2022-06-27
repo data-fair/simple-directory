@@ -1,5 +1,5 @@
 const assert = require('assert').strict
-const ldapStorage = require('../server/storages/ldap')
+const ldapStorage = require('../../server/storages/ldap')
 
 const ldapConfig = JSON.parse(JSON.stringify(require('config').storage.ldap))
 ldapConfig.members.onlyWithRole = true

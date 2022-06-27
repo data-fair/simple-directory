@@ -1,5 +1,7 @@
+process.env.STORAGE_TYPE = 'file'
+
 const debug = require('debug')('test')
-const app = require('../server/app')
+const app = require('../../server/app')
 
 before('start app', async function () {
   debug('run app')
