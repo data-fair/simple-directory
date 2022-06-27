@@ -225,6 +225,9 @@ export default {
             org_storage: this.orgStorage
           }
         })
+        if (this.members.count && !this.members.results.length) {
+          this.fetchMembers(page - 1)
+        }
       } catch (error) {
         eventBus.$emit('notification', { error })
       }
@@ -233,7 +236,7 @@ export default {
       try {
         await this.$axios.$delete(`api/organizations/${this.orga.id}/members/${member.id}`)
         eventBus.$emit('notification', this.$t('pages.organization.deleteMemberSuccess', { name: member.name }))
-        this.fetchMembers(1)
+        this.fetchMembers(this.membersPage)
       } catch (error) {
         eventBus.$emit('notification', { error })
       }
@@ -241,7 +244,7 @@ export default {
     async saveMember (member) {
       try {
         await this.$axios.patch(`api/organizations/${this.orga.id}/members/${member.id}`, { role: member.role, department: member.department })
-        this.fetchMembers(1)
+        this.fetchMembers(this.membersPage)
       } catch (error) {
         eventBus.$emit('notification', { error })
       }
