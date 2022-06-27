@@ -1,5 +1,3 @@
-process.env.STORAGE_TYPE = 'ldap'
-
 const debug = require('debug')('test')
 const app = require('../../server/app')
 

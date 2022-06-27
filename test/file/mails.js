@@ -5,8 +5,7 @@ const testUtils = require('../utils')
 describe('mails', () => {
   it('Try to send mail whithout the secret', async () => {
     const ax = await testUtils.axios()
-    const res = await ax.post('/api/mails', {})
-    assert.equal(res.status, 403)
+    await assert.rejects(ax.post('/api/mails', {}), (res) => res.status === 403)
   })
 
   it('Send email to a user', async () => {

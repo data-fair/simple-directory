@@ -34,7 +34,6 @@ describe('organizations API', () => {
 
   it('Cannot get organization roles when non member', async () => {
     const ax = await testUtils.axios('dmeadus0@answers.com:testpasswd')
-    const res = await ax.get('/api/organizations/ihMQiGTaY/roles')
-    assert.equal(res.status, 403)
+    await assert.rejects(ax.get('/api/organizations/ihMQiGTaY/roles'), (res) => res.status === 403)
   })
 })

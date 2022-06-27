@@ -69,7 +69,6 @@ class MongodbStorage {
     await ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
     await ensureIndex(this.db, 'users', { plannedDeletion: 1 }, { sparse: true })
     await ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
-    await ensureIndex(this.db, 'invitations', { email: 1, id: 1 }, { unique: true })
     await ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1 }, { unique: true })
     await ensureIndex(this.db, 'limits', { id: 'text', name: 'text' }, { name: 'fulltext' })
     await ensureIndex(this.db, 'limits', { type: 1, id: 1 }, { name: 'limits-find-current', unique: true })
