@@ -20,7 +20,7 @@
           :members="members"
           :disable-invite="disableInvite"
           :department="adminDepartment"
-          @sent="fetchMembers"
+          @sent="fetchMembers(membersPage)"
         />
         <notify-menu
           v-if="isAdminOrga"
@@ -38,8 +38,10 @@
           name="search"
           solo
           append-icon="mdi-magnify"
-          @click:append="fetchMembers"
-          @keyup.enter="fetchMembers"
+          clearable
+          @click:clear="$nextTick(() => $nextTick(() => fetchMembers(1)))"
+          @click:append="fetchMembers(1)"
+          @keyup.enter="fetchMembers(1)"
         />
       </v-col>
       <v-col cols="4">
@@ -50,7 +52,7 @@
           name="role"
           solo
           clearable
-          @change="fetchMembers"
+          @change="fetchMembers(1)"
         />
       </v-col>
       <v-col cols="4">
@@ -64,7 +66,7 @@
           clearable
           name="department"
           solo
-          @change="fetchMembers"
+          @change="fetchMembers(1)"
         />
       </v-col>
     </v-row>
@@ -134,7 +136,7 @@
     >
       <v-spacer />
       <v-pagination
-        v-model="membersPage"
+        :value="membersPage"
         :length="Math.ceil(members.count / membersPageSize)"
         @input="fetchMembers"
       />
@@ -206,11 +208,12 @@ export default {
   },
   async mounted () {
     this.department = this.adminDepartment
-    this.fetchMembers()
+    this.fetchMembers(1)
   },
   methods: {
     ...mapActions('session', ['asAdmin']),
-    async fetchMembers () {
+    async fetchMembers (page) {
+      this.membersPage = page
       try {
         this.members = await this.$axios.$get(`api/organizations/${this.orga.id}/members`, {
           params: {
@@ -230,7 +233,7 @@ export default {
       try {
         await this.$axios.$delete(`api/organizations/${this.orga.id}/members/${member.id}`)
         eventBus.$emit('notification', this.$t('pages.organization.deleteMemberSuccess', { name: member.name }))
-        this.fetchMembers()
+        this.fetchMembers(1)
       } catch (error) {
         eventBus.$emit('notification', { error })
       }
@@ -238,7 +241,7 @@ export default {
     async saveMember (member) {
       try {
         await this.$axios.patch(`api/organizations/${this.orga.id}/members/${member.id}`, { role: member.role, department: member.department })
-        this.fetchMembers()
+        this.fetchMembers(1)
       } catch (error) {
         eventBus.$emit('notification', { error })
       }

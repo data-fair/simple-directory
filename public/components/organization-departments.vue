@@ -30,12 +30,31 @@
       </h2>
     </v-row>
 
+    <v-row
+      v-if="orga.departments.length > pageSize"
+      dense
+    >
+      <v-col cols="4">
+        <v-text-field
+          v-model="q"
+          :label="$t('common.search')"
+          name="search"
+          solo
+          append-icon="mdi-magnify"
+          clearable
+          @click:clear="$nextTick(() => $nextTick(() => filterDeps()))"
+          @click:append="filterDeps"
+          @keyup.enter="filterDeps"
+        />
+      </v-col>
+    </v-row>
+
     <v-list
       v-if="orga.departments.length"
       two-line
-      class="elevation-1 mt-3"
+      class="elevation-1 mt-1"
     >
-      <template v-for="(department, i) in orga.departments">
+      <template v-for="(department, i) in currentPage">
         <v-list-item :key="department.id">
           <v-list-item-content>
             <v-list-item-title>{{ department.name }}</v-list-item-title>
@@ -62,11 +81,22 @@
           </v-list-item-action>
         </v-list-item>
         <v-divider
-          v-if="i + 1 < orga.departments.length"
+          v-if="i + 1 < currentPage.length"
           :key="i"
         />
       </template>
     </v-list>
+
+    <v-row
+      v-if="orga.departments && filteredDeps.length > pageSize"
+      class="mt-2"
+    >
+      <v-spacer />
+      <v-pagination
+        v-model="page"
+        :length="Math.ceil(filteredDeps.length / pageSize)"
+      />
+    </v-row>
   </v-container>
 </template>
 
@@ -88,16 +118,35 @@ export default {
       default: null
     }
   },
-  data: () => ({}),
+  data: () => ({
+    pageSize: 10,
+    page: 1,
+    q: '',
+    validQ: ''
+  }),
   computed: {
     ...mapState(['userDetails', 'env']),
     departmentLabel () {
       return this.orga.departmentLabel || this.$t('common.department')
+    },
+    filteredDeps () {
+      if (!this.validQ) return this.orga.departments
+      else return this.orga.departments.filter(d => (d.id && d.id.includes(this.validQ)) || (d.id && d.id.includes(this.validQ)))
+    },
+    currentPage () {
+      return this.filteredDeps.slice((this.page - 1) * this.pageSize, this.page * this.pageSize)
     }
   },
   created () {
     // eslint-disable-next-line vue/no-mutating-props
     this.orga.departments = this.orga.departments || []
+  },
+  methods: {
+    filterDeps (page) {
+      console.log('filter', this.q)
+      this.page = 1
+      this.validQ = this.q
+    }
   }
 }
 </script>
