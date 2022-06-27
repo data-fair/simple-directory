@@ -61,7 +61,7 @@
             outlined
             dense
           />
-          <v-select
+          <v-autocomplete
             v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
             v-model="invitation.department"
             :items="orga.departments"
