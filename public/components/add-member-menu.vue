@@ -20,7 +20,7 @@
     <v-card
       v-if="orga && menu"
       data-iframe-height
-      :width="link ? '800px' : '500px'"
+      width="500px"
     >
       <v-card-title
         v-if="!link"

@@ -19,7 +19,7 @@
     <v-card
       v-if="menu"
       data-iframe-height
-      width="500"
+      width="500px"
     >
       <v-card-title
         v-if="!link"

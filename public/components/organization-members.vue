@@ -56,7 +56,7 @@
         />
       </v-col>
       <v-col cols="4">
-        <v-select
+        <v-autocomplete
           v-if="env.manageDepartments && orga.departments && orga.departments.length && !adminDepartment"
           v-model="department"
           :items="orga.departments"
@@ -80,7 +80,7 @@
         <v-list-item :key="member.id">
           <v-list-item-content>
             <v-list-item-title>{{ member.name }} ({{ member.email }})</v-list-item-title>
-            <v-list-item-subtitle>
+            <v-list-item-subtitle style="white-space:normal;">
               <span>{{ $t('common.role') }} = {{ member.role }}</span>
               <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
               <template v-if="member.emailConfirmed === false">
