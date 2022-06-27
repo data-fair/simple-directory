@@ -204,7 +204,13 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   if (storage.db) {
     await limits.setNbMembers(storage.db, req.params.organizationId)
   }
-  webhooks.postIdentity('user', await storage.getUser({ id: req.params.userId }))
+  const user = await storage.getUser({ id: req.params.userId })
+  if (config.onlyCreateInvited && !user.organizations.length) {
+    await storage.deleteUser(req.params.userId)
+    webhooks.deleteIdentity('user', user.id)
+  } else {
+    webhooks.postIdentity('user', user)
+  }
 
   // update session info
   await tokens.keepalive(req, res)
