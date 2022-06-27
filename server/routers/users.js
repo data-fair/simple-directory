@@ -88,8 +88,9 @@ router.post('', asyncWrap(async (req, res, next) => {
     newUser.password = await passwords.hashPassword(req.body.password)
   }
 
-  // email is already taken, send a conflict email
   const user = await req.app.get('storage').getUserByEmail(req.body.email)
+
+  // email is already taken, send a conflict email
   const link = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl
   if (user && user.emailConfirmed !== false) {
     const linkUrl = new URL(link)
@@ -101,6 +102,11 @@ router.post('', asyncWrap(async (req, res, next) => {
       params: { host: linkUrl.host, origin: linkUrl.origin }
     })
     return res.status(204).send()
+  }
+
+  // the user was invited in alwaysAcceptInvitations mode, but the membership was revoked
+  if (invit && config.alwaysAcceptInvitation && (!user || !user.organizations.find(o => o.id === orga.id))) {
+    return res.status(400).send(req.messages.errors.invalidInvitationToken)
   }
 
   // Re-create a user that was never validated.. first clean temporary user
