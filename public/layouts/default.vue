@@ -97,7 +97,7 @@
               </v-list-item-content>
             </v-list-item>
             <v-list-item
-              v-if="user.organization && user.organization.role === 'admin' && !user.organization.department"
+              v-if="user.organization && user.organization.role === 'admin' && (env.depAdminIsOrgAdmin || !user.organization.department)"
               :to="'/organization/' + user.organization.id"
               :nuxt="true"
             >

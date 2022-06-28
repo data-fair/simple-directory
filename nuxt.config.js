@@ -121,7 +121,8 @@ module.exports = {
     perOrgStorageTypes: config.perOrgStorageTypes,
     notifyUrl: config.notifyUrl,
     plannedDeletionDelay: config.plannedDeletionDelay,
-    alwaysAcceptInvitation: config.alwaysAcceptInvitation
+    alwaysAcceptInvitation: config.alwaysAcceptInvitation,
+    depAdminIsOrgAdmin: config.depAdminIsOrgAdmin
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,
