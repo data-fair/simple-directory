@@ -31,9 +31,16 @@ router.post('', asyncWrap(async (req, res, next) => {
 
   const invitation = req.body
   const userOrga = req.user.organizations.find(o => o.id === invitation.id)
-  if (!req.user.isAdmin && (!userOrga || userOrga.role !== 'admin' || (userOrga.department && userOrga.department !== invitation.department))) {
-    return res.status(403).send(req.messages.errors.permissionDenied)
+  if (config.depAdminIsOrgAdmin) {
+    if (!req.user.isAdmin && (!userOrga || userOrga.role !== 'admin')) {
+      return res.status(403).send(req.messages.errors.permissionDenied)
+    }
+  } else {
+    if (!req.user.isAdmin && (!userOrga || userOrga.role !== 'admin' || (userOrga.department && userOrga.department !== invitation.department))) {
+      return res.status(403).send(req.messages.errors.permissionDenied)
+    }
   }
+
   const orga = await storage.getOrganization(invitation.id)
 
   const token = tokens.sign(req.app.get('keys'), shortenInvit(invitation), config.jwtDurations.invitationToken)

@@ -305,5 +305,9 @@ module.exports = {
       __format: 'json'
     },
     port: 'PROMETHEUS_PORT'
+  },
+  depAdminIsOrgAdmin: {
+    __name: 'DEP_ADMIN_IS_ORG_ADMIN',
+    __format: 'json'
   }
 }

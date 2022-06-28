@@ -253,5 +253,7 @@ module.exports = {
   prometheus: {
     active: true,
     port: 9090
-  }
+  },
+  // temporary option to prevent some regression
+  depAdminIsOrgAdmin: false
 }

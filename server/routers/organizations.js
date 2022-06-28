@@ -19,6 +19,7 @@ function getUserOrg (req) {
 // Either a super admin, or an admin of the current organization
 function isOrgAdmin (req) {
   const userOrg = getUserOrg(req)
+  if (config.depAdminIsOrgAdmin) return req.user.adminMode || (userOrg && userOrg.role === 'admin')
   return req.user.adminMode || (userOrg && userOrg.role === 'admin' && !userOrg.department)
 }
 
@@ -194,6 +195,8 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   const userOrg = getUserOrg(req)
   if (req.user.adminMode) {
     // ok
+  } else if (config.depAdminIsOrgAdmin && member && userOrg && userOrg.role === 'admin') {
+    // ok
   } else if (member && userOrg && userOrg.role === 'admin' && (!userOrg.department || userOrg.department === member.department)) {
     // ok
   } else {
@@ -227,6 +230,8 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
   // Only allowed for the organizations that the user is admin of (or admin of the member's department)
   const userOrg = getUserOrg(req)
   if (req.user.adminMode) {
+    // ok
+  } else if (config.depAdminIsOrgAdmin && member && userOrg && userOrg.role === 'admin') {
     // ok
   } else if (member && userOrg && userOrg.role === 'admin' && (!userOrg.department || (userOrg.department === member.department && userOrg.department === req.body.department))) {
     // ok
