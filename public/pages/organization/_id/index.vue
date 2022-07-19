@@ -127,7 +127,11 @@ export default {
     isAdminOrga () {
       if (!this.user || !this.userDetails) return false
       if (this.user.adminMode) return true
-      return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin' && !o.department))
+      if (this.env.depAdminIsOrgAdmin) {
+        return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin'))
+      } else {
+        return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin' && !o.department))
+      }
     }
   },
   watch: {

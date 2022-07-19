@@ -23,6 +23,7 @@ function getUserOrgDep (req) {
 // Either a super admin, or an admin of the current organization
 function isOrgAdmin (req) {
   const userOrg = getUserOrg(req)
+  if (config.depAdminIsOrgAdmin) return req.user.adminMode || (userOrg && userOrg.role === 'admin')
   return req.user.adminMode || (userOrg && userOrg.role === 'admin' && !userOrg.department)
 }
 
@@ -143,11 +144,6 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (!isMember(req)) {
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
-  const userOrg = getUserOrg(req)
-  const userDep = getUserOrgDep(req)
-  if (!req.user.adminMode && !userOrg.role && !userDep) {
-    return res.status(403).send(req.messages.errors.permissionDenied)
-  }
 
   const org = await req.app.get('storage').getOrganization(req.params.organizationId)
   if (!org) return res.status(404).send('organization not found')
@@ -203,7 +199,9 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   const userOrg = getUserOrg(req)
   if (req.user.adminMode) {
     // ok
-  } else if (member && userOrg && userOrg.role === 'admin') {
+  } else if (config.depAdminIsOrgAdmin && member && userOrg && userOrg.role === 'admin') {
+    // ok
+  } else if (member && userOrg && userOrg.role === 'admin' && (!userOrg.department || userOrg.department === member.department)) {
     // ok
   } else {
     return res.status(403).send(req.messages.errors.permissionDenied)
@@ -213,7 +211,13 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   if (storage.db) {
     await limits.setNbMembers(storage.db, req.params.organizationId)
   }
-  webhooks.postIdentity('user', await storage.getUser({ id: req.params.userId }))
+  const user = await storage.getUser({ id: req.params.userId })
+  if (config.onlyCreateInvited && !user.organizations.length) {
+    await storage.deleteUser(req.params.userId)
+    webhooks.deleteIdentity('user', user.id)
+  } else {
+    webhooks.postIdentity('user', user)
+  }
 
   // update session info
   await tokens.keepalive(req, res)
@@ -259,6 +263,8 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
   // Only allowed for the organizations that the user is admin of (or admin of the member's department)
   const userOrg = getUserOrg(req)
   if (req.user.adminMode) {
+    // ok
+  } else if (config.depAdminIsOrgAdmin && member && userOrg && userOrg.role === 'admin') {
     // ok
   } else if (member && userOrg && userOrg.role === 'admin' && (!userOrg.department || (userOrg.department === member.department && userOrg.department === req.body.department))) {
     // ok

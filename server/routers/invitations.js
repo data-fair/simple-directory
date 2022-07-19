@@ -1,9 +1,11 @@
 const express = require('express')
 const config = require('config')
+const shortid = require('shortid')
 const URL = require('url').URL
 const tokens = require('../utils/tokens')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
+const userName = require('../utils/user-name')
 const limits = require('../utils/limits')
 const { shortenInvit, unshortenInvit } = require('../utils/invitations')
 const { send: sendNotification } = require('../utils/notifications')
@@ -28,32 +30,102 @@ router.post('', asyncWrap(async (req, res, next) => {
   }
 
   const invitation = req.body
-  const orga = req.user.organizations.find(o => o.id === invitation.id)
-  if (!req.user.isAdmin && (!orga || orga.role !== 'admin' || (orga.department && orga.department !== invitation.department))) {
-    return res.status(403).send(req.messages.errors.permissionDenied)
+  const userOrga = req.user.organizations.find(o => o.id === invitation.id)
+  if (config.depAdminIsOrgAdmin) {
+    if (!req.user.isAdmin && (!userOrga || userOrga.role !== 'admin')) {
+      return res.status(403).send(req.messages.errors.permissionDenied)
+    }
+  } else {
+    if (!req.user.isAdmin && (!userOrga || userOrga.role !== 'admin' || (userOrga.department && userOrga.department !== invitation.department))) {
+      return res.status(403).send(req.messages.errors.permissionDenied)
+    }
   }
+
+  const orga = await storage.getOrganization(invitation.id)
+
   const token = tokens.sign(req.app.get('keys'), shortenInvit(invitation), config.jwtDurations.invitationToken)
 
-  const linkUrl = new URL(req.publicBaseUrl + '/api/invitations/_accept')
-  linkUrl.searchParams.set('invit_token', token)
-  const params = { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin }
-  await mails.send({
-    transport: req.app.get('mailTransport'),
-    key: 'invitation',
-    messages: req.messages,
-    to: req.body.email,
-    params
-  })
+  if (config.alwaysAcceptInvitation) {
+    // in 'always accept invitation' mode the user is not sent an email to accept the invitation
+    // he is simple added to the list of members and created if needed
+    const user = await storage.getUserByEmail(invitation.email)
+    if (user && user.emailConfirmed) {
+      debug('in alwaysAcceptInvitation and the user already exists, immediately add it as member', invitation.email)
+      await storage.addMember(orga, user, invitation.role, invitation.department)
+      if (storage.db) await limits.setNbMembers(storage.db, orga.id)
+      sendNotification({
+        sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
+        topic: { key: 'simple-directory:invitation-sent' },
+        title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (invitation.department ? ' / ' + invitation.department : '') })
+      })
+    } else {
+      const newUser = {
+        email: invitation.email,
+        id: user ? user.id : shortid.generate(),
+        emailConfirmed: false,
+        defaultOrg: orga.id,
+        ignorePersonalAccount: true
+      }
+      newUser.name = userName(newUser)
+      debug('in alwaysAcceptInvitation and the user does not exist, create it', newUser)
+      await storage.createUser(newUser, req.user)
+      await storage.addMember(orga, newUser, invitation.role, invitation.department)
+      if (storage.db) await limits.setNbMembers(storage.db, orga.id)
+      const reboundRedirect = new URL(invitation.redirect || config.invitationRedirect || `${req.publicBaseUrl}/invitation`)
+      const linkUrl = new URL(`${req.publicBaseUrl}/login`)
+      linkUrl.searchParams.set('step', 'createUser')
+      linkUrl.searchParams.set('invit_token', token)
+      linkUrl.searchParams.set('redirect', reboundRedirect.href)
+      debug('send email with link to createUser step', linkUrl.href)
+      const params = { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin }
+      await mails.send({
+        transport: req.app.get('mailTransport'),
+        key: 'invitation',
+        messages: req.messages,
+        to: req.body.email,
+        params
+      })
 
-  sendNotification({
-    sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
-    topic: { key: 'simple-directory:invitation-sent' },
-    title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (invitation.department ? ' / ' + invitation.department : '') })
-  })
+      const notif = {
+        sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
+        topic: { key: 'simple-directory:add-member' },
+        title: req.__all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (invitation.department ? ' / ' + invitation.department : '') })
+      }
+      // send notif to all admins subscribed to the topic
+      sendNotification(notif)
+      // send same notif to user himself
+      sendNotification({
+        ...notif,
+        recipient: { id: newUser.id, name: newUser.name }
+      })
 
-  if (req.user.adminMode || req.user.asAdmin) {
-    return res.send(params)
+      if (req.user.adminMode || req.user.asAdmin) {
+        return res.send(params)
+      }
+    }
+  } else {
+    const linkUrl = new URL(req.publicBaseUrl + '/api/invitations/_accept')
+    linkUrl.searchParams.set('invit_token', token)
+    const params = { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin }
+    await mails.send({
+      transport: req.app.get('mailTransport'),
+      key: 'invitation',
+      messages: req.messages,
+      to: req.body.email,
+      params
+    })
+
+    sendNotification({
+      sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
+      topic: { key: 'simple-directory:invitation-sent' },
+      title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (invitation.department ? ' / ' + invitation.department : '') })
+    })
+
+    if (req.user.adminMode || req.user.asAdmin) {
+      return res.send(params)
+    }
   }
+
   res.status(201).send()
 }))
 
@@ -151,10 +223,17 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
 
   await storage.addMember(orga, user, invit.role, invit.department)
 
-  sendNotification({
+  const notif = {
     sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },
     topic: { key: 'simple-directory:invitation-accepted' },
     title: req.__all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
+  }
+  // send notif to all admins subscribed to the topic
+  sendNotification(notif)
+  // send same notif to user himself
+  sendNotification({
+    ...notif,
+    recipient: { id: user.id, name: user.name }
   })
 
   webhooks.postIdentity('user', await storage.getUser({ id: user.id }))

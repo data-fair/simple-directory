@@ -12,6 +12,7 @@ const Cookies = require('cookies')
 const defaultConfig = require('../../config/default.js')
 const storages = require('../storages')
 const twoFA = require('../routers/2fa.js')
+const prometheus = require('./prometheus')
 
 exports.init = async () => {
   const keys = {}
@@ -165,7 +166,10 @@ exports.keepalive = async (req, res) => {
     payload.isAdmin = false
   } else {
     if (!storage.readonly) {
-      await storage.updateLogged(req.user.id)
+      storage.updateLogged(req.user.id).catch((err) => {
+        console.error('(update-logged) error while updating logged date', err)
+        prometheus.internalError.inc({ errorCode: 'http' })
+      })
     }
   }
   const token = exports.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)

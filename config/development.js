@@ -72,8 +72,10 @@ module.exports = {
     ttl: 20
   },
   cleanup: {
-    cron: '*/1 * * * *',
+    // cron: '*/1 * * * *',
     deleteInactive: true,
     deleteInactiveDelay: [1, 'days']
-  }
+  },
+  alwaysAcceptInvitation: true,
+  onlyCreateInvited: true
 }

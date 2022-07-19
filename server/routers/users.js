@@ -88,8 +88,9 @@ router.post('', asyncWrap(async (req, res, next) => {
     newUser.password = await passwords.hashPassword(req.body.password)
   }
 
-  // email is already taken, send a conflict email
   const user = await req.app.get('storage').getUserByEmail(req.body.email)
+
+  // email is already taken, send a conflict email
   const link = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl
   if (user && user.emailConfirmed !== false) {
     const linkUrl = new URL(link)
@@ -103,12 +104,25 @@ router.post('', asyncWrap(async (req, res, next) => {
     return res.status(204).send()
   }
 
+  // the user was invited in alwaysAcceptInvitations mode, but the membership was revoked
+  if (invit && config.alwaysAcceptInvitation && (!user || !user.organizations.find(o => o.id === orga.id))) {
+    return res.status(400).send(req.messages.errors.invalidInvitationToken)
+  }
+
   // Re-create a user that was never validated.. first clean temporary user
-  if (user && user.emailConfirmed === false) await storage.deleteUser(user.id)
+  if (user && user.emailConfirmed === false) {
+    if (user.organizations && invit) {
+      // This user was created empty from an invitation in 'alwaysAcceptInvitations' mode
+      newUser.id = user.id
+      newUser.organizations = user.organizations
+    } else {
+      await storage.deleteUser(user.id)
+    }
+  }
 
   await storage.createUser(newUser, null, new URL(link).host)
 
-  if (invit) {
+  if (invit && !config.alwaysAcceptInvitation) {
     if (storage.db) {
       const consumer = { type: 'organization', id: orga.id }
       const limit = await limits.get(storage.db, consumer, 'store_nb_members')

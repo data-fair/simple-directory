@@ -294,5 +294,20 @@ module.exports = {
       __name: 'CLEANUP_DELETE_INACTIVE_DELAY',
       __format: 'json'
     }
+  },
+  alwaysAcceptInvitation: {
+    __name: 'ALWAYS_ACCEPT_INVITATION',
+    __format: 'json'
+  },
+  prometheus: {
+    active: {
+      __name: 'PROMETHEUS_ACTIVE',
+      __format: 'json'
+    },
+    port: 'PROMETHEUS_PORT'
+  },
+  depAdminIsOrgAdmin: {
+    __name: 'DEP_ADMIN_IS_ORG_ADMIN',
+    __format: 'json'
   }
 }

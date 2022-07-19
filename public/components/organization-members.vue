@@ -20,14 +20,12 @@
           :members="members"
           :disable-invite="disableInvite"
           :department="adminDepartment"
+          @sent="fetchMembers(membersPage)"
         />
         <notify-menu
           v-if="isAdminOrga"
           :sender="`organization:${orga.id}:${department || ''}:admin`"
-          :topics=" [
-            {key: 'simple-directory:invitation-sent', title: $t('notifications.sentInvitationTopic')},
-            {key: 'simple-directory:invitation-accepted', title: $t('notifications.acceptedInvitationTopic')}
-          ] "
+          :topics="notifyTopics"
         />
       </h2>
     </v-row>
@@ -40,8 +38,10 @@
           name="search"
           solo
           append-icon="mdi-magnify"
-          @click:append="fetchMembers"
-          @keyup.enter="fetchMembers"
+          clearable
+          @click:clear="$nextTick(() => $nextTick(() => fetchMembers(1)))"
+          @click:append="fetchMembers(1)"
+          @keyup.enter="fetchMembers(1)"
         />
       </v-col>
       <v-col cols="4">
@@ -52,11 +52,11 @@
           name="role"
           solo
           clearable
-          @change="fetchMembers"
+          @change="fetchMembers(1)"
         />
       </v-col>
       <v-col cols="4">
-        <v-select
+        <v-autocomplete
           v-if="env.manageDepartments && orga.departments && orga.departments.length && !adminDepartment"
           v-model="department"
           :items="orga.departments"
@@ -66,7 +66,7 @@
           clearable
           name="department"
           solo
-          @change="fetchMembers"
+          @change="fetchMembers(1)"
         />
       </v-col>
     </v-row>
@@ -80,9 +80,18 @@
         <v-list-item :key="member.id">
           <v-list-item-content>
             <v-list-item-title>{{ member.name }} ({{ member.email }})</v-list-item-title>
-            <v-list-item-subtitle>
+            <v-list-item-subtitle style="white-space:normal;">
               <span>{{ $t('common.role') }} = {{ member.role }}</span>
               <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
+              <template v-if="member.emailConfirmed === false">
+                - <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
+                  <resend-invitation
+                    :member="member"
+                    :orga="orga"
+                    :department="adminDepartment"
+                  />
+                </span>
+              </template>
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action v-if="isAdminOrga && !readonly">
@@ -127,7 +136,7 @@
     >
       <v-spacer />
       <v-pagination
-        v-model="membersPage"
+        :value="membersPage"
         :length="Math.ceil(members.count / membersPageSize)"
         @input="fetchMembers"
       />
@@ -185,15 +194,26 @@ export default {
     ...mapState('session', ['user']),
     disableInvite () {
       return !this.nbMembersLimits || (this.nbMembersLimits.limit > 0 && this.nbMembersLimits.consumption >= this.nbMembersLimits.limit)
+    },
+    notifyTopics () {
+      if (this.env.alwaysAcceptInvitation) {
+        return [{ key: 'simple-directory:add-member', title: this.$t('notifications.addMemberTopic') }]
+      } else {
+        return [
+          { key: 'simple-directory:invitation-sent', title: this.$t('notifications.sentInvitationTopic') },
+          { key: 'simple-directory:invitation-accepted', title: this.$t('notifications.acceptedInvitationTopic') }
+        ]
+      }
     }
   },
   async mounted () {
     this.department = this.adminDepartment
-    this.fetchMembers()
+    this.fetchMembers(1)
   },
   methods: {
     ...mapActions('session', ['asAdmin']),
-    async fetchMembers () {
+    async fetchMembers (page) {
+      this.membersPage = page
       try {
         this.members = await this.$axios.$get(`api/organizations/${this.orga.id}/members`, {
           params: {
@@ -205,6 +225,9 @@ export default {
             org_storage: this.orgStorage
           }
         })
+        if (this.members.count && !this.members.results.length) {
+          this.fetchMembers(page - 1)
+        }
       } catch (error) {
         eventBus.$emit('notification', { error })
       }
@@ -213,7 +236,7 @@ export default {
       try {
         await this.$axios.$delete(`api/organizations/${this.orga.id}/members/${member.id}`)
         eventBus.$emit('notification', this.$t('pages.organization.deleteMemberSuccess', { name: member.name }))
-        this.fetchMembers()
+        this.fetchMembers(this.membersPage)
       } catch (error) {
         eventBus.$emit('notification', { error })
       }
@@ -221,7 +244,7 @@ export default {
     async saveMember (member) {
       try {
         await this.$axios.patch(`api/organizations/${this.orga.id}/members/${member.id}`, { role: member.role, department: member.department })
-        this.fetchMembers()
+        this.fetchMembers(this.membersPage)
       } catch (error) {
         eventBus.$emit('notification', { error })
       }

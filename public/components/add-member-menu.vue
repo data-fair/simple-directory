@@ -20,9 +20,12 @@
     <v-card
       v-if="orga && menu"
       data-iframe-height
-      :width="link ? '800px' : '500px'"
+      width="500px"
     >
-      <v-card-title class="text-h6">
+      <v-card-title
+        v-if="!link"
+        class="text-h6"
+      >
         {{ $t('pages.organization.addMember') }}
       </v-card-title>
       <v-card-text v-if="disableInvite">
@@ -58,7 +61,7 @@
             outlined
             dense
           />
-          <v-select
+          <v-autocomplete
             v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
             v-model="invitation.department"
             :items="orga.departments"
@@ -140,7 +143,10 @@ export default {
           } else {
             this.menu = false
           }
-          eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', { email: this.invitation.email }))
+          this.$emit('sent', this.invitation)
+          if (!this.env.alwaysAcceptInvitation) {
+            eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', { email: this.invitation.email }))
+          }
         } catch (error) {
           eventBus.$emit('notification', { error })
         }

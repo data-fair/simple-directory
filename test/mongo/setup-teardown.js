@@ -1,5 +1,5 @@
 const debug = require('debug')('test')
-const app = require('../server/app')
+const app = require('../../server/app')
 
 before('start app', async function () {
   debug('run app')
@@ -19,4 +19,17 @@ after('stop app', async () => {
     app.stop()
   ])
   debug('stop app ok')
+})
+
+beforeEach('scratch data', async () => {
+  debug('scratch data')
+  try {
+    await Promise.all([
+      global.app.get('storage').db.collection('users').deleteMany({}),
+      global.app.get('storage').db.collection('organizations').deleteMany({})
+    ])
+  } catch (err) {
+    console.warn('error while scratching data before test', err)
+  }
+  debug('scratch data ok')
 })

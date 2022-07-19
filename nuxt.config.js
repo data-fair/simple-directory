@@ -120,7 +120,9 @@ module.exports = {
     avatars: config.avatars,
     perOrgStorageTypes: config.perOrgStorageTypes,
     notifyUrl: config.notifyUrl,
-    plannedDeletionDelay: config.plannedDeletionDelay
+    plannedDeletionDelay: config.plannedDeletionDelay,
+    alwaysAcceptInvitation: config.alwaysAcceptInvitation,
+    depAdminIsOrgAdmin: config.depAdminIsOrgAdmin
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

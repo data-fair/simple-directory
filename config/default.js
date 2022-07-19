@@ -163,6 +163,8 @@ module.exports = {
   listUsersMode: null, // same as listEntitiesMode but only for users
   listOrganizationsMode: null, // same as listEntitiesMode but only for users
   // Users can not be created at first email sent. They must be invited in an organization.
+  // also they will not be able to log with personal account
+  // and if removed from their last organization they will be deleted
   onlyCreateInvited: false,
   // users cannot delete their own account by default
   userSelfDelete: false,
@@ -246,5 +248,12 @@ module.exports = {
     cron: '0 5 * * *',
     deleteInactive: false,
     deleteInactiveDelay: [3, 'years']
-  }
+  },
+  alwaysAcceptInvitation: false,
+  prometheus: {
+    active: true,
+    port: 9090
+  },
+  // temporary option to prevent some regression
+  depAdminIsOrgAdmin: false
 }
