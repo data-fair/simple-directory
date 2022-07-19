@@ -208,7 +208,7 @@ class MongodbStorage {
       filter.organizations.$elemMatch.role = { $in: params.roles }
     }
     if (params.departments && params.departments.length) {
-      filter.organizations.$elemMatch.departments = { id: { $in: params.departments } }
+      filter.organizations.$elemMatch.department = { $in: params.departments }
     }
     const countPromise = this.db.collection('users').countDocuments(filter)
     const users = params.size === 0
@@ -220,14 +220,21 @@ class MongodbStorage {
           .limit(params.size || 12)
           .toArray())
     const count = await countPromise
-    return {
-      count,
-      results: users.map(user => {
-        const userOrga = user.organizations.find(o => o.id === organizationId)
-        const member = { id: user._id, name: user.name, email: user.email, role: userOrga.role, departments: userOrga.departments, emailConfirmed: user.emailConfirmed }
-        return member
+    const results = []
+    users.forEach(user => {
+      user.organizations.filter(o => o.id === organizationId).forEach(userOrga => {
+        results.push({
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: userOrga.role,
+          department: userOrga.department,
+          departmentName: userOrga.departmentName,
+          emailConfirmed: user.emailConfirmed
+        })
       })
-    }
+    })
+    return { count, results }
   }
 
   async getOrganization (id) {
@@ -254,14 +261,17 @@ class MongodbStorage {
     )
     const orga = cleanOrganization(mongoRes.value)
     // "name" was modified, also update all organizations references in users
-    if (patch.name) {
+    if (patch.name || patch.departments) {
+      const departments = patch.departments || []
       const cursor = this.db.collection('users').find({ organizations: { $elemMatch: { id } } })
       while (await cursor.hasNext()) {
         const user = await cursor.next()
         user.organizations
-          .filter(orga => orga.id === id)
-          .forEach(orga => {
-            orga.name = patch.name
+          .filter(userOrga => userOrga.id === id)
+          .filter(userOrga => !userOrga.department || departments.find(d => d.id === userOrga.department))
+          .forEach(userOrga => {
+            userOrga.name = patch.name
+            if (userOrga.department) userOrga.departmentName = departments.find(d => d.id === userOrga.department).name
           })
         await this.db.collection('users').updateOne({ _id: user._id }, { $set: { organizations: user.organizations } })
       }
@@ -299,28 +309,23 @@ class MongodbStorage {
     return { count, results: organizations.map(cleanOrganization) }
   }
 
-  async addMember (orga, user, role, department) {
+  async addMember (orga, user, role, department = null) {
     user.organizations = user.organizations || []
-    let userOrga = user.organizations.find(o => o.id === orga.id)
+    let userOrga = user.organizations.find(o => o.id === orga.id && (orga.department || null) === department)
     if (userOrga) {
       // prevent adding in a department if user as a root org role, or the contrary
       if (!department || userOrga.role) throw createError(400, 'cet utilisateur est déjà membre de cette organisation')
     } else {
       userOrga = { id: orga.id, name: orga.name }
+      if (department) {
+        const fullDepartment = orga.departments.find(d => d.id === department)
+        if (!fullDepartment) throw createError(404, 'department not found')
+        userOrga.department = department
+        userOrga.departmentName = fullDepartment.name
+      }
       user.organizations.push(userOrga)
     }
-    if (department) {
-      userOrga.departments = userOrga.departments || []
-      if (!userOrga.departments.find(d => d.id === department)) {
-        const fullDepartment = orga.departments.find(d => d.id === department)
-        userOrga.departments.push({ id: fullDepartment.id, name: fullDepartment.name, role })
-      } else {
-        const userDep = userOrga.departments.find(o => o.id === orga.id)
-        userDep.role = role
-      }
-    } else {
-      userOrga.role = role
-    }
+    userOrga.role = role
     await this.db.collection('users').updateOne(
       { _id: user.id },
       { $set: { organizations: user.organizations } }
@@ -331,44 +336,16 @@ class MongodbStorage {
     return this.db.collection('users').countDocuments({ 'organizations.id': organizationId })
   }
 
-  async setMemberRole (organizationId, userId, role, departmentId) {
-    if (departmentId) {
-      const user = await this.db.collection('users').findOne({ _id: userId })
-      if (!user) throw createError(404, 'user not found')
-      const org = user.organizations.find(o => o.id === organizationId)
-      if (!org) throw createError(404, 'user.org not found')
-      const dep = (org.departments || []).find(d => d.id === departmentId)
-      if (!org) throw createError(404, 'user.org.dep not found')
-      dep.role = role
-      await this.db.collection('users').updateOne(
-        { _id: userId, 'organizations.id': organizationId },
-        { $set: { 'organizations.$.departments': org.departments } }
-      )
-    } else {
-      await this.db.collection('users').updateOne(
-        { _id: userId, 'organizations.id': organizationId },
-        { $set: { 'organizations.$.role': role } }
-      )
-    }
+  async setMemberRole (organizationId, userId, role, department = null) {
+    await this.db.collection('users').updateOne(
+      { _id: userId, 'organizations.id': organizationId, department },
+      { $set: { 'organizations.$.role': role } }
+    )
   }
 
-  async removeMember (organizationId, userId, department) {
-    if (department) {
-      const user = this.db.collection('user').findOne({ _id: userId })
-      const userOrg = user.organizations.find(o => o.id === organizationId)
-      if (!userOrg || !userOrg.departments) return
-      userOrg.departments = userOrg.departments.filter(d => d.id !== department)
-      if (userOrg.departments.length) {
-        await this.db.collection('users')
-          .updateOne({ _id: userId }, { $set: { organizations: userOrg.organizations } })
-      } else {
-        await this.db.collection('users')
-          .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId } } })
-      }
-    } else {
-      await this.db.collection('users')
-        .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId } } })
-    }
+  async removeMember (organizationId, userId, department = null) {
+    await this.db.collection('users')
+      .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId, department } } })
   }
 
   async setAvatar (avatar) {
@@ -388,12 +365,7 @@ class MongodbStorage {
   async required2FA (user) {
     if (user.isAdmin && config.admins2FA) return true
     for (const org of user.organizations) {
-      const roles = []
-      if (org.role) roles.push(org.role)
-      if (org.departments) {
-        org.departments.forEach(d => { if (d.role) roles.push(d) })
-      }
-      if (await this.db.collection('organizations').findOne({ _id: org.id, '2FA.roles': { $in: roles } })) {
+      if (await this.db.collection('organizations').findOne({ _id: org.id, '2FA.roles': org.role })) {
         return true
       }
     }

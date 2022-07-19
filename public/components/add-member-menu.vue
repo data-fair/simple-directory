@@ -46,7 +46,7 @@
             id="id"
             v-model="invitation.email"
             :label="$t('pages.organization.inviteEmail')"
-            :rules="[v => !!v || '', v => !members.results.find(m => m.email === v) || $t('pages.organization.memberConflict')]"
+            :rules="[v => !!v || '']"
             name="email"
             required
             outlined

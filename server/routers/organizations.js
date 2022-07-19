@@ -12,24 +12,23 @@ const defaultConfig = require('../../config/default.js')
 
 const router = module.exports = express.Router()
 
-function getUserOrg (req) {
-  return (req.user.organizations || []).find(o => o.id === req.params.organizationId)
+function getUserOrg (req, noDep = true) {
+  return (req.user.organizations || []).find(o => o.id === req.params.organizationId && !(noDep && o.department))
 }
 function getUserOrgDep (req) {
-  const userOrg = getUserOrg(req)
-  return (userOrg.departments || []).find(d => d.id === req.params.departmentId || req.query.department)
+  return (req.user.organizations || []).find(o => o.id === req.params.organizationId && o.department === req.params.departmentId)
 }
 
 // Either a super admin, or an admin of the current organization
 function isOrgAdmin (req) {
-  const userOrg = getUserOrg(req)
+  const userOrg = getUserOrg(req, false)
   if (config.depAdminIsOrgAdmin) return req.user.adminMode || (userOrg && userOrg.role === 'admin')
   return req.user.adminMode || (userOrg && userOrg.role === 'admin' && !userOrg.department)
 }
 
 // Either a super admin, or a member of the current organization
 function isMember (req) {
-  return req.user.adminMode || getUserOrg(req)
+  return req.user.adminMode || getUserOrg(req, false)
 }
 
 // Get the list of organizations
@@ -196,7 +195,7 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   const member = (await storage.findMembers(req.params.organizationId, { ids: [req.params.userId] })).results[0]
 
   // Only allowed for the organizations that the user is admin of
-  const userOrg = getUserOrg(req)
+  const userOrg = getUserOrg(req, false)
   if (req.user.adminMode) {
     // ok
   } else if (config.depAdminIsOrgAdmin && member && userOrg && userOrg.role === 'admin') {
@@ -233,8 +232,11 @@ router.delete('/:organizationId/members/departments/:departmentId/:userId', asyn
   const member = (await storage.findMembers(req.params.organizationId, { ids: [req.params.userId], departments: [req.params.departmentId] })).results[0]
 
   // Only allowed for the organizations that the user is admin of (or admin of the member's department)
+  const userOrg = getUserOrg(req)
   const userDep = getUserOrgDep(req)
   if (req.user.adminMode) {
+    // ok
+  } else if (member && userOrg && userOrg.role === 'admin') {
     // ok
   } else if (member && userDep && userDep.role === 'admin') {
     // ok
@@ -261,7 +263,7 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
   const member = (await storage.findMembers(req.params.organizationId, { ids: [req.params.userId] })).results[0]
 
   // Only allowed for the organizations that the user is admin of (or admin of the member's department)
-  const userOrg = getUserOrg(req)
+  const userOrg = getUserOrg(req, false)
   if (req.user.adminMode) {
     // ok
   } else if (config.depAdminIsOrgAdmin && member && userOrg && userOrg.role === 'admin') {

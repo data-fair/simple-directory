@@ -53,7 +53,7 @@
         </v-btn>
         <v-btn
           color="warning"
-          @click="menu = false;$emit('save', {role: editRole, department: department})"
+          @click="menu = false;$emit('save', {id: member.id, role: editRole, department: department})"
         >
           {{ $t('common.confirmOk') }}
         </v-btn>

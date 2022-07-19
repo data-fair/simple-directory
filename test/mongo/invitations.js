@@ -159,10 +159,9 @@ describe('organizations api', () => {
     const newMember = members.find(m => m.email === 'test-invit10@test.com')
     assert.ok(newMember)
     assert.ok(newMember.emailConfirmed)
-    assert.ok(!newMember.role)
-    assert.equal(newMember.departments.length, 1)
-    assert.equal(newMember.departments[0].id, 'dep1')
-    assert.equal(newMember.departments[0].role, 'user')
+    assert.equal(newMember.role, 'user')
+    assert.equal(newMember.department, 'dep1')
+    assert.equal(newMember.departmentName, 'Department 1')
 
     // log in a newly invited user
     const newAx = await testUtils.axios('test-invit10@test.com:Test1234')

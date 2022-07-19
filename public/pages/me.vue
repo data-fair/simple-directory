@@ -147,13 +147,24 @@
 
         <div v-if="userDetails">
           <template v-if="userDetails.organizations.length">
-            <span
+            <template
               v-for="orga in userDetails.organizations"
-              :key="orga.id"
             >
-              {{ orga.name }} ({{ orga.role }})
-              &nbsp;
-            </span>
+              <span
+                v-if="orga.role"
+                :key="'org-' + orga.id"
+              >
+                {{ orga.name }} ({{ orga.role }})
+                &nbsp;
+              </span>
+              <span
+                v-for="dep in (orga.departments || [])"
+                :key="orga.id + dep.id"
+              >
+                {{ orga.name }} - {{ dep.name || dep.id }} ({{ dep.role }})
+                &nbsp;
+              </span>
+            </template>
           </template>
           <span v-else>
             {{ $t('pages.me.noOrganization') }}

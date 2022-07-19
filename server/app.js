@@ -163,7 +163,7 @@ exports.run = async () => {
   app.set('mailTransport', mailTransport)
 
   if (storage.db) {
-    await require('../upgrade')(storage.db)
+    // await require('../upgrade')(storage.db)
 
     const locks = require('./utils/locks')
     const webhooks = require('./webhooks')

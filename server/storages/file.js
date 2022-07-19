@@ -111,13 +111,11 @@ class FileStorage {
       members = members.filter(member => params.roles.includes(member.role))
     }
     if (params.departments && params.departments.length) {
-      members = members.filter(member => member.departments && member.departments.find(d => params.departments.includes(d)))
+      members = members.filter(member => params.departments.includes(member.department))
     }
-    for (const member of members.filter(m => m.departments)) {
-      for (const d of member.departments) {
-        const dep = orga.departments && orga.departments.find(d2 => d2.id === d.id)
-        if (dep) d.name = dep.name
-      }
+    for (const member of members.filter(m => m.department)) {
+      const dep = orga.departments && orga.departments.find(d2 => d2.id === member.department)
+      if (dep) member.departmentName = dep.name
     }
     return {
       count: members.length,

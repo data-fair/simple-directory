@@ -389,11 +389,7 @@ class LdapStorage {
           await this._setUserOrg(client, user, res.results[i].entry, res.results[i].attrs, orgCache)
           const userOrga = user.organizations.find(o => o.id === organizationId)
 
-          const member = { id: user.id, name: user.name, email: user.email, role: userOrga.role }
-          if (userOrga.department) {
-            member.departments = [{ id: userOrga.department, role: member.role }]
-            delete member.role
-          }
+          const member = { id: user.id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department }
           res.results[i] = member
         }
         return res
