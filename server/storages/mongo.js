@@ -241,7 +241,7 @@ class MongodbStorage {
     const date = new Date()
     clonedOrga.created = { id: user.id, name: user.name, date }
     clonedOrga.updated = { id: user.id, name: user.name, date }
-    await this.db.collection('organizations').insert(clonedOrga)
+    await this.db.collection('organizations').insertOne(clonedOrga)
     return orga
   }
 
@@ -381,11 +381,15 @@ class MongodbStorage {
   async required2FA (user) {
     if (user.isAdmin && config.admins2FA) return true
     for (const org of user.organizations) {
-      if (await this.db.collection('organizations').findOne({ _id: org.id, '2FA.roles': org.role })) {
+      const roles = []
+      if (org.role) roles.push(org.role)
+      if (org.departments) {
+        org.departments.forEach(d => { if (d.role) roles.push(d) })
+      }
+      if (await this.db.collection('organizations').findOne({ _id: org.id, '2FA.roles': { $in: roles } })) {
         return true
       }
     }
-
     return false
   }
 

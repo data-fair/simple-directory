@@ -70,9 +70,21 @@ exports.getPayload = (user) => {
   if (user.defaultOrg) {
     const defaultOrg = payload.organizations.find(o => o.id === user.defaultOrg)
     if (defaultOrg) defaultOrg.dflt = 1
+    if (user.defaultDep) {
+      const defaultDep = (defaultOrg.departments || []).find(d => d.id === user.defaultDep)
+      if (defaultDep) defaultDep.dflt = 1
+    }
   }
+  // temporarily recreate the previous flat department structure
+  // TODO: remove this after a transition period
+  payload.organizations.forEach(o => {
+    if (!o.role && o.departments) {
+      const defaultDep = o.departments.find(d => d.dflt) || o.departments[0]
+      o.department = defaultDep.id
+      o.role = defaultDep.role
+    }
+  })
   if (user.ignorePersonalAccount) payload.ipa = 1
-  if (user.department) payload.department = user.department
   if (user.orgStorage) payload.orgStorage = user.orgStorage
   if (user.readonly) payload.readonly = user.readonly
   if (user.ipa) payload.ipa = 1

@@ -7,7 +7,7 @@ describe('users api', () => {
   it('should create a user', async () => {
     const ax = await testUtils.axios()
     const mailPromise = eventToPromise(mails.events, 'send')
-    await ax.post('/api/users', { email: 'alban.mouton@koumoul.com', password: 'Test1234' })
+    await ax.post('/api/users', { email: 'test-create@test.com', password: 'Test1234' })
     const mail = await mailPromise
     // sent a mail with a token_callback url to validate user creation
     assert.ok(mail.link.includes('token_callback'))
