@@ -104,7 +104,18 @@ export default {
   watch: {
     menu (value) {
       if (!value) return
-      this.invitation = { id: this.orga.id, name: this.orga.name, email: this.member.email, role: this.member.role, department: this.member.department, redirect: this.$route.query.redirect }
+      const invitation = {
+        id: this.orga.id,
+        name: this.orga.name,
+        email: this.member.email,
+        role: this.member.role,
+        redirect: this.$route.query.redirect
+      }
+      if (this.member.departments && this.member.departments.length) {
+        invitation.department = this.member.departments[0].id
+        invitation.role = this.member.departments[0].role
+      }
+      this.invitation = invitation
       this.link = null
     }
   },

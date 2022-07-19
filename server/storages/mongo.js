@@ -331,11 +331,18 @@ class MongodbStorage {
     return this.db.collection('users').countDocuments({ 'organizations.id': organizationId })
   }
 
-  async setMemberRole (organizationId, userId, role, department) {
-    if (department) {
+  async setMemberRole (organizationId, userId, role, departmentId) {
+    if (departmentId) {
+      const user = await this.db.collection('users').findOne({ _id: userId })
+      if (!user) throw createError(404, 'user not found')
+      const org = user.organizations.find(o => o.id === organizationId)
+      if (!org) throw createError(404, 'user.org not found')
+      const dep = (org.departments || []).find(d => d.id === departmentId)
+      if (!org) throw createError(404, 'user.org.dep not found')
+      dep.role = role
       await this.db.collection('users').updateOne(
-        { _id: userId, 'organizations.id': organizationId, 'organizations.departments.id': department },
-        { $set: { 'organizations.$.$.role': role } }
+        { _id: userId, 'organizations.id': organizationId },
+        { $set: { 'organizations.$.departments': org.departments } }
       )
     } else {
       await this.db.collection('users').updateOne(

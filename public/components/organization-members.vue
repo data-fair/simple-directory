@@ -79,12 +79,10 @@
       <template v-for="(member, i) in members.results">
         <v-list-item :key="member.id">
           <v-list-item-content>
-            <v-list-item-title>{{ member.name }} ({{ member.email }})</v-list-item-title>
-            <v-list-item-subtitle style="white-space:normal;">
-              <span>{{ $t('common.role') }} = {{ member.role }}</span>
-              <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
+            <v-list-item-title>
+              {{ member.name }} ({{ member.email }})
               <template v-if="member.emailConfirmed === false">
-                - <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
+                <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
                   <resend-invitation
                     :member="member"
                     :orga="orga"
@@ -92,20 +90,30 @@
                   />
                 </span>
               </template>
+            </v-list-item-title>
+            <v-list-item-subtitle style="white-space:normal;">
+              <span
+                v-for="(memberDep, j) in (member.role ? [{role: member.role}] : []).concat((member.departments || []).map(d => ({role: d.role, department: d.id, departmentName: d.name})))"
+                :key="j"
+              >
+                <template v-if="!memberDep.department">{{ $t('common.organization') }}</template>
+                <template v-else>{{ memberDep.departmentName || memberDep.department }}</template>
+                {{ memberDep.role || $t('common.noRole') }}
+                <edit-member-role-menu
+                  :orga="orga"
+                  :member="member"
+                  :department="memberDep.department"
+                  :role="memberDep.role"
+                  @save="saveMember"
+                />
+              </span>
             </v-list-item-subtitle>
           </v-list-item-content>
-          <v-list-item-action v-if="isAdminOrga && !readonly">
-            <edit-member-menu
-              :orga="orga"
-              :member="member"
-              :department="adminDepartment"
-              @save="saveMember"
-            />
-          </v-list-item-action>
           <v-list-item-action v-if="user.adminMode && !member.orgStorage">
             <v-btn
               :title="$t('common.asAdmin')"
               icon
+              :disabled="!member.emailConfirmed"
               @click="asAdmin(member)"
             >
               <v-icon color="warning">
@@ -147,12 +155,8 @@
 <script>
 import { mapState, mapActions } from 'vuex'
 import eventBus from '../event-bus'
-import AddMemberMenu from '~/components/add-member-menu'
-import DeleteMemberMenu from '~/components/delete-member-menu'
-import EditMemberMenu from '~/components/edit-member-menu'
 
 export default {
-  components: { AddMemberMenu, DeleteMemberMenu, EditMemberMenu },
   props: {
     isAdminOrga: {
       type: Boolean,

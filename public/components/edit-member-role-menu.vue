@@ -15,7 +15,7 @@
       </v-btn>
     </template>
     <v-card
-      v-if="editMember"
+      v-if="editRole"
       data-iframe-height
       width="500"
     >
@@ -23,21 +23,22 @@
         {{ $t('pages.organization.confirmEditMemberTitle', {name: member.name}) }}
       </v-card-title>
       <v-card-text>
-        <v-select
-          v-model="editMember.role"
-          :items="orga.roles"
-          :label="$t('common.role')"
-          dense
-          outlined
-        />
         <v-autocomplete
-          v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
-          v-model="editMember.department"
+          v-if="env.manageDepartments && orga.departments && orga.departments.length && department"
+          :value="department"
           :items="orga.departments"
           :label="orga.departmentLabel || $t('common.department')"
           item-value="id"
           item-text="name"
           clearable
+          dense
+          outlined
+          disabled
+        />
+        <v-select
+          v-model="editRole"
+          :items="orga.roles"
+          :label="$t('common.role')"
           dense
           outlined
         />
@@ -52,7 +53,7 @@
         </v-btn>
         <v-btn
           color="warning"
-          @click="menu = false;$emit('save', editMember)"
+          @click="menu = false;$emit('save', {role: editRole, department: department})"
         >
           {{ $t('common.confirmOk') }}
         </v-btn>
@@ -65,15 +66,15 @@
 import { mapState } from 'vuex'
 
 export default {
-  props: ['orga', 'member', 'department'],
-  data: () => ({ menu: false, editMember: null }),
+  props: ['orga', 'member', 'department', 'role'],
+  data: () => ({ menu: false, editRole: null }),
   computed: {
     ...mapState(['env'])
   },
   watch: {
     menu () {
       if (!this.menu) return
-      this.editMember = JSON.parse(JSON.stringify(this.member))
+      this.editRole = this.role
     }
   }
 }

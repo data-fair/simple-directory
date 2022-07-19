@@ -67,7 +67,8 @@ module.exports = {
     continue: 'Continue',
     tooLong: 'text is too long',
     settings: 'settings',
-    emailNotConfirmed: 'creation not finalized'
+    emailNotConfirmed: 'creation not finalized',
+    noRole: 'no role'
   },
   doc: {
     about: {
