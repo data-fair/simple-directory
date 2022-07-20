@@ -41,8 +41,10 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
   if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
 
-  const returnError = (error, errorCode) => {
+  const returnError = async (error, errorCode) => {
     debug('auth password return error', error, errorCode)
+    // prevent attacker from analyzing response time
+    await new Promise(resolve => setTimeout(resolve, Math.round(Math.random * 1000)))
     if (req.is('application/x-www-form-urlencoded')) {
       const refererUrl = new URL(req.headers.referer || req.headers.referrer)
       refererUrl.searchParams.set('error', error)
@@ -54,15 +56,17 @@ router.post('/password', asyncWrap(async (req, res, next) => {
 
   try {
     await limiter(req).consume(requestIp.getClientIp(req), 1)
+    await limiter(req).consume(requestIp.getClientIp(req), 1)
   } catch (err) {
     console.error('Rate limit error for /password route', requestIp.getClientIp(req), req.body.email, err)
     return returnError('rateLimitAuth', 429)
   }
 
+  const orgId = req.body.org || req.query.org
   let org
-  if (req.body.org || req.query.org) {
-    org = await req.app.get('storage').getOrganization(req.body.org || req.query.org)
-    if (!org) return returnError('orgaUnknown', 404)
+  if (orgId && typeof orgId === 'string') {
+    org = await req.app.get('storage').getOrganization(orgId)
+    if (!org) return returnError('badCredentials', 400)
   }
 
   let storage = req.app.get('storage')
@@ -81,7 +85,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     }
   }
   if (org && req.body.membersOnly && !user.organizations.find(o => o.id === org.id)) {
-    return returnError('orgaUnknown', 404)
+    return returnError('badCredentials', 400)
   }
   const payload = tokens.getPayload(user)
   if (req.body.adminMode) {
