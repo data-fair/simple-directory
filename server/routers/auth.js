@@ -56,7 +56,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
 
   try {
     await limiter(req).consume(requestIp.getClientIp(req), 1)
-    await limiter(req).consume(requestIp.getClientIp(req), 1)
+    await limiter(req).consume(req.body.email, 1)
   } catch (err) {
     console.error('Rate limit error for /password route', requestIp.getClientIp(req), req.body.email, err)
     return returnError('rateLimitAuth', 429)
