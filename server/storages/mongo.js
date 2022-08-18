@@ -311,11 +311,14 @@ class MongodbStorage {
 
   async addMember (orga, user, role, department = null) {
     user.organizations = user.organizations || []
-    let userOrga = user.organizations.find(o => o.id === orga.id && (orga.department || null) === department)
-    if (userOrga) {
-      // prevent adding in a department if user as a root org role, or the contrary
-      if (!department || userOrga.role) throw createError(400, 'cet utilisateur est déjà membre de cette organisation')
-    } else {
+    let userOrga = user.organizations.find(o => o.id === orga.id && (o.department || null) === department)
+    if (!userOrga) {
+      if (department && user.organizations.find(o => o.id === orga.id && !o.department)) {
+        throw createError(400, 'cet utilisateur est membre de l\'organisation parente, il ne peut pas être ajouté dans un département.')
+      }
+      if (!department && user.organizations.find(o => o.id === orga.id && o.department)) {
+        throw createError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
+      }
       userOrga = { id: orga.id, name: orga.name }
       if (department) {
         const fullDepartment = orga.departments.find(d => d.id === department)

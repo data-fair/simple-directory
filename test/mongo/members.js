@@ -28,4 +28,35 @@ describe('organizations api', () => {
 
     config.alwaysAcceptInvitation = false
   })
+
+  it('should invite a user in orga in multiple departments', async () => {
+    config.alwaysAcceptInvitation = true
+
+    const { ax } = await testUtils.createUser('test-owner2@test.com')
+
+    const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }] })).data
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'test-member2@test.com', role: 'user' })
+
+    let members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    const newMember = members.find(m => m.email === 'test-member2@test.com')
+    assert.equal(newMember.department, 'dep1')
+    assert.equal(newMember.departmentName, 'Department 1')
+    assert.equal(newMember.role, 'user')
+
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep2', email: 'test-member2@test.com', role: 'admin' })
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    const newMembers = members.filter(m => m.email === 'test-member2@test.com')
+    assert.equal(newMembers[0].department, 'dep1')
+    assert.equal(newMembers[0].departmentName, 'Department 1')
+    assert.equal(newMembers[0].role, 'user')
+    assert.equal(newMembers[1].department, 'dep2')
+    assert.equal(newMembers[1].departmentName, 'Department 2')
+    assert.equal(newMembers[1].role, 'admin')
+
+    await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-member2@test.com', role: 'user' }), err => err.status === 400)
+    await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'test-owner2@test.com', role: 'user' }), err => err.status === 400)
+    await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, department: 'baddep', email: 'test-member2@test.com', role: 'user' }), err => err.status === 404)
+
+    config.alwaysAcceptInvitation = false
+  })
 })

@@ -62,6 +62,7 @@ router.post('', asyncWrap(async (req, res, next) => {
       const newUser = {
         email: invitation.email,
         id: user ? user.id : shortid.generate(),
+        organizations: user ? user.organizations : [],
         emailConfirmed: false,
         defaultOrg: orga.id,
         ignorePersonalAccount: true
