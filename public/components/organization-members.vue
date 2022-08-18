@@ -79,7 +79,18 @@
       <template v-for="(member, i) in members.results">
         <v-list-item :key="member.id">
           <v-list-item-content>
-            <v-list-item-title>{{ member.name }} ({{ member.email }})</v-list-item-title>
+            <v-list-item-title>
+              {{ member.name }} ({{ member.email }})
+              <template v-if="member.emailConfirmed === false">
+                <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
+                  <resend-invitation
+                    :member="member"
+                    :orga="orga"
+                    :department="adminDepartment"
+                  />
+                </span>
+              </template>
+            </v-list-item-title>
             <v-list-item-subtitle style="white-space:normal;">
               <span>{{ $t('common.role') }} = {{ member.role }}</span>
               <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ member.departmentName || member.department }}</span>
