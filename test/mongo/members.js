@@ -45,13 +45,29 @@ describe('organizations api', () => {
 
     await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep2', email: 'test-member2@test.com', role: 'admin' })
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
-    const newMembers = members.filter(m => m.email === 'test-member2@test.com')
+    let newMembers = members.filter(m => m.email === 'test-member2@test.com')
+    assert.equal(newMembers.length, 2)
     assert.equal(newMembers[0].department, 'dep1')
     assert.equal(newMembers[0].departmentName, 'Department 1')
     assert.equal(newMembers[0].role, 'user')
     assert.equal(newMembers[1].department, 'dep2')
     assert.equal(newMembers[1].departmentName, 'Department 2')
     assert.equal(newMembers[1].role, 'admin')
+
+    await ax.delete(`/api/organizations/${org.id}/members/${newMembers[0].id}?department=dep2`)
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    newMembers = members.filter(m => m.email === 'test-member2@test.com')
+    assert.equal(newMembers.length, 1)
+    assert.equal(newMembers[0].department, 'dep1')
+    assert.equal(newMembers[0].role, 'user')
+
+    await assert.rejects(ax.patch(`/api/organizations/${org.id}/members/${newMembers[0].id}?dep=dep2`, { role: 'config' }), (err) => err.status === 400)
+    await ax.patch(`/api/organizations/${org.id}/members/${newMembers[0].id}?department=dep1`, { role: 'admin' })
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    newMembers = members.filter(m => m.email === 'test-member2@test.com')
+    assert.equal(newMembers.length, 1)
+    assert.equal(newMembers[0].department, 'dep1')
+    assert.equal(newMembers[0].role, 'admin')
 
     await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-member2@test.com', role: 'user' }), err => err.status === 400)
     await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'test-owner2@test.com', role: 'user' }), err => err.status === 400)

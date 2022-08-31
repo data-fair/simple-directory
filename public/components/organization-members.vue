@@ -100,7 +100,6 @@
             <edit-member-menu
               :orga="orga"
               :member="member"
-              :department="adminDepartment"
               @save="saveMember"
             />
           </v-list-item-action>
@@ -233,7 +232,7 @@ export default {
     },
     async deleteMember (member) {
       try {
-        await this.$axios.$delete(`api/organizations/${this.orga.id}/members/${member.id}`)
+        await this.$axios.$delete(`api/organizations/${this.orga.id}/members/${member.id}`, { params: { department: member.department } })
         eventBus.$emit('notification', this.$t('pages.organization.deleteMemberSuccess', { name: member.name }))
         this.fetchMembers(this.membersPage)
       } catch (error) {
@@ -242,7 +241,7 @@ export default {
     },
     async saveMember (member) {
       try {
-        await this.$axios.patch(`api/organizations/${this.orga.id}/members/${member.id}`, { role: member.role, department: member.department })
+        await this.$axios.patch(`api/organizations/${this.orga.id}/members/${member.id}`, { role: member.role }, { params: { department: member.department } })
         this.fetchMembers(this.membersPage)
       } catch (error) {
         eventBus.$emit('notification', { error })

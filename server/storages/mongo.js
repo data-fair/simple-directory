@@ -341,7 +341,7 @@ class MongodbStorage {
 
   async setMemberRole (organizationId, userId, role, department = null) {
     await this.db.collection('users').updateOne(
-      { _id: userId, 'organizations.id': organizationId, department },
+      { _id: userId, organizations: { $elemMatch: { id: organizationId, department } } },
       { $set: { 'organizations.$.role': role } }
     )
   }
