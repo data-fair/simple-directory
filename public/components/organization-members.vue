@@ -79,7 +79,7 @@
       <template v-for="(member, i) in members.results">
         <v-list-item :key="member.id">
           <v-list-item-content>
-            <v-list-item-title>
+            <v-list-item-title style="white-space:normal;">
               {{ member.name }} ({{ member.email }})
               <template v-if="member.emailConfirmed === false">
                 <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
