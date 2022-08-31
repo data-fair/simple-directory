@@ -1,6 +1,7 @@
 const express = require('express')
 const config = require('config')
 const shortid = require('shortid')
+const dayjs = require('dayjs')
 const URL = require('url').URL
 const tokens = require('../utils/tokens')
 const asyncWrap = require('../utils/async-wrap')
@@ -79,13 +80,16 @@ router.post('', asyncWrap(async (req, res, next) => {
       linkUrl.searchParams.set('redirect', reboundRedirect.href)
       debug('send email with link to createUser step', linkUrl.href)
       const params = { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin }
-      await mails.send({
-        transport: req.app.get('mailTransport'),
-        key: 'invitation',
-        messages: req.messages,
-        to: req.body.email,
-        params
-      })
+      // send the mail either if the user does not exist or it was created more that 24 hours ago
+      if (!user || req.query.force_mail === 'true' || dayjs().diff(dayjs(user.created.date), 'day', true) < 1) {
+        await mails.send({
+          transport: req.app.get('mailTransport'),
+          key: 'invitation',
+          messages: req.messages,
+          to: req.body.email,
+          params
+        })
+      }
 
       const notif = {
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },

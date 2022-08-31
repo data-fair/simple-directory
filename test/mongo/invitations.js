@@ -95,6 +95,19 @@ describe('organizations api', () => {
     assert.equal(newMember.role, 'user')
     assert.equal(newMember.emailConfirmed, false)
 
+    // invite in a second organization
+    const org2 = (await ax.post('/api/organizations', { name: 'test2' })).data
+    await ax.post('/api/invitations', { id: org2.id, name: org2.name, email: 'test-invit6@test.com', role: 'user' })
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 2)
+    newMember = members.find(m => m.email === 'test-invit6@test.com')
+    assert.equal(newMember.emailConfirmed, false)
+    members = (await ax.get(`/api/organizations/${org2.id}/members`)).data.results
+    assert.equal(members.length, 2)
+    newMember = members.find(m => m.email === 'test-invit6@test.com')
+    assert.equal(newMember.role, 'user')
+    assert.equal(newMember.emailConfirmed, false)
+
     // finalize user creation and invitation
     await anonymousAx.post('/api/users', { email: 'test-invit6@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results

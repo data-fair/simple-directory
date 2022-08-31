@@ -126,7 +126,7 @@ export default {
         return
       }
       try {
-        const res = await this.$axios.$post('api/invitations/', this.invitation)
+        const res = await this.$axios.$post('api/invitations', this.invitation, { params: { force_mail: true } })
         if (res && res.link) {
           this.link = res.link
         } else {
