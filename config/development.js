@@ -76,6 +76,6 @@ module.exports = {
     deleteInactive: true,
     deleteInactiveDelay: [1, 'days']
   },
-  alwaysAcceptInvitation: true,
-  onlyCreateInvited: true
+  alwaysAcceptInvitation: false,
+  onlyCreateInvited: false
 }

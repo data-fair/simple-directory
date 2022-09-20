@@ -237,13 +237,21 @@
                   :error-messages="createUserErrors"
                   :rules="[v => !!v || '']"
                   name="newUserPassword"
-                  type="password"
+                  :type="showNewUserPassword ? 'text' : 'password'"
                   autocomplete="new-password"
                   outlined
                   dense
                   rounded
                   @keyup.enter="createUser"
                 >
+                  <template slot="append">
+                    <v-icon
+                      v-if="newUser.password"
+                      @click="showNewUserPassword = !showNewUserPassword"
+                    >
+                      {{ showNewUserPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline' }}
+                    </v-icon>
+                  </template>
                   <v-tooltip
                     slot="append-outer"
                     right
@@ -263,7 +271,7 @@
                   :label="$t('pages.login.newPassword2')"
                   :rules="[v => !!v || '', v => newUser.password === v || $t('errors.differentPasswords')]"
                   name="newUserPassword2"
-                  type="password"
+                  :type="showNewUserPassword ? 'text' : 'password'"
                   autocomplete="new-password"
                   outlined
                   dense
@@ -680,6 +688,7 @@ export default {
       },
       createUserErrors: [],
       newUserPassword2: null,
+      showNewUserPassword: false,
       error: this.$route.query.error,
       rememberMe: true,
       qrcode: null,
