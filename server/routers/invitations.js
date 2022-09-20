@@ -65,9 +65,10 @@ router.post('', asyncWrap(async (req, res, next) => {
         id: user ? user.id : shortid.generate(),
         organizations: user ? user.organizations : [],
         emailConfirmed: false,
-        defaultOrg: orga.id,
+        defaultOrg: invitation.id,
         ignorePersonalAccount: true
       }
+      if (invitation.department) newUser.defaultDep = invitation.department
       newUser.name = userName(newUser)
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUser)
       await storage.createUser(newUser, req.user)

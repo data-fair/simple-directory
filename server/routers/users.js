@@ -178,7 +178,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
 }))
 
 // Update some parts of a user as himself
-const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'plannedDeletion']
+const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'defaultDep', 'plannedDeletion']
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 router.patch('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()

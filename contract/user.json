@@ -47,6 +47,9 @@
     "defaultOrg": {
       "type": "string"
     },
+    "defaultDep": {
+      "type": "string"
+    },
     "ignorePersonalAccount": {
       "type": "boolean",
       "default": false
