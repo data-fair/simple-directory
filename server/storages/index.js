@@ -27,7 +27,9 @@ exports.initGlobal = async () => {
           email: adminEmail,
           id: shortid.generate(),
           maxCreatedOrgs: -1,
-          organizations: []
+          organizations: [],
+          emailConfirmed: true,
+          ignorePersonalAccount: config.onlyCreateInvited
         }
         newAdmin.name = userName(newAdmin)
         if (config.adminsOrg) {
