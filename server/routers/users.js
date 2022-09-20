@@ -148,7 +148,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     // prepare same link and payload as for a passwordless authentication
     // the user will be validated and authenticated at the same time by the token_callback route
     const payload = { ...tokens.getPayload(newUser), emailConfirmed: true, temporary: true }
-    const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, req.query.org, req.query.dep))
+    const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(newUser, req.query.org, req.query.dep))
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'creation',
