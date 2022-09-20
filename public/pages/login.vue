@@ -662,6 +662,7 @@ export default {
       invitToken: this.$route.query.invit_token,
       adminMode: this.$route.query.adminMode === 'true',
       org: this.$route.query.org,
+      dep: this.$route.query.dep,
       orgStorage: this.$route.query.org_storage === 'true',
       membersOnly: this.$route.query.members_only === 'true',
       newPassword: null,
@@ -739,6 +740,7 @@ export default {
     } else if (this.invitPayload) {
       this.createUserStep()
       this.org = this.invitPayload.id
+      this.department = this.invitPayload.department
       this.email = this.invitPayload.email || this.invitPayload.e
     } else if (this.plannedDeletion) {
       this.step = 'plannedDeletion'
@@ -762,6 +764,7 @@ export default {
           params: {
             redirect: this.redirectUrl,
             org: this.org,
+            dep: this.dep,
             invit_token: this.invitToken
           }
         })
@@ -796,6 +799,7 @@ export default {
           email: this.email,
           rememberMe: this.rememberMe,
           org: this.org,
+          dep: this.dep,
           membersOnly: this.membersOnly,
           orgStorage: this.orgStorage
         }, { params: { redirect: this.redirectUrl } })
@@ -815,6 +819,7 @@ export default {
           adminMode: this.adminMode,
           rememberMe: this.rememberMe && !this.adminMode,
           org: this.org,
+          dep: this.dep,
           '2fa': this.twoFACode,
           membersOnly: this.membersOnly,
           orgStorage: this.orgStorage

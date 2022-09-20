@@ -152,17 +152,9 @@
             >
               <span
                 v-if="orga.role"
-                :key="'org-' + orga.id"
+                :key="'org-' + orga.id + '-' + orga.department"
               >
-                {{ orga.name }} ({{ orga.role }})
-                &nbsp;
-              </span>
-              <span
-                v-for="dep in (orga.departments || [])"
-                :key="orga.id + dep.id"
-              >
-                {{ orga.name }} - {{ dep.name || dep.id }} ({{ dep.role }})
-                &nbsp;
+                {{ orga.name }} <span v-if="orga.department">- {{ orga.departmentName || orga.department }}</span> ({{ orga.role }})
               </span>
             </template>
           </template>
@@ -212,7 +204,7 @@
           name="defaultOrg"
           :items="defaultOrgItems"
           item-value="id"
-          item-text="name"
+          :item-text="(org) => `${org.name}` + (org.department ? ` - ${org.departmentName || org.department}` : '')"
           clearable
           outlined
           dense

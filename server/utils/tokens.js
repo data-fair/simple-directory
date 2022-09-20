@@ -80,13 +80,15 @@ exports.getPayload = (user) => {
   return payload
 }
 
-exports.getDefaultOrg = (user) => {
+exports.getDefaultUserOrg = (user, defaultOrg, defaultDep) => {
   if (!user.organizations || !user.organizations.length) return null
-  if (user.defaultOrg) {
-    const defaultOrg = user.organizations.find(o => o.id === user.defaultOrg)
-    if (defaultOrg) return defaultOrg.id
+  defaultDep = (defaultOrg ? defaultDep : user.defaultDep) || null
+  defaultOrg = defaultOrg || user.defaultOrg
+  if (defaultOrg) {
+    const defaultOrg = user.organizations.find(o => o.id === user.defaultOrg && (o.department || null) === defaultDep)
+    if (defaultOrg) return defaultOrg
   }
-  if (user.ignorePersonalAccount) return user.organizations[0].id
+  if (user.ignorePersonalAccount) return user.organizations[0]
   return null
 }
 
@@ -96,12 +98,14 @@ exports.unsetCookies = (req, res) => {
   cookies.set('id_token', '')
   cookies.set('id_token_sign', '')
   cookies.set('id_token_org', '')
+  cookies.set('id_token_dep', '')
 
   // remove cookies on deprecated domain (stop using wildcard domain cookies)
   if (config.oldSessionDomain) {
     cookies.set('id_token', null, { domain: config.oldSessionDomain })
     cookies.set('id_token_sign', null, { domain: config.oldSessionDomain })
     cookies.set('id_token_org', null, { domain: config.oldSessionDomain })
+    cookies.set('id_token_dep', null, { domain: config.oldSessionDomain })
     cookies.set('id_token_2fa', null, { domain: config.oldSessionDomain })
     if (req.user) cookies.set(twoFA.cookieName(req.user.id), null, { domain: config.oldSessionDomain })
   }
@@ -110,7 +114,7 @@ exports.unsetCookies = (req, res) => {
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
 // the header and payload are not httpOnly to be readable by client
 // all cookies use sameSite for CSRF prevention
-exports.setCookieToken = (req, res, token, org) => {
+exports.setCookieToken = (req, res, token, userOrg) => {
   const cookies = new Cookies(req, res)
 
   // remove cookies on deprecated domain (stop using wildcard domain cookies)
@@ -118,6 +122,7 @@ exports.setCookieToken = (req, res, token, org) => {
     cookies.set('id_token', null, { domain: config.oldSessionDomain })
     cookies.set('id_token_sign', null, { domain: config.oldSessionDomain })
     cookies.set('id_token_org', null, { domain: config.oldSessionDomain })
+    cookies.set('id_token_dep', null, { domain: config.oldSessionDomain })
     cookies.set('id_token_2fa', null, { domain: config.oldSessionDomain })
   }
 
@@ -128,12 +133,9 @@ exports.setCookieToken = (req, res, token, org) => {
   cookies.set('id_token', parts[0] + '.' + parts[1], { ...opts, httpOnly: false })
   cookies.set('id_token_sign', parts[2], { ...opts, httpOnly: true })
   // set the same params to id_token_org cookie so that it doesn't expire before the rest
-  if (org) {
-    if (payload.organizations.find(o => o.id === org)) {
-      cookies.set('id_token_org', org, { ...opts, httpOnly: false })
-    } else {
-      cookies.set('id_token_org', '')
-    }
+  if (userOrg) {
+    cookies.set('id_token_org', userOrg.id, { ...opts, httpOnly: false })
+    if (userOrg.department) cookies.set('id_token_dep', userOrg.department, { ...opts, httpOnly: false })
   }
 }
 
@@ -174,12 +176,13 @@ exports.keepalive = async (req, res) => {
   }
   const token = exports.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   const cookies = new Cookies(req, res)
-  exports.setCookieToken(req, res, token, cookies.get('id_token_org'))
+  const userOrg = cookies.get('id_token_org') && user.organizations.find(o => o.id === cookies.get('id_token_org') && (o.department || null) === (cookies.get('id_token_dep') || null))
+  exports.setCookieToken(req, res, token, userOrg)
 }
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
 // this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
-exports.prepareCallbackUrl = (req, payload, redirect, org, orgStorage) => {
+exports.prepareCallbackUrl = (req, payload, redirect, userOrg, orgStorage) => {
   redirect = redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me'
   const redirectUrl = new URL(redirect)
   const token = exports.sign(req.app.get('keys'), { ...payload, temporary: true }, config.jwtDurations.initialToken)
@@ -187,7 +190,10 @@ exports.prepareCallbackUrl = (req, payload, redirect, org, orgStorage) => {
   const tokenCallbackUrl = new URL(tokenCallback)
   tokenCallbackUrl.searchParams.set('id_token', token)
   if (redirect) tokenCallbackUrl.searchParams.set('redirect', redirect)
-  if (org) tokenCallbackUrl.searchParams.set('id_token_org', org)
+  if (userOrg) {
+    tokenCallbackUrl.searchParams.set('id_token_org', userOrg.id)
+    if (userOrg.department) tokenCallbackUrl.searchParams.set('id_token_dep', userOrg.department)
+  }
   if (orgStorage) tokenCallbackUrl.searchParams.set('org_storage', 'true')
   return tokenCallbackUrl
 }

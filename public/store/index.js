@@ -19,7 +19,6 @@ export default () => {
     },
     actions: {
       async fetchUserDetails ({ state, commit, dispatch }) {
-        console.log('fetchUserDetails', state.session.user)
         if (!state.session.user) return
         try {
           const userDetails = await this.$axios.$get(`api/users/${state.session.user.id}`)

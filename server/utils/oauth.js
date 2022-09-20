@@ -187,9 +187,10 @@ exports.providers.forEach(p => {
   const callbackUri = `${config.publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
-  p.authorizationUri = (redirect, org) => {
+  p.authorizationUri = (redirect, org, dep) => {
     let state = p.state + '/' + encodeURIComponent(redirect.replace('?id_token=', ''))
     if (org) state += '/' + org
+    if (dep) state += '/' + dep
     return p.client.authorizationCode.authorizeURL({
       redirect_uri: callbackUri,
       scope: p.scope,

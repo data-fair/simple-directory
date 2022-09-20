@@ -95,7 +95,6 @@ import eventBus from '../event-bus'
 export default {
   props: {
     orga: { type: Object, required: true },
-    department: { type: String, default: null },
     member: { type: Object, required: true }
   },
   data () {
@@ -111,10 +110,7 @@ export default {
         role: this.member.role,
         redirect: this.$route.query.redirect
       }
-      if (this.member.departments && this.member.departments.length) {
-        invitation.department = this.member.departments[0].id
-        invitation.role = this.member.departments[0].role
-      }
+      if (this.member.department) invitation.department = this.member.department
       this.invitation = invitation
       this.link = null
     }

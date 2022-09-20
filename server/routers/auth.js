@@ -63,10 +63,15 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   }
 
   const orgId = req.body.org || req.query.org
-  let org
+  const depId = req.body.dep || req.query.dep
+  let org, dep
   if (orgId && typeof orgId === 'string') {
     org = await req.app.get('storage').getOrganization(orgId)
     if (!org) return returnError('badCredentials', 400)
+    if (depId) {
+      dep = org.departments.find(d => d.id === depId)
+      if (!dep) return returnError('badCredentials', 400)
+    }
   }
 
   let storage = req.app.get('storage')
@@ -128,11 +133,11 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   // this is used by data-fair app integrated login
   if (req.is('application/x-www-form-urlencoded')) {
     const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-    tokens.setCookieToken(req, res, token, (org && org.id) || tokens.getDefaultOrg(user))
+    tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
     res.redirect(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
   } else {
-    const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, org && org.id, req.body.orgStorage).href
+    const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, orgId, depId), req.body.orgStorage).href
     debug(`Password based authentication of user ${user.name}, ajax mode`, callbackUrl)
     res.send(callbackUrl)
   }
@@ -192,7 +197,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     return res.status(400).send(req.messages.errors.passwordless2FA)
   }
 
-  const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, req.body.org, req.body.orgStorage)
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, req.body.org, req.body.dep), req.body.orgStorage)
   debug(`Passwordless authentication of user ${user.name}`)
   await mails.send({
     transport: req.app.get('mailTransport'),
@@ -238,7 +243,7 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
 
   await confirmLog(storage, user)
-  tokens.setCookieToken(req, res, token, req.query.id_token_org || tokens.getDefaultOrg(user))
+  tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user, req.query.id_token_org, req.query.id_token_dep))
 
   // we just confirmed the user email after creation, he might want to create an organization
   if (decoded.emailConfirmed && config.quotas.defaultMaxCreatedOrgs !== 0 && !org) {
@@ -381,7 +386,7 @@ router.post('/asadmin', asyncWrap(async (req, res, next) => {
   payload.isAdmin = false
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
-  tokens.setCookieToken(req, res, token)
+  tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user))
 
   res.status(204).send()
 }))
@@ -396,7 +401,7 @@ router.delete('/asadmin', asyncWrap(async (req, res, next) => {
   payload.adminMode = true
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
-  tokens.setCookieToken(req, res, token)
+  tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user))
 
   res.status(204).send()
 }))
@@ -413,7 +418,7 @@ router.get('/oauth/providers', (req, res) => {
 router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
   if (!provider) return res.redirect(`${req.publicBaseUrl}/login?error=unknownOAuthProvider`)
-  res.redirect(provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl, req.query.org))
+  res.redirect(provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl, req.query.org, req.query.dep))
 }))
 
 router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
@@ -427,7 +432,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
     throw new Error('Bad OAuth state')
   }
   // TODO: also a way to send org ?
-  const [_, redirect, org] = req.query.state.split('/').map(p => decodeURIComponent(p)) // eslint-disable-line no-unused-vars
+  const [_, redirect, org, dep] = req.query.state.split('/').map(p => decodeURIComponent(p)) // eslint-disable-line no-unused-vars
   const target = redirect || config.defaultLoginRedirect || config.publicUrl + '/me'
 
   if (req.query.error) {
@@ -477,7 +482,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   }
 
   const payload = tokens.getPayload(user)
-  const linkUrl = tokens.prepareCallbackUrl(req, payload, target, org)
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, target, tokens.getDefaultUserOrg(user, org, dep))
   debug(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 }))

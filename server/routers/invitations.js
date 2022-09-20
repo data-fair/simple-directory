@@ -173,6 +173,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${req.publicBaseUrl}/invitation`)
   redirectUrl.searchParams.set('email', invit.email)
   redirectUrl.searchParams.set('id_token_org', invit.id)
+  if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
 
   // case where the invitation was already accepted, but we still want the user to proceed
   if (user && user.organizations && user.organizations.find(o => o.id === invit.id)) {
@@ -186,6 +187,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
       redirectUrl.searchParams.set('step', 'changePassword')
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
+      if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
       redirectUrl.searchParams.set('action_token', token)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
       debug('redirect to changePassword step', redirectUrl.href)
@@ -196,6 +198,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
       redirectUrl = new URL(`${req.publicBaseUrl}/login`)
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
+      if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
       debug('redirect to login', redirectUrl.href)
       return res.redirect(redirectUrl.href)
