@@ -181,23 +181,25 @@
         {{ $t('common.settings') }}
       </h2>
 
-      <template v-if="user.organizations.length && !(env.onlyCreateInvited && user.organizations.length === 1)">
+      <template v-if="userDetails && (showIgnorePersonalAccount || defaultOrgItems.length > 1)">
         <h2 class="text-h5 mt-8 mb-4">
           {{ $t('pages.me.accountChanges') }}
         </h2>
         <v-checkbox
+          v-if="showIgnorePersonalAccount"
           v-model="patch.ignorePersonalAccount"
           :label="$t('pages.me.ignorePersonalAccount')"
-          :disabled="!userDetails || readonly"
+          :disabled="readonly"
           name="ignorePersonalAccount"
           @change="save"
         />
         <v-select
+          v-if="defaultOrgItems.length > 1"
           v-model="patch.defaultOrg"
           :label="$t('pages.me.defaultOrg')"
-          :disabled="!userDetails || readonly"
+          :disabled="readonly"
           name="defaultOrg"
-          :items="(patch.ignorePersonalAccount ? [] : [{id: '', name: $t('common.userAccount')}]).concat(user.organizations)"
+          :items="defaultOrgItems"
           item-value="id"
           item-text="name"
           clearable
@@ -268,6 +270,18 @@ export default {
     },
     mainHost () {
       return new URL(this.env.mainPublicUrl).host
+    },
+    defaultOrgItems () {
+      return (this.patch.ignorePersonalAccount ? [] : [{ id: '', name: this.$t('common.userAccount') }]).concat(this.userDetails.organizations)
+    },
+    showIgnorePersonalAccount () {
+      // invitation mode only (means user should always be in an orga)
+      // ignorePersonalAccount should already be true in this case
+      if (this.env.onlyCreateInvited && this.userDetails.ignorePersonalAccount) return false
+      // user only has a personal account
+      // ignorePersonalAccount should already be false in this case
+      if (this.user.organizations.length === 0 && !this.userDetails.ignorePersonalAccount) return false
+      return true
     }
   },
   watch: {
