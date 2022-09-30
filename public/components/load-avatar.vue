@@ -18,7 +18,7 @@
       >
         <v-img
           v-if="owner && !loading"
-          :src="owner.avatarUrl"
+          :src="avatarUrl"
         />
       </v-avatar>
       <v-file-input
@@ -100,7 +100,13 @@ export default {
     }
   },
   computed: {
-    ...mapState(['env'])
+    ...mapState(['env']),
+    avatarUrl () {
+      let url = `${this.env.publicUrl}/api/avatars/${this.owner.type}/${this.owner.id}`
+      if (this.owner.department) url += `/${this.owner.department}`
+      url += '/avatar.png'
+      return url
+    }
   },
   methods: {
     change (event) {
@@ -120,7 +126,7 @@ export default {
       const croppedImg = dataURItoBlob(this.$refs.cropper.getCroppedCanvas({ width: 100, height: 100 }).toDataURL('image/png'))
       const formData = new FormData()
       formData.append('avatar', croppedImg)
-      await this.$axios.$post(`${this.env.publicUrl}/api/avatars/${this.owner.type}/${this.owner.id}/avatar.png`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+      await this.$axios.$post(this.avatarUrl, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
       this.loading = false
       this.file = null
     }

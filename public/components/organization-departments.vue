@@ -56,6 +56,9 @@
     >
       <template v-for="(department, i) in currentPage">
         <v-list-item :key="department.id">
+          <v-list-item-avatar>
+            <v-img :src="`${env.publicUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png`" />
+          </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>{{ department.name }}</v-list-item-title>
             <v-list-item-subtitle>{{ $t('common.id') }} = {{ department.id }}</v-list-item-subtitle>
@@ -143,7 +146,6 @@ export default {
   },
   methods: {
     filterDeps (page) {
-      console.log('filter', this.q)
       this.page = 1
       this.validQ = this.q
     }

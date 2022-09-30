@@ -6,14 +6,14 @@ const collation = { locale: 'en', strength: 1 }
 async function ensureIndex (db, collection, key, options = {}) {
   try {
     await db.collection(collection).createIndex(key, options)
-  } catch (error) {
-    if (error.codeName === 'IndexOptionsConflict') {
-      console.log(`Index options conflict for index ${collection}.${JSON.stringify(key)}.${JSON.stringify(options)}. Delete then re-create the index`)
-      await db.collection(collection).dropIndex(key)
-      await db.collection(collection).createIndex(key, options)
-    } else {
-      throw error
-    }
+  } catch (err) {
+    if ((err.code !== 85 && err.code !== 86) || !options.name) throw err
+
+    // if the error is a conflict on keys or params of the index we automatically
+    // delete then recreate the index
+    console.log(`Drop then recreate index ${collection}/${options.name}`)
+    await db.collection(collection).dropIndex(options.name)
+    await db.collection(collection).createIndex(key, options)
   }
 }
 
@@ -69,7 +69,7 @@ class MongodbStorage {
     await ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
     await ensureIndex(this.db, 'users', { plannedDeletion: 1 }, { sparse: true })
     await ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
-    await ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1 }, { unique: true })
+    await ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }, { unique: true, name: 'owner.type_1_owner.id_1' })
     await ensureIndex(this.db, 'limits', { id: 'text', name: 'text' }, { name: 'fulltext' })
     await ensureIndex(this.db, 'limits', { type: 1, id: 1 }, { name: 'limits-find-current', unique: true })
     return this
@@ -321,15 +321,15 @@ class MongodbStorage {
   }
 
   async setAvatar (avatar) {
-    await this.db.collection('avatars').replaceOne(
-      { 'owner.type': avatar.owner.type, 'owner.id': avatar.owner.id },
-      avatar,
-      { upsert: true }
-    )
+    const filter = { 'owner.type': avatar.owner.type, 'owner.id': avatar.owner.id }
+    if (avatar.owner.department) filter['owner.department'] = avatar.owner.department
+    await this.db.collection('avatars').replaceOne(filter, avatar, { upsert: true })
   }
 
   async getAvatar (owner) {
-    const avatar = await this.db.collection('avatars').findOne({ 'owner.type': owner.type, 'owner.id': owner.id })
+    const filter = { 'owner.type': owner.type, 'owner.id': owner.id }
+    if (owner.department) filter['owner.department'] = owner.department
+    const avatar = await this.db.collection('avatars').findOne(filter)
     if (avatar && avatar.buffer) avatar.buffer = avatar.buffer.buffer
     return avatar
   }

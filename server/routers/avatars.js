@@ -24,7 +24,7 @@ const getInitials = (identity) => {
   return initials
 }
 
-router.get('/:type/:id/avatar.png', asyncWrap(async (req, res, next) => {
+const readAvatar = asyncWrap(async (req, res, next) => {
   if (!['user', 'organization'].includes(req.params.type)) {
     return res.status(400).send('Owner type must be "user" or "organization"')
   }
@@ -38,7 +38,7 @@ router.get('/:type/:id/avatar.png', asyncWrap(async (req, res, next) => {
     storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
 
-  const owner = { id: req.params.id, type: req.params.type }
+  const owner = req.params
   let avatar = storage.getAvatar && await storage.getAvatar(owner)
   if (!avatar || avatar.initials) {
     const identity = req.params.type === 'organization' ? (await storage.getOrganization(req.params.id)) : (await storage.getUser({ id: req.params.id }))
@@ -66,7 +66,9 @@ router.get('/:type/:id/avatar.png', asyncWrap(async (req, res, next) => {
 
   res.set('Content-Type', 'image/png')
   res.send(avatar.buffer)
-}))
+})
+router.get('/:type/:id/avatar.png', readAvatar)
+router.get('/:type/:id/:department/avatar.png', readAvatar)
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -77,14 +79,18 @@ const isAdmin = (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (req.user.adminMode) return next()
   if (req.params.type === 'user' && req.params.id === req.user.id) return next()
-  if (req.params.type === 'organization' && (req.user.organizations || []).find(o => o.id === req.params.id && o.role === 'admin' && !o.department)) return next()
+  if (req.params.type === 'organization' && !req.params.department && (req.user.organizations || []).find(o => o.id === req.params.id && o.role === 'admin' && !o.department)) return next()
+  if (req.params.type === 'organization' && req.params.department && (req.user.organizations || []).find(o => o.id === req.params.id && o.role === 'admin' && (!o.department || o.department === req.params.department))) return next()
   res.status(403).send()
 }
 
-router.post('/:type/:id/avatar.png', isAdmin, upload.single('avatar'), asyncWrap(async (req, res, next) => {
+const writeAvatar = asyncWrap(async (req, res, next) => {
   await req.app.get('storage').setAvatar({
-    owner: { id: req.params.id, type: req.params.type },
+    owner: req.params,
     buffer: req.file.buffer
   })
   res.status(201).send()
-}))
+})
+
+router.post('/:type/:id/avatar.png', isAdmin, upload.single('avatar'), writeAvatar)
+router.post('/:type/:id/:department/avatar.png', isAdmin, upload.single('avatar'), writeAvatar)
