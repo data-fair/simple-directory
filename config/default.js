@@ -145,7 +145,8 @@ module.exports = {
       port: 1025,
       ignoreTLS: true,
       default: 'localhost'
-    }
+    },
+    extraParams: {}
   },
   maildev: {
     url: 'http://localhost:1080',

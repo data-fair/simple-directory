@@ -161,7 +161,11 @@ module.exports = {
       __name: 'MAILS_TRANSPORT',
       __format: 'json'
     },
-    from: 'MAILS_FROM'
+    from: 'MAILS_FROM',
+    extraParams: {
+      __name: 'MAILS_EXTRA_PARAMS',
+      __format: 'json'
+    }
   },
   maildev: {
     url: 'MAILDEV_URL',
