@@ -110,10 +110,6 @@ try { info = require('../BUILD.json') } catch (err) {}
 app.get('/api/info', session.requiredAuth, (req, res) => {
   res.send(info)
 })
-app.get('/api/admin/info', session.requiredAuth, (req, res) => {
-  if (!req.user.adminMode) return res.status(403).send()
-  res.send({ ...info, config })
-})
 
 /*
 *  WARNING:
