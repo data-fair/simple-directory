@@ -41,7 +41,8 @@ const readAvatar = asyncWrap(async (req, res, next) => {
   const owner = req.params
   let avatar = storage.getAvatar && await storage.getAvatar(owner)
   if (!avatar || avatar.initials) {
-    const identity = req.params.type === 'organization' ? (await storage.getOrganization(req.params.id)) : (await storage.getUser({ id: req.params.id }))
+    let identity = req.params.type === 'organization' ? (await storage.getOrganization(req.params.id)) : (await storage.getUser({ id: req.params.id }))
+    if (req.params.department) identity = identity.departments.find(d => d.id === req.params.department)
     if (!identity) return res.status(404).send()
 
     if (req.params.type === 'user' && identity.oauth) {
