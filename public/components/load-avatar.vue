@@ -18,7 +18,7 @@
       >
         <v-img
           v-if="owner && !loading"
-          :src="avatarUrl"
+          :src="avatarUrl + '?t=' + getTimestamp()"
         />
       </v-avatar>
       <v-file-input
@@ -35,7 +35,7 @@
       >
         <template #append-outer>
           <v-btn
-            v-if="file"
+            v-if="file && !hideValidate"
             fab
             x-small
             color="primary"
@@ -88,7 +88,8 @@ export default {
   },
   props: {
     owner: { type: Object, default: null },
-    disabled: { type: Boolean, default: false }
+    disabled: { type: Boolean, default: false },
+    hideValidate: { type: Boolean, default: false }
   },
   data () {
     return {
@@ -122,6 +123,7 @@ export default {
       reader.readAsDataURL(this.file)
     },
     async validate () {
+      if (!this.file) return
       this.loading = true
       const croppedImg = dataURItoBlob(this.$refs.cropper.getCroppedCanvas({ width: 100, height: 100 }).toDataURL('image/png'))
       const formData = new FormData()
@@ -129,6 +131,9 @@ export default {
       await this.$axios.$post(this.avatarUrl, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
       this.loading = false
       this.file = null
+    },
+    getTimestamp () {
+      return new Date().getTime()
     }
   }
 }
