@@ -23,7 +23,7 @@ const getInitials = (type, identity) => {
   } else {
     name = identity.name
   }
-  return initialsModule(capitalize.words(name, true).replace('D\'', 'd\'')).slice(0, 3)
+  return initialsModule(capitalize.words(name, true).replace('La ', 'la ').replace('Le ', 'le ').replace('De ', 'de ').replace('D\'', 'd\'').replace('L\'', 'l\'')).slice(0, 3)
 }
 
 // inspired by https://github.com/thatisuday/npm-no-avatar/blob/master/lib/make.js
