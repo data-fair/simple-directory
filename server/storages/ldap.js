@@ -242,7 +242,7 @@ class LdapStorage {
         }
       }
       const overwrite = (this.ldapParams.members.overwrite || [])
-        .find(o => (o.orgId === org.id || !o.orgId) && o.email === user.email)
+        .find(o => (o.orgId === org.id || !o.orgId) && o.email?.toLowerCase() === user.email?.toLowerCase())
       role = (overwrite && overwrite.role) || role || this.ldapParams.members.role.default
       user.organizations = [{ ...org, role }]
     }
@@ -266,7 +266,7 @@ class LdapStorage {
       if (!onlyItem) return res.results[0]
       const user = res.results[0].item
       await this._setUserOrg(client, user, res.results[0].entry, res.results[0].attrs)
-      const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email === user.email)
+      const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email?.toLowerCase() === user.email?.toLowerCase())
       if (overwrite) Object.assign(user, overwrite)
       if (this.org) user.orgStorage = true
       return user
