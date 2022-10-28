@@ -65,7 +65,7 @@ exports.getPayload = (user) => {
     email: user.email,
     name: user.name,
     organizations: (user.organizations || []).map(o => ({ ...o })),
-    isAdmin: config.admins.includes(user.email)
+    isAdmin: config.admins.includes(user.email) || (config.adminCredentials?.password?.hash && config.adminCredentials?.email === user.email)
   }
   if (user.defaultOrg) {
     const defaultOrg = payload.organizations.find(o => o.id === user.defaultOrg)
@@ -151,7 +151,7 @@ exports.keepalive = async (req, res) => {
   if (req.user.orgStorage && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
-  const user = await storage.getUser({ id: req.user.id })
+  const user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
   if (!user) {
     exports.unsetCookies(req, res)
     return res.status(401).send('User does not exist anymore')

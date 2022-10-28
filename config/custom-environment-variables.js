@@ -21,6 +21,10 @@ module.exports = {
     __name: 'ADMINS_2FA',
     __format: 'json'
   },
+  adminCredentials: {
+    __name: 'ADMIN_CREDENTIALS',
+    __format: 'json'
+  },
   roles: {
     defaults: {
       __name: 'ROLES_DEFAULTS',

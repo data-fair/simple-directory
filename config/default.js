@@ -17,6 +17,10 @@ module.exports = {
   admins: ['admin@test.com'],
   adminsOrg: null,
   admins2FA: false,
+  // special case where a email/password is defined at config level for a superadmin
+  // useful when superadmins cannot be created in the storage (on-premise ldap with heavy constraints ?)
+  // or to test stuff while email sending is not working yet, etc
+  adminCredentials: null,
   roles: {
     defaults: ['admin', 'user'],
     editable: false

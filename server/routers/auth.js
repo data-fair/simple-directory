@@ -69,6 +69,20 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
+
+  if (config.adminCredentials?.password?.hash && config.adminCredentials.email === req.body.email) {
+    const validPassword = await passwords.checkPassword(req.body.password, config.adminCredentials.password)
+    if (validPassword) {
+      const payload = tokens.getPayload({ id: '_superadmin', name: 'Super Admin', email: req.body.email })
+      payload.adminMode = true
+      const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect).href
+      debug('Password based authentication of superadmin with password from config', callbackUrl)
+      return res.send(callbackUrl)
+    } else {
+      return returnError('badCredentials', 400)
+    }
+  }
+
   const user = await storage.getUserByEmail(req.body.email)
   if (!user || user.emailConfirmed === false) return returnError('badCredentials', 400)
   if (storage.getPassword) {
@@ -220,7 +234,7 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
   if (req.query.org_storage === 'true' && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
-  const user = await storage.getUser({ id: decoded.id })
+  const user = decoded.id === '_superadmin' ? decoded : await storage.getUser({ id: decoded.id })
 
   if (!user || (decoded.emailConfirmed !== true && user.emailConfirmed === false)) {
     return redirectError('badCredentials')
@@ -270,7 +284,8 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
 
   // User may have new organizations since last renew
   const storage = req.app.get('storage')
-  const user = await storage.getUser({ id: decoded.id })
+  const user = decoded.id === '_superadmin' ? decoded : await storage.getUser({ id: decoded.id })
+
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = tokens.getPayload(user)
   if (decoded.adminMode && req.query.noAdmin !== 'true') payload.adminMode = true
@@ -386,7 +401,7 @@ router.delete('/asadmin', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send('No active session to keep alive')
   if (!req.user.asAdmin) return res.status(403).send('This functionality is for admins only')
   const storage = req.app.get('storage')
-  const user = await storage.getUser({ id: req.user.asAdmin.id })
+  const user = req.user.asAdmin.id === '_superadmin' ? req.user.asAdmin : await storage.getUser({ id: req.user.asAdmin.id })
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = tokens.getPayload(user)
   payload.adminMode = true

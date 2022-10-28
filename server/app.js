@@ -40,7 +40,7 @@ app.use(i18n.middleware)
 // Replaces req.user from session with full and fresh user object from storage
 // also minimalist api key management
 const fullUser = asyncWrap(async (req, res, next) => {
-  if (req.user && !req.user.orgStorage) {
+  if (req.user && !req.user.orgStorage && req.user.id !== '_superadmin') {
     req.user = {
       ...await req.app.get('storage').getUser({ id: req.user.id }),
       isAdmin: req.user.isAdmin,

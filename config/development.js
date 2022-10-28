@@ -6,6 +6,17 @@ module.exports = {
   admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com'],
   adminsOrg: { id: 'admins-org', name: 'Admins organization' },
   admins2FA: false,
+  adminCredentials: {
+    email: '_superadmin@test.com',
+    password: {
+      // Test1234
+      hash: '657cae4fd3026f325a48ae05da5980e74d4d841e1769ca54f47dc8733dfdd1d7c67196c1bcfc5e3e63b24b8572f6afea7f9347d7dbb489a9e55351a092901b4b',
+      salt: 'b8b6f350af7c15fda9f6557fd8bf154a',
+      iterations: 100000,
+      size: 64,
+      alg: 'sha512'
+    }
+  },
   homePage: 'https://koumoul.com',
   anonymousContactForm: true,
   jwtDurations: {
