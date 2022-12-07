@@ -1,5 +1,6 @@
 const config = require('config')
 const moment = require('moment')
+const escapeStringRegexp = require('escape-string-regexp')
 
 const collation = { locale: 'en', strength: 1 }
 
@@ -159,7 +160,7 @@ class MongodbStorage {
       filter._id = { $in: params.ids }
     }
     if (params.q) {
-      filter.name = { $regex: params.q, $options: 'i' }
+      filter.name = { $regex: escapeStringRegexp(params.q), $options: 'i' }
     }
 
     const countPromise = this.db.collection('users').countDocuments(filter)
@@ -201,7 +202,7 @@ class MongodbStorage {
       filter._id = { $in: params.ids }
     }
     if (params.q) {
-      filter.name = { $regex: params.q, $options: 'i' }
+      filter.name = { $regex: escapeStringRegexp(params.q), $options: 'i' }
     }
     if (params.roles && params.roles.length) {
       filter.organizations.$elemMatch.role = { $in: params.roles }
@@ -279,7 +280,7 @@ class MongodbStorage {
       filter._id = { $in: params.ids }
     }
     if (params.q) {
-      filter.name = { $regex: params.q, $options: 'i' }
+      filter.name = { $regex: escapeStringRegexp(params.q), $options: 'i' }
     }
     if (params.creator) {
       filter['created.id'] = params.creator
