@@ -43,6 +43,11 @@ describe('organizations api', () => {
     const newMember = members.find(m => m.email === 'test-invit2@test.com')
     assert.ok(newMember)
     assert.equal(newMember.role, 'user')
+
+    members = (await ax.get(`/api/organizations/${org.id}/members?q=test`)).data.results
+    assert.equal(members.length, 2)
+    members = (await ax.get(`/api/organizations/${org.id}/members?q=test-invit2@test.com`)).data.results
+    assert.equal(members.length, 1)
   })
 
   it('should invite an existing user in an organization', async () => {
