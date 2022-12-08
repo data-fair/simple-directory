@@ -263,6 +263,12 @@ module.exports = {
       secret: 'OAUTH_LINKEDIN_SECRET'
     }
   },
+  saml2: {
+    providers: {
+      __name: 'SAML2_PROVIDERS',
+      __format: 'json'
+    }
+  },
   noBirthday: {
     __name: 'NO_BIRTHDAY',
     __format: 'json'

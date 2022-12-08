@@ -15,6 +15,7 @@ const asyncWrap = require('./utils/async-wrap')
 const tokens = require('./utils/tokens')
 const limits = require('./utils/limits')
 const prometheus = require('./utils/prometheus')
+const saml2 = require('./utils/saml2')
 const twoFA = require('./routers/2fa.js')
 const session = require('@data-fair/sd-express')({
   directoryUrl: config.publicUrl,
@@ -233,6 +234,8 @@ exports.run = async () => {
   debug('start server')
   server.listen(config.port)
   await eventToPromise(server, 'listening')
+
+  await saml2.init()
 
   if (process.env.NODE_ENV === 'development') {
     const server2 = http.createServer(app)

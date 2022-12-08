@@ -5,7 +5,7 @@ config.basePath = new URL(config.publicUrl + '/').pathname
 config.i18nMessages = i18n.messages
 config.i18nLocales = config.i18n.locales.join(',')
 config.readonly = require('./server/storages').readonly()
-config.publicOAuth = require('./server/utils/oauth').publicProviders
+config.authProviders = require('./server/utils/saml2').publicProviders.concat(require('./server/utils/oauth').publicProviders)
 
 const isBuilding = process.argv.slice(-1)[0] === 'build'
 
@@ -39,6 +39,7 @@ if (process.env.NODE_ENV !== 'production' || isBuilding) {
 }
 
 module.exports = {
+  telemetry: false,
   ssr: false,
   components: true,
   srcDir: 'public/',
@@ -113,7 +114,6 @@ module.exports = {
     manageDepartmentLabel: config.manageDepartmentLabel,
     passwordless: config.passwordless,
     i18nLocales: config.i18nLocales,
-    oauth: config.publicOAuth,
     anonymousContactForm: config.anonymousContactForm,
     noBirthday: config.noBirthday,
     showCreatedUserHost: config.showCreatedUserHost,

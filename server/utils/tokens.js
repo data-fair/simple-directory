@@ -16,8 +16,8 @@ const prometheus = require('./prometheus')
 
 exports.init = async () => {
   const keys = {}
-  const privateKeyPath = path.resolve(__dirname, '../..', config.secret.private)
-  const publicKeyPath = path.resolve(__dirname, '../..', config.secret.public)
+  const privateKeyPath = path.resolve(config.secret.private)
+  const publicKeyPath = path.resolve(config.secret.public)
   try {
     await fs.access(privateKeyPath, fs.constants.F_OK)
   } catch (err) {

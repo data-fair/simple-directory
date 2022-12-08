@@ -26,6 +26,16 @@ services:
       - 6443:443
     environment:
       - PHPLDAPADMIN_LDAP_HOSTS=ldap
+  saml:
+    profiles:
+      - dev
+      - test
+    image: kristophjunge/test-saml-idp:1.15
+    network_mode: host
+    environment:
+      - SIMPLESAMLPHP_SP_ENTITY_ID=http://localhost:5689/api/auth/saml2-metadata.xml
+      - SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE=http://localhost:5689/api/auth/saml2-assert
+      - SIMPLESAMLPHP_SP_SINGLE_LOGOUT_SERVICE=http://localhost:5689/api/auth/saml2-logout
   notify:
     profiles:
       - dev

@@ -38,11 +38,8 @@
                 class="mb-6"
                 v-html="$t('pages.login.separateDomain', {redirectHost, mainHost, mainOrigin})"
               />
-              <template v-if="env.oauth.length && !adminMode && !orgStorage">
-                <!--<v-layout row>
-                  <p class="mb-0">{{ $t('pages.login.oauth') }}</p>
-                </v-layout>-->
-                <oauth-login-links :redirect="redirectUrl" />
+              <template v-if="!adminMode && !orgStorage">
+                <auth-providers-login-links :redirect="redirectUrl" />
               </template>
 
               <v-text-field
@@ -629,15 +626,9 @@
 
 import { mapState, mapActions } from 'vuex'
 import jwtDecode from 'jwt-decode'
-import logo from '../components/logo.vue'
-import OauthLoginLinks from '../components/oauth-login-links.vue'
 import eventBus from '../event-bus'
 
 export default {
-  components: {
-    logo,
-    OauthLoginLinks
-  },
   data () {
     return {
       dialog: true,

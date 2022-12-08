@@ -214,4 +214,10 @@ exports.providers.forEach(p => {
   }
 })
 
-exports.publicProviders = exports.providers.map(p => ({ id: p.id, title: p.title, color: p.color, icon: p.icon }))
+exports.publicProviders = exports.providers.map(p => ({
+  type: 'oauth',
+  id: p.id,
+  title: p.title,
+  color: p.color,
+  icon: p.icon
+}))

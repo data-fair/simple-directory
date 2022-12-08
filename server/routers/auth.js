@@ -12,6 +12,7 @@ const mails = require('../mails')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 const oauth = require('../utils/oauth')
+const saml2 = require('../utils/saml2')
 const userName = require('../utils/user-name')
 const twoFA = require('./2fa.js')
 const limiter = require('../utils/limiter')
@@ -417,9 +418,11 @@ router.get('/me', (req, res) => {
   else res.send(req.user)
 })
 
-router.get('/oauth/providers', (req, res) => {
-  res.send(oauth.publicProviders)
+router.get('/providers', (req, res) => {
+  res.send(saml2.publicProviders.concat(oauth.publicProviders))
 })
+
+// OAUTH
 
 router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
@@ -492,3 +495,79 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   debug(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 }))
+
+// SAML 2
+const debugSAML = require('debug')('saml')
+
+// expose metadata to declare ourselves to identity provider
+router.get('/saml2-metadata.xml', (req, res) => {
+  res.type('application/xml')
+  res.send(saml2.sp.create_metadata())
+})
+
+// login confirm by IDP
+router.post('/saml2-assert', (req, res) => {
+  const origin = new URL(req.headers.referer).origin
+  console.log('assert from origin', origin, req.headers.referer, req.query)
+  if (!saml2.idpsByOrigin[origin]) return res.status(404).send(`IDP with origin ${origin} unknown`)
+  saml2.sp.post_assert(saml2.idpsByOrigin[origin], { request_body: req.body }, (err, samlResponse) => {
+    if (err) {
+      console.error('SAML assert error', err) // TODO: can this be returned to the client or is it potentially sensitive ?
+      return res.status(500).send()
+    }
+    console.log('SAML login success !', samlResponse)
+
+    // TODO: Save name_id and session_index for logout ?
+    // Note:  In practice these should be saved in the user session, not globally.
+    // name_id = saml_response.user.name_id;
+    // session_index = saml_response.user.session_index;
+    res.send()
+  })
+})
+
+// logout by idp
+router.get('/saml2-logout', (req, res) => {
+  console.log('logout', req.headers, req.query)
+  res.send()
+})
+
+router.use('/saml2', express.urlencoded())
+
+router.get('/saml2/providers', (req, res) => {
+  res.send(oauth.publicProviders)
+})
+
+router.use('/saml2/:providerId', (req, res, next) => {
+  req.idp = saml2.idps[req.params.providerId]
+  if (!req.idp) return res.status(404).send('unknown saml2 provider')
+  next()
+})
+
+// starts login
+router.get('/saml2/:providerId/login', (req, res) => {
+  debugSAML('login saml')
+  let relayState = encodeURIComponent((req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl).replace('?id_token=', ''))
+  if (req.query.org) relayState += '/' + req.query.org
+  saml2.sp.create_login_request_url(req.idp, { relay_state: relayState }, (err, loginUrl) => {
+    debugSAML('login saml callback')
+    if (err) {
+      console.error('SAML login error', err) // TODO: can this be returned to the client or is it potentially sensitive ?
+      return res.status(500).send()
+    }
+    res.redirect(loginUrl)
+  })
+})
+
+// starts logout
+/* router.get('/saml2/:providerId/logout', () => {
+  var options = {
+    name_id: name_id,
+    session_index: session_index
+  };
+
+  sp.create_logout_request_url(idp, options, function(err, logout_url) {
+    if (err != null)
+      return res.send(500);
+    res.redirect(logout_url);
+  });
+}) */
