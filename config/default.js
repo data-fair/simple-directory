@@ -235,6 +235,9 @@ module.exports = {
   saml2: {
     providers: []
   },
+  oidc: {
+    providers: []
+  },
   noBirthday: false,
   showCreatedUserHost: false,
   avatars: {

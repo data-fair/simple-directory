@@ -12,7 +12,7 @@
       small
       rounded
       depressed
-      class="pl-1 pr-3 mr-2 text-none"
+      class="pl-1 pr-3 mr-2 mb-1 text-none"
     >
       <v-icon>{{ authProvider.icon }}</v-icon>
       &nbsp;{{ authProvider.title }}

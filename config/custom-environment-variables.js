@@ -269,6 +269,12 @@ module.exports = {
       __format: 'json'
     }
   },
+  oidc: {
+    providers: {
+      __name: 'OIDC_PROVIDERS',
+      __format: 'json'
+    }
+  },
   noBirthday: {
     __name: 'NO_BIRTHDAY',
     __format: 'json'

@@ -19,7 +19,6 @@ exports.init = async () => {
     private_key: (await fs.readFile(config.secret.private)).toString(),
     certificate: (await fs.readFile(config.secret.public)).toString(),
     assert_endpoint: `${config.publicUrl}/api/auth/saml2-assert`,
-    sign_get_request: false,
     allow_unencrypted_assertion: true
   })
   exports.sp.createLoginRequestURL = promisify(exports.sp.create_login_request_url).bind(exports.sp)
@@ -32,7 +31,6 @@ exports.init = async () => {
       sso_login_url: providerConfig.loginUrl,
       sso_logout_url: providerConfig.logoutUrl,
       certificates: providerConfig.certificates,
-      sign_get_request: false,
       allow_unencrypted_assertion: true
     })
   }

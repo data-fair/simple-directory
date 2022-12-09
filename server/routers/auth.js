@@ -428,11 +428,14 @@ const debugOAuth = require('debug')('oauth')
 router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
   if (!provider) return res.redirect(`${req.publicBaseUrl}/login?error=unknownOAuthProvider`)
-  res.redirect(provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl, req.query.org))
+  const authorizationUri = provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl, req.query.org)
+  debugOAuth('login authorizationUri', authorizationUri)
+  res.redirect(authorizationUri)
 }))
 
 router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
+  debugOAuth('oauth login callback')
 
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
   if (!provider) return res.status(404).send('Unknown OAuth provider')
@@ -449,7 +452,9 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
     throw new Error('Bad OAuth query')
   }
 
-  const userInfo = await provider.userInfo(await provider.accessToken(req.query.code))
+  const accessToken = await provider.accessToken(req.query.code)
+  console.log('access token', accessToken)
+  const userInfo = await provider.userInfo(accessToken)
   if (!userInfo.email) {
     console.error('Email attribute not fetched from OAuth', req.params.oauthId, userInfo)
     throw new Error('Email attribute not fetched from OAuth')
@@ -601,7 +606,7 @@ router.get('/saml2/providers', (req, res) => {
 router.get('/saml2/:providerId/login', asyncWrap(async (req, res) => {
   debugSAML('login request', req.params.providerId)
   const idp = saml2.idps[req.params.providerId]
-  if (!idp) return res.status(404).send(`unknown saml2 provider ${req.params.providerId}`)
+  if (!idp) return res.redirect(`${req.publicBaseUrl}/login?error=unknownSAMLProvider`)
 
   // relay_state is used to remember some information about the login attempt
   const relayState = [

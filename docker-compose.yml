@@ -26,16 +26,27 @@ services:
       - 6443:443
     environment:
       - PHPLDAPADMIN_LDAP_HOSTS=ldap
-  saml:
+  saml-provider:
     profiles:
       - dev
-      - test
     image: kristophjunge/test-saml-idp:1.15
     network_mode: host
     environment:
       - SIMPLESAMLPHP_SP_ENTITY_ID=http://localhost:5689/api/auth/saml2-metadata.xml
       - SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE=http://localhost:5689/api/auth/saml2-assert
       - SIMPLESAMLPHP_SP_SINGLE_LOGOUT_SERVICE=http://localhost:5689/api/auth/saml2-logout
+  
+  # WARNING: does not work on a recent chrome, this provider tries to use a cookie with samesite=none option and this is not permitted without https
+  oidc-provider:
+    profiles:
+      - dev
+    image: qlik/simple-oidc-provider:0.2.5
+    network_mode: host
+    environment:
+      - REDIRECTS=http://localhost:5689/api/auth/oauth/localhost9009/callback
+      - PORT=9009
+      - IDP_NAME=http://localhost:9009
+  
   notify:
     profiles:
       - dev

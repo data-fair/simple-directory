@@ -16,6 +16,7 @@ const tokens = require('./utils/tokens')
 const limits = require('./utils/limits')
 const prometheus = require('./utils/prometheus')
 const saml2 = require('./utils/saml2')
+const oauth = require('./utils/oauth')
 const twoFA = require('./routers/2fa.js')
 const session = require('@data-fair/sd-express')({
   directoryUrl: config.publicUrl,
@@ -159,6 +160,11 @@ exports.run = async () => {
   const mailTransport = await mails.init()
   app.set('mailTransport', mailTransport)
 
+  debug('prepare oauth providers')
+  await oauth.init()
+  debug('prepare saml2 providers')
+  await saml2.init()
+
   if (storage.db) {
     const locks = require('./utils/locks')
     const webhooks = require('./webhooks')
@@ -234,8 +240,6 @@ exports.run = async () => {
   debug('start server')
   server.listen(config.port)
   await eventToPromise(server, 'listening')
-
-  await saml2.init()
 
   if (process.env.NODE_ENV === 'development') {
     const server2 = http.createServer(app)
