@@ -88,13 +88,12 @@ module.exports = {
     deleteInactive: true,
     deleteInactiveDelay: [1, 'days']
   },
-  alwaysAcceptInvitation: true,
-  onlyCreateInvited: true,
+  // alwaysAcceptInvitation: true,
+  // onlyCreateInvited: true,
   saml2: {
     providers: [{
-      id: 'test-idp',
-      title: 'Test IDP',
-      color: '#FF00AA',
+      title: 'Test SAML IDP',
+      color: '#444791',
       icon: 'mdi-connection',
       loginUrl: 'http://localhost:8080/simplesaml/saml2/idp/SSOService.php',
       logoutUrl: 'http://localhost:8080/simplesaml/saml2/idp/SingleLogoutService.php',

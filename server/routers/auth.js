@@ -423,6 +423,7 @@ router.get('/providers', (req, res) => {
 })
 
 // OAUTH
+const debugOAuth = require('debug')('oauth')
 
 router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
@@ -440,21 +441,20 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
     console.error('Bad state in oauth query, CSRF attack ?', provider.state, req.query.state)
     throw new Error('Bad OAuth state')
   }
-  // TODO: also a way to send org ?
   const [_, redirect, org] = req.query.state.split('/').map(p => decodeURIComponent(p)) // eslint-disable-line no-unused-vars
   const target = redirect || config.defaultLoginRedirect || config.publicUrl + '/me'
 
   if (req.query.error) {
     console.log('Bad OAuth query', req.query)
-    res.redirect(target)
+    throw new Error('Bad OAuth query')
   }
 
   const userInfo = await provider.userInfo(await provider.accessToken(req.query.code))
   if (!userInfo.email) {
-    console.error('Bad user from oauth', userInfo)
-    return res.status(500).send('Bad user from oauth')
+    console.error('Email attribute not fetched from OAuth', req.params.oauthId, userInfo)
+    throw new Error('Email attribute not fetched from OAuth')
   }
-  debug('Got user info from oauth', req.params.oauthId, userInfo)
+  debugOAuth('Got user info from oauth', req.params.oauthId, userInfo)
 
   const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
 
@@ -480,10 +480,10 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
       }
     }
     user.name = userName(user)
-    debug('Create user authenticated through oauth', user)
+    debugOAuth('Create user authenticated through oauth', user)
     await storage.createUser(user, null, new URL(target).host)
   } else {
-    debug('Existing user authenticated through oauth', user, userInfo)
+    debugOAuth('Existing user authenticated through oauth', user, userInfo)
     const patch = { oauth: { ...user.oauth, [req.params.oauthId]: oauthInfo } }
     if (userInfo.firstName && !user.firstName) patch.firstName = userInfo.firstName
     if (userInfo.lastName && !user.lastName) patch.lastName = userInfo.lastName
@@ -492,7 +492,7 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
 
   const payload = tokens.getPayload(user)
   const linkUrl = tokens.prepareCallbackUrl(req, payload, target, org)
-  debug(`OAuth based authentication of user ${user.name}`)
+  debugOAuth(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 }))
 
@@ -506,57 +506,112 @@ router.get('/saml2-metadata.xml', (req, res) => {
 })
 
 // login confirm by IDP
-router.post('/saml2-assert', (req, res) => {
-  const origin = new URL(req.headers.referer).origin
-  console.log('assert from origin', origin, req.headers.referer, req.query)
-  if (!saml2.idpsByOrigin[origin]) return res.status(404).send(`IDP with origin ${origin} unknown`)
-  saml2.sp.post_assert(saml2.idpsByOrigin[origin], { request_body: req.body }, (err, samlResponse) => {
-    if (err) {
-      console.error('SAML assert error', err) // TODO: can this be returned to the client or is it potentially sensitive ?
-      return res.status(500).send()
+router.post('/saml2-assert', asyncWrap(async (req, res) => {
+  const storage = req.app.get('storage')
+
+  const providerId = saml2.getProviderId(req.headers.referer)
+  const idp = saml2.idps[providerId]
+  if (!idp) return res.status(404).send(`unknown saml2 provider ${providerId}`)
+
+  const samlResponse = await saml2.sp.post_assert(idp, { request_body: req.body })
+  if (samlResponse.type !== 'authn_response') {
+    console.warn('SAML response received with unsupported type', samlResponse)
+    return res.send()
+  }
+  debugSAML('login success', JSON.stringify(samlResponse, null, 2))
+
+  const [loginReferer, redirect, org] = JSON.parse(req.body.RelayState)
+  const returnError = (error, errorCode) => {
+    debugSAML('login return error', error, errorCode)
+    if (loginReferer) {
+      const refererUrl = new URL(loginReferer)
+      refererUrl.searchParams.set('error', error)
+      res.redirect(refererUrl.href)
+    } else {
+      res.status(errorCode).send(req.messages.errors[error] || error)
     }
-    console.log('SAML login success !', samlResponse)
+  }
 
-    // TODO: Save name_id and session_index for logout ?
-    // Note:  In practice these should be saved in the user session, not globally.
-    // name_id = saml_response.user.name_id;
-    // session_index = saml_response.user.session_index;
-    res.send()
-  })
-})
+  const email = samlResponse.user.attributes.email && samlResponse.user.attributes.email[0]
+  if (!email) {
+    console.error('Email attribute not fetched from SAML', providerId, samlResponse.user.attributes)
+    throw new Error('Email attribute not fetched from OAuth')
+  }
+  debugSAML('Got user info from oauth', providerId, samlResponse.user.attributes)
 
-// logout by idp
+  const samlInfo = { ...samlResponse.user.attributes, logged: new Date().toISOString() }
+
+  // check for user with same email
+  let user = await storage.getUserByEmail(email)
+
+  // Re-create a user that was never validated.. first clean temporary user
+  if (user && user.emailConfirmed === false) {
+    await storage.deleteUser(user.id)
+    user = null
+  }
+
+  if (!user) {
+    if (config.onlyCreateInvited || storage.readonly) {
+      return returnError('userUnknown', 403)
+    }
+    // TODO: map more attributes ? lastName, firstName, avatarUrl ?
+    user = {
+      email,
+      id: shortid.generate(),
+      emailConfirmed: true,
+      saml2: {
+        [providerId]: samlInfo
+      }
+    }
+    user.name = userName(user)
+    debugSAML('Create user', user)
+    await storage.createUser(user, null, new URL(redirect).host)
+  } else {
+    debugSAML('Existing user authenticated', providerId, user)
+    const patch = { saml2: { ...user.saml2, [providerId]: samlInfo } }
+    // TODO: map more attributes ? lastName, firstName, avatarUrl ?
+    await storage.patchUser(user.id, patch)
+  }
+
+  const payload = tokens.getPayload(user)
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, org)
+  res.redirect(linkUrl.href)
+
+  // TODO: Save name_id and session_index for logout ?
+  // Note:  In practice these should be saved in the user session, not globally.
+  // name_id = saml_response.user.name_id;
+  // session_index = saml_response.user.session_index;
+}))
+
+// logout not implemented
 router.get('/saml2-logout', (req, res) => {
-  console.log('logout', req.headers, req.query)
+  console.warn('SAML GET logout not yet implemented', req.headers, req.query)
   res.send()
 })
-
-router.use('/saml2', express.urlencoded())
+router.post('/saml2-logout', (req, res) => {
+  console.lowarng('SAML POST logout not yet implemented', req.headers, req.query, req.body)
+  res.send()
+})
 
 router.get('/saml2/providers', (req, res) => {
   res.send(oauth.publicProviders)
 })
 
-router.use('/saml2/:providerId', (req, res, next) => {
-  req.idp = saml2.idps[req.params.providerId]
-  if (!req.idp) return res.status(404).send('unknown saml2 provider')
-  next()
-})
-
 // starts login
-router.get('/saml2/:providerId/login', (req, res) => {
-  debugSAML('login saml')
-  let relayState = encodeURIComponent((req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl).replace('?id_token=', ''))
-  if (req.query.org) relayState += '/' + req.query.org
-  saml2.sp.create_login_request_url(req.idp, { relay_state: relayState }, (err, loginUrl) => {
-    debugSAML('login saml callback')
-    if (err) {
-      console.error('SAML login error', err) // TODO: can this be returned to the client or is it potentially sensitive ?
-      return res.status(500).send()
-    }
-    res.redirect(loginUrl)
-  })
-})
+router.get('/saml2/:providerId/login', asyncWrap(async (req, res) => {
+  debugSAML('login request', req.params.providerId)
+  const idp = saml2.idps[req.params.providerId]
+  if (!idp) return res.status(404).send(`unknown saml2 provider ${req.params.providerId}`)
+
+  // relay_state is used to remember some information about the login attempt
+  const relayState = [
+    req.headers.referer,
+    (req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl).replace('?id_token=', ''),
+    req.query.org || ''
+  ]
+  const loginRequestURL = await saml2.sp.createLoginRequestURL(idp, { relay_state: JSON.stringify(relayState) })
+  res.redirect(loginRequestURL)
+}))
 
 // starts logout
 /* router.get('/saml2/:providerId/logout', () => {

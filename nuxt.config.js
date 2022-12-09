@@ -5,7 +5,6 @@ config.basePath = new URL(config.publicUrl + '/').pathname
 config.i18nMessages = i18n.messages
 config.i18nLocales = config.i18n.locales.join(',')
 config.readonly = require('./server/storages').readonly()
-config.authProviders = require('./server/utils/saml2').publicProviders.concat(require('./server/utils/oauth').publicProviders)
 
 const isBuilding = process.argv.slice(-1)[0] === 'build'
 
