@@ -1,0 +1,45 @@
+diff --git a/node_modules/saml2-js/lib-js/saml2.js b/node_modules/saml2-js/lib-js/saml2.js
+index 477af7e..d37a27e 100644
+--- a/node_modules/saml2-js/lib-js/saml2.js
++++ b/node_modules/saml2-js/lib-js/saml2.js
+@@ -53,14 +53,19 @@ SAMLError = (function(superClass) {
+ 
+ })(Error);
+ 
+-create_authn_request = function(issuer, assert_endpoint, destination, force_authn, context, nameid_format) {
+-  var context_element, id, xml;
++create_authn_request = function(issuer, assert_endpoint, destination, force_authn, context, nameid_format, nameid) {
++  var context_element, subject, id, xml;
+   if (context != null) {
+     context_element = {
+       'saml:AuthnContextClassRef': context.class_refs,
+       '@Comparison': context.comparison
+     };
+   }
++  if (nameid != null) {
++    subject = {
++      'saml:NameID': nameid
++    };
++  }
+   id = '_' + crypto.randomBytes(21).toString('hex');
+   xml = xmlbuilder.create({
+     AuthnRequest: {
+@@ -78,7 +83,8 @@ create_authn_request = function(issuer, assert_endpoint, destination, force_auth
+         '@Format': nameid_format || 'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified',
+         '@AllowCreate': 'true'
+       },
+-      RequestedAuthnContext: context_element
++      RequestedAuthnContext: context_element,
++      'saml:Subject': subject
+     }
+   }).end();
+   return {
+@@ -742,7 +748,7 @@ module.exports.ServiceProvider = ServiceProvider = (function() {
+   ServiceProvider.prototype.create_login_request_url = function(identity_provider, options, cb) {
+     var id, ref1, xml;
+     options = set_option_defaults(options, identity_provider.shared_options, this.shared_options);
+-    ref1 = create_authn_request(this.entity_id, this.assert_endpoint, identity_provider.sso_login_url, options.force_authn, options.auth_context, options.nameid_format), id = ref1.id, xml = ref1.xml;
++    ref1 = create_authn_request(this.entity_id, this.assert_endpoint, identity_provider.sso_login_url, options.force_authn, options.auth_context, options.nameid_format, options.nameid), id = ref1.id, xml = ref1.xml;
+     return zlib.deflateRaw(xml, (function(_this) {
+       return function(err, deflated) {
+         var ex, uri;

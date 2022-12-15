@@ -101,7 +101,8 @@ module.exports = {
     }]
   },
   oidc: {
-    // WARNING: does not work on a recent chrome, this provider tries to use a cookie with samesite=none option and this is not permitted without https
+    // WARNING: does not work on a recent chrome
+    // this provider tries to use a cookie with samesite=none option and this is not permitted without https
     providers: [{
       title: 'Test OIDC IDP',
       color: '#288E35',

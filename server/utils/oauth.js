@@ -54,7 +54,7 @@ const standardProviders = {
       authorizePath: '/v6.0/dialog/oauth'
     },
     userInfo: async (accessToken) => {
-      // TOFO: fetch picture, but it is a temporary URL we should store the result if we want to use it
+      // TODO: fetch picture, but it is a temporary URL we should store the result if we want to use it
       const res = await axios.get('https://graph.facebook.com/me', { params: { access_token: accessToken, fields: 'name,first_name,last_name,email' } })
       debug('user info from facebook', res.data)
       return {
@@ -189,9 +189,6 @@ for (const p of config.oauth.providers) {
   })
 }
 
-// TODO: send email in login_hint
-// see https://openid.net/specs/openid-connect-basic-1_0.html
-
 exports.init = async () => {
   const statesDir = path.resolve(__dirname, '../..', config.oauth.statesDir)
   await fs.ensureDir(statesDir)
@@ -229,31 +226,29 @@ exports.init = async () => {
       await fs.writeFile(statePath, p.state)
     }
 
-    const callbackUri = `${config.publicUrl}/api/auth/oauth/${p.id}/callback`
+    // standard oauth providers use the old deprecated url callback for retro-compatibility
+    const callbackUri = p.discovery ? `${config.publicUrl}/api/auth/oauth-callback` : `${config.publicUrl}/api/auth/oauth/${p.id}/callback`
 
     // dynamically prepare authorization uris for login redirection
-    p.authorizationUri = (redirect, org) => {
-      let state = p.state + '/' + encodeURIComponent(redirect.replace('?id_token=', ''))
-      if (org) state += '/' + org
-      const url = oauthClient.authorizationCode.authorizeURL({
+    p.authorizationUri = (relayState, email) => {
+      const params = {
         redirect_uri: callbackUri,
         scope: p.scope,
-        state,
+        state: JSON.stringify(relayState),
         display: 'page',
         prompt: 'login'
-      })
+      }
+      if (email) {
+        // send email in login_hint
+        // see https://openid.net/specs/openid-connect-basic-1_0.html
+        params.login_hint = email
+      }
+      const url = oauthClient.authorizationCode.authorizeURL(params)
       return url
     }
 
     // get an access token from code sent as callback to login redirect
     p.accessToken = async (code) => {
-      console.log('access token params', {
-        code,
-        redirect_uri: callbackUri,
-        scope: p.scope,
-        client_id: p.client.id,
-        client_secret: p.client.secret
-      })
       const token = await oauthClient.authorizationCode.getToken({
         code,
         redirect_uri: callbackUri,

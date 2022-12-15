@@ -7,7 +7,7 @@
       v-for="authProvider of authProviders"
       :key="authProvider.type + ':' + authProvider.id"
       :color="authProvider.color"
-      :href="`${env.publicUrl}/api/auth/${authProvider.type}/${authProvider.id}/login${redirectParam}`"
+      :href="loginURL(authProvider)"
       dark
       small
       rounded
@@ -24,9 +24,10 @@
 import { mapState } from 'vuex'
 
 export default {
-  props: ['redirect'],
+  props: ['redirect', 'email', 'invitToken'],
   computed: {
     ...mapState(['env', 'authProviders']),
+
     redirectParam () {
       if (!this.redirect) return ''
       return `?redirect=${encodeURIComponent(this.redirect)}`
@@ -34,6 +35,15 @@ export default {
   },
   created () {
     this.$store.dispatch('fetchAuthProviders')
+  },
+  methods: {
+    loginURL (authProvider) {
+      const url = new URL(`${this.env.publicUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
+      if (this.redirect) url.searchParams.append('redirect', this.redirect)
+      if (this.email) url.searchParams.append('email', this.email)
+      if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
+      return url.href
+    }
   }
 }
 </script>

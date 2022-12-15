@@ -242,6 +242,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
   },
   errors: {
     badEmail: 'Adresse mail non renseignée ou malformée.',
+    badProviderInvitEmail: 'L\'adresse mail que vous venez d\'utiliser pour vous connecter ne correspond pas à celle de l\'invitation que vous avez reçu',
     maxCreatedOrgs: 'L\'utilisateur ne peut pas créer plus d\'organisations. Quota atteint.',
     permissionDenied: 'Permissions insuffisantes.',
     nonEmptyOrganization: 'Il faut supprimer les autres membres de l\'organisation',
@@ -266,7 +267,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     '2FANotConfigured': 'L\'authentification à 2 facteurs est nécessaire pour ce compte et n\'est pas encore configurée.',
     passwordless2FA: 'L\'authentification sans mot de passe est incompatible avec l\'authentification à 2 facteurs requise pour ce compte.',
     bad2FAToken: 'Code de vérification erroné ou périmé pour l\'authentification à 2 facteurs',
-    plannedDeletion: 'La suppression de l\'utilisateur {name} et toutes ses informations est programmée le {plannedDeletion}.'
+    plannedDeletion: 'La suppression de l\'utilisateur {name} et toutes ses informations est programmée le {plannedDeletion}.',
+    onlyCreateInvited: 'Impossible de créer un utilisateur en dehors d\'une invitation.',
+    badIDPQuery: 'Requête considérée comme invalide par le fournisseur d\'identité.'
   },
   mails: {
     creation: {

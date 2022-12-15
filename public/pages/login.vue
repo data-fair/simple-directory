@@ -39,7 +39,10 @@
                 v-html="$t('pages.login.separateDomain', {redirectHost, mainHost, mainOrigin})"
               />
               <template v-if="!adminMode && !orgStorage">
-                <auth-providers-login-links :redirect="redirectUrl" />
+                <auth-providers-login-links
+                  :redirect="redirectUrl"
+                  :email="email"
+                />
               </template>
 
               <v-text-field
@@ -189,6 +192,11 @@
               >
                 {{ $t('pages.login.createUserInvit', {name: invitPayload.n || invitPayload.name || invitPayload.id }) }}
               </v-alert>
+              <auth-providers-login-links
+                :redirect="redirectUrl"
+                :email="email"
+                :invit-token="invitToken"
+              />
               <v-form ref="createUserForm">
                 <v-text-field
                   id="createuser-email"
@@ -733,7 +741,9 @@ export default {
       this.email = this.invitPayload.email || this.invitPayload.e
     } else if (this.plannedDeletion) {
       this.step = 'plannedDeletion'
-    } else if (this.error) {
+    }
+
+    if (this.error) {
       this.step = 'error'
     }
   },
@@ -861,7 +871,9 @@ export default {
     },
     async clearError () {
       this.step = 'login'
-      this.$router.replace({ query: { ...this.$route.query, error: undefined } })
+      const url = new URL(window.location.href)
+      url.searchParams.delete('error')
+      window.location.href = url.href
     },
     async init2FA () {
       try {

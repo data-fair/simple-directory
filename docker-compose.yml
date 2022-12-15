@@ -43,7 +43,7 @@ services:
     image: qlik/simple-oidc-provider:0.2.5
     network_mode: host
     environment:
-      - REDIRECTS=http://localhost:5689/api/auth/oauth/localhost9009/callback
+      - REDIRECTS=http://localhost:5689/api/auth/oauth-callback
       - PORT=9009
       - IDP_NAME=http://localhost:9009
   
