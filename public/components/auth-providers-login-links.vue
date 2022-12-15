@@ -12,9 +12,18 @@
       small
       rounded
       depressed
-      class="pl-1 pr-3 mr-2 mb-1 text-none"
+      class="pl-0 pr-3 mr-2 mb-1 text-none"
     >
-      <v-icon>{{ authProvider.icon }}</v-icon>
+      <v-avatar size="28">
+        <v-icon v-if="authProvider.icon">
+          {{ authProvider.icon }}
+        </v-icon>
+        <img
+          v-else-if="authProvider.img"
+          :src="authProvider.img"
+          :alt="authProvider.title"
+        >
+      </v-avatar>
       &nbsp;{{ authProvider.title }}
     </v-btn>
   </v-row>

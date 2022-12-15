@@ -41,5 +41,6 @@ exports.publicProviders = config.saml2.providers.map(p => ({
   id: exports.getProviderId(p.loginUrl),
   title: p.title,
   color: p.color,
-  icon: p.icon
+  icon: p.icon,
+  img: p.img
 }))

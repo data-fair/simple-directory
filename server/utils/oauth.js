@@ -271,5 +271,6 @@ exports.publicProviders = exports.providers.map(p => ({
   id: p.id,
   title: p.title,
   color: p.color,
-  icon: p.icon
+  icon: p.icon,
+  img: p.img
 }))
