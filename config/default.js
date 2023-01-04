@@ -51,6 +51,7 @@ module.exports = {
       readonly: true,
       // support storing overwritten properties in mongodb
       overwrite: ['members', 'departments'],
+      cacheMS: 1000 * 60 * 5, // 5 minutes
       // map entities in ldap to SD users
       users: {
         objectClass: 'inetOrgPerson',

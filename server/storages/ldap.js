@@ -130,7 +130,7 @@ class LdapStorage {
         false
       )
       return res
-    }, { maxAge: 1000 * 60 * 5 }) // 5 minutes cache
+    }, { maxAge: config.storage.ldap.cacheMS }) // 5 minutes cache
 
     return this
   }
@@ -320,7 +320,7 @@ class LdapStorage {
       for (let i = 0; i < results.length; i++) {
         const user = results[i].item
         await this._setUserOrg(client, user, results[i].entry, results[i].attrs, orgCache)
-        const overwrite = this.ldapParams.users.overwrite.find(o => o.email === user.email)
+        const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email === user.email)
         if (overwrite) Object.assign(user, overwrite)
         results[i] = user
       }
