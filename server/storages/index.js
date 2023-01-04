@@ -48,3 +48,4 @@ exports.initGlobal = async () => {
 }
 
 exports.readonly = () => require('./' + config.storage.type).readonly
+exports.overwrite = () => require('./' + config.storage.type).overwrite || []

@@ -1,22 +1,9 @@
 const config = require('config')
 const moment = require('moment')
 const escapeStringRegexp = require('escape-string-regexp')
+const mongoUtils = require('../utils/mongo')
 
 const collation = { locale: 'en', strength: 1 }
-
-async function ensureIndex (db, collection, key, options = {}) {
-  try {
-    await db.collection(collection).createIndex(key, options)
-  } catch (err) {
-    if ((err.code !== 85 && err.code !== 86) || !options.name) throw err
-
-    // if the error is a conflict on keys or params of the index we automatically
-    // delete then recreate the index
-    console.log(`Drop then recreate index ${collection}/${options.name}`)
-    await db.collection(collection).dropIndex(options.name)
-    await db.collection(collection).createIndex(key, options)
-  }
-}
 
 function cleanUser (resource) {
   resource.id = resource._id
@@ -51,28 +38,24 @@ class MongodbStorage {
     if (this.org) throw new Error('mongo storage is not compatible with per-org storage')
     console.log('Connecting to mongodb ' + params.url)
     const MongoClient = require('mongodb').MongoClient
-    const opts = {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }
     try {
-      this.client = await MongoClient.connect(params.url, opts)
+      this.client = await MongoClient.connect(params.url)
     } catch (err) {
       // 1 retry after 1s
       // solve the quite common case in docker-compose of the service starting at the same time as the db
       await new Promise(resolve => setTimeout(resolve, 1000))
-      this.client = await MongoClient.connect(params.url, opts)
+      this.client = await MongoClient.connect(params.url)
     }
 
     this.db = this.client.db()
     // An index for comparison case and diacritics insensitive
-    await ensureIndex(this.db, 'users', { email: 1 }, { unique: true, collation })
-    await ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
-    await ensureIndex(this.db, 'users', { plannedDeletion: 1 }, { sparse: true })
-    await ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
-    await ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }, { unique: true, name: 'owner.type_1_owner.id_1' })
-    await ensureIndex(this.db, 'limits', { id: 'text', name: 'text' }, { name: 'fulltext' })
-    await ensureIndex(this.db, 'limits', { type: 1, id: 1 }, { name: 'limits-find-current', unique: true })
+    await mongoUtils.ensureIndex(this.db, 'users', { email: 1 }, { unique: true, collation })
+    await mongoUtils.ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
+    await mongoUtils.ensureIndex(this.db, 'users', { plannedDeletion: 1 }, { sparse: true })
+    await mongoUtils.ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
+    await mongoUtils.ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }, { unique: true, name: 'owner.type_1_owner.id_1' })
+    await mongoUtils.ensureIndex(this.db, 'limits', { id: 'text', name: 'text' }, { name: 'fulltext' })
+    await mongoUtils.ensureIndex(this.db, 'limits', { type: 1, id: 1 }, { name: 'limits-find-current', unique: true })
     return this
   }
 

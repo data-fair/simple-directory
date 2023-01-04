@@ -14,7 +14,7 @@
         </v-icon>
         {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
         <add-department-menu
-          v-if="!env.readonly"
+          v-if="!env.readonly || env.overwrite.includes('departments')"
           :orga="orga"
           :is-admin-orga="isAdminOrga"
           :department-label="departmentLabel"

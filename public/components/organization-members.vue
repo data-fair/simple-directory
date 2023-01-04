@@ -94,7 +94,7 @@
               </template>
             </v-list-item-subtitle>
           </v-list-item-content>
-          <v-list-item-action v-if="isAdminOrga && !readonly">
+          <v-list-item-action v-if="isAdminOrga && (!readonly || env.overwrite.includes('members'))">
             <edit-member-menu
               :orga="orga"
               :member="member"
@@ -131,7 +131,7 @@
     </v-list>
 
     <v-row
-      v-if="members && members.count > membersPageSize"
+      v-if="members && members.count > membersPageSize && !disablePagination"
       class="mt-2"
     >
       <v-spacer />
@@ -187,7 +187,8 @@ export default {
     role: null,
     department: null,
     membersPage: 1,
-    membersPageSize: 10
+    membersPageSize: 10,
+    disablePagination: false
   }),
   computed: {
     ...mapState(['userDetails', 'env']),
@@ -225,6 +226,9 @@ export default {
             org_storage: this.orgStorage
           }
         })
+        if (this.members.count && this.members.results.length === this.members.count) {
+          this.disablePagination = true
+        }
         if (this.members.count && !this.members.results.length) {
           this.fetchMembers(page - 1)
         }

@@ -5,6 +5,7 @@ config.basePath = new URL(config.publicUrl + '/').pathname
 config.i18nMessages = i18n.messages
 config.i18nLocales = config.i18n.locales.join(',')
 config.readonly = require('./server/storages').readonly()
+config.overwrite = require('./server/storages').overwrite()
 config.publicOAuth = require('./server/utils/oauth').publicProviders
 
 const isBuilding = process.argv.slice(-1)[0] === 'build'
@@ -105,6 +106,7 @@ module.exports = {
     maildev: config.maildev,
     defaultMaxCreatedOrgs: config.quotas.defaultMaxCreatedOrgs,
     readonly: config.readonly,
+    overwrite: config.overwrite,
     analytics: config.analytics,
     onlyCreateInvited: config.onlyCreateInvited,
     userSelfDelete: config.userSelfDelete,

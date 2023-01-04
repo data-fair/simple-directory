@@ -49,6 +49,8 @@ module.exports = {
       searchUserPassword: 'admin',
       baseDN: 'dc=example,dc=org',
       readonly: true,
+      // support storing overwritten properties in mongodb
+      overwrite: ['members', 'departments'],
       // map entities in ldap to SD users
       users: {
         objectClass: 'inetOrgPerson',

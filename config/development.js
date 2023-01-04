@@ -42,7 +42,7 @@ module.exports = {
     private: './test/resources/test.key'
   },
   storage: {
-    type: 'mongo',
+    type: 'ldap',
     file: {
       users: './test/resources/users.json',
       organizations: './test/resources/organizations.json'
@@ -51,7 +51,17 @@ module.exports = {
       url: 'mongodb://localhost:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
     },
     ldap: {
-      url: 'ldap://localhost:389'
+      url: 'ldap://localhost:389',
+      members: {
+        role: {
+          attr: 'employeeType',
+          values: {
+            admin: ['administrator'],
+            user: []
+          },
+          default: 'user'
+        }
+      }
     }
   },
   webhooks: {
