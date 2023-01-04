@@ -7,3 +7,4 @@
 /nuxt-dist
 /dist
 /.git
+config/local*
