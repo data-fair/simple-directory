@@ -13,16 +13,16 @@ describe('storage ldap', () => {
     const storage = await ldapStorage.init(ldapConfig)
 
     const user = storage.getUser({ email: 'alban.mouton@koumoul.com' })
-    if (user) await storage.deleteUser(user.id)
+    if (user) await storage._deleteUser(user.id)
 
     const org = await storage.getOrganization('myorg')
-    if (org) await storage.deleteOrganization(org.id)
+    if (org) await storage._deleteOrganization(org.id)
   })
 
   it('create and find users', async () => {
     const storage = await ldapStorage.init(ldapConfig)
-    await storage.createOrganization({ id: 'myorg', name: 'My Org' })
-    await storage.createUser({
+    await storage._createOrganization({ id: 'myorg', name: 'My Org' })
+    await storage._createUser({
       name: 'Alban Mouton',
       firstName: 'Alban',
       lastName: 'Mouton',

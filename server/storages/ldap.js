@@ -188,35 +188,6 @@ class LdapStorage {
     return `${dnKey}=${entry[dnKey]}, ${this.ldapParams.baseDN}`
   }
 
-  async createUser (user) {
-    const entry = this._userMapping.to({ ...user, lastName: user.lastName || 'missing' })
-    const dn = this._userDN(user)
-    if (user.organizations.length && this.ldapParams.members.role.attr) {
-      const roleValues = this.ldapParams.members.role.values[user.organizations[0].role]
-      const roleValue = roleValues && roleValues[0]
-      entry[this.ldapParams.members.role.attr] = roleValue || this.ldapParams.members.role.default
-    }
-
-    debug('add user to ldap', dn, entry)
-    await this._client(async (client) => {
-      await client.add(dn, entry)
-    })
-    return user
-  }
-
-  async deleteUser (id) {
-    const user = await this._getUser({ id }, false)
-    if (!user) {
-      debug('delete user not found')
-      return
-    }
-    const dn = user.entry.objectName
-    debug('delete user from ldap', dn)
-    await this._client(async (client) => {
-      await client.del(dn)
-    })
-  }
-
   async _setUserOrg (client, user, entry, attrs, orgCache = {}) {
     let org
     if (this.ldapParams.organizations.staticSingleOrg) {
@@ -396,28 +367,6 @@ class LdapStorage {
     }
   }
 
-  async createOrganization (org) {
-    const entry = this._orgMapping.to(org)
-    const dn = this._orgDN(org)
-
-    // dc is in the dn string, not as an attribute
-    delete entry.dc
-
-    debug('add org to ldap', dn, entry)
-    await this._client(async (client) => {
-      await client.add(dn, entry)
-    })
-    return org
-  }
-
-  async deleteOrganization (id) {
-    const dn = this._orgDN({ id })
-    debug('delete org from ldap', dn)
-    await this._client(async (client) => {
-      await client.del(dn)
-    })
-  }
-
   async _getOrganization (client, id) {
     if (this.ldapParams.organizations.staticSingleOrg) {
       if (this.ldapParams.organizations.staticSingleOrg.id === id) {
@@ -476,7 +425,61 @@ class LdapStorage {
   async get2FA (userId) {
     return null
   }
+
+  // WARNING: the following is used only in tests as ldap storage is always readonly
+  // except for the overwritten properties stored in mongo
+
+  async _createUser (user) {
+    const entry = this._userMapping.to({ ...user, lastName: user.lastName || 'missing' })
+    const dn = this._userDN(user)
+    if (user.organizations.length && this.ldapParams.members.role.attr) {
+      const roleValues = this.ldapParams.members.role.values[user.organizations[0].role]
+      const roleValue = roleValues && roleValues[0]
+      entry[this.ldapParams.members.role.attr] = roleValue || this.ldapParams.members.role.default
+    }
+
+    debug('add user to ldap', dn, entry)
+    await this._client(async (client) => {
+      await client.add(dn, entry)
+    })
+    return user
+  }
+
+  async _deleteUser (id) {
+    const user = await this._getUser({ id }, false)
+    if (!user) {
+      debug('delete user not found')
+      return
+    }
+    const dn = user.entry.objectName
+    debug('delete user from ldap', dn)
+    await this._client(async (client) => {
+      await client.del(dn)
+    })
+  }
+
+  async _createOrganization (org) {
+    const entry = this._orgMapping.to(org)
+    const dn = this._orgDN(org)
+
+    // dc is in the dn string, not as an attribute
+    delete entry.dc
+
+    debug('add org to ldap', dn, entry)
+    await this._client(async (client) => {
+      await client.add(dn, entry)
+    })
+    return org
+  }
+
+  async _deleteOrganization (id) {
+    const dn = this._orgDN({ id })
+    debug('delete org from ldap', dn)
+    await this._client(async (client) => {
+      await client.del(dn)
+    })
+  }
 }
 
 exports.init = async (params, org) => new LdapStorage().init(params, org)
-exports.readonly = config.storage.ldap.readonly
+exports.readonly = true

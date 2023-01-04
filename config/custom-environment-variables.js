@@ -60,10 +60,6 @@ module.exports = {
       searchUserDN: 'STORAGE_LDAP_SEARCH_USER_DN',
       searchUserPassword: 'STORAGE_LDAP_SEARCH_USER_PASS',
       baseDN: 'STORAGE_LDAP_BASE_DN',
-      readonly: {
-        __name: 'STORAGE_LDAP_READONLY',
-        __format: 'json'
-      },
       users: {
         objectClass: 'STORAGE_LDAP_USERS_OBJECT_CLASS',
         dnKey: 'STORAGE_LDAP_USERS_DN_KEY',
