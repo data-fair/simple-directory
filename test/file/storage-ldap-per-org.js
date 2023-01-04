@@ -14,17 +14,17 @@ describe('ldap per org', () => {
     const storage = await ldapStorage.init(ldapConfig)
 
     const user = await storage.getUser({ email: 'alban.mouton@koumoul.com' })
-    if (user) await storage.deleteUser(user.id)
+    if (user) await storage._deleteUser(user.id)
     const user2 = await storage.getUser({ email: 'alban.mouton@gmail.com' })
-    if (user2) await storage.deleteUser(user2.id)
-    await storage.createUser({
+    if (user2) await storage._deleteUser(user2.id)
+    await storage._createUser({
       name: 'Alban Mouton',
       firstName: 'Alban',
       lastName: 'Mouton',
       email: 'alban.mouton@koumoul.com',
       organizations: [{ id: 'test-ldap', role: 'admin' }]
     })
-    await storage.createUser({
+    await storage._createUser({
       name: 'Alban',
       firstName: 'Alban',
       lastName: '',
@@ -37,9 +37,9 @@ describe('ldap per org', () => {
     const storage = await ldapStorage.init(ldapConfig)
 
     const user = await storage.getUser({ email: 'alban.mouton@koumoul.com' })
-    if (user) await storage.deleteUser(user.id)
+    if (user) await storage._deleteUser(user.id)
     const user2 = await storage.getUser({ email: 'alban.mouton@gmail.com' })
-    if (user2) await storage.deleteUser(user2.id)
+    if (user2) await storage._deleteUser(user2.id)
   })
 
   it('find org members from secondary ldap storage', async () => {
