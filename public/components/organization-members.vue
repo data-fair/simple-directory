@@ -131,7 +131,7 @@
     </v-list>
 
     <v-row
-      v-if="members && members.count > membersPageSize && !disablePagination"
+      v-if="members && members.count > membersPageSize"
       class="mt-2"
     >
       <v-spacer />
@@ -187,8 +187,7 @@ export default {
     role: null,
     department: null,
     membersPage: 1,
-    membersPageSize: 10,
-    disablePagination: false
+    membersPageSize: 10
   }),
   computed: {
     ...mapState(['userDetails', 'env']),
@@ -226,9 +225,6 @@ export default {
             org_storage: this.orgStorage
           }
         })
-        if (this.members.count && this.members.results.length === this.members.count) {
-          this.disablePagination = true
-        }
         if (this.members.count && !this.members.results.length) {
           this.fetchMembers(page - 1)
         }

@@ -315,24 +315,28 @@ class LdapStorage {
   async findUsers (params = {}) {
     debug('find users', params)
     return this._client(async (client) => {
-      const res = await this._getAllUsers(client)
+      let results = (await this._getAllUsers(client)).results.slice()
       const orgCache = {}
-      for (let i = 0; i < res.results.length; i++) {
-        const user = res.results[i].item
-        await this._setUserOrg(client, user, res.results[i].entry, res.results[i].attrs, orgCache)
+      for (let i = 0; i < results.length; i++) {
+        const user = results[i].item
+        await this._setUserOrg(client, user, results[i].entry, results[i].attrs, orgCache)
         const overwrite = this.ldapParams.users.overwrite.find(o => o.email === user.email)
         if (overwrite) Object.assign(user, overwrite)
-        res.results[i] = user
+        results[i] = user
       }
       if (params.ids) {
-        res.results = res.results.filter(user => (params.ids).find(id => user.id === id))
+        results = results.filter(user => (params.ids).find(id => user.id === id))
       }
       if (params.q) {
         const lq = params.q.toLowerCase()
-        res.results = res.results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
+        results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
       }
-      res.results.sort(sortCompare(params.sort))
-      return res
+      results.sort(sortCompare(params.sort))
+      const count = results.length
+      const skip = params.skip || 0
+      const size = params.size || 20
+      results = results.slice(skip, skip + size)
+      return { count, results }
     })
   }
 
@@ -354,7 +358,7 @@ class LdapStorage {
 
   async findMembers (organizationId, params = {}) {
     debug('find members', params)
-    const users = (await this.findUsers(params)).results
+    const users = (await this.findUsers({ ...params, sort: null, skip: 0, size: 10000 })).results
     let members = users
       .filter(user => user.organizations.find(o => o.id === organizationId))
       .map(user => {
@@ -367,8 +371,13 @@ class LdapStorage {
     if (params.departments && params.departments.length) {
       members = members.filter(member => params.departments.includes(member.department))
     }
+    members.sort(sortCompare(params.sort))
+    const count = members.length
+    const skip = params.skip || 0
+    const size = params.size || 20
+    members = members.slice(skip, skip + size)
     return {
-      count: members.length,
+      count,
       results: members
     }
   }
