@@ -108,10 +108,6 @@ module.exports = {
         overwrite: {
           __name: 'STORAGE_LDAP_MEMBERS_OVERWRITE',
           __format: 'json'
-        },
-        overwriteMongo: {
-          __name: 'STORAGE_LDAP_MEMBERS_OVERWRITE_MONGO',
-          __format: 'json'
         }
       }
     }
