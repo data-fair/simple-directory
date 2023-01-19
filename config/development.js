@@ -61,6 +61,9 @@ module.exports = {
           },
           default: 'user'
         }
+      },
+      organizations: {
+        staticSingleOrg: { id: 'static-org', name: 'Static Org' }
       }
     }
   },

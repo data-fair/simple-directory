@@ -107,7 +107,7 @@ class LdapStorage {
 
       this.db = this.mongoClient.db()
       await mongoUtils.ensureIndex(this.db, 'ldap-members-overwrite', { orgId: 1, userId: 1 }, { name: 'main-keys', unique: true })
-      await mongoUtils.ensureIndex(this.db, 'ldap-organizations-overwrite', { orgId: 1 }, { name: 'main-keys', unique: true })
+      await mongoUtils.ensureIndex(this.db, 'ldap-organizations-overwrite', { id: 1 }, { name: 'main-keys', unique: true })
     } else {
       console.log('LDAP without mongodb overwriting capabilities')
     }
@@ -407,21 +407,21 @@ class LdapStorage {
   }
 
   async _getOrganization (client, id) {
+    let org
     if (this.ldapParams.organizations.staticSingleOrg) {
       if (this.ldapParams.organizations.staticSingleOrg.id === id) {
-        return this.ldapParams.organizations.staticSingleOrg
-      } else {
-        return null
+        org = this.ldapParams.organizations.staticSingleOrg
       }
+    } else {
+      const res = await this._search(
+        client,
+        this.ldapParams.baseDN,
+        this._orgMapping.filter({ id }, this.ldapParams.organizations.objectClass, this.ldapParams.organizations.extraFilters),
+        Object.values(this.ldapParams.organizations.mapping),
+        this._orgMapping.from
+      )
+      org = res.results[0]
     }
-    const res = await this._search(
-      client,
-      this.ldapParams.baseDN,
-      this._orgMapping.filter({ id }, this.ldapParams.organizations.objectClass, this.ldapParams.organizations.extraFilters),
-      Object.values(this.ldapParams.organizations.mapping),
-      this._orgMapping.from
-    )
-    const org = res.results[0]
     if (org) {
       let overwrite
       if ((this.ldapParams.overwrite || []).includes('organizations') || (this.ldapParams.overwrite || []).includes('departments')) {
@@ -430,7 +430,8 @@ class LdapStorage {
       overwrite = overwrite || (this.ldapParams.organizations.overwrite || []).find(o => (o.id === org.id))
       if (overwrite) Object.assign(org, overwrite)
     }
-    return res.results[0]
+    org.departments = org.departments || []
+    return org
   }
 
   async getOrganization (id) {
