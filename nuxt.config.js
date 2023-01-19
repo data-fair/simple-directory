@@ -47,11 +47,13 @@ module.exports = {
   build: {
     transpile: [/@koumoul/, /@data-fair/],
     publicPath: config.publicUrl + '/_nuxt/',
-    extend (config, { isServer, isDev, isClient }) {
+    extend (webpackConfig, { isServer, isDev, isClient }) {
       const webpack = require('webpack')
-      // config.optimization.minimize = false
+      // webpackConfig.optimization.minimize = false
       // Ignore all locale files of moment.js, those we want are loaded in plugins/moment.js
-      config.plugins.push(new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/))
+      webpackConfig.plugins.push(new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/))
+      // source-map to debug in production
+      webpackConfig.devtool = webpackConfig.devtool || 'source-map'
     }
   },
   loading: { color: '#1e88e5' }, // Customize the progress bar color
