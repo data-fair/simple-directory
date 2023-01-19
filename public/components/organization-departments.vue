@@ -14,14 +14,13 @@
         </v-icon>
         {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
         <add-department-menu
-          v-if="!env.readonly || env.overwrite.includes('departments')"
+          v-if="writableDepartments"
           :orga="orga"
-          :is-admin-orga="isAdminOrga"
           :department-label="departmentLabel"
           @change="$emit('change')"
         />
         <!--<edit-departments-menu
-          v-if="!env.readonly"
+          v-if="writableDepartments"
           :orga="orga"
           :is-admin-orga="isAdminOrga"
           :department-label="departmentLabel"
@@ -66,7 +65,7 @@
             <v-list-item-title>{{ department.name }}</v-list-item-title>
             <v-list-item-subtitle>{{ $t('common.id') }} = {{ department.id }}</v-list-item-subtitle>
           </v-list-item-content>
-          <v-list-item-action v-if="isAdminOrga && !env.readonly">
+          <v-list-item-action v-if="writableDepartments">
             <edit-department-menu
               :orga="orga"
               :department="department"
@@ -75,7 +74,7 @@
             />
           </v-list-item-action>
           <v-list-item-action
-            v-if="isAdminOrga && !env.readonly"
+            v-if="writableDepartments"
             class="ml-0"
           >
             <delete-department-menu
@@ -133,6 +132,9 @@ export default {
   }),
   computed: {
     ...mapState(['userDetails', 'env']),
+    writableDepartments () {
+      return this.isAdminOrga && (!this.env.readonly || this.env.overwrite.includes('departments'))
+    },
     departmentLabel () {
       return this.orga.departmentLabel || this.$t('common.department')
     },

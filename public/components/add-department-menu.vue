@@ -1,6 +1,5 @@
 <template>
   <v-menu
-    v-if="isAdminOrga"
     v-model="menu"
     :close-on-content-click="false"
     offset-y
@@ -72,7 +71,7 @@
 import { mapActions } from 'vuex'
 
 export default {
-  props: ['orga', 'departmentLabel', 'isAdminOrga'],
+  props: ['orga', 'departmentLabel'],
   data: () => ({ menu: false, editDepartment: null }),
   watch: {
     menu () {
