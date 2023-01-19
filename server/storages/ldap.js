@@ -429,8 +429,8 @@ class LdapStorage {
       }
       overwrite = overwrite || (this.ldapParams.organizations.overwrite || []).find(o => (o.id === org.id))
       if (overwrite) Object.assign(org, overwrite)
+      org.departments = org.departments || []
     }
-    org.departments = org.departments || []
     return org
   }
 
