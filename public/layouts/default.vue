@@ -186,6 +186,13 @@ export default {
       showNav: this.$route.query && this.$route.query.showNav === 'true'
     }
   },
+  head () {
+    return {
+      htmlAttrs: { lang: this.$i18n.locale }, // TODO: this should be set by nuxt-i18n but it isn't for some reason
+      style: [{ vmid: 'dynamic-style', cssText: this.$store.getters.style, type: 'text/css' }],
+      __dangerouslyDisableSanitizers: ['style']
+    }
+  },
   computed: {
     ...mapState('session', ['user', 'initialized']),
     ...mapState(['env', 'userDetails']),

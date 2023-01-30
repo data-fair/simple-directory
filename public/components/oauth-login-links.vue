@@ -3,13 +3,13 @@
     <v-btn
       v-for="oauth of env.oauth"
       :key="oauth.id"
-      :color="oauth.color"
+      :color="contrastColor(oauth.color)"
       :href="`${env.publicUrl}/api/auth/oauth/${oauth.id}/login${redirectParam}`"
       dark
       small
       rounded
       depressed
-      class="pl-1 pr-3 mr-2 text-none"
+      class="pl-1 pr-3 mr-2 text-none white--text"
     >
       <v-icon>{{ oauth.icon }}</v-icon>
       &nbsp;{{ oauth.title }}
@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 
 export default {
   props: ['redirect'],
@@ -27,7 +27,8 @@ export default {
     redirectParam () {
       if (!this.redirect) return ''
       return `?redirect=${encodeURIComponent(this.redirect)}`
-    }
+    },
+    ...mapGetters(['contrastColor'])
   }
 }
 </script>

@@ -2,12 +2,16 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import { sessionStoreBuilder } from '@data-fair/sd-vue/src'
 import eventBus from '../event-bus.js'
+import style from './style'
 
 Vue.use(Vuex)
 
 export default () => {
   return new Vuex.Store({
-    modules: { session: sessionStoreBuilder() },
+    modules: {
+      session: sessionStoreBuilder(),
+      style: style()
+    },
     state: {
       userDetails: null,
       env: {}

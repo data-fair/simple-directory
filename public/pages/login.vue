@@ -13,9 +13,9 @@
         class="pa-2"
       >
         <v-card-title primary-title>
-          <h3 :class="{headline: true, 'mb-0': true, 'warning--text': adminMode}">
+          <h1 :class="{headline: true, 'mb-0': true, 'warning--text': adminMode}">
             {{ stepsTitles[step] || email }}
-          </h3>
+          </h1>
           <div :class="`v-card v-sheet theme--${$vuetify.theme.dark ? 'dark' : 'light'} login-logo-container`">
             <img
               v-if="logoUrl"

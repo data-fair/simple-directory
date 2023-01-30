@@ -42,7 +42,7 @@ module.exports = {
     private: './test/resources/test.key'
   },
   storage: {
-    type: 'ldap',
+    type: 'mongo',
     file: {
       users: './test/resources/users.json',
       organizations: './test/resources/organizations.json'
