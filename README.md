@@ -51,19 +51,15 @@ docker run --network=host --env PORT=8081 sd-dev
 
 The application applies the material design recommendations and uses vue and vuetify
 
-## Embedded documentation
+## Documentation
 
-Documentation is maintained in ./doc as a small separate nuxt project. Its content is built and pushed on gitlab-pages by the Travis build.
-
-The pages are also linked to the main nuxt project, so that any Simple Directory instance embeds its full documentation.
-
-Run the documentation development server:
+Documentation is maintained in ./doc as a small separate nuxt project. Its content is built and pushed on gitlab-pages by the build. Run the documentation development server:
 
 ```
 npm run doc
 ```
 
-Then open http://localhost:3000/simple-directory/
+Then open http://localhost:3146
 
 ## Work on LDAP storage
 

@@ -13,7 +13,7 @@ const flatten = require('flat')
 const context = require.context('.', true, /\.md$/)
 
 // Used to flatten var definitions from custom-environment-variables.js
-const defaults = require('../../../config/default.js')
+const defaults = Object.assign({}, require('../../../config/default.js'), require('../../../config/production.js'))
 function flattenVars (vars, flatVars = [], prefix = '') {
   Object.keys(vars).forEach(v => {
     const key = prefix + v
@@ -42,7 +42,7 @@ export default {
     content () {
       if (!this.$route) return
       const content = context(`./${this.$route.params.id}-${this.$i18n.locale}.md`) || context(`./${this.$route.params.id}-fr.md`)
-      return content.replace('{{I18N_VARS}}', this.i18nVars).replace('{{CONFIG_VARS}}', this.configVars)
+      return content.default.replace('{{I18N_VARS}}', this.i18nVars).replace('{{CONFIG_VARS}}', this.configVars).replace(/{{DOC_BASE}}/g, this.$router.options.base)
     },
     configVars () {
       let table = `<table><thead><tr><th>${this.$t('doc.config.varKey')}</th><th>${this.$t('doc.config.varName')}</th><th>${this.$t('doc.config.varDesc')}</th><th>${this.$t('doc.config.varDefault')}</th></tr></thead><tbody>\n`

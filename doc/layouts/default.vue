@@ -4,77 +4,75 @@
       v-model="drawer"
       fixed
       app
+      width="300"
     >
-      <v-subheader>Documentation</v-subheader>
+      <v-list-item
+        :to="localePath({name: `index`})"
+        nuxt
+        exact
+      >
+        <v-list-item-avatar class="brand-logo">
+          <img src="~/assets/logo.svg">
+        </v-list-item-avatar>
+        <v-list-item-content>
+          <v-list-item-title class="text-h5 font-weight-bold">
+            Simple Directory
+          </v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
       <v-list>
-        <v-list-tile
+        <v-list-item
           v-for="page in pages"
           :key="page"
           :to="localePath({name: 'doc-id', params: {id: page}})"
         >
-          <v-list-tile-title>{{ $t(`doc.${page}.link`) }}</v-list-tile-title>
-        </v-list-tile>
+          <v-list-item-title>{{ $t(`doc.${page}.link`) }}</v-list-item-title>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
-    <v-toolbar
-      app
-      scroll-off-screen
-      color="white"
-    >
-      <v-toolbar-side-icon @click.stop="drawer = !drawer" />
-      <template v-if="$route.path !== localePath('index')">
-        <div class="logo-container">
-          <nuxt-link
-            :title="$t('home')"
-            :to="localePath('index')"
-          >
-            <img
-              src="../../public/assets/logo.svg"
-              style="max-width: 150px;"
-            >
-          </nuxt-link>
-        </div>
-        <v-toolbar-title>
-          <h1 class="text-h5">
-            Simple Directory
-          </h1>
-        </v-toolbar-title>
-      </template>
-
-      <v-spacer />
-
+    <v-main>
+      <v-btn
+        absolute
+        top
+        left
+        icon
+        @click.stop="drawer = !drawer"
+      >
+        <v-icon>mdi-menu</v-icon>
+      </v-btn>
       <v-speed-dial
         direction="bottom"
         transition="fade-transition"
+        absolute
+        top
+        right
       >
+        <template #activator>
+          <v-btn
+            icon
+            color="primary"
+            style="font-weight:bold;"
+          >
+            {{ $i18n.locale }}
+          </v-btn>
+        </template>
         <v-btn
-          slot="activator"
-          fab
-          flat
-          small
-        >
-          {{ $i18n.locale }}
-        </v-btn>
-        <v-btn
-          v-for="locale in $i18n.locales.filter(l => l.code !== $i18n.locale)"
-          :key="locale.code"
-          :to="switchLocalePath(locale.code)"
-          fab
-          small
+          v-for="locale in $i18n.locales.filter(l => l !== $i18n.locale)"
+          :key="locale"
+          :to="switchLocalePath(locale)"
+          icon
+          style="font-weight:bold;"
           nuxt
         >
-          {{ locale.code }}
+          {{ locale }}
         </v-btn>
       </v-speed-dial>
-    </v-toolbar>
-    <v-content>
-      <v-container fluid>
-        <nuxt />
-      </v-container>
-    </v-content>
+      <nuxt />
+    </v-main>
+
     <v-footer class="pa-3">
       <v-spacer />
-      <div>Powered by <a href="https://koumoul-dev.github.io/simple-directory/">Simple Directory</a></div>
+      <div>Maintained by <a href="https://koumoul.com">Koumoul</a></div>
     </v-footer>
   </v-app>
 </template>
@@ -91,27 +89,21 @@ export default {
 </script>
 
 <style lang="less">
-body .application {
+body .v-application {
   font-family: 'Nunito', sans-serif;
 
-  .logo-container {
-    height: 100%;
-    padding: 4px;
-    margin-left: 4px !important;
-    margin-right: 4px;
-
-    img, svg {
-      height:100%;
-    }
+  a {
+    text-decoration: none;
   }
+}
 
-  .notification .snack__content {
-    height: auto;
-    p {
-      margin-bottom: 4px;
-      margin-top: 4px;
-    }
-  }
+.brand-logo.v-avatar {
+  border-radius: 0;
+  overflow: visible;
+}
+.brand-logo.v-avatar img {
+  width: 40px !important;
+  height: auto !important;
 }
 
 </style>

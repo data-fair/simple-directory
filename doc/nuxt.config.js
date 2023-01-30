@@ -11,30 +11,53 @@ const routes = fs.readdirSync('doc/pages/doc/')
     else return `/${lang}/doc/${key}`
   })
 
+const targetURL = new URL(process.env.TARGET || 'http://localhost:3146/')
+
 module.exports = {
+  telemetry: false,
+  ssr: true,
   srcDir: 'doc/',
-  build: { extractCSS: true },
+  target: 'static',
+  components: true,
+  build: {
+    extractCSS: true
+  },
   generate: {
     dir: 'doc-dist',
     routes
   },
   loading: { color: '#1e88e5' }, // Customize the progress bar color
-  plugins: [{ src: '~plugins/vuetify' }],
-  router: { base: '/simple-directory/' },
-  env: { theme: config.theme },
-  modules: ['@nuxtjs/markdownit', ['nuxt-i18n', {
-    locales: [
-      { code: 'fr' },
-      { code: 'en' }
-    ],
+  router: { base: targetURL.pathname },
+  env: {
+    base: targetURL.pathname,
+    theme: config.theme
+  },
+  modules: ['@nuxtjs/markdownit', '@nuxtjs/sitemap', ['nuxt-i18n', {
+    locales: ['fr', 'en'],
     defaultLocale: 'fr',
     vueI18n: {
       fallbackLocale: 'fr',
       messages
     }
   }]],
+  sitemap: {
+    hostname: targetURL.origin
+  },
+  buildModules: ['@nuxtjs/vuetify'],
+  vuetify: {
+    theme: {
+      themes: {
+        light: config.theme.colors
+      }
+    },
+    defaultAssets: {
+      font: {
+        family: 'Nunito'
+      }
+    }
+  },
   head: {
-    title: 'Simple Directory',
+    title: 'Simple Directory - Documentation',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },

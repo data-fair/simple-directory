@@ -1,0 +1,26 @@
+name: Publish documentation
+
+on:
+  push:
+    # branches: [ 'master' ]
+    tags: [ 'v*.*.*' ]
+
+jobs:
+  publish-doc:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo $GITHUB_REF
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
+      - run: npm i --no-audit
+      - run: |
+          export MAJOR=$(./node_modules/.bin/semver-extract --major --branch $GITHUB_REF)
+          echo "MAJOR=$MAJOR"
+          TARGET=https://data-fair.github.io/simple-directory/$MAJOR/ npm run build-doc
+          git config --global user.email "github-actions@koumoul.com"
+          git config --global user.name "github-actions"
+          ./node_modules/.bin/gh-pages-multi deploy -v -r https://${{ secrets.GH_TOKEN }}@github.com/data-fair/simple-directory.git -s doc-dist -b main -t $MAJOR
+
