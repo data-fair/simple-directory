@@ -167,7 +167,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       oauth: 'Connect with:',
       error: 'Error',
       plannedDeletion: 'Planned deletion',
-      cancelDeletion: 'Cancel the deletion of the user'
+      cancelDeletion: 'Cancel the deletion of the user',
+      siteLogo: 'Site logo'
     },
     organization: {
       addMember: 'Invite a user to join this organization',

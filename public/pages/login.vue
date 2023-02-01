@@ -20,6 +20,7 @@
             <img
               v-if="logoUrl"
               :src="logoUrl"
+              @alt="$t('pages.login.siteLogo')"
             >
             <logo v-else />
           </div>
@@ -63,7 +64,12 @@
                 v-if="env.passwordless && !adminMode"
                 class="mb-2 text-caption"
               >
-                {{ $t('pages.login.passwordlessMsg1') }} <a @click="passwordlessAuth">{{ $t('pages.login.passwordlessMsg2') }}</a>
+                {{ $t('pages.login.passwordlessMsg1') }} <a
+                  tabindex="0"
+                  role="button"
+                  @click="passwordlessAuth"
+                  @keyup.enter="passwordlessAuth"
+                >{{ $t('pages.login.passwordlessMsg2') }}</a>
               </p>
 
               <v-text-field
@@ -124,17 +130,25 @@
                 class="ma-0"
               >
                 <p class="my-1">
-                  <a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a>
+                  <a
+                    tabindex="0"
+                    role="button"
+                    @click="createUserStep"
+                    @keyup.enter="createUserStep"
+                  >{{ $t('pages.login.createUserMsg2') }}</a>
                 </p>
               </v-row>
               <v-row
                 v-if="!readonly && !adminMode"
                 class="ma-0"
               >
-                <p class="mb-0">
+                <p class="my-1">
                   <a
                     :title="$t('pages.login.changePasswordTooltip')"
+                    tabindex="0"
+                    role="button"
                     @click="changePasswordAction"
+                    @keyup.enter="passwordAuth"
                   >{{ $t('pages.login.changePassword') }}</a>
                 </p>
               </v-row>

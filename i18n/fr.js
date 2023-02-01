@@ -190,7 +190,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       recovery2FADownload: 'télécharger un fichier contenant le code de récupération',
       recovery2FAContent: 'Code de récupération authentification 2 facteurs {name}',
       plannedDeletion: 'Suppression programmée',
-      cancelDeletion: 'Annuler la suppression de l\'utilisateur'
+      cancelDeletion: 'Annuler la suppression de l\'utilisateur',
+      siteLogo: 'Logo du site'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
