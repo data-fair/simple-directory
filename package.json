@@ -85,7 +85,6 @@
     "vue-moment": "^4.1.0"
   },
   "dependencies": {
-    "@authenio/samlify-xsd-schema-validator": "^1.0.3",
     "@data-fair/sd-express": "^1.2.0",
     "@koumoul/nuxt-config-inject": "^0.4.10",
     "@nuxtjs/axios": "^5.13.6",
