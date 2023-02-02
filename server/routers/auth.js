@@ -575,7 +575,7 @@ const debugSAML = require('debug')('saml')
 // expose metadata to declare ourselves to identity provider
 router.get('/saml2-metadata.xml', (req, res) => {
   res.type('application/xml')
-  res.send(saml2.sp.create_metadata())
+  res.send(saml2.sp.getMetadata())
 })
 
 // starts login
@@ -591,9 +591,11 @@ router.get('/saml2/:providerId/login', asyncWrap(async (req, res) => {
     req.query.org || '',
     req.query.invit_token || ''
   ]
-  const loginRequestURL = await saml2.sp.createLoginRequestURL(idp, { relay_state: JSON.stringify(relayState), nameid: req.query.email })
+  const { context: loginRequestURL } = await saml2.sp.createLoginRequest(idp, 'redirect', { nameid: req.query.email })
   const parsedURL = new URL(loginRequestURL)
   if (req.query.email) parsedURL.searchParams.append('login_hint', req.query.email)
+  parsedURL.searchParams.append('RelayState', JSON.stringify(relayState))
+  console.log(parsedURL.href)
   res.redirect(parsedURL.href)
 }))
 
@@ -605,12 +607,9 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
   const idp = saml2.idps[providerId]
   if (!idp) return res.status(404).send(`unknown saml2 provider ${providerId}`)
 
-  const samlResponse = await saml2.sp.post_assert(idp, { request_body: req.body })
-  if (samlResponse.type !== 'authn_response') {
-    console.warn('SAML response received with unsupported type', samlResponse)
-    return res.send()
-  }
-  debugSAML('login success', JSON.stringify(samlResponse, null, 2))
+  debugSAML('saml2 assert full body', req.body)
+  const samlResponse = await saml2.sp.parseLoginResponse(idp, 'post', req)
+  debugSAML('login success', JSON.stringify(samlResponse.extract, null, 2))
 
   const [loginReferer, redirect, org, invitToken] = JSON.parse(req.body.RelayState)
 
@@ -625,14 +624,14 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
     }
   }
 
-  const email = samlResponse.user.attributes.email && samlResponse.user.attributes.email[0]
+  const email = samlResponse.extract.attributes.email
   if (!email) {
-    console.error('Email attribute not fetched from SAML', providerId, samlResponse.user.attributes)
+    console.error('Email attribute not fetched from SAML', providerId, samlResponse.extract.attributes)
     throw new Error('Email attribute not fetched from OAuth')
   }
-  debugSAML('Got user info from oauth', providerId, samlResponse.user.attributes)
+  debugSAML('Got user info from saml', providerId, samlResponse.extract.attributes)
 
-  const samlInfo = { ...samlResponse.user.attributes, logged: new Date().toISOString() }
+  const samlInfo = { ...samlResponse.extract.attributes, logged: new Date().toISOString() }
 
   // used to create a user and accept a member invitation at the same time
   // if the invitation is not valid, better not to proceed with the user creation
