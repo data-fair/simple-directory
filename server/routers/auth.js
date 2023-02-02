@@ -624,7 +624,7 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
     }
   }
 
-  const email = samlResponse.extract.attributes.email
+  const email = samlResponse.extract.attributes.email || samlResponse.extract.attributes['urn:oid:0.9.2342.19200300.100.1.3']
   if (!email) {
     console.error('Email attribute not fetched from SAML', providerId, samlResponse.extract.attributes)
     throw new Error('Email attribute not fetched from OAuth')
