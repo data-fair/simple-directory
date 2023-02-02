@@ -24,9 +24,15 @@ exports.getProviderId = (url) => {
 exports.init = async () => {
   const cert = (await fs.readFile(config.secret.public)).toString()
   const privateKey = (await fs.readFile(config.secret.private)).toString()
+
+  const assertionConsumerService = [{
+    Binding: samlify.Constants.namespace.binding.post,
+    Location: `${config.publicUrl}/api/auth/saml2-assert`
+  }]
+
   exports.sp = samlify.ServiceProvider({
     entityID: `${config.publicUrl}/api/auth/saml2-metadata.xml`,
-    assertionConsumerService: `${config.publicUrl}/api/auth/saml2-assert`,
+    assertionConsumerService,
     signingCert: cert,
     privateKey,
     encryptCert: cert,
