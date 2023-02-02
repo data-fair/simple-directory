@@ -37,7 +37,8 @@ exports.init = async () => {
 
   for (const providerConfig of config.saml2.providers) {
     const idp = new samlify.IdentityProvider(providerConfig)
-    const id = exports.getProviderId(idp.entitySetting.id)
+    if (!idp.entityMeta.meta.entityID) throw new Error('missing entityID in saml IDP metadata')
+    const id = exports.getProviderId(idp.entityMeta.meta.entityID)
     if (exports.idps[id]) throw new Error('Duplicate SAML provider id ' + id)
     exports.idps[id] = idp
     exports.publicProviders.push({

@@ -95,7 +95,6 @@ module.exports = {
       title: 'Test SAML IDP',
       color: '#444791',
       icon: 'mdi-connection',
-      id: 'http://localhost:8080/simplesaml/saml2/idp/metadata.php',
       metadata: `<?xml version="1.0"?>
       <md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" entityID="http://localhost:8080/simplesaml/saml2/idp/metadata.php">
         <md:IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
