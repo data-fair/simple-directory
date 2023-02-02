@@ -5,9 +5,15 @@ const fs = require('fs-extra')
 const config = require('config')
 const slug = require('slugify')
 const samlify = require('samlify')
-const validator = require('@authenio/samlify-xsd-schema-validator')
+// const validator = require('@authenio/samlify-xsd-schema-validator')
+// samlify.setSchemaValidator(validator)
 
-samlify.setSchemaValidator(validator)
+// TODO: apply an actual validator cf https://github.com/tngan/samlify#installation
+samlify.setSchemaValidator({
+  validate: (response) => {
+    return Promise.resolve('skipped')
+  }
+})
 
 exports.idps = {}
 
