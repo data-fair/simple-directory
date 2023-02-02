@@ -5,6 +5,10 @@ const fs = require('fs-extra')
 const config = require('config')
 const slug = require('slugify')
 const samlify = require('samlify')
+const util = require('util')
+const { exec } = require('child_process')
+const execAsync = util.promisify(exec)
+const debug = require('debug')('saml')
 // const validator = require('@authenio/samlify-xsd-schema-validator')
 // samlify.setSchemaValidator(validator)
 
@@ -22,25 +26,37 @@ exports.getProviderId = (url) => {
 }
 
 exports.init = async () => {
-  const cert = (await fs.readFile(config.secret.public)).toString()
-  const privateKey = (await fs.readFile(config.secret.private)).toString()
+  // prepare certificates and their private keys
+  await fs.ensureDir(config.saml2.certsDirectory)
+  for (const name of ['signing', 'encrypt']) {
+    const privateKeyPath = config.saml2.certsDirectory + '/' + name + '.key'
+    try {
+      await fs.access(privateKeyPath, fs.constants.F_OK)
+    } catch (err) {
+      const subject = `/C=FR/CN=${new URL(config.publicUrl).hostname}`
+      const opensslCmd = `openssl req -x509 -sha256 -nodes -days 1095 -newkey rsa:2048 -subj "${subject}" -keyout ${privateKeyPath} -out ${config.saml2.certsDirectory + '/' + name + '.crt'}`
+      debug('generate certificate with command: ' + opensslCmd)
+      await execAsync(opensslCmd)
+    }
+  }
 
   const assertionConsumerService = [{
     Binding: samlify.Constants.namespace.binding.post,
     Location: `${config.publicUrl}/api/auth/saml2-assert`
   }]
-
+  debug('config service provider')
   exports.sp = samlify.ServiceProvider({
     entityID: `${config.publicUrl}/api/auth/saml2-metadata.xml`,
     assertionConsumerService,
-    signingCert: cert,
-    privateKey,
-    encryptCert: cert,
-    envPrivateKey: privateKey
+    signingCert: (await fs.readFile(config.saml2.certsDirectory + '/signing.crt')).toString(),
+    privateKey: (await fs.readFile(config.saml2.certsDirectory + '/signing.key')).toString(),
+    encryptCert: (await fs.readFile(config.saml2.certsDirectory + '/encrypt.crt')).toString(),
+    encPrivateKey: (await fs.readFile(config.saml2.certsDirectory + '/encrypt.key')).toString()
   })
 
   exports.publicProviders = []
 
+  debug('config identity providers')
   for (const providerConfig of config.saml2.providers) {
     const idp = new samlify.IdentityProvider(providerConfig)
     if (!idp.entityMeta.meta.entityID) throw new Error('missing entityID in saml IDP metadata')

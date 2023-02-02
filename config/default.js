@@ -233,6 +233,7 @@ module.exports = {
     }
   },
   saml2: {
+    certsDirectory: './security/saml2',
     providers: []
   },
   oidc: {
