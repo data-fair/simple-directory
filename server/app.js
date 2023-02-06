@@ -8,6 +8,7 @@ const eventToPromise = require('event-to-promise')
 const originalUrl = require('original-url')
 const { format: formatUrl } = require('url')
 const cors = require('cors')
+const { createHttpTerminator } = require('http-terminator')
 const dayjs = require('./utils/dayjs')
 const storages = require('./storages')
 const mails = require('./mails')
@@ -25,6 +26,7 @@ const debug = require('debug')('app')
 
 const app = express()
 const server = http.createServer(app)
+const httpTerminator = createHttpTerminator({ server })
 
 // cf https://connectreport.com/blog/tuning-http-keep-alive-in-node-js/
 // timeout is often 60s on the reverse proxy, better to a have a longer one here
@@ -251,8 +253,7 @@ exports.run = async () => {
 }
 
 exports.stop = async () => {
-  server.close()
-  await eventToPromise(server, 'close')
+  await httpTerminator.terminate()
 
   app.get('mailTransport').close()
   if (config.maildev.active) {

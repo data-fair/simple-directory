@@ -106,6 +106,7 @@
     "flat": "^4.1.0",
     "fs-extra": "^8.1.0",
     "gm": "^1.25.0",
+    "http-terminator": "^3.2.0",
     "initials": "^3.1.2",
     "json-web-key": "^0.3.0",
     "jsonwebtoken": "^8.3.0",
