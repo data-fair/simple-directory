@@ -14,7 +14,8 @@ export default () => {
     },
     state: {
       userDetails: null,
-      env: {}
+      env: {},
+      authProviders: null
     },
     mutations: {
       setAny (state, params) {
@@ -39,6 +40,15 @@ export default () => {
           await this.$axios.$patch(`api/organizations/${id}`, patch)
           eventBus.$emit('notification', msg)
           dispatch('fetchUserDetails')
+        } catch (error) {
+          eventBus.$emit('notification', { error })
+        }
+      },
+      async fetchAuthProviders ({ commit, state }) {
+        if (state.authProviders) return
+        try {
+          const authProviders = await this.$axios.$get('api/auth/providers')
+          commit('setAny', { authProviders })
         } catch (error) {
           eventBus.$emit('notification', { error })
         }

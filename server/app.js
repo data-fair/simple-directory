@@ -16,6 +16,8 @@ const asyncWrap = require('./utils/async-wrap')
 const tokens = require('./utils/tokens')
 const limits = require('./utils/limits')
 const prometheus = require('./utils/prometheus')
+const saml2 = require('./utils/saml2')
+const oauth = require('./utils/oauth')
 const twoFA = require('./routers/2fa.js')
 const session = require('@data-fair/sd-express')({
   directoryUrl: config.publicUrl,
@@ -165,6 +167,11 @@ exports.run = async () => {
   debug('prepare mail transport')
   const mailTransport = await mails.init()
   app.set('mailTransport', mailTransport)
+
+  debug('prepare oauth providers')
+  await oauth.init()
+  debug('prepare saml2 providers')
+  await saml2.init()
 
   if (storage.db) {
     const locks = require('./utils/locks')

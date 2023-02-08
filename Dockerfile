@@ -12,6 +12,7 @@ FROM nativedeps AS builder
 WORKDIR /webapp
 ADD package.json .
 ADD package-lock.json .
+ADD patches patches
 # use clean-modules on the same line as npm ci to be lighter in the cache
 RUN npm ci && \
     ./node_modules/.bin/clean-modules --yes --exclude mocha/lib/test.js --exclude "**/*.mustache"

@@ -12,11 +12,15 @@ const mails = require('../mails')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 const oauth = require('../utils/oauth')
+const saml2 = require('../utils/saml2')
 const userName = require('../utils/user-name')
 const twoFA = require('./2fa.js')
 const limiter = require('../utils/limiter')
 const storages = require('../storages')
 const defaultConfig = require('../../config/default.js')
+const { unshortenInvit } = require('../utils/invitations')
+const { send: sendNotification } = require('../utils/notifications')
+const limits = require('../utils/limits')
 const debug = require('debug')('auth')
 
 const router = exports.router = express.Router()
@@ -417,55 +421,104 @@ router.get('/me', (req, res) => {
   else res.send(req.user)
 })
 
-router.get('/oauth/providers', (req, res) => {
-  res.send(oauth.publicProviders)
+router.get('/providers', (req, res) => {
+  res.send(saml2.publicProviders.concat(oauth.publicProviders))
 })
+
+// OAUTH
+const debugOAuth = require('debug')('oauth')
 
 router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const provider = oauth.providers.find(p => p.id === req.params.oauthId)
   if (!provider) return res.redirect(`${req.publicBaseUrl}/login?error=unknownOAuthProvider`)
-  res.redirect(provider.authorizationUri(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl, req.query.org))
+  const relayState = [
+    provider.state,
+    req.headers.referer,
+    (req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl).replace('?id_token=', ''),
+    req.query.org || '',
+    req.query.invit_token || ''
+  ]
+  const authorizationUri = provider.authorizationUri(relayState, req.query.email)
+  debugOAuth('login authorizationUri', authorizationUri)
+  res.redirect(authorizationUri)
 }))
 
-router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
+const oauthCallback = asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
+  debugOAuth('oauth login callback')
 
-  const provider = oauth.providers.find(p => p.id === req.params.oauthId)
-  if (!provider) return res.status(404).send('Unknown OAuth provider')
-
-  if (!req.query.state.startsWith(provider.state + '/')) {
-    console.error('Bad state in oauth query, CSRF attack ?', provider.state, req.query.state)
+  if (!req.query.state) {
+    console.error('missing OAuth state')
     throw new Error('Bad OAuth state')
   }
-  // TODO: also a way to send org ?
-  const [_, redirect, org] = req.query.state.split('/').map(p => decodeURIComponent(p)) // eslint-disable-line no-unused-vars
-  const target = redirect || config.defaultLoginRedirect || config.publicUrl + '/me'
+  const [providerState, loginReferer, redirect, org, invitToken] = JSON.parse(req.query.state)
+
+  const returnError = (error, errorCode) => {
+    debugSAML('login return error', error, errorCode)
+    if (loginReferer) {
+      const refererUrl = new URL(loginReferer)
+      refererUrl.searchParams.set('error', error)
+      res.redirect(refererUrl.href)
+    } else {
+      res.status(errorCode).send(req.messages.errors[error] || error)
+    }
+  }
+
+  const provider = oauth.providers.find(p => p.state === providerState)
+  if (!provider) return res.status(404).send('Unknown OAuth provider')
+  if (req.params.oauthId && req.params.oauthId) return res.status(404).send('Wrong OAuth provider id')
 
   if (req.query.error) {
     console.log('Bad OAuth query', req.query)
-    res.redirect(target)
+    return returnError('badIDPQuery', 500)
   }
 
-  const userInfo = await provider.userInfo(await provider.accessToken(req.query.code))
+  const accessToken = await provider.accessToken(req.query.code)
+
+  const userInfo = await provider.userInfo(accessToken)
   if (!userInfo.email) {
-    console.error('Bad user from oauth', userInfo)
-    return res.status(500).send('Bad user from oauth')
+    console.error('Email attribute not fetched from OAuth', req.params.oauthId, userInfo)
+    throw new Error('Email attribute not fetched from OAuth')
   }
-  debug('Got user info from oauth', req.params.oauthId, userInfo)
+  debugOAuth('Got user info from oauth', req.params.oauthId, userInfo)
 
   const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
+
+  // used to create a user and accept a member invitation at the same time
+  // if the invitation is not valid, better not to proceed with the user creation
+  let invit, invitOrga
+  if (invitToken) {
+    try {
+      invit = unshortenInvit(await tokens.verify(req.app.get('keys'), invitToken))
+    } catch (err) {
+      return returnError(err.name === 'TokenExpiredError' ? 'expiredInvitationToken' : 'invalidInvitationToken', 400)
+    }
+    invitOrga = await storage.getOrganization(invit.id)
+    if (!invitOrga) return returnError('orgaUnknown', 400)
+    if (invit.email !== userInfo.email) return returnError('badProviderInvitEmail', 400)
+  }
 
   // check for user with same email
   let user = await storage.getUserByEmail(userInfo.email)
 
+  if (!user && !invit && config.onlyCreateInvited) {
+    return returnError('onlyCreateInvited', 400)
+  }
+
   // Re-create a user that was never validated.. first clean temporary user
   if (user && user.emailConfirmed === false) {
-    await storage.deleteUser(user.id)
-    user = null
+    if (user.organizations && invit) {
+      // This user was created empty from an invitation in 'alwaysAcceptInvitations' mode
+    } else {
+      await storage.deleteUser(user.id)
+      user = null
+    }
   }
 
   if (!user) {
-    if (config.onlyCreateInvited || storage.readonly) return res.status(403).send('Unknown user for email ' + userInfo.email)
+    if ((!invit && config.onlyCreateInvited) || storage.readonly) {
+      return returnError('userUnknown', 403)
+    }
     user = {
       email: userInfo.email,
       id: shortid.generate(),
@@ -476,19 +529,218 @@ router.get('/oauth/:oauthId/callback', asyncWrap(async (req, res, next) => {
         [req.params.oauthId]: oauthInfo
       }
     }
+    if (invit) {
+      user.defaultOrg = invitOrga.id
+      user.ignorePersonalAccount = true
+    }
     user.name = userName(user)
-    debug('Create user authenticated through oauth', user)
-    await storage.createUser(user, null, new URL(target).host)
+    debugOAuth('Create user authenticated through oauth', user)
+    await storage.createUser(user, null, new URL(redirect).host)
   } else {
-    debug('Existing user authenticated through oauth', user, userInfo)
-    const patch = { oauth: { ...user.oauth, [req.params.oauthId]: oauthInfo } }
+    debugOAuth('Existing user authenticated through oauth', user, userInfo)
+    const patch = { oauth: { ...user.oauth, [req.params.oauthId]: oauthInfo }, emailConfirmed: true }
     if (userInfo.firstName && !user.firstName) patch.firstName = userInfo.firstName
     if (userInfo.lastName && !user.lastName) patch.lastName = userInfo.lastName
     await storage.patchUser(user.id, patch)
   }
 
-  const payload = tokens.getPayload(user)
-  const linkUrl = tokens.prepareCallbackUrl(req, payload, target, org)
-  debug(`OAuth based authentication of user ${user.name}`)
+  if (invit && !config.alwaysAcceptInvitation) {
+    if (storage.db) {
+      const consumer = { type: 'organization', id: invitOrga.id }
+      const limit = await limits.get(storage.db, consumer, 'store_nb_members')
+      if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(req.messages.errors.maxNbMembers)
+    }
+    await storage.addMember(invitOrga, user, invit.role, invit.department)
+    sendNotification({
+      sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
+      topic: { key: 'simple-directory:invitation-accepted' },
+      title: req.__all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
+    })
+    if (storage.db) await limits.setNbMembers(storage.db, invitOrga.id)
+  }
+
+  const payload = { ...tokens.getPayload(user), temporary: true }
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? invitOrga.id : org)
+  debugOAuth(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
+})
+
+// kept for retro-compatibility
+router.get('/oauth/:oauthId/callback', oauthCallback)
+router.get('/oauth-callback', oauthCallback)
+
+// SAML 2
+const debugSAML = require('debug')('saml')
+
+// expose metadata to declare ourselves to identity provider
+router.get('/saml2-metadata.xml', (req, res) => {
+  res.type('application/xml')
+  res.send(saml2.sp.getMetadata())
+})
+
+// starts login
+router.get('/saml2/:providerId/login', asyncWrap(async (req, res) => {
+  debugSAML('login request', req.params.providerId)
+  const idp = saml2.idps[req.params.providerId]
+  if (!idp) return res.redirect(`${req.publicBaseUrl}/login?error=unknownSAMLProvider`)
+
+  // relay_state is used to remember some information about the login attempt
+  const relayState = [
+    req.headers.referer,
+    (req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl).replace('?id_token=', ''),
+    req.query.org || '',
+    req.query.invit_token || ''
+  ]
+  const { context: loginRequestURL } = await saml2.sp.createLoginRequest(idp, 'redirect', { nameid: req.query.email })
+  const parsedURL = new URL(loginRequestURL)
+  if (req.query.email) parsedURL.searchParams.append('login_hint', req.query.email)
+  parsedURL.searchParams.append('RelayState', JSON.stringify(relayState))
+  console.log(parsedURL.href)
+  res.redirect(parsedURL.href)
 }))
+
+// login confirm by IDP
+router.post('/saml2-assert', asyncWrap(async (req, res) => {
+  const storage = req.app.get('storage')
+
+  const providerId = saml2.getProviderId(req.headers.referer)
+  const idp = saml2.idps[providerId]
+  if (!idp) return res.status(404).send(`unknown saml2 provider ${providerId}`)
+
+  debugSAML('saml2 assert full body', req.body)
+  const samlResponse = await saml2.sp.parseLoginResponse(idp, 'post', req)
+  debugSAML('login success', JSON.stringify(samlResponse.extract, null, 2))
+
+  const [loginReferer, redirect, org, invitToken] = JSON.parse(req.body.RelayState)
+
+  const returnError = (error, errorCode) => {
+    debugSAML('login return error', error, errorCode)
+    if (loginReferer) {
+      const refererUrl = new URL(loginReferer)
+      refererUrl.searchParams.set('error', error)
+      res.redirect(refererUrl.href)
+    } else {
+      res.status(errorCode).send(req.messages.errors[error] || error)
+    }
+  }
+
+  const email = samlResponse.extract.attributes.email || samlResponse.extract.attributes['urn:oid:0.9.2342.19200300.100.1.3']
+  if (!email) {
+    console.error('Email attribute not fetched from SAML', providerId, samlResponse.extract.attributes)
+    throw new Error('Email attribute not fetched from OAuth')
+  }
+  debugSAML('Got user info from saml', providerId, samlResponse.extract.attributes)
+
+  const samlInfo = { ...samlResponse.extract.attributes, logged: new Date().toISOString() }
+
+  // used to create a user and accept a member invitation at the same time
+  // if the invitation is not valid, better not to proceed with the user creation
+  let invit, invitOrga
+  if (invitToken) {
+    try {
+      invit = unshortenInvit(await tokens.verify(req.app.get('keys'), invitToken))
+    } catch (err) {
+      return returnError(err.name === 'TokenExpiredError' ? 'expiredInvitationToken' : 'invalidInvitationToken', 400)
+    }
+    invitOrga = await storage.getOrganization(invit.id)
+    if (!invitOrga) return returnError('orgaUnknown', 400)
+    if (invit.email !== email) return returnError('badProviderInvitEmail', 400)
+  }
+
+  // check for user with same email
+  let user = await storage.getUserByEmail(email)
+
+  if (!user && !invit && config.onlyCreateInvited) {
+    return returnError('onlyCreateInvited', 400)
+  }
+
+  // Re-create a user that was never validated.. first clean temporary user
+  if (user && user.emailConfirmed === false) {
+    if (user.organizations && invit) {
+      // This user was created empty from an invitation in 'alwaysAcceptInvitations' mode
+    } else {
+      await storage.deleteUser(user.id)
+      user = null
+    }
+  }
+
+  if (!user) {
+    if ((!invit && config.onlyCreateInvited) || storage.readonly) {
+      return returnError('userUnknown', 403)
+    }
+    // TODO: map more attributes ? lastName, firstName, avatarUrl ?
+    user = {
+      email,
+      id: shortid.generate(),
+      emailConfirmed: true,
+      saml2: {
+        [providerId]: samlInfo
+      }
+    }
+    if (invit) {
+      user.defaultOrg = invitOrga.id
+      user.ignorePersonalAccount = true
+    }
+    user.name = userName(user)
+    debugSAML('Create user', user)
+    await storage.createUser(user, null, new URL(redirect).host)
+  } else {
+    debugSAML('Existing user authenticated', providerId, user)
+    const patch = { saml2: { ...user.saml2, [providerId]: samlInfo }, emailConfirmed: true }
+    // TODO: map more attributes ? lastName, firstName, avatarUrl ?
+    await storage.patchUser(user.id, patch)
+  }
+
+  if (invit && !config.alwaysAcceptInvitation) {
+    if (storage.db) {
+      const consumer = { type: 'organization', id: invitOrga.id }
+      const limit = await limits.get(storage.db, consumer, 'store_nb_members')
+      if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(req.messages.errors.maxNbMembers)
+    }
+    await storage.addMember(invitOrga, user, invit.role, invit.department)
+    sendNotification({
+      sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
+      topic: { key: 'simple-directory:invitation-accepted' },
+      title: req.__all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
+    })
+    if (storage.db) await limits.setNbMembers(storage.db, invitOrga.id)
+  }
+
+  const payload = { ...tokens.getPayload(user), temporary: true }
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? invitOrga.id : org)
+  debugSAML(`SAML based authentication of user ${user.name}`)
+  res.redirect(linkUrl.href)
+
+  // TODO: Save name_id and session_index for logout ?
+  // Note:  In practice these should be saved in the user session, not globally.
+  // name_id = saml_response.user.name_id;
+  // session_index = saml_response.user.session_index;
+}))
+
+// logout not implemented
+router.get('/saml2-logout', (req, res) => {
+  console.warn('SAML GET logout not yet implemented', req.headers, req.query)
+  res.send()
+})
+router.post('/saml2-logout', (req, res) => {
+  console.lowarng('SAML POST logout not yet implemented', req.headers, req.query, req.body)
+  res.send()
+})
+
+router.get('/saml2/providers', (req, res) => {
+  res.send(oauth.publicProviders)
+})
+
+// starts logout
+/* router.get('/saml2/:providerId/logout', () => {
+  var options = {
+    name_id: name_id,
+    session_index: session_index
+  };
+
+  sp.create_logout_request_url(idp, options, function(err, logout_url) {
+    if (err != null)
+      return res.send(500);
+    res.redirect(logout_url);
+  });
+}) */

@@ -39,11 +39,11 @@
                 class="mb-6"
                 v-html="$t('pages.login.separateDomain', {redirectHost, mainHost, mainOrigin})"
               />
-              <template v-if="env.oauth.length && !adminMode && !orgStorage">
-                <!--<v-layout row>
-                  <p class="mb-0">{{ $t('pages.login.oauth') }}</p>
-                </v-layout>-->
-                <oauth-login-links :redirect="redirectUrl" />
+              <template v-if="!adminMode && !orgStorage">
+                <auth-providers-login-links
+                  :redirect="redirectUrl"
+                  :email="email"
+                />
               </template>
 
               <v-text-field
@@ -206,6 +206,11 @@
               >
                 {{ $t('pages.login.createUserInvit', {name: invitPayload.n || invitPayload.name || invitPayload.id }) }}
               </v-alert>
+              <auth-providers-login-links
+                :redirect="redirectUrl"
+                :email="email"
+                :invit-token="invitToken"
+              />
               <v-form ref="createUserForm">
                 <v-text-field
                   id="createuser-email"
@@ -643,15 +648,9 @@
 
 import { mapState, mapActions } from 'vuex'
 import jwtDecode from 'jwt-decode'
-import logo from '../components/logo.vue'
-import OauthLoginLinks from '../components/oauth-login-links.vue'
 import eventBus from '../event-bus'
 
 export default {
-  components: {
-    logo,
-    OauthLoginLinks
-  },
   data () {
     return {
       dialog: true,
@@ -756,7 +755,9 @@ export default {
       this.email = this.invitPayload.email || this.invitPayload.e
     } else if (this.plannedDeletion) {
       this.step = 'plannedDeletion'
-    } else if (this.error) {
+    }
+
+    if (this.error) {
       this.step = 'error'
     }
   },
@@ -884,7 +885,9 @@ export default {
     },
     async clearError () {
       this.step = 'login'
-      this.$router.replace({ query: { ...this.$route.query, error: undefined } })
+      const url = new URL(window.location.href)
+      url.searchParams.delete('error')
+      window.location.href = url.href
     },
     async init2FA () {
       try {

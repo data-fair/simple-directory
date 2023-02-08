@@ -235,6 +235,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     expiredInvitationToken: 'The invitation link you received has expired, you can no longer accept this invitation.',
     maxNbMembers: 'The organization already contains the maximum number of members allowed by its quotas.',
     unknownOAuthProvider: 'OAuth identification not supported.',
+    unknownSAMLProvider: 'SAML identification not supported.',
     adminModeOnly: 'Functionality reserved for super administrators.',
     plannedDeletion: 'The deletion of the user {name} and all its data is planned on the {plannedDeletion}.'
   },

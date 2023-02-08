@@ -21,7 +21,8 @@
     "analyze": "nuxt build --analyze",
     "doc": "nuxt --config-file ${PWD}/doc/nuxt.config.js",
     "link-doc": "ln -nsf ${PWD}/doc/pages/doc public/pages/doc",
-    "build-doc": "nuxt generate --config-file ${PWD}/doc/nuxt.config.js"
+    "build-doc": "nuxt generate --config-file ${PWD}/doc/nuxt.config.js",
+    "postinstall": "patch-package"
   },
   "repository": {
     "type": "git",
@@ -77,6 +78,7 @@
     "nuxt": "^2.15.8",
     "nuxt-webpack-optimisations": "^2.2.0",
     "nyc": "^15.1.0",
+    "patch-package": "^6.5.1",
     "push-dir": "^0.4.1",
     "semver-extract": "^1.1.1",
     "tinycolor2": "^1.4.2",
@@ -129,9 +131,11 @@
     "qrcode": "^1.4.4",
     "rate-limiter-flexible": "^2.0.0",
     "request-ip": "^2.1.3",
+    "samlify": "^2.8.8",
     "seedrandom": "^3.0.5",
     "shortid": "^2.2.13",
     "simple-oauth2": "^3.4.0",
+    "slugify": "^1.6.5",
     "uuid": "^8.3.2"
   }
 }

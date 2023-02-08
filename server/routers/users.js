@@ -63,6 +63,8 @@ router.post('', asyncWrap(async (req, res, next) => {
     orga = await storage.getOrganization(invit.id)
     if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
     if (invit.email !== req.body.email) return res.status(400).send(req.messages.errors.badEmail)
+  } else if (config.onlyCreateInvited) {
+    return res.status(400).send('users can only be created from an invitation')
   }
 
   // create user
