@@ -6,13 +6,13 @@
     <v-btn
       v-for="authProvider of authProviders"
       :key="authProvider.type + ':' + authProvider.id"
-      :color="authProvider.color"
+      :color="contrastColor(authProvider.color)"
       :href="loginURL(authProvider)"
       dark
       small
       rounded
       depressed
-      class="pl-0 pr-3 mr-2 mb-1 text-none"
+      class="pl-0 pr-3 mr-2 mb-1 text-none white--text"
     >
       <v-avatar size="28">
         <v-icon v-if="authProvider.icon">
@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 
 export default {
   props: ['redirect', 'email', 'invitToken'],
@@ -40,7 +40,8 @@ export default {
     redirectParam () {
       if (!this.redirect) return ''
       return `?redirect=${encodeURIComponent(this.redirect)}`
-    }
+    },
+    ...mapGetters(['contrastColor'])
   },
   created () {
     this.$store.dispatch('fetchAuthProviders')
