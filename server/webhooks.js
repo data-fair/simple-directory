@@ -7,6 +7,7 @@ exports.postIdentity = async (type, identity) => {
   const name = type === 'user' ? userName(identity) : identity.name
   const body = { name }
   if (type === 'user' && identity.organizations) body.organizations = identity.organizations
+  if (type === 'organization' && identity.departments) body.departments = identity.departments
   for (const webhook of config.webhooks.identities) {
     const url = `${webhook.base}/${type}/${identity.id}`
     debug(`Send identity name webhook to ${url} : `, body)

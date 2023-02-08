@@ -1,22 +1,10 @@
 const createError = require('http-errors')
 const config = require('config')
 const moment = require('moment')
+const escapeStringRegexp = require('escape-string-regexp')
+const mongoUtils = require('../utils/mongo')
 
 const collation = { locale: 'en', strength: 1 }
-
-async function ensureIndex (db, collection, key, options = {}) {
-  try {
-    await db.collection(collection).createIndex(key, options)
-  } catch (error) {
-    if (error.codeName === 'IndexOptionsConflict') {
-      console.log(`Index options conflict for index ${collection}.${JSON.stringify(key)}.${JSON.stringify(options)}. Delete then re-create the index`)
-      await db.collection(collection).dropIndex(key)
-      await db.collection(collection).createIndex(key, options)
-    } else {
-      throw error
-    }
-  }
-}
 
 function cleanUser (resource) {
   resource.id = resource._id
@@ -51,28 +39,24 @@ class MongodbStorage {
     if (this.org) throw new Error('mongo storage is not compatible with per-org storage')
     console.log('Connecting to mongodb ' + params.url)
     const MongoClient = require('mongodb').MongoClient
-    const opts = {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }
     try {
-      this.client = await MongoClient.connect(params.url, opts)
+      this.client = await MongoClient.connect(params.url)
     } catch (err) {
       // 1 retry after 1s
       // solve the quite common case in docker-compose of the service starting at the same time as the db
       await new Promise(resolve => setTimeout(resolve, 1000))
-      this.client = await MongoClient.connect(params.url, opts)
+      this.client = await MongoClient.connect(params.url)
     }
 
     this.db = this.client.db()
     // An index for comparison case and diacritics insensitive
-    await ensureIndex(this.db, 'users', { email: 1 }, { unique: true, collation })
-    await ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
-    await ensureIndex(this.db, 'users', { plannedDeletion: 1 }, { sparse: true })
-    await ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
-    await ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1 }, { unique: true })
-    await ensureIndex(this.db, 'limits', { id: 'text', name: 'text' }, { name: 'fulltext' })
-    await ensureIndex(this.db, 'limits', { type: 1, id: 1 }, { name: 'limits-find-current', unique: true })
+    await mongoUtils.ensureIndex(this.db, 'users', { email: 1 }, { unique: true, collation })
+    await mongoUtils.ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
+    await mongoUtils.ensureIndex(this.db, 'users', { plannedDeletion: 1 }, { sparse: true })
+    await mongoUtils.ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
+    await mongoUtils.ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }, { unique: true, name: 'owner.type_1_owner.id_1' })
+    await mongoUtils.ensureIndex(this.db, 'limits', { id: 'text', name: 'text' }, { name: 'fulltext' })
+    await mongoUtils.ensureIndex(this.db, 'limits', { type: 1, id: 1 }, { name: 'limits-find-current', unique: true })
     return this
   }
 
@@ -151,7 +135,7 @@ class MongodbStorage {
   }
 
   async deleteUser (userId) {
-    await this.db.collection('users').removeOne({ _id: userId })
+    await this.db.collection('users').deleteOne({ _id: userId })
   }
 
   async findUsers (params = {}) {
@@ -160,7 +144,7 @@ class MongodbStorage {
       filter._id = { $in: params.ids }
     }
     if (params.q) {
-      filter.name = { $regex: params.q, $options: 'i' }
+      filter.name = { $regex: escapeStringRegexp(params.q), $options: 'i' }
     }
 
     const countPromise = this.db.collection('users').countDocuments(filter)
@@ -202,7 +186,10 @@ class MongodbStorage {
       filter._id = { $in: params.ids }
     }
     if (params.q) {
-      filter.name = { $regex: params.q, $options: 'i' }
+      filter.$or = [
+        { name: { $regex: escapeStringRegexp(params.q), $options: 'i' } },
+        { email: { $regex: escapeStringRegexp(params.q), $options: 'i' } }
+      ]
     }
     if (params.roles && params.roles.length) {
       filter.organizations.$elemMatch.role = { $in: params.roles }
@@ -282,7 +269,7 @@ class MongodbStorage {
   async deleteOrganization (organizationId) {
     await this.db.collection('users')
       .updateMany({}, { $pull: { organizations: { id: organizationId } } })
-    await this.db.collection('organizations').removeOne({ _id: organizationId })
+    await this.db.collection('organizations').deleteOne({ _id: organizationId })
   }
 
   async findOrganizations (params = {}) {
@@ -291,7 +278,7 @@ class MongodbStorage {
       filter._id = { $in: params.ids }
     }
     if (params.q) {
-      filter.name = { $regex: params.q, $options: 'i' }
+      filter.name = { $regex: escapeStringRegexp(params.q), $options: 'i' }
     }
     if (params.creator) {
       filter['created.id'] = params.creator
@@ -352,15 +339,15 @@ class MongodbStorage {
   }
 
   async setAvatar (avatar) {
-    await this.db.collection('avatars').replaceOne(
-      { 'owner.type': avatar.owner.type, 'owner.id': avatar.owner.id },
-      avatar,
-      { upsert: true }
-    )
+    const filter = { 'owner.type': avatar.owner.type, 'owner.id': avatar.owner.id }
+    if (avatar.owner.department) filter['owner.department'] = avatar.owner.department
+    await this.db.collection('avatars').replaceOne(filter, avatar, { upsert: true })
   }
 
   async getAvatar (owner) {
-    const avatar = await this.db.collection('avatars').findOne({ 'owner.type': owner.type, 'owner.id': owner.id })
+    const filter = { 'owner.type': owner.type, 'owner.id': owner.id }
+    if (owner.department) filter['owner.department'] = owner.department
+    const avatar = await this.db.collection('avatars').findOne(filter)
     if (avatar && avatar.buffer) avatar.buffer = avatar.buffer.buffer
     return avatar
   }

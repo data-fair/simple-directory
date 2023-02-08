@@ -13,13 +13,14 @@
         class="pa-2"
       >
         <v-card-title primary-title>
-          <h3 :class="{headline: true, 'mb-0': true, 'warning--text': adminMode}">
+          <h1 :class="{headline: true, 'mb-0': true, 'warning--text': adminMode}">
             {{ stepsTitles[step] || email }}
-          </h3>
+          </h1>
           <div :class="`v-card v-sheet theme--${$vuetify.theme.dark ? 'dark' : 'light'} login-logo-container`">
             <img
               v-if="logoUrl"
               :src="logoUrl"
+              @alt="$t('pages.login.siteLogo')"
             >
             <logo v-else />
           </div>
@@ -38,11 +39,11 @@
                 class="mb-6"
                 v-html="$t('pages.login.separateDomain', {redirectHost, mainHost, mainOrigin})"
               />
-              <template v-if="env.oauth.length && !adminMode && !orgStorage">
-                <!--<v-layout row>
-                  <p class="mb-0">{{ $t('pages.login.oauth') }}</p>
-                </v-layout>-->
-                <oauth-login-links :redirect="redirectUrl" />
+              <template v-if="!adminMode && !orgStorage">
+                <auth-providers-login-links
+                  :redirect="redirectUrl"
+                  :email="email"
+                />
               </template>
 
               <v-text-field
@@ -63,7 +64,12 @@
                 v-if="env.passwordless && !adminMode"
                 class="mb-2 text-caption"
               >
-                {{ $t('pages.login.passwordlessMsg1') }} <a @click="passwordlessAuth">{{ $t('pages.login.passwordlessMsg2') }}</a>
+                {{ $t('pages.login.passwordlessMsg1') }} <a
+                  tabindex="0"
+                  role="button"
+                  @click="passwordlessAuth"
+                  @keyup.enter="passwordlessAuth"
+                >{{ $t('pages.login.passwordlessMsg2') }}</a>
               </p>
 
               <v-text-field
@@ -124,17 +130,25 @@
                 class="ma-0"
               >
                 <p class="my-1">
-                  <a @click="createUserStep">{{ $t('pages.login.createUserMsg2') }}</a>
+                  <a
+                    tabindex="0"
+                    role="button"
+                    @click="createUserStep"
+                    @keyup.enter="createUserStep"
+                  >{{ $t('pages.login.createUserMsg2') }}</a>
                 </p>
               </v-row>
               <v-row
                 v-if="!readonly && !adminMode"
                 class="ma-0"
               >
-                <p class="mb-0">
+                <p class="my-1">
                   <a
                     :title="$t('pages.login.changePasswordTooltip')"
+                    tabindex="0"
+                    role="button"
                     @click="changePasswordAction"
+                    @keyup.enter="passwordAuth"
                   >{{ $t('pages.login.changePassword') }}</a>
                 </p>
               </v-row>
@@ -192,6 +206,11 @@
               >
                 {{ $t('pages.login.createUserInvit', {name: invitPayload.n || invitPayload.name || invitPayload.id }) }}
               </v-alert>
+              <auth-providers-login-links
+                :redirect="redirectUrl"
+                :email="email"
+                :invit-token="invitToken"
+              />
               <v-form ref="createUserForm">
                 <v-text-field
                   id="createuser-email"
@@ -637,15 +656,9 @@
 
 import { mapState, mapActions } from 'vuex'
 import jwtDecode from 'jwt-decode'
-import logo from '../components/logo.vue'
-import OauthLoginLinks from '../components/oauth-login-links.vue'
 import eventBus from '../event-bus'
 
 export default {
-  components: {
-    logo,
-    OauthLoginLinks
-  },
   data () {
     return {
       dialog: true,
@@ -753,7 +766,9 @@ export default {
       this.email = this.invitPayload.email || this.invitPayload.e
     } else if (this.plannedDeletion) {
       this.step = 'plannedDeletion'
-    } else if (this.error) {
+    }
+
+    if (this.error) {
       this.step = 'error'
     }
   },
@@ -884,7 +899,9 @@ export default {
     },
     async clearError () {
       this.step = 'login'
-      this.$router.replace({ query: { ...this.$route.query, error: undefined } })
+      const url = new URL(window.location.href)
+      url.searchParams.delete('error')
+      window.location.href = url.href
     },
     async init2FA () {
       try {

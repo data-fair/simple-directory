@@ -8,8 +8,7 @@
 *.swp
 /nuxt-dist
 /dist
-config/local.js
-config/local.json
+config/local*
 .idea
 /data
 

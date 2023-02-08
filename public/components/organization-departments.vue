@@ -14,14 +14,13 @@
         </v-icon>
         {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
         <add-department-menu
-          v-if="!env.readonly"
+          v-if="writableDepartments"
           :orga="orga"
-          :is-admin-orga="isAdminOrga"
           :department-label="departmentLabel"
           @change="$emit('change')"
         />
         <!--<edit-departments-menu
-          v-if="!env.readonly"
+          v-if="writableDepartments"
           :orga="orga"
           :is-admin-orga="isAdminOrga"
           :department-label="departmentLabel"
@@ -56,20 +55,26 @@
     >
       <template v-for="(department, i) in currentPage">
         <v-list-item :key="department.id">
+          <v-list-item-avatar>
+            <v-img
+              v-if="refreshingDepartment !== department.id"
+              :src="`${env.publicUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png?t=${getTimestamp()}`"
+            />
+          </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>{{ department.name }}</v-list-item-title>
             <v-list-item-subtitle>{{ $t('common.id') }} = {{ department.id }}</v-list-item-subtitle>
           </v-list-item-content>
-          <v-list-item-action v-if="isAdminOrga && !env.readonly">
+          <v-list-item-action v-if="writableDepartments">
             <edit-department-menu
               :orga="orga"
               :department="department"
               :department-label="departmentLabel"
-              @change="$emit('change')"
+              @change="$emit('change');refreshDepartment(department)"
             />
           </v-list-item-action>
           <v-list-item-action
-            v-if="isAdminOrga && !env.readonly"
+            v-if="writableDepartments"
             class="ml-0"
           >
             <delete-department-menu
@@ -122,10 +127,14 @@ export default {
     pageSize: 10,
     page: 1,
     q: '',
-    validQ: ''
+    validQ: '',
+    refreshingDepartment: null
   }),
   computed: {
     ...mapState(['userDetails', 'env']),
+    writableDepartments () {
+      return this.isAdminOrga && (!this.env.readonly || this.env.overwrite.includes('departments'))
+    },
     departmentLabel () {
       return this.orga.departmentLabel || this.$t('common.department')
     },
@@ -143,9 +152,16 @@ export default {
   },
   methods: {
     filterDeps (page) {
-      console.log('filter', this.q)
       this.page = 1
       this.validQ = this.q
+    },
+    async refreshDepartment (department) {
+      this.refreshingDepartment = department.id
+      await this.$nextTick()
+      this.refreshingDepartment = null
+    },
+    getTimestamp () {
+      return new Date().getTime()
     }
   }
 }

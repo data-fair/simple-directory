@@ -5,7 +5,7 @@ config.basePath = new URL(config.publicUrl + '/').pathname
 config.i18nMessages = i18n.messages
 config.i18nLocales = config.i18n.locales.join(',')
 config.readonly = require('./server/storages').readonly()
-config.publicOAuth = require('./server/utils/oauth').publicProviders
+config.overwrite = require('./server/storages').overwrite()
 
 const isBuilding = process.argv.slice(-1)[0] === 'build'
 
@@ -39,6 +39,7 @@ if (process.env.NODE_ENV !== 'production' || isBuilding) {
 }
 
 module.exports = {
+  telemetry: false,
   ssr: false,
   components: true,
   srcDir: 'public/',
@@ -46,11 +47,13 @@ module.exports = {
   build: {
     transpile: [/@koumoul/, /@data-fair/],
     publicPath: config.publicUrl + '/_nuxt/',
-    extend (config, { isServer, isDev, isClient }) {
+    extend (webpackConfig, { isServer, isDev, isClient }) {
       const webpack = require('webpack')
-      // config.optimization.minimize = false
+      // webpackConfig.optimization.minimize = false
       // Ignore all locale files of moment.js, those we want are loaded in plugins/moment.js
-      config.plugins.push(new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/))
+      webpackConfig.plugins.push(new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/))
+      // source-map to debug in production
+      webpackConfig.devtool = webpackConfig.devtool || 'source-map'
     }
   },
   loading: { color: '#1e88e5' }, // Customize the progress bar color
@@ -105,6 +108,7 @@ module.exports = {
     maildev: config.maildev,
     defaultMaxCreatedOrgs: config.quotas.defaultMaxCreatedOrgs,
     readonly: config.readonly,
+    overwrite: config.overwrite,
     analytics: config.analytics,
     onlyCreateInvited: config.onlyCreateInvited,
     userSelfDelete: config.userSelfDelete,
@@ -113,7 +117,6 @@ module.exports = {
     manageDepartmentLabel: config.manageDepartmentLabel,
     passwordless: config.passwordless,
     i18nLocales: config.i18nLocales,
-    oauth: config.publicOAuth,
     anonymousContactForm: config.anonymousContactForm,
     noBirthday: config.noBirthday,
     showCreatedUserHost: config.showCreatedUserHost,
@@ -133,7 +136,6 @@ module.exports = {
       { hid: 'description', name: 'description', content: i18n.messages[i18n.defaultLocale].root.description }
     ],
     link: [
-      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Nunito:300,400,500,700,400italic' },
       // /favicon.ico is not put un config/default.js to prevent a nuxt-config-inject bug
       { rel: 'icon', type: 'image/x-icon', href: config.theme.favicon || '/favicon.ico' }
     ],

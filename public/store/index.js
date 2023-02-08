@@ -2,15 +2,20 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import { sessionStoreBuilder } from '@data-fair/sd-vue/src'
 import eventBus from '../event-bus.js'
+import style from './style'
 
 Vue.use(Vuex)
 
 export default () => {
   return new Vuex.Store({
-    modules: { session: sessionStoreBuilder() },
+    modules: {
+      session: sessionStoreBuilder(),
+      style: style()
+    },
     state: {
       userDetails: null,
-      env: {}
+      env: {},
+      authProviders: null
     },
     mutations: {
       setAny (state, params) {
@@ -34,6 +39,15 @@ export default () => {
           await this.$axios.$patch(`api/organizations/${id}`, patch)
           eventBus.$emit('notification', msg)
           dispatch('fetchUserDetails')
+        } catch (error) {
+          eventBus.$emit('notification', { error })
+        }
+      },
+      async fetchAuthProviders ({ commit, state }) {
+        if (state.authProviders) return
+        try {
+          const authProviders = await this.$axios.$get('api/auth/providers')
+          commit('setAny', { authProviders })
         } catch (error) {
           eventBus.$emit('notification', { error })
         }

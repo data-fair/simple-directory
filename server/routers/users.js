@@ -63,6 +63,8 @@ router.post('', asyncWrap(async (req, res, next) => {
     orga = await storage.getOrganization(invit.id)
     if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
     if (invit.email !== req.body.email) return res.status(400).send(req.messages.errors.badEmail)
+  } else if (config.onlyCreateInvited) {
+    return res.status(400).send('users can only be created from an invitation')
   }
 
   // create user
@@ -164,6 +166,7 @@ router.post('', asyncWrap(async (req, res, next) => {
 router.get('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (req.user.id === '_superadmin') return res.json(req.user)
   let storage = req.app.get('storage')
   if (req.user.id === req.params.userId && req.user.orgStorage && req.user.organization) {
     const org = await req.app.get('storage').getOrganization(req.user.organization.id)

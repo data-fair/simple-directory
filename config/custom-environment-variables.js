@@ -21,6 +21,10 @@ module.exports = {
     __name: 'ADMINS_2FA',
     __format: 'json'
   },
+  adminCredentials: {
+    __name: 'ADMIN_CREDENTIALS',
+    __format: 'json'
+  },
   roles: {
     defaults: {
       __name: 'ROLES_DEFAULTS',
@@ -56,10 +60,6 @@ module.exports = {
       searchUserDN: 'STORAGE_LDAP_SEARCH_USER_DN',
       searchUserPassword: 'STORAGE_LDAP_SEARCH_USER_PASS',
       baseDN: 'STORAGE_LDAP_BASE_DN',
-      readonly: {
-        __name: 'STORAGE_LDAP_READONLY',
-        __format: 'json'
-      },
       users: {
         objectClass: 'STORAGE_LDAP_USERS_OBJECT_CLASS',
         dnKey: 'STORAGE_LDAP_USERS_DN_KEY',
@@ -161,7 +161,11 @@ module.exports = {
       __name: 'MAILS_TRANSPORT',
       __format: 'json'
     },
-    from: 'MAILS_FROM'
+    from: 'MAILS_FROM',
+    extraParams: {
+      __name: 'MAILS_EXTRA_PARAMS',
+      __format: 'json'
+    }
   },
   maildev: {
     url: 'MAILDEV_URL',
@@ -253,6 +257,18 @@ module.exports = {
     linkedin: {
       id: 'OAUTH_LINKEDIN_ID',
       secret: 'OAUTH_LINKEDIN_SECRET'
+    }
+  },
+  saml2: {
+    providers: {
+      __name: 'SAML2_PROVIDERS',
+      __format: 'json'
+    }
+  },
+  oidc: {
+    providers: {
+      __name: 'OIDC_PROVIDERS',
+      __format: 'json'
     }
   },
   noBirthday: {

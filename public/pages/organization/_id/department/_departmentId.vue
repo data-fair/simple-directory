@@ -15,6 +15,12 @@
       {{ orga.name }} - {{ department.name }} ({{ department.id }})
     </h2>
 
+    <load-avatar
+      v-if="orga && env.avatars.orgs"
+      :owner="{type: 'organization', id: orga.id, department: department.id}"
+      :disabled="env.readonly"
+    />
+
     <organization-members
       :orga="orga"
       :is-admin-orga="isAdminDepartment"

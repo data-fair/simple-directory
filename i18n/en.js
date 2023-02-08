@@ -68,7 +68,8 @@ module.exports = {
     tooLong: 'text is too long',
     settings: 'settings',
     emailNotConfirmed: 'creation not finalized',
-    noRole: 'no role'
+    noRole: 'no role',
+    downloadCsv: 'download the list in CSV format'
   },
   doc: {
     about: {
@@ -168,7 +169,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       oauth: 'Connect with:',
       error: 'Error',
       plannedDeletion: 'Planned deletion',
-      cancelDeletion: 'Cancel the deletion of the user'
+      cancelDeletion: 'Cancel the deletion of the user',
+      siteLogo: 'Site logo'
     },
     organization: {
       addMember: 'Invite a user to join this organization',
@@ -235,6 +237,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     expiredInvitationToken: 'The invitation link you received has expired, you can no longer accept this invitation.',
     maxNbMembers: 'The organization already contains the maximum number of members allowed by its quotas.',
     unknownOAuthProvider: 'OAuth identification not supported.',
+    unknownSAMLProvider: 'SAML identification not supported.',
     adminModeOnly: 'Functionality reserved for super administrators.',
     plannedDeletion: 'The deletion of the user {name} and all its data is planned on the {plannedDeletion}.'
   },

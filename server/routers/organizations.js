@@ -1,6 +1,7 @@
 const express = require('express')
 const shortid = require('shortid')
 const config = require('config')
+const csvStringify = require('util').promisify(require('csv-stringify').stringify)
 const asyncWrap = require('../utils/async-wrap')
 const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
@@ -184,7 +185,13 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
       }
     }
   }
-  res.send(members)
+  if (req.query.format === 'csv') {
+    res.setHeader('content-disposition', 'attachment; filename="members.csv"')
+    const csv = await csvStringify(members.results, { header: true, columns: ['name', 'email', 'role', 'department'] })
+    res.send(csv)
+  } else {
+    res.send(members)
+  }
 }))
 
 // Exclude a member of the organization

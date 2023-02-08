@@ -6,3 +6,5 @@
 /data
 /nuxt-dist
 /dist
+/.git
+config/local*

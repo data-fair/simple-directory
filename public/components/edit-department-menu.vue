@@ -24,6 +24,13 @@
         {{ $t('pages.organization.confirmEditDepartmentTitle', {name: department.name, departmentLabel}) }}
       </v-card-title>
       <v-card-text>
+        <load-avatar
+          v-if="orga && env.avatars.orgs"
+          ref="loadAvatar"
+          :owner="{type: 'organization', id: orga.id, department: department.id}"
+          :disabled="env.readonly"
+          :hide-validate="true"
+        />
         <v-text-field
           v-model="editDepartment.name"
           :label="$t('common.name')"
@@ -52,11 +59,14 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapActions, mapState } from 'vuex'
 
 export default {
   props: ['orga', 'department', 'departmentLabel'],
   data: () => ({ menu: false, editDepartment: null }),
+  computed: {
+    ...mapState(['env'])
+  },
   watch: {
     menu () {
       if (!this.menu) return
@@ -69,6 +79,7 @@ export default {
       this.menu = false
       const departments = this.orga.departments.map(d => d.id === this.department.id ? this.editDepartment : d)
       await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
+      await this.$refs.loadAvatar.validate()
       this.$emit('change')
     }
   }

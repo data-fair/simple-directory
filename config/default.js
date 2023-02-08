@@ -17,6 +17,10 @@ module.exports = {
   admins: ['admin@test.com'],
   adminsOrg: null,
   admins2FA: false,
+  // special case where a email/password is defined at config level for a superadmin
+  // useful when superadmins cannot be created in the storage (on-premise ldap with heavy constraints ?)
+  // or to test stuff while email sending is not working yet, etc
+  adminCredentials: null,
   roles: {
     defaults: ['admin', 'user'],
     editable: false
@@ -45,6 +49,9 @@ module.exports = {
       searchUserPassword: 'admin',
       baseDN: 'dc=example,dc=org',
       readonly: true,
+      // support storing overwritten properties in mongodb
+      overwrite: ['members', 'departments'],
+      cacheMS: 1000 * 60 * 5, // 5 minutes
       // map entities in ldap to SD users
       users: {
         objectClass: 'inetOrgPerson',
@@ -145,7 +152,8 @@ module.exports = {
       port: 1025,
       ignoreTLS: true,
       default: 'localhost'
-    }
+    },
+    extraParams: {}
   },
   maildev: {
     url: 'http://localhost:1080',
@@ -190,14 +198,13 @@ module.exports = {
     attempts: 5,
     duration: 60
   },
-  // Example of oauth configuration
-  // oauth: [{
+  // Example of full oauth provider configuration
+  // oauth: {providers: [{
   //   id: 'github',
   //   icon: 'mdi-github',
   //   title: 'GitHub',
   //   color: '#4078c0',
   //   scope: 'user:email'
-  //   state: '...' // just type random stuff
   //   client: {
   //     id: '...',
   //     secret: '...'
@@ -207,7 +214,7 @@ module.exports = {
   //     tokenPath: '/login/oauth/access_token',
   //     authorizePath: '/login/oauth/authorize'
   //   }
-  // }]
+  // }]}
   oauth: {
     providers: [],
     statesDir: './security',
@@ -227,6 +234,13 @@ module.exports = {
       id: '',
       secret: ''
     }
+  },
+  saml2: {
+    certsDirectory: './security/saml2',
+    providers: []
+  },
+  oidc: {
+    providers: []
   },
   noBirthday: false,
   showCreatedUserHost: false,

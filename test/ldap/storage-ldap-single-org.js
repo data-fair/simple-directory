@@ -10,16 +10,16 @@ describe('ldap single org', () => {
     const storage = await ldapStorage.init(ldapConfig)
 
     const user = storage.getUser({ email: 'alban.mouton@koumoul.com' })
-    if (user) storage.deleteUser(user.id)
+    if (user) storage._deleteUser(user.id)
 
     const org = storage.getOrganization('myorg')
-    if (org) storage.deleteOrganization(org.id)
+    if (org) storage._deleteOrganization(org.id)
   })
 
   it('create and find users in static single org', async () => {
     const storage = await ldapStorage.init(ldapConfig)
 
-    await storage.createUser({
+    await storage._createUser({
       name: 'Alban Mouton',
       firstName: 'Alban',
       lastName: 'Mouton',

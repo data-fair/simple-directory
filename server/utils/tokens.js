@@ -16,8 +16,8 @@ const prometheus = require('./prometheus')
 
 exports.init = async () => {
   const keys = {}
-  const privateKeyPath = path.resolve(__dirname, '../..', config.secret.private)
-  const publicKeyPath = path.resolve(__dirname, '../..', config.secret.public)
+  const privateKeyPath = path.resolve(config.secret.private)
+  const publicKeyPath = path.resolve(config.secret.public)
   try {
     await fs.access(privateKeyPath, fs.constants.F_OK)
   } catch (err) {
@@ -65,7 +65,7 @@ exports.getPayload = (user) => {
     email: user.email,
     name: user.name,
     organizations: (user.organizations || []).map(o => ({ ...o })),
-    isAdmin: config.admins.includes(user.email)
+    isAdmin: config.admins.includes(user.email) || (config.adminCredentials?.password?.hash && config.adminCredentials?.email === user.email)
   }
   if (user.defaultOrg) {
     let defaultOrg = payload.organizations.find(o => o.id === user.defaultOrg)
@@ -153,7 +153,7 @@ exports.keepalive = async (req, res) => {
   if (req.user.orgStorage && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
-  const user = await storage.getUser({ id: req.user.id })
+  const user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
   if (!user) {
     exports.unsetCookies(req, res)
     return res.status(401).send('User does not exist anymore')

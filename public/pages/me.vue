@@ -114,22 +114,31 @@
       </v-row>
 
       <v-row
-        v-if="userDetails && userDetails.oauth && Object.keys(userDetails.oauth).length"
-        class="mx-0"
+        v-if="userIdentities.length"
+        class="mx-0 mt-6"
       >
         <v-btn
-          v-for="oauth of env.oauth.filter(oauth => !!userDetails.oauth[oauth.id])"
-          :key="oauth.id"
-          :color="oauth.color"
-          :href="userDetails.oauth[oauth.id].url"
+          v-for="identity of userIdentities"
+          :key="identity.type + identity.id"
+          :color="identity.color"
+          :href="identity.user.url"
           dark
           small
-          round
+          rounded
           depressed
           class="pl-1 text-none pr-3"
         >
-          <v-icon>{{ oauth.icon }}</v-icon>
-          &nbsp;&nbsp;{{ oauth.title }} - {{ userDetails.oauth[oauth.id].login || userDetails.oauth[oauth.id].name }}
+          <v-avatar size="28">
+            <v-icon v-if="identity.icon">
+              {{ identity.icon }}
+            </v-icon>
+            <img
+              v-else-if="identity.img"
+              :src="identity.img"
+              :alt="identity.title"
+            >
+          </v-avatar>
+          &nbsp;&nbsp;{{ identity.title }}{{ identity.name ? ' - ' + identity.name : '' }}
         </v-btn>
       </v-row>
 
@@ -255,7 +264,7 @@ export default {
   }),
   computed: {
     ...mapState('session', ['user', 'initialized']),
-    ...mapState(['userDetails', 'env']),
+    ...mapState(['userDetails', 'env', 'authProviders']),
     readonly () {
       return this.env.readonly || this.user.orgStorage
     },
@@ -302,6 +311,13 @@ export default {
           this.patch.defaultOrg = this.patch.defaultDep = ''
         }
       }
+    },
+    userIdentities () {
+      if (!this.authProviders || !this.userDetails) return []
+      return this.authProviders.map(p => ({
+        ...p,
+        user: this.userDetails[p.type] && this.userDetails[p.type][p.id]
+      })).filter(p => !!p.user).map(p => ({ ...p, name: p.user.login || p.user.name }))
     }
   },
   watch: {
@@ -320,6 +336,9 @@ export default {
       },
       immediate: true
     }
+  },
+  created () {
+    this.$store.dispatch('fetchAuthProviders')
   },
   methods: {
     ...mapActions(['fetchUserDetails']),

@@ -15,7 +15,7 @@ module.exports = {
     },
     ldap: {
       url: 'ldap://localhost:389',
-      readonly: false
+      cacheMS: 0
     }
   },
   secretKeys: {

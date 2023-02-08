@@ -8,6 +8,7 @@ const eventToPromise = require('event-to-promise')
 const originalUrl = require('original-url')
 const { format: formatUrl } = require('url')
 const cors = require('cors')
+const { createHttpTerminator } = require('http-terminator')
 const dayjs = require('./utils/dayjs')
 const storages = require('./storages')
 const mails = require('./mails')
@@ -15,6 +16,8 @@ const asyncWrap = require('./utils/async-wrap')
 const tokens = require('./utils/tokens')
 const limits = require('./utils/limits')
 const prometheus = require('./utils/prometheus')
+const saml2 = require('./utils/saml2')
+const oauth = require('./utils/oauth')
 const twoFA = require('./routers/2fa.js')
 const session = require('@data-fair/sd-express')({
   directoryUrl: config.publicUrl,
@@ -25,6 +28,13 @@ const debug = require('debug')('app')
 
 const app = express()
 const server = http.createServer(app)
+const httpTerminator = createHttpTerminator({ server })
+
+// cf https://connectreport.com/blog/tuning-http-keep-alive-in-node-js/
+// timeout is often 60s on the reverse proxy, better to a have a longer one here
+// so that interruption is managed downstream instead of here
+server.keepAliveTimeout = (60 * 1000) + 1000
+server.headersTimeout = (60 * 1000) + 2000
 
 app.set('json spaces', 2)
 
@@ -40,7 +50,7 @@ app.use(i18n.middleware)
 // Replaces req.user from session with full and fresh user object from storage
 // also minimalist api key management
 const fullUser = asyncWrap(async (req, res, next) => {
-  if (req.user && !req.user.orgStorage) {
+  if (req.user && !req.user.orgStorage && req.user.id !== '_superadmin') {
     req.user = {
       ...await req.app.get('storage').getUser({ id: req.user.id }),
       isAdmin: req.user.isAdmin,
@@ -110,10 +120,6 @@ try { info = require('../BUILD.json') } catch (err) {}
 app.get('/api/info', session.requiredAuth, (req, res) => {
   res.send(info)
 })
-app.get('/api/admin/info', session.requiredAuth, (req, res) => {
-  if (!req.user.adminMode) return res.status(403).send()
-  res.send({ ...info, config })
-})
 
 /*
 *  WARNING:
@@ -161,6 +167,11 @@ exports.run = async () => {
   debug('prepare mail transport')
   const mailTransport = await mails.init()
   app.set('mailTransport', mailTransport)
+
+  debug('prepare oauth providers')
+  await oauth.init()
+  debug('prepare saml2 providers')
+  await saml2.init()
 
   if (storage.db) {
     // await require('../upgrade')(storage.db)
@@ -251,8 +262,7 @@ exports.run = async () => {
 }
 
 exports.stop = async () => {
-  server.close()
-  await eventToPromise(server, 'close')
+  await httpTerminator.terminate()
 
   app.get('mailTransport').close()
   if (config.maildev.active) {

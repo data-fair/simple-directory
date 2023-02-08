@@ -2,11 +2,16 @@ const oauth2 = require('simple-oauth2')
 const path = require('path')
 const fs = require('fs-extra')
 const config = require('config')
-const shortid = require('shortid')
+const { nanoid } = require('nanoid')
 const axios = require('axios')
+const slug = require('slugify')
 const debug = require('debug')('oauth')
 
-const providers = {
+exports.getProviderId = (url) => {
+  return slug(new URL(url).host, { lower: true, strict: true })
+}
+
+const standardProviders = {
   github: {
     title: 'GitHub',
     icon: 'mdi-github',
@@ -49,7 +54,7 @@ const providers = {
       authorizePath: '/v6.0/dialog/oauth'
     },
     userInfo: async (accessToken) => {
-      // TOFO: fetch picture, but it is a temporary URL we should store the result if we want to use it
+      // TODO: fetch picture, but it is a temporary URL we should store the result if we want to use it
       const res = await axios.get('https://graph.facebook.com/me', { params: { access_token: accessToken, fields: 'name,first_name,last_name,email' } })
       debug('user info from facebook', res.data)
       return {
@@ -162,57 +167,110 @@ const providers = {
 }
 
 config.oauth.providers.forEach(p => {
-  if (!providers[p]) throw new Error('Unknown oauth provider ' + p)
+  if (!standardProviders[p]) throw new Error('Unknown oauth provider ' + p)
 })
 
-exports.providers = config.oauth.providers.map(p => ({
-  ...providers[p],
-  id: p,
-  client: oauth2.create({ client: config.oauth[p], auth: providers[p].auth })
-}))
+exports.providers = []
 
-const statesDir = path.resolve(__dirname, '../..', config.oauth.statesDir)
-fs.ensureDir(statesDir)
+for (const p of config.oidc.providers) {
+  exports.providers.push({
+    ...p,
+    id: this.getProviderId(p.discovery),
+    scope: 'openid email profile',
+    oidc: true
+  })
+}
+for (const p of config.oauth.providers) {
+  exports.providers.push({
+    ...standardProviders[p],
+    id: p,
+    client: config.oauth[p],
+    auth: standardProviders[p].auth
+  })
+}
 
-exports.providers.forEach(p => {
-  // a random string as state for each provider
-  const statePath = path.join(statesDir, 'oauth-state-' + p.id)
-  if (fs.existsSync(statePath)) {
-    p.state = fs.readFileSync(statePath, 'utf8')
-  } else {
-    p.state = shortid.generate()
-    fs.writeFileSync(statePath, p.state)
-  }
+exports.init = async () => {
+  const statesDir = path.resolve(__dirname, '../..', config.oauth.statesDir)
+  await fs.ensureDir(statesDir)
 
-  const callbackUri = `${config.publicUrl}/api/auth/oauth/${p.id}/callback`
-
-  // dynamically prepare authorization uris for login redirection
-  p.authorizationUri = (redirect, org, dep) => {
-    let state = p.state + '/' + encodeURIComponent(redirect.replace('?id_token=', ''))
-    if (org) state += '/' + org
-    if (dep) state += '/' + dep
-    return p.client.authorizationCode.authorizeURL({
-      redirect_uri: callbackUri,
-      scope: p.scope,
-      state
-    })
-  }
-
-  // get an access token from code sent as callback to login redirect
-  p.accessToken = async (code) => {
-    const token = await p.client.authorizationCode.getToken({
-      code,
-      redirect_uri: callbackUri,
-      scope: p.scope,
-      client_id: config.oauth[p.id].id,
-      client_secret: config.oauth[p.id].secret
-    })
-    if (token.error) {
-      console.error('Bad OAuth code', token)
-      throw new Error('Bad OAuth code')
+  for (const p of exports.providers) {
+    if (p.discovery) {
+      const discoveryContent = (await axios.get(p.discovery)).data
+      const tokenURL = new URL(discoveryContent.token_endpoint)
+      const authURL = new URL(discoveryContent.authorization_endpoint)
+      p.auth = {
+        tokenHost: tokenURL.origin,
+        tokenPath: tokenURL.pathname,
+        authorizeHost: authURL.origin,
+        authorizePath: authURL.pathname
+      }
+      p.userInfo = async (accessToken) => {
+        const claims = (await axios.get(discoveryContent.userinfo_endpoint, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        })).data
+        if (claims.email_verified === false) throw new Error('OAuth athentication invalid, email_verified is false.')
+        return { email: claims.email, avatarUrl: claims.picture, name: claims.name }
+      }
     }
-    return token.access_token
-  }
-})
+    const oauthClient = oauth2.create({
+      client: p.client,
+      auth: p.auth
+    })
 
-exports.publicProviders = exports.providers.map(p => ({ id: p.id, title: p.title, color: p.color, icon: p.icon }))
+    // a random string as state for each provider
+    const statePath = path.join(statesDir, 'oauth-state-' + p.id)
+    if (await fs.pathExists(statePath)) {
+      p.state = await fs.readFile(statePath, 'utf8')
+    } else {
+      p.state = nanoid()
+      await fs.writeFile(statePath, p.state)
+    }
+
+    // standard oauth providers use the old deprecated url callback for retro-compatibility
+    const callbackUri = p.discovery ? `${config.publicUrl}/api/auth/oauth-callback` : `${config.publicUrl}/api/auth/oauth/${p.id}/callback`
+
+    // dynamically prepare authorization uris for login redirection
+    p.authorizationUri = (relayState, email) => {
+      const params = {
+        redirect_uri: callbackUri,
+        scope: p.scope,
+        state: JSON.stringify(relayState),
+        display: 'page',
+        prompt: 'login'
+      }
+      if (email) {
+        // send email in login_hint
+        // see https://openid.net/specs/openid-connect-basic-1_0.html
+        params.login_hint = email
+      }
+      const url = oauthClient.authorizationCode.authorizeURL(params)
+      return url
+    }
+
+    // get an access token from code sent as callback to login redirect
+    p.accessToken = async (code) => {
+      const token = await oauthClient.authorizationCode.getToken({
+        code,
+        redirect_uri: callbackUri,
+        scope: p.scope,
+        client_id: p.client.id,
+        client_secret: p.client.secret,
+        grant_type: 'authorization_code'
+      })
+      if (token.error) {
+        console.error('Bad OAuth code', token)
+        throw new Error('Bad OAuth code')
+      }
+      return token.access_token
+    }
+  }
+}
+
+exports.publicProviders = exports.providers.map(p => ({
+  type: 'oauth',
+  id: p.id,
+  title: p.title,
+  color: p.color,
+  icon: p.icon,
+  img: p.img
+}))
