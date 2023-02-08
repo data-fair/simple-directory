@@ -27,6 +27,16 @@
           :sender="`organization:${orga.id}:${department || ''}:admin`"
           :topics="notifyTopics"
         />
+        <v-btn
+          icon
+          v-bind="attrs"
+          color="primary"
+          class="mx-1"
+          :href="csvUrl"
+          :title="$t('common.downloadCsv')"
+        >
+          <v-icon>mdi-file-table</v-icon>
+        </v-btn>
       </h2>
     </v-row>
 
@@ -204,6 +214,9 @@ export default {
           { key: 'simple-directory:invitation-accepted', title: this.$t('notifications.acceptedInvitationTopic') }
         ]
       }
+    },
+    csvUrl () {
+      return this.env.publicUrl + `/api/organizations/${this.orga.id}/members?size=10000&format=csv`
     }
   },
   async mounted () {

@@ -99,6 +99,7 @@
     "cookie-parser": "^1.4.3",
     "cookie-universal-nuxt": "^2.1.5",
     "cookies": "^0.7.3",
+    "csv-stringify": "^6.2.4",
     "dayjs": "^1.10.7",
     "debug": "^3.2.6",
     "email-validator": "^2.0.4",

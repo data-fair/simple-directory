@@ -5,8 +5,7 @@
   >
     <template #activator="{on, attrs}">
       <v-btn
-        fab
-        small
+        icon
         v-bind="attrs"
         color="primary"
         class="mx-1"

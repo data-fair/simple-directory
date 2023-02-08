@@ -72,7 +72,8 @@ module.exports = {
     continue: 'Continuer',
     tooLong: 'texte trop long',
     settings: 'paramètres',
-    emailNotConfirmed: 'création non finalisée'
+    emailNotConfirmed: 'création non finalisée',
+    downloadCsv: 'télécharger la liste au format CSV'
   },
   doc: {
     about: {
