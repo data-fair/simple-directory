@@ -134,7 +134,7 @@ class MongodbStorage {
   }
 
   async deleteUser (userId) {
-    await this.db.collection('users').removeOne({ _id: userId })
+    await this.db.collection('users').deleteOne({ _id: userId })
   }
 
   async findUsers (params = {}) {
@@ -257,7 +257,7 @@ class MongodbStorage {
   async deleteOrganization (organizationId) {
     await this.db.collection('users')
       .updateMany({}, { $pull: { organizations: { id: organizationId } } })
-    await this.db.collection('organizations').removeOne({ _id: organizationId })
+    await this.db.collection('organizations').deleteOne({ _id: organizationId })
   }
 
   async findOrganizations (params = {}) {
