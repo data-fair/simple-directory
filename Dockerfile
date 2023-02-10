@@ -60,7 +60,9 @@ ADD nuxt.config.js nuxt.config.js
 ADD i18n i18n
 ADD server server
 ADD scripts scripts
-ADD config config
+ADD config/default.js config/
+ADD config/production.js config/
+ADD config/custom-environment-variables.js config/
 ADD contract contract
 
 # Adding licence, manifests, etc.
