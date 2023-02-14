@@ -22,18 +22,12 @@ after('stop app', async () => {
   debug('stop app ok')
 })
 
-before('create users', async () => {
-  debug('create users')
-  global.app.get('storage').db.collection('users').deleteMany({})
-  global.users = {
-    admin: await testUtils.createUser('alban.mouton@koumoul.com', true)
-  }
-
-  debug('create users ok')
-})
-
 beforeEach('scratch data', async () => {
   debug('scratch data')
   await global.app.get('storage').db.collection('organizations').deleteMany({})
+  await global.app.get('storage').db.collection('users').deleteMany({})
+  global.users = {
+    admin: await testUtils.createUser('alban.mouton@koumoul.com', true)
+  }
   debug('scratch data ok')
 })
