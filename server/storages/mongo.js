@@ -247,19 +247,19 @@ class MongodbStorage {
       { returnOriginal: false }
     )
     const orga = cleanOrganization(mongoRes.value)
-    // "name" was modified, also update all organizations references in users
+    // also update all organizations references in users
     if (patch.name || patch.departments) {
-      const departments = patch.departments || []
-      const cursor = this.db.collection('users').find({ organizations: { $elemMatch: { id } } })
-      while (await cursor.hasNext()) {
-        const user = await cursor.next()
-        user.organizations
-          .filter(userOrga => userOrga.id === id)
-          .filter(userOrga => !userOrga.department || departments.find(d => d.id === userOrga.department))
-          .forEach(userOrga => {
-            userOrga.name = patch.name
-            if (userOrga.department) userOrga.departmentName = departments.find(d => d.id === userOrga.department).name
-          })
+      for await (const user of this.db.collection('users').find({ organizations: { $elemMatch: { id } } })) {
+        for (const org of user.organizations) {
+          if (org.id !== id) continue
+          if (patch.name) org.name = patch.name
+          if (org.department && patch.departments) {
+            const department = patch.departments.find(d => d.id === org.department)
+            // TODO: if !department means that the department was deleted.
+            // What to do in this case, remove the membershp entirely ?
+            if (department) org.departmentName = department.name
+          }
+        }
         await this.db.collection('users').updateOne({ _id: user._id }, { $set: { organizations: user.organizations } })
       }
     }
