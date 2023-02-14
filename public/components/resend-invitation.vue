@@ -95,7 +95,6 @@ import eventBus from '../event-bus'
 export default {
   props: {
     orga: { type: Object, required: true },
-    department: { type: String, default: null },
     member: { type: Object, required: true }
   },
   data () {
@@ -104,7 +103,15 @@ export default {
   watch: {
     menu (value) {
       if (!value) return
-      this.invitation = { id: this.orga.id, name: this.orga.name, email: this.member.email, role: this.member.role, department: this.member.department, redirect: this.$route.query.redirect }
+      const invitation = {
+        id: this.orga.id,
+        name: this.orga.name,
+        email: this.member.email,
+        role: this.member.role,
+        redirect: this.$route.query.redirect
+      }
+      if (this.member.department) invitation.department = this.member.department
+      this.invitation = invitation
       this.link = null
     }
   },
@@ -115,7 +122,7 @@ export default {
         return
       }
       try {
-        const res = await this.$axios.$post('api/invitations/', this.invitation)
+        const res = await this.$axios.$post('api/invitations', this.invitation, { params: { force_mail: true } })
         if (res && res.link) {
           this.link = res.link
         } else {

@@ -100,6 +100,19 @@ describe('organizations api', () => {
     assert.equal(newMember.role, 'user')
     assert.equal(newMember.emailConfirmed, false)
 
+    // invite in a second organization
+    const org2 = (await ax.post('/api/organizations', { name: 'test2' })).data
+    await ax.post('/api/invitations', { id: org2.id, name: org2.name, email: 'test-invit6@test.com', role: 'user' })
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 2)
+    newMember = members.find(m => m.email === 'test-invit6@test.com')
+    assert.equal(newMember.emailConfirmed, false)
+    members = (await ax.get(`/api/organizations/${org2.id}/members`)).data.results
+    assert.equal(members.length, 2)
+    newMember = members.find(m => m.email === 'test-invit6@test.com')
+    assert.equal(newMember.role, 'user')
+    assert.equal(newMember.emailConfirmed, false)
+
     // finalize user creation and invitation
     await anonymousAx.post('/api/users', { email: 'test-invit6@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
@@ -130,5 +143,49 @@ describe('organizations api', () => {
     assert.equal(newMember.emailConfirmed, true)
 
     config.alwaysAcceptInvitation = false
+  })
+
+  it('should invite a new user in an organization departments', async () => {
+    const { ax } = await testUtils.createUser('test-invit9@test.com')
+    const anonymousAx = await testUtils.axios()
+
+    const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }] })).data
+    const mailPromise = eventToPromise(mails.events, 'send')
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep1', role: 'user' })
+    const mail = await mailPromise
+    assert.ok(mail.link.startsWith('http://localhost:8080/api/invitations/_accept'))
+
+    // before accepting the user is not yet member
+    let members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 1)
+    assert.equal(members[0].email, 'test-invit9@test.com')
+
+    // when clicking on the link the person is redirected to a page to create their user
+    // the invitation token is forwarded to be re-sent with the user creation requests
+    let redirect
+    await assert.rejects(anonymousAx.get(mail.link), (res) => {
+      assert.equal(res.status, 302)
+      redirect = res.headers.location
+      return true
+    })
+    const invitToken = new URL(redirect).searchParams.get('invit_token')
+
+    // create user and accept invitation
+    await anonymousAx.post('/api/users', { email: 'test-invit10@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 2)
+    const newMember = members.find(m => m.email === 'test-invit10@test.com')
+    assert.ok(newMember)
+    assert.ok(newMember.emailConfirmed)
+    assert.equal(newMember.role, 'user')
+    assert.equal(newMember.department, 'dep1')
+    assert.equal(newMember.departmentName, 'Department 1')
+
+    // log in a newly invited user
+    const newAx = await testUtils.axios('test-invit10@test.com:Test1234')
+    const newUser = (await newAx.get('/api/auth/me')).data
+    assert.equal(newUser.organization.name, 'test')
+    assert.equal(newUser.organization.department, 'dep1')
+    assert.equal(newUser.organization.role, 'user')
   })
 })

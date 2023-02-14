@@ -68,6 +68,7 @@ module.exports = {
     tooLong: 'text is too long',
     settings: 'settings',
     emailNotConfirmed: 'creation not finalized',
+    noRole: 'no role',
     downloadCsv: 'download the list in CSV format'
   },
   doc: {

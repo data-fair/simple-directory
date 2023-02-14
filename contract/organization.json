@@ -70,9 +70,22 @@
             "enum": ["admin", "user"],
             "description": "Role for this member in this organization"
           },
-          "department": {
-            "type": "string",
-            "description": "Identifier of the department"
+          "departments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Identifier of the department"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": ["admin", "user"],
+                  "description": "Role for this member in this department"
+                }
+              }
+            }
           }
         }
       }

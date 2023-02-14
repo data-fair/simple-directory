@@ -4,11 +4,12 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on}">
+    <template #activator="{on, attrs}">
       <v-btn
         :title="$t('pages.organization.editMember')"
         text
         icon
+        v-bind="attrs"
         v-on="on"
       >
         <v-icon>mdi-pencil</v-icon>
@@ -27,17 +28,6 @@
           v-model="editMember.role"
           :items="orga.roles"
           :label="$t('common.role')"
-          dense
-          outlined
-        />
-        <v-autocomplete
-          v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
-          v-model="editMember.department"
-          :items="orga.departments"
-          :label="orga.departmentLabel || $t('common.department')"
-          item-value="id"
-          item-text="name"
-          clearable
           dense
           outlined
         />
@@ -65,7 +55,7 @@
 import { mapState } from 'vuex'
 
 export default {
-  props: ['orga', 'member', 'department'],
+  props: ['orga', 'member'],
   data: () => ({ menu: false, editMember: null }),
   computed: {
     ...mapState(['env'])
@@ -73,7 +63,7 @@ export default {
   watch: {
     menu () {
       if (!this.menu) return
-      this.editMember = JSON.parse(JSON.stringify(this.member))
+      this.editMember = { ...this.member }
     }
   }
 }

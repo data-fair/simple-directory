@@ -45,8 +45,10 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
   if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
 
-  const returnError = (error, errorCode) => {
+  const returnError = async (error, errorCode) => {
     debug('auth password return error', error, errorCode)
+    // prevent attacker from analyzing response time
+    await new Promise(resolve => setTimeout(resolve, Math.round(Math.random * 1000)))
     if (req.is('application/x-www-form-urlencoded')) {
       const refererUrl = new URL(req.headers.referer || req.headers.referrer)
       refererUrl.searchParams.set('error', error)
@@ -58,15 +60,22 @@ router.post('/password', asyncWrap(async (req, res, next) => {
 
   try {
     await limiter(req).consume(requestIp.getClientIp(req), 1)
+    await limiter(req).consume(req.body.email, 1)
   } catch (err) {
     console.error('Rate limit error for /password route', requestIp.getClientIp(req), req.body.email, err)
     return returnError('rateLimitAuth', 429)
   }
 
-  let org
-  if (req.body.org || req.query.org) {
-    org = await req.app.get('storage').getOrganization(req.body.org || req.query.org)
-    if (!org) return returnError('orgaUnknown', 404)
+  const orgId = req.body.org || req.query.org
+  const depId = req.body.dep || req.query.dep
+  let org, dep
+  if (orgId && typeof orgId === 'string') {
+    org = await req.app.get('storage').getOrganization(orgId)
+    if (!org) return returnError('badCredentials', 400)
+    if (depId) {
+      dep = org.departments.find(d => d.id === depId)
+      if (!dep) return returnError('badCredentials', 400)
+    }
   }
 
   let storage = req.app.get('storage')
@@ -99,7 +108,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     }
   }
   if (org && req.body.membersOnly && !user.organizations.find(o => o.id === org.id)) {
-    return returnError('orgaUnknown', 404)
+    return returnError('badCredentials', 400)
   }
   const payload = tokens.getPayload(user)
   if (req.body.adminMode) {
@@ -142,11 +151,11 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   // this is used by data-fair app integrated login
   if (req.is('application/x-www-form-urlencoded')) {
     const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
-    tokens.setCookieToken(req, res, token, (org && org.id) || tokens.getDefaultOrg(user))
+    tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
     res.redirect(req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
   } else {
-    const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, org && org.id, req.body.orgStorage).href
+    const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, orgId, depId), req.body.orgStorage).href
     debug(`Password based authentication of user ${user.name}, ajax mode`, callbackUrl)
     res.send(callbackUrl)
   }
@@ -206,7 +215,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
     return res.status(400).send(req.messages.errors.passwordless2FA)
   }
 
-  const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, req.body.org, req.body.orgStorage)
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, req.body.org, req.body.dep), req.body.orgStorage)
   debug(`Passwordless authentication of user ${user.name}`)
   await mails.send({
     transport: req.app.get('mailTransport'),
@@ -252,7 +261,7 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
 
   await confirmLog(storage, user)
-  tokens.setCookieToken(req, res, token, req.query.id_token_org || tokens.getDefaultOrg(user))
+  tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user, req.query.id_token_org, req.query.id_token_dep))
 
   // we just confirmed the user email after creation, he might want to create an organization
   if (decoded.emailConfirmed && config.quotas.defaultMaxCreatedOrgs !== 0 && !org) {
@@ -396,7 +405,7 @@ router.post('/asadmin', asyncWrap(async (req, res, next) => {
   payload.isAdmin = false
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
-  tokens.setCookieToken(req, res, token)
+  tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user))
 
   res.status(204).send()
 }))
@@ -411,7 +420,7 @@ router.delete('/asadmin', asyncWrap(async (req, res, next) => {
   payload.adminMode = true
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
-  tokens.setCookieToken(req, res, token)
+  tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user))
 
   res.status(204).send()
 }))
@@ -436,6 +445,7 @@ router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
     req.headers.referer,
     (req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl).replace('?id_token=', ''),
     req.query.org || '',
+    req.query.dep || '',
     req.query.invit_token || ''
   ]
   const authorizationUri = provider.authorizationUri(relayState, req.query.email)
@@ -451,7 +461,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     console.error('missing OAuth state')
     throw new Error('Bad OAuth state')
   }
-  const [providerState, loginReferer, redirect, org, invitToken] = JSON.parse(req.query.state)
+  const [providerState, loginReferer, redirect, org, dep, invitToken] = JSON.parse(req.query.state)
 
   const returnError = (error, errorCode) => {
     debugSAML('login return error', error, errorCode)
@@ -560,7 +570,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
   }
 
   const payload = { ...tokens.getPayload(user), temporary: true }
-  const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? invitOrga.id : org)
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? {id: invit.id, department: invit.department} : {id: org, department: dep})
   debugOAuth(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 })

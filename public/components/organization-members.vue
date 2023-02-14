@@ -89,12 +89,10 @@
       <template v-for="(member, i) in members.results">
         <v-list-item :key="member.id">
           <v-list-item-content>
-            <v-list-item-title>{{ member.name }} ({{ member.email }})</v-list-item-title>
-            <v-list-item-subtitle style="white-space:normal;">
-              <span>{{ $t('common.role') }} = {{ member.role }}</span>
-              <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ orga.departments.find(d => d.id === member.department) && orga.departments.find(d => d.id === member.department).name }}</span>
+            <v-list-item-title style="white-space:normal;">
+              {{ member.name }} ({{ member.email }})
               <template v-if="member.emailConfirmed === false">
-                - <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
+                <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
                   <resend-invitation
                     :member="member"
                     :orga="orga"
@@ -102,13 +100,16 @@
                   />
                 </span>
               </template>
+            </v-list-item-title>
+            <v-list-item-subtitle style="white-space:normal;">
+              <span>{{ $t('common.role') }} = {{ member.role }}</span>
+              <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ member.departmentName || member.department }}</span>
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action v-if="isAdminOrga && (!readonly || env.overwrite.includes('members'))">
             <edit-member-menu
               :orga="orga"
               :member="member"
-              :department="adminDepartment"
               @save="saveMember"
             />
           </v-list-item-action>
@@ -116,6 +117,7 @@
             <v-btn
               :title="$t('common.asAdmin')"
               icon
+              :disabled="!member.emailConfirmed"
               @click="asAdmin(member)"
             >
               <v-icon color="warning">
@@ -157,12 +159,8 @@
 <script>
 import { mapState, mapActions } from 'vuex'
 import eventBus from '../event-bus'
-import AddMemberMenu from '~/components/add-member-menu'
-import DeleteMemberMenu from '~/components/delete-member-menu'
-import EditMemberMenu from '~/components/edit-member-menu'
 
 export default {
-  components: { AddMemberMenu, DeleteMemberMenu, EditMemberMenu },
   props: {
     isAdminOrga: {
       type: Boolean,
@@ -247,7 +245,7 @@ export default {
     },
     async deleteMember (member) {
       try {
-        await this.$axios.$delete(`api/organizations/${this.orga.id}/members/${member.id}`)
+        await this.$axios.$delete(`api/organizations/${this.orga.id}/members/${member.id}`, { params: { department: member.department } })
         eventBus.$emit('notification', this.$t('pages.organization.deleteMemberSuccess', { name: member.name }))
         this.fetchMembers(this.membersPage)
       } catch (error) {
@@ -256,7 +254,7 @@ export default {
     },
     async saveMember (member) {
       try {
-        await this.$axios.patch(`api/organizations/${this.orga.id}/members/${member.id}`, { role: member.role, department: member.department })
+        await this.$axios.patch(`api/organizations/${this.orga.id}/members/${member.id}`, { role: member.role }, { params: { department: member.department } })
         this.fetchMembers(this.membersPage)
       } catch (error) {
         eventBus.$emit('notification', { error })

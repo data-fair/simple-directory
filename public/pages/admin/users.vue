@@ -83,13 +83,16 @@
           <span v-else>non</span>
         </td>
         <td>
-          <span
+          <div
             v-for="orga in props.item.organizations"
             :key="orga.id"
           >
-            <nuxt-link :to="localePath({name: 'organization-id', params: {id: orga.id}})">{{ orga.name }} ({{ orga.role }})</nuxt-link>
-          &nbsp;
-          </span>
+            <span style="white-space:nowrap">
+              <nuxt-link :to="localePath({name: 'organization-id', params: {id: orga.id}})">{{ orga.name }}</nuxt-link>
+              <template v-if="orga.department">{{ orga.departmentName || orga.department }}</template>
+              ({{ orga.role }})
+            </span>
+          </div>
         </td>
         <td v-if="env.defaultMaxCreatedOrgs !== -1 && !env.readonly">
           <span>{{ props.item.maxCreatedOrgs }}</span>

@@ -97,6 +97,7 @@ app.use('/login', (req, res, next) => {
       url.searchParams.set(key, req.query[key])
     }
     url.searchParams.set('redirect', req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
+    debug(`redirect login from ${req.publicBaseUrl} to ${config.publicUrl}`)
     res.redirect(url.href)
   } else {
     next()
@@ -174,6 +175,8 @@ exports.run = async () => {
   await saml2.init()
 
   if (storage.db) {
+    // await require('../upgrade')(storage.db)
+
     const locks = require('./utils/locks')
     const webhooks = require('./webhooks')
 

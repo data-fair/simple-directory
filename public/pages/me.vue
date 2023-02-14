@@ -156,13 +156,16 @@
 
         <div v-if="userDetails">
           <template v-if="userDetails.organizations.length">
-            <span
+            <template
               v-for="orga in userDetails.organizations"
-              :key="orga.id"
             >
-              {{ orga.name }} ({{ orga.role }})
-              &nbsp;
-            </span>
+              <span
+                v-if="orga.role"
+                :key="'org-' + orga.id + '-' + orga.department"
+              >
+                {{ orga.name }} <span v-if="orga.department">- {{ orga.departmentName || orga.department }}</span> ({{ orga.role }})
+              </span>
+            </template>
           </template>
           <span v-else>
             {{ $t('pages.me.noOrganization') }}
@@ -204,16 +207,17 @@
         />
         <v-select
           v-if="defaultOrgItems.length > 1"
-          v-model="patch.defaultOrg"
+          v-model="defaultOrg"
           :label="$t('pages.me.defaultOrg')"
           :disabled="readonly"
           name="defaultOrg"
           :items="defaultOrgItems"
-          item-value="id"
-          item-text="name"
+          :item-value="(org) => org.id + '-' + org.department"
+          :item-text="(org) => `${org.name}` + (org.department ? ` - ${org.departmentName || org.department}` : '')"
           clearable
           outlined
           dense
+          return-object
           @change="save"
         />
       </template>
@@ -292,6 +296,22 @@ export default {
       if (this.user.organizations.length === 0 && !this.userDetails.ignorePersonalAccount) return false
       return true
     },
+    defaultOrg: {
+      get () {
+        return {
+          id: this.patch.defaultOrg,
+          department: this.patch.defaultDep
+        }
+      },
+      set (value) {
+        if (value) {
+          this.patch.defaultOrg = value.id
+          this.patch.defaultDep = value.department || ''
+        } else {
+          this.patch.defaultOrg = this.patch.defaultDep = ''
+        }
+      }
+    },
     userIdentities () {
       if (!this.authProviders || !this.userDetails) return []
       return this.authProviders.map(p => ({
@@ -329,6 +349,7 @@ export default {
       this.patch.birthday = this.userDetails.birthday
       this.patch.ignorePersonalAccount = this.userDetails.ignorePersonalAccount || false
       this.patch.defaultOrg = this.userDetails.defaultOrg || ''
+      this.patch.defaultDep = this.userDetails.defaultDep || ''
     },
     async save (e) {
       if (e && e.preventDefault) e.preventDefault()

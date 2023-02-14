@@ -113,6 +113,10 @@ class FileStorage {
     if (params.departments && params.departments.length) {
       members = members.filter(member => params.departments.includes(member.department))
     }
+    for (const member of members.filter(m => m.department)) {
+      const dep = orga.departments && orga.departments.find(d2 => d2.id === member.department)
+      if (dep) member.departmentName = dep.name
+    }
     return {
       count: members.length,
       results: members.sort(sortCompare(params.sort)).slice(params.skip, params.skip + params.size)

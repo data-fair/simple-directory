@@ -23,9 +23,9 @@ describe('users api', () => {
       return true
     })
 
-    const { ax: adminAx } = await testUtils.createUser('alban.mouton@koumoul.com', true)
+    const { ax: adminAx } = await testUtils.createUser('admin@test.com', true)
     let users = (await adminAx.get('/api/users')).data
-    assert.equal(users.results.length, 2)
+    assert.equal(users.results.length, 3)
     users = (await adminAx.get('/api/users?q=use')).data
     assert.equal(users.results.length, 1)
   })

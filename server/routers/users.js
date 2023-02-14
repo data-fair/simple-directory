@@ -78,7 +78,8 @@ router.post('', asyncWrap(async (req, res, next) => {
   newUser.name = userName(newUser)
   if (invit) {
     newUser.emailConfirmed = true
-    newUser.defaultOrg = orga.id
+    newUser.defaultOrg = invit.id
+    if (invit.department) newUser.defaultDep = invit.department
     newUser.ignorePersonalAccount = true
   }
 
@@ -143,13 +144,13 @@ router.post('', asyncWrap(async (req, res, next) => {
     // no need to confirm email if the user already comes from an invitation link
     // we already created the user with emailConfirmed=true
     const payload = { ...tokens.getPayload(newUser), temporary: true }
-    const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, orga.id)
+    const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(newUser, invit && invit.id, invit && invit.department))
     return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication
     // the user will be validated and authenticated at the same time by the token_callback route
     const payload = { ...tokens.getPayload(newUser), emailConfirmed: true, temporary: true }
-    const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, req.query.org)
+    const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(newUser, req.query.org, req.query.dep))
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'creation',
@@ -180,7 +181,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
 }))
 
 // Update some parts of a user as himself
-const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'plannedDeletion']
+const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'defaultDep', 'plannedDeletion']
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 router.patch('/:userId', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()

@@ -1,3 +1,4 @@
+const createError = require('http-errors')
 const config = require('config')
 const moment = require('moment')
 const escapeStringRegexp = require('escape-string-regexp')
@@ -206,13 +207,21 @@ class MongodbStorage {
           .limit(params.size || 12)
           .toArray())
     const count = await countPromise
-    return {
-      count,
-      results: users.map(user => {
-        const userOrga = user.organizations.find(o => o.id === organizationId)
-        return { id: user._id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department, emailConfirmed: user.emailConfirmed }
+    const results = []
+    users.forEach(user => {
+      user.organizations.filter(o => o.id === organizationId).forEach(userOrga => {
+        results.push({
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: userOrga.role,
+          department: userOrga.department,
+          departmentName: userOrga.departmentName,
+          emailConfirmed: user.emailConfirmed
+        })
       })
-    }
+    })
+    return { count, results }
   }
 
   async getOrganization (id) {
@@ -226,7 +235,7 @@ class MongodbStorage {
     const date = new Date()
     clonedOrga.created = { id: user.id, name: user.name, date }
     clonedOrga.updated = { id: user.id, name: user.name, date }
-    await this.db.collection('organizations').insert(clonedOrga)
+    await this.db.collection('organizations').insertOne(clonedOrga)
     return orga
   }
 
@@ -239,14 +248,17 @@ class MongodbStorage {
     )
     const orga = cleanOrganization(mongoRes.value)
     // "name" was modified, also update all organizations references in users
-    if (patch.name) {
+    if (patch.name || patch.departments) {
+      const departments = patch.departments || []
       const cursor = this.db.collection('users').find({ organizations: { $elemMatch: { id } } })
       while (await cursor.hasNext()) {
         const user = await cursor.next()
         user.organizations
-          .filter(orga => orga.id === id)
-          .forEach(orga => {
-            orga.name = patch.name
+          .filter(userOrga => userOrga.id === id)
+          .filter(userOrga => !userOrga.department || departments.find(d => d.id === userOrga.department))
+          .forEach(userOrga => {
+            userOrga.name = patch.name
+            if (userOrga.department) userOrga.departmentName = departments.find(d => d.id === userOrga.department).name
           })
         await this.db.collection('users').updateOne({ _id: user._id }, { $set: { organizations: user.organizations } })
       }
@@ -284,10 +296,29 @@ class MongodbStorage {
     return { count, results: organizations.map(cleanOrganization) }
   }
 
-  async addMember (orga, user, role, department) {
+  async addMember (orga, user, role, department = null) {
+    user.organizations = user.organizations || []
+    let userOrga = user.organizations.find(o => o.id === orga.id && (o.department || null) === department)
+    if (!userOrga) {
+      if (department && user.organizations.find(o => o.id === orga.id && !o.department)) {
+        throw createError(400, 'cet utilisateur est membre de l\'organisation parente, il ne peut pas être ajouté dans un département.')
+      }
+      if (!department && user.organizations.find(o => o.id === orga.id && o.department)) {
+        throw createError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
+      }
+      userOrga = { id: orga.id, name: orga.name }
+      if (department) {
+        const fullDepartment = orga.departments.find(d => d.id === department)
+        if (!fullDepartment) throw createError(404, 'department not found')
+        userOrga.department = department
+        userOrga.departmentName = fullDepartment.name
+      }
+      user.organizations.push(userOrga)
+    }
+    userOrga.role = role
     await this.db.collection('users').updateOne(
       { _id: user.id },
-      { $push: { organizations: { id: orga.id, name: orga.name, role, department } } }
+      { $set: { organizations: user.organizations } }
     )
   }
 
@@ -295,16 +326,16 @@ class MongodbStorage {
     return this.db.collection('users').countDocuments({ 'organizations.id': organizationId })
   }
 
-  async setMemberRole (organizationId, userId, role, department) {
+  async setMemberRole (organizationId, userId, role, department = null) {
     await this.db.collection('users').updateOne(
-      { _id: userId, 'organizations.id': organizationId },
-      { $set: { 'organizations.$.role': role, 'organizations.$.department': department } }
+      { _id: userId, organizations: { $elemMatch: { id: organizationId, department } } },
+      { $set: { 'organizations.$.role': role } }
     )
   }
 
-  async removeMember (organizationId, userId) {
+  async removeMember (organizationId, userId, department = null) {
     await this.db.collection('users')
-      .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId } } })
+      .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId, department } } })
   }
 
   async setAvatar (avatar) {
@@ -328,7 +359,6 @@ class MongodbStorage {
         return true
       }
     }
-
     return false
   }
 

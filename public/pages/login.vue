@@ -256,13 +256,21 @@
                   :error-messages="createUserErrors"
                   :rules="[v => !!v || '']"
                   name="newUserPassword"
-                  type="password"
+                  :type="showNewUserPassword ? 'text' : 'password'"
                   autocomplete="new-password"
                   outlined
                   dense
                   rounded
                   @keyup.enter="createUser"
                 >
+                  <template slot="append">
+                    <v-icon
+                      v-if="newUser.password"
+                      @click="showNewUserPassword = !showNewUserPassword"
+                    >
+                      {{ showNewUserPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline' }}
+                    </v-icon>
+                  </template>
                   <v-tooltip
                     slot="append-outer"
                     right
@@ -282,7 +290,7 @@
                   :label="$t('pages.login.newPassword2')"
                   :rules="[v => !!v || '', v => newUser.password === v || $t('errors.differentPasswords')]"
                   name="newUserPassword2"
-                  type="password"
+                  :type="showNewUserPassword ? 'text' : 'password'"
                   autocomplete="new-password"
                   outlined
                   dense
@@ -675,6 +683,7 @@ export default {
       invitToken: this.$route.query.invit_token,
       adminMode: this.$route.query.adminMode === 'true',
       org: this.$route.query.org,
+      dep: this.$route.query.dep,
       orgStorage: this.$route.query.org_storage === 'true',
       membersOnly: this.$route.query.members_only === 'true',
       newPassword: null,
@@ -692,6 +701,7 @@ export default {
       },
       createUserErrors: [],
       newUserPassword2: null,
+      showNewUserPassword: false,
       error: this.$route.query.error,
       rememberMe: true,
       qrcode: null,
@@ -752,6 +762,7 @@ export default {
     } else if (this.invitPayload) {
       this.createUserStep()
       this.org = this.invitPayload.id
+      this.department = this.invitPayload.department
       this.email = this.invitPayload.email || this.invitPayload.e
     } else if (this.plannedDeletion) {
       this.step = 'plannedDeletion'
@@ -777,6 +788,7 @@ export default {
           params: {
             redirect: this.redirectUrl,
             org: this.org,
+            dep: this.dep,
             invit_token: this.invitToken
           }
         })
@@ -811,6 +823,7 @@ export default {
           email: this.email,
           rememberMe: this.rememberMe,
           org: this.org,
+          dep: this.dep,
           membersOnly: this.membersOnly,
           orgStorage: this.orgStorage
         }, { params: { redirect: this.redirectUrl } })
@@ -830,6 +843,7 @@ export default {
           adminMode: this.adminMode,
           rememberMe: this.rememberMe && !this.adminMode,
           org: this.org,
+          dep: this.dep,
           '2fa': this.twoFACode,
           membersOnly: this.membersOnly,
           orgStorage: this.orgStorage

@@ -1,6 +1,7 @@
 const express = require('express')
 const config = require('config')
 const shortid = require('shortid')
+const dayjs = require('dayjs')
 const URL = require('url').URL
 const tokens = require('../utils/tokens')
 const asyncWrap = require('../utils/async-wrap')
@@ -62,10 +63,12 @@ router.post('', asyncWrap(async (req, res, next) => {
       const newUser = {
         email: invitation.email,
         id: user ? user.id : shortid.generate(),
+        organizations: user ? user.organizations : [],
         emailConfirmed: false,
-        defaultOrg: orga.id,
+        defaultOrg: invitation.id,
         ignorePersonalAccount: true
       }
+      if (invitation.department) newUser.defaultDep = invitation.department
       newUser.name = userName(newUser)
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUser)
       await storage.createUser(newUser, req.user)
@@ -78,13 +81,16 @@ router.post('', asyncWrap(async (req, res, next) => {
       linkUrl.searchParams.set('redirect', reboundRedirect.href)
       debug('send email with link to createUser step', linkUrl.href)
       const params = { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin }
-      await mails.send({
-        transport: req.app.get('mailTransport'),
-        key: 'invitation',
-        messages: req.messages,
-        to: req.body.email,
-        params
-      })
+      // send the mail either if the user does not exist or it was created more that 24 hours ago
+      if (!user || req.query.force_mail === 'true' || dayjs().diff(dayjs(user.created.date), 'day', true) < 1) {
+        await mails.send({
+          transport: req.app.get('mailTransport'),
+          key: 'invitation',
+          messages: req.messages,
+          to: req.body.email,
+          params
+        })
+      }
 
       const notif = {
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
@@ -168,6 +174,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${req.publicBaseUrl}/invitation`)
   redirectUrl.searchParams.set('email', invit.email)
   redirectUrl.searchParams.set('id_token_org', invit.id)
+  if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
 
   // case where the invitation was already accepted, but we still want the user to proceed
   if (user && user.organizations && user.organizations.find(o => o.id === invit.id)) {
@@ -181,6 +188,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
       redirectUrl.searchParams.set('step', 'changePassword')
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
+      if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
       redirectUrl.searchParams.set('action_token', token)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
       debug('redirect to changePassword step', redirectUrl.href)
@@ -191,6 +199,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
       redirectUrl = new URL(`${req.publicBaseUrl}/login`)
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
+      if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
       debug('redirect to login', redirectUrl.href)
       return res.redirect(redirectUrl.href)

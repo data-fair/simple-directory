@@ -22,13 +22,14 @@ exports.axios = async (email) => {
 }
 
 exports.createUser = async (email, adminMode = false, password = 'Test1234') => {
-  const ax = await exports.axios()
+  const anonymAx = await exports.axios()
   const mailPromise = eventToPromise(mails.events, 'send')
-  const user = await ax.post('/api/users', { email, password })
+  await anonymAx.post('/api/users', { email, password })
   const mail = await mailPromise
   // sent a mail with a token_callback url to validate user creation
   assert.ok(mail.link.includes('token_callback'))
-  await ax(mail.link).catch(err => { if (err.status !== 302) throw err })
-
-  return { user, ax: await exports.axios(email + ':' + password + (adminMode ? ':adminMode' : '')) }
+  await anonymAx(mail.link).catch(err => { if (err.status !== 302) throw err })
+  const ax = await exports.axios(email + ':' + password + (adminMode ? ':adminMode' : ''))
+  const user = (await ax.get('/api/auth/me')).data
+  return { ax, user }
 }
