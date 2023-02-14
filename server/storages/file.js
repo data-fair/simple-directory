@@ -11,13 +11,19 @@ function applySelect (resources, select) {
 }
 
 function getUserOrgas (organizations, user) {
-  return organizations
-    .filter(orga => orga.members.find(member => member.id === user.id))
-    .map(orga => ({
-      ...orga.members.find(m => m.id === user.id),
-      id: orga.id,
-      name: orga.name
-    }))
+  const userOrgas = []
+  for (const orga of organizations) {
+    for (const member of orga.members) {
+      if (member.id === user.id) {
+        userOrgas.push({
+          ...member,
+          id: orga.id,
+          name: orga.name
+        })
+      }
+    }
+  }
+  return userOrgas
 }
 
 function sortCompare (sort) {
