@@ -570,7 +570,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
   }
 
   const payload = { ...tokens.getPayload(user), temporary: true }
-  const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? {id: invit.id, department: invit.department} : {id: org, department: dep})
+  const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? { id: invit.id, department: invit.department } : { id: org, department: dep })
   debugOAuth(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 })
