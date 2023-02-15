@@ -80,12 +80,19 @@ exports.getPayload = (user) => {
   return payload
 }
 
-exports.getDefaultUserOrg = (user, defaultOrg, defaultDep) => {
+exports.getDefaultUserOrg = (user, reqOrgId, reqDepId) => {
   if (!user.organizations || !user.organizations.length) return null
-  defaultDep = (defaultOrg ? defaultDep : user.defaultDep) || null
-  defaultOrg = defaultOrg || user.defaultOrg
-  if (defaultOrg) {
-    const defaultOrg = user.organizations.find(o => o.id === user.defaultOrg && (o.department || null) === defaultDep)
+  if (reqOrgId) {
+    let reqOrg
+    if (reqDepId) {
+      reqOrg = user.organizations.find(o => o.id === reqOrgId && o.department === reqDepId)
+    } else {
+      reqOrg = user.organizations.find(o => o.id === reqOrgId && !o.department) || user.organizations.find(o => o.id === reqOrgId)
+    }
+    if (reqOrg) return reqOrg
+  }
+  if (user.defaultOrg) {
+    const defaultOrg = user.organizations.find(o => o.id === user.defaultOrg && (o.department || null) === (user.defaultDep || null))
     if (defaultOrg) return defaultOrg
   }
   if (user.ignorePersonalAccount) return user.organizations[0]
