@@ -113,7 +113,7 @@ class MongodbStorage {
     const mongoRes = await this.db.collection('users').findOneAndUpdate(
       { _id: id },
       operation,
-      { returnOriginal: false }
+      { returnDocument: 'after' }
     )
     const user = cleanUser(mongoRes.value)
     // "name" was modified, also update all references in created and updated events
@@ -244,7 +244,7 @@ class MongodbStorage {
     const mongoRes = await this.db.collection('organizations').findOneAndUpdate(
       { _id: id },
       { $set: patch },
-      { returnOriginal: false }
+      { returnDocument: 'after' }
     )
     const orga = cleanOrganization(mongoRes.value)
     // also update all organizations references in users
