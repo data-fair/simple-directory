@@ -153,6 +153,7 @@ describe('organizations api', () => {
     const mailPromise = eventToPromise(mails.events, 'send')
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep1', role: 'user' })
     const mail = await mailPromise
+    assert.equal(mail.subject, 'Rejoignez l\'organisation test / Department 1 sur localhost:8080')
     assert.ok(mail.link.startsWith('http://localhost:8080/api/invitations/_accept'))
 
     // before accepting the user is not yet member

@@ -43,6 +43,12 @@ router.post('', asyncWrap(async (req, res, next) => {
   }
 
   const orga = await storage.getOrganization(invitation.id)
+  if (!orga) return res.status(404).send('unknown organization')
+  let dep
+  if (invitation.department) {
+    dep = orga.departments && orga.departments.find(d => d.id === invitation.department)
+    if (!dep) return res.status(404).send('unknown department')
+  }
 
   const token = tokens.sign(req.app.get('keys'), shortenInvit(invitation), config.jwtDurations.invitationToken)
 
@@ -57,7 +63,7 @@ router.post('', asyncWrap(async (req, res, next) => {
       sendNotification({
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
         topic: { key: 'simple-directory:invitation-sent' },
-        title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (invitation.department ? ' / ' + invitation.department : '') })
+        title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
       })
     } else {
       const newUser = {
@@ -80,7 +86,12 @@ router.post('', asyncWrap(async (req, res, next) => {
       linkUrl.searchParams.set('invit_token', token)
       linkUrl.searchParams.set('redirect', reboundRedirect.href)
       debug('send email with link to createUser step', linkUrl.href)
-      const params = { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin }
+      const params = {
+        link: linkUrl.href,
+        organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : ''),
+        host: linkUrl.host,
+        origin: linkUrl.origin
+      }
       // send the mail either if the user does not exist or it was created more that 24 hours ago
       if (!user || req.query.force_mail === 'true' || dayjs().diff(dayjs(user.created.date), 'day', true) < 1) {
         await mails.send({
@@ -95,7 +106,7 @@ router.post('', asyncWrap(async (req, res, next) => {
       const notif = {
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
         topic: { key: 'simple-directory:add-member' },
-        title: req.__all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (invitation.department ? ' / ' + invitation.department : '') })
+        title: req.__all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
       }
       // send notif to all admins subscribed to the topic
       sendNotification(notif)
@@ -112,7 +123,12 @@ router.post('', asyncWrap(async (req, res, next) => {
   } else {
     const linkUrl = new URL(req.publicBaseUrl + '/api/invitations/_accept')
     linkUrl.searchParams.set('invit_token', token)
-    const params = { link: linkUrl.href, organization: invitation.name, host: linkUrl.host, origin: linkUrl.origin }
+    const params = {
+      link: linkUrl.href,
+      organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : ''),
+      host: linkUrl.host,
+      origin: linkUrl.origin
+    }
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'invitation',
@@ -124,7 +140,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     sendNotification({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
       topic: { key: 'simple-directory:invitation-sent' },
-      title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (invitation.department ? ' / ' + invitation.department : '') })
+      title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
     })
 
     if (req.user.adminMode || req.user.asAdmin) {
