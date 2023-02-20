@@ -177,7 +177,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
 
   // case where the invitation was already accepted, but we still want the user to proceed
-  if (user && user.organizations && user.organizations.find(o => o.id === invit.id)) {
+  if (user && user.organizations && user.organizations.find(o => o.id === invit.id && (o.department || null) === (invit.department || null))) {
     debug('invitation was already accepted, redirect', redirectUrl.href)
     // missing password, invitation must have been accepted without completing account creation
     if (!await storage.hasPassword(invit.email) && !config.passwordless) {

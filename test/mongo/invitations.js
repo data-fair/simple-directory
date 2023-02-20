@@ -145,11 +145,11 @@ describe('organizations api', () => {
     config.alwaysAcceptInvitation = false
   })
 
-  it('should invite a new user in an organization departments', async () => {
+  it('should invite a new user in multiple organization departments', async () => {
     const { ax } = await testUtils.createUser('test-invit9@test.com')
     const anonymousAx = await testUtils.axios()
 
-    const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }] })).data
+    const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }] })).data
     const mailPromise = eventToPromise(mails.events, 'send')
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep1', role: 'user' })
     const mail = await mailPromise
@@ -187,5 +187,28 @@ describe('organizations api', () => {
     assert.equal(newUser.organization.name, 'test')
     assert.equal(newUser.organization.department, 'dep1')
     assert.equal(newUser.organization.role, 'user')
+
+    // send a second invitation
+    const mailPromise2 = eventToPromise(mails.events, 'send')
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep2', role: 'admin' })
+    const mail2 = await mailPromise2
+    assert.ok(mail2.link.startsWith('http://localhost:8080/api/invitations/_accept'))
+
+    // before accepting the user is not yet member of the second department
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 2)
+    assert.equal(members.filter(m => m.email === 'test-invit10@test.com').length, 1)
+
+    // when clicking on the link the person accepts the invitation and is redirected to to a page
+    await assert.rejects(newAx.get(mail2.link), (res) => {
+      assert.equal(res.status, 302)
+      redirect = res.headers.location
+      return true
+    })
+    assert.ok(redirect.startsWith('http://localhost:8080/invitation'))
+
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 3)
+    assert.equal(members.filter(m => m.email === 'test-invit10@test.com').length, 2)
   })
 })
