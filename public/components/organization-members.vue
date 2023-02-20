@@ -29,7 +29,6 @@
         />
         <v-btn
           icon
-          v-bind="attrs"
           color="primary"
           class="mx-1"
           :href="csvUrl"
