@@ -31,12 +31,15 @@ router.post('', asyncWrap(async (req, res, next) => {
   }
 
   const invitation = req.body
-  const userOrga = req.user.organizations.find(o => o.id === invitation.id)
+  let userOrga = req.user.organizations.find(o => o.id === invitation.id)
   if (config.depAdminIsOrgAdmin) {
     if (!req.user.isAdmin && (!userOrga || userOrga.role !== 'admin')) {
       return res.status(403).send(req.messages.errors.permissionDenied)
     }
   } else {
+    if (invitation.department) {
+      userOrga = req.user.organizations.find(o => o.id === invitation.id && o.department === invitation.department) || userOrga
+    }
     if (!req.user.isAdmin && (!userOrga || userOrga.role !== 'admin' || (userOrga.department && userOrga.department !== invitation.department))) {
       return res.status(403).send(req.messages.errors.permissionDenied)
     }

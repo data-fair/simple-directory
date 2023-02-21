@@ -208,8 +208,12 @@ class MongodbStorage {
           .toArray())
     const count = await countPromise
     const results = []
-    users.forEach(user => {
-      user.organizations.filter(o => o.id === organizationId).forEach(userOrga => {
+    for (const user of users) {
+      for (const userOrga of user.organizations) {
+        if (userOrga.id !== organizationId) continue
+        if (params.departments && params.departments.length) {
+          if (!params.departments.includes(userOrga.department)) continue
+        }
         results.push({
           id: user._id,
           name: user.name,
@@ -219,8 +223,8 @@ class MongodbStorage {
           departmentName: userOrga.departmentName,
           emailConfirmed: user.emailConfirmed
         })
-      })
-    })
+      }
+    }
     return { count, results }
   }
 
