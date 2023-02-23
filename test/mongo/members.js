@@ -2,7 +2,7 @@ const assert = require('assert').strict
 const config = require('config')
 const testUtils = require('../utils')
 
-describe('organizations api', () => {
+describe('organizations members api', () => {
   it('should invite a user in orga and change his role', async () => {
     config.alwaysAcceptInvitation = true
 
@@ -61,8 +61,8 @@ describe('organizations api', () => {
     assert.equal(newMembers[0].department, 'dep1')
     assert.equal(newMembers[0].role, 'user')
 
-    await assert.rejects(ax.patch(`/api/organizations/${org.id}/members/${newMembers[0].id}?dep=dep2`, { role: 'config' }), (err) => err.status === 400)
-    await ax.patch(`/api/organizations/${org.id}/members/${newMembers[0].id}?department=dep1`, { role: 'admin' })
+    await assert.rejects(ax.patch(`/api/organizations/${org.id}/members/${newMembers[0].id}?dep=dep2`, { role: 'config', department: 'dep2' }), (err) => err.status === 400)
+    await ax.patch(`/api/organizations/${org.id}/members/${newMembers[0].id}?department=dep1`, { role: 'admin', department: 'dep1' })
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
     newMembers = members.filter(m => m.email === 'test-member2@test.com')
     assert.equal(newMembers.length, 1)
