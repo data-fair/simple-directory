@@ -336,11 +336,6 @@ class MongodbStorage {
 
     const org = await this.db.collection('organizations').findOne({ _id: organizationId })
     if (!org) throw createError(404, 'organisation inconnue.')
-    let departmentObject
-    if (department) {
-      departmentObject = org.departments.find(d => d.id === department)
-      if (!departmentObject) throw createError(404, 'département inconnu.')
-    }
     let patchDepartmentObject
     if (patch.department) {
       patchDepartmentObject = org.departments.find(d => d.id === patch.department)
