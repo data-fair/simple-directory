@@ -112,8 +112,8 @@
               </template>
             </v-list-item-title>
             <v-list-item-subtitle style="white-space:normal;">
+              <span v-if="member.department">{{ orga.departmentLabel || $t('common.department') }} = {{ member.departmentName || member.department }}, </span>
               <span>{{ $t('common.role') }} = {{ member.role }}</span>
-              <span v-if="member.department">, {{ orga.departmentLabel || $t('common.department') }} = {{ member.departmentName || member.department }}</span>
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action v-if="isAdminOrga && (!readonly || env.overwrite.includes('members'))">
