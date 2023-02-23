@@ -101,8 +101,8 @@ module.exports = {
     deleteInactive: true,
     deleteInactiveDelay: [1, 'days']
   },
-  // alwaysAcceptInvitation: true,
-  // onlyCreateInvited: true,
+  alwaysAcceptInvitation: true,
+  onlyCreateInvited: true,
   saml2: {
     providers: [{
       title: 'Test SAML IDP',

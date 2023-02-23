@@ -23,7 +23,7 @@
         {{ $t('pages.organization.confirmDeleteMemberTitle', {name: member.name}) }}
       </v-card-title>
       <v-card-text>
-        {{ $t('pages.organization.confirmDeleteMemberMsg') }}
+        {{ $t('pages.organization.confirmDeleteMemberMsg', {org: orga.name + (member.department ? (' / ' + (member.departmentName || member.department)) : '')}) }}
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -46,7 +46,7 @@
 
 <script>
 export default {
-  props: ['member'],
+  props: ['member', 'orga'],
   data: () => ({ menu: false })
 }
 </script>

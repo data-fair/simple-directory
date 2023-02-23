@@ -86,7 +86,7 @@
       class="elevation-1 mt-1"
     >
       <template v-for="(member, i) in members.results">
-        <v-list-item :key="member.id">
+        <v-list-item :key="`${member.id}-${member.department}`">
           <v-list-item-content>
             <v-list-item-title style="white-space:normal;">
               {{ member.name }} ({{ member.email }})
@@ -109,7 +109,8 @@
             <edit-member-menu
               :orga="orga"
               :member="member"
-              @save="saveMember"
+              :department="adminDepartment"
+              @save="newMember => saveMember(newMember, member)"
             />
           </v-list-item-action>
           <v-list-item-action v-if="user.adminMode && !member.orgStorage">
@@ -130,6 +131,7 @@
           >
             <delete-member-menu
               :member="member"
+              :orga="orga"
               @delete="deleteMember"
             />
           </v-list-item-action>
@@ -251,9 +253,18 @@ export default {
         eventBus.$emit('notification', { error })
       }
     },
-    async saveMember (member) {
+    async saveMember (member, oldMember) {
       try {
-        await this.$axios.patch(`api/organizations/${this.orga.id}/members/${member.id}`, { role: member.role }, { params: { department: member.department } })
+        const patch = { role: member.role }
+        if (member.department) {
+          const dep = this.orga.departments.find(d => d.id === member.department)
+          patch.department = dep.id
+          patch.departmentName = dep.name
+        }
+        await this.$axios.patch(`api/organizations/${this.orga.id}/members/${member.id}`,
+          patch,
+          { params: { department: oldMember.department } }
+        )
         this.fetchMembers(this.membersPage)
       } catch (error) {
         eventBus.$emit('notification', { error })

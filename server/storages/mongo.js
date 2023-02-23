@@ -330,10 +330,55 @@ class MongodbStorage {
     return this.db.collection('users').countDocuments({ 'organizations.id': organizationId })
   }
 
-  async setMemberRole (organizationId, userId, role, department = null) {
+  async patchMember (organizationId, userId, department = null, patch) {
+    // department is the optional department of the membership we are trying to change
+    // patch.department is the optional new department of the membership
+
+    const org = await this.db.collection('organizations').findOne({ _id: organizationId })
+    if (!org) throw createError(404, 'organisation inconnue.')
+    let departmentObject
+    if (department) {
+      departmentObject = org.departments.find(d => d.id === department)
+      if (!departmentObject) throw createError(404, 'département inconnu.')
+    }
+    let patchDepartmentObject
+    if (patch.department) {
+      patchDepartmentObject = org.departments.find(d => d.id === patch.department)
+      if (!patchDepartmentObject) throw createError(404, 'département inconnu.')
+    }
+    const user = await this.db.collection('users').findOne({ _id: userId })
+    if (!user) throw createError(404, 'utilisateur inconnu.')
+    const userOrg = user.organizations.find(o => o.id === organizationId && (o.department || null) === (department || null))
+    if (!userOrg) throw createError(404, 'information de membre inconnue.')
+
+    // if we are switching department remove potential conflict
+    if ((patch.department || null) !== (department || null)) {
+      user.organizations = user.organizations.filter(o => {
+        const isConflict = o.id === organizationId && (o.department || null) === (patch.department || null)
+        return !isConflict
+      })
+    }
+
+    // apply patch
+    userOrg.role = patch.role
+    if (patchDepartmentObject) {
+      userOrg.department = patchDepartmentObject.id
+      userOrg.departmentName = patchDepartmentObject.name
+    } else {
+      delete userOrg.department
+      delete userOrg.departmentName
+    }
+
+    if (patch.department && user.organizations.find(o => o.id === organizationId && !o.department)) {
+      throw createError(400, 'cet utilisateur est membre de l\'organisation parente, il ne peut pas être ajouté dans un département.')
+    }
+    if (!patch.department && user.organizations.find(o => o.id === organizationId && o.department)) {
+      throw createError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
+    }
+
     await this.db.collection('users').updateOne(
-      { _id: userId, organizations: { $elemMatch: { id: organizationId, department } } },
-      { $set: { 'organizations.$.role': role } }
+      { _id: userId },
+      { $set: { organizations: user.organizations } }
     )
   }
 

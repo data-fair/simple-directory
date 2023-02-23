@@ -31,6 +31,18 @@
           dense
           outlined
         />
+        <v-autocomplete
+          v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
+          v-model="editMember.department"
+          :items="orga.departments"
+          :label="orga.departmentLabel || $t('common.department')"
+          item-value="id"
+          item-text="name"
+          name="department"
+          clearable
+          outlined
+          dense
+        />
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -55,7 +67,7 @@
 import { mapState } from 'vuex'
 
 export default {
-  props: ['orga', 'member'],
+  props: ['orga', 'member', 'department'],
   data: () => ({ menu: false, editMember: null }),
   computed: {
     ...mapState(['env'])

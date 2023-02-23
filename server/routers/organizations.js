@@ -257,16 +257,17 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
     // ok
   } else if (member && userOrg && userOrg.role === 'admin') {
     // ok
-  } else if (member && dep && userDep && userDep.role === 'admin') {
+  } else if (member && dep && userDep && userDep.role === 'admin' && dep === req.body.department) {
     // ok
   } else {
+    console.log()
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
   const orga = await storage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   const roles = orga.roles || config.roles.defaults
   if (!roles.includes(req.body.role)) return res.status(400).send(req.messages.errors.unknownRole.replace('{role}', req.body.role))
-  await storage.setMemberRole(req.params.organizationId, req.params.userId, req.body.role, req.query.department)
+  await storage.patchMember(req.params.organizationId, req.params.userId, req.query.department, req.body)
   webhooks.postIdentity('user', await storage.getUser({ id: req.params.userId }))
 
   // update session info

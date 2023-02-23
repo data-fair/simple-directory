@@ -391,11 +391,11 @@ class LdapStorage {
     )
   }
 
-  async setMemberRole (orgId, userId, role, department) {
+  async patchMember (orgId, userId, department = null, patch) {
     if (!(this.ldapParams.overwrite || []).includes('members')) throw new Error('ldap members overwrite not supported')
     await this.db.collection('ldap-members-overwrite').replaceOne(
       { orgId, userId },
-      { orgId, userId, role, department },
+      { ...patch, orgId, userId },
       { upsert: true }
     )
   }
