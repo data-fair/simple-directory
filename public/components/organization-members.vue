@@ -82,13 +82,24 @@
 
     <v-list
       v-if="members && members.count"
-      two-line
       class="elevation-1 mt-1"
     >
       <template v-for="(member, i) in members.results">
-        <v-list-item :key="`${member.id}-${member.department}`">
+        <v-list-item
+          :key="`${member.id}-${member.department}`"
+          :class="{'secondary-member': members.results[i-1] && members.results[i-1].id === member.id}"
+        >
+          <v-list-item-avatar>
+            <v-img
+              v-if="!members.results[i-1] || members.results[i-1].id !== member.id"
+              :src="`${env.publicUrl}/api/avatars/user/${member.id}/avatar.png`"
+            />
+          </v-list-item-avatar>
           <v-list-item-content>
-            <v-list-item-title style="white-space:normal;">
+            <v-list-item-title
+              v-if="!members.results[i-1] || members.results[i-1].id !== member.id"
+              style="white-space:normal;"
+            >
               {{ member.name }} ({{ member.email }})
               <template v-if="member.emailConfirmed === false">
                 <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
@@ -137,7 +148,7 @@
           </v-list-item-action>
         </v-list-item>
         <v-divider
-          v-if="i + 1 < members.results.length"
+          v-if="members.results[i+1] && members.results[i+1].id !== member.id"
           :key="i"
         />
       </template>
@@ -275,4 +286,12 @@ export default {
 </script>
 
 <style lang="css" scoped>
+.v-list .v-list-item.secondary-member {
+  min-height: 36px;
+  height: 36px;
+}
+.v-list .v-list-item.secondary-member .v-list-item__action {
+  margin-top: 0;
+  margin-bottom: 0;
+}
 </style>
