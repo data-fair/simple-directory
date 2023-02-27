@@ -476,7 +476,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
 
   const provider = oauth.providers.find(p => p.state === providerState)
   if (!provider) return res.status(404).send('Unknown OAuth provider')
-  if (req.params.oauthId && req.params.oauthId) return res.status(404).send('Wrong OAuth provider id')
+  if (req.params.oauthId && req.params.oauthId !== provider.id) return res.status(404).send('Wrong OAuth provider id')
 
   if (req.query.error) {
     console.log('Bad OAuth query', req.query)
