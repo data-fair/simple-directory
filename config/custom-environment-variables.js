@@ -204,7 +204,8 @@ module.exports = {
     limits: 'SECRET_LIMITS',
     readAll: 'SECRET_READ_ALL',
     metrics: 'SECRET_METRICS',
-    notifications: 'SECRET_NOTIFICATIONS'
+    notifications: 'SECRET_NOTIFICATIONS',
+    sites: 'SECRET_SITES'
   },
   listenWhenReady: {
     __name: 'LISTEN_WHEN_READY',
