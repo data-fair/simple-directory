@@ -275,10 +275,6 @@ module.exports = {
     __name: 'NO_BIRTHDAY',
     __format: 'json'
   },
-  showCreatedUserHost: {
-    __name: 'SHOW_CREATED_USER_HOST',
-    __format: 'json'
-  },
   avatars: {
     users: {
       __name: 'AVATARS_USERS',
@@ -324,6 +320,10 @@ module.exports = {
   },
   depAdminIsOrgAdmin: {
     __name: 'DEP_ADMIN_IS_ORG_ADMIN',
+    __format: 'json'
+  },
+  manageSites: {
+    __name: 'MANAGE_SITES',
     __format: 'json'
   }
 }

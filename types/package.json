@@ -1,0 +1,18 @@
+{
+  "scripts": {
+    "build": "node node_modules/@data-fair/lib/types/build.js ./ && tsc"
+  },
+  "dependencies": {
+    "@data-fair/lib": "^0.3.0",
+    "ajv-errors": "^3.0.0",
+    "ajv-formats": "^2.1.1",
+    "ajv-i18n": "^4.2.0",
+    "fast-json-stringify": "^5.6.1",
+    "flatstr": "^1.0.12",
+    "json-schema-to-typescript": "^11.0.3",
+    "pascal-case": "^3.1.2"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.5"
+  }
+}

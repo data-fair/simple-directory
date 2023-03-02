@@ -1,0 +1,20 @@
+{
+  "$id": "https://github.com/data-fair/simple-directory/list-response",
+  "x-exports": ["types", "stringify"],
+  "title": "sites-response",
+  "type":"object",
+  "additionalProperties":false,
+  "required":[
+    "count",
+    "results"
+  ],
+  "properties":{
+    "count":{
+      "type":"integer"
+    },
+    "results":{
+      "type":"array",
+      "items":{"$ref": "https://github.com/data-fair/simple-directory/site"}
+    }
+  }
+}

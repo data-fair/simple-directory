@@ -75,6 +75,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     lastName: req.body.lastName,
     emailConfirmed: false
   }
+  if (req.site) newUser.host = req.site.host
   newUser.name = userName(newUser)
   if (invit) {
     newUser.emailConfirmed = true
@@ -91,7 +92,7 @@ router.post('', asyncWrap(async (req, res, next) => {
     newUser.password = await passwords.hashPassword(req.body.password)
   }
 
-  const user = await req.app.get('storage').getUserByEmail(req.body.email)
+  const user = await req.app.get('storage').getUserByEmail(req.body.email, req.site)
 
   // email is already taken, send a conflict email
   const link = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl

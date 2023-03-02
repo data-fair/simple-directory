@@ -187,7 +187,8 @@ module.exports = {
     limits: null,
     readAll: null,
     metrics: null,
-    notifications: null
+    notifications: null,
+    sites: null
   },
   // A link to the terms of services for the site
   tosUrl: null,
@@ -243,7 +244,6 @@ module.exports = {
     providers: []
   },
   noBirthday: false,
-  showCreatedUserHost: false,
   avatars: {
     users: true,
     orgs: true
@@ -269,5 +269,6 @@ module.exports = {
     port: 9090
   },
   // temporary option to prevent some regression
-  depAdminIsOrgAdmin: false
+  depAdminIsOrgAdmin: false,
+  manageSites: false
 }

@@ -80,29 +80,22 @@ const fullUser = asyncWrap(async (req, res, next) => {
 const publicUrl = new URL(config.publicUrl)
 let basePath = publicUrl.pathname
 if (basePath.endsWith('/')) basePath = basePath.slice(0, -1)
-app.use((req, res, next) => {
-  const u = originalUrl(req)
-  const urlParts = { protocol: u.protocol, hostname: u.hostname, pathname: basePath }
-  if (u.port !== 443 && u.port !== 80) urlParts.port = u.port
-  req.publicBaseUrl = u.full ? formatUrl(urlParts) : config.publicUrl
+app.use(asyncWrap(async (req, res, next) => {
+  const host = req.get('host')
+  if (host !== publicUrl.host) {
+    // TODO: use a small memory cache for this very frequent query ?
+    req.site = await app.get('storage').getSiteByHost(host)
+    if (!req.site) return res.status(404).send('unknown site')
+    const url = new URL(config.publicUrl)
+    url.host = host
+    req.publicBaseUrl = url.href
+  } else {
+    req.publicBaseUrl = config.publicUrl
+  }
   req.publicBasePath = basePath
   next()
-})
+}))
 
-// login is always done on the main domain with a redirect to the child domain
-app.use('/login', (req, res, next) => {
-  if (req.baseUrl === '/login' && req.publicBaseUrl !== config.publicUrl) {
-    const url = new URL(config.publicUrl + '/login')
-    for (const key in req.query) {
-      url.searchParams.set(key, req.query[key])
-    }
-    url.searchParams.set('redirect', req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me')
-    debug(`redirect login from ${req.publicBaseUrl} to ${config.publicUrl}`)
-    res.redirect(url.href)
-  } else {
-    next()
-  }
-})
 const apiDocs = require('../contract/api-docs')
 app.get('/api/api-docs.json', cors(), (req, res) => res.json(apiDocs))
 app.get('/api/auth/anonymous-action', cors(), require('./routers/anonymous-action'))
@@ -115,6 +108,9 @@ app.use('/api/avatars', session.auth, fullUser, require('./routers/avatars'))
 app.use('/api/limits', session.auth, limits.router)
 app.use('/api/2fa', twoFA.router)
 app.get('/api/metrics', require('./routers/metrics'))
+if (config.manageSites) {
+  app.use('/api/sites', session.auth, require('./routers/sites'))
+}
 
 let info = { version: process.env.NODE_ENV }
 try { info = require('../BUILD.json') } catch (err) {}

@@ -48,7 +48,7 @@ router.post('/', asyncWrap(async (req, res, next) => {
   }
 
   const storage = req.app.get('storage')
-  const user = await storage.getUserByEmail(req.body.email)
+  const user = await storage.getUserByEmail(req.body.email, req.site)
   if (!user || user.emailConfirmed === false) return res.status(400).send(req.messages.errors.badCredentials)
   if (storage.getPassword) {
     const storedPassword = await storage.getPassword(user.id)

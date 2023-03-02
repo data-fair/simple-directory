@@ -109,8 +109,8 @@
         </td>
         <template v-if="!env.readonly">
           <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
-          <td v-if="env.showCreatedUserHost">
-            {{ props.item.created && props.item.created.host }}
+          <td v-if="env.manageSites">
+            {{ props.item.host }}
           </td>
           <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
           <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
@@ -342,8 +342,8 @@ export default {
     }
     if (!this.env.readonly) {
       this.headers.push({ text: this.$t('common.createdAt'), value: 'created.date' })
-      if (this.env.showCreatedUserHost) {
-        this.headers.push({ text: this.$t('common.createdHost'), value: 'created.host' })
+      if (this.env.manageSites) {
+        this.headers.push({ text: this.$t('common.host'), value: 'host' })
       }
       this.headers.push({ text: this.$t('common.updatedAt'), value: 'updated.date' })
       this.headers.push({ text: this.$t('common.loggedAt'), value: 'logged' })

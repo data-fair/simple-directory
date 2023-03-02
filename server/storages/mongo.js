@@ -57,6 +57,8 @@ class MongodbStorage {
     await mongoUtils.ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }, { unique: true, name: 'owner.type_1_owner.id_1' })
     await mongoUtils.ensureIndex(this.db, 'limits', { id: 'text', name: 'text' }, { name: 'fulltext' })
     await mongoUtils.ensureIndex(this.db, 'limits', { type: 1, id: 1 }, { name: 'limits-find-current', unique: true })
+    await mongoUtils.ensureIndex(this.db, 'sites', { host: 1 }, { name: 'sites-host', unique: true })
+    await mongoUtils.ensureIndex(this.db, 'sites', { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }, { name: 'sites-owner' })
     return this
   }
 
@@ -75,8 +77,14 @@ class MongodbStorage {
     return !!(user && user.password)
   }
 
-  async getUserByEmail (email) {
-    const user = (await this.db.collection('users').find({ email }).collation(collation).toArray())[0]
+  async getUserByEmail (email, site) {
+    const filter = { email }
+    if (site) {
+      filter.host = site.host
+    } else {
+      filter.host = { $exists: false }
+    }
+    const user = (await this.db.collection('users').find(filter).collation(collation).toArray())[0]
     if (!user) return null
     return cleanUser(user)
   }
@@ -409,6 +417,28 @@ class MongodbStorage {
   async get2FA (userId) {
     const user = await this.db.collection('users').findOne({ _id: userId })
     return user && user['2FA']
+  }
+
+  async findOwnerSites (owner) {
+    const filter = { 'owner.type': owner.type, 'owner.id': owner.id }
+    if (owner.department) filter['owner.department'] = owner.department
+    const sites = await this.db.collection('sites').find(filter).toArray()
+    return {
+      count: sites.length,
+      results: sites
+    }
+  }
+
+  async saveSite (site) {
+    await this.db.collection('sites').updateOne({ _id: site._id }, site, { upsert: true })
+  }
+
+  async getSiteByHost (host) {
+    return await this.db.collection('sites').findOne({ host: host })
+  }
+
+  async deleteSite (siteId) {
+    await this.db.collection('sites').deleteOne({ _id: siteId })
   }
 }
 

@@ -119,13 +119,13 @@ module.exports = {
     i18nLocales: config.i18nLocales,
     anonymousContactForm: config.anonymousContactForm,
     noBirthday: config.noBirthday,
-    showCreatedUserHost: config.showCreatedUserHost,
     avatars: config.avatars,
     perOrgStorageTypes: config.perOrgStorageTypes,
     notifyUrl: config.notifyUrl,
     plannedDeletionDelay: config.plannedDeletionDelay,
     alwaysAcceptInvitation: config.alwaysAcceptInvitation,
-    depAdminIsOrgAdmin: config.depAdminIsOrgAdmin
+    depAdminIsOrgAdmin: config.depAdminIsOrgAdmin,
+    manageSites: config.manageSites
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

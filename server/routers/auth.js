@@ -96,7 +96,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     }
   }
 
-  const user = await storage.getUserByEmail(req.body.email)
+  const user = await storage.getUserByEmail(req.body.email, req.site)
   if (!user || user.emailConfirmed === false) return returnError('badCredentials', 400)
   if (storage.getPassword) {
     const storedPassword = await storage.getPassword(user.id)
@@ -185,7 +185,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
-  const user = await storage.getUserByEmail(req.body.email)
+  const user = await storage.getUserByEmail(req.body.email, req.site)
 
   const redirect = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl
   const redirectUrl = new URL(redirect)
@@ -350,7 +350,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   }
 
   const storage = req.app.get('storage')
-  const user = await storage.getUserByEmail(req.body.email)
+  const user = await storage.getUserByEmail(req.body.email, req.site)
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
     const link = req.body.target || config.defaultLoginRedirect || (req.publicBaseUrl + '/login')
@@ -509,7 +509,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
   }
 
   // check for user with same email
-  let user = await storage.getUserByEmail(userInfo.email)
+  let user = await storage.getUserByEmail(userInfo.email, req.site)
 
   if (!user && !invit && config.onlyCreateInvited) {
     return returnError('onlyCreateInvited', 400)
@@ -658,7 +658,7 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
   }
 
   // check for user with same email
-  let user = await storage.getUserByEmail(email)
+  let user = await storage.getUserByEmail(email, req.site)
 
   if (!user && !invit && config.onlyCreateInvited) {
     return returnError('onlyCreateInvited', 400)

@@ -1,0 +1,19 @@
+{
+  "$id": "https://github.com/data-fair/simple-directory/site-public",
+  "x-exports": ["types", "stringify"],
+  "title": "site-public",
+  "type":"object",
+  "additionalProperties":false,
+  "required":[
+    "host",
+    "theme"
+  ],
+  "properties":{
+    "host": {
+      "type": "string"
+    },
+    "theme": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/definitions/theme"
+    }
+  }
+}

@@ -11,6 +11,10 @@
       "description": "The main email of the user",
       "type": "string"
     },
+    "host": {
+      "description": "Site where the user created his account (leave empty if it is the main public site)",
+      "type": "string"
+    },
     "firstName": {
       "description": "First name of the user",
       "type": "string",

@@ -83,9 +83,9 @@ module.exports = {
     limits: 'testkey',
     readAll: 'testkey',
     metrics: 'testkey',
-    notifications: 'secret-notifications'
+    notifications: 'secret-notifications',
+    sites: 'secret-sites'
   },
-  showCreatedUserHost: true,
   proxyNuxt: true,
   perOrgStorageTypes: ['ldap'],
   cipherPassword: 'dev',
@@ -149,5 +149,6 @@ module.exports = {
         secret: 'bar'
       }
     }]
-  }
+  },
+  manageSites: true
 }

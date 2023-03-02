@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "$id": "https://github.com/data-fair/simple-directory/site",
+  "title": "Site",
+  "x-exports": ["types", "stringify", "validate"],
+  "required": ["_id", "owner", "host", "theme"],
+  "properties": {
+    "_id": {
+      "type": "string"
+    },
+    "owner": {
+      "$ref": "https://github.com/data-fair/lib/session-state#/definitions/account"
+    },
+    "host": {
+      "type": "string"
+    },
+    "theme": {
+      "$ref": "#/definitions/theme"
+    }
+  },
+  "definitions": {
+    "theme": {
+      "type": "object",
+      "additionalProperties":false,
+      "required": ["primaryColor"],
+      "properties": {
+        "primaryColor": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

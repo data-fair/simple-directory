@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": ".",
+    "baseUrl": ".",
+    "declaration": true
+  },
+  "include": ["."],
+  "exclude": ["node_modules"]
+}

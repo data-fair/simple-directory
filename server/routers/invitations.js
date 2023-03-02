@@ -58,7 +58,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (config.alwaysAcceptInvitation) {
     // in 'always accept invitation' mode the user is not sent an email to accept the invitation
     // he is simple added to the list of members and created if needed
-    const user = await storage.getUserByEmail(invitation.email)
+    const user = await storage.getUserByEmail(invitation.email, req.email)
     if (user && user.emailConfirmed) {
       debug('in alwaysAcceptInvitation and the user already exists, immediately add it as member', invitation.email)
       await storage.addMember(orga, user, invitation.role, invitation.department)
@@ -77,6 +77,7 @@ router.post('', asyncWrap(async (req, res, next) => {
         defaultOrg: invitation.id,
         ignorePersonalAccount: true
       }
+      if (req.site) newUser.host = req.site.host
       if (invitation.department) newUser.defaultDep = invitation.department
       newUser.name = userName(newUser)
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUser)
@@ -178,7 +179,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   debug('accept invitation', invit, verified)
   const storage = req.app.get('storage')
 
-  const user = await storage.getUserByEmail(invit.email)
+  const user = await storage.getUserByEmail(invit.email, req.site)
   if (!user && storage.readonly) {
     errorUrl.searchParams.set('error', 'userUnknown')
     return res.redirect(errorUrl.href)

@@ -44,7 +44,7 @@ module.exports = {
     editTitle: 'Bearbeiten {name}',
     loggedAt: 'Letzte Anmeldung',
     createdAt: 'Erstellt am',
-    createdHost: 'Erstellt von der Website',
+    host: 'Website',
     createdPhrase: 'Erstellt von {name} am {date}',
     updatedAt: 'Aktualisiert am',
     maxCreatedOrgs: 'Maximale Anzahl der zu gründenden Organisationen',
