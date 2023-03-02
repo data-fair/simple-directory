@@ -270,6 +270,5 @@ module.exports = {
   },
   // temporary option to prevent some regression
   depAdminIsOrgAdmin: false,
-  manageSites: false,
-  serveNuxt: true
+  manageSites: false
 }

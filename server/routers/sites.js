@@ -5,6 +5,7 @@ const asyncWrap = require('../utils/async-wrap')
 const siteSchema = require('../../types/site')
 const sitePublicSchema = require('../../types/site-public')
 const sitesResponseSchema = require('../../types/sites-response')
+const sitesQuerySchema = require('../../types/sites-query')
 
 const router = module.exports = express.Router()
 
@@ -16,7 +17,9 @@ const checkSecret = async (req) => {
 
 router.get('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
-  const response = await req.app.get('storage').findOwnerSites(req.user.accountOwner)
+  const query = await sitesQuerySchema.validate(req.query)
+  if (query.showAll && !req.user.adminMode) return res.status(403).send()
+  const response = query.showAll ? await req.app.get('storage').findAllSites() : await req.app.get('storage').findOwnerSites(req.user.accountOwner)
   res.type('json').send(sitesResponseSchema.stringify(response))
 }))
 

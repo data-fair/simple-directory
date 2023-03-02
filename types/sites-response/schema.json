@@ -1,5 +1,5 @@
 {
-  "$id": "https://github.com/data-fair/simple-directory/list-response",
+  "$id": "https://github.com/data-fair/simple-directory/sites-response",
   "x-exports": ["types", "stringify"],
   "title": "sites-response",
   "type":"object",

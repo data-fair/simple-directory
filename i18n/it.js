@@ -45,6 +45,7 @@ module.exports = {
     loggedAt: 'Ultimo login',
     createdAt: 'Creato su',
     host: 'Sito',
+    sites: 'Sitos',
     createdPhrase: 'Creato da {name} il {date}',
     updatedAt: 'Aggiornato il',
     maxCreatedOrgs: 'Numero massimo di organizzazioni da creare',

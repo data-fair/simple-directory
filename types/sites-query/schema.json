@@ -1,0 +1,13 @@
+{
+  "$id": "https://github.com/data-fair/simple-directory/sites-query",
+  "x-exports": ["types", "validate"],
+  "title": "sites-query",
+  "type":"object",
+  "additionalProperties":false,
+  "required":[],
+  "properties":{
+    "showAll":{
+      "type":"boolean"
+    }
+  }
+}

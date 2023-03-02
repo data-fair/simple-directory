@@ -77,6 +77,15 @@
             >
               {{ $t(`common.organizations`) }}
             </v-btn>
+            <v-btn
+              v-if="env.manageSites"
+              :to="localePath('admin-sites')"
+              color="admin"
+              dark
+              depressed
+            >
+              {{ $t(`common.sites`) }}
+            </v-btn>
           </template>
           <v-btn
             v-if="env.anonymousContactForm"

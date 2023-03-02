@@ -429,6 +429,14 @@ class MongodbStorage {
     }
   }
 
+  async findAllSites (owner) {
+    const sites = await this.db.collection('sites').find().toArray()
+    return {
+      count: sites.length,
+      results: sites
+    }
+  }
+
   async saveSite (site) {
     await this.db.collection('sites').replaceOne({ _id: site._id }, site, { upsert: true })
   }
