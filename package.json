@@ -75,7 +75,7 @@
     "eslint-plugin-vue": "^8.5.0",
     "iframe-resizer": "^4.0.1",
     "jwt-decode": "^3.1.2",
-    "mocha": "^9.2.1",
+    "mocha": "^9.2.2",
     "nuxt": "^2.15.8",
     "nuxt-webpack-optimisations": "^2.2.0",
     "nyc": "^15.1.0",
