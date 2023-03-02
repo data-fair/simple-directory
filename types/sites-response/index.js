@@ -1,14 +1,17 @@
 "use strict";
-exports.__esModule = true;
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.stringify = void 0;
 // stringify function compiled using fast-json-stringify
 // @ts-ignore
-var stringify_js_1 = require("./stringify.js");
+const stringify_js_1 = __importDefault(require("./stringify.js"));
 // @ts-ignore
-var flatstr_1 = require("flatstr");
-var stringify = function (data) {
-    var str = (0, stringify_js_1["default"])(data);
-    (0, flatstr_1["default"])(str);
+const flatstr_1 = __importDefault(require("flatstr"));
+const stringify = (data) => {
+    const str = (0, stringify_js_1.default)(data);
+    (0, flatstr_1.default)(str);
     return str;
 };
 exports.stringify = stringify;

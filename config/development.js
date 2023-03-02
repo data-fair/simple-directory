@@ -1,6 +1,6 @@
 module.exports = {
-  port: 5689,
-  publicUrl: 'http://localhost:5689',
+  port: 5690,
+  publicUrl: 'http://localhost:5689/simple-directory',
   // use this host when debugging a data-fair inside a virtualbox vm
   // publicUrl: 'http://10.0.2.2:5689',
   admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com'],
@@ -86,7 +86,7 @@ module.exports = {
     notifications: 'secret-notifications',
     sites: 'secret-sites'
   },
-  proxyNuxt: true,
+  noUI: true,
   perOrgStorageTypes: ['ldap'],
   cipherPassword: 'dev',
   notifyUrl: 'http://localhost:5689/notify',
@@ -102,7 +102,7 @@ module.exports = {
     deleteInactiveDelay: [1, 'days']
   },
   alwaysAcceptInvitation: true,
-  onlyCreateInvited: true,
+  onlyCreateInvited: false,
   saml2: {
     providers: [{
       title: 'Test SAML IDP',

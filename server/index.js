@@ -2,7 +2,7 @@ const config = require('config')
 const app = require('./app')
 
 app.run().then(() => {
-  console.log('Listening on http://localhost:%s', config.port)
+  console.log(`Listening on localhost:${config.port}, exposed on ${config.publicUrl}`)
 }, err => {
   console.error('failed to run application', err)
   process.exit(-1)

@@ -50,7 +50,7 @@ class MongodbStorage {
 
     this.db = this.client.db()
     // An index for comparison case and diacritics insensitive
-    await mongoUtils.ensureIndex(this.db, 'users', { email: 1 }, { unique: true, collation })
+    await mongoUtils.ensureIndex(this.db, 'users', { email: 1, host: 1 }, { unique: true, collation, name: 'email_1' })
     await mongoUtils.ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
     await mongoUtils.ensureIndex(this.db, 'users', { plannedDeletion: 1 }, { sparse: true })
     await mongoUtils.ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
@@ -430,7 +430,7 @@ class MongodbStorage {
   }
 
   async saveSite (site) {
-    await this.db.collection('sites').updateOne({ _id: site._id }, site, { upsert: true })
+    await this.db.collection('sites').replaceOne({ _id: site._id }, site, { upsert: true })
   }
 
   async getSiteByHost (host) {

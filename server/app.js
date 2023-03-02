@@ -5,8 +5,6 @@ const bodyParser = require('body-parser')
 const http = require('http')
 const util = require('util')
 const eventToPromise = require('event-to-promise')
-const originalUrl = require('original-url')
-const { format: formatUrl } = require('url')
 const cors = require('cors')
 const { createHttpTerminator } = require('http-terminator')
 const dayjs = require('./utils/dayjs')
@@ -37,12 +35,6 @@ server.keepAliveTimeout = (60 * 1000) + 1000
 server.headersTimeout = (60 * 1000) + 2000
 
 app.set('json spaces', 2)
-
-if (process.env.NODE_ENV === 'development') {
-  // Create a mono-domain environment with other services in dev
-  const { createProxyMiddleware } = require('http-proxy-middleware')
-  app.use('/notify', createProxyMiddleware({ target: 'http://localhost:8088', pathRewrite: { '^/notify': '' } }))
-}
 
 app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))
@@ -80,7 +72,7 @@ const fullUser = asyncWrap(async (req, res, next) => {
 const publicUrl = new URL(config.publicUrl)
 let basePath = publicUrl.pathname
 if (basePath.endsWith('/')) basePath = basePath.slice(0, -1)
-app.use(asyncWrap(async (req, res, next) => {
+const setSite = asyncWrap(async (req, res, next) => {
   const host = req.get('host')
   if (host !== publicUrl.host) {
     // TODO: use a small memory cache for this very frequent query ?
@@ -94,14 +86,14 @@ app.use(asyncWrap(async (req, res, next) => {
   }
   req.publicBasePath = basePath
   next()
-}))
+})
 
 const apiDocs = require('../contract/api-docs')
 app.get('/api/api-docs.json', cors(), (req, res) => res.json(apiDocs))
 app.get('/api/auth/anonymous-action', cors(), require('./routers/anonymous-action'))
-app.use('/api/auth', session.auth, require('./routers/auth').router)
+app.use('/api/auth', setSite, session.auth, require('./routers/auth').router)
 app.use('/api/mails', session.auth, require('./routers/mails'))
-app.use('/api/users', session.auth, fullUser, require('./routers/users'))
+app.use('/api/users', setSite, session.auth, fullUser, require('./routers/users'))
 app.use('/api/organizations', session.auth, fullUser, require('./routers/organizations'))
 app.use('/api/invitations', session.auth, fullUser, require('./routers/invitations'))
 app.use('/api/avatars', session.auth, fullUser, require('./routers/avatars'))
@@ -123,7 +115,7 @@ app.get('/api/info', session.requiredAuth, (req, res) => {
 *  the next few lines are here only to maintain compatibility for installed clients
 *  that have an older version of sd-vue
 */
-app.post('/api/session/keepalive', session.auth, asyncWrap(async (req, res, next) => {
+app.post('/api/session/keepalive', setSite, session.auth, asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send('No active session to keep alive')
   debug(`Exchange session token for user ${req.user.name}`)
   await tokens.keepalive(req, res)
@@ -235,7 +227,6 @@ exports.run = async () => {
 
   if (!config.noUI) {
     app.use(session.auth)
-
     debug('prepare nuxt')
     const nuxt = await require('./nuxt')()
     app.set('nuxt', nuxt.instance)
@@ -247,13 +238,6 @@ exports.run = async () => {
   debug('start server')
   server.listen(config.port)
   await eventToPromise(server, 'listening')
-
-  if (process.env.NODE_ENV === 'development') {
-    const server2 = http.createServer(app)
-    console.log(`listen on secondary port ${config.port + 1} to simulate multi-domain exposition`)
-    server2.listen(config.port + 1)
-    await eventToPromise(server2, 'listening')
-  }
 
   return app
 }

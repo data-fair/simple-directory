@@ -17,6 +17,17 @@ export default () => {
       env: {},
       authProviders: null
     },
+    getters: {
+      mainHost (state) {
+        return new URL(state.env.mainPublicUrl).host
+      },
+      mainOrigin (state) {
+        return new URL(state.env.mainPublicUrl).origin
+      },
+      host () {
+        return window.location.host
+      }
+    },
     mutations: {
       setAny (state, params) {
         Object.assign(state, params)

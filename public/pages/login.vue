@@ -34,11 +34,6 @@
               >
                 {{ $t('pages.login.adminMode') }}
               </p>
-              <p
-                v-if="redirectHost && redirectHost !== mainHost"
-                class="mb-6"
-                v-html="$t('pages.login.separateDomain', {redirectHost, mainHost, mainOrigin})"
-              />
               <template v-if="!adminMode && !orgStorage">
                 <auth-providers-login-links
                   :redirect="redirectUrl"
@@ -736,26 +731,11 @@ export default {
       if (this.env.theme.logo) return this.env.theme.logo
       return null
     },
-    host () {
-      return window.location.host
-    },
-    mainHost () {
-      return new URL(this.env.mainPublicUrl).host
-    },
-    mainOrigin () {
-      return new URL(this.env.mainPublicUrl).origin
-    },
     redirectHost () {
       return this.redirectUrl && new URL(this.redirectUrl).host
     }
   },
   created () {
-    // this should not be necessary, see redirect in server/app.js
-    if (this.host !== this.mainHost) {
-      const url = new URL(window.location.href)
-      url.host = this.mainHost
-      window.location = url.href
-    }
     if (this.actionPayload) {
       this.step = 'changePassword'
       this.email = this.actionPayload.email || this.invitPayload.e

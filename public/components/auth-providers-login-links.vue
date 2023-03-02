@@ -4,6 +4,25 @@
     class="mb-6 mx-0"
   >
     <v-btn
+      v-if="host !== mainHost"
+      :color="env.theme.colors.primary"
+      :href="mainSiteLoginUrl"
+      dark
+      small
+      rounded
+      depressed
+      class="pl-0 pr-3 mr-2 mb-1 text-none white--text"
+    >
+      <v-avatar size="28">
+        <img
+          v-if="env.theme.logo"
+          :src="env.theme.logo"
+        >
+        <logo v-else />
+      </v-avatar>
+      &nbsp;{{ mainHost }}
+    </v-btn>
+    <v-btn
       v-for="authProvider of authProviders"
       :key="authProvider.type + ':' + authProvider.id"
       :color="contrastColor(authProvider.color)"
@@ -36,12 +55,18 @@ export default {
   props: ['redirect', 'email', 'invitToken'],
   computed: {
     ...mapState(['env', 'authProviders']),
-
     redirectParam () {
       if (!this.redirect) return ''
       return `?redirect=${encodeURIComponent(this.redirect)}`
     },
-    ...mapGetters(['contrastColor'])
+    ...mapGetters(['contrastColor', 'host', 'mainHost']),
+    mainSiteLoginUrl () {
+      const url = new URL(`${this.env.mainPublicUrl}/login`)
+      if (this.redirect) url.searchParams.append('redirect', this.redirect)
+      if (this.email) url.searchParams.append('email', this.email)
+      if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
+      return url.href
+    }
   },
   created () {
     this.$store.dispatch('fetchAuthProviders')

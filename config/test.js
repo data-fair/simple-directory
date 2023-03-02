@@ -31,5 +31,6 @@ module.exports = {
   perOrgStorageTypes: ['ldap'],
   maildev: {
     active: true
-  }
+  },
+  noUI: false
 }

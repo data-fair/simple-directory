@@ -5,7 +5,8 @@ const asyncWrap = require('../utils/async-wrap')
 const siteSchema = require('../../types/site')
 const sitePublicSchema = require('../../types/site-public')
 const sitesResponseSchema = require('../../types/sites-response')
-const router = express.Router()
+
+const router = module.exports = express.Router()
 
 const checkSecret = async (req) => {
   if (!req.query.key || req.query.key !== config.secretKeys.sites) {
