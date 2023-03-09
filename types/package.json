@@ -4,15 +4,15 @@
   },
   "dependencies": {
     "@data-fair/lib": "^0.3.0",
-    "ajv-errors": "^3.0.0",
-    "ajv-formats": "^2.1.1",
     "ajv-i18n": "^4.2.0",
-    "fast-json-stringify": "^5.6.1",
-    "flatstr": "^1.0.12",
-    "json-schema-to-typescript": "^11.0.3",
-    "pascal-case": "^3.1.2"
+    "flatstr": "^1.0.12"
   },
   "devDependencies": {
+    "ajv-errors": "^3.0.0",
+    "ajv-formats": "^2.1.1",
+    "fast-json-stringify": "^5.6.1",
+    "json-schema-to-typescript": "^11.0.3",
+    "pascal-case": "^3.1.2",
     "typescript": "^4.9.5"
   }
 }

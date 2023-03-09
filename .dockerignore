@@ -8,3 +8,4 @@
 /dist
 /.git
 config/local*
+/types/node_modules

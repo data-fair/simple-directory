@@ -40,6 +40,12 @@ ENV NODE_ENV production
 RUN npm run build && \
     rm -rf dist
 
+# also install deps in types submodule
+ADD types types
+WORKDIR /webapp/types
+RUN npm ci --production && \
+    ../node_modules/.bin/clean-modules --yes
+
 # Cleanup /webapp/node_modules so it can be copied by next stage
 RUN npm prune --production
 RUN rm -rf node_modules/.cache
@@ -57,10 +63,10 @@ WORKDIR /webapp
 COPY --from=builder /webapp/node_modules /webapp/node_modules
 COPY --from=builder /webapp/package.json /webapp/package.json
 COPY --from=builder /webapp/nuxt-dist /webapp/nuxt-dist
+COPY --from=builder /webapp/types /webapp/types
 ADD nuxt.config.js nuxt.config.js
 ADD i18n i18n
 ADD server server
-ADD types types
 ADD scripts scripts
 ADD config/default.js config/
 ADD config/production.js config/
