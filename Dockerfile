@@ -27,10 +27,9 @@ ADD i18n i18n
 # Adding server files
 ADD server server
 ADD scripts scripts
-ADD types types
 
 # Check quality
-ADD .gitignore .gitignore
+ADD .eslintignore .eslintignore
 RUN npm run lint
 ADD test test
 RUN npm run test
