@@ -27,6 +27,7 @@ ADD i18n i18n
 # Adding server files
 ADD server server
 ADD scripts scripts
+ADD types types
 
 # Check quality
 ADD .gitignore .gitignore
@@ -59,6 +60,7 @@ COPY --from=builder /webapp/nuxt-dist /webapp/nuxt-dist
 ADD nuxt.config.js nuxt.config.js
 ADD i18n i18n
 ADD server server
+ADD types types
 ADD scripts scripts
 ADD config/default.js config/
 ADD config/production.js config/
