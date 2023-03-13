@@ -122,6 +122,7 @@
     "material-colors": "^1.2.6",
     "memoizee": "^0.4.15",
     "mjml": "^4.8.1",
+    "moment": "^2.29.4",
     "mongodb": "^4.13.0",
     "multer": "^1.4.2",
     "node-cron": "^3.0.0",
