@@ -22,7 +22,8 @@ module.exports = {
     sendMails: 'testkey',
     limits: 'testkey',
     readAll: 'testkey',
-    metrics: 'testkey'
+    metrics: 'testkey',
+    sites: 'testkey'
   },
   authRateLimit: {
     attempts: 100,

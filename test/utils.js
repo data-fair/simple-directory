@@ -4,11 +4,11 @@ const eventToPromise = require('event-to-promise')
 const assert = require('assert').strict
 const mails = require('../server/mails')
 
-exports.axios = async (email) => {
+exports.axios = async (email, org = null) => {
   const config = require('config')
   const opts = { baseURL: config.publicUrl, maxRedirects: 0 }
   let ax
-  if (email) ax = await sdExpress.axiosAuth(email, null, opts, config.publicUrl, config.maildev.url)
+  if (email) ax = await sdExpress.axiosAuth(email, org, opts, config.publicUrl, config.maildev.url)
   else ax = axios.create(opts)
 
   // customize axios errors for shorter stack traces when a request fails in a test
