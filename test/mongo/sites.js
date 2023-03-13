@@ -8,9 +8,9 @@ describe('sites api', () => {
     await assert.rejects(anonymousAx.post('/api/sites', { host: 'test' }), (err) => err.status === 401)
     await assert.rejects(anonymousAx.post('/api/sites', { host: 'test' }, { params: { key: config.secretKeys.sites } }), (err) => err.status === 400)
 
-    const { ax } = await testUtils.createUser('test-org@test.com')
+    const { ax } = await testUtils.createUser('test-site@test.com')
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
-    const orgAx = await testUtils.axios('test-org@test.com:Test1234:org', org.id)
+    const orgAx = await testUtils.axios('test-site@test.com:Test1234:org', org.id)
     const owner = { type: 'organization', id: org.id, name: org.name }
 
     await anonymousAx.post('/api/sites',
