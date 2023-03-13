@@ -22,7 +22,7 @@ module.exports = {
   plugins: [{ src: '~plugins/vuetify' }],
   router: { base: '/simple-directory/' },
   env: { theme: config.theme },
-  modules: ['@nuxtjs/markdownit', ['nuxt-i18n', {
+  modules: ['@nuxtjs/markdownit', ['@nuxtjs/i18n', {
     locales: [
       { code: 'fr' },
       { code: 'en' }

@@ -69,7 +69,7 @@ module.exports = {
   router: {
     base: config.basePath
   },
-  modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', 'cookie-universal-nuxt', ['nuxt-i18n', {
+  modules: ['@nuxtjs/markdownit', '@nuxtjs/axios', 'cookie-universal-nuxt', ['@nuxtjs/i18n', {
     seo: false,
     // cannot come from config as it must be defined at build time (routes are impacted
     // we will override some of it at runtime using env.i18n

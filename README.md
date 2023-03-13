@@ -46,6 +46,8 @@ Test built nuxt distributable in dev:
 Test building the docker image:
 
 ```
+docker compose stop
+npm run test-deps
 docker build --network=host -t sd-dev .
 // don't expect the following line to work fully, it will be missing service dependencies, etc.
 docker run --network=host --env PORT=8081 sd-dev
