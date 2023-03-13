@@ -7,6 +7,7 @@ const util = require('util')
 const eventToPromise = require('event-to-promise')
 const cors = require('cors')
 const { createHttpTerminator } = require('http-terminator')
+const createHttpError = require('http-errors')
 const dayjs = require('./utils/dayjs')
 const storages = require('./storages')
 const mails = require('./mails')
@@ -75,6 +76,7 @@ if (basePath.endsWith('/')) basePath = basePath.slice(0, -1)
 const setSite = asyncWrap(async (req, res, next) => {
   const host = req.get('host')
   if (host !== publicUrl.host) {
+    if (!config.manageSites) throw createHttpError(400, `multi-sites not supported by this install of simple-directory, host=${host}, declared host=${publicUrl.host}`)
     // TODO: use a small memory cache for this very frequent query ?
     req.site = await app.get('storage').getSiteByHost(host)
     if (!req.site) return res.status(404).send('unknown site')
