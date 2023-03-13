@@ -32,5 +32,6 @@ module.exports = {
   maildev: {
     active: true
   },
-  noUI: false
+  noUI: false,
+  manageSites: false
 }
