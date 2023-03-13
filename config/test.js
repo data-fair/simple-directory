@@ -33,5 +33,5 @@ module.exports = {
     active: true
   },
   noUI: false,
-  manageSites: false
+  manageSites: true
 }

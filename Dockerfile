@@ -28,6 +28,13 @@ ADD i18n i18n
 ADD server server
 ADD scripts scripts
 
+# also install deps in types submodule
+ADD types types
+WORKDIR /webapp/types
+RUN npm ci --production && \
+    ../node_modules/.bin/clean-modules --yes
+WORKDIR /webapp
+
 # Check quality
 ADD .eslintignore .eslintignore
 RUN npm run lint
@@ -38,12 +45,6 @@ RUN npm run test
 ENV NODE_ENV production
 RUN npm run build && \
     rm -rf dist
-
-# also install deps in types submodule
-ADD types types
-WORKDIR /webapp/types
-RUN npm ci --production && \
-    ../node_modules/.bin/clean-modules --yes
 
 # Cleanup /webapp/node_modules so it can be copied by next stage
 RUN npm prune --production
