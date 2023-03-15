@@ -11,13 +11,13 @@
   ],
   "properties":{
     "theme": {
-      "$ref": "https://github.com/data-fair/simple-directory/site#/definitions/theme"
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/theme"
     },
     "logo": {
-      "$ref": "https://github.com/data-fair/simple-directory/site#/definitions/logo"
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/logo"
     },
     "authMode": {
-      "$ref": "https://github.com/data-fair/simple-directory/site#/definitions/auth-mode"
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/authMode"
     }
   }
 }

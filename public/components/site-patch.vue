@@ -1,0 +1,89 @@
+<template>
+  <v-menu
+    v-model="menu"
+    :close-on-content-click="false"
+    offset-y
+  >
+    <template #activator="{on}">
+      <v-btn
+        :title="$t('common.editTitle', {name: site.host})"
+        text
+        icon
+        v-on="on"
+      >
+        <v-icon>mdi-pencil</v-icon>
+      </v-btn>
+    </template>
+
+    <v-card
+      v-if="patch"
+      data-iframe-height
+      width="500"
+    >
+      <v-card-title class="text-h6">
+        {{ $t('common.editTitle', {name: site.host}) }}
+      </v-card-title>
+      <v-card-text v-if="menu">
+        <v-form v-model="valid">
+          <v-jsf
+            v-model="patch"
+            :schema="schema"
+          />
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn
+          text
+          @click="menu = false"
+        >
+          {{ $t('common.confirmCancel') }}
+        </v-btn>
+        <v-btn
+          color="primary"
+          :disabled="!valid"
+          @click="confirmEdit"
+        >
+          {{ $t('common.confirmOk') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-menu>
+</template>
+
+<script>
+import { resolvedSchema } from '../../types/site-patch'
+import { mapActions, mapState } from 'vuex'
+
+// our schema resolver create enums that suck
+resolvedSchema.properties.authMode.oneOf.forEach(o => {
+  o.const = o.enum[0]
+  delete o.enum
+})
+
+export default {
+  props: ['site'],
+  data: () => ({ menu: false, patch: null, valid: false, model: {} }),
+  computed: {
+    ...mapState(['env']),
+    schema: () => resolvedSchema
+  },
+  watch: {
+    menu () {
+      if (!this.menu) return
+      this.patch = JSON.parse(JSON.stringify(this.site))
+    }
+  },
+  methods: {
+    ...mapActions(['patchSite']),
+    async confirmEdit (department) {
+      this.menu = false
+      await this.patchSite(this.patch)
+      this.$emit('change')
+    }
+  }
+}
+</script>
+
+<style lang="css" scoped>
+</style>

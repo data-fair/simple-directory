@@ -220,7 +220,7 @@ class Serializer {
   
 
     function anonymous2 (input) {
-      // #/definitions/theme
+      // https://github.com/data-fair/simple-directory/site#/properties/theme
   
       const obj = (input && typeof input.toJSON === 'function')
     ? input.toJSON()
@@ -292,15 +292,6 @@ class Serializer {
         !addComma && (addComma = true) || (json += ',')
         json += "\"logo\":"
       json += serializer.asString(obj["logo"])
-      }
-    
-      if (obj["authMode"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"authMode\":"
-      json += serializer.asString(obj["authMode"])
-      } else {
-        throw new Error('"authMode" is required!')
-      
       }
     
       return json + '}'

@@ -22,16 +22,30 @@
         slot="item"
         slot-scope="props"
       >
-        <!-- TODO: site logo
-        <td v-if="env.avatars.orgs">
-          <v-avatar :size="40">
-              <img :src="env.publicUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
-          </v-avatar>
-        </td>-->
-        <td :style="`min-width:50px;background-color:${props.item.theme.primaryColor}`" />
-        <td><a :href="`http://${props.item.host}/simple-directory/login`">{{ props.item.host }}</a></td>
+        <td v-if="props.item.logo">
+          <img
+            style="max-height: 100%"
+            :src="props.item.logo"
+          >
+        </td>
+        <td
+          v-else
+          :style="`min-width:50px;background-color:${props.item.theme.primaryColor}`"
+        />
+        <td>
+          <a
+            :href="`http://${props.item.host}/simple-directory/login`"
+            target="blank"
+          >{{ props.item.host }}</a>
+        </td>
         <td>{{ props.item._id }}</td>
         <td>{{ props.item.authMode }}</td>
+        <td>
+          <site-patch
+            :site="props.item"
+            @change="fetchSites"
+          />
+        </td>
       </tr>
     </v-data-table>
   </v-container>
@@ -59,7 +73,8 @@ export default {
       { text: '', value: 'theme.primaryColor', sortable: false },
       { text: this.$t('common.host'), value: 'host' },
       { text: this.$t('common.id'), value: '_id', sortable: false },
-      { text: this.$t('common.authMode'), value: 'authMode', sortable: false }
+      { text: this.$t('common.authMode'), value: 'authMode', sortable: false },
+      { test: '', sortable: false }
     ])
   },
   methods: {

@@ -2,7 +2,8 @@ const express = require('express')
 const config = require('config')
 const createError = require('http-errors')
 const asyncWrap = require('../utils/async-wrap')
-const siteSchema = require('../../types/site')
+const sitePatchSchema = require('../../types/site-patch')
+const sitePostSchema = require('../../types/site-post')
 const sitePublicSchema = require('../../types/site-public')
 const sitesResponseSchema = require('../../types/sites-response')
 const sitesQuerySchema = require('../../types/sites-query')
@@ -25,9 +26,15 @@ router.get('', asyncWrap(async (req, res, next) => {
 
 router.post('', asyncWrap(async (req, res, next) => {
   await checkSecret(req)
-  const body = siteSchema.validate(req.body)
-  await req.app.get('storage').saveSite(body)
-  res.type('json').send(siteSchema.stringify(body))
+  const body = sitePostSchema.validate(req.body)
+  await req.app.get('storage').patchSite(body, true)
+  res.type('json').send(sitePostSchema.stringify(body))
+}))
+
+router.patch('/:id', asyncWrap(async (req, res, next) => {
+  const body = sitePatchSchema.validate(req.body)
+  await req.app.get('storage').patchSite(body)
+  res.type('json').send(sitePatchSchema.stringify(body))
 }))
 
 router.delete('/:id', asyncWrap(async (req, res, next) => {

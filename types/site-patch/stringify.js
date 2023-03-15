@@ -166,84 +166,8 @@ class Serializer {
 
   
     
-    function anonymous3 (input) {
-      // https://github.com/data-fair/simple-directory/site#/properties/owner
-  
-      const obj = (input && typeof input.toJSON === 'function')
-    ? input.toJSON()
-    : input
-  
-      let json = '{'
-      let addComma = false
-  
-      if (obj["type"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"type\":"
-      json += serializer.asString(obj["type"])
-      } else {
-        throw new Error('"type" is required!')
-      
-      }
-    
-      if (obj["id"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"id\":"
-      json += serializer.asString(obj["id"])
-      } else {
-        throw new Error('"id" is required!')
-      
-      }
-    
-      if (obj["name"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"name\":"
-      json += serializer.asString(obj["name"])
-      } else {
-        throw new Error('"name" is required!')
-      
-      }
-    
-      if (obj["department"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"department\":"
-      json += serializer.asString(obj["department"])
-      }
-    
-      if (obj["departmentName"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"departmentName\":"
-      json += serializer.asString(obj["departmentName"])
-      }
-    
-      return json + '}'
-    }
-  
-
-    function anonymous4 (input) {
-      // https://github.com/data-fair/simple-directory/site#/properties/theme
-  
-      const obj = (input && typeof input.toJSON === 'function')
-    ? input.toJSON()
-    : input
-  
-      let json = '{'
-      let addComma = false
-  
-      if (obj["primaryColor"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"primaryColor\":"
-      json += serializer.asString(obj["primaryColor"])
-      } else {
-        throw new Error('"primaryColor" is required!')
-      
-      }
-    
-      return json + '}'
-    }
-  
-
-    function anonymous2 (input) {
-      // https://github.com/data-fair/simple-directory/site#
+    function anonymous0 (input) {
+      // #
   
       const obj = (input && typeof input.toJSON === 'function')
     ? input.toJSON()
@@ -261,39 +185,6 @@ class Serializer {
       
       }
     
-      if (obj["owner"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"owner\":"
-      json += anonymous3(obj["owner"])
-      } else {
-        throw new Error('"owner" is required!')
-      
-      }
-    
-      if (obj["host"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"host\":"
-      json += serializer.asString(obj["host"])
-      } else {
-        throw new Error('"host" is required!')
-      
-      }
-    
-      if (obj["theme"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"theme\":"
-      json += anonymous4(obj["theme"])
-      } else {
-        throw new Error('"theme" is required!')
-      
-      }
-    
-      if (obj["logo"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"logo\":"
-      json += serializer.asString(obj["logo"])
-      }
-    
       if (obj["authMode"] !== undefined) {
         !addComma && (addComma = true) || (json += ',')
         json += "\"authMode\":"
@@ -301,73 +192,6 @@ class Serializer {
       } else {
         !addComma && (addComma = true) || (json += ',')
         json += "\"authMode\":\"onlyBackOffice\""
-      
-      }
-    
-    const propertiesKeys = ["_id","owner","host","theme","logo","authMode"]
-    for (const [key, value] of Object.entries(obj)) {
-      if (
-        propertiesKeys.includes(key) ||
-        value === undefined ||
-        typeof value === 'function' ||
-        typeof value === 'symbol'
-      ) continue
-  
-        !addComma && (addComma = true) || (json += ',')
-        json += serializer.asString(key) + ':' + JSON.stringify(value)
-      
-    }
-  
-      return json + '}'
-    }
-  
-
-    function anonymous1 (obj) {
-      // #/properties/results
-  
-    if (!Array.isArray(obj)) {
-      throw new TypeError(`The value of '#/properties/results' does not match schema definition.`)
-    }
-    const arrayLength = obj.length
-  
-    let jsonOutput = ''
-  
-      for (let i = 0; i < arrayLength; i++) {
-        let json = ''
-        json += anonymous2(obj[i])
-        jsonOutput += json
-        if (i < arrayLength - 1) {
-          jsonOutput += ','
-        }
-      }
-    return `[${jsonOutput}]`
-  }
-
-    function anonymous0 (input) {
-      // #
-  
-      const obj = (input && typeof input.toJSON === 'function')
-    ? input.toJSON()
-    : input
-  
-      let json = '{'
-      let addComma = false
-  
-      if (obj["count"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"count\":"
-      json += serializer.asInteger(obj["count"])
-      } else {
-        throw new Error('"count" is required!')
-      
-      }
-    
-      if (obj["results"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"results\":"
-      json += anonymous1(obj["results"])
-      } else {
-        throw new Error('"results" is required!')
       
       }
     

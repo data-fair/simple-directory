@@ -2,7 +2,7 @@
   "type": "object",
   "$id": "https://github.com/data-fair/simple-directory/site",
   "title": "Site",
-  "x-exports": ["types", "stringify", "validate"],
+  "x-exports": ["types"],
   "required": ["_id", "owner", "host", "theme", "authMode"],
   "properties": {
     "_id": {
@@ -14,18 +14,6 @@
     "host": {
       "type": "string"
     },
-    "theme": {
-      "$ref": "#/definitions/theme"
-    },
-    "logo": {
-      "$ref": "#/definitions/logo"
-    },
-    "authMode": {
-      "default": "ssoBackOffice",
-      "$ref": "#/definitions/auth-mode"
-    }
-  },
-  "definitions": {
     "theme": {
       "type": "object",
       "additionalProperties":false,
@@ -39,12 +27,14 @@
     "logo": {
       "type": "string"
     },
-    "auth-mode": {
+    "authMode": {
+      "default": "onlyBackOffice",
+      "title": "Mode d'authentification",
       "type": "string",
       "oneOf": [
-        { "const": "onlyLocal", "title": "only users created on this site can log in" },
-        { "const": "onlyBackOffice", "title": "only users created in the back-office can log in" },
-        { "const": "ssoBackOffice", "title": "users can be created on this site, but back-office users can also login through a SSO link"}
+        { "const": "onlyLocal", "title": "uniquement sur le site lui même" },
+        { "const": "onlyBackOffice", "title": "uniquement sur le back-office" },
+        { "const": "ssoBackOffice", "title": "sur le site et sur le back-office par SSO"}
       ]
     }
   }

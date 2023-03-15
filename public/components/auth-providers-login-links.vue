@@ -39,12 +39,15 @@
       class="pl-0 pr-3 mr-2 mb-1 text-none white--text"
     >
       <v-avatar
-        size="28"
+        size="27"
         color="white"
-        class="elevation-1"
-        style="left:-1px"
+        class="elevation-4"
+        style="left:-1px; top: -1px;"
       >
-        <v-icon v-if="authProvider.icon">
+        <v-icon
+          v-if="authProvider.icon"
+          :color="contrastColor(authProvider.color)"
+        >
           {{ authProvider.icon }}
         </v-icon>
         <img

@@ -46,6 +46,9 @@ module.exports = {
   buildDir: 'nuxt-dist',
   build: {
     transpile: [/@koumoul/, /@data-fair/],
+    babel: {
+      sourceType: 'unambiguous'
+    },
     publicPath: config.publicUrl + '/_nuxt/',
     extend (webpackConfig, { isServer, isDev, isClient }) {
       const webpack = require('webpack')
@@ -96,9 +99,9 @@ module.exports = {
     ['@nuxtjs/google-fonts', { download: true, display: 'swap', families: { Nunito: [100, 300, 400, 500, 700, 900] } }]
   ],
   webpackOptimisations: {
-    // hard source is the riskiest, if you have issues don't enable it
-    hardSourcePlugin: process.env.NODE_ENV === 'development',
-    parallelPlugin: process.env.NODE_ENV === 'development'
+    features: {
+      cacheLoader: false // cache is not available inside docker build
+    }
   },
   vuetify: vuetifyOptions,
   env: {

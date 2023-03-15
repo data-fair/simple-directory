@@ -437,8 +437,8 @@ class MongodbStorage {
     }
   }
 
-  async saveSite (site) {
-    await this.db.collection('sites').replaceOne({ _id: site._id }, site, { upsert: true })
+  async patchSite (site, createIfMissing = false) {
+    await this.db.collection('sites').updateOne({ _id: site._id }, { $set: site }, { upsert: createIfMissing })
   }
 
   async getSiteByHost (host) {

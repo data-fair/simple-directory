@@ -131,10 +131,13 @@
           <v-avatar
             size="28"
             color="white"
-            class="elevation-1"
-            style="left:-1px"
+            class="elevation-4"
+            style="left:-1px; top: -1px;"
           >
-            <v-icon v-if="identity.icon">
+            <v-icon
+              v-if="identity.icon"
+              :color="contrastColor(authProvider.color)"
+            >
               {{ identity.icon }}
             </v-icon>
             <img

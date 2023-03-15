@@ -1,6 +1,12 @@
-export type OnlyUsersCreatedOnThisSiteCanLogIn = "onlyLocal";
-export type OnlyUsersCreatedInTheBackOfficeCanLogIn = "onlyBackOffice";
-export type UsersCanBeCreatedOnThisSiteButBackOfficeUsersCanAlsoLoginThroughASSOLink = "ssoBackOffice";
+export type ModeDAuthentification = ModeDAuthentification1 & ModeDAuthentification2;
+export type ModeDAuthentification1 =
+  | UniquementSurLeSiteLuiMeme
+  | UniquementSurLeBackOffice
+  | SurLeSiteEtSurLeBackOfficeParSSO;
+export type UniquementSurLeSiteLuiMeme = "onlyLocal";
+export type UniquementSurLeBackOffice = "onlyBackOffice";
+export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
+export type ModeDAuthentification2 = string;
 
 export interface SitesResponse {
   count: number;
@@ -11,17 +17,8 @@ export interface Site {
   owner: Account;
   host: string;
   theme: Theme;
-  /**
-   * This interface was referenced by `Site`'s JSON-Schema
-   * via the `definition` "logo".
-   */
   logo?: string;
-  authMode: (
-    | OnlyUsersCreatedOnThisSiteCanLogIn
-    | OnlyUsersCreatedInTheBackOfficeCanLogIn
-    | UsersCanBeCreatedOnThisSiteButBackOfficeUsersCanAlsoLoginThroughASSOLink
-  ) &
-    string;
+  authMode: ModeDAuthentification;
   [k: string]: unknown;
 }
 export interface Account {
@@ -31,10 +28,6 @@ export interface Account {
   department?: string;
   departmentName?: string;
 }
-/**
- * This interface was referenced by `Site`'s JSON-Schema
- * via the `definition` "theme".
- */
 export interface Theme {
   primaryColor: string;
 }

@@ -43,8 +43,7 @@ RUN npm run test
 
 # Build UI
 ENV NODE_ENV production
-RUN npm run build && \
-    rm -rf dist
+RUN npm run build
 
 # Cleanup /webapp/node_modules so it can be copied by next stage
 RUN npm prune --production

@@ -69,6 +69,13 @@ export default () => {
         } catch (error) {
           eventBus.$emit('notification', { error })
         }
+      },
+      async patchSite (_, patch) {
+        try {
+          await this.$axios.$patch(`api/sites/${patch._id}`, patch)
+        } catch (error) {
+          eventBus.$emit('notification', { error })
+        }
       }
     }
   })

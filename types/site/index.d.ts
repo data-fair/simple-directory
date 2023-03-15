@@ -1,20 +1,18 @@
-/**
- * This interface was referenced by `Site`'s JSON-Schema
- * via the `definition` "logo".
- */
-export type Logo = string;
-export type OnlyUsersCreatedOnThisSiteCanLogIn = "onlyLocal";
-export type OnlyUsersCreatedInTheBackOfficeCanLogIn = "onlyBackOffice";
-export type UsersCanBeCreatedOnThisSiteButBackOfficeUsersCanAlsoLoginThroughASSOLink = "ssoBackOffice";
-export type AuthMode = OnlyUsersCreatedOnThisSiteCanLogIn | OnlyUsersCreatedInTheBackOfficeCanLogIn | UsersCanBeCreatedOnThisSiteButBackOfficeUsersCanAlsoLoginThroughASSOLink;
-export type AuthMode1 = string;
+export type ModeDAuthentification = ModeDAuthentification1 & ModeDAuthentification2;
+export type ModeDAuthentification1 = UniquementSurLeSiteLuiMeme | UniquementSurLeBackOffice | SurLeSiteEtSurLeBackOfficeParSSO;
+export type UniquementSurLeSiteLuiMeme = "onlyLocal";
+export type UniquementSurLeBackOffice = "onlyBackOffice";
+export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
+export type ModeDAuthentification2 = string;
 export interface Site {
     _id: string;
     owner: Account;
     host: string;
-    theme: Theme;
-    logo?: Logo;
-    authMode: (OnlyUsersCreatedOnThisSiteCanLogIn | OnlyUsersCreatedInTheBackOfficeCanLogIn | UsersCanBeCreatedOnThisSiteButBackOfficeUsersCanAlsoLoginThroughASSOLink) & string;
+    theme: {
+        primaryColor: string;
+    };
+    logo?: string;
+    authMode: ModeDAuthentification;
     [k: string]: unknown;
 }
 export interface Account {
@@ -24,12 +22,3 @@ export interface Account {
     department?: string;
     departmentName?: string;
 }
-/**
- * This interface was referenced by `Site`'s JSON-Schema
- * via the `definition` "theme".
- */
-export interface Theme {
-    primaryColor: string;
-}
-export declare const stringify: (data: Site) => string;
-export declare const validate: (data: any, lang?: string, name?: string, internal?: boolean) => Site;

@@ -1,0 +1,25 @@
+{
+  "$id": "https://github.com/data-fair/simple-directory/site-post",
+  "x-exports": ["types", "validate", "stringify"],
+  "title": "site-post",
+  "type":"object",
+  "additionalProperties":false,
+  "required": ["_id", "owner", "host", "theme"],
+  "properties":{
+    "_id": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/_id"
+    },
+    "owner": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/owner"
+    },
+    "host": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/host"
+    },
+    "theme": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/theme"
+    },
+    "logo": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/logo"
+    }
+  }
+}

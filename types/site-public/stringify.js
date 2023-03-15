@@ -167,7 +167,7 @@ class Serializer {
   
     
     function anonymous1 (input) {
-      // https://github.com/data-fair/simple-directory/site#/definitions/theme
+      // https://github.com/data-fair/simple-directory/site#/properties/theme
   
       const obj = (input && typeof input.toJSON === 'function')
     ? input.toJSON()
@@ -222,7 +222,8 @@ class Serializer {
         json += "\"authMode\":"
       json += serializer.asString(obj["authMode"])
       } else {
-        throw new Error('"authMode" is required!')
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"authMode\":\"onlyBackOffice\""
       
       }
     
