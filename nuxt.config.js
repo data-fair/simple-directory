@@ -60,6 +60,7 @@ module.exports = {
   plugins: [
     { src: '~plugins/session', ssr: false },
     { src: '~plugins/query-params', ssr: false },
+    { src: '~plugins/site-public', ssr: false },
     { src: '~plugins/vuetify' },
     { src: '~plugins/moment' },
     { src: '~plugins/axios' },

@@ -37,6 +37,7 @@
               <template v-if="!adminMode && !orgStorage">
                 <auth-providers-login-links
                   :redirect="redirectUrl"
+                  :main-site-login-url="mainSiteLoginUrl"
                   :email="email"
                 />
               </template>
@@ -649,7 +650,7 @@
 
 <script>
 
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapActions, mapGetters } from 'vuex'
 import jwtDecode from 'jwt-decode'
 import eventBus from '../event-bus'
 
@@ -710,7 +711,8 @@ export default {
   },
   computed: {
     ...mapState('session', ['user']),
-    ...mapState(['env']),
+    ...mapState(['env', 'sitePublic']),
+    ...mapGetters(['host', 'mainHost']),
     readonly () {
       return this.env.readonly || this.$route.query.readonly === 'true'
     },
@@ -733,6 +735,13 @@ export default {
     },
     redirectHost () {
       return this.redirectUrl && new URL(this.redirectUrl).host
+    },
+    mainSiteLoginUrl () {
+      const url = new URL(`${this.env.mainPublicUrl}/login`)
+      if (this.redirect) url.searchParams.append('redirect', this.redirect)
+      if (this.email) url.searchParams.append('email', this.email)
+      if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
+      return url.href
     }
   },
   created () {

@@ -288,6 +288,16 @@ class Serializer {
       
       }
     
+      if (obj["authMode"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"authMode\":"
+      json += serializer.asString(obj["authMode"])
+      } else {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"authMode\":\"ssoBackOffice\""
+      
+      }
+    
       return json + '}'
     }
   

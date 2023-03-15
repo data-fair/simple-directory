@@ -1,3 +1,7 @@
+export type OnlyUsersCreatedOnThisSiteCanLogIn = "onlyLocal";
+export type OnlyUsersCreatedInTheBackOfficeCanLogIn = "onlyBackOffice";
+export type UsersCanBeCreatedOnThisSiteButBackOfficeUsersCanAlsoLoginThroughASSOLink = "ssoBackOffice";
+
 export interface SitesResponse {
   count: number;
   results: Site[];
@@ -7,6 +11,12 @@ export interface Site {
   owner: Account;
   host: string;
   theme: Theme;
+  authMode: (
+    | OnlyUsersCreatedOnThisSiteCanLogIn
+    | OnlyUsersCreatedInTheBackOfficeCanLogIn
+    | UsersCanBeCreatedOnThisSiteButBackOfficeUsersCanAlsoLoginThroughASSOLink
+  ) &
+    string;
   [k: string]: unknown;
 }
 export interface Account {

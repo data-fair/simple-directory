@@ -288,7 +288,17 @@ class Serializer {
       
       }
     
-    const propertiesKeys = ["_id","owner","host","theme"]
+      if (obj["authMode"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"authMode\":"
+      json += serializer.asString(obj["authMode"])
+      } else {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"authMode\":\"ssoBackOffice\""
+      
+      }
+    
+    const propertiesKeys = ["_id","owner","host","theme","authMode"]
     for (const [key, value] of Object.entries(obj)) {
       if (
         propertiesKeys.includes(key) ||

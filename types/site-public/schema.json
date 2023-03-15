@@ -14,6 +14,9 @@
     },
     "theme": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/definitions/theme"
+    },
+    "authMode": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/definitions/auth-mode"
     }
   }
 }

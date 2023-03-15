@@ -22,14 +22,16 @@
         slot="item"
         slot-scope="props"
       >
+        <!-- TODO: site logo
         <td v-if="env.avatars.orgs">
           <v-avatar :size="40">
-            <!-- TODO: site logo
-              <img :src="env.publicUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">-->
+              <img :src="env.publicUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
           </v-avatar>
-        </td>
-        <td>{{ props.item.host }}</td>
+        </td>-->
+        <td :style="`min-width:50px;background-color:${props.item.theme.primaryColor}`" />
+        <td><a :href="`http://${props.item.host}/simple-directory/login`">{{ props.item.host }}</a></td>
         <td>{{ props.item._id }}</td>
+        <td>{{ props.item.authMode }}</td>
       </tr>
     </v-data-table>
   </v-container>
@@ -52,10 +54,12 @@ export default {
     if (!this.user.adminMode) return this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
     this.fetchSites()
     this.headers = []
-    if (this.env.avatars.orgs) this.headers.push({ text: '', sortable: false })
+    // if (this.env.avatars.orgs) this.headers.push({ text: '', sortable: false })
     this.headers = this.headers.concat([
+      { text: '', value: 'theme.primaryColor', sortable: false },
       { text: this.$t('common.host'), value: 'host' },
-      { text: this.$t('common.id'), value: '_id', sortable: false }
+      { text: this.$t('common.id'), value: '_id', sortable: false },
+      { text: this.$t('common.authMode'), value: 'authMode', sortable: false }
     ])
   },
   methods: {

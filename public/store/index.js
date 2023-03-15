@@ -15,7 +15,8 @@ export default () => {
     state: {
       userDetails: null,
       env: {},
-      authProviders: null
+      authProviders: null,
+      sitePublic: null
     },
     getters: {
       mainHost (state) {
@@ -34,6 +35,12 @@ export default () => {
       }
     },
     actions: {
+      async fetchSitePublic ({ state, getters, commit }) {
+        if (getters.mainHost === getters.host) return
+        const sitePublic = await this.$axios.$get('/api/sites/' + encodeURIComponent(getters.host))
+        commit('setAny', { sitePublic })
+        return sitePublic
+      },
       async fetchUserDetails ({ state, commit, dispatch }) {
         if (!state.session.user) return
         try {

@@ -40,5 +40,5 @@ router.get('/:host', asyncWrap(async (req, res, next) => {
   const site = await req.app.get('storage').getSiteByHost(req.params.host)
   if (!site) return res.status(404).send()
   // return only parts that are public knowledge
-  res.type('json').send(sitePublicSchema.stringify({ host: site.host, theme: site.theme }))
+  res.type('json').send(sitePublicSchema.stringify({ host: site.host, theme: site.theme, authMode: site.authMode }))
 }))

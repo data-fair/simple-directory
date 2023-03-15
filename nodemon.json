@@ -1,5 +1,5 @@
 {
   "verbose": true,
   "ext": "js json mjml",
-  "watch": ["server/", "config/", "package.json", "contract/", "i18n/", "upgrade/"]
+  "watch": ["server/", "config/", "package.json", "contract/", "i18n/", "upgrade/", "types/"]
 }

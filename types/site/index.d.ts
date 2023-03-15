@@ -1,8 +1,14 @@
+export type AuthMode = OnlyUsersCreatedOnThisSiteCanLogIn | OnlyUsersCreatedInTheBackOfficeCanLogIn | UsersCanBeCreatedOnThisSiteButBackOfficeUsersCanAlsoLoginThroughASSOLink;
+export type OnlyUsersCreatedOnThisSiteCanLogIn = "onlyLocal";
+export type OnlyUsersCreatedInTheBackOfficeCanLogIn = "onlyBackOffice";
+export type UsersCanBeCreatedOnThisSiteButBackOfficeUsersCanAlsoLoginThroughASSOLink = "ssoBackOffice";
+export type AuthMode1 = string;
 export interface Site {
     _id: string;
     owner: Account;
     host: string;
     theme: Theme;
+    authMode: AuthMode & AuthMode1;
     [k: string]: unknown;
 }
 export interface Account {

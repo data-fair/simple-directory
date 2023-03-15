@@ -75,7 +75,8 @@ module.exports = {
     settings: 'paramètres',
     emailNotConfirmed: 'création non finalisée',
     noRole: 'aucun role',
-    downloadCsv: 'télécharger la liste au format CSV'
+    downloadCsv: 'télécharger la liste au format CSV',
+    authMode: 'Mode d\'authentification'
   },
   doc: {
     about: {

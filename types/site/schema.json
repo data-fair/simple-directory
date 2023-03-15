@@ -3,7 +3,7 @@
   "$id": "https://github.com/data-fair/simple-directory/site",
   "title": "Site",
   "x-exports": ["types", "stringify", "validate"],
-  "required": ["_id", "owner", "host", "theme"],
+  "required": ["_id", "owner", "host", "theme", "authMode"],
   "properties": {
     "_id": {
       "type": "string"
@@ -16,6 +16,9 @@
     },
     "theme": {
       "$ref": "#/definitions/theme"
+    },
+    "authMode": {
+      "$ref": "#/definitions/auth-mode"
     }
   },
   "definitions": {
@@ -28,6 +31,15 @@
           "type": "string"
         }
       }
+    },
+    "auth-mode": {
+      "type": "string",
+      "default": "ssoBackOffice",
+      "oneOf": [
+        { "const": "onlyLocal", "title": "only users created on this site can log in" },
+        { "const": "onlyBackOffice", "title": "only users created in the back-office can log in" },
+        { "const": "ssoBackOffice", "title": "users can be created on this site, but back-office users can also login through a SSO link"}
+      ]
     }
   }
 }
