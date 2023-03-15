@@ -36,9 +36,9 @@ router.delete('/:id', asyncWrap(async (req, res, next) => {
   res.status(204).send()
 }))
 
-router.get('/:host', asyncWrap(async (req, res, next) => {
-  const site = await req.app.get('storage').getSiteByHost(req.params.host)
-  if (!site) return res.status(404).send()
-  // return only parts that are public knowledge
-  res.type('json').send(sitePublicSchema.stringify({ host: site.host, theme: site.theme, authMode: site.authMode }))
+router.get('/_public', asyncWrap(async (req, res, next) => {
+  if (!req.site) return res.status(404).send()
+  req.site.logo = req.site.logo || `${req.publicBaseUrl}/api/avatars/${req.site.owner.type}/${req.site.owner.id}/avatar.png`
+  // stringify will keep only parts that are public knowledge
+  res.type('json').send(sitePublicSchema.stringify(req.site))
 }))

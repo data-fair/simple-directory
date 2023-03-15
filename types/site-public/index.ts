@@ -3,9 +3,9 @@ export type OnlyUsersCreatedInTheBackOfficeCanLogIn = "onlyBackOffice";
 export type UsersCanBeCreatedOnThisSiteButBackOfficeUsersCanAlsoLoginThroughASSOLink = "ssoBackOffice";
 
 export interface SitePublic {
-  host: string;
   theme: Theme;
-  authMode?: (
+  logo: string;
+  authMode: (
     | OnlyUsersCreatedOnThisSiteCanLogIn
     | OnlyUsersCreatedInTheBackOfficeCanLogIn
     | UsersCanBeCreatedOnThisSiteButBackOfficeUsersCanAlsoLoginThroughASSOLink

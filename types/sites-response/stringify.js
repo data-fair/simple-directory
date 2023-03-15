@@ -288,6 +288,12 @@ class Serializer {
       
       }
     
+      if (obj["logo"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"logo\":"
+      json += serializer.asString(obj["logo"])
+      }
+    
       if (obj["authMode"] !== undefined) {
         !addComma && (addComma = true) || (json += ',')
         json += "\"authMode\":"
@@ -298,7 +304,7 @@ class Serializer {
       
       }
     
-    const propertiesKeys = ["_id","owner","host","theme","authMode"]
+    const propertiesKeys = ["_id","owner","host","theme","logo","authMode"]
     for (const [key, value] of Object.entries(obj)) {
       if (
         propertiesKeys.includes(key) ||

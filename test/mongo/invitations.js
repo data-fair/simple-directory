@@ -13,7 +13,7 @@ describe('organizations api', () => {
     const mailPromise = eventToPromise(mails.events, 'send')
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit2@test.com', role: 'user' })
     const mail = await mailPromise
-    assert.ok(mail.link.startsWith('http://localhost:8080/api/invitations/_accept'))
+    assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
     // before accepting the user is not yet member
     let members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
@@ -26,7 +26,7 @@ describe('organizations api', () => {
     await assert.rejects(anonymousAx.get(mail.link), (res) => {
       assert.equal(res.status, 302)
       redirect = res.headers.location
-      assert.ok(redirect.startsWith('http://localhost:8080/login?step=createUser&invit_token='))
+      assert.ok(redirect.startsWith(config.publicUrl + '/login?step=createUser&invit_token='))
       return true
     })
     const invitToken = new URL(redirect).searchParams.get('invit_token')
@@ -59,7 +59,7 @@ describe('organizations api', () => {
     const mailPromise = eventToPromise(mails.events, 'send')
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit4@test.com', role: 'user' })
     const mail = await mailPromise
-    assert.ok(mail.link.startsWith('http://localhost:8080/api/invitations/_accept'))
+    assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
     // when clicking on the link the person is redirected to a page to create their user
     // the invitation token is forwarded to be re-sent with the user creation requests
@@ -67,7 +67,7 @@ describe('organizations api', () => {
     await assert.rejects(anonymousAx.get(mail.link), (res) => {
       assert.equal(res.status, 302)
       redirect = res.headers.location
-      assert.ok(redirect.startsWith('http://localhost:8080/invitation'))
+      assert.ok(redirect.startsWith(config.publicUrl + '/invitation'))
       return true
     })
 
@@ -90,7 +90,7 @@ describe('organizations api', () => {
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit6@test.com', role: 'user' })
     const mail = await mailPromise
     // the person is redirected by mail to a page to create their user
-    assert.ok(mail.link.startsWith('http://localhost:8080/login?step=createUser&invit_token='))
+    assert.ok(mail.link.startsWith(config.publicUrl + '/login?step=createUser&invit_token='))
     const invitToken = new URL(mail.link).searchParams.get('invit_token')
 
     // the user is already added as a member but flagged as not finalized (emailConfirmed=false)
@@ -153,8 +153,8 @@ describe('organizations api', () => {
     const mailPromise = eventToPromise(mails.events, 'send')
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep1', role: 'user' })
     const mail = await mailPromise
-    assert.equal(mail.subject, 'Rejoignez l\'organisation test / Department 1 sur localhost:8080')
-    assert.ok(mail.link.startsWith('http://localhost:8080/api/invitations/_accept'))
+    assert.equal(mail.subject, 'Rejoignez l\'organisation test / Department 1 sur localhost:5689')
+    assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
     // before accepting the user is not yet member
     let members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
@@ -193,7 +193,7 @@ describe('organizations api', () => {
     const mailPromise2 = eventToPromise(mails.events, 'send')
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep2', role: 'admin' })
     const mail2 = await mailPromise2
-    assert.ok(mail2.link.startsWith('http://localhost:8080/api/invitations/_accept'))
+    assert.ok(mail2.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
     // before accepting the user is not yet member of the second department
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
@@ -206,7 +206,7 @@ describe('organizations api', () => {
       redirect = res.headers.location
       return true
     })
-    assert.ok(redirect.startsWith('http://localhost:8080/invitation'))
+    assert.ok(redirect.startsWith(config.publicUrl + '/invitation'))
 
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
     assert.equal(members.length, 3)

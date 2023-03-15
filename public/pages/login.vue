@@ -8,6 +8,18 @@
       cols="12"
       style="max-width: 500px;"
     >
+      <v-row class="justify-center">
+        <v-col
+          cols="auto"
+          class=""
+        >
+          <img
+            v-if="sitePublic"
+            :src="sitePublic.logo"
+            @alt="$t('pages.login.siteLogo')"
+          >
+        </v-col>
+      </v-row>
       <v-card
         shaped
         class="pa-2"
@@ -16,7 +28,10 @@
           <h1 :class="{headline: true, 'mb-0': true, 'warning--text': adminMode}">
             {{ stepsTitles[step] || email }}
           </h1>
-          <div :class="`v-card v-sheet theme--${$vuetify.theme.dark ? 'dark' : 'light'} login-logo-container`">
+          <div
+            v-if="!sitePublic"
+            :class="`v-card v-sheet theme--${$vuetify.theme.dark ? 'dark' : 'light'} login-logo-container`"
+          >
             <img
               v-if="logoUrl"
               :src="logoUrl"

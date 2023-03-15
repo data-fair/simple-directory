@@ -75,7 +75,7 @@ let basePath = publicUrl.pathname
 if (basePath.endsWith('/')) basePath = basePath.slice(0, -1)
 const setSite = asyncWrap(async (req, res, next) => {
   const host = req.get('host')
-  if (host && host !== publicUrl.host && host !== `localhost:${config.port}`) {
+  if (host && host !== publicUrl.host && !(process.env.NODE_ENV === 'production' && host === `localhost:${config.port}`)) {
     if (!config.manageSites) throw createHttpError(400, `multi-sites not supported by this install of simple-directory, host=${host}, declared host=${publicUrl.host}`)
     // TODO: use a small memory cache for this very frequent query ?
     req.site = await app.get('storage').getSiteByHost(host)
@@ -103,7 +103,7 @@ app.use('/api/limits', session.auth, limits.router)
 app.use('/api/2fa', twoFA.router)
 app.get('/api/metrics', require('./routers/metrics'))
 if (config.manageSites) {
-  app.use('/api/sites', session.auth, require('./routers/sites'))
+  app.use('/api/sites', setSite, session.auth, require('./routers/sites'))
 }
 
 let info = { version: process.env.NODE_ENV }

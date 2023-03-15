@@ -288,13 +288,18 @@ class Serializer {
       
       }
     
+      if (obj["logo"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"logo\":"
+      json += serializer.asString(obj["logo"])
+      }
+    
       if (obj["authMode"] !== undefined) {
         !addComma && (addComma = true) || (json += ',')
         json += "\"authMode\":"
       json += serializer.asString(obj["authMode"])
       } else {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"authMode\":\"ssoBackOffice\""
+        throw new Error('"authMode" is required!')
       
       }
     

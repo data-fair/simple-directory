@@ -17,7 +17,11 @@
     "theme": {
       "$ref": "#/definitions/theme"
     },
+    "logo": {
+      "$ref": "#/definitions/logo"
+    },
     "authMode": {
+      "default": "ssoBackOffice",
       "$ref": "#/definitions/auth-mode"
     }
   },
@@ -32,9 +36,11 @@
         }
       }
     },
+    "logo": {
+      "type": "string"
+    },
     "auth-mode": {
       "type": "string",
-      "default": "ssoBackOffice",
       "oneOf": [
         { "const": "onlyLocal", "title": "only users created on this site can log in" },
         { "const": "onlyBackOffice", "title": "only users created in the back-office can log in" },

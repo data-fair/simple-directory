@@ -1,3 +1,4 @@
+const config = require('config')
 const assert = require('assert').strict
 const eventToPromise = require('event-to-promise')
 const testUtils = require('../utils')
@@ -13,7 +14,7 @@ describe('users api', () => {
     assert.ok(mail.link.includes('token_callback'))
     await assert.rejects(ax(mail.link), (res) => {
       // redirect to login page on the createOrga step
-      assert.ok(res.headers.location.startsWith('http://localhost:8080/login?step=createOrga'))
+      assert.ok(res.headers.location.startsWith(config.publicUrl + '/login?step=createOrga'))
       assert.ok(res.status, 302)
 
       // auto login of the created user

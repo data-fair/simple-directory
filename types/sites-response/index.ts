@@ -11,6 +11,11 @@ export interface Site {
   owner: Account;
   host: string;
   theme: Theme;
+  /**
+   * This interface was referenced by `Site`'s JSON-Schema
+   * via the `definition` "logo".
+   */
+  logo?: string;
   authMode: (
     | OnlyUsersCreatedOnThisSiteCanLogIn
     | OnlyUsersCreatedInTheBackOfficeCanLogIn

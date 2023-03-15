@@ -5,15 +5,16 @@
   "type":"object",
   "additionalProperties":false,
   "required":[
-    "host",
-    "theme"
+    "theme",
+    "logo",
+    "authMode"
   ],
   "properties":{
-    "host": {
-      "type": "string"
-    },
     "theme": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/definitions/theme"
+    },
+    "logo": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/definitions/logo"
     },
     "authMode": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/definitions/auth-mode"

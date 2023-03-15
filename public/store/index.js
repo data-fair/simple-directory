@@ -37,7 +37,7 @@ export default () => {
     actions: {
       async fetchSitePublic ({ state, getters, commit }) {
         if (getters.mainHost === getters.host) return
-        const sitePublic = await this.$axios.$get('/api/sites/' + encodeURIComponent(getters.host))
+        const sitePublic = await this.$axios.$get('/api/sites/_public')
         commit('setAny', { sitePublic })
         return sitePublic
       },

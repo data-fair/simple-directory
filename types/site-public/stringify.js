@@ -199,15 +199,6 @@ class Serializer {
       let json = '{'
       let addComma = false
   
-      if (obj["host"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"host\":"
-      json += serializer.asString(obj["host"])
-      } else {
-        throw new Error('"host" is required!')
-      
-      }
-    
       if (obj["theme"] !== undefined) {
         !addComma && (addComma = true) || (json += ',')
         json += "\"theme\":"
@@ -217,13 +208,21 @@ class Serializer {
       
       }
     
+      if (obj["logo"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"logo\":"
+      json += serializer.asString(obj["logo"])
+      } else {
+        throw new Error('"logo" is required!')
+      
+      }
+    
       if (obj["authMode"] !== undefined) {
         !addComma && (addComma = true) || (json += ',')
         json += "\"authMode\":"
       json += serializer.asString(obj["authMode"])
       } else {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"authMode\":\"ssoBackOffice\""
+        throw new Error('"authMode" is required!')
       
       }
     

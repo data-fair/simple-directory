@@ -1,4 +1,6 @@
 module.exports = {
+  port: 5690,
+  publicUrl: 'http://localhost:5689/simple-directory',
   secret: {
     public: './test/resources/test.key.pub',
     private: './test/resources/test.key'
