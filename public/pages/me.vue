@@ -120,15 +120,20 @@
         <v-btn
           v-for="identity of userIdentities"
           :key="identity.type + identity.id"
-          :color="identity.color"
+          :color="contrastColor(identity.color)"
           :href="identity.user.url"
           dark
           small
           rounded
           depressed
-          class="pl-1 text-none pr-3"
+          class="pl-0 pr-3 mr-2 mb-1 text-none white--text"
         >
-          <v-avatar size="28">
+          <v-avatar
+            size="28"
+            color="white"
+            class="elevation-1"
+            style="left:-1px"
+          >
             <v-icon v-if="identity.icon">
               {{ identity.icon }}
             </v-icon>
@@ -245,7 +250,7 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapActions, mapGetters } from 'vuex'
 import eventBus from '../event-bus'
 import LoadAvatar from '../components/load-avatar.vue'
 import AddOrganizationMenu from '../components/add-organization-menu.vue'
@@ -265,6 +270,7 @@ export default {
   computed: {
     ...mapState('session', ['user', 'initialized']),
     ...mapState(['userDetails', 'env', 'authProviders']),
+    ...mapGetters(['contrastColor']),
     readonly () {
       return this.env.readonly || this.user.orgStorage
     },

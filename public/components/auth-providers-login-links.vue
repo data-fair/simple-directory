@@ -13,7 +13,12 @@
       depressed
       class="pl-0 pr-3 mr-2 mb-1 text-none white--text"
     >
-      <v-avatar size="28">
+      <v-avatar
+        size="28"
+        color="white"
+        class="elevation-1"
+        style="left:-1px"
+      >
         <img
           v-if="env.theme.logo"
           :src="env.theme.logo"
@@ -33,7 +38,12 @@
       depressed
       class="pl-0 pr-3 mr-2 mb-1 text-none white--text"
     >
-      <v-avatar size="28">
+      <v-avatar
+        size="28"
+        color="white"
+        class="elevation-1"
+        style="left:-1px"
+      >
         <v-icon v-if="authProvider.icon">
           {{ authProvider.icon }}
         </v-icon>
