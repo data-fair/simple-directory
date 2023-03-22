@@ -151,7 +151,7 @@ module.exports = {
     transport: {
       port: 1025,
       ignoreTLS: true,
-      default: '127.0.0.1'
+      host: '127.0.0.1'
     },
     extraParams: {}
   },
