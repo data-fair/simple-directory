@@ -240,6 +240,7 @@ exports.run = async () => {
   debug('start server')
   server.listen(config.port)
   await eventToPromise(server, 'listening')
+  console.log(`listening on localhost:${config.port}, exposed on ${config.publicUrl}`)
 
   return app
 }
