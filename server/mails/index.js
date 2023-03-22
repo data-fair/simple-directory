@@ -15,7 +15,7 @@ const mjmlNoButtonTemplate = fs.readFileSync(path.join(__dirname, 'mail-nobutton
 const maildevTransport = {
   port: config.maildev.smtp,
   ignoreTLS: true,
-  host: 'localhost'
+  host: '127.0.0.1'
 }
 
 exports.init = async () => {
