@@ -4,16 +4,13 @@ on:
   push:
     branches: [ '*' ]
     tags: [ 'v*.*.*' ]
-  pull_request:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - run: echo $GITHUB_REF
-    - uses: actions/checkout@v3
+    - name: Checkout git repository
+      uses: actions/checkout@v3
     
     # no need to work on a cache here, it is not faster than pulling
     # instead work on moving to some images hosted on ghcr.io, it is the fastest
@@ -51,11 +48,7 @@ jobs:
         echo '{"version": "${{github.ref_name}}", "repository": "${{github.server_url}}/${{github.repository}}", "commit": "${{github.sha}}"}' > BUILD.json
         cat BUILD.json
 
-    - name: check dependencies availability
-      run: |
-        docker compose ps
-        curl http://localhost:5689
-    - name: Build and push
+    - name: Build and push docker images
       id: docker_build
       uses: docker/build-push-action@v3
       with:
@@ -67,7 +60,7 @@ jobs:
         network: host
         cache-from: type=gha
         cache-to: type=gha,mode=max
-
+    
     - name: Stop test dependencies
       run: docker compose stop
 
