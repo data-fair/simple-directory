@@ -22,7 +22,7 @@ describe('sites api', () => {
     // anonymous user can access the public info (host, theme and later auth providers) so that we can display custom login page
     const publicSite = (await anonymousAx.get('http://localhost:5989/simple-directory/api/sites/_public')).data
     assert.deepEqual(publicSite, {
-      authMode: 'ssoBackOffice',
+      authMode: 'onlyBackOffice',
       theme: { primaryColor: '#FF00FF' },
       logo: `http://localhost:5989/simple-directory/api/avatars/organization/${org.id}/avatar.png`
     })

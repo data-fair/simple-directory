@@ -26,6 +26,7 @@ beforeEach('scratch data', async () => {
   debug('scratch data')
   await global.app.get('storage').db.collection('organizations').deleteMany({})
   await global.app.get('storage').db.collection('users').deleteMany({})
+  await global.app.get('storage').db.collection('sites').deleteMany({})
   global.users = {
     admin: await testUtils.createUser('alban.mouton@koumoul.com', true)
   }
