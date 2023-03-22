@@ -9,6 +9,8 @@ RUN apk add --no-cache openssl graphicsmagick
 # Stage: nodejs dependencies and build
 FROM nativedeps AS builder
 
+RUN apk add --no-cache curl
+
 WORKDIR /webapp
 ADD package.json .
 ADD package-lock.json .
@@ -39,6 +41,7 @@ WORKDIR /webapp
 ADD .eslintignore .eslintignore
 RUN npm run lint
 ADD test test
+RUN curl http://localhost:5689
 RUN npm run test
 
 # Build UI

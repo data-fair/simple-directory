@@ -51,7 +51,10 @@ jobs:
         echo '{"version": "${{github.ref_name}}", "repository": "${{github.server_url}}/${{github.repository}}", "commit": "${{github.sha}}"}' > BUILD.json
         cat BUILD.json
 
-    - run: docker compose ps
+    - name: check dependencies availability
+      run: |
+        docker compose ps
+        curl http://localhost:5689
     - name: Build and push
       id: docker_build
       uses: docker/build-push-action@v3
