@@ -7,7 +7,7 @@ config.i18nLocales = config.i18n.locales.join(',')
 config.readonly = require('./server/storages').readonly()
 config.overwrite = require('./server/storages').overwrite()
 
-const isBuilding = process.argv.slice(-1)[0] === 'build'
+const isBuilding = process.argv[2] === 'build'
 
 if (process.env.NODE_ENV === 'production') {
   const nuxtConfigInject = require('@koumoul/nuxt-config-inject')
