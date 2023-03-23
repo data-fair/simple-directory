@@ -57,7 +57,7 @@ npm run prepare
 npx husky add .husky/pre-commit "docker build --network=host -t sd-dev ."
 
 npm i -D @commitlint/config-conventional @commitlint/cli
-echo 'module.exports = { extends: ["@commitlint/config-conventional"] };' > commitlint.config.js
+echo "module.exports = { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
 npx husky add .husky/commit-msg 'npx --no-install commitlint --edit ""'
 ```
 
