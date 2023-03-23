@@ -221,7 +221,6 @@ export default {
     appClass () {
       const classes = []
       if (this.$route.name) classes.push('page-' + this.$route.name.replace('___' + this.$i18n.locale, ''))
-      if (this.embed) classes.push('embed')
       return classes.join(' ')
     }
   },
@@ -262,10 +261,6 @@ export default {
 </script>
 
 <style>
-body .v-application.embed {
-  background: transparent;
-}
-
 body .v-application .logo-container {
   height: 100%;
   padding: 4px;
