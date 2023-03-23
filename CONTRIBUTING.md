@@ -8,7 +8,8 @@ You should use linters and beautifiers compliants with the ES7 syntax in your ed
 Install dependencies and run bundler:
 
     npm install
-    npm run build
+
+If you use [tmux](https://github.com/tmux/tmux/wiki) you can replace all the following steps with `npm run dev-tmux`, otherwise follow the next instructions.
 
 Run the services dependencies:
 

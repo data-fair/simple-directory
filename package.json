@@ -16,6 +16,7 @@
     "dev-server": "NODE_ENV=development nodemon server",
     "dev-client": "npm run link-doc && NODE_ENV=development nuxt",
     "dev-deps": "docker compose --profile dev up -d",
+    "dev-tmux": "./dev-tmux.sh",
     "build": "npm run link-doc && nuxt build --no-generate",
     "start": "node server",
     "analyze": "nuxt build --no-generate --analyze",
