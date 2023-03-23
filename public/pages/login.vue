@@ -219,6 +219,7 @@
               </v-alert>
               <auth-providers-login-links
                 :redirect="redirectUrl"
+                :main-site-login-url="mainSiteLoginUrl"
                 :email="email"
                 :invit-token="invitToken"
               />
