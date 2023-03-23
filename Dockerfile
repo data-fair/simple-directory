@@ -24,10 +24,6 @@ ADD config config
 ADD contract contract
 ADD i18n i18n
 
-# Adding server files
-ADD server server
-ADD scripts scripts
-
 # also install deps in types submodule
 ADD types types
 WORKDIR /webapp/types
@@ -35,16 +31,20 @@ RUN npm ci --production && \
     ../node_modules/.bin/clean-modules --yes
 WORKDIR /webapp
 
+# Build UI
+ENV NODE_ENV production
+RUN npm run build
+
+# Adding server files
+ADD server server
+ADD scripts scripts
+
 # Check quality
 ADD .eslintignore .eslintignore
 RUN npm run lint
 ADD test test
 RUN npm run test
 RUN npm audit --omit=dev --audit-level=critical
-
-# Build UI
-ENV NODE_ENV production
-RUN npm run build
 
 # Cleanup /webapp/node_modules so it can be copied by next stage
 RUN npm prune --production
