@@ -85,7 +85,6 @@
     "nuxt-webpack-optimisations": "^2.2.0",
     "nyc": "^15.1.0",
     "patch-package": "^6.5.1",
-    "push-dir": "^0.4.1",
     "semver-extract": "^1.1.1",
     "tinycolor2": "^1.4.2",
     "vue-cropperjs": "^4.1.0",
