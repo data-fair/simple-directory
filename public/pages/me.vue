@@ -135,7 +135,7 @@
           >
             <v-icon
               v-if="identity.icon"
-              :color="contrastColor(authProvider.color)"
+              :color="contrastColor(identity.color)"
             >
               {{ identity.icon }}
             </v-icon>
