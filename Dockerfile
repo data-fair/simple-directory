@@ -40,6 +40,7 @@ ADD .eslintignore .eslintignore
 RUN npm run lint
 ADD test test
 RUN npm run test
+RUN npm audit --omit=dev --audit-level=critical
 
 # Build UI
 ENV NODE_ENV production
