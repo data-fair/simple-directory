@@ -9,7 +9,7 @@ Install dependencies:
 
     npm install
 
-If you use [tmux](https://github.com/tmux/tmux/wiki) you can replace all the following steps with `npm run dev-tmux`, otherwise follow the next instructions.
+If you use [zellij](https://zellij.dev/) you can replace all the following steps with `npm run dev-zellij`, otherwise follow the next instructions.
 
 Switch to the appropriate nodejs version:
 
