@@ -1,5 +1,5 @@
 layout {
-    pane borderless=true {
+    pane name="simple-directory" borderless=true {
       command "bash"
       args "-ic" "nvm use && bash"
     }

@@ -754,7 +754,7 @@ export default {
     },
     mainSiteLoginUrl () {
       const url = new URL(`${this.env.mainPublicUrl}/login`)
-      if (this.redirect) url.searchParams.append('redirect', this.redirect)
+      if (this.redirectUrl) url.searchParams.append('redirect', this.redirectUrl)
       if (this.email) url.searchParams.append('email', this.email)
       if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
       return url.href
