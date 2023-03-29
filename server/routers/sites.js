@@ -32,6 +32,8 @@ router.post('', asyncWrap(async (req, res, next) => {
 }))
 
 router.patch('/:id', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).send()
+  if (!req.user.adminMode) return res.status(403).send()
   const body = sitePatchSchema.validate(req.body)
   await req.app.get('storage').patchSite(body)
   res.type('json').send(sitePatchSchema.stringify(body))
