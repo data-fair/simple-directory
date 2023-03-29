@@ -422,7 +422,7 @@ class MongodbStorage {
   async findOwnerSites (owner) {
     const filter = { 'owner.type': owner.type, 'owner.id': owner.id }
     if (owner.department) filter['owner.department'] = owner.department
-    const sites = await this.db.collection('sites').find(filter).toArray()
+    const sites = await this.db.collection('sites').find(filter).limit(10000).toArray()
     return {
       count: sites.length,
       results: sites
@@ -430,7 +430,7 @@ class MongodbStorage {
   }
 
   async findAllSites (owner) {
-    const sites = await this.db.collection('sites').find().toArray()
+    const sites = await this.db.collection('sites').find().limit(10000).toArray()
     return {
       count: sites.length,
       results: sites
