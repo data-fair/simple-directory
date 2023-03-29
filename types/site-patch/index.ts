@@ -7,10 +7,35 @@ export type UniquementSurLeSiteLuiMeme = "onlyLocal";
 export type UniquementSurLeBackOffice = "onlyBackOffice";
 export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
 export type ModeDAuthentification2 = string;
+export type TypeDeFounisseur = "oidc";
+/**
+ * probablement de la forme http://mon-fournisseur/.well-known/openid-configuration
+ */
+export type URLDeDecouverte = string;
+export type IdentifiantDuClient = string;
+export type Secret = string;
+export type MetadataXML = string;
+export type FournisseursDIdentiteSSO = (OpenIDConnect | SAMLV2)[];
 
 export interface SitePatch {
   _id: string;
   authMode: ModeDAuthentification;
+  authProviders?: FournisseursDIdentiteSSO;
+}
+export interface OpenIDConnect {
+  type?: TypeDeFounisseur;
+  discovery: URLDeDecouverte;
+  client: {
+    id: IdentifiantDuClient;
+    secret: Secret;
+    [k: string]: unknown;
+  };
+  [k: string]: unknown;
+}
+export interface SAMLV2 {
+  type?: "saml2";
+  metadata?: MetadataXML;
+  [k: string]: unknown;
 }
 
 // validate function compiled using ajv
@@ -59,24 +84,103 @@ export const resolvedSchema = {
       "type": "string",
       "oneOf": [
         {
-          "title": "uniquement sur le site lui même",
-          "enum": [
-            "onlyLocal"
-          ]
+          "const": "onlyLocal",
+          "title": "uniquement sur le site lui même"
         },
         {
-          "title": "uniquement sur le back-office",
-          "enum": [
-            "onlyBackOffice"
-          ]
+          "const": "onlyBackOffice",
+          "title": "uniquement sur le back-office"
         },
         {
-          "title": "sur le site et sur le back-office par SSO",
-          "enum": [
-            "ssoBackOffice"
-          ]
+          "const": "ssoBackOffice",
+          "title": "sur le site et sur le back-office par SSO"
         }
       ]
+    },
+    "authProviders": {
+      "type": "array",
+      "title": "Fournisseurs d'identité (SSO)",
+      "items": {
+        "type": "object",
+        "required": [
+          "title",
+          "type"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Nom"
+          },
+          "color": {
+            "type": "string",
+            "title": "Couleur",
+            "x-display": "color-picker"
+          },
+          "img": {
+            "type": "string",
+            "title": "URL du logo (petite taille)"
+          }
+        },
+        "oneOf": [
+          {
+            "type": "object",
+            "title": "OpenID Connect",
+            "required": [
+              "discovery",
+              "client"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "title": "Type de founisseur",
+                "const": "oidc"
+              },
+              "discovery": {
+                "type": "string",
+                "title": "URL de découverte",
+                "description": "probablement de la forme http://mon-fournisseur/.well-known/openid-configuration"
+              },
+              "client": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "secret"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "title": "Identifiant du client"
+                  },
+                  "secret": {
+                    "type": "string",
+                    "title": "Secret",
+                    "writeOnly": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "SAML v2",
+            "required": [
+              "discovery",
+              "client"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "saml2"
+              },
+              "metadata": {
+                "type": "string",
+                "title": "Metadata XML",
+                "x-display": "textarea"
+              }
+            }
+          }
+        ]
+      }
     }
   }
 }

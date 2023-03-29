@@ -20,6 +20,7 @@ router.get('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   const query = await sitesQuerySchema.validate(req.query)
   if (query.showAll && !req.user.adminMode) return res.status(403).send()
+  console.log(req.user)
   const response = query.showAll ? await req.app.get('storage').findAllSites() : await req.app.get('storage').findOwnerSites(req.user.accountOwner)
   res.type('json').send(sitesResponseSchema.stringify(response))
 }))

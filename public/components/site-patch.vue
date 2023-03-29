@@ -1,6 +1,7 @@
 <template>
-  <v-menu
+  <v-dialog
     v-model="menu"
+    fullscreen
     :close-on-content-click="false"
     offset-y
   >
@@ -31,6 +32,7 @@
           />
         </v-form>
       </v-card-text>
+      <v-spacer />
       <v-card-actions>
         <v-spacer />
         <v-btn
@@ -48,18 +50,12 @@
         </v-btn>
       </v-card-actions>
     </v-card>
-  </v-menu>
+  </v-dialog>
 </template>
 
 <script>
 import { resolvedSchema } from '../../types/site-patch'
 import { mapActions, mapState } from 'vuex'
-
-// our schema resolver create enums that suck
-resolvedSchema.properties.authMode.oneOf.forEach(o => {
-  o.const = o.enum[0]
-  delete o.enum
-})
 
 export default {
   props: ['site'],

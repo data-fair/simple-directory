@@ -49,24 +49,103 @@ exports.resolvedSchema = {
             "type": "string",
             "oneOf": [
                 {
-                    "title": "uniquement sur le site lui même",
-                    "enum": [
-                        "onlyLocal"
-                    ]
+                    "const": "onlyLocal",
+                    "title": "uniquement sur le site lui même"
                 },
                 {
-                    "title": "uniquement sur le back-office",
-                    "enum": [
-                        "onlyBackOffice"
-                    ]
+                    "const": "onlyBackOffice",
+                    "title": "uniquement sur le back-office"
                 },
                 {
-                    "title": "sur le site et sur le back-office par SSO",
-                    "enum": [
-                        "ssoBackOffice"
-                    ]
+                    "const": "ssoBackOffice",
+                    "title": "sur le site et sur le back-office par SSO"
                 }
             ]
+        },
+        "authProviders": {
+            "type": "array",
+            "title": "Fournisseurs d'identité (SSO)",
+            "items": {
+                "type": "object",
+                "required": [
+                    "title",
+                    "type"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "title": "Nom"
+                    },
+                    "color": {
+                        "type": "string",
+                        "title": "Couleur",
+                        "x-display": "color-picker"
+                    },
+                    "img": {
+                        "type": "string",
+                        "title": "URL du logo (petite taille)"
+                    }
+                },
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "title": "OpenID Connect",
+                        "required": [
+                            "discovery",
+                            "client"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "title": "Type de founisseur",
+                                "const": "oidc"
+                            },
+                            "discovery": {
+                                "type": "string",
+                                "title": "URL de découverte",
+                                "description": "probablement de la forme http://mon-fournisseur/.well-known/openid-configuration"
+                            },
+                            "client": {
+                                "type": "object",
+                                "required": [
+                                    "id",
+                                    "secret"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "string",
+                                        "title": "Identifiant du client"
+                                    },
+                                    "secret": {
+                                        "type": "string",
+                                        "title": "Secret",
+                                        "writeOnly": true
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "title": "SAML v2",
+                        "required": [
+                            "discovery",
+                            "client"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "const": "saml2"
+                            },
+                            "metadata": {
+                                "type": "string",
+                                "title": "Metadata XML",
+                                "x-display": "textarea"
+                            }
+                        }
+                    }
+                ]
+            }
         }
     }
 };

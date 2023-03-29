@@ -1,11 +1,11 @@
 export interface SitePost {
     _id: string;
-    owner: Account;
+    owner: Owner;
     host: string;
     theme: Theme;
     logo?: string;
 }
-export interface Account {
+export interface Owner {
     type: "user" | "organization";
     id: string;
     name: string;

@@ -242,6 +242,77 @@ class Serializer {
     }
   
 
+    function anonymous6 (input) {
+      // https://github.com/data-fair/simple-directory/site#/properties/authProviders/items
+  
+      const obj = (input && typeof input.toJSON === 'function')
+    ? input.toJSON()
+    : input
+  
+      let json = '{'
+      let addComma = false
+  
+      if (obj["title"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"title\":"
+      json += serializer.asString(obj["title"])
+      } else {
+        throw new Error('"title" is required!')
+      
+      }
+    
+      if (obj["color"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"color\":"
+      json += serializer.asString(obj["color"])
+      }
+    
+      if (obj["img"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"img\":"
+      json += serializer.asString(obj["img"])
+      }
+    if (obj['type'] === undefined) throw new Error('"type" is required!')
+
+    const propertiesKeys = ["title","color","img"]
+    for (const [key, value] of Object.entries(obj)) {
+      if (
+        propertiesKeys.includes(key) ||
+        value === undefined ||
+        typeof value === 'function' ||
+        typeof value === 'symbol'
+      ) continue
+  
+        !addComma && (addComma = true) || (json += ',')
+        json += serializer.asString(key) + ':' + JSON.stringify(value)
+      
+    }
+  
+      return json + '}'
+    }
+  
+
+    function anonymous5 (obj) {
+      // https://github.com/data-fair/simple-directory/site#/properties/authProviders
+  
+    if (!Array.isArray(obj)) {
+      throw new TypeError(`The value of 'https://github.com/data-fair/simple-directory/site#/properties/authProviders' does not match schema definition.`)
+    }
+    const arrayLength = obj.length
+  
+    let jsonOutput = ''
+  
+      for (let i = 0; i < arrayLength; i++) {
+        let json = ''
+        json += anonymous6(obj[i])
+        jsonOutput += json
+        if (i < arrayLength - 1) {
+          jsonOutput += ','
+        }
+      }
+    return `[${jsonOutput}]`
+  }
+
     function anonymous2 (input) {
       // https://github.com/data-fair/simple-directory/site#
   
@@ -304,7 +375,13 @@ class Serializer {
       
       }
     
-    const propertiesKeys = ["_id","owner","host","theme","logo","authMode"]
+      if (obj["authProviders"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"authProviders\":"
+      json += anonymous5(obj["authProviders"])
+      }
+    
+    const propertiesKeys = ["_id","owner","host","theme","logo","authMode","authProviders"]
     for (const [key, value] of Object.entries(obj)) {
       if (
         propertiesKeys.includes(key) ||
