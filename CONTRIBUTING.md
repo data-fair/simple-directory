@@ -5,15 +5,15 @@
 This project uses the following stack : Mongo, Express, VueJS, NodeJS. The primary language used is javascript with the ES7 syntax.
 You should use linters and beautifiers compliants with the ES7 syntax in your editor.
 
+Switch to the appropriate nodejs version:
+
+    nvm use
+
 Install dependencies:
 
     npm install
 
 If you use [zellij](https://zellij.dev/) you can replace all the following steps with `npm run dev-zellij`, otherwise follow the next instructions.
-
-Switch to the appropriate nodejs version:
-
-    nvm use
 
 Run the services dependencies:
 
@@ -59,7 +59,6 @@ npm i -D husky
 npm pkg set scripts.prepare="husky install"
 npm run prepare
 npx husky add .husky/pre-commit "npm run lint"
-npx husky add .husky/pre-push "docker build --network=host -t sd-dev ."
 
 npm i -D @commitlint/config-conventional @commitlint/cli
 echo "module.exports = { extends: ['@commitlint/config-conventional'] }" > commitlint.config.js

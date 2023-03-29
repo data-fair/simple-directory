@@ -7,11 +7,11 @@ layout {
       split_direction "vertical"
       pane name="client" {
         command "bash"
-        args "-c" "npm run dev-client"
+        args "-ic" "nvm use && npm run dev-client"
       }
       pane name="server" {
         command "bash"
-        args "-c" "npm run dev-deps && npm run dev-server"
+        args "-ic" "nvm use && npm run dev-deps && npm run dev-server"
       }
     }
     pane size=2 borderless=true {
