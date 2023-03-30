@@ -32,7 +32,6 @@
           />
         </v-form>
       </v-card-text>
-      <v-spacer />
       <v-card-actions>
         <v-spacer />
         <v-btn
@@ -62,7 +61,16 @@ export default {
   data: () => ({ menu: false, patch: null, valid: false, model: {} }),
   computed: {
     ...mapState(['env']),
-    schema: () => resolvedSchema
+    schema () {
+      const schema = JSON.parse(JSON.stringify(resolvedSchema))
+      schema.properties.authProviders.items.oneOf[0].properties.discovery['x-slots'] = {
+        before: `Donnez cette [URL de retour de connexion](http://${this.site.host}/simple-directory/api/auth/oauth-callback) au fournisseur d'identité.`
+      }
+      schema.properties.authProviders.items.oneOf[1].properties.metadata['x-slots'] = {
+        before: `Remplissez le champ ci-dessous avec les métadonnées au format XML données par le fournisseurs d'identité. Et donnez ce [lien en retour](http://${this.site.host}/simple-directory/api/auth/saml2-metadata.xml).`
+      }
+      return schema
+    }
   },
   watch: {
     menu () {
