@@ -431,16 +431,25 @@ router.get('/me', (req, res) => {
 })
 
 router.get('/providers', (req, res) => {
-  // TODO: per-site auth providers
-  if (req.site) return res.send([])
-  res.send(saml2.publicProviders.concat(oauth.publicProviders))
+  if (!req.site) {
+    res.send(saml2.publicProviders.concat(oauth.publicProviders))
+  } else {
+    const providers = req.site.authProviders || []
+    res.send(providers.map(p => ({ type: p.type, id: oauth.getProviderId(p.discovery), title: p.title, color: p.color, img: p.img })))
+  }
 })
 
 // OAUTH
 const debugOAuth = require('debug')('oauth')
 
-router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
-  const provider = oauth.providers.find(p => p.id === req.params.oauthId)
+const oauthLogin = asyncWrap(async (req, res, next) => {
+  let provider
+  if (!req.site) {
+    provider = oauth.providers.find(p => p.id === req.params.oauthId)
+  } else {
+    const providerInfo = req.site.authProviders.find(p => oauth.getProviderId(p.discovery) === req.params.oauthId)
+    provider = await oauth.initProvider({ ...providerInfo })
+  }
   if (!provider) return res.redirect(`${req.publicBaseUrl}/login?error=unknownOAuthProvider`)
   const relayState = [
     provider.state,
@@ -453,7 +462,10 @@ router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const authorizationUri = provider.authorizationUri(relayState, req.query.email)
   debugOAuth('login authorizationUri', authorizationUri)
   res.redirect(authorizationUri)
-}))
+})
+
+router.get('/oauth/:oauthId/login', oauthLogin)
+router.get('/oidc/:oauthId/login', oauthLogin)
 
 const oauthCallback = asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')

@@ -11,8 +11,7 @@ export type TypeDeFounisseur = "oidc";
 export type URLDeDecouverte = string;
 export type IdentifiantDuClient = string;
 export type Secret = string;
-export type MetadataXML = string;
-export type FournisseursDIdentiteSSO = (OpenIDConnect | SAMLV2)[];
+export type FournisseursDIdentiteSSO = OpenIDConnect[];
 export interface SitesResponse {
     count: number;
     results: Site[];
@@ -45,11 +44,6 @@ export interface OpenIDConnect {
         secret: Secret;
         [k: string]: unknown;
     };
-    [k: string]: unknown;
-}
-export interface SAMLV2 {
-    type?: "saml2";
-    metadata?: MetadataXML;
     [k: string]: unknown;
 }
 export declare const stringify: (data: SitesResponse) => string;

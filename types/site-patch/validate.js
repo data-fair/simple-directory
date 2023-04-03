@@ -1,7 +1,7 @@
 "use strict";
 module.exports = validate14;
 module.exports.default = validate14;
-const schema16 = {"$id":"https://github.com/data-fair/simple-directory/site-patch","x-exports":["types","validate","stringify","resolvedSchema"],"title":"site-patch","type":"object","additionalProperties":false,"required":["_id","authMode"],"properties":{"_id":{"readOnly":true,"type":"string"},"authMode":{"default":"onlyBackOffice","title":"Mode d'authentification","type":"string","oneOf":[{"const":"onlyLocal","title":"uniquement sur le site lui même"},{"const":"onlyBackOffice","title":"uniquement sur le back-office"},{"const":"ssoBackOffice","title":"sur le site et sur le back-office par SSO"}]},"authProviders":{"type":"array","title":"Fournisseurs d'identité (SSO)","items":{"type":"object","required":["title","type"],"properties":{"title":{"type":"string","title":"Nom"},"color":{"type":"string","title":"Couleur","x-display":"color-picker"},"img":{"type":"string","title":"URL du logo (petite taille)"}},"oneOf":[{"type":"object","title":"OpenID Connect","required":["discovery","client"],"properties":{"type":{"type":"string","title":"Type de founisseur","const":"oidc"},"discovery":{"type":"string","title":"URL de découverte","description":"probablement de la forme http://mon-fournisseur/.well-known/openid-configuration"},"client":{"type":"object","required":["id","secret"],"properties":{"id":{"type":"string","title":"Identifiant du client"},"secret":{"type":"string","title":"Secret","writeOnly":true}}}}},{"type":"object","title":"SAML v2","required":["discovery","client"],"properties":{"type":{"type":"string","const":"saml2"},"metadata":{"type":"string","title":"Metadata XML","x-display":"textarea"}}}]}}}};
+const schema16 = {"$id":"https://github.com/data-fair/simple-directory/site-patch","x-exports":["types","validate","stringify","resolvedSchema"],"title":"site-patch","type":"object","additionalProperties":false,"required":["_id","authMode"],"properties":{"_id":{"readOnly":true,"type":"string"},"authMode":{"default":"onlyBackOffice","title":"Mode d'authentification","type":"string","oneOf":[{"const":"onlyLocal","title":"uniquement sur le site lui même"},{"const":"onlyBackOffice","title":"uniquement sur le back-office"},{"const":"ssoBackOffice","title":"sur le site et sur le back-office par SSO"}]},"authProviders":{"type":"array","title":"Fournisseurs d'identité (SSO)","items":{"type":"object","required":["title","type"],"properties":{"id":{"type":"string","title":"Identifiant","readOnly":true},"title":{"type":"string","title":"Nom"},"color":{"type":"string","title":"Couleur","x-display":"color-picker"},"img":{"type":"string","title":"URL du logo (petite taille)"}},"oneOf":[{"type":"object","title":"OpenID Connect","required":["discovery","client"],"properties":{"type":{"type":"string","title":"Type de founisseur","const":"oidc"},"discovery":{"type":"string","title":"URL de découverte","description":"probablement de la forme http://mon-fournisseur/.well-known/openid-configuration"},"client":{"type":"object","required":["id","secret"],"properties":{"id":{"type":"string","title":"Identifiant du client"},"secret":{"type":"string","title":"Secret","writeOnly":true}}}}}]}}}};
 
 function validate14(data, {instancePath="", parentData, parentDataProperty, rootData=data}={}){
 /*# sourceURL="https://github.com/data-fair/simple-directory/site-patch" */;
@@ -478,10 +478,8 @@ if(_valid1){
 valid4 = true;
 passing1 = 0;
 }
-const _errs27 = errors;
-if(data3 && typeof data3 == "object" && !Array.isArray(data3)){
-if(data3.discovery === undefined){
-const err21 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/1/required",keyword:"required",params:{missingProperty: "discovery"},message:"must have required property '"+"discovery"+"'"};
+if(!valid4){
+const err21 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf",keyword:"oneOf",params:{passingSchemas: passing1},message:"must match exactly one schema in oneOf"};
 if(vErrors === null){
 vErrors = [err21];
 }
@@ -490,8 +488,20 @@ vErrors.push(err21);
 }
 errors++;
 }
-if(data3.client === undefined){
-const err22 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/1/required",keyword:"required",params:{missingProperty: "client"},message:"must have required property '"+"client"+"'"};
+else {
+errors = _errs14;
+if(vErrors !== null){
+if(_errs14){
+vErrors.length = _errs14;
+}
+else {
+vErrors = null;
+}
+}
+}
+if(data3 && typeof data3 == "object" && !Array.isArray(data3)){
+if(data3.title === undefined){
+const err22 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "title"},message:"must have required property '"+"title"+"'"};
 if(vErrors === null){
 vErrors = [err22];
 }
@@ -500,8 +510,18 @@ vErrors.push(err22);
 }
 errors++;
 }
-if(data3.type !== undefined){
-let data9 = data3.type;
+if(data3.type === undefined){
+const err23 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "type"},message:"must have required property '"+"type"+"'"};
+if(vErrors === null){
+vErrors = [err23];
+}
+else {
+vErrors.push(err23);
+}
+errors++;
+}
+if(data3.id !== undefined){
+let data9 = data3.id;
 if(typeof data9 !== "string"){
 let dataType7 = typeof data9;
 let coerced7 = undefined;
@@ -520,25 +540,7 @@ else if(data9 === null){
 coerced7 = "";
 }
 else {
-const err23 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/type/type",keyword:"type",params:{type: "string"},message:"must be string"};
-if(vErrors === null){
-vErrors = [err23];
-}
-else {
-vErrors.push(err23);
-}
-errors++;
-}
-}
-if(coerced7 !== undefined){
-data9 = coerced7;
-if(data3 !== undefined){
-data3["type"] = coerced7;
-}
-}
-}
-if("saml2" !== data9){
-const err24 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/type/const",keyword:"const",params:{allowedValue: "saml2"},message:"must be equal to constant"};
+const err24 = {instancePath:instancePath+"/authProviders/" + i0+"/id",schemaPath:"#/properties/authProviders/items/properties/id/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err24];
 }
@@ -548,8 +550,16 @@ vErrors.push(err24);
 errors++;
 }
 }
-if(data3.metadata !== undefined){
-let data10 = data3.metadata;
+if(coerced7 !== undefined){
+data9 = coerced7;
+if(data3 !== undefined){
+data3["id"] = coerced7;
+}
+}
+}
+}
+if(data3.title !== undefined){
+let data10 = data3.title;
 if(typeof data10 !== "string"){
 let dataType8 = typeof data10;
 let coerced8 = undefined;
@@ -568,7 +578,7 @@ else if(data10 === null){
 coerced8 = "";
 }
 else {
-const err25 = {instancePath:instancePath+"/authProviders/" + i0+"/metadata",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/metadata/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err25 = {instancePath:instancePath+"/authProviders/" + i0+"/title",schemaPath:"#/properties/authProviders/items/properties/title/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err25];
 }
@@ -581,77 +591,13 @@ errors++;
 if(coerced8 !== undefined){
 data10 = coerced8;
 if(data3 !== undefined){
-data3["metadata"] = coerced8;
+data3["title"] = coerced8;
 }
 }
 }
 }
-}
-else {
-const err26 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/1/type",keyword:"type",params:{type: "object"},message:"must be object"};
-if(vErrors === null){
-vErrors = [err26];
-}
-else {
-vErrors.push(err26);
-}
-errors++;
-}
-var _valid1 = _errs27 === errors;
-if(_valid1 && valid4){
-valid4 = false;
-passing1 = [passing1, 1];
-}
-else {
-if(_valid1){
-valid4 = true;
-passing1 = 1;
-}
-}
-if(!valid4){
-const err27 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf",keyword:"oneOf",params:{passingSchemas: passing1},message:"must match exactly one schema in oneOf"};
-if(vErrors === null){
-vErrors = [err27];
-}
-else {
-vErrors.push(err27);
-}
-errors++;
-}
-else {
-errors = _errs14;
-if(vErrors !== null){
-if(_errs14){
-vErrors.length = _errs14;
-}
-else {
-vErrors = null;
-}
-}
-}
-if(data3 && typeof data3 == "object" && !Array.isArray(data3)){
-if(data3.title === undefined){
-const err28 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "title"},message:"must have required property '"+"title"+"'"};
-if(vErrors === null){
-vErrors = [err28];
-}
-else {
-vErrors.push(err28);
-}
-errors++;
-}
-if(data3.type === undefined){
-const err29 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "type"},message:"must have required property '"+"type"+"'"};
-if(vErrors === null){
-vErrors = [err29];
-}
-else {
-vErrors.push(err29);
-}
-errors++;
-}
-if(data3.title !== undefined){
-let data11 = data3.title;
+if(data3.color !== undefined){
+let data11 = data3.color;
 if(typeof data11 !== "string"){
 let dataType9 = typeof data11;
 let coerced9 = undefined;
@@ -670,12 +616,12 @@ else if(data11 === null){
 coerced9 = "";
 }
 else {
-const err30 = {instancePath:instancePath+"/authProviders/" + i0+"/title",schemaPath:"#/properties/authProviders/items/properties/title/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err26 = {instancePath:instancePath+"/authProviders/" + i0+"/color",schemaPath:"#/properties/authProviders/items/properties/color/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
-vErrors = [err30];
+vErrors = [err26];
 }
 else {
-vErrors.push(err30);
+vErrors.push(err26);
 }
 errors++;
 }
@@ -683,13 +629,13 @@ errors++;
 if(coerced9 !== undefined){
 data11 = coerced9;
 if(data3 !== undefined){
-data3["title"] = coerced9;
+data3["color"] = coerced9;
 }
 }
 }
 }
-if(data3.color !== undefined){
-let data12 = data3.color;
+if(data3.img !== undefined){
+let data12 = data3.img;
 if(typeof data12 !== "string"){
 let dataType10 = typeof data12;
 let coerced10 = undefined;
@@ -708,12 +654,12 @@ else if(data12 === null){
 coerced10 = "";
 }
 else {
-const err31 = {instancePath:instancePath+"/authProviders/" + i0+"/color",schemaPath:"#/properties/authProviders/items/properties/color/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err27 = {instancePath:instancePath+"/authProviders/" + i0+"/img",schemaPath:"#/properties/authProviders/items/properties/img/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
-vErrors = [err31];
+vErrors = [err27];
 }
 else {
-vErrors.push(err31);
+vErrors.push(err27);
 }
 errors++;
 }
@@ -721,57 +667,19 @@ errors++;
 if(coerced10 !== undefined){
 data12 = coerced10;
 if(data3 !== undefined){
-data3["color"] = coerced10;
+data3["img"] = coerced10;
 }
 }
 }
 }
-if(data3.img !== undefined){
-let data13 = data3.img;
-if(typeof data13 !== "string"){
-let dataType11 = typeof data13;
-let coerced11 = undefined;
-if(dataType11 == 'object' && Array.isArray(data13) && data13.length == 1){
-data13 = data13[0];
-dataType11 = typeof data13;
-if(typeof data13 === "string"){
-coerced11 = data13;
-}
-}
-if(!(coerced11 !== undefined)){
-if(dataType11 == "number" || dataType11 == "boolean"){
-coerced11 = "" + data13;
-}
-else if(data13 === null){
-coerced11 = "";
 }
 else {
-const err32 = {instancePath:instancePath+"/authProviders/" + i0+"/img",schemaPath:"#/properties/authProviders/items/properties/img/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err28 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/type",keyword:"type",params:{type: "object"},message:"must be object"};
 if(vErrors === null){
-vErrors = [err32];
+vErrors = [err28];
 }
 else {
-vErrors.push(err32);
-}
-errors++;
-}
-}
-if(coerced11 !== undefined){
-data13 = coerced11;
-if(data3 !== undefined){
-data3["img"] = coerced11;
-}
-}
-}
-}
-}
-else {
-const err33 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/type",keyword:"type",params:{type: "object"},message:"must be object"};
-if(vErrors === null){
-vErrors = [err33];
-}
-else {
-vErrors.push(err33);
+vErrors.push(err28);
 }
 errors++;
 }
@@ -780,12 +688,12 @@ errors++;
 }
 }
 else {
-const err34 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+const err29 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
 if(vErrors === null){
-vErrors = [err34];
+vErrors = [err29];
 }
 else {
-vErrors.push(err34);
+vErrors.push(err29);
 }
 errors++;
 }

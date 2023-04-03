@@ -11,8 +11,7 @@ export type TypeDeFounisseur = "oidc";
 export type URLDeDecouverte = string;
 export type IdentifiantDuClient = string;
 export type Secret = string;
-export type MetadataXML = string;
-export type FournisseursDIdentiteSSO = (OpenIDConnect | SAMLV2)[];
+export type FournisseursDIdentiteSSO = OpenIDConnect[];
 export interface SitePatch {
     _id: string;
     authMode: ModeDAuthentification;
@@ -26,11 +25,6 @@ export interface OpenIDConnect {
         secret: Secret;
         [k: string]: unknown;
     };
-    [k: string]: unknown;
-}
-export interface SAMLV2 {
-    type?: "saml2";
-    metadata?: MetadataXML;
     [k: string]: unknown;
 }
 export declare const validate: (data: any, lang?: string, name?: string, internal?: boolean) => SitePatch;
@@ -63,6 +57,11 @@ export declare const resolvedSchema: {
                 type: string;
                 required: string[];
                 properties: {
+                    id: {
+                        type: string;
+                        title: string;
+                        readOnly: boolean;
+                    };
                     title: {
                         type: string;
                         title: string;
@@ -77,7 +76,7 @@ export declare const resolvedSchema: {
                         title: string;
                     };
                 };
-                oneOf: ({
+                oneOf: {
                     type: string;
                     title: string;
                     required: string[];
@@ -107,27 +106,8 @@ export declare const resolvedSchema: {
                                 };
                             };
                         };
-                        metadata?: undefined;
                     };
-                } | {
-                    type: string;
-                    title: string;
-                    required: string[];
-                    properties: {
-                        type: {
-                            type: string;
-                            const: string;
-                            title?: undefined;
-                        };
-                        metadata: {
-                            type: string;
-                            title: string;
-                            "x-display": string;
-                        };
-                        discovery?: undefined;
-                        client?: undefined;
-                    };
-                })[];
+                }[];
             };
         };
     };

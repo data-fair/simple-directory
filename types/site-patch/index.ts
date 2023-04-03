@@ -14,8 +14,7 @@ export type TypeDeFounisseur = "oidc";
 export type URLDeDecouverte = string;
 export type IdentifiantDuClient = string;
 export type Secret = string;
-export type MetadataXML = string;
-export type FournisseursDIdentiteSSO = (OpenIDConnect | SAMLV2)[];
+export type FournisseursDIdentiteSSO = OpenIDConnect[];
 
 export interface SitePatch {
   _id: string;
@@ -30,11 +29,6 @@ export interface OpenIDConnect {
     secret: Secret;
     [k: string]: unknown;
   };
-  [k: string]: unknown;
-}
-export interface SAMLV2 {
-  type?: "saml2";
-  metadata?: MetadataXML;
   [k: string]: unknown;
 }
 
@@ -107,6 +101,11 @@ export const resolvedSchema = {
           "type"
         ],
         "properties": {
+          "id": {
+            "type": "string",
+            "title": "Identifiant",
+            "readOnly": true
+          },
           "title": {
             "type": "string",
             "title": "Nom"
@@ -157,25 +156,6 @@ export const resolvedSchema = {
                     "writeOnly": true
                   }
                 }
-              }
-            }
-          },
-          {
-            "type": "object",
-            "title": "SAML v2",
-            "required": [
-              "discovery",
-              "client"
-            ],
-            "properties": {
-              "type": {
-                "type": "string",
-                "const": "saml2"
-              },
-              "metadata": {
-                "type": "string",
-                "title": "Metadata XML",
-                "x-display": "textarea"
               }
             }
           }

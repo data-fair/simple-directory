@@ -72,6 +72,11 @@ exports.resolvedSchema = {
                     "type"
                 ],
                 "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Identifiant",
+                        "readOnly": true
+                    },
                     "title": {
                         "type": "string",
                         "title": "Nom"
@@ -122,25 +127,6 @@ exports.resolvedSchema = {
                                         "writeOnly": true
                                     }
                                 }
-                            }
-                        }
-                    },
-                    {
-                        "type": "object",
-                        "title": "SAML v2",
-                        "required": [
-                            "discovery",
-                            "client"
-                        ],
-                        "properties": {
-                            "type": {
-                                "type": "string",
-                                "const": "saml2"
-                            },
-                            "metadata": {
-                                "type": "string",
-                                "title": "Metadata XML",
-                                "x-display": "textarea"
                             }
                         }
                     }

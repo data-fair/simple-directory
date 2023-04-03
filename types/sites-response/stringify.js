@@ -252,6 +252,12 @@ class Serializer {
       let json = '{'
       let addComma = false
   
+      if (obj["id"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"id\":"
+      json += serializer.asString(obj["id"])
+      }
+    
       if (obj["title"] !== undefined) {
         !addComma && (addComma = true) || (json += ',')
         json += "\"title\":"
@@ -274,7 +280,7 @@ class Serializer {
       }
     if (obj['type'] === undefined) throw new Error('"type" is required!')
 
-    const propertiesKeys = ["title","color","img"]
+    const propertiesKeys = ["id","title","color","img"]
     for (const [key, value] of Object.entries(obj)) {
       if (
         propertiesKeys.includes(key) ||

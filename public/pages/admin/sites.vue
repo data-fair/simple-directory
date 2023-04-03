@@ -41,6 +41,39 @@
         <td>{{ props.item._id }}</td>
         <td>{{ props.item.authMode }}</td>
         <td>
+          <v-btn
+            v-for="authProvider of (props.item.authProviders || [])"
+            :key="authProvider.type + ':' + authProvider.id"
+            :color="contrastColor(authProvider.color)"
+            dark
+            small
+            rounded
+            depressed
+            class="pl-0 pr-3 mr-2 mb-1 text-none white--text"
+            style="cursor:default"
+          >
+            <v-avatar
+              size="27"
+              color="white"
+              class="elevation-4"
+              style="left:-1px; top: -1px;"
+            >
+              <v-icon
+                v-if="authProvider.icon"
+                :color="contrastColor(authProvider.color)"
+              >
+                {{ authProvider.icon }}
+              </v-icon>
+              <img
+                v-else-if="authProvider.img"
+                :src="authProvider.img"
+                :alt="authProvider.title"
+              >
+            </v-avatar>
+            &nbsp;{{ authProvider.title }}
+          </v-btn>
+        </td>
+        <td>
           <site-patch
             :site="props.item"
             @change="fetchSites"
@@ -52,7 +85,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import eventBus from '../../event-bus'
 export default {
   data: () => ({
@@ -62,7 +95,8 @@ export default {
   }),
   computed: {
     ...mapState(['env']),
-    ...mapState('session', ['user'])
+    ...mapState('session', ['user']),
+    ...mapGetters(['contrastColor'])
   },
   async created () {
     if (!this.user.adminMode) return this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
@@ -74,6 +108,7 @@ export default {
       { text: this.$t('common.host'), value: 'host' },
       { text: this.$t('common.id'), value: '_id', sortable: false },
       { text: this.$t('common.authMode'), value: 'authMode', sortable: false },
+      { text: this.$t('common.authProviders'), value: 'authProviders', sortable: false },
       { test: '', sortable: false }
     ])
   },

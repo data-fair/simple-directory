@@ -176,6 +176,12 @@ class Serializer {
       let json = '{'
       let addComma = false
   
+      if (obj["id"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"id\":"
+      json += serializer.asString(obj["id"])
+      }
+    
       if (obj["title"] !== undefined) {
         !addComma && (addComma = true) || (json += ',')
         json += "\"title\":"
