@@ -55,12 +55,6 @@
 import { resolvedSchema } from '../../types/site-patch'
 import { mapActions, mapState } from 'vuex'
 
-// our schema resolver create enums that suck
-resolvedSchema.properties.authMode.oneOf.forEach(o => {
-  o.const = o.enum[0]
-  delete o.enum
-})
-
 export default {
   props: ['site'],
   data: () => ({ menu: false, patch: null, valid: false, model: {} }),

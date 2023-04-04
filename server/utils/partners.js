@@ -1,7 +1,7 @@
-exports.shortenPartnerInvitation = (partner, orgId, pendingId) => {
+exports.shortenPartnerInvitation = (partner, orgId, partnerId) => {
   return {
     o: orgId,
-    p: pendingId,
+    p: partnerId,
     n: partner.name,
     e: partner.contactEmail
   }
@@ -10,7 +10,7 @@ exports.shortenPartnerInvitation = (partner, orgId, pendingId) => {
 exports.unshortenPartnerInvitation = (partnerPayload) => {
   return {
     orgId: partnerPayload.o,
-    pendingId: partnerPayload.p,
+    partnerId: partnerPayload.p,
     name: partnerPayload.n,
     contactEmail: partnerPayload.e
   }

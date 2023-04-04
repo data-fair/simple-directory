@@ -450,13 +450,22 @@ class MongodbStorage {
   }
 
   async addPartner (orgId, partner) {
-    return await this.db.collection('organizations').updateOne({ _id: orgId }, { $push: { partners: partner } })
+    await this.db.collection('organizations').updateOne({ _id: orgId }, {
+      $pull: { partners: { contactEmail: partner.contactEmail, id: { $exists: false } } }
+    })
+    await this.db.collection('organizations').updateOne({ _id: orgId }, {
+      $push: { partners: partner }
+    })
   }
 
-  async validatePartner (orgId, pendingId, partner) {
-    return await this.db.collection('organizations').updateOne(
-      { _id: orgId, 'partners.pendingId': pendingId },
-      { $set: { 'partners.$.name': partner.name, 'partners.$.id': partner.id, 'partners.$.partnerId': pendingId }, $unset: { 'partners.$.pendingId': 1 } }
+  async deletePartner (orgId, partnerId) {
+    await this.db.collection('organizations').updateOne({ _id: orgId }, { $pull: { partners: { partnerId: partnerId } } })
+  }
+
+  async validatePartner (orgId, partnerId, partner) {
+    await this.db.collection('organizations').updateOne(
+      { _id: orgId, 'partners.partnerId': partnerId },
+      { $set: { 'partners.$.name': partner.name, 'partners.$.id': partner.id } }
     )
   }
 }

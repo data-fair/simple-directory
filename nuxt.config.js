@@ -129,7 +129,8 @@ module.exports = {
     plannedDeletionDelay: config.plannedDeletionDelay,
     alwaysAcceptInvitation: config.alwaysAcceptInvitation,
     depAdminIsOrgAdmin: config.depAdminIsOrgAdmin,
-    manageSites: config.manageSites
+    manageSites: config.manageSites,
+    managePartners: config.managePartners
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

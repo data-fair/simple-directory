@@ -76,7 +76,10 @@ module.exports = {
     emailNotConfirmed: 'création non finalisée',
     noRole: 'aucun role',
     downloadCsv: 'télécharger la liste au format CSV',
-    authMode: 'Mode d\'authentification'
+    authMode: 'Mode d\'authentification',
+    partners: 'Organisations partenaires',
+    contactEmail: 'Email de contact',
+    orgName: 'Nom de l\'organisation'
   },
   doc: {
     about: {
@@ -207,6 +210,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       deleteMemberSuccess: 'L\'utilisateur {name} a été exclu de l\'organisation',
       inviteEmail: 'Adresse mail de l\'utilisateur',
       inviteSuccess: 'Une invitation a été envoyée à l\'adresse {email}',
+      invitePartnerSuccess: 'Une invitation a été envoyé à l\'adresse {email}',
       memberConflict: 'Cet utilisateur est déjà membre',
       departmentLabelTitle: 'Libellé du concept "département"',
       departmentLabelHelp: 'Laissez vide pour afficher "département". Renseignez pour utiliser un autre vocabulaire comme "service", "agence", etc.',
@@ -221,7 +225,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       inviteLink: 'En cas de problème dans la communication par email vous pouvez envoyer le lien de confirmation ci-dessous par un autre moyen. Attention ! Vous risquez d\'insérer dans la base utilisateur une adresse mail erronée ou non fonctionnelle. Cette adresse mail pourra poser de multiples problèmes par la suite : changement de mot de passe, envoi d\'alertes, etc.',
       '2FARoles': 'Authentification à 2 facteurs.',
       '2FARolesMsg': 'Rendre obligatoire l\'authentification à 2 facteurs pour les utilisateurs possédant ces rôles.',
-      createUserLink: 'Renvoyer un lien d\'invitation'
+      sendInvitationLink: 'Renvoyer un lien d\'invitation',
+      addPartner: 'Inviter une organisation partenaire'
     },
     invitation: {
       title: 'Invitation validée',

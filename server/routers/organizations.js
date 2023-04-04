@@ -311,11 +311,11 @@ if (config.managePartners) {
     const orga = await storage.getOrganization(req.params.organizationId)
     if (!orga) return res.status(404).send()
 
-    const pendingId = nanoid()
+    const partnerId = nanoid()
 
-    const token = tokens.sign(req.app.get('keys'), partnersUtils.shortenPartnerInvitation(partnerPost, orga.id, pendingId), config.jwtDurations.partnerInvitationToken)
+    const token = tokens.sign(req.app.get('keys'), partnersUtils.shortenPartnerInvitation(partnerPost, orga.id, partnerId), config.jwtDurations.partnerInvitationToken)
 
-    await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, pendingId, createdAt: new Date().toISOString() })
+    await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
 
     const linkUrl = new URL(req.publicBaseUrl + '/login')
     linkUrl.searchParams.set('partner_invit_token', token)
@@ -335,7 +335,7 @@ if (config.managePartners) {
     })
 
     sendNotification({
-      sender: { ...req.user.accountOwner, role: 'admin' },
+      sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
       topic: { key: 'simple-directory:partner-invitation-sent' },
       title: req.__all('notifications.sentPartnerInvitation', { partnerName: partnerPost.name, email: partnerPost.contactEmail, orgName: orga.name })
     })
@@ -364,16 +364,19 @@ if (config.managePartners) {
 
     // user must have access to a token sent to the contact email
     if (tokenPayload.contactEmail !== partnerAccept.contactEmail || tokenPayload.orgId !== req.params.organizationId) {
-      return res.status(400).send('request payload does not match the token content')
+      return res.status(400).send('requête incohérente avec l\'invitation envoyée')
     }
     const orga = await storage.getOrganization(req.params.organizationId)
     if (!orga) return res.status(404).send('unknown organization')
     debugPartners('accept partner invitation', tokenPayload, partnerOrga.name, partnerOrga.id)
 
-    const pendingInvitation = (orga.partners || []).find(p => p.pendingId && p.pendingId === tokenPayload.pendingId && p.contactEmail === partnerAccept.contactEmail)
-    if (!pendingInvitation) return res.status(400).send('no pending invitation')
+    const conflictInvitation = (orga.partners || []).find(p => p.id === partnerOrga.id)
+    if (conflictInvitation) return res.status(400).send('cette organisation est déjà partenaire')
 
-    await storage.validatePartner(orga.id, tokenPayload.pendingId, partnerAccept)
+    const pendingInvitation = (orga.partners || []).find(p => p.partnerId === tokenPayload.partnerId && p.contactEmail === partnerAccept.contactEmail && !p.id)
+    if (!pendingInvitation) return res.status(400).send('pas d\'invitation en attente de validation')
+
+    await storage.validatePartner(orga.id, tokenPayload.partnerId, partnerAccept)
 
     const notif = {
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
@@ -383,6 +386,14 @@ if (config.managePartners) {
     // send notif to all admins subscribed to the topic
     debugPartners(notif)
 
+    res.status(201).send()
+  }))
+
+  router.delete('/:organizationId/partners/:partnerId', asyncWrap(async (req, res, next) => {
+    if (!req.user) return res.status(401).send()
+    if (!isOrgAdmin(req)) return res.status(403).send(req.messages.errors.permissionDenied)
+    const storage = req.app.get('storage')
+    await storage.deletePartner(req.params.organizationId, req.params.partnerId)
     res.status(201).send()
   }))
 }
