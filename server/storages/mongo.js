@@ -448,6 +448,17 @@ class MongodbStorage {
   async deleteSite (siteId) {
     await this.db.collection('sites').deleteOne({ _id: siteId })
   }
+
+  async addPartner (orgId, partner) {
+    return await this.db.collection('organizations').updateOne({ _id: orgId }, { $push: { partners: partner } })
+  }
+
+  async validatePartner (orgId, pendingId, partner) {
+    return await this.db.collection('organizations').updateOne(
+      { _id: orgId, 'partners.pendingId': pendingId },
+      { $set: { 'partners.$.name': partner.name, 'partners.$.id': partner.id, 'partners.$.partnerId': pendingId }, $unset: { 'partners.$.pendingId': 1 } }
+    )
+  }
 }
 
 exports.init = async (params, org) => new MongodbStorage().init(params, org)

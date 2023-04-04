@@ -339,6 +339,22 @@ Un administrateur de l'organisation {organization} vous a invité à la rejoindr
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
       htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
     },
+    partnerInvitation: {
+      subject: 'Soyez partenaire de l\'organisation {organization} sur {host}',
+      text: `
+Un administrateur de l'organisation {organization} vous a invité à la rejoindre en tant que partenaire {partner}. Pour accepter cette invitation copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 10 jours.
+
+{link}
+
+Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à {contact}.
+      `,
+      htmlMsg: `
+Un administrateur de l'organisation {organization} vous a invité à la rejoindre en tant que partenaire {partner}. Pour accepter cette invitation cliquez sur le bouton ci-dessous. Le lien est valide 10 jours.
+      `,
+      htmlButton: 'Accepter l\'invitation',
+      htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
+      htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
+    },
     action: {
       subject: 'Effectuez une action sur votre compte sur {host}',
       text: `
@@ -376,6 +392,10 @@ N'hésitez pas à nous contacter à {contact}.
     sentInvitation: 'Un email a été envoyé à {email} avec une invitation à rejoindre l\'organisation {orgName}.',
     acceptedInvitationTopic: 'une invitation est acceptée',
     acceptedInvitation: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.',
+    sentPartnerInvitationTopic: 'une invitation de partenaire est envoyée',
+    sentPartnerInvitation: 'Un email a été envoyé à {email} avec une invitation pour l\'organisation {partnerName} à rejoindre l\'organisation {orgName} en tant que partenaire.',
+    acceptedPartnerInvitationTopic: 'une invitation de partenaire est acceptée',
+    acceptedPartnerInvitation: 'L\'organisation {partnerName} ({email}) a rejoint l\'organisation {orgName} en tant que partenaire.',
     addMemberTopic: 'un membre a été ajouté',
     addMember: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.'
   }

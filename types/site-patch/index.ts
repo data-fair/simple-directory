@@ -59,22 +59,16 @@ export const resolvedSchema = {
       "type": "string",
       "oneOf": [
         {
-          "title": "uniquement sur le site lui même",
-          "enum": [
-            "onlyLocal"
-          ]
+          "const": "onlyLocal",
+          "title": "uniquement sur le site lui même"
         },
         {
-          "title": "uniquement sur le back-office",
-          "enum": [
-            "onlyBackOffice"
-          ]
+          "const": "onlyBackOffice",
+          "title": "uniquement sur le back-office"
         },
         {
-          "title": "sur le site et sur le back-office par SSO",
-          "enum": [
-            "ssoBackOffice"
-          ]
+          "const": "ssoBackOffice",
+          "title": "sur le site et sur le back-office par SSO"
         }
       ]
     }

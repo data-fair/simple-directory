@@ -1,0 +1,20 @@
+{
+  "$id": "https://github.com/data-fair/simple-directory/partner-accept",
+  "x-exports": ["types", "validate"],
+  "title": "partner accept",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "contactEmail", "token"],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "contactEmail": {
+      "type": "string",
+      "format": "email"
+    },
+    "token": {
+      "type": "string"
+    }
+  }
+}

@@ -27,8 +27,8 @@ export declare const resolvedSchema: {
             title: string;
             type: string;
             oneOf: {
+                const: string;
                 title: string;
-                enum: string[];
             }[];
         };
     };

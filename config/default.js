@@ -12,6 +12,7 @@ module.exports = {
     initialToken: '15m',
     exchangedToken: '30d',
     invitationToken: '10d',
+    partnerInvitationToken: '10d',
     '2FAToken': '30d'
   },
   admins: ['admin@test.com'],
@@ -270,5 +271,6 @@ module.exports = {
   },
   // temporary option to prevent some regression
   depAdminIsOrgAdmin: false,
-  manageSites: false
+  manageSites: false,
+  managerPartners: false
 }

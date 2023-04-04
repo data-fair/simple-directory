@@ -36,5 +36,6 @@ module.exports = {
     active: true
   },
   noUI: false,
-  manageSites: true
+  manageSites: true,
+  managePartners: true
 }
