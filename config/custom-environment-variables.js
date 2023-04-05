@@ -327,5 +327,9 @@ module.exports = {
   manageSites: {
     __name: 'MANAGE_SITES',
     __format: 'json'
+  },
+  managePartners: {
+    __name: 'MANAGE_PARTNERS',
+    __format: 'json'
   }
 }
