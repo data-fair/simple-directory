@@ -14,7 +14,7 @@ describe('partners management api', () => {
     const mailPromise = eventToPromise(mails.events, 'send')
     await axOrg.post(`/api/organizations/${org.id}/partners`, { name: 'Org 2', contactEmail: 'test-partners2@test.com' })
     const mail = await mailPromise
-    assert.ok(mail.link.startsWith(config.publicUrl + '/login?partner_invit_token='))
+    assert.ok(mail.link.startsWith(config.publicUrl + '/login?step=partnerInvitation&partner_invit_token='))
     const token = new URL(mail.link).searchParams.get('partner_invit_token')
     const tokenPayload = jwt.decode(token)
     assert.equal(tokenPayload.o, org.id)
@@ -23,7 +23,7 @@ describe('partners management api', () => {
 
     let orgInfo = (await axOrg.get('/api/organizations/' + org.id)).data
     assert.equal(orgInfo.partners.length, 1)
-    assert.ok(orgInfo.partners[0].pendingId)
+    assert.ok(orgInfo.partners[0].partnerId)
     assert.ok(!orgInfo.partners[0].id)
 
     const { ax: ax2 } = await testUtils.createUser('test-partners2@test.com')
@@ -34,7 +34,6 @@ describe('partners management api', () => {
 
     orgInfo = (await axOrg.get('/api/organizations/' + org.id)).data
     assert.equal(orgInfo.partners.length, 1)
-    assert.ok(!orgInfo.partners[0].pendingId)
     assert.equal(orgInfo.partners[0].id, org2.id)
     assert.ok(orgInfo.partners[0].partnerId)
   })
