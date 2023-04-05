@@ -9,6 +9,9 @@
     "name": {
       "type": "string"
     },
+    "redirect": {
+      "type": "string"
+    },
     "contactEmail": {
       "type": "string",
       "format": "email"

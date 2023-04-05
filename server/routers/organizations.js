@@ -313,12 +313,14 @@ if (config.managePartners) {
 
     const partnerId = nanoid()
 
-    const token = tokens.sign(req.app.get('keys'), partnersUtils.shortenPartnerInvitation(partnerPost, orga.id, partnerId), config.jwtDurations.partnerInvitationToken)
+    const token = tokens.sign(req.app.get('keys'), partnersUtils.shortenPartnerInvitation(partnerPost, orga, partnerId), config.jwtDurations.partnerInvitationToken)
 
     await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
 
     const linkUrl = new URL(req.publicBaseUrl + '/login')
+    linkUrl.searchParams.set('step', 'partnerInvitation')
     linkUrl.searchParams.set('partner_invit_token', token)
+    linkUrl.searchParams.set('redirect', partnerPost.redirect || req.publicBaseUrl)
     const params = {
       link: linkUrl.href,
       organization: orga.name,

@@ -629,6 +629,12 @@
             </v-card-actions>
           </v-window-item>
 
+          <v-window-item value="partnerInvitation">
+            <v-card-text>
+              <partner-invitation @accepted="goToRedirect()" />
+            </v-card-text>
+          </v-window-item>
+
           <v-window-item value="error">
             <v-card-text v-if="error">
               <v-alert
@@ -687,7 +693,8 @@ export default {
         configure2FA: this.$t('pages.login.configure2FA'),
         recovery2FA: this.$t('pages.login.recovery2FA'),
         createOrga: this.$t('common.createOrganization'),
-        plannedDeletion: this.$t('pages.login.plannedDeletion')
+        plannedDeletion: this.$t('pages.login.plannedDeletion'),
+        partnerInvitation: this.$t('pages.login.partnerInvitation')
       },
       password: '',
       passwordErrors: [],

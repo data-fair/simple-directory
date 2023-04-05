@@ -1,6 +1,7 @@
-exports.shortenPartnerInvitation = (partner, orgId, partnerId) => {
+exports.shortenPartnerInvitation = (partner, org, partnerId) => {
   return {
-    o: orgId,
+    o: org.id,
+    on: org.name,
     p: partnerId,
     n: partner.name,
     e: partner.contactEmail

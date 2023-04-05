@@ -75,7 +75,7 @@ export default {
   watch: {
     menu () {
       if (!this.menu) return
-      this.editPartner = { name: '', contactEmail: '' }
+      this.editPartner = { name: '', contactEmail: '', redirect: this.$route.query.redirect || '' }
       if (this.$refs.createForm) this.$refs.createForm.reset()
     }
   },

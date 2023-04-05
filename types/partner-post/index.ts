@@ -1,5 +1,6 @@
 export interface PartnerPost {
   name: string;
+  redirect?: string;
   contactEmail: string;
 }
 

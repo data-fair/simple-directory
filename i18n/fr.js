@@ -79,7 +79,8 @@ module.exports = {
     authMode: 'Mode d\'authentification',
     partners: 'Organisations partenaires',
     contactEmail: 'Email de contact',
-    orgName: 'Nom de l\'organisation'
+    orgName: 'Nom de l\'organisation',
+    loginSignin: 'Se connecter / créer un compte'
   },
   doc: {
     about: {
@@ -197,7 +198,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       recovery2FAContent: 'Code de récupération authentification 2 facteurs {name}',
       plannedDeletion: 'Suppression programmée',
       cancelDeletion: 'Annuler la suppression de l\'utilisateur',
-      siteLogo: 'Logo du site'
+      siteLogo: 'Logo du site',
+      partnerInvitation: 'Invitation partenaire',
+      partnerInvitationMsg: 'L\'organisation {organization} souhaite ajouter {partner} comme partenaire.'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
@@ -345,16 +348,16 @@ Un administrateur de l'organisation {organization} vous a invité à la rejoindr
       htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
     },
     partnerInvitation: {
-      subject: 'Soyez partenaire de l\'organisation {organization} sur {host}',
+      subject: 'L\'organisation {organization} sur {host} souhaite ajouter {partner} comme partenaire',
       text: `
-Un administrateur de l'organisation {organization} vous a invité à la rejoindre en tant que partenaire {partner}. Pour accepter cette invitation copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 10 jours.
+Un administrateur de l'organisation {organization} vous invite en tant que contact de l'organisation {partner} à la rejoindre sur {host}. Pour accepter cette invitation copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 10 jours.
 
 {link}
 
 Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à {contact}.
       `,
       htmlMsg: `
-Un administrateur de l'organisation {organization} vous a invité à la rejoindre en tant que partenaire {partner}. Pour accepter cette invitation cliquez sur le bouton ci-dessous. Le lien est valide 10 jours.
+Un administrateur de l'organisation {organization} vous invite en tant que contact de l'organisation {partner} à la rejoindre sur {host}. Pour accepter cette invitation cliquez sur le bouton ci-dessous. Le lien est valide 10 jours.
       `,
       htmlButton: 'Accepter l\'invitation',
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
