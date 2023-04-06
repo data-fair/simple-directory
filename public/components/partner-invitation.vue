@@ -8,14 +8,17 @@
       color="info"
       :value="true"
       outlined
+      dense
     >
       <p>
-        {{ $t('pages.login.partnerInvitationMsg', {organization: payload.on, partner: payload.n}) }}
+        L'organisation {{ payload.on }} souhaite ajouter {{ payload.n }} comme partenaire avec l'adresse de contact {{ payload.e }}.
       </p>
+
       <p class="mb-0">
-        Le nom "{{ payload.n }}" est indicatif et ne correspond pas forcément exactement au libellé de votre organisation.
+        Le nom "{{ payload.n }}" est indicatif et ne correspond pas nécessairement au libellé exact de votre organisation.
       </p>
     </v-alert>
+
     <p v-if="user && user.email !== payload.e">
       Vous êtes connecté avec le compte utilisateur {{ user.name }} ({{ user.email }}). Vous pouvez vous connecter avec un autre compte ou créer un nouveau compte en cliquant sur le bouton ci-dessous.
     </p>

@@ -199,8 +199,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       plannedDeletion: 'Suppression programmée',
       cancelDeletion: 'Annuler la suppression de l\'utilisateur',
       siteLogo: 'Logo du site',
-      partnerInvitation: 'Invitation partenaire',
-      partnerInvitationMsg: 'L\'organisation {organization} souhaite ajouter {partner} comme partenaire.'
+      partnerInvitation: 'Invitation partenaire'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
