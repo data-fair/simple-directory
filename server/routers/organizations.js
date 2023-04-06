@@ -378,7 +378,7 @@ if (config.managePartners) {
     const pendingInvitation = (orga.partners || []).find(p => p.partnerId === tokenPayload.partnerId && p.contactEmail === partnerAccept.contactEmail && !p.id)
     if (!pendingInvitation) return res.status(400).send('pas d\'invitation en attente de validation')
 
-    await storage.validatePartner(orga.id, tokenPayload.partnerId, partnerAccept)
+    await storage.validatePartner(orga.id, tokenPayload.partnerId, partnerOrga)
 
     const notif = {
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
@@ -397,5 +397,14 @@ if (config.managePartners) {
     const storage = req.app.get('storage')
     await storage.deletePartner(req.params.organizationId, req.params.partnerId)
     res.status(201).send()
+  }))
+
+  router.get('/:organizationId/partners/_user-partners', asyncWrap(async (req, res, next) => {
+    if (!req.user) return res.status(401).send()
+    const storage = req.app.get('storage')
+    const orga = await storage.getOrganization(req.params.organizationId)
+    if (!orga) return res.status(404).send('unknown organization')
+    const partners = (orga.partners || []).filter(p => !!req.user.organizations.find(o => o.id === p.id))
+    res.send(partners.map(p => ({ id: p.id, name: p.name })))
   }))
 }

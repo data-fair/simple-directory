@@ -36,5 +36,10 @@ describe('partners management api', () => {
     assert.equal(orgInfo.partners.length, 1)
     assert.equal(orgInfo.partners[0].id, org2.id)
     assert.ok(orgInfo.partners[0].partnerId)
+
+    const userPartners = (await axOrg2.get(`/api/organizations/${org.id}/partners/_user-partners`)).data
+    assert.equal(userPartners.length, 1)
+    assert.equal(userPartners[0].id, org2.id)
+    assert.equal(userPartners[0].name, org2.name)
   })
 })
