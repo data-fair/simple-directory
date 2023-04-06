@@ -9,15 +9,17 @@
       :value="true"
       outlined
     >
-      {{ $t('pages.login.partnerInvitationMsg', {organization: payload.on, partner: payload.n}) }}
       <p>
-        Le nom "{{ payload.n }}" ne correspond pas forcément exactement au nom de votre organisation, il a été saisi librement par la personne qui vous a envoyé cette invitation et qui fait confiance à l'adresse de contact "{{ payload.e }}" pour respecter son intention.
+        {{ $t('pages.login.partnerInvitationMsg', {organization: payload.on, partner: payload.n}) }}
+      </p>
+      <p class="mb-0">
+        Le nom "{{ payload.n }}" est indicatif et ne correspond pas forcément exactement au libellé de votre organisation.
       </p>
     </v-alert>
-    <p v-if="user">
+    <p v-if="user && user.email !== payload.e">
       Vous êtes connecté avec le compte utilisateur {{ user.name }} ({{ user.email }}). Vous pouvez vous connecter avec un autre compte ou créer un nouveau compte en cliquant sur le bouton ci-dessous.
     </p>
-    <p>
+    <p v-if="!user || user.email !== payload.e">
       <v-btn
         v-t="'common.loginSignin'"
         depressed
@@ -30,7 +32,7 @@
         Vous n'appartenez à aucune organisation.
       </p>
       <p>
-        Vous pouvez accepter cette invitation au nom d'une organisation dont vous êtes administrateur. Ou bien créer une nouvelle organisation et accepter l'invitation en son nom.
+        Vous pouvez accepter cette invitation au nom d'une organisation dont vous êtes administrateur, ou bien créer une nouvelle organisation et accepter l'invitation en son nom.
       </p>
 
       <p>
@@ -41,6 +43,7 @@
           color="primary"
           :label="userOrg.name"
           hide-details
+          :disabled="userOrg.role !== 'admin'"
           @change="v => toggleSelectedUserOrg(userOrg, v)"
         />
         <v-checkbox
