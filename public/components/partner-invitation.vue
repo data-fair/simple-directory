@@ -11,7 +11,7 @@
       dense
     >
       <p>
-        L'organisation {{ payload.on }} souhaite ajouter {{ payload.n }} comme partenaire avec l'adresse de contact {{ payload.e }}.
+        L'organisation {{ payload.on }} souhaite ajouter {{ payload.n }} comme partenaire avec {{ payload.e }} comme adresse de contact.
       </p>
 
       <p class="mb-0">
@@ -19,17 +19,45 @@
       </p>
     </v-alert>
 
-    <p v-if="user && user.email !== payload.e">
-      Vous êtes connecté avec le compte utilisateur {{ user.name }} ({{ user.email }}). Vous pouvez vous connecter avec un autre compte ou créer un nouveau compte en cliquant sur le bouton ci-dessous.
-    </p>
-    <p v-if="!user || user.email !== payload.e">
-      <v-btn
-        v-t="'common.loginSignin'"
-        depressed
-        color="primary"
-        @click="login()"
-      />
-    </p>
+    <template v-if="user && user.email !== payload.e">
+      <p>
+        Vous êtes connecté avec le compte utilisateur {{ user.name }} ({{ user.email }}). Vous pouvez vous connecter avec un autre compte ou créer un nouveau compte en cliquant sur le bouton ci-dessous.
+      </p>
+      <p>
+        <v-btn
+          v-t="'common.loginSignin'"
+          :href="loginUrl(null, true, {email: payload.e})"
+          depressed
+          color="primary"
+        />
+      </p>
+    </template>
+
+    <template v-if="!user">
+      <p>
+        Vous avez déjà un compte ? Vous pouvez vous connecter et vous serez redirigé vers cette page par la suite.
+      </p>
+      <p>
+        <v-btn
+          v-t="'common.login'"
+          depressed
+          color="primary"
+          :href="loginUrl(null, true, {email: payload.e})"
+        />
+      </p>
+      <p>
+        Vous n'avez pas encore de compte ? Vous pouvez en créer un et vous serez redirigé vers cette page par la suite.
+      </p>
+      <p>
+        <v-btn
+          v-t="'common.signin'"
+          depressed
+          color="primary"
+          :href="loginUrl(null, true, {email: payload.e, step: 'createUser'})"
+        />
+      </p>
+    </template>
+
     <template v-if="user">
       <p v-if="user.organizations.length === 0">
         Vous n'appartenez à aucune organisation.
@@ -90,7 +118,7 @@
 
 <script>
 import jwtDecode from 'jwt-decode'
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapActions, mapGetters } from 'vuex'
 import eventBus from '../event-bus'
 
 export default {
@@ -104,6 +132,7 @@ export default {
   },
   computed: {
     ...mapState('session', ['user']),
+    ...mapGetters('session', ['loginUrl']),
     payload () {
       if (!this.token) return
       return jwtDecode(this.token)
@@ -117,9 +146,9 @@ export default {
   methods: {
     ...mapActions('session', ['login']),
     async createOrga () {
-      if (!this.createOrganization.name) return
+      if (!this.createOrganizationName) return
       try {
-        const orga = await this.$axios.$post('api/organizations', { name: this.createOrganization.name })
+        const orga = await this.$axios.$post('api/organizations', { name: this.createOrganizationName })
         this.acceptPartnerInvitation(orga)
       } catch (error) {
         eventBus.$emit('notification', { error })
