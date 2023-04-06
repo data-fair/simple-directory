@@ -272,5 +272,5 @@ module.exports = {
   // temporary option to prevent some regression
   depAdminIsOrgAdmin: false,
   manageSites: false,
-  managerPartners: false
+  managePartners: false
 }
