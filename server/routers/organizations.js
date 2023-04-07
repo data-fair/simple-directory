@@ -404,7 +404,12 @@ if (config.managePartners) {
     const storage = req.app.get('storage')
     const orga = await storage.getOrganization(req.params.organizationId)
     if (!orga) return res.status(404).send('unknown organization')
-    const partners = (orga.partners || []).filter(p => !!req.user.organizations.find(o => o.id === p.id))
-    res.send(partners.map(p => ({ id: p.id, name: p.name })))
+    const userPartners = []
+    for (const partner of orga.partners) {
+      const userOrg = req.user.organizations.find(o => o.id === partner.id)
+      if (!userOrg) continue
+      userPartners.push(userOrg)
+    }
+    res.send(userPartners)
   }))
 }
