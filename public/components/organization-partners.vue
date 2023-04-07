@@ -73,7 +73,9 @@
                 </span>
               </template>
             </v-list-item-title>
-            <v-list-item-subtitle>{{ $t('common.createdAt') }} {{ $d(new Date(partner.createdAt)) }}</v-list-item-subtitle>
+            <v-list-item-subtitle v-if="partner.createdAt">
+              {{ $t('common.createdAt') }} {{ $d(new Date(partner.createdAt)) }}
+            </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action
             v-if="writablePartners"
