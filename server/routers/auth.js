@@ -564,6 +564,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
         [req.params.oauthId]: oauthInfo
       }
     }
+    if (req.site) user.host = req.site.host
     if (invit) {
       user.defaultOrg = invitOrga.id
       user.ignorePersonalAccount = true
@@ -712,6 +713,7 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
         [providerId]: samlInfo
       }
     }
+    if (req.site) user.host = req.site.host
     if (invit) {
       user.defaultOrg = invitOrga.id
       user.ignorePersonalAccount = true
