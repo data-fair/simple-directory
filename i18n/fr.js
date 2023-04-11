@@ -11,6 +11,7 @@ module.exports = {
     logLink: 'Se connecter / s\'inscrire',
     logout: 'Se déconnecter',
     login: 'Se connecter',
+    signin: 'Créer un compte',
     activateAdminMode: 'Activer mode admin',
     deactivateAdminMode: 'Désactiver mode admin',
     documentation: 'Documentation',
@@ -76,7 +77,11 @@ module.exports = {
     emailNotConfirmed: 'création non finalisée',
     noRole: 'aucun role',
     downloadCsv: 'télécharger la liste au format CSV',
-    authMode: 'Mode d\'authentification'
+    authMode: 'Mode d\'authentification',
+    partners: 'Organisations partenaires',
+    contactEmail: 'Email de contact',
+    orgName: 'Nom de l\'organisation',
+    loginSignin: 'Se connecter / créer un compte'
   },
   doc: {
     about: {
@@ -194,7 +199,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       recovery2FAContent: 'Code de récupération authentification 2 facteurs {name}',
       plannedDeletion: 'Suppression programmée',
       cancelDeletion: 'Annuler la suppression de l\'utilisateur',
-      siteLogo: 'Logo du site'
+      siteLogo: 'Logo du site',
+      partnerInvitation: 'Invitation partenaire'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
@@ -207,6 +213,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       deleteMemberSuccess: 'L\'utilisateur {name} a été exclu de l\'organisation',
       inviteEmail: 'Adresse mail de l\'utilisateur',
       inviteSuccess: 'Une invitation a été envoyée à l\'adresse {email}',
+      invitePartnerSuccess: 'Une invitation a été envoyé à l\'adresse {email}',
       memberConflict: 'Cet utilisateur est déjà membre',
       departmentLabelTitle: 'Libellé du concept "département"',
       departmentLabelHelp: 'Laissez vide pour afficher "département". Renseignez pour utiliser un autre vocabulaire comme "service", "agence", etc.',
@@ -221,7 +228,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       inviteLink: 'En cas de problème dans la communication par email vous pouvez envoyer le lien de confirmation ci-dessous par un autre moyen. Attention ! Vous risquez d\'insérer dans la base utilisateur une adresse mail erronée ou non fonctionnelle. Cette adresse mail pourra poser de multiples problèmes par la suite : changement de mot de passe, envoi d\'alertes, etc.',
       '2FARoles': 'Authentification à 2 facteurs.',
       '2FARolesMsg': 'Rendre obligatoire l\'authentification à 2 facteurs pour les utilisateurs possédant ces rôles.',
-      createUserLink: 'Renvoyer un lien d\'invitation'
+      sendInvitationLink: 'Renvoyer un lien d\'invitation',
+      addPartner: 'Inviter une organisation partenaire'
     },
     invitation: {
       title: 'Invitation validée',
@@ -339,6 +347,22 @@ Un administrateur de l'organisation {organization} vous a invité à la rejoindr
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
       htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
     },
+    partnerInvitation: {
+      subject: 'L\'organisation {organization} sur {host} souhaite ajouter {partner} comme partenaire',
+      text: `
+Un administrateur de l'organisation {organization} vous invite en tant que contact de l'organisation {partner} à la rejoindre sur {host}. Pour accepter cette invitation copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 10 jours.
+
+{link}
+
+Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à {contact}.
+      `,
+      htmlMsg: `
+Un administrateur de l'organisation {organization} vous invite en tant que contact de l'organisation {partner} à la rejoindre sur {host}. Pour accepter cette invitation cliquez sur le bouton ci-dessous. Le lien est valide 10 jours.
+      `,
+      htmlButton: 'Accepter l\'invitation',
+      htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
+      htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
+    },
     action: {
       subject: 'Effectuez une action sur votre compte sur {host}',
       text: `
@@ -376,6 +400,10 @@ N'hésitez pas à nous contacter à {contact}.
     sentInvitation: 'Un email a été envoyé à {email} avec une invitation à rejoindre l\'organisation {orgName}.',
     acceptedInvitationTopic: 'une invitation est acceptée',
     acceptedInvitation: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.',
+    sentPartnerInvitationTopic: 'une invitation de partenaire est envoyée',
+    sentPartnerInvitation: 'Un email a été envoyé à {email} avec une invitation pour l\'organisation {partnerName} à rejoindre l\'organisation {orgName} en tant que partenaire.',
+    acceptedPartnerInvitationTopic: 'une invitation de partenaire est acceptée',
+    acceptedPartnerInvitation: 'L\'organisation {partnerName} ({email}) a rejoint l\'organisation {orgName} en tant que partenaire.',
     addMemberTopic: 'un membre a été ajouté',
     addMember: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.'
   }

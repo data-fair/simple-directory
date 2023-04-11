@@ -5,7 +5,7 @@ config.basePath = new URL(config.publicUrl + '/').pathname
 config.i18nMessages = i18n.messages
 config.i18nLocales = config.i18n.locales.join(',')
 config.readonly = config.storage.type !== 'mongo'
-config.overwrite = config.storage.type === 'ldap' && config.storage.ldap.overwrite
+config.overwrite = (config.storage.type === 'ldap' && config.storage.ldap.overwrite) || []
 
 const isBuilding = process.argv[2] === 'build'
 
@@ -129,7 +129,8 @@ module.exports = {
     plannedDeletionDelay: config.plannedDeletionDelay,
     alwaysAcceptInvitation: config.alwaysAcceptInvitation,
     depAdminIsOrgAdmin: config.depAdminIsOrgAdmin,
-    manageSites: config.manageSites
+    manageSites: config.manageSites,
+    managePartners: config.managePartners
   },
   head: {
     title: config.i18nMessages[i18n.defaultLocale].root.title,

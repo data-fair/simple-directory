@@ -150,5 +150,6 @@ module.exports = {
       }
     }]
   },
-  manageSites: true
+  manageSites: true,
+  managePartners: true
 }
