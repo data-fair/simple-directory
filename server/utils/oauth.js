@@ -225,6 +225,7 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
   })
 
   // a random string as state for each provider
+  // TODO: better use of state for CSRF prevention ?
   const statePath = path.join(statesDir, 'oauth-state-' + p.id)
   if (await fs.pathExists(statePath)) {
     p.state = await fs.readFile(statePath, 'utf8')

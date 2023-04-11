@@ -488,7 +488,18 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     }
   }
 
-  const provider = oauth.providers.find(p => p.state === providerState)
+  let provider
+  if (!req.site) {
+    provider = oauth.providers.find(p => p.state === providerState)
+  } else {
+    for (const providerInfo of req.site.authProviders) {
+      const p = await oauth.initProvider({ ...providerInfo }, req.publicBaseUrl)
+      if (p.state === providerState) {
+        provider = p
+        break
+      }
+    }
+  }
   if (!provider) return res.status(404).send('Unknown OAuth provider')
   if (req.params.oauthId && req.params.oauthId !== provider.id) return res.status(404).send('Wrong OAuth provider id')
 
