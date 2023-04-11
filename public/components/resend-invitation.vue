@@ -9,7 +9,7 @@
         icon
         color="warning"
         small
-        :title="$t('pages.organization.createUserLink')"
+        :title="$t('pages.organization.sendInvitationLink')"
         v-bind="attrs"
         v-on="on"
       >
@@ -25,7 +25,7 @@
         v-if="!link"
         class="text-h6"
       >
-        {{ $t('pages.organization.createUserLink') }}
+        {{ $t('pages.organization.sendInvitationLink') }}
       </v-card-title>
       <v-card-text>
         <template v-if="!link">

@@ -96,7 +96,7 @@ app.get('/api/auth/anonymous-action', cors(), require('./routers/anonymous-actio
 app.use('/api/auth', setSite, session.auth, require('./routers/auth').router)
 app.use('/api/mails', session.auth, require('./routers/mails'))
 app.use('/api/users', setSite, session.auth, fullUser, require('./routers/users'))
-app.use('/api/organizations', session.auth, fullUser, require('./routers/organizations'))
+app.use('/api/organizations', setSite, session.auth, fullUser, require('./routers/organizations'))
 app.use('/api/invitations', setSite, session.auth, fullUser, require('./routers/invitations'))
 app.use('/api/avatars', setSite, session.auth, fullUser, require('./routers/avatars'))
 app.use('/api/limits', session.auth, limits.router)
@@ -105,7 +105,6 @@ app.get('/api/metrics', require('./routers/metrics'))
 if (config.manageSites) {
   app.use('/api/sites', setSite, session.auth, require('./routers/sites'))
 }
-
 let info = { version: process.env.NODE_ENV }
 try { info = require('../BUILD.json') } catch (err) {}
 app.get('/api/info', session.requiredAuth, (req, res) => {
@@ -124,6 +123,10 @@ app.post('/api/session/keepalive', setSite, session.auth, asyncWrap(async (req, 
   res.status(204).send()
 }))
 // end of compatibility only section
+
+app.use('/api/', (req, res) => {
+  return res.status(404).send('unknown api endpoint')
+})
 
 // Error management
 app.use((err, req, res, next) => {
@@ -240,7 +243,8 @@ exports.run = async () => {
   debug('start server')
   server.listen(config.port)
   await eventToPromise(server, 'listening')
-  console.log(`listening on localhost:${config.port}, exposed on ${config.publicUrl}`)
+  console.log(`listening on localhost:${config.port}`)
+  console.log(`exposed on ${config.publicUrl}`)
 
   return app
 }

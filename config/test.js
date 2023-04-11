@@ -48,5 +48,6 @@ module.exports = {
         secret: 'bar'
       }
     }]
-  }
+  },
+  managePartners: true
 }

@@ -2,14 +2,20 @@ const express = require('express')
 const shortid = require('shortid')
 const config = require('config')
 const csvStringify = require('util').promisify(require('csv-stringify').stringify)
+const { nanoid } = require('nanoid')
 const asyncWrap = require('../utils/async-wrap')
 const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
+const mails = require('../mails')
 const limits = require('../utils/limits')
 const tokens = require('../utils/tokens')
 const storageFactory = require('../storages')
 const passwordsUtils = require('../utils/passwords')
+const partnersUtils = require('../utils/partners')
+const partnerPostSchema = require('../../types/partner-post')
+const partnerAcceptSchema = require('../../types/partner-accept')
 const defaultConfig = require('../../config/default.js')
+const { send: sendNotification } = require('../utils/notifications')
 
 const router = module.exports = express.Router()
 
@@ -290,3 +296,120 @@ router.delete('/:organizationId', asyncWrap(async (req, res, next) => {
 
   res.status(204).send()
 }))
+
+if (config.managePartners) {
+  // Invitation for an organization to join us as partners
+  const debugPartners = require('debug')('partners')
+  router.post('/:organizationId/partners', asyncWrap(async (req, res, next) => {
+    if (!req.user) return res.status(401).send()
+    if (!isOrgAdmin(req)) return res.status(403).send(req.messages.errors.permissionDenied)
+
+    const partnerPost = partnerPostSchema.validate(req.body)
+    debugPartners('new partner', partnerPost, req.user.activeAccount)
+    const storage = req.app.get('storage')
+
+    const orga = await storage.getOrganization(req.params.organizationId)
+    if (!orga) return res.status(404).send()
+
+    const partnerId = nanoid()
+
+    const token = tokens.sign(req.app.get('keys'), partnersUtils.shortenPartnerInvitation(partnerPost, orga, partnerId), config.jwtDurations.partnerInvitationToken)
+
+    await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
+
+    const linkUrl = new URL(req.publicBaseUrl + '/login')
+    linkUrl.searchParams.set('step', 'partnerInvitation')
+    linkUrl.searchParams.set('partner_invit_token', token)
+    linkUrl.searchParams.set('redirect', partnerPost.redirect || req.publicBaseUrl)
+    const params = {
+      link: linkUrl.href,
+      organization: orga.name,
+      host: linkUrl.host,
+      origin: linkUrl.origin,
+      partner: partnerPost.name
+    }
+    await mails.send({
+      transport: req.app.get('mailTransport'),
+      key: 'partnerInvitation',
+      messages: req.messages,
+      to: partnerPost.contactEmail,
+      params
+    })
+
+    sendNotification({
+      sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
+      topic: { key: 'simple-directory:partner-invitation-sent' },
+      title: req.__all('notifications.sentPartnerInvitation', { partnerName: partnerPost.name, email: partnerPost.contactEmail, orgName: orga.name })
+    })
+
+    res.status(201).send()
+  }))
+
+  router.post('/:organizationId/partners/_accept', asyncWrap(async (req, res, next) => {
+    if (!req.user) return res.status(401).send()
+    const partnerAccept = partnerAcceptSchema.validate(req.body)
+
+    // user must be owner of the new partner
+    const userOrga = req.user.organizations.find(o => o.id === partnerAccept.id && !o.department)
+    if (!userOrga || userOrga.role !== 'admin') return res.status(403).send()
+
+    const storage = req.app.get('storage')
+    const partnerOrga = await storage.getOrganization(partnerAccept.id)
+    if (!partnerOrga) return res.status(404).send('unknown organization')
+
+    let tokenPayload
+    try {
+      tokenPayload = partnersUtils.unshortenPartnerInvitation(await tokens.verify(req.app.get('keys'), partnerAccept.token))
+    } catch (err) {
+      return res.status(400).send(err.message)
+    }
+
+    // user must have access to a token sent to the contact email
+    if (tokenPayload.contactEmail !== partnerAccept.contactEmail || tokenPayload.orgId !== req.params.organizationId) {
+      return res.status(400).send('requête incohérente avec l\'invitation envoyée')
+    }
+    const orga = await storage.getOrganization(req.params.organizationId)
+    if (!orga) return res.status(404).send('unknown organization')
+    debugPartners('accept partner invitation', tokenPayload, partnerOrga.name, partnerOrga.id)
+
+    const conflictInvitation = (orga.partners || []).find(p => p.id === partnerOrga.id)
+    if (conflictInvitation) return res.status(400).send('cette organisation est déjà partenaire')
+
+    const pendingInvitation = (orga.partners || []).find(p => p.partnerId === tokenPayload.partnerId && p.contactEmail === partnerAccept.contactEmail && !p.id)
+    if (!pendingInvitation) return res.status(400).send('pas d\'invitation en attente de validation')
+
+    await storage.validatePartner(orga.id, tokenPayload.partnerId, partnerOrga)
+
+    const notif = {
+      sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
+      topic: { key: 'simple-directory:partner-invitation-accepted' },
+      title: req.__all('notifications.acceptedPartnerInvitation', { email: partnerAccept.contactEmail, partnerName: partnerOrga.name, orgName: orga.name })
+    }
+    // send notif to all admins subscribed to the topic
+    debugPartners(notif)
+
+    res.status(201).send()
+  }))
+
+  router.delete('/:organizationId/partners/:partnerId', asyncWrap(async (req, res, next) => {
+    if (!req.user) return res.status(401).send()
+    if (!isOrgAdmin(req)) return res.status(403).send(req.messages.errors.permissionDenied)
+    const storage = req.app.get('storage')
+    await storage.deletePartner(req.params.organizationId, req.params.partnerId)
+    res.status(201).send()
+  }))
+
+  router.get('/:organizationId/partners/_user-partners', asyncWrap(async (req, res, next) => {
+    if (!req.user) return res.status(401).send()
+    const storage = req.app.get('storage')
+    const orga = await storage.getOrganization(req.params.organizationId)
+    if (!orga) return res.status(404).send('unknown organization')
+    const userPartners = []
+    for (const partner of orga.partners) {
+      const userOrg = req.user.organizations.find(o => o.id === partner.id)
+      if (!userOrg) continue
+      userPartners.push(userOrg)
+    }
+    res.send(userPartners)
+  }))
+}

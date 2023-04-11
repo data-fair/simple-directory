@@ -87,6 +87,12 @@
       :is-admin-orga="isAdminOrga"
       @change="fetchOrganization"
     />
+    <organization-partners
+      v-if="env.managePartners"
+      :orga="orga"
+      :is-admin-orga="isAdminOrga"
+      @change="fetchOrganization"
+    />
     <organization-members
       :orga="orga"
       :is-admin-orga="isAdminOrga"
@@ -94,6 +100,7 @@
       :org-storage="'false'"
       :readonly="env.readonly"
     />
+
     <organization-storage
       v-if="(user.adminMode && env.perOrgStorageTypes.length) || (orga.orgStorage && orga.orgStorage.active)"
       :orga="orga"

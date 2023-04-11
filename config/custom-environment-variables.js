@@ -7,6 +7,7 @@ module.exports = {
     initialToken: 'JWT_DURATION_INITIAL',
     exchangedToken: 'JWT_DURATION_EXCHANGED',
     invitationToken: 'JWT_DURATION_INVIT',
+    partnerInvitationToken: 'JWT_DURATION_PARTNER_INVIT',
     '2FAToken': 'JWT_DURATION_2FA'
   },
   admins: {
@@ -325,6 +326,10 @@ module.exports = {
   },
   manageSites: {
     __name: 'MANAGE_SITES',
+    __format: 'json'
+  },
+  managePartners: {
+    __name: 'MANAGE_PARTNERS',
     __format: 'json'
   }
 }
