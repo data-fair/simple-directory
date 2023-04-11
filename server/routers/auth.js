@@ -448,7 +448,7 @@ const oauthLogin = asyncWrap(async (req, res, next) => {
     provider = oauth.providers.find(p => p.id === req.params.oauthId)
   } else {
     const providerInfo = req.site.authProviders.find(p => oauth.getProviderId(p.discovery) === req.params.oauthId)
-    provider = await oauth.initProvider({ ...providerInfo })
+    provider = await oauth.initProvider({ ...providerInfo }, req.publicBaseUrl)
   }
   if (!provider) return res.redirect(`${req.publicBaseUrl}/login?error=unknownOAuthProvider`)
   const relayState = [

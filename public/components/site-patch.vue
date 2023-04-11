@@ -64,7 +64,7 @@ export default {
     schema () {
       const schema = JSON.parse(JSON.stringify(resolvedSchema))
       schema.properties.authProviders.items.oneOf[0].properties.discovery['x-slots'] = {
-        before: `Donnez cette [URL de retour de connexion](http://${this.site.host}/simple-directory/api/auth/oauth-callback) au fournisseur d'identité.`
+        before: `Donnez cette [URL de retour de connexion](https://${this.site.host}/simple-directory/api/auth/oauth-callback) au fournisseur d'identité.`
       }
       /* uncomment if we activate saml support someday
       schema.properties.authProviders.items.oneOf[1].properties.metadata['x-slots'] = {

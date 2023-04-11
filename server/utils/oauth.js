@@ -188,7 +188,7 @@ for (const p of config.oauth.providers) {
 
 const statesDir = path.resolve(__dirname, '../..', config.oauth.statesDir)
 
-exports.initProvider = async (p) => {
+exports.initProvider = async (p, publicUrl = config.publicUrl) => {
   // persence of p.discovery means we are on an OIDC provider
   if (p.discovery) {
     p.id = this.getProviderId(p.discovery)
@@ -234,7 +234,7 @@ exports.initProvider = async (p) => {
   }
 
   // standard oauth providers use the old deprecated url callback for retro-compatibility
-  const callbackUri = p.discovery ? `${config.publicUrl}/api/auth/oauth-callback` : `${config.publicUrl}/api/auth/oauth/${p.id}/callback`
+  const callbackUri = p.discovery ? `${publicUrl}/api/auth/oauth-callback` : `${publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
   p.authorizationUri = (relayState, email) => {
