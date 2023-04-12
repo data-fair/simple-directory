@@ -117,6 +117,7 @@
           :key="identity.type + identity.id"
           :color="contrastColor(identity.color)"
           :href="identity.user.url"
+          target="_blank"
           dark
           small
           rounded
