@@ -96,21 +96,26 @@
             />
           </v-list-item-avatar>
           <v-list-item-content>
-            <v-list-item-title
-              v-if="!members.results[i-1] || members.results[i-1].id !== member.id"
-              style="white-space:normal;"
-            >
-              {{ member.name }} ({{ member.email }})
-              <template v-if="member.emailConfirmed === false">
-                <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
-                  <resend-invitation
-                    :member="member"
-                    :orga="orga"
-                    :department="adminDepartment"
-                  />
-                </span>
-              </template>
-            </v-list-item-title>
+            <template v-if="!members.results[i-1] || members.results[i-1].id !== member.id">
+              <v-list-item-title style="white-space:normal;">
+                {{ member.name }} ({{ member.email }})
+                <template v-if="member.emailConfirmed === false">
+                  <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
+                    <resend-invitation
+                      :member="member"
+                      :orga="orga"
+                      :department="adminDepartment"
+                    />
+                  </span>
+                </template>
+              </v-list-item-title>
+              <v-list-item-subtitle
+                v-if="member.host"
+                style="white-space:normal;"
+              >
+                {{ $t('common.host') }} = {{ member.host }}
+              </v-list-item-subtitle>
+            </template>
             <v-list-item-subtitle style="white-space:normal;">
               <span v-if="member.department">{{ orga.departmentLabel || $t('common.department') }} = {{ member.departmentName || member.department }}, </span>
               <span>{{ $t('common.role') }} = {{ member.role }}</span>
