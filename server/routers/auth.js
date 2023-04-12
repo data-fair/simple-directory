@@ -512,10 +512,10 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
 
   const userInfo = await provider.userInfo(accessToken)
   if (!userInfo.email) {
-    console.error('Email attribute not fetched from OAuth', req.params.oauthId, userInfo)
+    console.error('Email attribute not fetched from OAuth', provider.id, userInfo)
     throw new Error('Email attribute not fetched from OAuth')
   }
-  debugOAuth('Got user info from oauth', req.params.oauthId, userInfo)
+  debugOAuth('Got user info from oauth', provider.id, userInfo)
 
   const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
 
@@ -560,8 +560,8 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
       firstName: userInfo.firstName || '',
       lastName: userInfo.lastName || '',
       emailConfirmed: true,
-      oauth: {
-        [req.params.oauthId]: oauthInfo
+      [provider.type || 'oauth']: {
+        [provider.id]: oauthInfo
       }
     }
     if (req.site) user.host = req.site.host
@@ -574,7 +574,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     await storage.createUser(user, null, new URL(redirect).host)
   } else {
     debugOAuth('Existing user authenticated through oauth', user, userInfo)
-    const patch = { oauth: { ...user.oauth, [req.params.oauthId]: oauthInfo }, emailConfirmed: true }
+    const patch = { [provider.type | 'oauth']: { ...user.oauth, [provider.id]: oauthInfo }, emailConfirmed: true }
     if (userInfo.firstName && !user.firstName) patch.firstName = userInfo.firstName
     if (userInfo.lastName && !user.lastName) patch.lastName = userInfo.lastName
     await storage.patchUser(user.id, patch)

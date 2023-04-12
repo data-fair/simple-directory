@@ -15,10 +15,6 @@
       </v-icon>
       {{ $t('common.myAccount') }}
     </h2>
-    <p
-      v-if="host !== mainHost"
-      v-html="$t('pages.me.separateDomain', {host, mainHost})"
-    />
     <v-form
       v-if="user"
       ref="form"
