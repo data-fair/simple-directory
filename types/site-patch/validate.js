@@ -1,7 +1,7 @@
 "use strict";
 module.exports = validate16;
 module.exports.default = validate16;
-const schema18 = {"$id":"https://github.com/data-fair/simple-directory/site-patch","x-exports":["types","validate","stringify","resolvedSchema"],"title":"site-patch","type":"object","additionalProperties":false,"required":["_id","authMode"],"properties":{"_id":{"readOnly":true,"type":"string"},"authMode":{"default":"onlyBackOffice","title":"Mode d'authentification","type":"string","oneOf":[{"const":"onlyLocal","title":"uniquement sur le site lui même"},{"const":"onlyBackOffice","title":"uniquement sur le back-office"},{"const":"ssoBackOffice","title":"sur le site et sur le back-office par SSO"}]},"authProviders":{"type":"array","title":"Fournisseurs d'identité (SSO)","items":{"type":"object","required":["title","type"],"properties":{"id":{"type":"string","title":"Identifiant","readOnly":true},"title":{"type":"string","title":"Nom"},"color":{"type":"string","title":"Couleur","x-display":"color-picker"},"img":{"type":"string","title":"URL du logo (petite taille)"}},"oneOf":[{"type":"object","title":"OpenID Connect","required":["discovery","client"],"properties":{"type":{"type":"string","title":"Type de founisseur","const":"oidc"},"discovery":{"type":"string","title":"URL de découverte","description":"probablement de la forme http://mon-fournisseur/.well-known/openid-configuration"},"client":{"type":"object","required":["id","secret"],"properties":{"id":{"type":"string","title":"Identifiant du client"},"secret":{"type":"string","title":"Secret","writeOnly":true}}}}}]}}}};
+const schema18 = {"$id":"https://github.com/data-fair/simple-directory/site-patch","x-exports":["types","validate","stringify","resolvedSchema"],"title":"site-patch","type":"object","additionalProperties":false,"required":["_id","authMode"],"properties":{"_id":{"readOnly":true,"type":"string"},"authMode":{"default":"onlyBackOffice","title":"Mode d'authentification","type":"string","oneOf":[{"const":"onlyLocal","title":"uniquement sur le site lui même"},{"const":"onlyBackOffice","title":"uniquement sur le back-office"},{"const":"ssoBackOffice","title":"sur le site et sur le back-office par SSO"}]},"authProviders":{"type":"array","title":"Fournisseurs d'identité (SSO)","items":{"type":"object","required":["title","type"],"properties":{"id":{"type":"string","title":"Identifiant","readOnly":true},"title":{"type":"string","title":"Nom"},"color":{"type":"string","title":"Couleur","x-display":"color-picker"},"img":{"type":"string","title":"URL du logo (petite taille)"},"createMember":{"type":"boolean","title":"Créer les utilisateurs en tant que membre","description":"si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membre de l'organisation propriétaire du site"}},"oneOf":[{"type":"object","title":"OpenID Connect","required":["discovery","client"],"properties":{"type":{"type":"string","title":"Type de founisseur","const":"oidc"},"discovery":{"type":"string","title":"URL de découverte","description":"probablement de la forme http://mon-fournisseur/.well-known/openid-configuration"},"client":{"type":"object","required":["id","secret"],"properties":{"id":{"type":"string","title":"Identifiant du client"},"secret":{"type":"string","title":"Secret","writeOnly":true}}}}}]}}}};
 
 function validate16(data, {instancePath="", parentData, parentDataProperty, rootData=data}={}){
 /*# sourceURL="https://github.com/data-fair/simple-directory/site-patch" */;
@@ -672,9 +672,27 @@ data3["img"] = coerced10;
 }
 }
 }
+if(data3.createMember !== undefined){
+let data13 = data3.createMember;
+if(typeof data13 !== "boolean"){
+let dataType11 = typeof data13;
+let coerced11 = undefined;
+if(dataType11 == 'object' && Array.isArray(data13) && data13.length == 1){
+data13 = data13[0];
+dataType11 = typeof data13;
+if(typeof data13 === "boolean"){
+coerced11 = data13;
+}
+}
+if(!(coerced11 !== undefined)){
+if(data13 === "false" || data13 === 0 || data13 === null){
+coerced11 = false;
+}
+else if(data13 === "true" || data13 === 1){
+coerced11 = true;
 }
 else {
-const err28 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/type",keyword:"type",params:{type: "object"},message:"must be object"};
+const err28 = {instancePath:instancePath+"/authProviders/" + i0+"/createMember",schemaPath:"#/properties/authProviders/items/properties/createMember/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
 if(vErrors === null){
 vErrors = [err28];
 }
@@ -684,16 +702,36 @@ vErrors.push(err28);
 errors++;
 }
 }
+if(coerced11 !== undefined){
+data13 = coerced11;
+if(data3 !== undefined){
+data3["createMember"] = coerced11;
+}
+}
 }
 }
 }
 else {
-const err29 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+const err29 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/type",keyword:"type",params:{type: "object"},message:"must be object"};
 if(vErrors === null){
 vErrors = [err29];
 }
 else {
 vErrors.push(err29);
+}
+errors++;
+}
+}
+}
+}
+}
+else {
+const err30 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err30];
+}
+else {
+vErrors.push(err30);
 }
 errors++;
 }

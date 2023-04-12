@@ -118,6 +118,11 @@ export const resolvedSchema = {
           "img": {
             "type": "string",
             "title": "URL du logo (petite taille)"
+          },
+          "createMember": {
+            "type": "boolean",
+            "title": "Créer les utilisateurs en tant que membre",
+            "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membre de l'organisation propriétaire du site"
           }
         },
         "oneOf": [

@@ -278,9 +278,15 @@ class Serializer {
         json += "\"img\":"
       json += serializer.asString(obj["img"])
       }
+    
+      if (obj["createMember"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"createMember\":"
+      json += serializer.asBoolean(obj["createMember"])
+      }
     if (obj['type'] === undefined) throw new Error('"type" is required!')
 
-    const propertiesKeys = ["id","title","color","img"]
+    const propertiesKeys = ["id","title","color","img","createMember"]
     for (const [key, value] of Object.entries(obj)) {
       if (
         propertiesKeys.includes(key) ||

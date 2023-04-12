@@ -75,6 +75,11 @@ export declare const resolvedSchema: {
                         type: string;
                         title: string;
                     };
+                    createMember: {
+                        type: string;
+                        title: string;
+                        description: string;
+                    };
                 };
                 oneOf: {
                     type: string;

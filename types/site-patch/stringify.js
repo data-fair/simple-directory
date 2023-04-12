@@ -202,6 +202,12 @@ class Serializer {
         json += "\"img\":"
       json += serializer.asString(obj["img"])
       }
+    
+      if (obj["createMember"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"createMember\":"
+      json += serializer.asBoolean(obj["createMember"])
+      }
     if (obj['type'] === undefined) throw new Error('"type" is required!')
 
       return json + '}'

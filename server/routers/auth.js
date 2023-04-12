@@ -572,6 +572,10 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     user.name = userName(user)
     debugOAuth('Create user authenticated through oauth', user)
     await storage.createUser(user, null, new URL(redirect).host)
+    if (req.site && provider.createMember) {
+      const siteOrga = await storage.getOrganization(req.site.owner.id)
+      await storage.addMember(siteOrga, user, 'user')
+    }
   } else {
     debugOAuth('Existing user authenticated through oauth', user, userInfo)
     const patch = { [provider.type | 'oauth']: { ...user.oauth, [provider.id]: oauthInfo }, emailConfirmed: true }
