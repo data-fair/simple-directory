@@ -69,6 +69,10 @@ const readAvatar = asyncWrap(async (req, res, next) => {
       const oauthWithAvatar = Object.keys(identity.oauth).find(oauth => !!identity.oauth[oauth].avatarUrl)
       if (oauthWithAvatar) return res.redirect(identity.oauth[oauthWithAvatar].avatarUrl)
     }
+    if (req.params.type === 'user' && identity.oidc) {
+      const oidcWithAvatar = Object.keys(identity.oidc).find(oauth => !!identity.oidc[oauth].avatarUrl)
+      if (oidcWithAvatar) return res.redirect(identity.oidc[oidcWithAvatar].avatarUrl)
+    }
 
     const initials = getInitials(req.params.type, identity)
 

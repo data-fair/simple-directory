@@ -215,8 +215,17 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
       const claims = (await axios.get(discoveryContent.userinfo_endpoint, {
         headers: { Authorization: `Bearer ${accessToken}` }
       })).data
-      if (claims.email_verified === false) throw new Error('OAuth athentication invalid, email_verified is false.')
-      return { email: claims.email, avatarUrl: claims.picture, name: claims.name }
+      debug('fetch userInfo claims from oidc provider', claims)
+      if (claims.email_verified === false) {
+        throw new Error('OAuth athentication invalid, email_verified is false.')
+      }
+      return {
+        email: claims.email,
+        avatarUrl: claims.picture,
+        name: claims.name,
+        url: claims.profile,
+        sub: claims.sub
+      }
     }
   }
   const oauthClient = oauth2.create({
