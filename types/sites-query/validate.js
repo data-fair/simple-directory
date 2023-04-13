@@ -1,9 +1,9 @@
 "use strict";
-module.exports = validate22;
-module.exports.default = validate22;
-const schema33 = {"$id":"https://github.com/data-fair/simple-directory/sites-query","x-exports":["types","validate"],"title":"sites-query","type":"object","additionalProperties":false,"required":[],"properties":{"showAll":{"type":"boolean"}}};
+module.exports = validate19;
+module.exports.default = validate19;
+const schema26 = {"$id":"https://github.com/data-fair/simple-directory/sites-query","x-exports":["types","validate"],"title":"sites-query","type":"object","additionalProperties":false,"required":[],"properties":{"showAll":{"type":"boolean"}}};
 
-function validate22(data, {instancePath="", parentData, parentDataProperty, rootData=data}={}){
+function validate19(data, {instancePath="", parentData, parentDataProperty, rootData=data}={}){
 /*# sourceURL="https://github.com/data-fair/simple-directory/sites-query" */;
 let vErrors = null;
 let errors = 0;
@@ -69,6 +69,6 @@ vErrors.push(err2);
 }
 errors++;
 }
-validate22.errors = vErrors;
+validate19.errors = vErrors;
 return errors === 0;
 }

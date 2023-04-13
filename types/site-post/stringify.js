@@ -167,7 +167,7 @@ class Serializer {
   
     
     function anonymous1 (input) {
-      // https://github.com/data-fair/lib/session-state#/definitions/account
+      // https://github.com/data-fair/simple-directory/site#/properties/owner
   
       const obj = (input && typeof input.toJSON === 'function')
     ? input.toJSON()

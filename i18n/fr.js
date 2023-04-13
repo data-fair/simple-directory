@@ -78,6 +78,7 @@ module.exports = {
     noRole: 'aucun role',
     downloadCsv: 'télécharger la liste au format CSV',
     authMode: 'Mode d\'authentification',
+    authProviders: 'Fournisseurs d\'identitié',
     partners: 'Organisations partenaires',
     contactEmail: 'Email de contact',
     orgName: 'Nom de l\'organisation',

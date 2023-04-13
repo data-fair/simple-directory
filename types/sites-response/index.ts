@@ -7,6 +7,14 @@ export type UniquementSurLeSiteLuiMeme = "onlyLocal";
 export type UniquementSurLeBackOffice = "onlyBackOffice";
 export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
 export type ModeDAuthentification2 = string;
+export type TypeDeFounisseur = "oidc";
+/**
+ * probablement de la forme http://mon-fournisseur/.well-known/openid-configuration
+ */
+export type URLDeDecouverte = string;
+export type IdentifiantDuClient = string;
+export type Secret = string;
+export type FournisseursDIdentiteSSO = OpenIDConnect[];
 
 export interface SitesResponse {
   count: number;
@@ -14,14 +22,15 @@ export interface SitesResponse {
 }
 export interface Site {
   _id: string;
-  owner: Account;
+  owner: Owner;
   host: string;
   theme: Theme;
   logo?: string;
   authMode: ModeDAuthentification;
+  authProviders?: FournisseursDIdentiteSSO;
   [k: string]: unknown;
 }
-export interface Account {
+export interface Owner {
   type: "user" | "organization";
   id: string;
   name: string;
@@ -30,6 +39,16 @@ export interface Account {
 }
 export interface Theme {
   primaryColor: string;
+}
+export interface OpenIDConnect {
+  type?: TypeDeFounisseur;
+  discovery: URLDeDecouverte;
+  client: {
+    id: IdentifiantDuClient;
+    secret: Secret;
+    [k: string]: unknown;
+  };
+  [k: string]: unknown;
 }
 
 // stringify function compiled using fast-json-stringify

@@ -431,16 +431,25 @@ router.get('/me', (req, res) => {
 })
 
 router.get('/providers', (req, res) => {
-  // TODO: per-site auth providers
-  if (req.site) return res.send([])
-  res.send(saml2.publicProviders.concat(oauth.publicProviders))
+  if (!req.site) {
+    res.send(saml2.publicProviders.concat(oauth.publicProviders))
+  } else {
+    const providers = req.site.authProviders || []
+    res.send(providers.map(p => ({ type: p.type, id: oauth.getProviderId(p.discovery), title: p.title, color: p.color, img: p.img })))
+  }
 })
 
 // OAUTH
 const debugOAuth = require('debug')('oauth')
 
-router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
-  const provider = oauth.providers.find(p => p.id === req.params.oauthId)
+const oauthLogin = asyncWrap(async (req, res, next) => {
+  let provider
+  if (!req.site) {
+    provider = oauth.providers.find(p => p.id === req.params.oauthId)
+  } else {
+    const providerInfo = req.site.authProviders.find(p => oauth.getProviderId(p.discovery) === req.params.oauthId)
+    provider = await oauth.initProvider({ ...providerInfo }, req.publicBaseUrl)
+  }
   if (!provider) return res.redirect(`${req.publicBaseUrl}/login?error=unknownOAuthProvider`)
   const relayState = [
     provider.state,
@@ -453,7 +462,10 @@ router.get('/oauth/:oauthId/login', asyncWrap(async (req, res, next) => {
   const authorizationUri = provider.authorizationUri(relayState, req.query.email)
   debugOAuth('login authorizationUri', authorizationUri)
   res.redirect(authorizationUri)
-}))
+})
+
+router.get('/oauth/:oauthId/login', oauthLogin)
+router.get('/oidc/:oauthId/login', oauthLogin)
 
 const oauthCallback = asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
@@ -476,7 +488,18 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     }
   }
 
-  const provider = oauth.providers.find(p => p.state === providerState)
+  let provider
+  if (!req.site) {
+    provider = oauth.providers.find(p => p.state === providerState)
+  } else {
+    for (const providerInfo of req.site.authProviders) {
+      const p = await oauth.initProvider({ ...providerInfo }, req.publicBaseUrl)
+      if (p.state === providerState) {
+        provider = p
+        break
+      }
+    }
+  }
   if (!provider) return res.status(404).send('Unknown OAuth provider')
   if (req.params.oauthId && req.params.oauthId !== provider.id) return res.status(404).send('Wrong OAuth provider id')
 
@@ -489,10 +512,10 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
 
   const userInfo = await provider.userInfo(accessToken)
   if (!userInfo.email) {
-    console.error('Email attribute not fetched from OAuth', req.params.oauthId, userInfo)
+    console.error('Email attribute not fetched from OAuth', provider.id, userInfo)
     throw new Error('Email attribute not fetched from OAuth')
   }
-  debugOAuth('Got user info from oauth', req.params.oauthId, userInfo)
+  debugOAuth('Got user info from oauth', provider.id, userInfo)
 
   const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
 
@@ -537,10 +560,11 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
       firstName: userInfo.firstName || '',
       lastName: userInfo.lastName || '',
       emailConfirmed: true,
-      oauth: {
-        [req.params.oauthId]: oauthInfo
+      [provider.type || 'oauth']: {
+        [provider.id]: oauthInfo
       }
     }
+    if (req.site) user.host = req.site.host
     if (invit) {
       user.defaultOrg = invitOrga.id
       user.ignorePersonalAccount = true
@@ -548,9 +572,13 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     user.name = userName(user)
     debugOAuth('Create user authenticated through oauth', user)
     await storage.createUser(user, null, new URL(redirect).host)
+    if (req.site && provider.createMember) {
+      const siteOrga = await storage.getOrganization(req.site.owner.id)
+      await storage.addMember(siteOrga, user, 'user')
+    }
   } else {
     debugOAuth('Existing user authenticated through oauth', user, userInfo)
-    const patch = { oauth: { ...user.oauth, [req.params.oauthId]: oauthInfo }, emailConfirmed: true }
+    const patch = { [provider.type | 'oauth']: { ...user.oauth, [provider.id]: oauthInfo }, emailConfirmed: true }
     if (userInfo.firstName && !user.firstName) patch.firstName = userInfo.firstName
     if (userInfo.lastName && !user.lastName) patch.lastName = userInfo.lastName
     await storage.patchUser(user.id, patch)
@@ -689,6 +717,7 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
         [providerId]: samlInfo
       }
     }
+    if (req.site) user.host = req.site.host
     if (invit) {
       user.defaultOrg = invitOrga.id
       user.ignorePersonalAccount = true

@@ -37,5 +37,17 @@ module.exports = {
   },
   noUI: false,
   manageSites: true,
+  oidc: {
+    providers: [{
+      title: 'Test OIDC IDP',
+      color: '#288E35',
+      img: 'https://cdn-icons-png.flaticon.com/512/25/25231.png',
+      discovery: 'http://localhost:9009/.well-known/openid-configuration',
+      client: {
+        id: 'foo',
+        secret: 'bar'
+      }
+    }]
+  },
   managePartners: true
 }

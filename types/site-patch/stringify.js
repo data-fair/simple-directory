@@ -166,6 +166,75 @@ class Serializer {
 
   
     
+    function anonymous2 (input) {
+      // #/properties/authProviders/items
+  
+      const obj = (input && typeof input.toJSON === 'function')
+    ? input.toJSON()
+    : input
+  
+      let json = '{'
+      let addComma = false
+  
+      if (obj["id"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"id\":"
+      json += serializer.asString(obj["id"])
+      }
+    
+      if (obj["title"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"title\":"
+      json += serializer.asString(obj["title"])
+      } else {
+        throw new Error('"title" is required!')
+      
+      }
+    
+      if (obj["color"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"color\":"
+      json += serializer.asString(obj["color"])
+      }
+    
+      if (obj["img"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"img\":"
+      json += serializer.asString(obj["img"])
+      }
+    
+      if (obj["createMember"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"createMember\":"
+      json += serializer.asBoolean(obj["createMember"])
+      }
+    if (obj['type'] === undefined) throw new Error('"type" is required!')
+
+      return json + '}'
+    }
+  
+
+    function anonymous1 (obj) {
+      // #/properties/authProviders
+  
+    if (!Array.isArray(obj)) {
+      throw new TypeError(`The value of '#/properties/authProviders' does not match schema definition.`)
+    }
+    const arrayLength = obj.length
+  
+    let jsonOutput = ''
+  
+      for (let i = 0; i < arrayLength; i++) {
+        let json = ''
+        json += anonymous2(obj[i])
+        jsonOutput += json
+        if (i < arrayLength - 1) {
+          jsonOutput += ','
+        }
+      }
+    return `[${jsonOutput}]`
+  }
+
     function anonymous0 (input) {
       // #
   
@@ -193,6 +262,12 @@ class Serializer {
         !addComma && (addComma = true) || (json += ',')
         json += "\"authMode\":\"onlyBackOffice\""
       
+      }
+    
+      if (obj["authProviders"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"authProviders\":"
+      json += anonymous1(obj["authProviders"])
       }
     
       return json + '}'

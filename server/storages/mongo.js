@@ -222,7 +222,7 @@ class MongodbStorage {
         if (params.departments && params.departments.length) {
           if (!params.departments.includes(userOrga.department)) continue
         }
-        results.push({
+        const member = {
           id: user._id,
           name: user.name,
           email: user.email,
@@ -230,7 +230,9 @@ class MongodbStorage {
           department: userOrga.department,
           departmentName: userOrga.departmentName,
           emailConfirmed: user.emailConfirmed
-        })
+        }
+        if (user.host) member.host = user.host
+        results.push(member)
       }
     }
     return { count, results }

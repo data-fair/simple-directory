@@ -2,11 +2,11 @@
 module.exports = validate17;
 module.exports.default = validate17;
 const schema19 = {"$id":"https://github.com/data-fair/simple-directory/site-post","x-exports":["types","validate","stringify"],"title":"site-post","type":"object","additionalProperties":false,"required":["_id","owner","host","theme"],"properties":{"_id":{"$ref":"https://github.com/data-fair/simple-directory/site#/properties/_id"},"owner":{"$ref":"https://github.com/data-fair/simple-directory/site#/properties/owner"},"host":{"$ref":"https://github.com/data-fair/simple-directory/site#/properties/host"},"theme":{"$ref":"https://github.com/data-fair/simple-directory/site#/properties/theme"},"logo":{"$ref":"https://github.com/data-fair/simple-directory/site#/properties/logo"}}};
-const schema28 = {"type":"string"};
-const schema26 = {"type":"object","additionalProperties":false,"required":["type","id","name"],"properties":{"type":{"type":"string","enum":["user","organization"]},"id":{"type":"string"},"name":{"type":"string"},"department":{"type":"string"},"departmentName":{"type":"string"}},"$id":"Account"};
-const schema30 = {"type":"string"};
-const schema31 = {"type":"object","additionalProperties":false,"required":["primaryColor"],"properties":{"primaryColor":{"type":"string"}},"$id":"Theme"};
-const schema32 = {"type":"string"};
+const schema21 = {"type":"string"};
+const schema22 = {"type":"object","additionalProperties":false,"required":["type","id","name"],"properties":{"type":{"type":"string","enum":["user","organization"]},"id":{"type":"string"},"name":{"type":"string"},"department":{"type":"string"},"departmentName":{"type":"string"}},"$id":"Owner"};
+const schema23 = {"type":"string"};
+const schema24 = {"type":"object","additionalProperties":false,"required":["primaryColor"],"properties":{"primaryColor":{"type":"string"}},"$id":"Theme"};
+const schema25 = {"type":"string"};
 
 function validate17(data, {instancePath="", parentData, parentDataProperty, rootData=data}={}){
 /*# sourceURL="https://github.com/data-fair/simple-directory/site-post" */;
@@ -186,7 +186,7 @@ data1["type"] = coerced1;
 }
 }
 if(!((data2 === "user") || (data2 === "organization"))){
-const err11 = {instancePath:instancePath+"/owner/type",schemaPath:"https://github.com/data-fair/simple-directory/site#/properties/owner/properties/type/enum",keyword:"enum",params:{allowedValues: schema26.properties.type.enum},message:"must be equal to one of the allowed values"};
+const err11 = {instancePath:instancePath+"/owner/type",schemaPath:"https://github.com/data-fair/simple-directory/site#/properties/owner/properties/type/enum",keyword:"enum",params:{allowedValues: schema22.properties.type.enum},message:"must be equal to one of the allowed values"};
 if(vErrors === null){
 vErrors = [err11];
 }
