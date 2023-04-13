@@ -60,9 +60,9 @@
 
     <template v-if="user">
       <p v-if="user.organizations.length === 0">
-        Vous n'appartenez à aucune organisation.
+        Vous n'appartenez à aucune organisation. Vous pouvez créer une nouvelle organisation et accepter l'invitation en son nom.
       </p>
-      <p>
+      <p v-else>
         Vous pouvez accepter cette invitation au nom d'une organisation dont vous êtes administrateur, ou bien créer une nouvelle organisation et accepter l'invitation en son nom.
       </p>
 
@@ -141,6 +141,9 @@ export default {
   mounted () {
     if (this.payload) {
       this.createOrganizationName = this.payload.n
+      if (this.user.organizations.length === 0) {
+        this.createNewOrg = true
+      }
     }
   },
   methods: {

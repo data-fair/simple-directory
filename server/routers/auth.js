@@ -264,7 +264,7 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
   tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user, req.query.id_token_org, req.query.id_token_dep))
 
   // we just confirmed the user email after creation, he might want to create an organization
-  if (decoded.emailConfirmed && config.quotas.defaultMaxCreatedOrgs !== 0 && !org && !req.site) {
+  if (decoded.emailConfirmed && config.quotas.defaultMaxCreatedOrgs !== 0 && !org && !req.site && !reboundRedirect.startsWith(`${req.publicBaseUrl}/login`)) {
     const redirectUrl = new URL(`${req.publicBaseUrl}/login`)
     redirectUrl.searchParams.set('step', 'createOrga')
     redirectUrl.searchParams.set('redirect', reboundRedirect)
