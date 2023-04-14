@@ -45,6 +45,17 @@
             dense
             outlined
           />
+          <v-select
+            v-if="env.manageSites"
+            v-model="editPartner.redirect"
+            label="Site de redirection"
+            :items="redirects"
+            :loading="!redirects"
+            name="host"
+            required
+            dense
+            outlined
+          />
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -67,17 +78,28 @@
 </template>
 
 <script>
+import { mapState, mapGetters } from 'vuex'
 import eventBus from '../event-bus'
 
 export default {
   props: ['orga'],
-  data: () => ({ menu: false, editPartner: null }),
+  data: () => ({ menu: false, editPartner: null, redirect: null }),
+  computed: {
+    ...mapState(['env', 'sites']),
+    ...mapGetters(['redirects'])
+  },
   watch: {
     menu () {
       if (!this.menu) return
-      this.editPartner = { name: '', contactEmail: '', redirect: this.$route.query.redirect || '' }
+      if (this.env.manageSites) {
+        this.$store.dispatch('fetchSites')
+      }
+      this.editPartner = { name: '', contactEmail: '', redirect: this.redirect }
       if (this.$refs.createForm) this.$refs.createForm.reset()
     }
+  },
+  mounted () {
+    this.redirect = this.$route.query.redirect || ''
   },
   methods: {
     async confirmCreate () {

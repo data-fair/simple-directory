@@ -88,7 +88,7 @@
       @change="fetchOrganization"
     />
     <organization-partners
-      v-if="env.managePartners"
+      v-if="env.managePartners && mainHost === host"
       :orga="orga"
       :is-admin-orga="isAdminOrga"
       @change="fetchOrganization"
@@ -118,7 +118,7 @@
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex'
+import { mapActions, mapState, mapGetters } from 'vuex'
 import LoadAvatar from '~/components/load-avatar.vue'
 
 export default {
@@ -131,6 +131,7 @@ export default {
   computed: {
     ...mapState(['userDetails', 'env']),
     ...mapState('session', ['user']),
+    ...mapGetters(['host', 'mainHost']),
     isAdminOrga () {
       if (!this.user || !this.userDetails) return false
       if (this.user.adminMode) return true

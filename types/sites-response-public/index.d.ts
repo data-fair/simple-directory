@@ -4,6 +4,10 @@ export type UniquementSurLeSiteLuiMeme = "onlyLocal";
 export type UniquementSurLeBackOffice = "onlyBackOffice";
 export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
 export type ModeDAuthentification2 = string;
+export interface SitesResponse {
+    count: number;
+    results: SitePublic[];
+}
 export interface SitePublic {
     host?: string;
     theme: Theme;
@@ -13,4 +17,4 @@ export interface SitePublic {
 export interface Theme {
     primaryColor: string;
 }
-export declare const stringify: (data: SitePublic) => string;
+export declare const stringify: (data: SitesResponse) => string;

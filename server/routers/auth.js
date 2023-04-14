@@ -227,6 +227,22 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   res.status(204).send()
 }))
 
+// use current session and redirect to a secondary site
+router.post('site_redirect', asyncWrap(async (req, res, next) => {
+  if (!req.user) return res.status(403).send()
+  if (req.site) return res.status(400).send()
+  const storage = req.app.get('storage')
+  const user = await storage.getUserByEmail(req.user.email)
+  if (!user) return res.status(404).send('user not found')
+  if (!req.query.redirect) return res.status(400).send()
+  const site = await storage.getSiteByHost(new URL(req.query.redirect).host)
+  if (!user) return res.status(404).send('site not found')
+  const payload = tokens.getPayload(user)
+  const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, req.query.org, req.query.dep)).href
+  debug(`Redirect auth of user ${user.name} to site ${site.host}`, callbackUrl)
+  res.send(callbackUrl)
+}))
+
 router.get('/token_callback', asyncWrap(async (req, res, next) => {
   const redirectError = (error, withIdToken) => res.redirect(`${req.publicBaseUrl}/login?error=${encodeURIComponent(error)}`)
 

@@ -45,6 +45,17 @@
           outlined
           disabled
         />
+        <v-select
+          v-if="env.manageSites"
+          v-model="redirect"
+          label="Site de redirection"
+          :items="redirects"
+          :loading="!redirects"
+          name="host"
+          required
+          dense
+          outlined
+        />
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -66,6 +77,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import eventBus from '../event-bus'
 
 export default {
@@ -75,14 +87,21 @@ export default {
   },
   data () {
     return {
-      menu: false
+      menu: false,
+      redirect: null
     }
+  },
+  computed: {
+    ...mapGetters(['redirects'])
+  },
+  mounted () {
+    this.redirect = this.$route.query.redirect || ''
   },
   methods: {
     async confirmInvitation () {
       try {
         this.menu = false
-        await this.$axios.$post(`api/organizations/${this.orga.id}/partners`, { name: this.partner.name, contactEmail: this.partner.contactEmail })
+        await this.$axios.$post(`api/organizations/${this.orga.id}/partners`, { name: this.partner.name, contactEmail: this.partner.contactEmail, redirect: this.redirect })
         eventBus.$emit('notification', this.$t('pages.organization.invitePartnerSuccess', { email: this.partner.contactEmail }))
         this.$emit('change')
       } catch (error) {

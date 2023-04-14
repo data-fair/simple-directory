@@ -133,6 +133,7 @@ export default {
   computed: {
     ...mapState('session', ['user']),
     ...mapGetters('session', ['loginUrl']),
+    ...mapGetters(['mainHost']),
     payload () {
       if (!this.token) return
       return jwtDecode(this.token)
@@ -141,7 +142,7 @@ export default {
   mounted () {
     if (this.payload) {
       this.createOrganizationName = this.payload.n
-      if (this.user.organizations.length === 0) {
+      if (this.user && this.user.organizations.length === 0) {
         this.createNewOrg = true
       }
     }
@@ -160,7 +161,7 @@ export default {
     async acceptPartnerInvitation (org) {
       try {
         await this.$axios.$post(`/api/organizations/${this.payload.o}/partners/_accept`, { id: org.id, contactEmail: this.payload.e, token: this.token })
-        this.$emit('accepted')
+        await this.goToRedirect(org.id)
       } catch (error) {
         eventBus.$emit('notification', { error })
       }
@@ -169,6 +170,13 @@ export default {
       if (toggle) this.selectedUserOrg = userOrg
       else this.selectedUserOrg = null
       this.createNewOrg = false
+    },
+    async goToRedirect (org) {
+      let redirect = this.$route.query.redirect
+      if (this.mainHost !== new URL(redirect).host) {
+        redirect = await this.$get('/api/auth/site_redirect', { redirect, org })
+      }
+      window.location.href = redirect
     }
   }
 }

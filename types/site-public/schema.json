@@ -10,6 +10,9 @@
     "authMode"
   ],
   "properties":{
+    "host": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/host"
+    },
     "theme": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/theme"
     },
