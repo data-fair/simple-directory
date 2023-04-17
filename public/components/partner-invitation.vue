@@ -60,9 +60,9 @@
 
     <template v-if="user">
       <p v-if="user.organizations.length === 0">
-        Vous n'appartenez à aucune organisation.
+        Vous n'appartenez à aucune organisation. Vous pouvez créer une nouvelle organisation et accepter l'invitation en son nom.
       </p>
-      <p>
+      <p v-else>
         Vous pouvez accepter cette invitation au nom d'une organisation dont vous êtes administrateur, ou bien créer une nouvelle organisation et accepter l'invitation en son nom.
       </p>
 
@@ -133,6 +133,7 @@ export default {
   computed: {
     ...mapState('session', ['user']),
     ...mapGetters('session', ['loginUrl']),
+    ...mapGetters(['mainHost']),
     payload () {
       if (!this.token) return
       return jwtDecode(this.token)
@@ -141,6 +142,9 @@ export default {
   mounted () {
     if (this.payload) {
       this.createOrganizationName = this.payload.n
+      if (this.user && this.user.organizations.length === 0) {
+        this.createNewOrg = true
+      }
     }
   },
   methods: {
@@ -149,6 +153,10 @@ export default {
       if (!this.createOrganizationName) return
       try {
         const orga = await this.$axios.$post('api/organizations', { name: this.createOrganizationName })
+        // switch this orga to default user organization if it is their first org
+        if (!this.user.organizations.length) {
+          await this.$axios.$patch('api/users/' + this.user.id, { defaultOrg: orga.id, ignorePersonalAccount: true })
+        }
         this.acceptPartnerInvitation(orga)
       } catch (error) {
         eventBus.$emit('notification', { error })
@@ -157,7 +165,7 @@ export default {
     async acceptPartnerInvitation (org) {
       try {
         await this.$axios.$post(`/api/organizations/${this.payload.o}/partners/_accept`, { id: org.id, contactEmail: this.payload.e, token: this.token })
-        this.$emit('accepted')
+        await this.goToRedirect(org.id)
       } catch (error) {
         eventBus.$emit('notification', { error })
       }
@@ -166,6 +174,13 @@ export default {
       if (toggle) this.selectedUserOrg = userOrg
       else this.selectedUserOrg = null
       this.createNewOrg = false
+    },
+    async goToRedirect (org) {
+      let redirect = this.$route.query.redirect
+      if (this.mainHost !== new URL(redirect).host) {
+        redirect = await this.$axios.$post('/api/auth/site_redirect', { redirect, org })
+      }
+      window.location.href = redirect
     }
   }
 }

@@ -35,6 +35,7 @@
             required
             dense
             outlined
+            autocomplete="off"
           />
           <v-text-field
             v-model="editDepartment.name"
@@ -44,6 +45,7 @@
             required
             dense
             outlined
+            autocomplete="off"
           />
         </v-form>
       </v-card-text>

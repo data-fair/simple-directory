@@ -39,6 +39,7 @@
           >{{ props.item.host }}</a>
         </td>
         <td>{{ props.item._id }}</td>
+        <td>{{ props.item.owner.name }}</td>
         <td>{{ props.item.authMode }}</td>
         <td>
           <v-btn
@@ -107,6 +108,7 @@ export default {
       { text: '', value: 'theme.primaryColor', sortable: false },
       { text: this.$t('common.host'), value: 'host' },
       { text: this.$t('common.id'), value: '_id', sortable: false },
+      { text: this.$t('common.organization'), value: 'owner', sortable: false },
       { text: this.$t('common.authMode'), value: 'authMode', sortable: false },
       { text: this.$t('common.authProviders'), value: 'authProviders', sortable: false },
       { test: '', sortable: false }

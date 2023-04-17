@@ -166,8 +166,8 @@ class Serializer {
 
   
     
-    function anonymous1 (input) {
-      // https://github.com/data-fair/simple-directory/site#/properties/theme
+    function anonymous3 (input) {
+      // https://github.com/data-fair/simple-directory/site-public#/properties/theme
   
       const obj = (input && typeof input.toJSON === 'function')
     ? input.toJSON()
@@ -189,8 +189,8 @@ class Serializer {
     }
   
 
-    function anonymous0 (input) {
-      // #
+    function anonymous2 (input) {
+      // https://github.com/data-fair/simple-directory/site-public#
   
       const obj = (input && typeof input.toJSON === 'function')
     ? input.toJSON()
@@ -208,7 +208,7 @@ class Serializer {
       if (obj["theme"] !== undefined) {
         !addComma && (addComma = true) || (json += ',')
         json += "\"theme\":"
-      json += anonymous1(obj["theme"])
+      json += anonymous3(obj["theme"])
       } else {
         throw new Error('"theme" is required!')
       
@@ -230,6 +230,59 @@ class Serializer {
       } else {
         !addComma && (addComma = true) || (json += ',')
         json += "\"authMode\":\"onlyBackOffice\""
+      
+      }
+    
+      return json + '}'
+    }
+  
+
+    function anonymous1 (obj) {
+      // #/properties/results
+  
+    if (!Array.isArray(obj)) {
+      throw new TypeError(`The value of '#/properties/results' does not match schema definition.`)
+    }
+    const arrayLength = obj.length
+  
+    let jsonOutput = ''
+  
+      for (let i = 0; i < arrayLength; i++) {
+        let json = ''
+        json += anonymous2(obj[i])
+        jsonOutput += json
+        if (i < arrayLength - 1) {
+          jsonOutput += ','
+        }
+      }
+    return `[${jsonOutput}]`
+  }
+
+    function anonymous0 (input) {
+      // #
+  
+      const obj = (input && typeof input.toJSON === 'function')
+    ? input.toJSON()
+    : input
+  
+      let json = '{'
+      let addComma = false
+  
+      if (obj["count"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"count\":"
+      json += serializer.asInteger(obj["count"])
+      } else {
+        throw new Error('"count" is required!')
+      
+      }
+    
+      if (obj["results"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"results\":"
+      json += anonymous1(obj["results"])
+      } else {
+        throw new Error('"results" is required!')
       
       }
     

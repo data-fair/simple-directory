@@ -68,7 +68,7 @@ jobs:
       run: echo ${{ steps.docker_build.outputs.digest }}
 
     - name: Send Keel notification to staging-koumoul.com
-      if: github.ref == 'refs/heads/master'
+      if: startsWith(github.ref, 'refs/heads/')
       run: |
         curl -s --fail --show-error -X POST https://keel.admin.staging-koumoul.com/v1/webhooks/native -u ${{ secrets.KEEL_STAGING_USER }}:${{ secrets.KEEL_STAGING_PASSWORD }} -d '{"name": "ghcr.io/${{ github.repository }}", "tag": "${{ steps.docker_meta.outputs.version }}"}'
     - name: Send Keel notification to koumoul.com

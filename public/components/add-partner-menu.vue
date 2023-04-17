@@ -21,6 +21,7 @@
       v-if="editPartner"
       data-iframe-height
       :width="500"
+      :loading="!redirects"
     >
       <v-card-title class="text-h6">
         {{ $t('pages.organization.addPartner') }}
@@ -35,12 +36,24 @@
             required
             dense
             outlined
+            autocomplete="off"
           />
           <v-text-field
             v-model="editPartner.contactEmail"
             :label="$t('common.contactEmail')"
             :rules="[v => !!v || '']"
             name="contactEmail"
+            required
+            dense
+            outlined
+            autocomplete="off"
+          />
+          <v-select
+            v-if="env.manageSites && redirects && redirects.length"
+            v-model="editPartner.redirect"
+            label="Site de redirection"
+            :items="redirects"
+            name="host"
             required
             dense
             outlined
@@ -57,6 +70,7 @@
         </v-btn>
         <v-btn
           color="primary"
+          :disabled="!redirects"
           @click="confirmCreate"
         >
           {{ $t('common.confirmOk') }}
@@ -67,16 +81,31 @@
 </template>
 
 <script>
+import { mapState, mapGetters } from 'vuex'
 import eventBus from '../event-bus'
 
 export default {
   props: ['orga'],
-  data: () => ({ menu: false, editPartner: null }),
+  data: () => ({ menu: false, editPartner: null, redirect: null }),
+  computed: {
+    ...mapState(['env', 'sites']),
+    ...mapGetters(['redirects'])
+  },
   watch: {
     menu () {
       if (!this.menu) return
-      this.editPartner = { name: '', contactEmail: '', redirect: this.$route.query.redirect || '' }
+      if (this.env.manageSites) {
+        this.$store.dispatch('fetchSites')
+      }
+      this.editPartner = { name: '', contactEmail: '', redirect: this.redirect }
       if (this.$refs.createForm) this.$refs.createForm.reset()
+    },
+    redirects: {
+      immediate: true,
+      handler () {
+        this.redirect = this.$route.query.redirect || (this.redirects && this.redirects[0] && this.redirects[0].value) || ''
+        if (this.editPartner) this.editPartner.redirect = this.redirect
+      }
     }
   },
   methods: {

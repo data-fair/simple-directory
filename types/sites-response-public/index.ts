@@ -8,6 +8,10 @@ export type UniquementSurLeBackOffice = "onlyBackOffice";
 export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
 export type ModeDAuthentification2 = string;
 
+export interface SitesResponse {
+  count: number;
+  results: SitePublic[];
+}
 export interface SitePublic {
   host?: string;
   theme: Theme;
@@ -23,7 +27,7 @@ export interface Theme {
 import stringifyUnsafe from './stringify.js'
 // @ts-ignore
 import flatstr from 'flatstr'
-export const  stringify = (data: SitePublic): string => {
+export const  stringify = (data: SitesResponse): string => {
   const str = stringifyUnsafe(data)
   flatstr(str)
   return str

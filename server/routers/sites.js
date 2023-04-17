@@ -6,6 +6,7 @@ const sitePatchSchema = require('../../types/site-patch')
 const sitePostSchema = require('../../types/site-post')
 const sitePublicSchema = require('../../types/site-public')
 const sitesResponseSchema = require('../../types/sites-response')
+const sitesResponsePublicSchema = require('../../types/sites-response-public')
 const sitesQuerySchema = require('../../types/sites-query')
 
 const router = module.exports = express.Router()
@@ -20,9 +21,15 @@ router.get('', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   const query = await sitesQuerySchema.validate(req.query)
   if (query.showAll && !req.user.adminMode) return res.status(403).send()
-  console.log(req.user)
   const response = query.showAll ? await req.app.get('storage').findAllSites() : await req.app.get('storage').findOwnerSites(req.user.accountOwner)
-  res.type('json').send(sitesResponseSchema.stringify(response))
+  for (const result of response.results) {
+    result.logo = result.logo || `${req.publicBaseUrl}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
+  }
+  if (query.showAll) {
+    res.type('json').send(sitesResponseSchema.stringify(response))
+  } else {
+    res.type('json').send(sitesResponsePublicSchema.stringify(response))
+  }
 }))
 
 router.post('', asyncWrap(async (req, res, next) => {

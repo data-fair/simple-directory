@@ -16,7 +16,8 @@ export default () => {
       userDetails: null,
       env: {},
       authProviders: null,
-      sitePublic: null
+      sitePublic: null,
+      sites: null
     },
     getters: {
       mainHost (state) {
@@ -27,6 +28,12 @@ export default () => {
       },
       host () {
         return window.location.host
+      },
+      redirects (state, getters) {
+        if (!state.sites) return
+        // debatable but for now do not list back-office in possible redirects if there are some secondary sites
+        if (state.sites.results.length) return state.sites.results.map(site => ({ text: site.host, value: 'https://' + site.host + '/me/account' }))
+        else return [{ text: getters.mainHost, value: new URL(window.location.href).searchParams.get('redirect') || '' }]
       }
     },
     mutations: {
@@ -73,6 +80,15 @@ export default () => {
       async patchSite (_, patch) {
         try {
           await this.$axios.$patch(`api/sites/${patch._id}`, patch)
+        } catch (error) {
+          eventBus.$emit('notification', { error })
+        }
+      },
+      async fetchSites ({ commit, state }) {
+        if (state.sites) return
+        try {
+          const sites = await this.$axios.$get('api/sites')
+          commit('setAny', { sites })
         } catch (error) {
           eventBus.$emit('notification', { error })
         }

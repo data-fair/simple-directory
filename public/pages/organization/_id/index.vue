@@ -37,7 +37,7 @@
         required
         outlined
         dense
-        @change="save"
+        autocomplete="off"
       />
       <v-textarea
         v-model="orga.description"
@@ -46,7 +46,7 @@
         name="description"
         hide-details
         outlined
-        @change="save"
+        autocomplete="off"
       />
       <v-text-field
         v-if="env.manageDepartments && env.manageDepartmentLabel"
@@ -54,7 +54,7 @@
         :label="$t('pages.organization.departmentLabelTitle')"
         :disabled="!isAdminOrga || env.readonly"
         name="departmentLabel"
-        @change="save"
+        autocomplete="off"
       >
         <v-tooltip
           slot="append-outer"
@@ -77,18 +77,21 @@
         multiple
         name="2FARoles"
         style="max-width:600px"
-        @change="save"
       />
+
+      <v-row class="mx-0 mb-0 mt-4">
+        <v-spacer />
+        <v-btn
+          color="primary"
+          @click="save"
+        >
+          {{ $t('common.save') }}
+        </v-btn>
+      </v-row>
     </v-form>
 
     <organization-departments
       v-if="env.manageDepartments"
-      :orga="orga"
-      :is-admin-orga="isAdminOrga"
-      @change="fetchOrganization"
-    />
-    <organization-partners
-      v-if="env.managePartners"
       :orga="orga"
       :is-admin-orga="isAdminOrga"
       @change="fetchOrganization"
@@ -114,11 +117,18 @@
       :org-storage="'true'"
       :readonly="orga.orgStorage.readonly"
     />
+
+    <organization-partners
+      v-if="env.managePartners && mainHost === host"
+      :orga="orga"
+      :is-admin-orga="isAdminOrga"
+      @change="fetchOrganization"
+    />
   </v-container>
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex'
+import { mapActions, mapState, mapGetters } from 'vuex'
 import LoadAvatar from '~/components/load-avatar.vue'
 
 export default {
@@ -131,6 +141,7 @@ export default {
   computed: {
     ...mapState(['userDetails', 'env']),
     ...mapState('session', ['user']),
+    ...mapGetters(['host', 'mainHost']),
     isAdminOrga () {
       if (!this.user || !this.userDetails) return false
       if (this.user.adminMode) return true

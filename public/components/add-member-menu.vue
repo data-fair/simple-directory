@@ -51,6 +51,7 @@
             required
             outlined
             dense
+            autocomplete="off"
           />
           <v-select
             v-model="invitation.role"
