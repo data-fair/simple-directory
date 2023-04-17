@@ -21,6 +21,7 @@
       v-if="editPartner"
       data-iframe-height
       :width="500"
+      :loading="!redirects"
     >
       <v-card-title class="text-h6">
         {{ $t('pages.organization.addPartner') }}
@@ -48,11 +49,10 @@
             autocomplete="off"
           />
           <v-select
-            v-if="env.manageSites"
+            v-if="env.manageSites && redirects && redirects.length"
             v-model="editPartner.redirect"
             label="Site de redirection"
             :items="redirects"
-            :loading="!redirects"
             name="host"
             required
             dense
@@ -70,6 +70,7 @@
         </v-btn>
         <v-btn
           color="primary"
+          :disabled="!redirects"
           @click="confirmCreate"
         >
           {{ $t('common.confirmOk') }}
@@ -98,10 +99,14 @@ export default {
       }
       this.editPartner = { name: '', contactEmail: '', redirect: this.redirect }
       if (this.$refs.createForm) this.$refs.createForm.reset()
+    },
+    redirects: {
+      immediate: true,
+      handler () {
+        this.redirect = this.$route.query.redirect || (this.redirects && this.redirects[0] && this.redirects[0].value) || ''
+        if (this.editPartner) this.editPartner.redirect = this.redirect
+      }
     }
-  },
-  mounted () {
-    this.redirect = this.$route.query.redirect || ''
   },
   methods: {
     async confirmCreate () {

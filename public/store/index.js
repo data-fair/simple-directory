@@ -31,8 +31,9 @@ export default () => {
       },
       redirects (state, getters) {
         if (!state.sites) return
-        return [{ text: getters.mainHost, value: new URL(window.location.href).searchParams.get('redirect') || '' }]
-          .concat(state.sites.results.map(site => ({ text: site.host, value: 'https://' + site.host + '/me/account' })))
+        // debatable but for now do not list back-office in possible redirects if there are some secondary sites
+        if (state.sites.results.length) return state.sites.results.map(site => ({ text: site.host, value: 'https://' + site.host + '/me/account' }))
+        else return [{ text: getters.mainHost, value: new URL(window.location.href).searchParams.get('redirect') || '' }]
       }
     },
     mutations: {
