@@ -146,45 +146,43 @@
         </v-btn>
       </v-row>
 
-      <template v-if="host === mainHost">
-        <h2 class="text-h4 mt-10 mb-4">
-          <v-icon
-            large
-            color="primary"
-            style="top:-2px"
+      <h2 class="text-h4 mt-10 mb-4">
+        <v-icon
+          large
+          color="primary"
+          style="top:-2px"
+        >
+          mdi-account-group
+        </v-icon>
+        {{ $t('common.myOrganizations') }}
+      </h2>
+
+      <div v-if="userDetails">
+        <template v-if="userDetails.organizations.length">
+          <template
+            v-for="orga in userDetails.organizations"
           >
-            mdi-account-group
-          </v-icon>
-          {{ $t('common.myOrganizations') }}
-        </h2>
-
-        <div v-if="userDetails">
-          <template v-if="userDetails.organizations.length">
-            <template
-              v-for="orga in userDetails.organizations"
+            <span
+              v-if="orga.role"
+              :key="'org-' + orga.id + '-' + orga.department"
             >
-              <span
-                v-if="orga.role"
-                :key="'org-' + orga.id + '-' + orga.department"
-              >
-                {{ orga.name }} <span v-if="orga.department">- {{ orga.departmentName || orga.department }}</span> ({{ orga.role }})
-              </span>
-            </template>
+              {{ orga.name }} <span v-if="orga.department">- {{ orga.departmentName || orga.department }}</span> ({{ orga.role }})
+            </span>
           </template>
-          <span v-else>
-            {{ $t('pages.me.noOrganization') }}
-          </span>
-        </div>
-        <br>
-        <div v-if="showMaxCreatedOrgs">
-          <p v-if="nbCreatedOrgs !== null">
-            {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
-          </p>
-          <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
-        </div>
+        </template>
+        <span v-else>
+          {{ $t('pages.me.noOrganization') }}
+        </span>
+      </div>
+      <br>
+      <div v-if="showMaxCreatedOrgs">
+        <p v-if="nbCreatedOrgs !== null">
+          {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
+        </p>
+        <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
+      </div>
 
-        <add-organization-menu v-if="!readonly && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
-      </template>
+      <add-organization-menu v-if="!readonly && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
 
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
