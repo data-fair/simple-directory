@@ -228,7 +228,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
 }))
 
 // use current session and redirect to a secondary site
-router.post('site_redirect', asyncWrap(async (req, res, next) => {
+router.post('/site_redirect', asyncWrap(async (req, res, next) => {
   if (!req.user) return res.status(403).send()
   if (req.site) return res.status(400).send()
   const storage = req.app.get('storage')
