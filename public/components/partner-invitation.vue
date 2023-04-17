@@ -174,7 +174,7 @@ export default {
     async goToRedirect (org) {
       let redirect = this.$route.query.redirect
       if (this.mainHost !== new URL(redirect).host) {
-        redirect = await this.$get('/api/auth/site_redirect', { redirect, org })
+        redirect = await this.$axios.$post('/api/auth/site_redirect', { redirect, org })
       }
       window.location.href = redirect
     }

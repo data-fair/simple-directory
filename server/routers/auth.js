@@ -234,11 +234,11 @@ router.post('site_redirect', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   const user = await storage.getUserByEmail(req.user.email)
   if (!user) return res.status(404).send('user not found')
-  if (!req.query.redirect) return res.status(400).send()
-  const site = await storage.getSiteByHost(new URL(req.query.redirect).host)
+  if (!req.body.redirect) return res.status(400).send()
+  const site = await storage.getSiteByHost(new URL(req.body.redirect).host)
   if (!user) return res.status(404).send('site not found')
   const payload = tokens.getPayload(user)
-  const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, req.query.org, req.query.dep)).href
+  const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.body.redirect, tokens.getDefaultUserOrg(user, req.body.org, req.body.dep)).href
   debug(`Redirect auth of user ${user.name} to site ${site.host}`, callbackUrl)
   res.send(callbackUrl)
 }))
