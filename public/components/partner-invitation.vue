@@ -153,6 +153,10 @@ export default {
       if (!this.createOrganizationName) return
       try {
         const orga = await this.$axios.$post('api/organizations', { name: this.createOrganizationName })
+        // switch this orga to default user organization if it is their first org
+        if (!this.user.organizations.length) {
+          await this.$axios.$patch('api/users/' + this.user.id, { defaultOrg: orga.id, ignorePersonalAccount: true })
+        }
         this.acceptPartnerInvitation(orga)
       } catch (error) {
         eventBus.$emit('notification', { error })

@@ -214,7 +214,7 @@
           :disabled="readonly"
           name="defaultOrg"
           :items="defaultOrgItems"
-          :item-value="(org) => org.id + '-' + org.department"
+          :item-value="(org) => org.id + ( org.department ? '-' + org.department : '')"
           :item-text="(org) => `${org.name}` + (org.department ? ` - ${org.departmentName || org.department}` : '')"
           clearable
           outlined
