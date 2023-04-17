@@ -38,7 +38,6 @@
         outlined
         dense
         autocomplete="off"
-        @change="save"
       />
       <v-textarea
         v-model="orga.description"
@@ -48,7 +47,6 @@
         hide-details
         outlined
         autocomplete="off"
-        @change="save"
       />
       <v-text-field
         v-if="env.manageDepartments && env.manageDepartmentLabel"
@@ -57,7 +55,6 @@
         :disabled="!isAdminOrga || env.readonly"
         name="departmentLabel"
         autocomplete="off"
-        @change="save"
       >
         <v-tooltip
           slot="append-outer"
@@ -80,8 +77,17 @@
         multiple
         name="2FARoles"
         style="max-width:600px"
-        @change="save"
       />
+
+      <v-row class="mx-0 mb-0 mt-4">
+        <v-spacer />
+        <v-btn
+          color="primary"
+          @click="save"
+        >
+          {{ $t('common.save') }}
+        </v-btn>
+      </v-row>
     </v-form>
 
     <organization-departments
