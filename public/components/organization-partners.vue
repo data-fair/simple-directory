@@ -62,7 +62,7 @@
             />
           </v-list-item-avatar>
           <v-list-item-content>
-            <v-list-item-title>
+            <v-list-item-title style="white-space:normal;">
               {{ partner.name }} ({{ partner.contactEmail }})
               <template v-if="!partner.id">
                 <span class="warning--text">{{ $t('common.emailNotConfirmed') }}

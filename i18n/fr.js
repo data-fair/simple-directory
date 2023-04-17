@@ -230,7 +230,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       '2FARoles': 'Authentification à 2 facteurs.',
       '2FARolesMsg': 'Rendre obligatoire l\'authentification à 2 facteurs pour les utilisateurs possédant ces rôles.',
       sendInvitationLink: 'Renvoyer un lien d\'invitation',
-      addPartner: 'Inviter une organisation partenaire'
+      addPartner: 'Inviter une organisation partenaire',
+      deletePartner: 'Supprimer ce partenaire'
     },
     invitation: {
       title: 'Invitation validée',

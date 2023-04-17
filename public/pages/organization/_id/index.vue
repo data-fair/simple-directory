@@ -87,12 +87,6 @@
       :is-admin-orga="isAdminOrga"
       @change="fetchOrganization"
     />
-    <organization-partners
-      v-if="env.managePartners && mainHost === host"
-      :orga="orga"
-      :is-admin-orga="isAdminOrga"
-      @change="fetchOrganization"
-    />
     <organization-members
       :orga="orga"
       :is-admin-orga="isAdminOrga"
@@ -113,6 +107,13 @@
       :nb-members-limits="limits && limits.store_nb_members"
       :org-storage="'true'"
       :readonly="orga.orgStorage.readonly"
+    />
+
+    <organization-partners
+      v-if="env.managePartners && mainHost === host"
+      :orga="orga"
+      :is-admin-orga="isAdminOrga"
+      @change="fetchOrganization"
     />
   </v-container>
 </template>
