@@ -35,6 +35,7 @@
             required
             dense
             outlined
+            autocomplete="off"
           />
           <v-text-field
             v-model="editPartner.contactEmail"
@@ -44,6 +45,7 @@
             required
             dense
             outlined
+            autocomplete="off"
           />
           <v-select
             v-if="env.manageSites"

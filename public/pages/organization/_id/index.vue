@@ -37,6 +37,7 @@
         required
         outlined
         dense
+        autocomplete="off"
         @change="save"
       />
       <v-textarea
@@ -46,6 +47,7 @@
         name="description"
         hide-details
         outlined
+        autocomplete="off"
         @change="save"
       />
       <v-text-field
@@ -54,6 +56,7 @@
         :label="$t('pages.organization.departmentLabelTitle')"
         :disabled="!isAdminOrga || env.readonly"
         name="departmentLabel"
+        autocomplete="off"
         @change="save"
       >
         <v-tooltip

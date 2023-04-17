@@ -32,12 +32,14 @@
             required
             outlined
             dense
+            autocomplete="off"
           />
           <v-textarea
             v-model="editOrganization.description"
             :label="$t('common.description')"
             name="description"
             outlined
+            autocomplete="off"
           />
         </v-form>
       </v-card-text>
