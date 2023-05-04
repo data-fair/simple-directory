@@ -152,7 +152,10 @@ class MongodbStorage {
       filter._id = { $in: params.ids }
     }
     if (params.q) {
-      filter.name = { $regex: escapeStringRegexp(params.q), $options: 'i' }
+      filter.$or = [
+        { name: { $regex: escapeStringRegexp(params.q), $options: 'i' } },
+        { email: { $regex: escapeStringRegexp(params.q), $options: 'i' } }
+      ]
     }
 
     const countPromise = this.db.collection('users').countDocuments(filter)

@@ -64,6 +64,7 @@
             </v-btn>
           </span>
         </td>
+        <td>{{ props.item.name }}</td>
         <td>{{ props.item.id }}</td>
         <td>{{ props.item.firstName }}</td>
         <td>{{ props.item.lastName }}</td>
@@ -331,6 +332,7 @@ export default {
     if (this.env.avatars.users) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
     this.headers = this.headers.concat([
       { text: this.$t('common.email'), value: 'email' },
+      { text: this.$t('common.name'), value: 'name' },
       { text: this.$t('common.id'), value: 'id', sortable: false },
       { text: this.$t('common.firstName'), value: 'firstName' },
       { text: this.$t('common.lastName'), value: 'lastName' },
