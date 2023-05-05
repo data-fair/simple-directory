@@ -28,16 +28,6 @@
       <v-card-text>
         <v-form ref="createForm">
           <v-text-field
-            v-model="editDepartment.id"
-            :label="$t('common.id')"
-            :rules="[v => !!v || '', v => v && !!v.match(/^[ a-zA-Z0-9]*$/) || $t('pages.organization.departmentIdInvalid')]"
-            name="id"
-            required
-            dense
-            outlined
-            autocomplete="off"
-          />
-          <v-text-field
             v-model="editDepartment.name"
             :label="$t('common.name')"
             :rules="[v => !!v || '']"

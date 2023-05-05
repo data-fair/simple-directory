@@ -3,6 +3,7 @@ const shortid = require('shortid')
 const config = require('config')
 const csvStringify = require('util').promisify(require('csv-stringify').stringify)
 const { nanoid } = require('nanoid')
+const slug = require('slugify')
 const asyncWrap = require('../utils/async-wrap')
 const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
@@ -131,6 +132,13 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   if (forbiddenKey) return res.status(400).send('Only some parts of the organization can be modified through this route')
   if (req.body.orgStorage?.config?.searchUserPassword && typeof req.body.orgStorage.config.searchUserPassword === 'string') {
     req.body.orgStorage.config.searchUserPassword = passwordsUtils.cipherPassword(req.body.orgStorage.config.searchUserPassword)
+  }
+  if (req.body.departments) {
+    for (const dep of req.body.departments) {
+      if (!dep.id) {
+        dep.id = slug(dep.name, { lower: true, strict: true })
+      }
+    }
   }
   const patchedOrga = await req.app.get('storage').patchOrganization(req.params.organizationId, req.body, req.user)
   if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
