@@ -322,6 +322,8 @@ class LdapStorage {
         await this._setUserOrg(client, user, results[i].entry, results[i].attrs, orgCache)
         const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email === user.email)
         if (overwrite) Object.assign(user, overwrite)
+        // email is implicitly confirmed in ldap mode
+        user.emailConfirmed = true
         results[i] = user
       }
       if (params.ids) {
@@ -363,7 +365,14 @@ class LdapStorage {
       .filter(user => user.organizations.find(o => o.id === organizationId))
       .map(user => {
         const userOrga = user.organizations.find(o => o.id === organizationId)
-        return { id: user.id, name: user.name, email: user.email, role: userOrga.role, department: userOrga.department }
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: userOrga.role,
+          department: userOrga.department,
+          emailConfirmed: true
+        }
       })
     if (params.roles && params.roles.length) {
       members = members.filter(member => params.roles.includes(member.role))
