@@ -239,6 +239,7 @@ export default {
       if (notification.error) {
         notification.type = 'error'
         notification.errorMsg = (notification.error.response && (notification.error.response.data || notification.error.response.status)) || notification.error.message || notification.error
+        delete notification.error // without this the notification cannot be serialized in postMessage
       }
       if (inIframe()) {
         window.top.postMessage({ vIframe: true, uiNotification: notification }, '*')
