@@ -9,7 +9,8 @@ const debug = require('debug')('ldap')
 function sortCompare (sort) {
   return function (a, b) {
     for (const key of Object.keys(sort || {})) {
-      if (a.item[key] < b.item[key]) return sort[key]
+      if (a[key] > b[key]) return sort[key]
+      if (a[key] < b[key]) return sort[key] * -1
     }
     return 0
   }

@@ -15,6 +15,9 @@ describe('storage ldap', () => {
     const user = storage.getUser({ email: 'alban.mouton@koumoul.com' })
     if (user) await storage._deleteUser(user.id)
 
+    const user2 = storage.getUser({ email: 'test@test.com' })
+    if (user2) await storage._deleteUser(user2.id)
+
     const org = await storage.getOrganization('myorg')
     if (org) await storage._deleteOrganization(org.id)
   })
@@ -29,8 +32,15 @@ describe('storage ldap', () => {
       email: 'alban.mouton@koumoul.com',
       organizations: [{ id: 'myorg', role: 'admin' }]
     })
-    let res = await storage.findUsers({ skip: 0, size: 10 })
-    assert.equal(res.count, 1)
+    await storage._createUser({
+      name: 'Test User',
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@test.com',
+      organizations: [{ id: 'myorg', role: 'user' }]
+    })
+    let res = await storage.findUsers({ skip: 0, size: 10, sort: { email: 1 } })
+    assert.equal(res.count, 2)
     assert.ok(res.results[0].id)
     assert.equal(res.results[0].email, 'alban.mouton@koumoul.com')
     assert.equal(res.results[0].lastName, 'Overwritten')
@@ -41,8 +51,11 @@ describe('storage ldap', () => {
     assert.equal(res.count, 0)
     res = await storage.findUsers({ q: 'alba', skip: 0, size: 10 })
     assert.equal(res.count, 1)
+    res = await storage.findUsers({ skip: 0, size: 10, sort: { email: -1 } })
+    assert.equal(res.count, 2)
+    assert.equal(res.results[0].email, 'test@test.com')
 
-    const user = await storage.getUser({ id: res.results[0].id })
+    const user = await storage.getUser({ id: res.results[1].id })
     assert.equal(user.email, 'alban.mouton@koumoul.com')
     assert.equal(user.lastName, 'Overwritten')
     assert.equal(user.organizations.length, 1)
@@ -51,7 +64,7 @@ describe('storage ldap', () => {
     assert.equal(user.organizations[0].role, 'overwritten')
 
     res = await storage.findMembers('myorg')
-    assert.equal(res.count, 1)
+    assert.equal(res.count, 2)
     assert.equal(res.results[0].name, 'Alban Mouton')
     assert.equal(res.results[0].role, 'overwritten')
 

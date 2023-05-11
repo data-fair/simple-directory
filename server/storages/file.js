@@ -29,7 +29,8 @@ function getUserOrgas (organizations, user) {
 function sortCompare (sort) {
   return function (a, b) {
     for (const key of Object.keys(sort || {})) {
-      if (a[key] < b[key]) return sort[key]
+      if (a[key] > b[key]) return sort[key]
+      if (a[key] < b[key]) return sort[key] * -1
     }
     return 0
   }
