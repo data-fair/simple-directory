@@ -282,7 +282,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     bad2FAToken: 'Code de vérification erroné ou périmé pour l\'authentification à 2 facteurs',
     plannedDeletion: 'La suppression de l\'utilisateur {name} et toutes ses informations est programmée le {plannedDeletion}.',
     onlyCreateInvited: 'Impossible de créer un utilisateur en dehors d\'une invitation.',
-    badIDPQuery: 'Requête considérée comme invalide par le fournisseur d\'identité.'
+    badIDPQuery: 'Requête considérée comme invalide par le fournisseur d\'identité.',
+    duplicateDepId: 'Le nouveau département est un doublon'
   },
   mails: {
     creation: {

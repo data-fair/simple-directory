@@ -148,9 +148,13 @@ export default {
       return this.filteredPartners.slice((this.page - 1) * this.pageSize, this.page * this.pageSize)
     }
   },
-  created () {
-    // eslint-disable-next-line vue/no-mutating-props
-    this.orga.partners = this.orga.partners || []
+  watch: {
+    orga: {
+      immediate: true,
+      handler () {
+        this.orga.partners = this.orga.partners || []
+      }
+    }
   },
   methods: {
     filterPartners (page) {

@@ -65,6 +65,7 @@ export default {
       }
     },
     diff () {
+      if (!this.orga || !this.orga.orgStorage || !this.orgStorage) return false
       if (!this.orga.orgStorage.active && !this.orgStorage.active) return false
       return JSON.stringify(this.orga.orgStorage) !== JSON.stringify(this.orgStorage)
     },
