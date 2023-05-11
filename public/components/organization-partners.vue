@@ -90,7 +90,7 @@
           </v-list-item-action>
         </v-list-item>
         <v-divider
-          v-if="i + 1 < currentPage.length"
+          v-if="currentPage && currentPage.length > i + 1"
           :key="i"
         />
       </template>
