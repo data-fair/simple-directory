@@ -50,7 +50,6 @@
 
     <v-list
       v-if="orga.departments.length"
-      two-line
       class="elevation-1 mt-1"
     >
       <template v-for="(department, i) in currentPage">
@@ -63,7 +62,6 @@
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>{{ department.name }}</v-list-item-title>
-            <v-list-item-subtitle>{{ $t('common.id') }} = {{ department.id }}</v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action v-if="writableDepartments">
             <edit-department-menu

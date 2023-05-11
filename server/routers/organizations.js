@@ -136,9 +136,15 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   if (req.body.departments) {
     for (const dep of req.body.departments) {
       if (!dep.id) {
-        const id = slug(dep.name, { lower: true, strict: true })
-        if (req.body.departments.find(d => d.id === id)) {
-          return res.status(400).send(req.messages.errors.duplicateDepId)
+        if (req.body.departments.find(d => d.id && d.name === dep.name)) {
+          return res.status(400).send(req.messages.errors.duplicateDep)
+        }
+        const baseId = slug(dep.name, { lower: true, strict: true })
+        let id = baseId
+        let i = 1
+        while (req.body.departments.find(d => d.id === id)) {
+          i += 1
+          id = baseId + '-' + i
         }
         dep.id = id
       }

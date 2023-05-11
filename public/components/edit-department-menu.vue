@@ -24,6 +24,7 @@
         {{ $t('pages.organization.confirmEditDepartmentTitle', {name: department.name, departmentLabel}) }}
       </v-card-title>
       <v-card-text>
+        <p>{{ $t('common.id') }} = {{ department.id }}</p>
         <load-avatar
           v-if="orga && env.avatars.orgs"
           ref="loadAvatar"

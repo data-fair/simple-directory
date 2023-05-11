@@ -24,6 +24,7 @@
         {{ $t('pages.organization.confirmDeleteDepartmentTitle', {name: department.name, departmentLabel}) }}
       </v-card-title>
       <v-card-text>
+        <p>{{ $t('common.id') }} = {{ department.id }}</p>
         <v-progress-circular
           v-if="!members"
           indeterminate

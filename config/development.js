@@ -43,6 +43,7 @@ module.exports = {
   },
   storage: {
     type: 'mongo',
+    // type: 'ldap',
     file: {
       users: './test/resources/users.json',
       organizations: './test/resources/organizations.json'

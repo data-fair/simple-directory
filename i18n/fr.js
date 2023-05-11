@@ -283,7 +283,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     plannedDeletion: 'La suppression de l\'utilisateur {name} et toutes ses informations est programmée le {plannedDeletion}.',
     onlyCreateInvited: 'Impossible de créer un utilisateur en dehors d\'une invitation.',
     badIDPQuery: 'Requête considérée comme invalide par le fournisseur d\'identité.',
-    duplicateDepId: 'Le nouveau département est un doublon'
+    duplicateDep: 'Le nouveau département est un doublon'
   },
   mails: {
     creation: {

@@ -242,7 +242,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     unknownSAMLProvider: 'SAML identification not supported.',
     adminModeOnly: 'Functionality reserved for super administrators.',
     plannedDeletion: 'The deletion of the user {name} and all its data is planned on the {plannedDeletion}.',
-    duplicateDepId: 'The new department is a duplicate'
+    duplicateDep: 'The new department is a duplicate'
   },
   mails: {
     creation: {
