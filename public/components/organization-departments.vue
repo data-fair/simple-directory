@@ -87,13 +87,13 @@
         </v-list-item>
         <v-divider
           v-if="i + 1 < currentPage.length"
-          :key="i"
+          :key="'div-' + i"
         />
       </template>
     </v-list>
 
     <v-row
-      v-if="orga.departments && filteredDeps.length > pageSize"
+      v-if="(orga.departments && filteredDeps.length > pageSize) || page > 1"
       class="mt-2"
     >
       <v-spacer />
@@ -144,6 +144,11 @@ export default {
     },
     currentPage () {
       return this.filteredDeps.slice((this.page - 1) * this.pageSize, this.page * this.pageSize)
+    }
+  },
+  watch: {
+    'orga.departments' () {
+      if (this.filteredDeps.length <= (this.page - 1) * this.pageSize) this.page -= 1
     }
   },
   created () {
