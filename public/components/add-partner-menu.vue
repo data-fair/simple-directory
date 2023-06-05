@@ -49,7 +49,7 @@
             autocomplete="off"
           />
           <v-select
-            v-if="env.manageSites && redirects && redirects.length"
+            v-if="env.manageSites && redirects && redirects.filter(r => r.value !== editPartner.redirect).length"
             v-model="editPartner.redirect"
             label="Site de redirection"
             :items="redirects"
@@ -94,9 +94,7 @@ export default {
   watch: {
     menu () {
       if (!this.menu) return
-      if (this.env.manageSites) {
-        this.$store.dispatch('fetchSites')
-      }
+      if (this.env.manageSites) this.$store.dispatch('fetchSites')
       this.editPartner = { name: '', contactEmail: '', redirect: this.redirect }
       if (this.$refs.createForm) this.$refs.createForm.reset()
     },

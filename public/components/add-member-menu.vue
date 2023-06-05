@@ -74,6 +74,16 @@
             outlined
             dense
           />
+          <v-select
+            v-if="env.manageSites && redirects && redirects.filter(r => r.value !== invitation.redirect).length"
+            v-model="invitation.redirect"
+            label="Site de redirection"
+            :items="redirects"
+            name="host"
+            required
+            dense
+            outlined
+          />
         </v-form>
         <v-alert
           :value="!!link"
@@ -108,7 +118,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import eventBus from '../event-bus'
 
 export default {
@@ -117,17 +127,34 @@ export default {
     menu: false,
     invitation: null,
     validInvitation: true,
-    link: null
+    link: null,
+    redirect: null
   }),
   computed: {
-    ...mapState(['env'])
+    ...mapState(['env']),
+    ...mapGetters(['redirects'])
   },
   watch: {
     menu () {
       if (!this.menu) return
-      this.invitation = { id: this.orga.id, name: this.orga.name, email: '', role: null, department: this.department, redirect: this.$route.query.redirect }
+      if (this.env.manageSites) this.$store.dispatch('fetchSites')
+      this.invitation = {
+        id: this.orga.id,
+        name: this.orga.name,
+        email: '',
+        role: null,
+        department: this.department,
+        redirect: this.redirect
+      }
       this.link = null
       if (this.$refs.inviteForm) this.$refs.inviteForm.reset()
+    },
+    redirects: {
+      immediate: true,
+      handler () {
+        this.redirect = this.$route.query.redirect || (this.redirects && this.redirects[0] && this.redirects[0].value) || ''
+        if (this.invitation) this.invitation.redirect = this.redirect
+      }
     }
   },
   methods: {
