@@ -423,7 +423,7 @@ if (config.managePartners) {
     const orga = await storage.getOrganization(req.params.organizationId)
     if (!orga) return res.status(404).send('unknown organization')
     const userPartners = []
-    for (const partner of orga.partners) {
+    for (const partner of (orga.partners || [])) {
       const userOrg = req.user.organizations.find(o => o.id === partner.id)
       if (!userOrg) continue
       userPartners.push(userOrg)
