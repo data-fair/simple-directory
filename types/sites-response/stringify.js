@@ -284,9 +284,15 @@ class Serializer {
         json += "\"createMember\":"
       json += serializer.asBoolean(obj["createMember"])
       }
+    
+      if (obj["ignoreEmailVerified"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"ignoreEmailVerified\":"
+      json += serializer.asBoolean(obj["ignoreEmailVerified"])
+      }
     if (obj['type'] === undefined) throw new Error('"type" is required!')
 
-    const propertiesKeys = ["id","title","color","img","createMember"]
+    const propertiesKeys = ["id","title","color","img","createMember","ignoreEmailVerified"]
     for (const [key, value] of Object.entries(obj)) {
       if (
         propertiesKeys.includes(key) ||

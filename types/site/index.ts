@@ -163,6 +163,11 @@ export const resolvedSchema = {
             "type": "boolean",
             "title": "Créer les utilisateurs en tant que membres",
             "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site."
+          },
+          "ignoreEmailVerified": {
+            "type": "boolean",
+            "title": "Accepter les utilisateurs aux emails non vérifiés",
+            "description": "Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."
           }
         },
         "oneOf": [

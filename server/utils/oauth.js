@@ -216,7 +216,7 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
         headers: { Authorization: `Bearer ${accessToken}` }
       })).data
       debug('fetch userInfo claims from oidc provider', claims)
-      if (claims.email_verified === false) {
+      if (claims.email_verified === false && !p.ignoreEmailVerified) {
         throw new Error('OAuth athentication invalid, email_verified is false.')
       }
       return {

@@ -208,6 +208,12 @@ class Serializer {
         json += "\"createMember\":"
       json += serializer.asBoolean(obj["createMember"])
       }
+    
+      if (obj["ignoreEmailVerified"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"ignoreEmailVerified\":"
+      json += serializer.asBoolean(obj["ignoreEmailVerified"])
+      }
     if (obj['type'] === undefined) throw new Error('"type" is required!')
 
       return json + '}'

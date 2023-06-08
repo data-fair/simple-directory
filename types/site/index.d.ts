@@ -128,6 +128,11 @@ export declare const resolvedSchema: {
                         title: string;
                         description: string;
                     };
+                    ignoreEmailVerified: {
+                        type: string;
+                        title: string;
+                        description: string;
+                    };
                 };
                 oneOf: {
                     type: string;
