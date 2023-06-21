@@ -7,14 +7,26 @@ export type UniquementSurLeSiteLuiMeme = "onlyLocal";
 export type UniquementSurLeBackOffice = "onlyBackOffice";
 export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
 export type ModeDAuthentification2 = string;
-export type TypeDeFounisseur = "oidc";
+export type Couleur = string;
+export type URLDuLogoPetiteTaille = string;
+export type TypeDeFournisseur = "oidc";
 /**
  * probablement de la forme http://mon-fournisseur/.well-known/openid-configuration
  */
 export type URLDeDecouverte = string;
 export type IdentifiantDuClient = string;
 export type Secret = string;
-export type FournisseursDIdentiteSSO = OpenIDConnect[];
+/**
+ * si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.
+ */
+export type CreerLesUtilisateursEnTantQueMembres = boolean;
+/**
+ * Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement.
+ */
+export type AccepterLesUtilisateursAuxEmailsNonVerifies = boolean;
+export type TypeDeFournisseur1 = "otherSite";
+export type Site1 = string;
+export type FournisseursDIdentiteSSO = (OpenIDConnect | UnAutreDeVosSites)[];
 
 export interface Site {
   _id: string;
@@ -35,13 +47,22 @@ export interface Site {
   [k: string]: unknown;
 }
 export interface OpenIDConnect {
-  type?: TypeDeFounisseur;
+  color?: Couleur;
+  img?: URLDuLogoPetiteTaille;
+  type?: TypeDeFournisseur;
   discovery: URLDeDecouverte;
   client: {
     id: IdentifiantDuClient;
     secret: Secret;
     [k: string]: unknown;
   };
+  createMember?: CreerLesUtilisateursEnTantQueMembres;
+  ignoreEmailVerified?: AccepterLesUtilisateursAuxEmailsNonVerifies;
+  [k: string]: unknown;
+}
+export interface UnAutreDeVosSites {
+  type?: TypeDeFournisseur1;
+  site?: Site1;
   [k: string]: unknown;
 }
 
@@ -149,25 +170,6 @@ export const resolvedSchema = {
           "title": {
             "type": "string",
             "title": "Nom"
-          },
-          "color": {
-            "type": "string",
-            "title": "Couleur",
-            "x-display": "color-picker"
-          },
-          "img": {
-            "type": "string",
-            "title": "URL du logo (petite taille)"
-          },
-          "createMember": {
-            "type": "boolean",
-            "title": "Créer les utilisateurs en tant que membres",
-            "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site."
-          },
-          "ignoreEmailVerified": {
-            "type": "boolean",
-            "title": "Accepter les utilisateurs aux emails non vérifiés",
-            "description": "Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."
           }
         },
         "oneOf": [
@@ -179,9 +181,18 @@ export const resolvedSchema = {
               "client"
             ],
             "properties": {
+              "color": {
+                "type": "string",
+                "title": "Couleur",
+                "x-display": "color-picker"
+              },
+              "img": {
+                "type": "string",
+                "title": "URL du logo (petite taille)"
+              },
               "type": {
                 "type": "string",
-                "title": "Type de founisseur",
+                "title": "Type de fournisseur",
                 "const": "oidc"
               },
               "discovery": {
@@ -206,6 +217,32 @@ export const resolvedSchema = {
                     "writeOnly": true
                   }
                 }
+              },
+              "createMember": {
+                "type": "boolean",
+                "title": "Créer les utilisateurs en tant que membres",
+                "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site."
+              },
+              "ignoreEmailVerified": {
+                "type": "boolean",
+                "title": "Accepter les utilisateurs aux emails non vérifiés",
+                "description": "Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "Un autre de vos sites",
+            "properties": {
+              "type": {
+                "type": "string",
+                "title": "Type de fournisseur",
+                "const": "otherSite"
+              },
+              "site": {
+                "type": "string",
+                "title": "Site",
+                "x-fromData": "context.otherSites"
               }
             }
           }
