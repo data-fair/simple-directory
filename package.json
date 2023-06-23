@@ -16,6 +16,7 @@
     "dev-server": "NODE_ENV=development nodemon server",
     "dev-client": "npm run link-doc && NODE_ENV=development nuxt",
     "dev-deps": "docker compose --profile dev up -d",
+    "stop-dev-deps": "docker compose --profile dev stop",
     "dev-zellij": "zellij --layout .zellij.kdl",
     "build": "npm run link-doc && nuxt build --no-generate",
     "start": "node server",
