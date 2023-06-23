@@ -23,7 +23,10 @@ export type CreerLesUtilisateursEnTantQueMembres = boolean;
 export type AccepterLesUtilisateursAuxEmailsNonVerifies = boolean;
 export type TypeDeFournisseur1 = "otherSite";
 export type Site1 = string;
-export type FournisseursDIdentiteSSO = (OpenIDConnect | UnAutreDeVosSites)[];
+export type TypeDeFournisseur2 = "otherSiteProvider";
+export type Site2 = string;
+export type Fournisseur = string;
+export type FournisseursDIdentiteSSO = (OpenIDConnect | UnAutreDeVosSites | UnFournisseurDIdentiteConfigureSurAutreDeVosSites)[];
 export interface Site {
     _id: string;
     owner: {
@@ -58,7 +61,13 @@ export interface OpenIDConnect {
 }
 export interface UnAutreDeVosSites {
     type?: TypeDeFournisseur1;
-    site?: Site1;
+    site: Site1;
+    [k: string]: unknown;
+}
+export interface UnFournisseurDIdentiteConfigureSurAutreDeVosSites {
+    type?: TypeDeFournisseur2;
+    site?: Site2;
+    provider: Fournisseur;
     [k: string]: unknown;
 }
 export declare const resolvedSchema: {
@@ -186,10 +195,12 @@ export declare const resolvedSchema: {
                             description: string;
                         };
                         site?: undefined;
+                        provider?: undefined;
                     };
                 } | {
                     type: string;
                     title: string;
+                    required: string[];
                     properties: {
                         type: {
                             type: string;
@@ -207,8 +218,36 @@ export declare const resolvedSchema: {
                         client?: undefined;
                         createMember?: undefined;
                         ignoreEmailVerified?: undefined;
+                        provider?: undefined;
                     };
-                    required?: undefined;
+                } | {
+                    type: string;
+                    title: string;
+                    required: string[];
+                    properties: {
+                        type: {
+                            type: string;
+                            title: string;
+                            const: string;
+                        };
+                        site: {
+                            type: string;
+                            title: string;
+                            "x-fromData": string;
+                        };
+                        provider: {
+                            type: string;
+                            title: string;
+                            "x-if": string;
+                            "x-fromData": string;
+                        };
+                        color?: undefined;
+                        img?: undefined;
+                        discovery?: undefined;
+                        client?: undefined;
+                        createMember?: undefined;
+                        ignoreEmailVerified?: undefined;
+                    };
                 })[];
             };
         };

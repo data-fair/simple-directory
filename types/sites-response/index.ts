@@ -26,7 +26,14 @@ export type CreerLesUtilisateursEnTantQueMembres = boolean;
 export type AccepterLesUtilisateursAuxEmailsNonVerifies = boolean;
 export type TypeDeFournisseur1 = "otherSite";
 export type Site1 = string;
-export type FournisseursDIdentiteSSO = (OpenIDConnect | UnAutreDeVosSites)[];
+export type TypeDeFournisseur2 = "otherSiteProvider";
+export type Site2 = string;
+export type Fournisseur = string;
+export type FournisseursDIdentiteSSO = (
+  | OpenIDConnect
+  | UnAutreDeVosSites
+  | UnFournisseurDIdentiteConfigureSurAutreDeVosSites
+)[];
 
 export interface SitesResponse {
   count: number;
@@ -68,7 +75,13 @@ export interface OpenIDConnect {
 }
 export interface UnAutreDeVosSites {
   type?: TypeDeFournisseur1;
-  site?: Site1;
+  site: Site1;
+  [k: string]: unknown;
+}
+export interface UnFournisseurDIdentiteConfigureSurAutreDeVosSites {
+  type?: TypeDeFournisseur2;
+  site?: Site2;
+  provider: Fournisseur;
   [k: string]: unknown;
 }
 

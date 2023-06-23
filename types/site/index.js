@@ -168,6 +168,9 @@ exports.resolvedSchema = {
                     {
                         "type": "object",
                         "title": "Un autre de vos sites",
+                        "required": [
+                            "site"
+                        ],
                         "properties": {
                             "type": {
                                 "type": "string",
@@ -178,6 +181,31 @@ exports.resolvedSchema = {
                                 "type": "string",
                                 "title": "Site",
                                 "x-fromData": "context.otherSites"
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "title": "Un fournisseur d'identité configuré sur autre de vos sites",
+                        "required": [
+                            "provider"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "title": "Type de fournisseur",
+                                "const": "otherSiteProvider"
+                            },
+                            "site": {
+                                "type": "string",
+                                "title": "Site",
+                                "x-fromData": "context.otherSites"
+                            },
+                            "provider": {
+                                "type": "string",
+                                "title": "Fournisseur",
+                                "x-if": "parent.value.site",
+                                "x-fromData": "context.otherSitesProviders[parent.value.site]"
                             }
                         }
                     }

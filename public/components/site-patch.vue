@@ -25,7 +25,7 @@
         {{ $t('common.editTitle', {name: site.host}) }}
       </v-card-title>
       <v-card-text v-if="menu">
-        {{ patch }}
+        {{ vjsfOptions }}
         <v-form v-model="valid">
           <v-jsf
             v-model="patch"
@@ -77,7 +77,8 @@ export default {
     vjsfOptions () {
       return {
         context: {
-          otherSites: this.sites.filter(s => s._id !== this.site._id).map(site => site.host)
+          otherSites: this.sites.filter(s => s._id !== this.site._id).map(site => site.host),
+          otherSitesProviders: this.sites.reduce((a, site) => { a[site.host] = site.authProviders.filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {})
         }
       }
     }

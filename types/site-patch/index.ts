@@ -26,7 +26,14 @@ export type CreerLesUtilisateursEnTantQueMembres = boolean;
 export type AccepterLesUtilisateursAuxEmailsNonVerifies = boolean;
 export type TypeDeFournisseur1 = "otherSite";
 export type Site = string;
-export type FournisseursDIdentiteSSO = (OpenIDConnect | UnAutreDeVosSites)[];
+export type TypeDeFournisseur2 = "otherSiteProvider";
+export type Site1 = string;
+export type Fournisseur = string;
+export type FournisseursDIdentiteSSO = (
+  | OpenIDConnect
+  | UnAutreDeVosSites
+  | UnFournisseurDIdentiteConfigureSurAutreDeVosSites
+)[];
 
 export interface SitePatch {
   _id: string;
@@ -49,7 +56,13 @@ export interface OpenIDConnect {
 }
 export interface UnAutreDeVosSites {
   type?: TypeDeFournisseur1;
-  site?: Site;
+  site: Site;
+  [k: string]: unknown;
+}
+export interface UnFournisseurDIdentiteConfigureSurAutreDeVosSites {
+  type?: TypeDeFournisseur2;
+  site?: Site1;
+  provider: Fournisseur;
   [k: string]: unknown;
 }
 
@@ -193,6 +206,9 @@ export const resolvedSchema = {
           {
             "type": "object",
             "title": "Un autre de vos sites",
+            "required": [
+              "site"
+            ],
             "properties": {
               "type": {
                 "type": "string",
@@ -203,6 +219,31 @@ export const resolvedSchema = {
                 "type": "string",
                 "title": "Site",
                 "x-fromData": "context.otherSites"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "Un fournisseur d'identité configuré sur autre de vos sites",
+            "required": [
+              "provider"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "title": "Type de fournisseur",
+                "const": "otherSiteProvider"
+              },
+              "site": {
+                "type": "string",
+                "title": "Site",
+                "x-fromData": "context.otherSites"
+              },
+              "provider": {
+                "type": "string",
+                "title": "Fournisseur",
+                "x-if": "parent.value.site",
+                "x-fromData": "context.otherSitesProviders[parent.value.site]"
               }
             }
           }

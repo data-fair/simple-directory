@@ -2,6 +2,7 @@ const express = require('express')
 const config = require('config')
 const createError = require('http-errors')
 const asyncWrap = require('../utils/async-wrap')
+const oauth = require('../utils/oauth')
 const sitePatchSchema = require('../../types/site-patch')
 const sitePostSchema = require('../../types/site-post')
 const sitePublicSchema = require('../../types/site-public')
@@ -24,6 +25,11 @@ router.get('', asyncWrap(async (req, res, next) => {
   const response = query.showAll ? await req.app.get('storage').findAllSites() : await req.app.get('storage').findOwnerSites(req.user.accountOwner)
   for (const result of response.results) {
     result.logo = result.logo || `${req.publicBaseUrl}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
+    if (result.authProviders) {
+      for (const p of result.authProviders) {
+        if (p.type === 'oidc') p.id = oauth.getProviderId(p.discovery)
+      }
+    }
   }
   if (query.showAll) {
     res.type('json').send(sitesResponseSchema.stringify(response))

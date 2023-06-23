@@ -23,7 +23,10 @@ export type CreerLesUtilisateursEnTantQueMembres = boolean;
 export type AccepterLesUtilisateursAuxEmailsNonVerifies = boolean;
 export type TypeDeFournisseur1 = "otherSite";
 export type Site = string;
-export type FournisseursDIdentiteSSO = (OpenIDConnect | UnAutreDeVosSites)[];
+export type TypeDeFournisseur2 = "otherSiteProvider";
+export type Site1 = string;
+export type Fournisseur = string;
+export type FournisseursDIdentiteSSO = (OpenIDConnect | UnAutreDeVosSites | UnFournisseurDIdentiteConfigureSurAutreDeVosSites)[];
 export interface SitePatch {
     _id: string;
     authMode: ModeDAuthentification;
@@ -45,7 +48,13 @@ export interface OpenIDConnect {
 }
 export interface UnAutreDeVosSites {
     type?: TypeDeFournisseur1;
-    site?: Site;
+    site: Site;
+    [k: string]: unknown;
+}
+export interface UnFournisseurDIdentiteConfigureSurAutreDeVosSites {
+    type?: TypeDeFournisseur2;
+    site?: Site1;
+    provider: Fournisseur;
     [k: string]: unknown;
 }
 export declare const validate: (data: any, lang?: string, name?: string, internal?: boolean) => SitePatch;
@@ -138,10 +147,12 @@ export declare const resolvedSchema: {
                             description: string;
                         };
                         site?: undefined;
+                        provider?: undefined;
                     };
                 } | {
                     type: string;
                     title: string;
+                    required: string[];
                     properties: {
                         type: {
                             type: string;
@@ -159,8 +170,36 @@ export declare const resolvedSchema: {
                         client?: undefined;
                         createMember?: undefined;
                         ignoreEmailVerified?: undefined;
+                        provider?: undefined;
                     };
-                    required?: undefined;
+                } | {
+                    type: string;
+                    title: string;
+                    required: string[];
+                    properties: {
+                        type: {
+                            type: string;
+                            title: string;
+                            const: string;
+                        };
+                        site: {
+                            type: string;
+                            title: string;
+                            "x-fromData": string;
+                        };
+                        provider: {
+                            type: string;
+                            title: string;
+                            "x-if": string;
+                            "x-fromData": string;
+                        };
+                        color?: undefined;
+                        img?: undefined;
+                        discovery?: undefined;
+                        client?: undefined;
+                        createMember?: undefined;
+                        ignoreEmailVerified?: undefined;
+                    };
                 })[];
             };
         };
