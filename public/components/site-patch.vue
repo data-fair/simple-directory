@@ -78,7 +78,7 @@ export default {
       return {
         context: {
           otherSites: this.sites.filter(s => s._id !== this.site._id).map(site => site.host),
-          otherSitesProviders: this.sites.reduce((a, site) => { a[site.host] = site.authProviders.filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {})
+          otherSitesProviders: this.sites.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {})
         }
       }
     }
