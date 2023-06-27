@@ -5,4 +5,9 @@ export default async ({ app, route, $vuetify, store }) => {
     mainLoginUrl.host = store.getters.mainHost
     window.location.replace(mainLoginUrl.href)
   }
+  if (route.name === 'login' && sitePublic && sitePublic.authMode === 'onlyOtherSite' && sitePublic.authOnlyOtherSite) {
+    const otherSiteLoginUrl = new URL(window.location.href)
+    otherSiteLoginUrl.host = sitePublic.authOnlyOtherSite
+    window.location.replace(otherSiteLoginUrl.href)
+  }
 }

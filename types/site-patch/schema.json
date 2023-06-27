@@ -13,6 +13,9 @@
     "authMode": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/authMode"
     },
+    "authOnlyOtherSite": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/authOnlyOtherSite"
+    },
     "authProviders": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/authProviders"
     }

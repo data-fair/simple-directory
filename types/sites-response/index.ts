@@ -2,11 +2,14 @@ export type ModeDAuthentification = ModeDAuthentification1 & ModeDAuthentificati
 export type ModeDAuthentification1 =
   | UniquementSurLeSiteLuiMeme
   | UniquementSurLeBackOffice
-  | SurLeSiteEtSurLeBackOfficeParSSO;
+  | SurLeSiteEtSurLeBackOfficeParSSO
+  | UniquementSurUnAutreDeVosSites;
 export type UniquementSurLeSiteLuiMeme = "onlyLocal";
 export type UniquementSurLeBackOffice = "onlyBackOffice";
 export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
+export type UniquementSurUnAutreDeVosSites = "onlyOtherSite";
 export type ModeDAuthentification2 = string;
+export type AutreSitePourLAuthentification = string;
 export type Couleur = string;
 export type URLDuLogoPetiteTaille = string;
 export type TypeDeFournisseur = "oidc";
@@ -46,6 +49,7 @@ export interface Site {
   theme: Theme;
   logo?: string;
   authMode: ModeDAuthentification;
+  authOnlyOtherSite?: AutreSitePourLAuthentification;
   authProviders?: FournisseursDIdentiteSSO;
   [k: string]: unknown;
 }

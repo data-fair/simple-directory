@@ -84,10 +84,21 @@ exports.resolvedSchema = {
                 {
                     "const": "ssoBackOffice",
                     "title": "sur le site et sur le back-office par SSO"
+                },
+                {
+                    "const": "onlyOtherSite",
+                    "title": "uniquement sur un autre de vos sites"
                 }
             ]
         },
+        "authOnlyOtherSite": {
+            "x-if": "parent.value.authMode === 'onlyOtherSite'",
+            "type": "string",
+            "title": "Autre site pour l'authentification",
+            "x-fromData": "context.otherSites"
+        },
         "authProviders": {
+            "x-if": "parent.value.authMode !== 'onlyOtherSite' && parent.value.authMode !== 'onlyBackOffice'",
             "type": "array",
             "title": "Fournisseurs d'identité (SSO)",
             "items": {

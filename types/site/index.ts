@@ -2,11 +2,14 @@ export type ModeDAuthentification = ModeDAuthentification1 & ModeDAuthentificati
 export type ModeDAuthentification1 =
   | UniquementSurLeSiteLuiMeme
   | UniquementSurLeBackOffice
-  | SurLeSiteEtSurLeBackOfficeParSSO;
+  | SurLeSiteEtSurLeBackOfficeParSSO
+  | UniquementSurUnAutreDeVosSites;
 export type UniquementSurLeSiteLuiMeme = "onlyLocal";
 export type UniquementSurLeBackOffice = "onlyBackOffice";
 export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
+export type UniquementSurUnAutreDeVosSites = "onlyOtherSite";
 export type ModeDAuthentification2 = string;
+export type AutreSitePourLAuthentification = string;
 export type Couleur = string;
 export type URLDuLogoPetiteTaille = string;
 export type TypeDeFournisseur = "oidc";
@@ -50,6 +53,7 @@ export interface Site {
   };
   logo?: string;
   authMode: ModeDAuthentification;
+  authOnlyOtherSite?: AutreSitePourLAuthentification;
   authProviders?: FournisseursDIdentiteSSO;
   [k: string]: unknown;
 }
@@ -162,10 +166,21 @@ export const resolvedSchema = {
         {
           "const": "ssoBackOffice",
           "title": "sur le site et sur le back-office par SSO"
+        },
+        {
+          "const": "onlyOtherSite",
+          "title": "uniquement sur un autre de vos sites"
         }
       ]
     },
+    "authOnlyOtherSite": {
+      "x-if": "parent.value.authMode === 'onlyOtherSite'",
+      "type": "string",
+      "title": "Autre site pour l'authentification",
+      "x-fromData": "context.otherSites"
+    },
     "authProviders": {
+      "x-if": "parent.value.authMode !== 'onlyOtherSite' && parent.value.authMode !== 'onlyBackOffice'",
       "type": "array",
       "title": "Fournisseurs d'identité (SSO)",
       "items": {

@@ -369,13 +369,19 @@ class Serializer {
       
       }
     
+      if (obj["authOnlyOtherSite"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"authOnlyOtherSite\":"
+      json += serializer.asString(obj["authOnlyOtherSite"])
+      }
+    
       if (obj["authProviders"] !== undefined) {
         !addComma && (addComma = true) || (json += ',')
         json += "\"authProviders\":"
       json += anonymous5(obj["authProviders"])
       }
     
-    const propertiesKeys = ["_id","owner","host","theme","logo","authMode","authProviders"]
+    const propertiesKeys = ["_id","owner","host","theme","logo","authMode","authOnlyOtherSite","authProviders"]
     for (const [key, value] of Object.entries(obj)) {
       if (
         propertiesKeys.includes(key) ||

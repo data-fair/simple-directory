@@ -1,9 +1,11 @@
 export type ModeDAuthentification = ModeDAuthentification1 & ModeDAuthentification2;
-export type ModeDAuthentification1 = UniquementSurLeSiteLuiMeme | UniquementSurLeBackOffice | SurLeSiteEtSurLeBackOfficeParSSO;
+export type ModeDAuthentification1 = UniquementSurLeSiteLuiMeme | UniquementSurLeBackOffice | SurLeSiteEtSurLeBackOfficeParSSO | UniquementSurUnAutreDeVosSites;
 export type UniquementSurLeSiteLuiMeme = "onlyLocal";
 export type UniquementSurLeBackOffice = "onlyBackOffice";
 export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
+export type UniquementSurUnAutreDeVosSites = "onlyOtherSite";
 export type ModeDAuthentification2 = string;
+export type AutreSitePourLAuthentification = string;
 export type Couleur = string;
 export type URLDuLogoPetiteTaille = string;
 export type TypeDeFournisseur = "oidc";
@@ -42,6 +44,7 @@ export interface Site {
     };
     logo?: string;
     authMode: ModeDAuthentification;
+    authOnlyOtherSite?: AutreSitePourLAuthentification;
     authProviders?: FournisseursDIdentiteSSO;
     [k: string]: unknown;
 }
@@ -128,7 +131,14 @@ export declare const resolvedSchema: {
                 title: string;
             }[];
         };
+        authOnlyOtherSite: {
+            "x-if": string;
+            type: string;
+            title: string;
+            "x-fromData": string;
+        };
         authProviders: {
+            "x-if": string;
             type: string;
             title: string;
             items: {
