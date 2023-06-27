@@ -68,7 +68,7 @@
 
       <p>
         <v-checkbox
-          v-for="userOrg in user.organizations"
+          v-for="userOrg in user.organizations.filter(o => payload.o !== o.id)"
           :key="userOrg.id"
           :value="!!(selectedUserOrg && selectedUserOrg.id === userOrg.id)"
           color="primary"
