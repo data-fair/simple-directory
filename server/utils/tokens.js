@@ -183,7 +183,7 @@ exports.keepalive = async (req, res) => {
   }
   const token = exports.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   const cookies = new Cookies(req, res)
-  const userOrg = cookies.get('id_token_org') && user.organizations.find(o => o.id === cookies.get('id_token_org') && (o.department || null) === (cookies.get('id_token_dep') || null))
+  const userOrg = cookies.get('id_token_org') && user.organizations.find(o => o.id === cookies.get('id_token_org') && (o.department || null) === (cookies.get('id_token_dep') ? decodeURIComponent(cookies.get('id_token_dep')) : null))
   exports.setCookieToken(req, res, token, userOrg)
 }
 
