@@ -39,10 +39,10 @@ export default () => ({
     style (state, getters, rootState) {
       if (!state.customPrimaryColor) return ''
       return `
-      .v-application#app a:not(.v-tab):not(.v-list-item):not(.v-card--link) {
+      .v-application#app a:not(.v-tab):not(.v-list-item):not(.v-card--link):not(.v-btn--has-bg) {
         color: ${getters.readablePrimaryColor};
       }
-      .v-application#app a:not(.v-tab):not(.v-list-item):not(.v-card--link):hover {
+      .v-application#app a:not(.v-tab):not(.v-list-item):not(.v-card--link):not(.v-btn--has-bg):hover {
         color: ${getters.darkReadablePrimary10};
       }
       .v-application#app .area--dark a,
