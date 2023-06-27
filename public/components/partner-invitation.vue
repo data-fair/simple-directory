@@ -59,7 +59,7 @@
     </template>
 
     <template v-if="user">
-      <p v-if="user.organizations.length === 0">
+      <p v-if="otherUserOrgs.length === 0">
         Vous n'appartenez à aucune organisation. Vous pouvez créer une nouvelle organisation et accepter l'invitation en son nom.
       </p>
       <p v-else>
@@ -68,7 +68,7 @@
 
       <p>
         <v-checkbox
-          v-for="userOrg in user.organizations.filter(o => payload.o !== o.id)"
+          v-for="userOrg in otherUserOrgs"
           :key="userOrg.id"
           :value="!!(selectedUserOrg && selectedUserOrg.id === userOrg.id)"
           color="primary"
@@ -137,12 +137,16 @@ export default {
     payload () {
       if (!this.token) return
       return jwtDecode(this.token)
+    },
+    otherUserOrgs () {
+      if (!this.payload) return
+      return this.user.organizations.filter(o => this.payload.o !== o.id)
     }
   },
   mounted () {
     if (this.payload) {
       this.createOrganizationName = this.payload.n
-      if (this.user && this.user.organizations.length === 0) {
+      if (this.user && this.otherUserOrgs.length === 0) {
         this.createNewOrg = true
       }
     }
