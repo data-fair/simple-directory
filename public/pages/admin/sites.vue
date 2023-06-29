@@ -17,6 +17,7 @@
       class="elevation-1"
       item-key="id"
       hide-default-footer
+      :items-per-page="10000"
     >
       <tr
         slot="item"
