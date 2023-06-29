@@ -8,7 +8,13 @@ const slug = require('slugify')
 const debug = require('debug')('oauth')
 
 exports.getProviderId = (url) => {
-  return slug(new URL(url).host, { lower: true, strict: true })
+  let host = url
+  try {
+    host = new URL(url).host
+  } catch (err) {
+    console.warn('invalide oauth provider url', url)
+  }
+  return slug(host, { lower: true, strict: true })
 }
 
 const standardProviders = {
