@@ -6,6 +6,7 @@ const bodyParser = require('body-parser')
 const requestIp = require('request-ip')
 const shortid = require('shortid')
 const Cookies = require('cookies')
+const slug = require('slugify')
 const tokens = require('../utils/tokens')
 const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
@@ -446,14 +447,26 @@ router.get('/me', (req, res) => {
   else res.send(req.user)
 })
 
-router.get('/providers', (req, res) => {
+router.get('/providers', asyncWrap(async (req, res) => {
   if (!req.site) {
     res.send(saml2.publicProviders.concat(oauth.publicProviders))
   } else {
     const providers = req.site.authProviders || []
-    res.send(providers.map(p => ({ type: p.type, id: oauth.getProviderId(p.discovery), title: p.title, color: p.color, img: p.img })))
+    const providersInfos = []
+    for (const p of providers) {
+      if (p.type === 'oidc') {
+        providersInfos.push({ type: p.type, id: oauth.getProviderId(p.discovery), title: p.title, color: p.color, img: p.img })
+      }
+      if (p.type === 'otherSite') {
+        const site = await req.app.get('storage').getSiteByHost(p.site)
+        if (site && site.owner.type === req.site.owner.type && site.owner.id === req.site.owner.id) {
+          providersInfos.push({ type: 'otherSite', id: slug(site.host, { lower: true, strict: true }), title: p.title, color: site.theme?.primaryColor, img: site.logo, host: site.host })
+        }
+      }
+    }
+    res.send(providersInfos)
   }
-})
+}))
 
 // OAUTH
 const debugOAuth = require('debug')('oauth')

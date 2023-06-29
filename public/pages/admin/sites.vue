@@ -77,6 +77,7 @@
         <td>
           <site-patch
             :site="props.item"
+            :sites="sites.results"
             @change="fetchSites"
           />
         </td>

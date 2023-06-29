@@ -52,7 +52,6 @@
               <template v-if="!adminMode && !orgStorage">
                 <auth-providers-login-links
                   :redirect="redirectUrl"
-                  :main-site-login-url="mainSiteLoginUrl"
                   :email="email"
                 />
               </template>
@@ -219,7 +218,6 @@
               </v-alert>
               <auth-providers-login-links
                 :redirect="redirectUrl"
-                :main-site-login-url="mainSiteLoginUrl"
                 :email="email"
                 :invit-token="invitToken"
               />
@@ -758,13 +756,6 @@ export default {
     },
     redirectHost () {
       return this.redirectUrl && new URL(this.redirectUrl).host
-    },
-    mainSiteLoginUrl () {
-      const url = new URL(`${this.env.mainPublicUrl}/login`)
-      if (this.redirectUrl) url.searchParams.append('redirect', this.redirectUrl)
-      if (this.email) url.searchParams.append('email', this.email)
-      if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
-      return url.href
     }
   },
   created () {

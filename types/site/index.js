@@ -84,10 +84,21 @@ exports.resolvedSchema = {
                 {
                     "const": "ssoBackOffice",
                     "title": "sur le site et sur le back-office par SSO"
+                },
+                {
+                    "const": "onlyOtherSite",
+                    "title": "uniquement sur un autre de vos sites"
                 }
             ]
         },
+        "authOnlyOtherSite": {
+            "x-if": "parent.value.authMode === 'onlyOtherSite'",
+            "type": "string",
+            "title": "Autre site pour l'authentification",
+            "x-fromData": "context.otherSites"
+        },
         "authProviders": {
+            "x-if": "parent.value.authMode !== 'onlyOtherSite' && parent.value.authMode !== 'onlyBackOffice'",
             "type": "array",
             "title": "Fournisseurs d'identité (SSO)",
             "items": {
@@ -105,25 +116,6 @@ exports.resolvedSchema = {
                     "title": {
                         "type": "string",
                         "title": "Nom"
-                    },
-                    "color": {
-                        "type": "string",
-                        "title": "Couleur",
-                        "x-display": "color-picker"
-                    },
-                    "img": {
-                        "type": "string",
-                        "title": "URL du logo (petite taille)"
-                    },
-                    "createMember": {
-                        "type": "boolean",
-                        "title": "Créer les utilisateurs en tant que membres",
-                        "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site."
-                    },
-                    "ignoreEmailVerified": {
-                        "type": "boolean",
-                        "title": "Accepter les utilisateurs aux emails non vérifiés",
-                        "description": "Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."
                     }
                 },
                 "oneOf": [
@@ -135,9 +127,18 @@ exports.resolvedSchema = {
                             "client"
                         ],
                         "properties": {
+                            "color": {
+                                "type": "string",
+                                "title": "Couleur",
+                                "x-display": "color-picker"
+                            },
+                            "img": {
+                                "type": "string",
+                                "title": "URL du logo (petite taille)"
+                            },
                             "type": {
                                 "type": "string",
-                                "title": "Type de founisseur",
+                                "title": "Type de fournisseur",
                                 "const": "oidc"
                             },
                             "discovery": {
@@ -162,6 +163,60 @@ exports.resolvedSchema = {
                                         "writeOnly": true
                                     }
                                 }
+                            },
+                            "createMember": {
+                                "type": "boolean",
+                                "title": "Créer les utilisateurs en tant que membres",
+                                "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site."
+                            },
+                            "ignoreEmailVerified": {
+                                "type": "boolean",
+                                "title": "Accepter les utilisateurs aux emails non vérifiés",
+                                "description": "Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "title": "Un autre de vos sites",
+                        "required": [
+                            "site"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "title": "Type de fournisseur",
+                                "const": "otherSite"
+                            },
+                            "site": {
+                                "type": "string",
+                                "title": "Site",
+                                "x-fromData": "context.otherSites"
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "title": "Un fournisseur d'identité configuré sur autre de vos sites",
+                        "required": [
+                            "provider"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "title": "Type de fournisseur",
+                                "const": "otherSiteProvider"
+                            },
+                            "site": {
+                                "type": "string",
+                                "title": "Site",
+                                "x-fromData": "context.otherSites"
+                            },
+                            "provider": {
+                                "type": "string",
+                                "title": "Fournisseur",
+                                "x-if": "parent.value.site",
+                                "x-fromData": "context.otherSitesProviders[parent.value.site]"
                             }
                         }
                     }

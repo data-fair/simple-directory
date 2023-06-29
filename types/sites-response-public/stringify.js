@@ -233,6 +233,12 @@ class Serializer {
       
       }
     
+      if (obj["authOnlyOtherSite"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"authOnlyOtherSite\":"
+      json += serializer.asString(obj["authOnlyOtherSite"])
+      }
+    
       return json + '}'
     }
   

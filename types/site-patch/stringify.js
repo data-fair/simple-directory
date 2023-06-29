@@ -190,30 +190,6 @@ class Serializer {
         throw new Error('"title" is required!')
       
       }
-    
-      if (obj["color"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"color\":"
-      json += serializer.asString(obj["color"])
-      }
-    
-      if (obj["img"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"img\":"
-      json += serializer.asString(obj["img"])
-      }
-    
-      if (obj["createMember"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"createMember\":"
-      json += serializer.asBoolean(obj["createMember"])
-      }
-    
-      if (obj["ignoreEmailVerified"] !== undefined) {
-        !addComma && (addComma = true) || (json += ',')
-        json += "\"ignoreEmailVerified\":"
-      json += serializer.asBoolean(obj["ignoreEmailVerified"])
-      }
     if (obj['type'] === undefined) throw new Error('"type" is required!')
 
       return json + '}'
@@ -268,6 +244,12 @@ class Serializer {
         !addComma && (addComma = true) || (json += ',')
         json += "\"authMode\":\"onlyBackOffice\""
       
+      }
+    
+      if (obj["authOnlyOtherSite"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"authOnlyOtherSite\":"
+      json += serializer.asString(obj["authOnlyOtherSite"])
       }
     
       if (obj["authProviders"] !== undefined) {

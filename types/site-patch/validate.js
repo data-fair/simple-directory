@@ -1,7 +1,7 @@
 "use strict";
 module.exports = validate16;
 module.exports.default = validate16;
-const schema18 = {"$id":"https://github.com/data-fair/simple-directory/site-patch","x-exports":["types","validate","stringify","resolvedSchema"],"title":"site-patch","type":"object","additionalProperties":false,"required":["_id","authMode"],"properties":{"_id":{"readOnly":true,"type":"string"},"authMode":{"default":"onlyBackOffice","title":"Mode d'authentification","type":"string","oneOf":[{"const":"onlyLocal","title":"uniquement sur le site lui même"},{"const":"onlyBackOffice","title":"uniquement sur le back-office"},{"const":"ssoBackOffice","title":"sur le site et sur le back-office par SSO"}]},"authProviders":{"type":"array","title":"Fournisseurs d'identité (SSO)","items":{"type":"object","required":["title","type"],"properties":{"id":{"type":"string","title":"Identifiant","readOnly":true},"title":{"type":"string","title":"Nom"},"color":{"type":"string","title":"Couleur","x-display":"color-picker"},"img":{"type":"string","title":"URL du logo (petite taille)"},"createMember":{"type":"boolean","title":"Créer les utilisateurs en tant que membres","description":"si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site."},"ignoreEmailVerified":{"type":"boolean","title":"Accepter les utilisateurs aux emails non vérifiés","description":"Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."}},"oneOf":[{"type":"object","title":"OpenID Connect","required":["discovery","client"],"properties":{"type":{"type":"string","title":"Type de founisseur","const":"oidc"},"discovery":{"type":"string","title":"URL de découverte","description":"probablement de la forme http://mon-fournisseur/.well-known/openid-configuration"},"client":{"type":"object","required":["id","secret"],"properties":{"id":{"type":"string","title":"Identifiant du client"},"secret":{"type":"string","title":"Secret","writeOnly":true}}}}}]}}}};
+const schema18 = {"$id":"https://github.com/data-fair/simple-directory/site-patch","x-exports":["types","validate","stringify","resolvedSchema"],"title":"site-patch","type":"object","additionalProperties":false,"required":["_id","authMode"],"properties":{"_id":{"readOnly":true,"type":"string"},"authMode":{"default":"onlyBackOffice","title":"Mode d'authentification","type":"string","oneOf":[{"const":"onlyLocal","title":"uniquement sur le site lui même"},{"const":"onlyBackOffice","title":"uniquement sur le back-office"},{"const":"ssoBackOffice","title":"sur le site et sur le back-office par SSO"},{"const":"onlyOtherSite","title":"uniquement sur un autre de vos sites"}]},"authOnlyOtherSite":{"x-if":"parent.value.authMode === 'onlyOtherSite'","type":"string","title":"Autre site pour l'authentification","x-fromData":"context.otherSites"},"authProviders":{"x-if":"parent.value.authMode !== 'onlyOtherSite' && parent.value.authMode !== 'onlyBackOffice'","type":"array","title":"Fournisseurs d'identité (SSO)","items":{"type":"object","required":["title","type"],"properties":{"id":{"type":"string","title":"Identifiant","readOnly":true},"title":{"type":"string","title":"Nom"}},"oneOf":[{"type":"object","title":"OpenID Connect","required":["discovery","client"],"properties":{"color":{"type":"string","title":"Couleur","x-display":"color-picker"},"img":{"type":"string","title":"URL du logo (petite taille)"},"type":{"type":"string","title":"Type de fournisseur","const":"oidc"},"discovery":{"type":"string","title":"URL de découverte","description":"probablement de la forme http://mon-fournisseur/.well-known/openid-configuration"},"client":{"type":"object","required":["id","secret"],"properties":{"id":{"type":"string","title":"Identifiant du client"},"secret":{"type":"string","title":"Secret","writeOnly":true}}},"createMember":{"type":"boolean","title":"Créer les utilisateurs en tant que membres","description":"si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site."},"ignoreEmailVerified":{"type":"boolean","title":"Accepter les utilisateurs aux emails non vérifiés","description":"Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."}}},{"type":"object","title":"Un autre de vos sites","required":["site"],"properties":{"type":{"type":"string","title":"Type de fournisseur","const":"otherSite"},"site":{"type":"string","title":"Site","x-fromData":"context.otherSites"}}},{"type":"object","title":"Un fournisseur d'identité configuré sur autre de vos sites","required":["provider"],"properties":{"type":{"type":"string","title":"Type de fournisseur","const":"otherSiteProvider"},"site":{"type":"string","title":"Site","x-fromData":"context.otherSites"},"provider":{"type":"string","title":"Fournisseur","x-if":"parent.value.site","x-fromData":"context.otherSitesProviders[parent.value.site]"}}}]}}}};
 
 function validate16(data, {instancePath="", parentData, parentDataProperty, rootData=data}={}){
 /*# sourceURL="https://github.com/data-fair/simple-directory/site-patch" */;
@@ -32,7 +32,7 @@ vErrors.push(err1);
 errors++;
 }
 for(const key0 in data){
-if(!(((key0 === "_id") || (key0 === "authMode")) || (key0 === "authProviders"))){
+if(!((((key0 === "_id") || (key0 === "authMode")) || (key0 === "authOnlyOtherSite")) || (key0 === "authProviders"))){
 const err2 = {instancePath,schemaPath:"#/additionalProperties",keyword:"additionalProperties",params:{additionalProperty: key0},message:"must NOT have additional properties"};
 if(vErrors === null){
 vErrors = [err2];
@@ -178,15 +178,37 @@ if(_valid0){
 valid1 = true;
 passing0 = 2;
 }
-}
-}
-if(!valid1){
-const err8 = {instancePath:instancePath+"/authMode",schemaPath:"#/properties/authMode/oneOf",keyword:"oneOf",params:{passingSchemas: passing0},message:"must match exactly one schema in oneOf"};
+const _errs10 = errors;
+if("onlyOtherSite" !== data1){
+const err8 = {instancePath:instancePath+"/authMode",schemaPath:"#/properties/authMode/oneOf/3/const",keyword:"const",params:{allowedValue: "onlyOtherSite"},message:"must be equal to constant"};
 if(vErrors === null){
 vErrors = [err8];
 }
 else {
 vErrors.push(err8);
+}
+errors++;
+}
+var _valid0 = _errs10 === errors;
+if(_valid0 && valid1){
+valid1 = false;
+passing0 = [passing0, 3];
+}
+else {
+if(_valid0){
+valid1 = true;
+passing0 = 3;
+}
+}
+}
+}
+if(!valid1){
+const err9 = {instancePath:instancePath+"/authMode",schemaPath:"#/properties/authMode/oneOf",keyword:"oneOf",params:{passingSchemas: passing0},message:"must match exactly one schema in oneOf"};
+if(vErrors === null){
+vErrors = [err9];
+}
+else {
+vErrors.push(err9);
 }
 errors++;
 }
@@ -201,52 +223,27 @@ vErrors = null;
 }
 }
 }
-if(data.authProviders !== undefined){
-let data2 = data.authProviders;
-if(!(Array.isArray(data2))){
+if(data.authOnlyOtherSite !== undefined){
+let data2 = data.authOnlyOtherSite;
+if(typeof data2 !== "string"){
 let dataType2 = typeof data2;
 let coerced2 = undefined;
 if(dataType2 == 'object' && Array.isArray(data2) && data2.length == 1){
 data2 = data2[0];
 dataType2 = typeof data2;
-if(Array.isArray(data2)){
+if(typeof data2 === "string"){
 coerced2 = data2;
 }
 }
 if(!(coerced2 !== undefined)){
-if(dataType2 === "string" || dataType2 === "number"
-              || dataType2 === "boolean" || data2 === null){
-coerced2 = [data2];
+if(dataType2 == "number" || dataType2 == "boolean"){
+coerced2 = "" + data2;
+}
+else if(data2 === null){
+coerced2 = "";
 }
 else {
-const err9 = {instancePath:instancePath+"/authProviders",schemaPath:"#/properties/authProviders/type",keyword:"type",params:{type: "array"},message:"must be array"};
-if(vErrors === null){
-vErrors = [err9];
-}
-else {
-vErrors.push(err9);
-}
-errors++;
-}
-}
-if(coerced2 !== undefined){
-data2 = coerced2;
-if(data !== undefined){
-data["authProviders"] = coerced2;
-}
-}
-}
-if(Array.isArray(data2)){
-const len0 = data2.length;
-for(let i0=0; i0<len0; i0++){
-let data3 = data2[i0];
-const _errs14 = errors;
-let valid4 = false;
-let passing1 = null;
-const _errs15 = errors;
-if(data3 && typeof data3 == "object" && !Array.isArray(data3)){
-if(data3.discovery === undefined){
-const err10 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/0/required",keyword:"required",params:{missingProperty: "discovery"},message:"must have required property '"+"discovery"+"'"};
+const err10 = {instancePath:instancePath+"/authOnlyOtherSite",schemaPath:"#/properties/authOnlyOtherSite/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err10];
 }
@@ -255,8 +252,34 @@ vErrors.push(err10);
 }
 errors++;
 }
-if(data3.client === undefined){
-const err11 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/0/required",keyword:"required",params:{missingProperty: "client"},message:"must have required property '"+"client"+"'"};
+}
+if(coerced2 !== undefined){
+data2 = coerced2;
+if(data !== undefined){
+data["authOnlyOtherSite"] = coerced2;
+}
+}
+}
+}
+if(data.authProviders !== undefined){
+let data3 = data.authProviders;
+if(!(Array.isArray(data3))){
+let dataType3 = typeof data3;
+let coerced3 = undefined;
+if(dataType3 == 'object' && Array.isArray(data3) && data3.length == 1){
+data3 = data3[0];
+dataType3 = typeof data3;
+if(Array.isArray(data3)){
+coerced3 = data3;
+}
+}
+if(!(coerced3 !== undefined)){
+if(dataType3 === "string" || dataType3 === "number"
+              || dataType3 === "boolean" || data3 === null){
+coerced3 = [data3];
+}
+else {
+const err11 = {instancePath:instancePath+"/authProviders",schemaPath:"#/properties/authProviders/type",keyword:"type",params:{type: "array"},message:"must be array"};
 if(vErrors === null){
 vErrors = [err11];
 }
@@ -265,27 +288,25 @@ vErrors.push(err11);
 }
 errors++;
 }
-if(data3.type !== undefined){
-let data4 = data3.type;
-if(typeof data4 !== "string"){
-let dataType3 = typeof data4;
-let coerced3 = undefined;
-if(dataType3 == 'object' && Array.isArray(data4) && data4.length == 1){
-data4 = data4[0];
-dataType3 = typeof data4;
-if(typeof data4 === "string"){
-coerced3 = data4;
+}
+if(coerced3 !== undefined){
+data3 = coerced3;
+if(data !== undefined){
+data["authProviders"] = coerced3;
 }
 }
-if(!(coerced3 !== undefined)){
-if(dataType3 == "number" || dataType3 == "boolean"){
-coerced3 = "" + data4;
 }
-else if(data4 === null){
-coerced3 = "";
-}
-else {
-const err12 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/type/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(Array.isArray(data3)){
+const len0 = data3.length;
+for(let i0=0; i0<len0; i0++){
+let data4 = data3[i0];
+const _errs17 = errors;
+let valid4 = false;
+let passing1 = null;
+const _errs18 = errors;
+if(data4 && typeof data4 == "object" && !Array.isArray(data4)){
+if(data4.discovery === undefined){
+const err12 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/0/required",keyword:"required",params:{missingProperty: "discovery"},message:"must have required property '"+"discovery"+"'"};
 if(vErrors === null){
 vErrors = [err12];
 }
@@ -294,16 +315,8 @@ vErrors.push(err12);
 }
 errors++;
 }
-}
-if(coerced3 !== undefined){
-data4 = coerced3;
-if(data3 !== undefined){
-data3["type"] = coerced3;
-}
-}
-}
-if("oidc" !== data4){
-const err13 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/type/const",keyword:"const",params:{allowedValue: "oidc"},message:"must be equal to constant"};
+if(data4.client === undefined){
+const err13 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/0/required",keyword:"required",params:{missingProperty: "client"},message:"must have required property '"+"client"+"'"};
 if(vErrors === null){
 vErrors = [err13];
 }
@@ -312,9 +325,8 @@ vErrors.push(err13);
 }
 errors++;
 }
-}
-if(data3.discovery !== undefined){
-let data5 = data3.discovery;
+if(data4.color !== undefined){
+let data5 = data4.color;
 if(typeof data5 !== "string"){
 let dataType4 = typeof data5;
 let coerced4 = undefined;
@@ -333,7 +345,7 @@ else if(data5 === null){
 coerced4 = "";
 }
 else {
-const err14 = {instancePath:instancePath+"/authProviders/" + i0+"/discovery",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/discovery/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err14 = {instancePath:instancePath+"/authProviders/" + i0+"/color",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/color/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err14];
 }
@@ -345,17 +357,33 @@ errors++;
 }
 if(coerced4 !== undefined){
 data5 = coerced4;
-if(data3 !== undefined){
-data3["discovery"] = coerced4;
+if(data4 !== undefined){
+data4["color"] = coerced4;
 }
 }
 }
 }
-if(data3.client !== undefined){
-let data6 = data3.client;
-if(data6 && typeof data6 == "object" && !Array.isArray(data6)){
-if(data6.id === undefined){
-const err15 = {instancePath:instancePath+"/authProviders/" + i0+"/client",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/client/required",keyword:"required",params:{missingProperty: "id"},message:"must have required property '"+"id"+"'"};
+if(data4.img !== undefined){
+let data6 = data4.img;
+if(typeof data6 !== "string"){
+let dataType5 = typeof data6;
+let coerced5 = undefined;
+if(dataType5 == 'object' && Array.isArray(data6) && data6.length == 1){
+data6 = data6[0];
+dataType5 = typeof data6;
+if(typeof data6 === "string"){
+coerced5 = data6;
+}
+}
+if(!(coerced5 !== undefined)){
+if(dataType5 == "number" || dataType5 == "boolean"){
+coerced5 = "" + data6;
+}
+else if(data6 === null){
+coerced5 = "";
+}
+else {
+const err15 = {instancePath:instancePath+"/authProviders/" + i0+"/img",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/img/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err15];
 }
@@ -364,8 +392,36 @@ vErrors.push(err15);
 }
 errors++;
 }
-if(data6.secret === undefined){
-const err16 = {instancePath:instancePath+"/authProviders/" + i0+"/client",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/client/required",keyword:"required",params:{missingProperty: "secret"},message:"must have required property '"+"secret"+"'"};
+}
+if(coerced5 !== undefined){
+data6 = coerced5;
+if(data4 !== undefined){
+data4["img"] = coerced5;
+}
+}
+}
+}
+if(data4.type !== undefined){
+let data7 = data4.type;
+if(typeof data7 !== "string"){
+let dataType6 = typeof data7;
+let coerced6 = undefined;
+if(dataType6 == 'object' && Array.isArray(data7) && data7.length == 1){
+data7 = data7[0];
+dataType6 = typeof data7;
+if(typeof data7 === "string"){
+coerced6 = data7;
+}
+}
+if(!(coerced6 !== undefined)){
+if(dataType6 == "number" || dataType6 == "boolean"){
+coerced6 = "" + data7;
+}
+else if(data7 === null){
+coerced6 = "";
+}
+else {
+const err16 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/type/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err16];
 }
@@ -374,27 +430,16 @@ vErrors.push(err16);
 }
 errors++;
 }
-if(data6.id !== undefined){
-let data7 = data6.id;
-if(typeof data7 !== "string"){
-let dataType5 = typeof data7;
-let coerced5 = undefined;
-if(dataType5 == 'object' && Array.isArray(data7) && data7.length == 1){
-data7 = data7[0];
-dataType5 = typeof data7;
-if(typeof data7 === "string"){
-coerced5 = data7;
+}
+if(coerced6 !== undefined){
+data7 = coerced6;
+if(data4 !== undefined){
+data4["type"] = coerced6;
 }
 }
-if(!(coerced5 !== undefined)){
-if(dataType5 == "number" || dataType5 == "boolean"){
-coerced5 = "" + data7;
 }
-else if(data7 === null){
-coerced5 = "";
-}
-else {
-const err17 = {instancePath:instancePath+"/authProviders/" + i0+"/client/id",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/client/properties/id/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if("oidc" !== data7){
+const err17 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/type/const",keyword:"const",params:{allowedValue: "oidc"},message:"must be equal to constant"};
 if(vErrors === null){
 vErrors = [err17];
 }
@@ -404,35 +449,27 @@ vErrors.push(err17);
 errors++;
 }
 }
-if(coerced5 !== undefined){
-data7 = coerced5;
-if(data6 !== undefined){
-data6["id"] = coerced5;
-}
-}
-}
-}
-if(data6.secret !== undefined){
-let data8 = data6.secret;
+if(data4.discovery !== undefined){
+let data8 = data4.discovery;
 if(typeof data8 !== "string"){
-let dataType6 = typeof data8;
-let coerced6 = undefined;
-if(dataType6 == 'object' && Array.isArray(data8) && data8.length == 1){
+let dataType7 = typeof data8;
+let coerced7 = undefined;
+if(dataType7 == 'object' && Array.isArray(data8) && data8.length == 1){
 data8 = data8[0];
-dataType6 = typeof data8;
+dataType7 = typeof data8;
 if(typeof data8 === "string"){
-coerced6 = data8;
+coerced7 = data8;
 }
 }
-if(!(coerced6 !== undefined)){
-if(dataType6 == "number" || dataType6 == "boolean"){
-coerced6 = "" + data8;
+if(!(coerced7 !== undefined)){
+if(dataType7 == "number" || dataType7 == "boolean"){
+coerced7 = "" + data8;
 }
 else if(data8 === null){
-coerced6 = "";
+coerced7 = "";
 }
 else {
-const err18 = {instancePath:instancePath+"/authProviders/" + i0+"/client/secret",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/client/properties/secret/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err18 = {instancePath:instancePath+"/authProviders/" + i0+"/discovery",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/discovery/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err18];
 }
@@ -442,17 +479,19 @@ vErrors.push(err18);
 errors++;
 }
 }
-if(coerced6 !== undefined){
-data8 = coerced6;
-if(data6 !== undefined){
-data6["secret"] = coerced6;
+if(coerced7 !== undefined){
+data8 = coerced7;
+if(data4 !== undefined){
+data4["discovery"] = coerced7;
 }
 }
 }
 }
-}
-else {
-const err19 = {instancePath:instancePath+"/authProviders/" + i0+"/client",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/client/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(data4.client !== undefined){
+let data9 = data4.client;
+if(data9 && typeof data9 == "object" && !Array.isArray(data9)){
+if(data9.id === undefined){
+const err19 = {instancePath:instancePath+"/authProviders/" + i0+"/client",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/client/required",keyword:"required",params:{missingProperty: "id"},message:"must have required property '"+"id"+"'"};
 if(vErrors === null){
 vErrors = [err19];
 }
@@ -461,10 +500,8 @@ vErrors.push(err19);
 }
 errors++;
 }
-}
-}
-else {
-const err20 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/0/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(data9.secret === undefined){
+const err20 = {instancePath:instancePath+"/authProviders/" + i0+"/client",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/client/required",keyword:"required",params:{missingProperty: "secret"},message:"must have required property '"+"secret"+"'"};
 if(vErrors === null){
 vErrors = [err20];
 }
@@ -473,93 +510,8 @@ vErrors.push(err20);
 }
 errors++;
 }
-var _valid1 = _errs15 === errors;
-if(_valid1){
-valid4 = true;
-passing1 = 0;
-}
-if(!valid4){
-const err21 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf",keyword:"oneOf",params:{passingSchemas: passing1},message:"must match exactly one schema in oneOf"};
-if(vErrors === null){
-vErrors = [err21];
-}
-else {
-vErrors.push(err21);
-}
-errors++;
-}
-else {
-errors = _errs14;
-if(vErrors !== null){
-if(_errs14){
-vErrors.length = _errs14;
-}
-else {
-vErrors = null;
-}
-}
-}
-if(data3 && typeof data3 == "object" && !Array.isArray(data3)){
-if(data3.title === undefined){
-const err22 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "title"},message:"must have required property '"+"title"+"'"};
-if(vErrors === null){
-vErrors = [err22];
-}
-else {
-vErrors.push(err22);
-}
-errors++;
-}
-if(data3.type === undefined){
-const err23 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "type"},message:"must have required property '"+"type"+"'"};
-if(vErrors === null){
-vErrors = [err23];
-}
-else {
-vErrors.push(err23);
-}
-errors++;
-}
-if(data3.id !== undefined){
-let data9 = data3.id;
-if(typeof data9 !== "string"){
-let dataType7 = typeof data9;
-let coerced7 = undefined;
-if(dataType7 == 'object' && Array.isArray(data9) && data9.length == 1){
-data9 = data9[0];
-dataType7 = typeof data9;
-if(typeof data9 === "string"){
-coerced7 = data9;
-}
-}
-if(!(coerced7 !== undefined)){
-if(dataType7 == "number" || dataType7 == "boolean"){
-coerced7 = "" + data9;
-}
-else if(data9 === null){
-coerced7 = "";
-}
-else {
-const err24 = {instancePath:instancePath+"/authProviders/" + i0+"/id",schemaPath:"#/properties/authProviders/items/properties/id/type",keyword:"type",params:{type: "string"},message:"must be string"};
-if(vErrors === null){
-vErrors = [err24];
-}
-else {
-vErrors.push(err24);
-}
-errors++;
-}
-}
-if(coerced7 !== undefined){
-data9 = coerced7;
-if(data3 !== undefined){
-data3["id"] = coerced7;
-}
-}
-}
-}
-if(data3.title !== undefined){
-let data10 = data3.title;
+if(data9.id !== undefined){
+let data10 = data9.id;
 if(typeof data10 !== "string"){
 let dataType8 = typeof data10;
 let coerced8 = undefined;
@@ -578,26 +530,26 @@ else if(data10 === null){
 coerced8 = "";
 }
 else {
-const err25 = {instancePath:instancePath+"/authProviders/" + i0+"/title",schemaPath:"#/properties/authProviders/items/properties/title/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err21 = {instancePath:instancePath+"/authProviders/" + i0+"/client/id",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/client/properties/id/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
-vErrors = [err25];
+vErrors = [err21];
 }
 else {
-vErrors.push(err25);
+vErrors.push(err21);
 }
 errors++;
 }
 }
 if(coerced8 !== undefined){
 data10 = coerced8;
-if(data3 !== undefined){
-data3["title"] = coerced8;
+if(data9 !== undefined){
+data9["id"] = coerced8;
 }
 }
 }
 }
-if(data3.color !== undefined){
-let data11 = data3.color;
+if(data9.secret !== undefined){
+let data11 = data9.secret;
 if(typeof data11 !== "string"){
 let dataType9 = typeof data11;
 let coerced9 = undefined;
@@ -616,64 +568,76 @@ else if(data11 === null){
 coerced9 = "";
 }
 else {
-const err26 = {instancePath:instancePath+"/authProviders/" + i0+"/color",schemaPath:"#/properties/authProviders/items/properties/color/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err22 = {instancePath:instancePath+"/authProviders/" + i0+"/client/secret",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/client/properties/secret/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
-vErrors = [err26];
+vErrors = [err22];
 }
 else {
-vErrors.push(err26);
+vErrors.push(err22);
 }
 errors++;
 }
 }
 if(coerced9 !== undefined){
 data11 = coerced9;
-if(data3 !== undefined){
-data3["color"] = coerced9;
+if(data9 !== undefined){
+data9["secret"] = coerced9;
 }
 }
 }
 }
-if(data3.img !== undefined){
-let data12 = data3.img;
-if(typeof data12 !== "string"){
+}
+else {
+const err23 = {instancePath:instancePath+"/authProviders/" + i0+"/client",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/client/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err23];
+}
+else {
+vErrors.push(err23);
+}
+errors++;
+}
+}
+if(data4.createMember !== undefined){
+let data12 = data4.createMember;
+if(typeof data12 !== "boolean"){
 let dataType10 = typeof data12;
 let coerced10 = undefined;
 if(dataType10 == 'object' && Array.isArray(data12) && data12.length == 1){
 data12 = data12[0];
 dataType10 = typeof data12;
-if(typeof data12 === "string"){
+if(typeof data12 === "boolean"){
 coerced10 = data12;
 }
 }
 if(!(coerced10 !== undefined)){
-if(dataType10 == "number" || dataType10 == "boolean"){
-coerced10 = "" + data12;
+if(data12 === "false" || data12 === 0 || data12 === null){
+coerced10 = false;
 }
-else if(data12 === null){
-coerced10 = "";
+else if(data12 === "true" || data12 === 1){
+coerced10 = true;
 }
 else {
-const err27 = {instancePath:instancePath+"/authProviders/" + i0+"/img",schemaPath:"#/properties/authProviders/items/properties/img/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err24 = {instancePath:instancePath+"/authProviders/" + i0+"/createMember",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/createMember/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
 if(vErrors === null){
-vErrors = [err27];
+vErrors = [err24];
 }
 else {
-vErrors.push(err27);
+vErrors.push(err24);
 }
 errors++;
 }
 }
 if(coerced10 !== undefined){
 data12 = coerced10;
-if(data3 !== undefined){
-data3["img"] = coerced10;
+if(data4 !== undefined){
+data4["createMember"] = coerced10;
 }
 }
 }
 }
-if(data3.createMember !== undefined){
-let data13 = data3.createMember;
+if(data4.ignoreEmailVerified !== undefined){
+let data13 = data4.ignoreEmailVerified;
 if(typeof data13 !== "boolean"){
 let dataType11 = typeof data13;
 let coerced11 = undefined;
@@ -692,7 +656,73 @@ else if(data13 === "true" || data13 === 1){
 coerced11 = true;
 }
 else {
-const err28 = {instancePath:instancePath+"/authProviders/" + i0+"/createMember",schemaPath:"#/properties/authProviders/items/properties/createMember/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
+const err25 = {instancePath:instancePath+"/authProviders/" + i0+"/ignoreEmailVerified",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/ignoreEmailVerified/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
+if(vErrors === null){
+vErrors = [err25];
+}
+else {
+vErrors.push(err25);
+}
+errors++;
+}
+}
+if(coerced11 !== undefined){
+data13 = coerced11;
+if(data4 !== undefined){
+data4["ignoreEmailVerified"] = coerced11;
+}
+}
+}
+}
+}
+else {
+const err26 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/0/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err26];
+}
+else {
+vErrors.push(err26);
+}
+errors++;
+}
+var _valid1 = _errs18 === errors;
+if(_valid1){
+valid4 = true;
+passing1 = 0;
+}
+const _errs38 = errors;
+if(data4 && typeof data4 == "object" && !Array.isArray(data4)){
+if(data4.site === undefined){
+const err27 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/1/required",keyword:"required",params:{missingProperty: "site"},message:"must have required property '"+"site"+"'"};
+if(vErrors === null){
+vErrors = [err27];
+}
+else {
+vErrors.push(err27);
+}
+errors++;
+}
+if(data4.type !== undefined){
+let data14 = data4.type;
+if(typeof data14 !== "string"){
+let dataType12 = typeof data14;
+let coerced12 = undefined;
+if(dataType12 == 'object' && Array.isArray(data14) && data14.length == 1){
+data14 = data14[0];
+dataType12 = typeof data14;
+if(typeof data14 === "string"){
+coerced12 = data14;
+}
+}
+if(!(coerced12 !== undefined)){
+if(dataType12 == "number" || dataType12 == "boolean"){
+coerced12 = "" + data14;
+}
+else if(data14 === null){
+coerced12 = "";
+}
+else {
+const err28 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/type/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err28];
 }
@@ -702,35 +732,15 @@ vErrors.push(err28);
 errors++;
 }
 }
-if(coerced11 !== undefined){
-data13 = coerced11;
-if(data3 !== undefined){
-data3["createMember"] = coerced11;
+if(coerced12 !== undefined){
+data14 = coerced12;
+if(data4 !== undefined){
+data4["type"] = coerced12;
 }
 }
 }
-}
-if(data3.ignoreEmailVerified !== undefined){
-let data14 = data3.ignoreEmailVerified;
-if(typeof data14 !== "boolean"){
-let dataType12 = typeof data14;
-let coerced12 = undefined;
-if(dataType12 == 'object' && Array.isArray(data14) && data14.length == 1){
-data14 = data14[0];
-dataType12 = typeof data14;
-if(typeof data14 === "boolean"){
-coerced12 = data14;
-}
-}
-if(!(coerced12 !== undefined)){
-if(data14 === "false" || data14 === 0 || data14 === null){
-coerced12 = false;
-}
-else if(data14 === "true" || data14 === 1){
-coerced12 = true;
-}
-else {
-const err29 = {instancePath:instancePath+"/authProviders/" + i0+"/ignoreEmailVerified",schemaPath:"#/properties/authProviders/items/properties/ignoreEmailVerified/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"};
+if("otherSite" !== data14){
+const err29 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/type/const",keyword:"const",params:{allowedValue: "otherSite"},message:"must be equal to constant"};
 if(vErrors === null){
 vErrors = [err29];
 }
@@ -740,17 +750,27 @@ vErrors.push(err29);
 errors++;
 }
 }
-if(coerced12 !== undefined){
-data14 = coerced12;
-if(data3 !== undefined){
-data3["ignoreEmailVerified"] = coerced12;
+if(data4.site !== undefined){
+let data15 = data4.site;
+if(typeof data15 !== "string"){
+let dataType13 = typeof data15;
+let coerced13 = undefined;
+if(dataType13 == 'object' && Array.isArray(data15) && data15.length == 1){
+data15 = data15[0];
+dataType13 = typeof data15;
+if(typeof data15 === "string"){
+coerced13 = data15;
 }
 }
+if(!(coerced13 !== undefined)){
+if(dataType13 == "number" || dataType13 == "boolean"){
+coerced13 = "" + data15;
 }
-}
+else if(data15 === null){
+coerced13 = "";
 }
 else {
-const err30 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/type",keyword:"type",params:{type: "object"},message:"must be object"};
+const err30 = {instancePath:instancePath+"/authProviders/" + i0+"/site",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/site/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err30];
 }
@@ -760,16 +780,334 @@ vErrors.push(err30);
 errors++;
 }
 }
+if(coerced13 !== undefined){
+data15 = coerced13;
+if(data4 !== undefined){
+data4["site"] = coerced13;
+}
+}
 }
 }
 }
 else {
-const err31 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+const err31 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/1/type",keyword:"type",params:{type: "object"},message:"must be object"};
 if(vErrors === null){
 vErrors = [err31];
 }
 else {
 vErrors.push(err31);
+}
+errors++;
+}
+var _valid1 = _errs38 === errors;
+if(_valid1 && valid4){
+valid4 = false;
+passing1 = [passing1, 1];
+}
+else {
+if(_valid1){
+valid4 = true;
+passing1 = 1;
+}
+const _errs44 = errors;
+if(data4 && typeof data4 == "object" && !Array.isArray(data4)){
+if(data4.provider === undefined){
+const err32 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/2/required",keyword:"required",params:{missingProperty: "provider"},message:"must have required property '"+"provider"+"'"};
+if(vErrors === null){
+vErrors = [err32];
+}
+else {
+vErrors.push(err32);
+}
+errors++;
+}
+if(data4.type !== undefined){
+let data16 = data4.type;
+if(typeof data16 !== "string"){
+let dataType14 = typeof data16;
+let coerced14 = undefined;
+if(dataType14 == 'object' && Array.isArray(data16) && data16.length == 1){
+data16 = data16[0];
+dataType14 = typeof data16;
+if(typeof data16 === "string"){
+coerced14 = data16;
+}
+}
+if(!(coerced14 !== undefined)){
+if(dataType14 == "number" || dataType14 == "boolean"){
+coerced14 = "" + data16;
+}
+else if(data16 === null){
+coerced14 = "";
+}
+else {
+const err33 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/type/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err33];
+}
+else {
+vErrors.push(err33);
+}
+errors++;
+}
+}
+if(coerced14 !== undefined){
+data16 = coerced14;
+if(data4 !== undefined){
+data4["type"] = coerced14;
+}
+}
+}
+if("otherSiteProvider" !== data16){
+const err34 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/type/const",keyword:"const",params:{allowedValue: "otherSiteProvider"},message:"must be equal to constant"};
+if(vErrors === null){
+vErrors = [err34];
+}
+else {
+vErrors.push(err34);
+}
+errors++;
+}
+}
+if(data4.site !== undefined){
+let data17 = data4.site;
+if(typeof data17 !== "string"){
+let dataType15 = typeof data17;
+let coerced15 = undefined;
+if(dataType15 == 'object' && Array.isArray(data17) && data17.length == 1){
+data17 = data17[0];
+dataType15 = typeof data17;
+if(typeof data17 === "string"){
+coerced15 = data17;
+}
+}
+if(!(coerced15 !== undefined)){
+if(dataType15 == "number" || dataType15 == "boolean"){
+coerced15 = "" + data17;
+}
+else if(data17 === null){
+coerced15 = "";
+}
+else {
+const err35 = {instancePath:instancePath+"/authProviders/" + i0+"/site",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/site/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err35];
+}
+else {
+vErrors.push(err35);
+}
+errors++;
+}
+}
+if(coerced15 !== undefined){
+data17 = coerced15;
+if(data4 !== undefined){
+data4["site"] = coerced15;
+}
+}
+}
+}
+if(data4.provider !== undefined){
+let data18 = data4.provider;
+if(typeof data18 !== "string"){
+let dataType16 = typeof data18;
+let coerced16 = undefined;
+if(dataType16 == 'object' && Array.isArray(data18) && data18.length == 1){
+data18 = data18[0];
+dataType16 = typeof data18;
+if(typeof data18 === "string"){
+coerced16 = data18;
+}
+}
+if(!(coerced16 !== undefined)){
+if(dataType16 == "number" || dataType16 == "boolean"){
+coerced16 = "" + data18;
+}
+else if(data18 === null){
+coerced16 = "";
+}
+else {
+const err36 = {instancePath:instancePath+"/authProviders/" + i0+"/provider",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/provider/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err36];
+}
+else {
+vErrors.push(err36);
+}
+errors++;
+}
+}
+if(coerced16 !== undefined){
+data18 = coerced16;
+if(data4 !== undefined){
+data4["provider"] = coerced16;
+}
+}
+}
+}
+}
+else {
+const err37 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/2/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err37];
+}
+else {
+vErrors.push(err37);
+}
+errors++;
+}
+var _valid1 = _errs44 === errors;
+if(_valid1 && valid4){
+valid4 = false;
+passing1 = [passing1, 2];
+}
+else {
+if(_valid1){
+valid4 = true;
+passing1 = 2;
+}
+}
+}
+if(!valid4){
+const err38 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf",keyword:"oneOf",params:{passingSchemas: passing1},message:"must match exactly one schema in oneOf"};
+if(vErrors === null){
+vErrors = [err38];
+}
+else {
+vErrors.push(err38);
+}
+errors++;
+}
+else {
+errors = _errs17;
+if(vErrors !== null){
+if(_errs17){
+vErrors.length = _errs17;
+}
+else {
+vErrors = null;
+}
+}
+}
+if(data4 && typeof data4 == "object" && !Array.isArray(data4)){
+if(data4.title === undefined){
+const err39 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "title"},message:"must have required property '"+"title"+"'"};
+if(vErrors === null){
+vErrors = [err39];
+}
+else {
+vErrors.push(err39);
+}
+errors++;
+}
+if(data4.type === undefined){
+const err40 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "type"},message:"must have required property '"+"type"+"'"};
+if(vErrors === null){
+vErrors = [err40];
+}
+else {
+vErrors.push(err40);
+}
+errors++;
+}
+if(data4.id !== undefined){
+let data19 = data4.id;
+if(typeof data19 !== "string"){
+let dataType17 = typeof data19;
+let coerced17 = undefined;
+if(dataType17 == 'object' && Array.isArray(data19) && data19.length == 1){
+data19 = data19[0];
+dataType17 = typeof data19;
+if(typeof data19 === "string"){
+coerced17 = data19;
+}
+}
+if(!(coerced17 !== undefined)){
+if(dataType17 == "number" || dataType17 == "boolean"){
+coerced17 = "" + data19;
+}
+else if(data19 === null){
+coerced17 = "";
+}
+else {
+const err41 = {instancePath:instancePath+"/authProviders/" + i0+"/id",schemaPath:"#/properties/authProviders/items/properties/id/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err41];
+}
+else {
+vErrors.push(err41);
+}
+errors++;
+}
+}
+if(coerced17 !== undefined){
+data19 = coerced17;
+if(data4 !== undefined){
+data4["id"] = coerced17;
+}
+}
+}
+}
+if(data4.title !== undefined){
+let data20 = data4.title;
+if(typeof data20 !== "string"){
+let dataType18 = typeof data20;
+let coerced18 = undefined;
+if(dataType18 == 'object' && Array.isArray(data20) && data20.length == 1){
+data20 = data20[0];
+dataType18 = typeof data20;
+if(typeof data20 === "string"){
+coerced18 = data20;
+}
+}
+if(!(coerced18 !== undefined)){
+if(dataType18 == "number" || dataType18 == "boolean"){
+coerced18 = "" + data20;
+}
+else if(data20 === null){
+coerced18 = "";
+}
+else {
+const err42 = {instancePath:instancePath+"/authProviders/" + i0+"/title",schemaPath:"#/properties/authProviders/items/properties/title/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err42];
+}
+else {
+vErrors.push(err42);
+}
+errors++;
+}
+}
+if(coerced18 !== undefined){
+data20 = coerced18;
+if(data4 !== undefined){
+data4["title"] = coerced18;
+}
+}
+}
+}
+}
+else {
+const err43 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err43];
+}
+else {
+vErrors.push(err43);
+}
+errors++;
+}
+}
+}
+}
+}
+else {
+const err44 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err44];
+}
+else {
+vErrors.push(err44);
 }
 errors++;
 }

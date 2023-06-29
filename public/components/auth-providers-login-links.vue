@@ -65,21 +65,39 @@
 import { mapState, mapGetters } from 'vuex'
 
 export default {
-  props: ['redirect', 'email', 'invitToken', 'mainSiteLoginUrl'],
+  props: ['redirect', 'email', 'invitToken'],
   computed: {
     ...mapState(['env', 'authProviders', 'sitePublic']),
+    ...mapGetters(['mainHost']),
     redirectParam () {
       if (!this.redirect) return ''
       return `?redirect=${encodeURIComponent(this.redirect)}`
     },
-    ...mapGetters(['contrastColor', 'host', 'mainHost'])
+    ...mapGetters(['contrastColor', 'host', 'mainHost']),
+    mainSiteLoginUrl () {
+      return this.siteLoginUrl(this.mainHost)
+    }
   },
   created () {
     this.$store.dispatch('fetchAuthProviders')
   },
   methods: {
     loginURL (authProvider) {
-      const url = new URL(`${this.env.publicUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
+      if (authProvider.type === 'otherSite') {
+        return this.siteLoginUrl(authProvider.host)
+      }
+      let sdUrl = this.env.publicUrl
+      if (authProvider.type === 'otherSiteProvider') {
+        sdUrl = `${authProvider.host.startsWith('localhost:') ? 'http' : 'https'}://${authProvider.host}/simple-directory`
+      }
+      const url = new URL(`${sdUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
+      if (this.redirect) url.searchParams.append('redirect', this.redirect)
+      if (this.email) url.searchParams.append('email', this.email)
+      if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
+      return url.href
+    },
+    siteLoginUrl (host) {
+      const url = new URL(`${host.startsWith('localhost:') ? 'http' : 'https'}://${host}/simple-directory/login`)
       if (this.redirect) url.searchParams.append('redirect', this.redirect)
       if (this.email) url.searchParams.append('email', this.email)
       if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)

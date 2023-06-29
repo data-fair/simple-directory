@@ -29,6 +29,7 @@
           <v-jsf
             v-model="patch"
             :schema="schema"
+            :options="vjsfOptions"
           />
         </v-form>
       </v-card-text>
@@ -57,7 +58,7 @@ import { resolvedSchema } from '../../types/site-patch'
 import { mapActions, mapState } from 'vuex'
 
 export default {
-  props: ['site'],
+  props: ['site', 'sites'],
   data: () => ({ menu: false, patch: null, valid: false, model: {} }),
   computed: {
     ...mapState(['env']),
@@ -71,6 +72,15 @@ export default {
         before: `Remplissez le champ ci-dessous avec les métadonnées au format XML données par le fournisseurs d'identité. Et donnez ce [lien en retour](http://${this.site.host}/simple-directory/api/auth/saml2-metadata.xml).`
       } */
       return schema
+    },
+    vjsfOptions () {
+      return {
+        context: {
+          otherSites: this.sites.filter(s => s._id !== this.site._id).map(site => site.host),
+          otherSitesProviders: this.sites.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {})
+        },
+        evalMethod: 'newFunction'
+      }
     }
   },
   watch: {
