@@ -19,10 +19,8 @@ export type TypeDeFournisseur = "oidc";
 export type URLDeDecouverte = string;
 export type IdentifiantDuClient = string;
 export type Secret = string;
-/**
- * si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.
- */
-export type CreerLesUtilisateursEnTantQueMembres = boolean;
+export type CreerLesUtilisateursEnTantQueMembres = "never";
+export type NomDeDomaineDeLEmail = string;
 /**
  * Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement.
  */
@@ -73,8 +71,24 @@ export interface OpenIDConnect {
     secret: Secret;
     [k: string]: unknown;
   };
-  createMember?: CreerLesUtilisateursEnTantQueMembres;
+  /**
+   * si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.
+   */
+  createMember?: Jamais | Toujours | QuandLEmailAppartientAUnNomDeDomaine;
   ignoreEmailVerified?: AccepterLesUtilisateursAuxEmailsNonVerifies;
+  [k: string]: unknown;
+}
+export interface Jamais {
+  type?: CreerLesUtilisateursEnTantQueMembres;
+  [k: string]: unknown;
+}
+export interface Toujours {
+  type?: "always";
+  [k: string]: unknown;
+}
+export interface QuandLEmailAppartientAUnNomDeDomaine {
+  type?: "emailDomain";
+  emailDomain?: NomDeDomaineDeLEmail;
   [k: string]: unknown;
 }
 export interface UnAutreDeVosSites {

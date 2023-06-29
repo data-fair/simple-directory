@@ -19,10 +19,8 @@ export type TypeDeFournisseur = "oidc";
 export type URLDeDecouverte = string;
 export type IdentifiantDuClient = string;
 export type Secret = string;
-/**
- * si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.
- */
-export type CreerLesUtilisateursEnTantQueMembres = boolean;
+export type CreerLesUtilisateursEnTantQueMembres = "never";
+export type NomDeDomaineDeLEmail = string;
 /**
  * Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement.
  */
@@ -67,8 +65,24 @@ export interface OpenIDConnect {
     secret: Secret;
     [k: string]: unknown;
   };
-  createMember?: CreerLesUtilisateursEnTantQueMembres;
+  /**
+   * si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.
+   */
+  createMember?: Jamais | Toujours | QuandLEmailAppartientAUnNomDeDomaine;
   ignoreEmailVerified?: AccepterLesUtilisateursAuxEmailsNonVerifies;
+  [k: string]: unknown;
+}
+export interface Jamais {
+  type?: CreerLesUtilisateursEnTantQueMembres;
+  [k: string]: unknown;
+}
+export interface Toujours {
+  type?: "always";
+  [k: string]: unknown;
+}
+export interface QuandLEmailAppartientAUnNomDeDomaine {
+  type?: "emailDomain";
+  emailDomain?: NomDeDomaineDeLEmail;
   [k: string]: unknown;
 }
 export interface UnAutreDeVosSites {
@@ -247,9 +261,39 @@ export const resolvedSchema = {
                 }
               },
               "createMember": {
-                "type": "boolean",
-                "title": "Créer les utilisateurs en tant que membres",
-                "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site."
+                "type": "object",
+                "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
+                "oneOf": [
+                  {
+                    "title": "jamais",
+                    "properties": {
+                      "type": {
+                        "const": "never",
+                        "title": "Créer les utilisateurs en tant que membres"
+                      }
+                    }
+                  },
+                  {
+                    "title": "toujours",
+                    "properties": {
+                      "type": {
+                        "const": "always"
+                      }
+                    }
+                  },
+                  {
+                    "title": "quand l'email appartient à un nom de domaine",
+                    "properties": {
+                      "type": {
+                        "const": "emailDomain"
+                      },
+                      "emailDomain": {
+                        "type": "string",
+                        "title": "nom de domaine de l'email"
+                      }
+                    }
+                  }
+                ]
               },
               "ignoreEmailVerified": {
                 "type": "boolean",

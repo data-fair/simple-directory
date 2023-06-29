@@ -165,9 +165,39 @@ exports.resolvedSchema = {
                                 }
                             },
                             "createMember": {
-                                "type": "boolean",
-                                "title": "Créer les utilisateurs en tant que membres",
-                                "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site."
+                                "type": "object",
+                                "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
+                                "oneOf": [
+                                    {
+                                        "title": "jamais",
+                                        "properties": {
+                                            "type": {
+                                                "const": "never",
+                                                "title": "Créer les utilisateurs en tant que membres"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "title": "toujours",
+                                        "properties": {
+                                            "type": {
+                                                "const": "always"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "title": "quand l'email appartient à un nom de domaine",
+                                        "properties": {
+                                            "type": {
+                                                "const": "emailDomain"
+                                            },
+                                            "emailDomain": {
+                                                "type": "string",
+                                                "title": "nom de domaine de l'email"
+                                            }
+                                        }
+                                    }
+                                ]
                             },
                             "ignoreEmailVerified": {
                                 "type": "boolean",
