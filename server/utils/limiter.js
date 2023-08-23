@@ -10,7 +10,11 @@ const limiterOptions = {
 }
 module.exports = (req) => {
   if (config.storage.type === 'mongo') {
-    _limiter = _limiter || new RateLimiterMongo({ storeClient: req.app.get('storage').client, ...limiterOptions })
+    _limiter = _limiter || new RateLimiterMongo({
+      storeClient: req.app.get('storage').client,
+      dbName: req.app.get('storage').db.databaseName,
+      ...limiterOptions
+    })
   } else {
     _limiter = _limiter || new RateLimiterMemory(limiterOptions)
   }
