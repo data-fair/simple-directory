@@ -57,7 +57,7 @@
           <v-list-item-avatar>
             <v-img
               v-if="refreshingDepartment !== department.id"
-              :src="`${env.publicUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png?t=${getTimestamp()}`"
+              :src="`${env.publicUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png?t=${timestamp}`"
             />
           </v-list-item-avatar>
           <v-list-item-content>
@@ -126,7 +126,8 @@ export default {
     page: 1,
     q: '',
     validQ: '',
-    refreshingDepartment: null
+    refreshingDepartment: null,
+    timestamp: new Date().getTime()
   }),
   computed: {
     ...mapState(['userDetails', 'env']),
@@ -162,9 +163,7 @@ export default {
       this.refreshingDepartment = department.id
       await this.$nextTick()
       this.refreshingDepartment = null
-    },
-    getTimestamp () {
-      return new Date().getTime()
+      this.timestamp = new Date().getTime()
     }
   }
 }
