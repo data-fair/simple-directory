@@ -16,6 +16,8 @@ services:
     image: mongo:4.2
     ports:
       - 27017:27017
+    volumes:
+      - mongo-data4:/data/db
   ldap:
     profiles:
       - dev
@@ -79,3 +81,7 @@ services:
       - SECRET_NOTIFICATIONS=secret-notifications
       - SECRET_SENDMAILS=secret-sendmails
       - PROMETHEUS_ACTIVE=false
+
+volumes:
+  mongo-data4:
+  mongo-data7:

@@ -95,7 +95,7 @@ class LdapStorage {
     }
 
     if (config.storage.mongo.url && (this.ldapParams.overwrite || []).includes('members')) {
-      console.log('Connecting to mongodb ' + params.url)
+      console.log('Connecting to mongodb ' + config.storage.mongo.url)
       const MongoClient = require('mongodb').MongoClient
       try {
         this.mongoClient = await MongoClient.connect(config.storage.mongo.url)
