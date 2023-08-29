@@ -30,4 +30,22 @@ describe('users api', () => {
     users = (await adminAx.get('/api/users?q=use')).data
     assert.equal(users.results.length, 1)
   })
+
+  it('should send an email to confirm new password', async () => {
+    const ax = await testUtils.axios()
+    const { user } = await testUtils.createUser('test-org2@test.com')
+
+    const mailPromise = eventToPromise(mails.events, 'send')
+    await ax.post('/api/auth/action', { email: 'test-org2@test.com', action: 'changePassword' })
+    const mail = await mailPromise
+    assert.ok(mail.link.includes('action_token'))
+    const actionToken = (new URL(mail.link)).searchParams.get('action_token')
+    await ax.post(
+      `/api/users/${user.id}/password`,
+      { email: 'test-org2@test.com', password: 'TestPassword01' },
+      { params: { action_token: actionToken } }
+    )
+    const loginRes = await ax.post('/api/auth/password', { email: 'test-org2@test.com', password: 'TestPassword01' })
+    assert.ok(loginRes.includes('token_callback'))
+  })
 })
