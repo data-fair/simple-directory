@@ -367,7 +367,12 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   }
 
   const storage = req.app.get('storage')
-  const user = await storage.getUserByEmail(req.body.email, req.site)
+  let user = await storage.getUserByEmail(req.body.email, req.site)
+  let action = req.body.action
+  if (!user && req.site) {
+    user = await storage.getUserByEmail(req.body.email)
+    action = 'changeHost'
+  }
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
     const link = req.body.target || config.defaultLoginRedirect || (req.publicBaseUrl + '/login')
@@ -384,7 +389,7 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   const payload = {
     id: user.id,
     email: user.email,
-    action: req.body.action
+    action
   }
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(req.body.target || req.publicBaseUrl + '/login')

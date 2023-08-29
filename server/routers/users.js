@@ -255,7 +255,7 @@ router.delete('/:userId', asyncWrap(async (req, res, next) => {
 router.post('/:userId/password', asyncWrap(async (req, res, next) => {
   if (!req.body.password) return res.status(400).send()
   const actionToken = req.query.action_token
-  if (!actionToken) return res.status(401).send('action token is required')
+  if (!actionToken) return res.status(401).send('action_token param is required')
   let decoded
   try {
     decoded = await tokens.verify(req.app.get('keys'), actionToken)
@@ -267,6 +267,23 @@ router.post('/:userId/password', asyncWrap(async (req, res, next) => {
   if (!passwords.validate(req.body.password)) return res.status(400).send(req.messages.errors.malformedPassword)
   const storedPassword = await passwords.hashPassword(req.body.password)
   await req.app.get('storage').patchUser(req.params.userId, { password: storedPassword })
+  res.status(204).send()
+}))
+
+// Change host of a user using an action token sent in a mail
+router.post('/:userId/host', asyncWrap(async (req, res, next) => {
+  if (!req.body.host) return res.status(400).send()
+  const actionToken = req.query.action_token
+  if (!actionToken) return res.status(401).send('action_token param is required')
+  let decoded
+  try {
+    decoded = await tokens.verify(req.app.get('keys'), actionToken)
+  } catch (err) {
+    return res.status(401).send(req.messages.errors.invalidToken)
+  }
+  if (decoded.id !== req.params.userId) return res.status(401).send('wrong user id in token')
+  if (decoded.action !== 'changeHost') return res.status(401).send('wrong action for this token')
+  await req.app.get('storage').patchUser(req.params.userId, { host: req.body.host })
   res.status(204).send()
 }))
 

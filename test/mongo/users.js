@@ -33,19 +33,51 @@ describe('users api', () => {
 
   it('should send an email to confirm new password', async () => {
     const ax = await testUtils.axios()
-    const { user } = await testUtils.createUser('test-org2@test.com')
+    const { user } = await testUtils.createUser('user2@test.com')
 
     const mailPromise = eventToPromise(mails.events, 'send')
-    await ax.post('/api/auth/action', { email: 'test-org2@test.com', action: 'changePassword' })
+    await ax.post('/api/auth/action', { email: 'user2@test.com', action: 'changePassword' })
     const mail = await mailPromise
     assert.ok(mail.link.includes('action_token'))
     const actionToken = (new URL(mail.link)).searchParams.get('action_token')
     await ax.post(
       `/api/users/${user.id}/password`,
-      { email: 'test-org2@test.com', password: 'TestPassword01' },
+      { email: 'user2@test.com', password: 'TestPassword01' },
       { params: { action_token: actionToken } }
     )
-    const loginRes = await ax.post('/api/auth/password', { email: 'test-org2@test.com', password: 'TestPassword01' })
+    const loginRes = (await ax.post('/api/auth/password', { email: 'user2@test.com', password: 'TestPassword01' })).data
     assert.ok(loginRes.includes('token_callback'))
+  })
+
+  it('should send an email to confirm new host if user exists on main host', async () => {
+    const anonymousAx = await testUtils.axios()
+    const { user, ax } = await testUtils.createUser('user3@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test' })).data
+    const owner = { type: 'organization', id: org.id, name: org.name }
+
+    await anonymousAx.post('/api/sites',
+      { _id: 'test', owner, host: '127.0.0.1:5989', theme: { primaryColor: '#FF00FF' } },
+      { params: { key: config.secretKeys.sites } })
+    const mailPromise = eventToPromise(mails.events, 'send')
+
+    await anonymousAx.post('http://127.0.0.1:5989/simple-directory/api/auth/action', { email: 'user3@test.com', action: 'changePassword' })
+    const mail = await mailPromise
+    console.log(mail.link)
+    assert.ok(mail.link.includes('action_token'))
+    const actionToken = (new URL(mail.link)).searchParams.get('action_token')
+    await assert.rejects(ax.post(
+      `/api/users/${user.id}/password`,
+      { email: 'user3@test.com', password: 'test.com' },
+      { params: { action_token: actionToken } }
+    ), (err) => {
+      assert.equal(err.status, 401)
+      return true
+    })
+
+    await ax.post(
+      `/api/users/${user.id}/host`,
+      { email: 'user3@test.com', host: '127.0.0.1:5989' },
+      { params: { action_token: actionToken } }
+    )
   })
 })
