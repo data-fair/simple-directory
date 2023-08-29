@@ -4,7 +4,7 @@
       color="warning"
       outlined
     >
-      Le compte {{ user.email }} n'existe pas sur {{ host }}, mais il existe sur {{ mainHost }}.
+      Le compte {{ user.email }} n'existe pas sur {{ host }} mais il existe sur {{ mainHost }}.
     </v-alert>
     <template v-if="sitePublic.authMode === 'ssoBackOffice'">
       <h3 class="subheader mb-2">

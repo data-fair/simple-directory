@@ -97,8 +97,15 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     }
   }
 
-  const user = await storage.getUserByEmail(req.body.email, req.site)
-  if (!user || user.emailConfirmed === false) return returnError('badCredentials', 400)
+  let user = await storage.getUserByEmail(req.body.email, req.site)
+  let userFromMainHost = false
+  if (!user || user.emailConfirmed === false) {
+    if (req.site) {
+      user = await storage.getUserByEmail(req.body.email)
+      userFromMainHost = true
+    }
+    if (!user) return returnError('badCredentials', 400)
+  }
   if (storage.getPassword) {
     const storedPassword = await storage.getPassword(user.id)
     const validPassword = await passwords.checkPassword(req.body.password, storedPassword)
@@ -111,6 +118,23 @@ router.post('/password', asyncWrap(async (req, res, next) => {
   if (org && req.body.membersOnly && !user.organizations.find(o => o.id === org.id)) {
     return returnError('badCredentials', 400)
   }
+
+  if (userFromMainHost) {
+    const payload = {
+      id: user.id,
+      email: user.email,
+      action: 'changeHost'
+    }
+    const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+    const changeHostUrl = new URL((req.site.host.startsWith('localhost') ? 'http://' : 'https://') + req.site.host + '/simple-directory/login')
+    changeHostUrl.searchParams.set('action_token', token)
+    if (req.is('application/x-www-form-urlencoded')) {
+      return res.redirect(changeHostUrl.href)
+    } else {
+      return res.send(changeHostUrl.href)
+    }
+  }
+
   const payload = tokens.getPayload(user)
   if (req.body.adminMode) {
     if (payload.isAdmin) payload.adminMode = true
