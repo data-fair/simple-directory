@@ -29,6 +29,7 @@ When both servers are ready, go to [http://localhost:5689](http://localhost:5689
 Test the multi-site mode:
 
 curl -H "Content-Type: application/json" -XPOST "http://localhost:5689/simple-directory/api/sites?key=secret-sites" -d '{"_id":"devsite","owner":{"type":"organization","id":"admins-org","name":"Admins organization"},"host":"localhost:5989","theme":{"primaryColor":"#004D40"}}'
+curl -H "Content-Type: application/json" -XPOST "http://localhost:5689/simple-directory/api/sites?key=secret-sites" -d '
 {"_id":"devsite2","owner":{"type":"organization","id":"admins-org","name":"Admins organization"},"host":"localhost:5999","theme":{"primaryColor":"#FF4D40"}}'
 
 Test built nuxt distributable in dev:

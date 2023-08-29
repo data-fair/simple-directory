@@ -201,7 +201,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       plannedDeletion: 'Suppression programmée',
       cancelDeletion: 'Annuler la suppression de l\'utilisateur',
       siteLogo: 'Logo du site',
-      partnerInvitation: 'Invitation partenaire'
+      partnerInvitation: 'Invitation partenaire',
+      changeHost: 'Compte associé au back-office'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',

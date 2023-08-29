@@ -633,6 +633,16 @@
             </v-card-text>
           </v-window-item>
 
+          <v-window-item value="changeHost">
+            <v-card-text>
+              <change-host
+                :user="actionPayload"
+                :action-token="actionToken"
+                @goTo="newStep => step = newStep"
+              />
+            </v-card-text>
+          </v-window-item>
+
           <v-window-item value="error">
             <v-card-text v-if="error">
               <v-alert
@@ -692,7 +702,8 @@ export default {
         recovery2FA: this.$t('pages.login.recovery2FA'),
         createOrga: this.$t('common.createOrganization'),
         plannedDeletion: this.$t('pages.login.plannedDeletion'),
-        partnerInvitation: this.$t('pages.login.partnerInvitation')
+        partnerInvitation: this.$t('pages.login.partnerInvitation'),
+        changeHost: this.$t('pages.login.changeHost')
       },
       password: '',
       passwordErrors: [],
@@ -759,8 +770,12 @@ export default {
     }
   },
   created () {
-    if (this.actionPayload) {
+    console.log(this.actionPayload)
+    if (this.actionPayload && this.actionPayload.action === 'changePassword') {
       this.step = 'changePassword'
+      this.email = this.actionPayload.email || this.invitPayload.e
+    } if (this.actionPayload && this.actionPayload.action === 'changeHost') {
+      this.step = 'changeHost'
       this.email = this.actionPayload.email || this.invitPayload.e
     } else if (this.invitPayload) {
       this.createUserStep()
