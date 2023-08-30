@@ -31,7 +31,11 @@ export default () => {
       },
       redirects (state, getters) {
         if (!state.sites) return
-        return [{ text: getters.mainHost, value: state.env.mainRedirect }].concat(state.sites.results.map(site => ({ text: site.host, value: 'https://' + site.host + '/me/account' })))
+        const redirects = [{ text: getters.mainHost, value: state.env.mainRedirect }].concat(state.sites.results.map(site => ({ text: site.host, value: 'https://' + site.host + '/me/account' })))
+        if (getters.mainHost !== getters.host && !state.sites.results.find(site => site.host === getters.host)) {
+          redirects.push({ text: getters.host, value: 'https://' + getters.host + '/me/account' })
+        }
+        return redirects
       }
     },
     mutations: {
