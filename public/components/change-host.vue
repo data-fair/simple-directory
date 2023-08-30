@@ -12,12 +12,6 @@
       </h3>
       <p>La page de login propose un bouton pour se connecter depuis {{ mainHost }} que vous pouvez utiliser. Vous pouvez aussi utiliser <a :href="mainHostLogin">ce lien.</a>.</p>
     </template>
-    <template v-else>
-      <h3 class="subheader mb-2">
-        Solution : créer un nouveau compte sur {{ host }}
-      </h3>
-      <p>Vous pouvez utiliser <a :href="createAccount">ce lien.</a>.</p>
-    </template>
     <h3 class="subheader mb-2">
       Solution : déplacer le compte vers {{ host }}
     </h3>
@@ -56,9 +50,6 @@ export default {
   computed: {
     ...mapState(['sitePublic']),
     ...mapGetters(['host', 'mainHost']),
-    createAccount () {
-      return `${this.host.startsWith('localhost:') ? 'http' : 'https'}://${this.host}/simple-directory/login?step=createUser`
-    },
     mainHostLogin () {
       const url = new URL(`${this.mainHost.startsWith('localhost:') ? 'http' : 'https'}://${this.mainHost}/simple-directory/login`)
       url.searchParams.append('redirect', `${this.host.startsWith('localhost:') ? 'http' : 'https'}://${this.host}`)
