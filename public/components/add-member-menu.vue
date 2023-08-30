@@ -75,8 +75,9 @@
             dense
           />
           <v-select
-            v-if="env.manageSites && redirects && redirects.filter(r => r.value !== invitation.redirect).length"
+            v-if="env.manageSites && redirects && redirects.filter(r => r.value !== defaultRedirect).length"
             v-model="invitation.redirect"
+            :disabled="mainHost !== host"
             label="Site de redirection"
             :items="redirects"
             name="host"
@@ -128,11 +129,11 @@ export default {
     invitation: null,
     validInvitation: true,
     link: null,
-    redirect: null
+    defaultRedirect: null
   }),
   computed: {
     ...mapState(['env']),
-    ...mapGetters(['redirects'])
+    ...mapGetters(['redirects', 'host', 'mainHost'])
   },
   watch: {
     menu () {
@@ -144,16 +145,19 @@ export default {
         email: '',
         role: null,
         department: this.department,
-        redirect: this.redirect
+        redirect: this.defaultRedirect && this.defaultRedirect.value
       }
       this.link = null
       if (this.$refs.inviteForm) this.$refs.inviteForm.reset()
     },
     redirects: {
-      immediate: true,
       handler () {
-        this.redirect = this.$route.query.redirect || (this.redirects && this.redirects[0] && this.redirects[0].value) || ''
-        if (this.invitation) this.invitation.redirect = this.redirect
+        if (this.host === this.mainHost) {
+          this.defaultRedirect = this.redirects[0]
+        } else {
+          this.defaultRedirect = (this.redirects && this.redirects.find(r => r.value && new URL(r.value).host === this.host))
+        }
+        if (this.invitation) this.invitation.redirect = this.defaultRedirect && this.defaultRedirect.value
       }
     }
   },
