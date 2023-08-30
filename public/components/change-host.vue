@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="user">
     <v-alert
       color="warning"
       outlined
@@ -58,13 +58,19 @@ export default {
   },
   methods: {
     async confirmChangeHost () {
-      await this.$axios.$post(
+      const changePasswordToken = await this.$axios.$post(
         'api/users/' + this.user.id + '/host',
         { host: this.host },
         { params: { action_token: this.actionToken } }
       )
-      this.$emit('goTo', 'login')
-      this.$router.replace({ query: { ...this.$route.query, action_token: undefined } })
+      console.log('changePasswordToken', changePasswordToken)
+      if (changePasswordToken) {
+        this.$emit('goTo', 'changePassword')
+        this.$router.replace({ query: { ...this.$route.query, action_token: changePasswordToken } })
+      } else {
+        this.$emit('goTo', 'login')
+        this.$router.replace({ query: { ...this.$route.query, action_token: undefined } })
+      }
     }
   }
 }

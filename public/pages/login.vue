@@ -707,7 +707,6 @@ export default {
       },
       password: '',
       passwordErrors: [],
-      actionToken: this.$route.query.action_token,
       invitToken: this.$route.query.invit_token,
       adminMode: this.$route.query.adminMode === 'true',
       org: this.$route.query.org,
@@ -745,6 +744,9 @@ export default {
     ...mapState('session', ['user']),
     ...mapState(['env', 'sitePublic']),
     ...mapGetters(['host', 'mainHost']),
+    actionToken () {
+      return this.$route.query.action_token
+    },
     readonly () {
       return this.env.readonly || this.$route.query.readonly === 'true'
     },
