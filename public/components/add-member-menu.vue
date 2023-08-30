@@ -21,6 +21,7 @@
       v-if="orga && menu"
       data-iframe-height
       width="500px"
+      :loading="!invitation"
     >
       <v-card-title
         v-if="!link"
@@ -36,7 +37,7 @@
           {{ $t('pages.organization.disableInvite') }}
         </v-alert>
       </v-card-text>
-      <v-card-text v-else>
+      <v-card-text v-else-if="invitation">
         <v-form
           v-if="!link"
           ref="inviteForm"
@@ -107,7 +108,7 @@
           {{ $t('common.confirmCancel') }}
         </v-btn>
         <v-btn
-          :disabled="disableInvite || !invitation.email || !invitation.role"
+          :disabled="disableInvite || !invitation || !invitation.email || !invitation.role"
           color="warning"
           @click="confirmInvitation()"
         >
@@ -128,17 +129,26 @@ export default {
     menu: false,
     invitation: null,
     validInvitation: true,
-    link: null,
-    defaultRedirect: null
+    link: null
   }),
   computed: {
     ...mapState(['env']),
-    ...mapGetters(['redirects', 'host', 'mainHost'])
+    ...mapGetters(['redirects', 'host', 'mainHost']),
+    defaultRedirect () {
+      if (this.host === this.mainHost) {
+        return this.redirects[0]
+      } else {
+        return (this.redirects && this.redirects.find(r => r.value && new URL(r.value).host === this.host))
+      }
+    }
   },
   watch: {
-    menu () {
-      if (!this.menu) return
-      if (this.env.manageSites) this.$store.dispatch('fetchSites')
+    async menu () {
+      if (!this.menu) {
+        this.invitation = null
+        return
+      }
+      if (this.env.manageSites) await this.$store.dispatch('fetchSites')
       this.invitation = {
         id: this.orga.id,
         name: this.orga.name,
@@ -149,16 +159,6 @@ export default {
       }
       this.link = null
       if (this.$refs.inviteForm) this.$refs.inviteForm.reset()
-    },
-    redirects: {
-      handler () {
-        if (this.host === this.mainHost) {
-          this.defaultRedirect = this.redirects[0]
-        } else {
-          this.defaultRedirect = (this.redirects && this.redirects.find(r => r.value && new URL(r.value).host === this.host))
-        }
-        if (this.invitation) this.invitation.redirect = this.defaultRedirect && this.defaultRedirect.value
-      }
     }
   },
   methods: {
