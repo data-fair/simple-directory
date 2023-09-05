@@ -136,7 +136,7 @@ export default {
     ...mapGetters(['redirects', 'host', 'mainHost']),
     defaultRedirect () {
       if (this.host === this.mainHost) {
-        return this.redirects[0]
+        return this.redirects && this.redirects[0]
       } else {
         return (this.redirects && this.redirects.find(r => r.value && new URL(r.value).host === this.host))
       }
