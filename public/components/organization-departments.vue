@@ -137,9 +137,19 @@ export default {
     departmentLabel () {
       return this.orga.departmentLabel || this.$t('common.department')
     },
+    searchableDepartments () {
+      return (this.orga.departments || []).map(department => ({ department, search: (department.id + ' ' + department.name).toLowerCase() }))
+    },
     filteredDeps () {
       if (!this.validQ) return this.orga.departments
-      else return this.orga.departments.filter(d => (d.id && d.id.includes(this.validQ)) || (d.id && d.id.includes(this.validQ)))
+      else {
+        const filteredDeps = []
+        const q = this.validQ.toLowerCase()
+        for (const dep of this.searchableDepartments) {
+          if (dep.search.includes(q)) filteredDeps.push(dep.department)
+        }
+        return filteredDeps
+      }
     },
     currentPage () {
       return this.filteredDeps.slice((this.page - 1) * this.pageSize, this.page * this.pageSize)
