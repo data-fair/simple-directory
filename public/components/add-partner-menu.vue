@@ -27,7 +27,10 @@
         {{ $t('pages.organization.addPartner') }}
       </v-card-title>
       <v-card-text>
-        <v-form ref="createForm">
+        <v-form
+          ref="createForm"
+          @submit.prevent
+        >
           <v-text-field
             v-model="editPartner.name"
             :label="$t('common.orgName')"

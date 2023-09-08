@@ -27,7 +27,10 @@
         {{ $t('pages.organization.addDepartment', {departmentLabel: departmentLabel.toLowerCase()}) }}
       </v-card-title>
       <v-card-text>
-        <v-form ref="createForm">
+        <v-form
+          ref="createForm"
+          @submit.prevent
+        >
           <v-text-field
             v-model="editDepartment.id"
             :label="$t('common.id')"

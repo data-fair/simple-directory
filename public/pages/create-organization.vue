@@ -7,6 +7,7 @@
       ref="form"
       v-model="valid"
       lazy-validation
+      @submit.prevent
     >
       <v-text-field
         v-model="newOrga.name"

@@ -42,6 +42,7 @@
           v-if="!link"
           ref="inviteForm"
           v-model="validInvitation"
+          @submit.prevent
         >
           <v-text-field
             id="id"

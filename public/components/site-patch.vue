@@ -25,7 +25,10 @@
         {{ $t('common.editTitle', {name: site.host}) }}
       </v-card-title>
       <v-card-text v-if="menu">
-        <v-form v-model="valid">
+        <v-form
+          v-model="valid"
+          @submit.prevent
+        >
           <v-jsf
             v-model="patch"
             :schema="schema"
