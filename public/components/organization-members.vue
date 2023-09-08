@@ -250,7 +250,8 @@ export default {
             size: this.membersPageSize,
             department: this.department,
             role: this.role,
-            org_storage: this.orgStorage
+            org_storage: this.orgStorage,
+            sort: 'name'
           }
         })
         if (this.members.count && !this.members.results.length) {

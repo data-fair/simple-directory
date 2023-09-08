@@ -46,6 +46,16 @@
           @keyup.enter="filterDeps"
         />
       </v-col>
+      <v-col cols="4" />
+      <v-col cols="4">
+        <v-select
+          v-model="sort"
+          :items="sortItems"
+          name="sort"
+          prepend-inner-icon="mdi-sort"
+          @change="filterDeps"
+        />
+      </v-col>
     </v-row>
 
     <v-list
@@ -121,14 +131,21 @@ export default {
       default: null
     }
   },
-  data: () => ({
-    pageSize: 10,
-    page: 1,
-    q: '',
-    validQ: '',
-    refreshingDepartment: null,
-    timestamp: new Date().getTime()
-  }),
+  data () {
+    return {
+      pageSize: 10,
+      page: 1,
+      q: '',
+      validQ: '',
+      refreshingDepartment: null,
+      timestamp: new Date().getTime(),
+      sort: 'creation',
+      sortItems: [
+        { text: this.$t('pages.organization.depSortCreation'), value: 'creation' },
+        { text: this.$t('pages.organization.depSortAlpha'), value: 'alpha' }
+      ]
+    }
+  },
   computed: {
     ...mapState(['userDetails', 'env']),
     writableDepartments () {
@@ -138,10 +155,14 @@ export default {
       return this.orga.departmentLabel || this.$t('common.department')
     },
     searchableDepartments () {
-      return (this.orga.departments || []).map(department => ({ department, search: (department.id + ' ' + department.name).toLowerCase() }))
+      const searchableDepartments = (this.orga.departments || [])
+        .map(department => ({ department, search: (department.id + ' ' + department.name).toLowerCase() }))
+      if (this.sort === 'creation') searchableDepartments.reverse()
+      if (this.sort === 'alpha') searchableDepartments.sort((d1, d2) => d1.department.name.localeCompare(d2.department.name))
+      return searchableDepartments
     },
     filteredDeps () {
-      if (!this.validQ) return this.orga.departments
+      if (!this.validQ) return this.searchableDepartments.map(d => d.department)
       else {
         const filteredDeps = []
         const q = this.validQ.toLowerCase()

@@ -82,7 +82,8 @@ module.exports = {
     partners: 'Organisations partenaires',
     contactEmail: 'Email de contact',
     orgName: 'Nom de l\'organisation',
-    loginSignin: 'Se connecter / créer un compte'
+    loginSignin: 'Se connecter / créer un compte',
+    sort: 'Tri'
   },
   doc: {
     about: {
@@ -232,7 +233,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       '2FARolesMsg': 'Rendre obligatoire l\'authentification à 2 facteurs pour les utilisateurs possédant ces rôles.',
       sendInvitationLink: 'Renvoyer un lien d\'invitation',
       addPartner: 'Inviter une organisation partenaire',
-      deletePartner: 'Supprimer ce partenaire'
+      deletePartner: 'Supprimer ce partenaire',
+      depSortCreation: 'Derniers créés',
+      depSortAlpha: 'Ordre alphabétique'
     },
     invitation: {
       title: 'Invitation validée',
