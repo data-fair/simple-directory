@@ -70,6 +70,10 @@
             "enum": ["admin", "user"],
             "description": "Role for this member in this organization"
           },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "departments": {
             "type": "array",
             "items": {

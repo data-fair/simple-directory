@@ -235,6 +235,7 @@ class MongodbStorage {
           emailConfirmed: user.emailConfirmed
         }
         if (user.host) member.host = user.host
+        if (userOrga.createdAt) member.createdAt = userOrga.createdAt
         results.push(member)
       }
     }
@@ -323,7 +324,11 @@ class MongodbStorage {
       if (!department && user.organizations.find(o => o.id === orga.id && o.department)) {
         throw createError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
       }
-      userOrga = { id: orga.id, name: orga.name }
+      userOrga = {
+        id: orga.id,
+        name: orga.name,
+        createdAt: new Date().toISOString()
+      }
       if (department) {
         const fullDepartment = orga.departments.find(d => d.id === department)
         if (!fullDepartment) throw createError(404, 'department not found')
