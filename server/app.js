@@ -141,6 +141,8 @@ app.use((err, req, res, next) => {
     if (['development', 'test'].includes(process.env.NODE_ENV)) {
       res.send(err.stack)
     } else {
+      // settings content-type as plain text instead of html to prevent XSS attack
+      res.type('text/plain')
       res.send(err.message)
     }
   }
