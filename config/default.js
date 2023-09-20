@@ -239,6 +239,10 @@ module.exports = {
   },
   saml2: {
     certsDirectory: './security/saml2',
+    // Accepts all samlify options for service providers https://samlify.js.org/#/sp-configuration
+    sp: {},
+    // providers have the usual title/color/icon/img attributes and all extra options accepted by samlify
+    // for identify provider https://samlify.js.org/#/idp-configuration
     providers: []
   },
   oidc: {

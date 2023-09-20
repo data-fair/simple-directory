@@ -51,7 +51,8 @@ exports.init = async () => {
     signingCert: (await fs.readFile(config.saml2.certsDirectory + '/signing.crt')).toString(),
     privateKey: (await fs.readFile(config.saml2.certsDirectory + '/signing.key')).toString(),
     encryptCert: (await fs.readFile(config.saml2.certsDirectory + '/encrypt.crt')).toString(),
-    encPrivateKey: (await fs.readFile(config.saml2.certsDirectory + '/encrypt.key')).toString()
+    encPrivateKey: (await fs.readFile(config.saml2.certsDirectory + '/encrypt.key')).toString(),
+    ...config.saml2.sp
   })
 
   exports.publicProviders = []

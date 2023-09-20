@@ -262,6 +262,10 @@ module.exports = {
     }
   },
   saml2: {
+    sp: {
+      __name: 'SAML2_SP',
+      __format: 'json'
+    },
     providers: {
       __name: 'SAML2_PROVIDERS',
       __format: 'json'
