@@ -778,7 +778,6 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
     if ((!invit && config.onlyCreateInvited) || storage.readonly) {
       return returnError('userUnknown', 403)
     }
-    // TODO: map more attributes ? lastName, firstName, avatarUrl ?
     user = {
       email,
       id: shortid.generate(),
@@ -792,6 +791,9 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
       user.defaultOrg = invitOrga.id
       user.ignorePersonalAccount = true
     }
+    // TODO: also a dynamic mapping
+    if (samlInfo.firstName) user.firstName = samlInfo.firstName
+    if (samlInfo.lastName) user.lastName = samlInfo.lastName
     user.name = userName(user)
     debugSAML('Create user', user)
     await storage.createUser(user, null, new URL(redirect).host)
