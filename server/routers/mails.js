@@ -20,20 +20,24 @@ router.post('/', asyncWrap(async (req, res) => {
   for (const t of req.body.to) {
     // separte mail per recipient, prevents showing email addresses from other users
     // but a single mail per orgs/members, showing emails is not a problem in this case
-    const to = []
+    const to = new Set([])
     if (t.type === 'user') {
       const user = (await storage.getUser({ id: t.id }))
-      if (user) to.push(user.email)
+      if (user) to.add(user.email)
       else console.error('Trying to send an email to a user that doesn\'t exist anymore')
     }
     if (t.type === 'organization') {
-      const members = await storage.findMembers(t.id, { roles: t.role && [t.role], size: 10000, skip: 0 })
-      members.results.forEach(member => to.push(member.email))
+      const membersParams = { size: 10000, skip: 0 }
+      if (t.role) membersParams.roles = [t.role]
+      if (t.department && t.department !== '*') membersParams.departments = [t.department]
+      if (!t.department) membersParams.departments = ['-']
+      const members = await storage.findMembers(t.id, membersParams)
+      members.results.forEach(member => to.add(member.email))
     }
 
     const mail = {
       from: config.mails.from,
-      to: to.join(', '),
+      to: [...to].join(', '),
       subject: req.body.subject,
       text: req.body.text
     }

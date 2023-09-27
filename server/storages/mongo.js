@@ -206,7 +206,12 @@ class MongodbStorage {
       filter.organizations.$elemMatch.role = { $in: params.roles }
     }
     if (params.departments && params.departments.length) {
-      filter.organizations.$elemMatch.department = { $in: params.departments }
+      const depOr = []
+      for (const dep of params.departments) {
+        if (dep === '-') depOr.push({ department: { $exists: false } })
+        else depOr.push({ department: dep })
+      }
+      filter.organizations.$elemMatch.$or = depOr
     }
     const countPromise = this.db.collection('users').countDocuments(filter)
     const users = params.size === 0
@@ -223,7 +228,7 @@ class MongodbStorage {
       for (const userOrga of user.organizations) {
         if (userOrga.id !== organizationId) continue
         if (params.departments && params.departments.length) {
-          if (!params.departments.includes(userOrga.department)) continue
+          if (!params.departments.includes(userOrga.department || '-')) continue
         }
         const member = {
           id: user._id,

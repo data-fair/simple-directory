@@ -118,7 +118,13 @@ class FileStorage {
       members = members.filter(member => params.roles.includes(member.role))
     }
     if (params.departments && params.departments.length) {
-      members = members.filter(member => params.departments.includes(member.department))
+      members = members.filter(member => {
+        for (const dep of params.departments) {
+          if (dep === '-' && !member.department) return true
+          if (dep === member.department) return true
+        }
+        return false
+      })
     }
     for (const member of members.filter(m => m.department)) {
       const dep = orga.departments && orga.departments.find(d2 => d2.id === member.department)
