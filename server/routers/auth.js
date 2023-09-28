@@ -701,11 +701,13 @@ router.get('/saml2/:providerId/login', asyncWrap(async (req, res) => {
     req.query.org || '',
     req.query.invit_token || ''
   ]
-  const { context: loginRequestURL } = await saml2.sp.createLoginRequest(idp, 'redirect', { nameid: req.query.email })
+  // relay state should be a request level parameter but it is not in current version of samlify
+  // cf https://github.com/tngan/samlify/issues/163
+  saml2.sp.entitySetting.relayState = JSON.stringify(relayState)
+  const { context: loginRequestURL } = saml2.sp.createLoginRequest(idp, 'redirect', { nameid: req.query.email })
   const parsedURL = new URL(loginRequestURL)
   if (req.query.email) parsedURL.searchParams.append('login_hint', req.query.email)
-  parsedURL.searchParams.append('RelayState', JSON.stringify(relayState))
-  console.log(parsedURL.href)
+  debugSAML('redirect', parsedURL.href)
   res.redirect(parsedURL.href)
 }))
 
