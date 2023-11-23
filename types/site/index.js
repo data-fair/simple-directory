@@ -203,6 +203,33 @@ exports.resolvedSchema = {
                                 "type": "boolean",
                                 "title": "Accepter les utilisateurs aux emails non vérifiés",
                                 "description": "Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."
+                            },
+                            "redirectMode": {
+                                "type": "object",
+                                "description": "Si vous utilisez un autre mode que 'bouton' alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.",
+                                "oneOf": [
+                                    {
+                                        "title": "bouton",
+                                        "properties": {
+                                            "type": {
+                                                "const": "button",
+                                                "title": "Controlez la manière dont les utilisateurs sont redirigés vers ce fournisseur"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "title": "redirection auto quand l'email appartient à un nom de domaine",
+                                        "properties": {
+                                            "type": {
+                                                "const": "emailDomain"
+                                            },
+                                            "emailDomain": {
+                                                "type": "string",
+                                                "title": "nom de domaine de l'email"
+                                            }
+                                        }
+                                    }
+                                ]
                             }
                         }
                     },

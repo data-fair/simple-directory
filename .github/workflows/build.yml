@@ -57,8 +57,6 @@ jobs:
         tags: ${{ steps.docker_meta.outputs.tags }}
         platforms: linux/amd64,linux/arm64
         labels: ${{ steps.docker_meta.outputs.labels }}
-        allow: network.host
-        network: host
         cache-from: type=gha
         cache-to: type=gha,mode=max
     

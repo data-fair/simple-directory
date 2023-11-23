@@ -40,7 +40,46 @@
             <logo v-else />
           </div>
         </v-card-title>
-        <v-window v-model="step">
+        <v-window
+          v-if="step !== null"
+          v-model="step"
+        >
+          <v-window-item
+            v-if="separateEmailPasswordSteps"
+            value="preLogin"
+          >
+            <v-card-text>
+              <auth-providers-login-links
+                :redirect="redirectUrl"
+                :email="email"
+              />
+              <v-text-field
+                id="email"
+                v-model="email"
+                dense
+                rounded
+                outlined
+                :autofocus="true"
+                :label="$t('pages.login.emailLabel')"
+                :error-messages="emailErrors"
+                name="email"
+                class="mb-3 hide-autofill"
+                hide-details="auto"
+                autocomplete="email"
+              />
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer />
+              <v-btn
+                :disabled="!email"
+                color="primary"
+                depressed
+                @click="preLogin"
+              >
+                {{ $t('common.next') }}
+              </v-btn>
+            </v-card-actions>
+          </v-window-item>
           <v-window-item value="login">
             <v-card-text>
               <p
@@ -49,7 +88,7 @@
               >
                 {{ $t('pages.login.adminMode') }}
               </p>
-              <template v-if="!adminMode && !orgStorage">
+              <template v-if="!adminMode && !orgStorage && !separateEmailPasswordSteps">
                 <auth-providers-login-links
                   :redirect="redirectUrl"
                   :email="email"
@@ -62,7 +101,7 @@
                 dense
                 rounded
                 outlined
-                :autofocus="true"
+                :autofocus="!email"
                 :label="$t('pages.login.emailLabel')"
                 :error-messages="emailErrors"
                 name="email"
@@ -88,6 +127,7 @@
                 dense
                 rounded
                 outlined
+                :autofocus="!!email"
                 :label="$t('common.password')"
                 :error-messages="passwordErrors"
                 name="password"
@@ -165,6 +205,13 @@
             </v-card-text>
 
             <v-card-actions>
+              <v-btn
+                v-if="separateEmailPasswordSteps"
+                text
+                @click="step='preLogin'"
+              >
+                {{ $t('common.back') }}
+              </v-btn>
               <v-spacer />
               <v-btn
                 :disabled="!email || !password"
@@ -188,7 +235,6 @@
 
             <v-card-actions>
               <v-btn
-                v-if="step !== 1"
                 text
                 @click="step='login'"
               >
@@ -318,7 +364,6 @@
 
             <v-card-actions>
               <v-btn
-                v-if="step !== 1"
                 text
                 @click="step='login'"
               >
@@ -344,7 +389,6 @@
             </v-card-text>
             <v-card-actions>
               <v-btn
-                v-if="step !== 1"
                 text
                 @click="step='login'"
               >
@@ -362,7 +406,6 @@
             </v-card-text>
             <v-card-actions>
               <v-btn
-                v-if="step !== 1"
                 text
                 @click="step='login'"
               >
@@ -380,7 +423,6 @@
             </v-card-text>
             <v-card-actions>
               <v-btn
-                v-if="step !== 1"
                 text
                 @click="step='login'"
               >
@@ -497,7 +539,6 @@
 
             <v-card-actions>
               <v-btn
-                v-if="step !== 1"
                 text
                 @click="step='login'"
               >
@@ -543,7 +584,6 @@
 
             <v-card-actions>
               <v-btn
-                v-if="step !== 1"
                 text
                 @click="step='login'"
               >
@@ -584,7 +624,6 @@
 
             <v-card-actions>
               <v-btn
-                v-if="step !== 1"
                 text
                 @click="step='login'"
               >
@@ -656,7 +695,6 @@
 
             <v-card-actions>
               <v-btn
-                v-if="step !== 1"
                 text
                 @click="clearError"
               >
@@ -690,8 +728,9 @@ export default {
       dialog: true,
       email: this.$route.query.email,
       emailErrors: [],
-      step: this.$route.query.step || 'login',
+      step: null,
       stepsTitles: {
+        preLogin: this.$t('pages.login.title'),
         login: this.$t('pages.login.title'),
         emailConfirmed: this.$t('common.checkInbox'),
         createUser: this.$t('pages.login.createUserMsg2'),
@@ -742,7 +781,7 @@ export default {
   },
   computed: {
     ...mapState('session', ['user']),
-    ...mapState(['env', 'sitePublic']),
+    ...mapState(['env', 'sitePublic', 'authProviders']),
     ...mapGetters(['host', 'mainHost']),
     actionToken () {
       return this.$route.query.action_token
@@ -769,10 +808,20 @@ export default {
     },
     redirectHost () {
       return this.redirectUrl && new URL(this.redirectUrl).host
+    },
+    separateEmailPasswordSteps () {
+      return this.authProviders?.find(p => p.redirectMode?.type === 'emailDomain')
     }
   },
-  created () {
-    console.log(this.actionPayload)
+  async created () {
+    await this.$store.dispatch('fetchAuthProviders')
+
+    this.step = this.$route.query.step || 'login'
+
+    if (this.step === 'login' && this.separateEmailPasswordSteps) {
+      this.step = 'preLogin'
+    }
+
     if (this.actionPayload && this.actionPayload.action === 'changePassword') {
       this.step = 'changePassword'
       this.email = this.actionPayload.email || this.invitPayload.e
@@ -794,6 +843,18 @@ export default {
   },
   methods: {
     ...mapActions('session', ['switchOrganization']),
+    preLogin () {
+      const authProvider = this.authProviders.find(p => p.redirectMode?.type === 'emailDomain' && p.redirectMode.emailDomain === this.email.trim().split('@')[1])
+      if (authProvider) {
+        const url = new URL(`${this.env.publicUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
+        if (this.redirectUrl) url.searchParams.append('redirect', this.redirectUrl)
+        if (this.email) url.searchParams.append('email', this.email)
+        if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
+        window.location.href = url.href
+      } else {
+        this.step = 'login'
+      }
+    },
     createUserStep () {
       this.step = this.env.tosUrl ? 'tos' : 'createUser'
     },

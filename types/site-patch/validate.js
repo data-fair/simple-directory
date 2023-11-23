@@ -1,7 +1,7 @@
 "use strict";
 module.exports = validate16;
 module.exports.default = validate16;
-const schema18 = {"$id":"https://github.com/data-fair/simple-directory/site-patch","x-exports":["types","validate","stringify","resolvedSchema"],"title":"site-patch","type":"object","additionalProperties":false,"required":["_id","authMode"],"properties":{"_id":{"readOnly":true,"type":"string"},"authMode":{"default":"onlyBackOffice","title":"Mode d'authentification","type":"string","oneOf":[{"const":"onlyLocal","title":"uniquement sur le site lui même"},{"const":"onlyBackOffice","title":"uniquement sur le back-office"},{"const":"ssoBackOffice","title":"sur le site et sur le back-office par SSO"},{"const":"onlyOtherSite","title":"uniquement sur un autre de vos sites"}]},"authOnlyOtherSite":{"x-if":"parent.value.authMode === 'onlyOtherSite'","type":"string","title":"Autre site pour l'authentification","x-fromData":"context.otherSites"},"authProviders":{"x-if":"parent.value.authMode !== 'onlyOtherSite' && parent.value.authMode !== 'onlyBackOffice'","type":"array","title":"Fournisseurs d'identité (SSO)","items":{"type":"object","required":["title","type"],"properties":{"id":{"type":"string","title":"Identifiant","readOnly":true},"title":{"type":"string","title":"Nom"}},"oneOf":[{"type":"object","title":"OpenID Connect","required":["discovery","client"],"properties":{"color":{"type":"string","title":"Couleur","x-display":"color-picker"},"img":{"type":"string","title":"URL du logo (petite taille)"},"type":{"type":"string","title":"Type de fournisseur","const":"oidc"},"discovery":{"type":"string","title":"URL de découverte","description":"probablement de la forme http://mon-fournisseur/.well-known/openid-configuration"},"client":{"type":"object","required":["id","secret"],"properties":{"id":{"type":"string","title":"Identifiant du client"},"secret":{"type":"string","title":"Secret","writeOnly":true}}},"createMember":{"type":"object","description":"si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.","oneOf":[{"title":"jamais","properties":{"type":{"const":"never","title":"Créer les utilisateurs en tant que membres"}}},{"title":"toujours","properties":{"type":{"const":"always"}}},{"title":"quand l'email appartient à un nom de domaine","properties":{"type":{"const":"emailDomain"},"emailDomain":{"type":"string","title":"nom de domaine de l'email"}}}]},"ignoreEmailVerified":{"type":"boolean","title":"Accepter les utilisateurs aux emails non vérifiés","description":"Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."}}},{"type":"object","title":"Un autre de vos sites","required":["site"],"properties":{"type":{"type":"string","title":"Type de fournisseur","const":"otherSite"},"site":{"type":"string","title":"Site","x-fromData":"context.otherSites"}}},{"type":"object","title":"Un fournisseur d'identité configuré sur autre de vos sites","required":["provider"],"properties":{"type":{"type":"string","title":"Type de fournisseur","const":"otherSiteProvider"},"site":{"type":"string","title":"Site","x-fromData":"context.otherSites"},"provider":{"type":"string","title":"Fournisseur","x-if":"parent.value.site","x-fromData":"context.otherSitesProviders[parent.value.site]"}}}]}}}};
+const schema18 = {"$id":"https://github.com/data-fair/simple-directory/site-patch","x-exports":["types","validate","stringify","resolvedSchema"],"title":"site-patch","type":"object","additionalProperties":false,"required":["_id","authMode"],"properties":{"_id":{"readOnly":true,"type":"string"},"authMode":{"default":"onlyBackOffice","title":"Mode d'authentification","type":"string","oneOf":[{"const":"onlyLocal","title":"uniquement sur le site lui même"},{"const":"onlyBackOffice","title":"uniquement sur le back-office"},{"const":"ssoBackOffice","title":"sur le site et sur le back-office par SSO"},{"const":"onlyOtherSite","title":"uniquement sur un autre de vos sites"}]},"authOnlyOtherSite":{"x-if":"parent.value.authMode === 'onlyOtherSite'","type":"string","title":"Autre site pour l'authentification","x-fromData":"context.otherSites"},"authProviders":{"x-if":"parent.value.authMode !== 'onlyOtherSite' && parent.value.authMode !== 'onlyBackOffice'","type":"array","title":"Fournisseurs d'identité (SSO)","items":{"type":"object","required":["title","type"],"properties":{"id":{"type":"string","title":"Identifiant","readOnly":true},"title":{"type":"string","title":"Nom"}},"oneOf":[{"type":"object","title":"OpenID Connect","required":["discovery","client"],"properties":{"color":{"type":"string","title":"Couleur","x-display":"color-picker"},"img":{"type":"string","title":"URL du logo (petite taille)"},"type":{"type":"string","title":"Type de fournisseur","const":"oidc"},"discovery":{"type":"string","title":"URL de découverte","description":"probablement de la forme http://mon-fournisseur/.well-known/openid-configuration"},"client":{"type":"object","required":["id","secret"],"properties":{"id":{"type":"string","title":"Identifiant du client"},"secret":{"type":"string","title":"Secret","writeOnly":true}}},"createMember":{"type":"object","description":"si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.","oneOf":[{"title":"jamais","properties":{"type":{"const":"never","title":"Créer les utilisateurs en tant que membres"}}},{"title":"toujours","properties":{"type":{"const":"always"}}},{"title":"quand l'email appartient à un nom de domaine","properties":{"type":{"const":"emailDomain"},"emailDomain":{"type":"string","title":"nom de domaine de l'email"}}}]},"ignoreEmailVerified":{"type":"boolean","title":"Accepter les utilisateurs aux emails non vérifiés","description":"Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."},"redirectMode":{"type":"object","description":"Si vous utilisez un autre mode que 'bouton' alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.","oneOf":[{"title":"bouton","properties":{"type":{"const":"button","title":"Controlez la manière dont les utilisateurs sont redirigés vers ce fournisseur"}}},{"title":"redirection auto quand l'email appartient à un nom de domaine","properties":{"type":{"const":"emailDomain"},"emailDomain":{"type":"string","title":"nom de domaine de l'email"}}}]}}},{"type":"object","title":"Un autre de vos sites","required":["site"],"properties":{"type":{"type":"string","title":"Type de fournisseur","const":"otherSite"},"site":{"type":"string","title":"Site","x-fromData":"context.otherSites"}}},{"type":"object","title":"Un fournisseur d'identité configuré sur autre de vos sites","required":["provider"],"properties":{"type":{"type":"string","title":"Type de fournisseur","const":"otherSiteProvider"},"site":{"type":"string","title":"Site","x-fromData":"context.otherSites"},"provider":{"type":"string","title":"Fournisseur","x-if":"parent.value.site","x-fromData":"context.otherSitesProviders[parent.value.site]"}}}]}}}};
 
 function validate16(data, {instancePath="", parentData, parentDataProperty, rootData=data}={}){
 /*# sourceURL="https://github.com/data-fair/simple-directory/site-patch" */;
@@ -783,9 +783,10 @@ data4["ignoreEmailVerified"] = coerced11;
 }
 }
 }
-}
-else {
-const err31 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/0/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(data4.redirectMode !== undefined){
+let data18 = data4.redirectMode;
+if(!(data18 && typeof data18 == "object" && !Array.isArray(data18))){
+const err31 = {instancePath:instancePath+"/authProviders/" + i0+"/redirectMode",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/redirectMode/type",keyword:"type",params:{type: "object"},message:"must be object"};
 if(vErrors === null){
 vErrors = [err31];
 }
@@ -794,15 +795,14 @@ vErrors.push(err31);
 }
 errors++;
 }
-var _valid1 = _errs18 === errors;
-if(_valid1){
-valid4 = true;
-passing1 = 0;
-}
-const _errs47 = errors;
-if(data4 && typeof data4 == "object" && !Array.isArray(data4)){
-if(data4.site === undefined){
-const err32 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/1/required",keyword:"required",params:{missingProperty: "site"},message:"must have required property '"+"site"+"'"};
+const _errs49 = errors;
+let valid11 = false;
+let passing3 = null;
+const _errs50 = errors;
+if(data18 && typeof data18 == "object" && !Array.isArray(data18)){
+if(data18.type !== undefined){
+if("button" !== data18.type){
+const err32 = {instancePath:instancePath+"/authProviders/" + i0+"/redirectMode/type",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/redirectMode/oneOf/0/properties/type/const",keyword:"const",params:{allowedValue: "button"},message:"must be equal to constant"};
 if(vErrors === null){
 vErrors = [err32];
 }
@@ -811,27 +811,18 @@ vErrors.push(err32);
 }
 errors++;
 }
-if(data4.type !== undefined){
-let data18 = data4.type;
-if(typeof data18 !== "string"){
-let dataType12 = typeof data18;
-let coerced12 = undefined;
-if(dataType12 == 'object' && Array.isArray(data18) && data18.length == 1){
-data18 = data18[0];
-dataType12 = typeof data18;
-if(typeof data18 === "string"){
-coerced12 = data18;
 }
 }
-if(!(coerced12 !== undefined)){
-if(dataType12 == "number" || dataType12 == "boolean"){
-coerced12 = "" + data18;
+var _valid3 = _errs50 === errors;
+if(_valid3){
+valid11 = true;
+passing3 = 0;
 }
-else if(data18 === null){
-coerced12 = "";
-}
-else {
-const err33 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/type/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const _errs52 = errors;
+if(data18 && typeof data18 == "object" && !Array.isArray(data18)){
+if(data18.type !== undefined){
+if("emailDomain" !== data18.type){
+const err33 = {instancePath:instancePath+"/authProviders/" + i0+"/redirectMode/type",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/redirectMode/oneOf/1/properties/type/const",keyword:"const",params:{allowedValue: "emailDomain"},message:"must be equal to constant"};
 if(vErrors === null){
 vErrors = [err33];
 }
@@ -841,15 +832,27 @@ vErrors.push(err33);
 errors++;
 }
 }
-if(coerced12 !== undefined){
-data18 = coerced12;
-if(data4 !== undefined){
-data4["type"] = coerced12;
+if(data18.emailDomain !== undefined){
+let data21 = data18.emailDomain;
+if(typeof data21 !== "string"){
+let dataType12 = typeof data21;
+let coerced12 = undefined;
+if(dataType12 == 'object' && Array.isArray(data21) && data21.length == 1){
+data21 = data21[0];
+dataType12 = typeof data21;
+if(typeof data21 === "string"){
+coerced12 = data21;
 }
 }
+if(!(coerced12 !== undefined)){
+if(dataType12 == "number" || dataType12 == "boolean"){
+coerced12 = "" + data21;
 }
-if("otherSite" !== data18){
-const err34 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/type/const",keyword:"const",params:{allowedValue: "otherSite"},message:"must be equal to constant"};
+else if(data21 === null){
+coerced12 = "";
+}
+else {
+const err34 = {instancePath:instancePath+"/authProviders/" + i0+"/redirectMode/emailDomain",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/redirectMode/oneOf/1/properties/emailDomain/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err34];
 }
@@ -859,27 +862,28 @@ vErrors.push(err34);
 errors++;
 }
 }
-if(data4.site !== undefined){
-let data19 = data4.site;
-if(typeof data19 !== "string"){
-let dataType13 = typeof data19;
-let coerced13 = undefined;
-if(dataType13 == 'object' && Array.isArray(data19) && data19.length == 1){
-data19 = data19[0];
-dataType13 = typeof data19;
-if(typeof data19 === "string"){
-coerced13 = data19;
+if(coerced12 !== undefined){
+data21 = coerced12;
+if(data18 !== undefined){
+data18["emailDomain"] = coerced12;
 }
 }
-if(!(coerced13 !== undefined)){
-if(dataType13 == "number" || dataType13 == "boolean"){
-coerced13 = "" + data19;
 }
-else if(data19 === null){
-coerced13 = "";
+}
+}
+var _valid3 = _errs52 === errors;
+if(_valid3 && valid11){
+valid11 = false;
+passing3 = [passing3, 1];
 }
 else {
-const err35 = {instancePath:instancePath+"/authProviders/" + i0+"/site",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/site/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(_valid3){
+valid11 = true;
+passing3 = 1;
+}
+}
+if(!valid11){
+const err35 = {instancePath:instancePath+"/authProviders/" + i0+"/redirectMode",schemaPath:"#/properties/authProviders/items/oneOf/0/properties/redirectMode/oneOf",keyword:"oneOf",params:{passingSchemas: passing3},message:"must match exactly one schema in oneOf"};
 if(vErrors === null){
 vErrors = [err35];
 }
@@ -888,18 +892,21 @@ vErrors.push(err35);
 }
 errors++;
 }
+else {
+errors = _errs49;
+if(vErrors !== null){
+if(_errs49){
+vErrors.length = _errs49;
 }
-if(coerced13 !== undefined){
-data19 = coerced13;
-if(data4 !== undefined){
-data4["site"] = coerced13;
+else {
+vErrors = null;
 }
 }
 }
 }
 }
 else {
-const err36 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/1/type",keyword:"type",params:{type: "object"},message:"must be object"};
+const err36 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/0/type",keyword:"type",params:{type: "object"},message:"must be object"};
 if(vErrors === null){
 vErrors = [err36];
 }
@@ -908,20 +915,15 @@ vErrors.push(err36);
 }
 errors++;
 }
-var _valid1 = _errs47 === errors;
-if(_valid1 && valid4){
-valid4 = false;
-passing1 = [passing1, 1];
-}
-else {
+var _valid1 = _errs18 === errors;
 if(_valid1){
 valid4 = true;
-passing1 = 1;
+passing1 = 0;
 }
-const _errs53 = errors;
+const _errs56 = errors;
 if(data4 && typeof data4 == "object" && !Array.isArray(data4)){
-if(data4.provider === undefined){
-const err37 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/2/required",keyword:"required",params:{missingProperty: "provider"},message:"must have required property '"+"provider"+"'"};
+if(data4.site === undefined){
+const err37 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/1/required",keyword:"required",params:{missingProperty: "site"},message:"must have required property '"+"site"+"'"};
 if(vErrors === null){
 vErrors = [err37];
 }
@@ -931,26 +933,26 @@ vErrors.push(err37);
 errors++;
 }
 if(data4.type !== undefined){
-let data20 = data4.type;
-if(typeof data20 !== "string"){
-let dataType14 = typeof data20;
-let coerced14 = undefined;
-if(dataType14 == 'object' && Array.isArray(data20) && data20.length == 1){
-data20 = data20[0];
-dataType14 = typeof data20;
-if(typeof data20 === "string"){
-coerced14 = data20;
+let data22 = data4.type;
+if(typeof data22 !== "string"){
+let dataType13 = typeof data22;
+let coerced13 = undefined;
+if(dataType13 == 'object' && Array.isArray(data22) && data22.length == 1){
+data22 = data22[0];
+dataType13 = typeof data22;
+if(typeof data22 === "string"){
+coerced13 = data22;
 }
 }
-if(!(coerced14 !== undefined)){
-if(dataType14 == "number" || dataType14 == "boolean"){
-coerced14 = "" + data20;
+if(!(coerced13 !== undefined)){
+if(dataType13 == "number" || dataType13 == "boolean"){
+coerced13 = "" + data22;
 }
-else if(data20 === null){
-coerced14 = "";
+else if(data22 === null){
+coerced13 = "";
 }
 else {
-const err38 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/type/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err38 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/type/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err38];
 }
@@ -960,15 +962,15 @@ vErrors.push(err38);
 errors++;
 }
 }
-if(coerced14 !== undefined){
-data20 = coerced14;
+if(coerced13 !== undefined){
+data22 = coerced13;
 if(data4 !== undefined){
-data4["type"] = coerced14;
+data4["type"] = coerced13;
 }
 }
 }
-if("otherSiteProvider" !== data20){
-const err39 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/type/const",keyword:"const",params:{allowedValue: "otherSiteProvider"},message:"must be equal to constant"};
+if("otherSite" !== data22){
+const err39 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/type/const",keyword:"const",params:{allowedValue: "otherSite"},message:"must be equal to constant"};
 if(vErrors === null){
 vErrors = [err39];
 }
@@ -979,26 +981,26 @@ errors++;
 }
 }
 if(data4.site !== undefined){
-let data21 = data4.site;
-if(typeof data21 !== "string"){
-let dataType15 = typeof data21;
-let coerced15 = undefined;
-if(dataType15 == 'object' && Array.isArray(data21) && data21.length == 1){
-data21 = data21[0];
-dataType15 = typeof data21;
-if(typeof data21 === "string"){
-coerced15 = data21;
+let data23 = data4.site;
+if(typeof data23 !== "string"){
+let dataType14 = typeof data23;
+let coerced14 = undefined;
+if(dataType14 == 'object' && Array.isArray(data23) && data23.length == 1){
+data23 = data23[0];
+dataType14 = typeof data23;
+if(typeof data23 === "string"){
+coerced14 = data23;
 }
 }
-if(!(coerced15 !== undefined)){
-if(dataType15 == "number" || dataType15 == "boolean"){
-coerced15 = "" + data21;
+if(!(coerced14 !== undefined)){
+if(dataType14 == "number" || dataType14 == "boolean"){
+coerced14 = "" + data23;
 }
-else if(data21 === null){
-coerced15 = "";
+else if(data23 === null){
+coerced14 = "";
 }
 else {
-const err40 = {instancePath:instancePath+"/authProviders/" + i0+"/site",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/site/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err40 = {instancePath:instancePath+"/authProviders/" + i0+"/site",schemaPath:"#/properties/authProviders/items/oneOf/1/properties/site/type",keyword:"type",params:{type: "string"},message:"must be string"};
 if(vErrors === null){
 vErrors = [err40];
 }
@@ -1008,35 +1010,17 @@ vErrors.push(err40);
 errors++;
 }
 }
-if(coerced15 !== undefined){
-data21 = coerced15;
+if(coerced14 !== undefined){
+data23 = coerced14;
 if(data4 !== undefined){
-data4["site"] = coerced15;
+data4["site"] = coerced14;
 }
 }
 }
 }
-if(data4.provider !== undefined){
-let data22 = data4.provider;
-if(typeof data22 !== "string"){
-let dataType16 = typeof data22;
-let coerced16 = undefined;
-if(dataType16 == 'object' && Array.isArray(data22) && data22.length == 1){
-data22 = data22[0];
-dataType16 = typeof data22;
-if(typeof data22 === "string"){
-coerced16 = data22;
-}
-}
-if(!(coerced16 !== undefined)){
-if(dataType16 == "number" || dataType16 == "boolean"){
-coerced16 = "" + data22;
-}
-else if(data22 === null){
-coerced16 = "";
 }
 else {
-const err41 = {instancePath:instancePath+"/authProviders/" + i0+"/provider",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/provider/type",keyword:"type",params:{type: "string"},message:"must be string"};
+const err41 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/1/type",keyword:"type",params:{type: "object"},message:"must be object"};
 if(vErrors === null){
 vErrors = [err41];
 }
@@ -1045,18 +1029,20 @@ vErrors.push(err41);
 }
 errors++;
 }
-}
-if(coerced16 !== undefined){
-data22 = coerced16;
-if(data4 !== undefined){
-data4["provider"] = coerced16;
-}
-}
-}
-}
+var _valid1 = _errs56 === errors;
+if(_valid1 && valid4){
+valid4 = false;
+passing1 = [passing1, 1];
 }
 else {
-const err42 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/2/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(_valid1){
+valid4 = true;
+passing1 = 1;
+}
+const _errs62 = errors;
+if(data4 && typeof data4 == "object" && !Array.isArray(data4)){
+if(data4.provider === undefined){
+const err42 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/2/required",keyword:"required",params:{missingProperty: "provider"},message:"must have required property '"+"provider"+"'"};
 if(vErrors === null){
 vErrors = [err42];
 }
@@ -1065,7 +1051,142 @@ vErrors.push(err42);
 }
 errors++;
 }
-var _valid1 = _errs53 === errors;
+if(data4.type !== undefined){
+let data24 = data4.type;
+if(typeof data24 !== "string"){
+let dataType15 = typeof data24;
+let coerced15 = undefined;
+if(dataType15 == 'object' && Array.isArray(data24) && data24.length == 1){
+data24 = data24[0];
+dataType15 = typeof data24;
+if(typeof data24 === "string"){
+coerced15 = data24;
+}
+}
+if(!(coerced15 !== undefined)){
+if(dataType15 == "number" || dataType15 == "boolean"){
+coerced15 = "" + data24;
+}
+else if(data24 === null){
+coerced15 = "";
+}
+else {
+const err43 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/type/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err43];
+}
+else {
+vErrors.push(err43);
+}
+errors++;
+}
+}
+if(coerced15 !== undefined){
+data24 = coerced15;
+if(data4 !== undefined){
+data4["type"] = coerced15;
+}
+}
+}
+if("otherSiteProvider" !== data24){
+const err44 = {instancePath:instancePath+"/authProviders/" + i0+"/type",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/type/const",keyword:"const",params:{allowedValue: "otherSiteProvider"},message:"must be equal to constant"};
+if(vErrors === null){
+vErrors = [err44];
+}
+else {
+vErrors.push(err44);
+}
+errors++;
+}
+}
+if(data4.site !== undefined){
+let data25 = data4.site;
+if(typeof data25 !== "string"){
+let dataType16 = typeof data25;
+let coerced16 = undefined;
+if(dataType16 == 'object' && Array.isArray(data25) && data25.length == 1){
+data25 = data25[0];
+dataType16 = typeof data25;
+if(typeof data25 === "string"){
+coerced16 = data25;
+}
+}
+if(!(coerced16 !== undefined)){
+if(dataType16 == "number" || dataType16 == "boolean"){
+coerced16 = "" + data25;
+}
+else if(data25 === null){
+coerced16 = "";
+}
+else {
+const err45 = {instancePath:instancePath+"/authProviders/" + i0+"/site",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/site/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err45];
+}
+else {
+vErrors.push(err45);
+}
+errors++;
+}
+}
+if(coerced16 !== undefined){
+data25 = coerced16;
+if(data4 !== undefined){
+data4["site"] = coerced16;
+}
+}
+}
+}
+if(data4.provider !== undefined){
+let data26 = data4.provider;
+if(typeof data26 !== "string"){
+let dataType17 = typeof data26;
+let coerced17 = undefined;
+if(dataType17 == 'object' && Array.isArray(data26) && data26.length == 1){
+data26 = data26[0];
+dataType17 = typeof data26;
+if(typeof data26 === "string"){
+coerced17 = data26;
+}
+}
+if(!(coerced17 !== undefined)){
+if(dataType17 == "number" || dataType17 == "boolean"){
+coerced17 = "" + data26;
+}
+else if(data26 === null){
+coerced17 = "";
+}
+else {
+const err46 = {instancePath:instancePath+"/authProviders/" + i0+"/provider",schemaPath:"#/properties/authProviders/items/oneOf/2/properties/provider/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err46];
+}
+else {
+vErrors.push(err46);
+}
+errors++;
+}
+}
+if(coerced17 !== undefined){
+data26 = coerced17;
+if(data4 !== undefined){
+data4["provider"] = coerced17;
+}
+}
+}
+}
+}
+else {
+const err47 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf/2/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err47];
+}
+else {
+vErrors.push(err47);
+}
+errors++;
+}
+var _valid1 = _errs62 === errors;
 if(_valid1 && valid4){
 valid4 = false;
 passing1 = [passing1, 2];
@@ -1078,12 +1199,12 @@ passing1 = 2;
 }
 }
 if(!valid4){
-const err43 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf",keyword:"oneOf",params:{passingSchemas: passing1},message:"must match exactly one schema in oneOf"};
+const err48 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/oneOf",keyword:"oneOf",params:{passingSchemas: passing1},message:"must match exactly one schema in oneOf"};
 if(vErrors === null){
-vErrors = [err43];
+vErrors = [err48];
 }
 else {
-vErrors.push(err43);
+vErrors.push(err48);
 }
 errors++;
 }
@@ -1100,123 +1221,123 @@ vErrors = null;
 }
 if(data4 && typeof data4 == "object" && !Array.isArray(data4)){
 if(data4.title === undefined){
-const err44 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "title"},message:"must have required property '"+"title"+"'"};
-if(vErrors === null){
-vErrors = [err44];
-}
-else {
-vErrors.push(err44);
-}
-errors++;
-}
-if(data4.type === undefined){
-const err45 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "type"},message:"must have required property '"+"type"+"'"};
-if(vErrors === null){
-vErrors = [err45];
-}
-else {
-vErrors.push(err45);
-}
-errors++;
-}
-if(data4.id !== undefined){
-let data23 = data4.id;
-if(typeof data23 !== "string"){
-let dataType17 = typeof data23;
-let coerced17 = undefined;
-if(dataType17 == 'object' && Array.isArray(data23) && data23.length == 1){
-data23 = data23[0];
-dataType17 = typeof data23;
-if(typeof data23 === "string"){
-coerced17 = data23;
-}
-}
-if(!(coerced17 !== undefined)){
-if(dataType17 == "number" || dataType17 == "boolean"){
-coerced17 = "" + data23;
-}
-else if(data23 === null){
-coerced17 = "";
-}
-else {
-const err46 = {instancePath:instancePath+"/authProviders/" + i0+"/id",schemaPath:"#/properties/authProviders/items/properties/id/type",keyword:"type",params:{type: "string"},message:"must be string"};
-if(vErrors === null){
-vErrors = [err46];
-}
-else {
-vErrors.push(err46);
-}
-errors++;
-}
-}
-if(coerced17 !== undefined){
-data23 = coerced17;
-if(data4 !== undefined){
-data4["id"] = coerced17;
-}
-}
-}
-}
-if(data4.title !== undefined){
-let data24 = data4.title;
-if(typeof data24 !== "string"){
-let dataType18 = typeof data24;
-let coerced18 = undefined;
-if(dataType18 == 'object' && Array.isArray(data24) && data24.length == 1){
-data24 = data24[0];
-dataType18 = typeof data24;
-if(typeof data24 === "string"){
-coerced18 = data24;
-}
-}
-if(!(coerced18 !== undefined)){
-if(dataType18 == "number" || dataType18 == "boolean"){
-coerced18 = "" + data24;
-}
-else if(data24 === null){
-coerced18 = "";
-}
-else {
-const err47 = {instancePath:instancePath+"/authProviders/" + i0+"/title",schemaPath:"#/properties/authProviders/items/properties/title/type",keyword:"type",params:{type: "string"},message:"must be string"};
-if(vErrors === null){
-vErrors = [err47];
-}
-else {
-vErrors.push(err47);
-}
-errors++;
-}
-}
-if(coerced18 !== undefined){
-data24 = coerced18;
-if(data4 !== undefined){
-data4["title"] = coerced18;
-}
-}
-}
-}
-}
-else {
-const err48 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/type",keyword:"type",params:{type: "object"},message:"must be object"};
-if(vErrors === null){
-vErrors = [err48];
-}
-else {
-vErrors.push(err48);
-}
-errors++;
-}
-}
-}
-}
-}
-else {
-const err49 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+const err49 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "title"},message:"must have required property '"+"title"+"'"};
 if(vErrors === null){
 vErrors = [err49];
 }
 else {
 vErrors.push(err49);
+}
+errors++;
+}
+if(data4.type === undefined){
+const err50 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/required",keyword:"required",params:{missingProperty: "type"},message:"must have required property '"+"type"+"'"};
+if(vErrors === null){
+vErrors = [err50];
+}
+else {
+vErrors.push(err50);
+}
+errors++;
+}
+if(data4.id !== undefined){
+let data27 = data4.id;
+if(typeof data27 !== "string"){
+let dataType18 = typeof data27;
+let coerced18 = undefined;
+if(dataType18 == 'object' && Array.isArray(data27) && data27.length == 1){
+data27 = data27[0];
+dataType18 = typeof data27;
+if(typeof data27 === "string"){
+coerced18 = data27;
+}
+}
+if(!(coerced18 !== undefined)){
+if(dataType18 == "number" || dataType18 == "boolean"){
+coerced18 = "" + data27;
+}
+else if(data27 === null){
+coerced18 = "";
+}
+else {
+const err51 = {instancePath:instancePath+"/authProviders/" + i0+"/id",schemaPath:"#/properties/authProviders/items/properties/id/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err51];
+}
+else {
+vErrors.push(err51);
+}
+errors++;
+}
+}
+if(coerced18 !== undefined){
+data27 = coerced18;
+if(data4 !== undefined){
+data4["id"] = coerced18;
+}
+}
+}
+}
+if(data4.title !== undefined){
+let data28 = data4.title;
+if(typeof data28 !== "string"){
+let dataType19 = typeof data28;
+let coerced19 = undefined;
+if(dataType19 == 'object' && Array.isArray(data28) && data28.length == 1){
+data28 = data28[0];
+dataType19 = typeof data28;
+if(typeof data28 === "string"){
+coerced19 = data28;
+}
+}
+if(!(coerced19 !== undefined)){
+if(dataType19 == "number" || dataType19 == "boolean"){
+coerced19 = "" + data28;
+}
+else if(data28 === null){
+coerced19 = "";
+}
+else {
+const err52 = {instancePath:instancePath+"/authProviders/" + i0+"/title",schemaPath:"#/properties/authProviders/items/properties/title/type",keyword:"type",params:{type: "string"},message:"must be string"};
+if(vErrors === null){
+vErrors = [err52];
+}
+else {
+vErrors.push(err52);
+}
+errors++;
+}
+}
+if(coerced19 !== undefined){
+data28 = coerced19;
+if(data4 !== undefined){
+data4["title"] = coerced19;
+}
+}
+}
+}
+}
+else {
+const err53 = {instancePath:instancePath+"/authProviders/" + i0,schemaPath:"#/properties/authProviders/items/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err53];
+}
+else {
+vErrors.push(err53);
+}
+errors++;
+}
+}
+}
+}
+}
+else {
+const err54 = {instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"};
+if(vErrors === null){
+vErrors = [err54];
+}
+else {
+vErrors.push(err54);
 }
 errors++;
 }

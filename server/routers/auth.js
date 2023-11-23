@@ -484,7 +484,14 @@ router.get('/providers', asyncWrap(async (req, res) => {
     const providersInfos = []
     for (const p of providers) {
       if (p.type === 'oidc') {
-        providersInfos.push({ type: p.type, id: oauth.getProviderId(p.discovery), title: p.title, color: p.color, img: p.img })
+        providersInfos.push({
+          type: p.type,
+          id: oauth.getProviderId(p.discovery),
+          title: p.title,
+          color: p.color,
+          img: p.img,
+          redirectMode: p.redirectMode
+        })
       }
       if (p.type === 'otherSite') {
         const site = await req.app.get('storage').getSiteByHost(p.site)

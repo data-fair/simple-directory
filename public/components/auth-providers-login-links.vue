@@ -28,7 +28,7 @@
       &nbsp;{{ mainHost }}
     </v-btn>
     <v-btn
-      v-for="authProvider of authProviders"
+      v-for="authProvider of authProviders.filter(p => !p.redirectMode || p.redirectMode.type === 'button')"
       :key="authProvider.type + ':' + authProvider.id"
       :color="contrastColor(authProvider.color)"
       :href="loginURL(authProvider)"
@@ -77,9 +77,6 @@ export default {
     mainSiteLoginUrl () {
       return this.siteLoginUrl(this.mainHost)
     }
-  },
-  created () {
-    this.$store.dispatch('fetchAuthProviders')
   },
   methods: {
     loginURL (authProvider) {

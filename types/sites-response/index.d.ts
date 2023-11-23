@@ -21,6 +21,8 @@ export type NomDeDomaineDeLEmail = string;
  * Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement.
  */
 export type AccepterLesUtilisateursAuxEmailsNonVerifies = boolean;
+export type ControlezLaManiereDontLesUtilisateursSontRedirigesVersCeFournisseur = "button";
+export type NomDeDomaineDeLEmail1 = string;
 export type TypeDeFournisseur1 = "otherSite";
 export type Site1 = string;
 export type TypeDeFournisseur2 = "otherSiteProvider";
@@ -67,6 +69,10 @@ export interface OpenIDConnect {
      */
     createMember?: Jamais | Toujours | QuandLEmailAppartientAUnNomDeDomaine;
     ignoreEmailVerified?: AccepterLesUtilisateursAuxEmailsNonVerifies;
+    /**
+     * Si vous utilisez un autre mode que 'bouton' alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.
+     */
+    redirectMode?: Bouton | RedirectionAutoQuandLEmailAppartientAUnNomDeDomaine;
     [k: string]: unknown;
 }
 export interface Jamais {
@@ -80,6 +86,15 @@ export interface Toujours {
 export interface QuandLEmailAppartientAUnNomDeDomaine {
     type?: "emailDomain";
     emailDomain?: NomDeDomaineDeLEmail;
+    [k: string]: unknown;
+}
+export interface Bouton {
+    type?: ControlezLaManiereDontLesUtilisateursSontRedirigesVersCeFournisseur;
+    [k: string]: unknown;
+}
+export interface RedirectionAutoQuandLEmailAppartientAUnNomDeDomaine {
+    type?: "emailDomain";
+    emailDomain?: NomDeDomaineDeLEmail1;
     [k: string]: unknown;
 }
 export interface UnAutreDeVosSites {

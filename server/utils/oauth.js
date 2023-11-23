@@ -303,6 +303,7 @@ exports.init = async () => {
     title: p.title,
     color: p.color,
     icon: p.icon,
-    img: p.img
+    img: p.img,
+    redirectMode: p.redirectMode
   }))
 }
