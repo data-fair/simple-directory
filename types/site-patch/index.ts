@@ -2,6 +2,10 @@
  * Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email.
  */
 export type ReduireLesInformationsPersonnellesALaCreationDeCompte = boolean;
+/**
+ * Vous pouvez remplacer le message des conditions d'utilisation par défaut.
+ */
+export type MessageDesConditionsDUtilisation = string;
 export type ModeDAuthentification = ModeDAuthentification1 & ModeDAuthentification2;
 export type ModeDAuthentification1 =
   | UniquementSurLeSiteLuiMeme
@@ -45,6 +49,7 @@ export type FournisseursDIdentiteSSO = (
 export interface SitePatch {
   _id: string;
   reducedPersonalInfoAtCreation?: ReduireLesInformationsPersonnellesALaCreationDeCompte;
+  tosMessage?: MessageDesConditionsDUtilisation;
   authMode: ModeDAuthentification;
   authOnlyOtherSite?: AutreSitePourLAuthentification;
   authProviders?: FournisseursDIdentiteSSO;
@@ -148,6 +153,12 @@ export const resolvedSchema = {
       "type": "boolean",
       "title": "Réduire les informations personnelles à la création de compte",
       "description": "Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email."
+    },
+    "tosMessage": {
+      "type": "string",
+      "x-display": "textarea",
+      "title": "Message des conditions d'utilisation",
+      "description": "Vous pouvez remplacer le message des conditions d'utilisation par défaut."
     },
     "authMode": {
       "default": "onlyBackOffice",

@@ -10,6 +10,10 @@ export type AutreSitePourLAuthentification = string;
  * Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email.
  */
 export type ReduireLesInformationsPersonnellesALaCreationDeCompte = boolean;
+/**
+ * Vous pouvez remplacer le message des conditions d'utilisation par défaut.
+ */
+export type MessageDesConditionsDUtilisation = string;
 export type Couleur = string;
 export type URLDuLogoPetiteTaille = string;
 export type TypeDeFournisseur = "oidc";
@@ -46,6 +50,7 @@ export interface Site {
     authMode: ModeDAuthentification;
     authOnlyOtherSite?: AutreSitePourLAuthentification;
     reducedPersonalInfoAtCreation?: ReduireLesInformationsPersonnellesALaCreationDeCompte;
+    tosMessage?: MessageDesConditionsDUtilisation;
     authProviders?: FournisseursDIdentiteSSO;
     [k: string]: unknown;
 }

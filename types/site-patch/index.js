@@ -48,6 +48,12 @@ exports.resolvedSchema = {
             "title": "Réduire les informations personnelles à la création de compte",
             "description": "Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email."
         },
+        "tosMessage": {
+            "type": "string",
+            "x-display": "textarea",
+            "title": "Message des conditions d'utilisation",
+            "description": "Vous pouvez remplacer le message des conditions d'utilisation par défaut."
+        },
         "authMode": {
             "default": "onlyBackOffice",
             "title": "Mode d'authentification",

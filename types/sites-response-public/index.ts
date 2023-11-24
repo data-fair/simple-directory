@@ -2,6 +2,10 @@
  * Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email.
  */
 export type ReduireLesInformationsPersonnellesALaCreationDeCompte = boolean;
+/**
+ * Vous pouvez remplacer le message des conditions d'utilisation par défaut.
+ */
+export type MessageDesConditionsDUtilisation = string;
 export type ModeDAuthentification = ModeDAuthentification1 & ModeDAuthentification2;
 export type ModeDAuthentification1 =
   | UniquementSurLeSiteLuiMeme
@@ -24,6 +28,7 @@ export interface SitePublic {
   theme: Theme;
   logo: string;
   reducedPersonalInfoAtCreation?: ReduireLesInformationsPersonnellesALaCreationDeCompte;
+  tosMessage?: MessageDesConditionsDUtilisation;
   authMode: ModeDAuthentification;
   authOnlyOtherSite?: AutreSitePourLAuthentification;
 }

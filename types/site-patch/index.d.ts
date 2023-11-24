@@ -2,6 +2,10 @@
  * Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email.
  */
 export type ReduireLesInformationsPersonnellesALaCreationDeCompte = boolean;
+/**
+ * Vous pouvez remplacer le message des conditions d'utilisation par défaut.
+ */
+export type MessageDesConditionsDUtilisation = string;
 export type ModeDAuthentification = ModeDAuthentification1 & ModeDAuthentification2;
 export type ModeDAuthentification1 = UniquementSurLeSiteLuiMeme | UniquementSurLeBackOffice | SurLeSiteEtSurLeBackOfficeParSSO | UniquementSurUnAutreDeVosSites;
 export type UniquementSurLeSiteLuiMeme = "onlyLocal";
@@ -36,6 +40,7 @@ export type FournisseursDIdentiteSSO = (OpenIDConnect | UnAutreDeVosSites | UnFo
 export interface SitePatch {
     _id: string;
     reducedPersonalInfoAtCreation?: ReduireLesInformationsPersonnellesALaCreationDeCompte;
+    tosMessage?: MessageDesConditionsDUtilisation;
     authMode: ModeDAuthentification;
     authOnlyOtherSite?: AutreSitePourLAuthentification;
     authProviders?: FournisseursDIdentiteSSO;
@@ -110,6 +115,12 @@ export declare const resolvedSchema: {
         };
         reducedPersonalInfoAtCreation: {
             type: string;
+            title: string;
+            description: string;
+        };
+        tosMessage: {
+            type: string;
+            "x-display": string;
             title: string;
             description: string;
         };

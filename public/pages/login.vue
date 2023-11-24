@@ -226,7 +226,7 @@
 
           <v-window-item value="tos">
             <v-card-text>
-              <p v-html="$t('pages.login.tosMsg', {tosUrl: env.tosUrl})" />
+              <p v-html="sitePublic.tosMessage || $t('pages.login.tosMsg', {tosUrl: env.tosUrl})" />
               <v-checkbox
                 v-model="tosAccepted"
                 :label="$t('pages.login.tosConfirm')"

@@ -22,6 +22,9 @@
     "reducedPersonalInfoAtCreation": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/reducedPersonalInfoAtCreation"
     },
+    "tosMessage": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/tosMessage"
+    },
     "authMode": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/authMode"
     },
