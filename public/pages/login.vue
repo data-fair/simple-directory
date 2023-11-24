@@ -226,7 +226,7 @@
 
           <v-window-item value="tos">
             <v-card-text>
-              <p v-html="sitePublic.tosMessage || $t('pages.login.tosMsg', {tosUrl: env.tosUrl})" />
+              <p v-html="sitePublic?.tosMessage || $t('pages.login.tosMsg', {tosUrl: env.tosUrl})" />
               <v-checkbox
                 v-model="tosAccepted"
                 :label="$t('pages.login.tosConfirm')"
@@ -284,7 +284,7 @@
                 />
 
                 <v-text-field
-                  v-if="!sitePublic.reducedPersonalInfoAtCreation"
+                  v-if="!sitePublic?.reducedPersonalInfoAtCreation"
                   v-model="newUser.firstName"
                   :label="$t('common.firstName')"
                   name="firstname"
@@ -296,7 +296,7 @@
                 />
 
                 <v-text-field
-                  v-if="!sitePublic.reducedPersonalInfoAtCreation"
+                  v-if="!sitePublic?.reducedPersonalInfoAtCreation"
                   v-model="newUser.lastName"
                   :label="$t('common.lastName')"
                   name="lastname"
