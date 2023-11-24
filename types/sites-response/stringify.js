@@ -375,13 +375,19 @@ class Serializer {
       json += serializer.asString(obj["authOnlyOtherSite"])
       }
     
+      if (obj["reducedPersonalInfoAtCreation"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"reducedPersonalInfoAtCreation\":"
+      json += serializer.asBoolean(obj["reducedPersonalInfoAtCreation"])
+      }
+    
       if (obj["authProviders"] !== undefined) {
         !addComma && (addComma = true) || (json += ',')
         json += "\"authProviders\":"
       json += anonymous5(obj["authProviders"])
       }
     
-    const propertiesKeys = ["_id","owner","host","theme","logo","authMode","authOnlyOtherSite","authProviders"]
+    const propertiesKeys = ["_id","owner","host","theme","logo","authMode","authOnlyOtherSite","reducedPersonalInfoAtCreation","authProviders"]
     for (const [key, value] of Object.entries(obj)) {
       if (
         propertiesKeys.includes(key) ||

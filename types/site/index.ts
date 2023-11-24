@@ -10,6 +10,10 @@ export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
 export type UniquementSurUnAutreDeVosSites = "onlyOtherSite";
 export type ModeDAuthentification2 = string;
 export type AutreSitePourLAuthentification = string;
+/**
+ * Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email.
+ */
+export type ReduireLesInformationsPersonnellesALaCreationDeCompte = boolean;
 export type Couleur = string;
 export type URLDuLogoPetiteTaille = string;
 export type TypeDeFournisseur = "oidc";
@@ -54,6 +58,7 @@ export interface Site {
   logo?: string;
   authMode: ModeDAuthentification;
   authOnlyOtherSite?: AutreSitePourLAuthentification;
+  reducedPersonalInfoAtCreation?: ReduireLesInformationsPersonnellesALaCreationDeCompte;
   authProviders?: FournisseursDIdentiteSSO;
   [k: string]: unknown;
 }
@@ -208,6 +213,11 @@ export const resolvedSchema = {
       "title": "Autre site pour l'authentification",
       "x-fromData": "context.otherSites"
     },
+    "reducedPersonalInfoAtCreation": {
+      "type": "boolean",
+      "title": "Réduire les informations personnelles à la création de compte",
+      "description": "Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email."
+    },
     "authProviders": {
       "x-if": "parent.value.authMode !== 'onlyOtherSite' && parent.value.authMode !== 'onlyBackOffice'",
       "type": "array",
@@ -278,6 +288,9 @@ export const resolvedSchema = {
               "createMember": {
                 "type": "object",
                 "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
+                "default": {
+                  "type": "never"
+                },
                 "oneOf": [
                   {
                     "title": "jamais",
@@ -318,6 +331,9 @@ export const resolvedSchema = {
               "redirectMode": {
                 "type": "object",
                 "description": "Si vous utilisez un autre mode que 'bouton' alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.",
+                "default": {
+                  "type": "button"
+                },
                 "oneOf": [
                   {
                     "title": "bouton",

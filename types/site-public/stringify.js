@@ -223,6 +223,12 @@ class Serializer {
       
       }
     
+      if (obj["reducedPersonalInfoAtCreation"] !== undefined) {
+        !addComma && (addComma = true) || (json += ',')
+        json += "\"reducedPersonalInfoAtCreation\":"
+      json += serializer.asBoolean(obj["reducedPersonalInfoAtCreation"])
+      }
+    
       if (obj["authMode"] !== undefined) {
         !addComma && (addComma = true) || (json += ',')
         json += "\"authMode\":"

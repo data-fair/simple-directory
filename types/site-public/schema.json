@@ -19,6 +19,9 @@
     "logo": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/logo"
     },
+    "reducedPersonalInfoAtCreation": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/reducedPersonalInfoAtCreation"
+    },
     "authMode": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/authMode"
     },

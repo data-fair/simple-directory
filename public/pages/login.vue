@@ -284,6 +284,7 @@
                 />
 
                 <v-text-field
+                  v-if="!sitePublic.reducedPersonalInfoAtCreation"
                   v-model="newUser.firstName"
                   :label="$t('common.firstName')"
                   name="firstname"
@@ -295,6 +296,7 @@
                 />
 
                 <v-text-field
+                  v-if="!sitePublic.reducedPersonalInfoAtCreation"
                   v-model="newUser.lastName"
                   :label="$t('common.lastName')"
                   name="lastname"

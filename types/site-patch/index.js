@@ -43,6 +43,11 @@ exports.resolvedSchema = {
             "readOnly": true,
             "type": "string"
         },
+        "reducedPersonalInfoAtCreation": {
+            "type": "boolean",
+            "title": "Réduire les informations personnelles à la création de compte",
+            "description": "Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email."
+        },
         "authMode": {
             "default": "onlyBackOffice",
             "title": "Mode d'authentification",
@@ -142,6 +147,9 @@ exports.resolvedSchema = {
                             "createMember": {
                                 "type": "object",
                                 "description": "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
+                                "default": {
+                                    "type": "never"
+                                },
                                 "oneOf": [
                                     {
                                         "title": "jamais",
@@ -182,6 +190,9 @@ exports.resolvedSchema = {
                             "redirectMode": {
                                 "type": "object",
                                 "description": "Si vous utilisez un autre mode que 'bouton' alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.",
+                                "default": {
+                                    "type": "button"
+                                },
                                 "oneOf": [
                                     {
                                         "title": "bouton",

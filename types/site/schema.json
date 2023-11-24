@@ -44,6 +44,11 @@
       "title": "Autre site pour l'authentification",
       "x-fromData": "context.otherSites"
     },
+    "reducedPersonalInfoAtCreation": {
+      "type": "boolean",
+      "title": "Réduire les informations personnelles à la création de compte",
+      "description": "Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email."
+    },
     "authProviders": {
       "x-if": "parent.value.authMode !== 'onlyOtherSite' && parent.value.authMode !== 'onlyBackOffice'",
       "type": "array",

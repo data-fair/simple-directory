@@ -10,6 +10,9 @@
       "readOnly": true,
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/_id"
     },
+    "reducedPersonalInfoAtCreation": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/reducedPersonalInfoAtCreation"
+    },
     "authMode": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/authMode"
     },

@@ -1,3 +1,7 @@
+/**
+ * Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email.
+ */
+export type ReduireLesInformationsPersonnellesALaCreationDeCompte = boolean;
 export type ModeDAuthentification = ModeDAuthentification1 & ModeDAuthentification2;
 export type ModeDAuthentification1 = UniquementSurLeSiteLuiMeme | UniquementSurLeBackOffice | SurLeSiteEtSurLeBackOfficeParSSO | UniquementSurUnAutreDeVosSites;
 export type UniquementSurLeSiteLuiMeme = "onlyLocal";
@@ -31,6 +35,7 @@ export type Fournisseur = string;
 export type FournisseursDIdentiteSSO = (OpenIDConnect | UnAutreDeVosSites | UnFournisseurDIdentiteConfigureSurAutreDeVosSites)[];
 export interface SitePatch {
     _id: string;
+    reducedPersonalInfoAtCreation?: ReduireLesInformationsPersonnellesALaCreationDeCompte;
     authMode: ModeDAuthentification;
     authOnlyOtherSite?: AutreSitePourLAuthentification;
     authProviders?: FournisseursDIdentiteSSO;
@@ -102,6 +107,11 @@ export declare const resolvedSchema: {
         _id: {
             readOnly: boolean;
             type: string;
+        };
+        reducedPersonalInfoAtCreation: {
+            type: string;
+            title: string;
+            description: string;
         };
         authMode: {
             default: string;
@@ -178,6 +188,9 @@ export declare const resolvedSchema: {
                         createMember: {
                             type: string;
                             description: string;
+                            default: {
+                                type: string;
+                            };
                             oneOf: ({
                                 title: string;
                                 properties: {
@@ -218,6 +231,9 @@ export declare const resolvedSchema: {
                         redirectMode: {
                             type: string;
                             description: string;
+                            default: {
+                                type: string;
+                            };
                             oneOf: ({
                                 title: string;
                                 properties: {

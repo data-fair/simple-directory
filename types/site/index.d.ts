@@ -6,6 +6,10 @@ export type SurLeSiteEtSurLeBackOfficeParSSO = "ssoBackOffice";
 export type UniquementSurUnAutreDeVosSites = "onlyOtherSite";
 export type ModeDAuthentification2 = string;
 export type AutreSitePourLAuthentification = string;
+/**
+ * Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email.
+ */
+export type ReduireLesInformationsPersonnellesALaCreationDeCompte = boolean;
 export type Couleur = string;
 export type URLDuLogoPetiteTaille = string;
 export type TypeDeFournisseur = "oidc";
@@ -45,6 +49,7 @@ export interface Site {
     logo?: string;
     authMode: ModeDAuthentification;
     authOnlyOtherSite?: AutreSitePourLAuthentification;
+    reducedPersonalInfoAtCreation?: ReduireLesInformationsPersonnellesALaCreationDeCompte;
     authProviders?: FournisseursDIdentiteSSO;
     [k: string]: unknown;
 }
@@ -166,6 +171,11 @@ export declare const resolvedSchema: {
             title: string;
             "x-fromData": string;
         };
+        reducedPersonalInfoAtCreation: {
+            type: string;
+            title: string;
+            description: string;
+        };
         authProviders: {
             "x-if": string;
             type: string;
@@ -226,6 +236,9 @@ export declare const resolvedSchema: {
                         createMember: {
                             type: string;
                             description: string;
+                            default: {
+                                type: string;
+                            };
                             oneOf: ({
                                 title: string;
                                 properties: {
@@ -266,6 +279,9 @@ export declare const resolvedSchema: {
                         redirectMode: {
                             type: string;
                             description: string;
+                            default: {
+                                type: string;
+                            };
                             oneOf: ({
                                 title: string;
                                 properties: {
