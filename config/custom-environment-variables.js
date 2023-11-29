@@ -194,6 +194,10 @@ module.exports = {
     __name: 'ONLY_CREATE_INVITED',
     __format: 'json'
   },
+  singleMembership: {
+    __name: 'SINGLE_MEMBERSHIP',
+    __format: 'json'
+  },
   userSelfDelete: {
     __name: 'USER_SELF_DELETE',
     __format: 'json'

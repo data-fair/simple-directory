@@ -104,6 +104,7 @@ module.exports = {
   },
   alwaysAcceptInvitation: true,
   onlyCreateInvited: false,
+  singleMembership: true,
   saml2: {
     providers: [{
       title: 'Test SAML IDP',

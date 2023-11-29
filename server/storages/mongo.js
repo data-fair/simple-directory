@@ -321,6 +321,11 @@ class MongodbStorage {
 
   async addMember (orga, user, role, department = null) {
     user.organizations = user.organizations || []
+
+    if (config.singleMembership && user.organizations.find(o => o.id === orga.id)) {
+      throw createError(400, 'cet utilisateur est déjà membre de cette organisation.')
+    }
+
     let userOrga = user.organizations.find(o => o.id === orga.id && (o.department || null) === department)
     if (!userOrga) {
       if (department && user.organizations.find(o => o.id === orga.id && !o.department)) {

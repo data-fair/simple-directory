@@ -175,6 +175,8 @@ module.exports = {
   // also they will not be able to log with personal account
   // and if removed from their last organization they will be deleted
   onlyCreateInvited: false,
+  // prevent inviting a user in multiple departments of the same organization
+  singleMembership: false,
   // users cannot delete their own account by default
   userSelfDelete: false,
   // Default redirection after login. If not specified user will go to his profile page.
