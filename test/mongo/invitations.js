@@ -212,4 +212,51 @@ describe('organizations api', () => {
     assert.equal(members.length, 3)
     assert.equal(members.filter(m => m.email === 'test-invit10@test.com').length, 2)
   })
+
+  it('should invite an existing user on another site', async () => {
+    const { ax } = await testUtils.createUser('test-invit12@test.com')
+    await testUtils.createUser('test-invit11@test.com')
+    const anonymousAx = await testUtils.axios()
+
+    const org = (await ax.post('/api/organizations', { name: 'test' })).data
+
+    await anonymousAx.post('/api/sites',
+      { _id: 'test', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:5989', theme: { primaryColor: '#FF00FF' } },
+      { params: { key: config.secretKeys.sites } })
+
+    const mailPromise = eventToPromise(mails.events, 'send')
+    await ax.post('/api/invitations', {
+      id: org.id,
+      name: org.name,
+      email: 'test-invit11@test.com',
+      role: 'user',
+      redirect: 'http://127.0.0.1:5989'
+    })
+    const mail = await mailPromise
+    assert.ok(mail.link.startsWith('http://127.0.0.1:5989/simple-directory/api/invitations/_accept'))
+
+    // when clicking on the link the person is redirected to a page to create their user
+    // the invitation token is forwarded to be re-sent with the user creation requests
+    let redirect
+    await assert.rejects(anonymousAx.get(mail.link), (res) => {
+      assert.equal(res.status, 302)
+      redirect = res.headers.location
+      console.log(redirect)
+      assert.ok(redirect.startsWith('http://127.0.0.1:5989/simple-directory/login?step=createUser&invit_token='))
+      return true
+    })
+
+    const invitToken = new URL(mail.link).searchParams.get('invit_token')
+
+    // finalize user creation and invitation
+    await anonymousAx.post('http://127.0.0.1:5989/simple-directory/api/users', { email: 'test-invit11@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
+
+    // after accepting the user is a member
+    const members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 2)
+    const newMember = members.find(m => m.email === 'test-invit11@test.com')
+    assert.ok(newMember)
+    assert.equal(newMember.role, 'user')
+    assert.equal(newMember.host, '127.0.0.1:5989')
+  })
 })

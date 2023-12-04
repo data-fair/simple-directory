@@ -45,6 +45,18 @@ router.post('', asyncWrap(async (req, res, next) => {
     }
   }
 
+  let invitSite = req.site
+  let invitPublicBaseUrl = req.publicBaseUrl
+  if (invitation.redirect) {
+    const host = new URL(invitation.redirect).host
+    invitSite = await storage.getSiteByHost(host)
+    if (invitSite) {
+      const url = new URL(config.publicUrl)
+      url.host = host
+      invitPublicBaseUrl = url.href
+    }
+  }
+
   const orga = await storage.getOrganization(invitation.id)
   if (!orga) return res.status(404).send('unknown organization')
   let dep
@@ -58,7 +70,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (config.alwaysAcceptInvitation) {
     // in 'always accept invitation' mode the user is not sent an email to accept the invitation
     // he is simple added to the list of members and created if needed
-    const user = await storage.getUserByEmail(invitation.email, req.email)
+    const user = await storage.getUserByEmail(invitation.email, invitSite)
     if (user && user.emailConfirmed) {
       debug('in alwaysAcceptInvitation and the user already exists, immediately add it as member', invitation.email)
       await storage.addMember(orga, user, invitation.role, invitation.department)
@@ -77,7 +89,7 @@ router.post('', asyncWrap(async (req, res, next) => {
         defaultOrg: invitation.id,
         ignorePersonalAccount: true
       }
-      if (req.site) newUser.host = req.site.host
+      if (invitSite) newUser.host = invitSite.host
       if (invitation.department) newUser.defaultDep = invitation.department
       newUser.name = userName(newUser)
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUser)
@@ -125,7 +137,7 @@ router.post('', asyncWrap(async (req, res, next) => {
       }
     }
   } else {
-    const linkUrl = new URL(req.publicBaseUrl + '/api/invitations/_accept')
+    const linkUrl = new URL(invitPublicBaseUrl + '/api/invitations/_accept')
     linkUrl.searchParams.set('invit_token', token)
     const params = {
       link: linkUrl.href,
