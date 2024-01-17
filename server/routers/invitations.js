@@ -30,6 +30,8 @@ router.post('', asyncWrap(async (req, res, next) => {
     }
   }
 
+  const skipMail = req.query.skip_mail === 'true'
+
   const invitation = req.body
   let userOrga = req.user.organizations.find(o => o.id === invitation.id)
   if (config.depAdminIsOrgAdmin) {
@@ -109,7 +111,7 @@ router.post('', asyncWrap(async (req, res, next) => {
         origin: linkUrl.origin
       }
       // send the mail either if the user does not exist or it was created more that 24 hours ago
-      if (!user || req.query.force_mail === 'true' || dayjs().diff(dayjs(user.created.date), 'day', true) < 1) {
+      if (!skipMail && (!user || req.query.force_mail === 'true' || dayjs().diff(dayjs(user.created.date), 'day', true) < 1)) {
         await mails.send({
           transport: req.app.get('mailTransport'),
           key: 'invitation',
@@ -145,13 +147,15 @@ router.post('', asyncWrap(async (req, res, next) => {
       host: linkUrl.host,
       origin: linkUrl.origin
     }
-    await mails.send({
-      transport: req.app.get('mailTransport'),
-      key: 'invitation',
-      messages: req.messages,
-      to: req.body.email,
-      params
-    })
+    if (!skipMail) {
+      await mails.send({
+        transport: req.app.get('mailTransport'),
+        key: 'invitation',
+        messages: req.messages,
+        to: req.body.email,
+        params
+      })
+    }
 
     sendNotification({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
