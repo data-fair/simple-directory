@@ -113,6 +113,55 @@ module.exports = {
         }
       }
     },
+    '/api/auth/password': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'To get a JWT from an email',
+        operationId: 'authPasswordless',
+        parameters: [{
+          name: 'redirect',
+          in: 'query',
+          description: 'A redirect URL',
+          required: false,
+          schema: {
+            type: 'string'
+          }
+        }],
+        requestBody: {
+          description: 'Credentials of the account',
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  email: {
+                    description: 'The main email of the account',
+                    type: 'string',
+                    format: 'email'
+                  },
+                  password: {
+                    description: 'The main email of the account',
+                    type: 'string'
+                  }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: {
+            description: 'A JWT, or the input redirect URL concatenated with a JWT'
+          },
+          400: {
+            description: 'Input data has wrong format'
+          },
+          404: {
+            description: 'There is no user associated with this email'
+          }
+        }
+      }
+    },
     '/api/auth/exchange': {
       post: {
         tags: ['Authentication'],
