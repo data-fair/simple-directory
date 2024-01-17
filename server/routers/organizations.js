@@ -193,6 +193,7 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   if (req.query.ids || req.query.id) params.ids = (req.query.ids || req.query.id).split(',')
   if (req.query.role) params.roles = req.query.role.split(',')
   if (req.query.department) params.departments = req.query.department.split(',')
+  if (req.query.email_confirmed) params.emailConfirmed = req.query.email_confirmed === 'true'
   const members = { count: 0, results: [] }
   for (const storage of storages) {
     // do our best to mix results in "org_storage=both" mode

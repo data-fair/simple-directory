@@ -40,7 +40,7 @@
     </v-row>
 
     <v-row dense>
-      <v-col cols="4">
+      <v-col :cols="filterMemberCols">
         <v-text-field
           v-model="q"
           :label="$t('common.search')"
@@ -48,12 +48,13 @@
           solo
           append-icon="mdi-magnify"
           clearable
+          hide-details="auto"
           @click:clear="$nextTick(() => $nextTick(() => fetchMembers(1)))"
           @click:append="fetchMembers(1)"
           @keyup.enter="fetchMembers(1)"
         />
       </v-col>
-      <v-col cols="4">
+      <v-col :cols="filterMemberCols">
         <v-select
           v-model="role"
           :items="orga.roles"
@@ -61,19 +62,37 @@
           name="role"
           solo
           clearable
+          hide-details="auto"
           @change="fetchMembers(1)"
         />
       </v-col>
-      <v-col cols="4">
+      <v-col :cols="filterMemberCols">
         <v-autocomplete
           v-if="env.manageDepartments && orga.departments && orga.departments.length && !adminDepartment"
           v-model="department"
-          :items="orga.departments"
+          :items="[{id: '-', name: 'aucun'}].concat(orga.departments)"
           :label="orga.departmentLabel || $t('common.department')"
           item-value="id"
           item-text="name"
           clearable
           name="department"
+          solo
+          hide-details="auto"
+          @change="fetchMembers(1)"
+        />
+      </v-col>
+      <v-col
+        v-if="env.alwaysAcceptInvitation"
+        :cols="filterMemberCols"
+      >
+        <v-select
+          v-model="emailConfirmedFilter"
+          :items="[{id: 'true', name: $t('common.emailConfirmed')}, {id: 'false', name: $t('common.emailNotConfirmed')}]"
+          :label="$t('common.creationStep')"
+          item-value="id"
+          item-text="name"
+          clearable
+          name="storage"
           solo
           @change="fetchMembers(1)"
         />
@@ -212,7 +231,8 @@ export default {
     role: null,
     department: null,
     membersPage: 1,
-    membersPageSize: 10
+    membersPageSize: 10,
+    emailConfirmedFilter: null
   }),
   computed: {
     ...mapState(['userDetails', 'env']),
@@ -232,6 +252,9 @@ export default {
     },
     csvUrl () {
       return this.env.publicUrl + `/api/organizations/${this.orga.id}/members?size=10000&format=csv`
+    },
+    filterMemberCols () {
+      return this.env.alwaysAcceptInvitation ? 6 : 4
     }
   },
   async mounted () {
@@ -243,17 +266,19 @@ export default {
     async fetchMembers (page) {
       this.membersPage = page
       try {
-        this.members = await this.$axios.$get(`api/organizations/${this.orga.id}/members`, {
-          params: {
-            q: this.q,
-            page: this.membersPage,
-            size: this.membersPageSize,
-            department: this.department,
-            role: this.role,
-            org_storage: this.orgStorage,
-            sort: 'name'
-          }
-        })
+        const params = {
+          q: this.q,
+          page: this.membersPage,
+          size: this.membersPageSize,
+          department: this.department,
+          role: this.role,
+          org_storage: this.orgStorage,
+          sort: 'name'
+        }
+        if (this.emailConfirmedFilter !== null) {
+          params.email_confirmed = this.emailConfirmedFilter
+        }
+        this.members = await this.$axios.$get(`api/organizations/${this.orga.id}/members`, { params })
         if (this.members.count && !this.members.results.length) {
           this.fetchMembers(page - 1)
         }

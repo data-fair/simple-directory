@@ -213,6 +213,9 @@ class MongodbStorage {
       }
       filter.organizations.$elemMatch.$or = depOr
     }
+    if ('emailConfirmed' in params) {
+      filter.emailConfirmed = params.emailConfirmed
+    }
     const countPromise = this.db.collection('users').countDocuments(filter)
     const users = params.size === 0
       ? []

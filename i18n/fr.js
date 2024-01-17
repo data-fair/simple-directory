@@ -74,6 +74,7 @@ module.exports = {
     continue: 'Continuer',
     tooLong: 'texte trop long',
     settings: 'paramètres',
+    emailConfirmed: 'création finalisée',
     emailNotConfirmed: 'création non finalisée',
     noRole: 'aucun role',
     downloadCsv: 'télécharger la liste au format CSV',
@@ -83,7 +84,9 @@ module.exports = {
     contactEmail: 'Email de contact',
     orgName: 'Nom de l\'organisation',
     loginSignin: 'Se connecter / créer un compte',
-    sort: 'Tri'
+    sort: 'Tri',
+    all: 'tous',
+    creationStep: 'Étape de création'
   },
   doc: {
     about: {
