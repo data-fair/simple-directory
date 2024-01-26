@@ -5,6 +5,8 @@ const testUtils = require('../utils')
 const ldapStorage = require('../../server/storages/ldap')
 
 const ldapConfig = JSON.parse(JSON.stringify(require('config').storage.ldap))
+ldapConfig.searchUserDN = 'cn=admin,dc=example,dc=org'
+ldapConfig.searchUserPassword = 'admin'
 ldapConfig.organizations.staticSingleOrg = { id: 'test-ldap', name: 'Test single org' }
 
 // see test/resources/organizations.json to see that the org "test-ldap" has a specific configuration
