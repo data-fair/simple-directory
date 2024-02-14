@@ -71,6 +71,10 @@ module.exports = {
         overwrite: {
           __name: 'STORAGE_LDAP_USERS_OVERWRITE',
           __format: 'json'
+        },
+        extraFilters: {
+          __name: 'STORAGE_LDAP_USERS_EXTRA_FILTERS',
+          __format: 'json'
         }
       },
       organizations: {
@@ -86,6 +90,10 @@ module.exports = {
         },
         overwrite: {
           __name: 'STORAGE_LDAP_ORGS_OVERWRITE',
+          __format: 'json'
+        },
+        extraFilters: {
+          __name: 'STORAGE_LDAP_ORGS_EXTRA_FILTERS',
           __format: 'json'
         }
       },
