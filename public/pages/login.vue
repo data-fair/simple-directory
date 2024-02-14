@@ -721,7 +721,7 @@
 <script>
 
 import { mapState, mapActions, mapGetters } from 'vuex'
-import jwtDecode from 'jwt-decode'
+import { jwtDecode } from 'jwt-decode'
 import eventBus from '../event-bus'
 
 export default {

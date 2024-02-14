@@ -117,7 +117,7 @@
 </template>
 
 <script>
-import jwtDecode from 'jwt-decode'
+import { jwtDecode } from 'jwt-decode'
 import { mapState, mapActions, mapGetters } from 'vuex'
 import eventBus from '../event-bus'
 
