@@ -14,9 +14,9 @@ const mails = require('./mails')
 const asyncWrap = require('./utils/async-wrap')
 const tokens = require('./utils/tokens')
 const limits = require('./utils/limits')
-const prometheus = require('./utils/prometheus')
 const saml2 = require('./utils/saml2')
 const oauth = require('./utils/oauth')
+const metrics = require('./utils/metrics')
 const twoFA = require('./routers/2fa.js')
 const session = require('@data-fair/sd-express')({
   directoryUrl: config.publicUrl,
@@ -128,28 +128,29 @@ app.use('/api/', (req, res) => {
   return res.status(404).send('unknown api endpoint')
 })
 
-// Error management
-app.use((err, req, res, next) => {
-  if (err.code === 'ECONNRESET') err.statusCode = 400
-  const status = err.statusCode || err.status || 500
-  if (status === 500) {
-    console.error('(http) Error in express route', req.originalUrl, err)
-    prometheus.internalError.inc({ errorCode: 'http' })
-  }
-  if (!res.headersSent) {
-    res.status(status)
-    if (['development', 'test'].includes(process.env.NODE_ENV)) {
-      res.send(err.stack)
-    } else {
-      // settings content-type as plain text instead of html to prevent XSS attack
-      res.type('text/plain')
-      res.send(err.message)
-    }
-  }
-})
-
 exports.run = async () => {
   debug('start run method')
+
+  const { internalError, startObserver } = await import('@data-fair/lib/node/observer.js')
+
+  // Error management
+  app.use((err, req, res, next) => {
+    if (err.code === 'ECONNRESET') err.statusCode = 400
+    const status = err.statusCode || err.status || 500
+    if (status === 500) {
+      internalError('http', 'failure while serving http request', err)
+    }
+    if (!res.headersSent) {
+      res.status(status)
+      if (['development', 'test'].includes(process.env.NODE_ENV)) {
+        res.send(err.stack)
+      } else {
+      // settings content-type as plain text instead of html to prevent XSS attack
+        res.type('text/plain')
+        res.send(err.message)
+      }
+    }
+  })
 
   debug('prepare keys')
   const keys = await tokens.init()
@@ -240,7 +241,10 @@ exports.run = async () => {
     app.use(cors(), nuxt.render)
   }
 
-  if (config.prometheus.active) await prometheus.start(storage.db)
+  if (config.prometheus.active) {
+    await metrics.init(storage.db)
+    await startObserver()
+  }
 
   debug('start server')
   server.listen(config.port)
@@ -259,5 +263,8 @@ exports.stop = async () => {
     await app.get('maildev').closeAsync()
   }
 
-  if (config.prometheus.active) await prometheus.stop()
+  if (config.prometheus.active) {
+    const { stopObserver } = await import('@data-fair/lib/node/observer.js')
+    await stopObserver()
+  }
 }

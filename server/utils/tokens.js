@@ -12,7 +12,6 @@ const Cookies = require('cookies')
 const defaultConfig = require('../../config/default.js')
 const storages = require('../storages')
 const twoFA = require('../routers/2fa.js')
-const prometheus = require('./prometheus')
 
 exports.init = async () => {
   const keys = {}
@@ -175,9 +174,9 @@ exports.keepalive = async (req, res) => {
     payload.isAdmin = false
   } else {
     if (!storage.readonly) {
-      storage.updateLogged(req.user.id).catch((err) => {
-        console.error('(update-logged) error while updating logged date', err)
-        prometheus.internalError.inc({ errorCode: 'http' })
+      storage.updateLogged(req.user.id).catch(async (err) => {
+        const { internalError } = await import('@data-fair/lib/node/observer.js')
+        internalError('update-logged', 'error while updating logged date', err)
       })
     }
   }
