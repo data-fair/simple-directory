@@ -9,7 +9,7 @@
       "type": "string"
     },
     "owner": {
-      "$ref": "https://github.com/data-fair/lib/session-state#/definitions/account"
+      "$ref": "https://github.com/data-fair/lib/session-state#/$defs/account"
     },
     "host": {
       "type": "string"

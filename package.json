@@ -24,9 +24,10 @@
     "doc": "nuxt --config-file ${PWD}/doc/nuxt.config.js",
     "link-doc": "ln -nsf ${PWD}/doc/pages/doc public/pages/doc",
     "build-doc": "nuxt generate --config-file ${PWD}/doc/nuxt.config.js",
-    "build-types": "cd types && npm run build",
+    "build-types": "df-build-types --mjs types",
     "postinstall": "patch-package",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "check-types": "tsc"
   },
   "repository": {
     "type": "git",
@@ -90,6 +91,7 @@
     "patch-package": "^6.5.1",
     "semver-extract": "^1.1.1",
     "tinycolor2": "^1.4.2",
+    "typescript": "^5.3.3",
     "vue": "^2.7.16",
     "vue-cropperjs": "^4.1.0",
     "vue-moment": "^4.1.0",
@@ -117,7 +119,9 @@
     "escape-string-regexp": "^4.0.0",
     "event-to-promise": "^0.8.0",
     "express": "^4.17.1",
+    "fast-json-stringify": "^5.12.0",
     "flat": "^5.0.2",
+    "flatstr": "^1.0.12",
     "fs-extra": "^8.1.0",
     "gm": "^1.25.0",
     "http-errors": "^2.0.0",

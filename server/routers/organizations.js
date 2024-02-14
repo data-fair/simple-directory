@@ -13,8 +13,6 @@ const tokens = require('../utils/tokens')
 const storageFactory = require('../storages')
 const passwordsUtils = require('../utils/passwords')
 const partnersUtils = require('../utils/partners')
-const partnerPostSchema = require('../../types/partner-post')
-const partnerAcceptSchema = require('../../types/partner-accept')
 const defaultConfig = require('../../config/default.js')
 const { send: sendNotification } = require('../utils/notifications')
 
@@ -320,10 +318,14 @@ if (config.managePartners) {
   // Invitation for an organization to join us as partners
   const debugPartners = require('debug')('partners')
   router.post('/:organizationId/partners', asyncWrap(async (req, res, next) => {
+    const { assertValid } = await import('../../types/partner-post/index.mjs')
+
     if (!req.user) return res.status(401).send()
     if (!isOrgAdmin(req)) return res.status(403).send(req.messages.errors.permissionDenied)
 
-    const partnerPost = partnerPostSchema.validate(req.body)
+    const partnerPost = req.body
+    // @ts-ignore
+    assertValid(partnerPost)
     debugPartners('new partner', partnerPost, req.user.activeAccount)
     const storage = req.app.get('storage')
 
@@ -365,8 +367,12 @@ if (config.managePartners) {
   }))
 
   router.post('/:organizationId/partners/_accept', asyncWrap(async (req, res, next) => {
+    const { assertValid } = await import('../../types/partner-accept/index.mjs')
+
     if (!req.user) return res.status(401).send()
-    const partnerAccept = partnerAcceptSchema.validate(req.body)
+    const partnerAccept = req.body
+    // @ts-ignore
+    assertValid(partnerAccept)
 
     // user must be owner of the new partner
     const userOrga = req.user.organizations.find(o => o.id === partnerAccept.id && !o.department)
