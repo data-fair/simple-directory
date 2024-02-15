@@ -57,7 +57,7 @@
 </template>
 
 <script>
-import { resolvedSchema } from '../../types/site-patch'
+import resolvedSchema from '../../types/site-patch/.type/resolved-schema.json'
 import { mapActions, mapState } from 'vuex'
 
 export default {
