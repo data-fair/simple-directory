@@ -36,6 +36,8 @@ exports.isValid = (twoFA, token) => {
 exports.cookieName = (userId) => 'id_token_2fa_' + userId
 
 router.post('/', asyncWrap(async (req, res, next) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
   if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
@@ -43,7 +45,7 @@ router.post('/', asyncWrap(async (req, res, next) => {
   try {
     await limiter(req).consume(requestIp.getClientIp(req), 1)
   } catch (err) {
-    console.error('Rate limit error for /password route', requestIp.getClientIp(req), req.body.email, err)
+    eventsLog.warn('2fa-rate-limit', `rate limit error for /2fa route with email ${req.body.email}`, { req })
     return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
 
@@ -70,6 +72,7 @@ router.post('/', asyncWrap(async (req, res, next) => {
     const secret = authenticator.generateSecret()
     const otpauth = authenticator.keyuri(user.name, new URL(config.publicUrl).host, secret)
     await storage.patchUser(user.id, { '2FA': { secret, active: false } })
+    eventsLog.info('2fa-initialize', `user initialized 2fa ${req.body.email}`, { req, user })
     res.send({ otpauth, qrcode: await qrcode.toDataURL(otpauth) })
   } else {
     // validate secret with initial token
@@ -77,6 +80,7 @@ router.post('/', asyncWrap(async (req, res, next) => {
     if (!isValid) return res.status(400).send(req.messages.errors.bad2FAToken)
     const recovery = uuidv4()
     await storage.patchUser(user.id, { '2FA': { ...user2FA, active: true, recovery: await passwords.hashPassword(recovery) } })
+    eventsLog.info('2fa-recovery', `user recovered 2fa with initial token ${req.body.email}`, { req, user })
     res.send({ recovery })
   }
 }))

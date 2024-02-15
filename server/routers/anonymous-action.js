@@ -10,7 +10,8 @@ module.exports = asyncWrap(async (req, res, next) => {
   try {
     await limiter(req).consume(requestIp.getClientIp(req), 1)
   } catch (err) {
-    console.error('Rate limit error for /anonymous-action route', requestIp.getClientIp(req), req.body.email, err)
+    const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+    eventsLog.warn('anonymous-action-rate-limit', 'rate limit error for /anonymous-action route', { req })
     return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
   const payload = { anonymousAction: true, validation: 'wait' }

@@ -18,6 +18,10 @@ const router = module.exports = express.Router()
 
 // Invitation for a user to join an organization from an admin of this organization
 router.post('', asyncWrap(async (req, res, next) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const logContext = { req, account: req.site?.account }
+
   if (!req.user) return res.status(401).send()
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
@@ -26,6 +30,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (storage.db) {
     const limit = await limits.get(storage.db, { type: 'organization', id: req.body.id }, 'store_nb_members')
     if (limit.consumption >= limit.limit && limit.limit > 0) {
+      eventsLog.warn('invitation-limit', `limit error for /invitations route with org ${req.body.id}`, logContext)
       return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
     }
   }
@@ -66,10 +71,14 @@ router.post('', asyncWrap(async (req, res, next) => {
     dep = orga.departments && orga.departments.find(d => d.id === invitation.department)
     if (!dep) return res.status(404).send('unknown department')
   }
+  if (!logContext.account) {
+    logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invitation.department, departmentName: dep ? dep.name : null }
+  }
 
   const token = tokens.sign(req.app.get('keys'), shortenInvit(invitation), config.jwtDurations.invitationToken)
 
   if (config.alwaysAcceptInvitation) {
+    eventsLog.info('invitation-creation', `invitation sent in always accept mode immediately creates a user or adds it as member ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
     // in 'always accept invitation' mode the user is not sent an email to accept the invitation
     // he is simple added to the list of members and created if needed
     const user = await storage.getUserByEmail(invitation.email, invitSite)
@@ -119,6 +128,7 @@ router.post('', asyncWrap(async (req, res, next) => {
           to: req.body.email,
           params
         })
+        eventsLog.info('invitation-sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.tole} ${invitation.department}`, logContext)
       }
 
       const notif = {
@@ -155,6 +165,7 @@ router.post('', asyncWrap(async (req, res, next) => {
         to: req.body.email,
         params
       })
+      eventsLog.info('invitation-sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.tole} ${invitation.department}`, logContext)
     }
 
     sendNotification({
@@ -172,6 +183,10 @@ router.post('', asyncWrap(async (req, res, next) => {
 }))
 
 router.get('/_accept', asyncWrap(async (req, res, next) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const logContext = { req, account: req.site?.account }
+
   let invit
   let verified
   const errorUrl = new URL(`${req.publicBaseUrl}/login`)
@@ -196,6 +211,7 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
 
   const user = await storage.getUserByEmail(invit.email, req.site)
+  logContext.user = user
   if (!user && storage.readonly) {
     errorUrl.searchParams.set('error', 'userUnknown')
     return res.redirect(errorUrl.href)
@@ -205,6 +221,9 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   if (!orga) {
     errorUrl.searchParams.set('error', 'orgaUnknown')
     return res.redirect(errorUrl.href)
+  }
+  if (!logContext.account) {
+    logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invit.department }
   }
 
   let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${req.publicBaseUrl}/invitation`)
@@ -267,6 +286,8 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   }
 
   await storage.addMember(orga, user, invit.role, invit.department)
+
+  eventsLog.info('invitation-accepted', `invitation accepted ${invit.email}, ${orga.id} ${orga.name} ${invit.department} ${invit.role}`, logContext)
 
   const notif = {
     sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },

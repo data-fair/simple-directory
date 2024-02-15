@@ -19,6 +19,10 @@ const router = express.Router()
 
 // Get the list of users
 router.get('', asyncWrap(async (req, res, next) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const logContext = { req, account: req.site?.account }
+
   const listMode = config.listUsersMode || config.listEntitiesMode
   if (listMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
   if (listMode === 'admin' && !(req.user && req.user.adminMode)) return res.send({ results: [], count: 0 })
@@ -38,12 +42,19 @@ router.get('', asyncWrap(async (req, res, next) => {
     if (req.query.q) params.q = req.query.q
   }
   const users = await req.app.get('storage').findUsers(params)
+
+  eventsLog.info('list-users', 'list users', logContext)
+
   res.json(users)
 }))
 
 const createKeys = ['firstName', 'lastName', 'email', 'password', 'birthday', 'createOrganization']
 // TODO: block when onlyCreateInvited is true ?
 router.post('', asyncWrap(async (req, res, next) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const logContext = { req, account: req.site?.account }
+
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
   const invalidKey = Object.keys(req.body).find(key => !createKeys.concat(adminKeys).includes(key))
@@ -62,6 +73,9 @@ router.post('', asyncWrap(async (req, res, next) => {
     }
     orga = await storage.getOrganization(invit.id)
     if (!orga) return res.status(400).send(req.messages.errors.orgaUnknown)
+    if (!logContext.account) {
+      logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invit.department, departmentName: invit.departmentName }
+    }
     if (invit.email !== req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   } else if (config.onlyCreateInvited) {
     return res.status(400).send('users can only be created from an invitation')
@@ -77,6 +91,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   }
   if (req.site) newUser.host = req.site.host
   newUser.name = userName(newUser)
+  logContext.user = newUser
   if (invit) {
     newUser.emailConfirmed = true
     newUser.defaultOrg = invit.id
@@ -120,11 +135,13 @@ router.post('', asyncWrap(async (req, res, next) => {
       newUser.id = user.id
       newUser.organizations = user.organizations
     } else {
+      eventsLog.info('user-recreated', 'user was recreated', logContext)
       await storage.deleteUser(user.id)
     }
   }
 
   await storage.createUser(newUser, null, new URL(link).host)
+  eventsLog.info('user-created', 'user was created', logContext)
 
   if (invit && !config.alwaysAcceptInvitation) {
     if (storage.db) {
@@ -132,6 +149,7 @@ router.post('', asyncWrap(async (req, res, next) => {
       const limit = await limits.get(storage.db, consumer, 'store_nb_members')
       if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(req.messages.errors.maxNbMembers)
     }
+    eventsLog.info('invitation-accepted', 'user accepted an invitation', logContext)
     await storage.addMember(orga, newUser, invit.role, invit.department)
     sendNotification({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },
@@ -185,6 +203,10 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
 const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'defaultDep', 'plannedDeletion']
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 router.patch('/:userId', asyncWrap(async (req, res, next) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const logContext = { req, account: req.site?.account }
+
   if (!req.user) return res.status(401).send()
   if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
 
@@ -209,6 +231,8 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
   }
 
   const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
+
+  eventsLog.info('user-patched', `user was patched ${patchedUser.name} (${patchedUser.id})`, logContext)
 
   const link = req.publicBaseUrl + '/login?email=' + encodeURIComponent(req.user.email)
   const linkUrl = new URL(link)
@@ -239,6 +263,10 @@ router.patch('/:userId', asyncWrap(async (req, res, next) => {
 }))
 
 router.delete('/:userId', asyncWrap(async (req, res, next) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const logContext = { req, account: req.site?.account }
+
   if (!req.user) return res.status(401).send()
   if (config.userSelfDelete) {
     if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
@@ -247,12 +275,19 @@ router.delete('/:userId', asyncWrap(async (req, res, next) => {
   }
 
   await req.app.get('storage').deleteUser(req.params.userId)
+
+  eventsLog.info('user-deleted', `user was deleted ${req.params.userId}`, logContext)
+
   webhooks.deleteIdentity('user', req.params.userId)
   res.status(204).send()
 }))
 
 // Change password of a user using an action token sent in a mail
 router.post('/:userId/password', asyncWrap(async (req, res, next) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const logContext = { req, account: req.site?.account }
+
   if (!req.body.password) return res.status(400).send()
   const actionToken = req.query.action_token
   if (!actionToken) return res.status(401).send('action_token param is required')
@@ -267,11 +302,18 @@ router.post('/:userId/password', asyncWrap(async (req, res, next) => {
   if (!passwords.validate(req.body.password)) return res.status(400).send(req.messages.errors.malformedPassword)
   const storedPassword = await passwords.hashPassword(req.body.password)
   await req.app.get('storage').patchUser(req.params.userId, { password: storedPassword })
+
+  eventsLog.info('user-password-change', `user changed password ${req.params.userId}`, logContext)
+
   res.status(204).send()
 }))
 
 // Change host of a user using an action token sent in a mail
 router.post('/:userId/host', asyncWrap(async (req, res, next) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const logContext = { req, account: req.site?.account }
+
   const storage = req.app.get('storage')
   if (!req.body.host) return res.status(400).send()
   const actionToken = req.query.action_token
@@ -285,6 +327,8 @@ router.post('/:userId/host', asyncWrap(async (req, res, next) => {
   if (decoded.id !== req.params.userId) return res.status(401).send('wrong user id in token')
   if (decoded.action !== 'changeHost') return res.status(401).send('wrong action for this token')
   await storage.patchUser(req.params.userId, { host: req.body.host, oauth: null, oidc: null, saml: null })
+
+  eventsLog.info('user-host-change', `user changed host ${req.params.userId}`, logContext)
 
   const storedPassword = await storage.getPassword(decoded.id)
   if (!storedPassword) {

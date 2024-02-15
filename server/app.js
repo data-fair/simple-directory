@@ -131,26 +131,12 @@ app.use('/api/', (req, res) => {
 exports.run = async () => {
   debug('start run method')
 
-  const { internalError, startObserver } = await import('@data-fair/lib/node/observer.js')
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+
+  const errorHandler = (await import('@data-fair/lib/express/error-handler.js')).default
 
   // Error management
-  app.use((err, req, res, next) => {
-    if (err.code === 'ECONNRESET') err.statusCode = 400
-    const status = err.statusCode || err.status || 500
-    if (status === 500) {
-      internalError('http', 'failure while serving http request', err)
-    }
-    if (!res.headersSent) {
-      res.status(status)
-      if (['development', 'test'].includes(process.env.NODE_ENV)) {
-        res.send(err.stack)
-      } else {
-      // settings content-type as plain text instead of html to prevent XSS attack
-        res.type('text/plain')
-        res.send(err.message)
-      }
-    }
-  })
+  app.use(errorHandler)
 
   debug('prepare keys')
   const keys = await tokens.init()
@@ -190,6 +176,7 @@ exports.run = async () => {
           for (const user of await storage.findInactiveUsers()) {
             console.log('plan deletion of inactive user', user)
             await storage.patchUser(user.id, { plannedDeletion })
+            eventsLog.warn('planned-deletion', 'planned deletion of inactive user', { user })
             const link = config.publicUrl + '/login?email=' + encodeURIComponent(user.email)
             const linkUrl = new URL(link)
             if (user.emailConfirmed || user.logged) {
@@ -207,12 +194,14 @@ exports.run = async () => {
                   cause: i18n.messages[i18n.defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', dayjs(user.logged || user.created.date).locale(i18n.defaultLocale).format('L'))
                 }
               })
+              eventsLog.warn('planned-deletion-email', `sent an email of planned deletion to inactive user ${user.email}`, { user })
             }
           }
         }
         for (const user of await storage.findUsersToDelete()) {
           console.log('execute planned deletion of user', user)
           await storage.deleteUser(user.id)
+          eventsLog.warn('planned-deletion-remove', 'deleted inactive user', { user })
           webhooks.deleteIdentity('user', user.id)
         }
         await locks.release(storage.db, 'user-deletion-task')
@@ -242,6 +231,7 @@ exports.run = async () => {
   }
 
   if (config.prometheus.active) {
+    const { startObserver } = await import('@data-fair/lib/node/observer.js')
     await metrics.init(storage.db)
     await startObserver()
   }
