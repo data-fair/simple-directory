@@ -54,6 +54,10 @@ module.exports = {
       readonly: {
         __name: 'STORAGE_MONGO_READONLY',
         __format: 'json'
+      },
+      clientOptions: {
+        __name: 'STORAGE_MONGO_CLIENT_OPTIONS',
+        __format: 'json'
       }
     },
     ldap: {
