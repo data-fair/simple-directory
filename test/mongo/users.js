@@ -62,7 +62,6 @@ describe('users api', () => {
 
     await anonymousAx.post('http://127.0.0.1:5989/simple-directory/api/auth/action', { email: 'user3@test.com', action: 'changePassword' })
     const mail = await mailPromise
-    console.log(mail.link)
     assert.ok(mail.link.includes('action_token'))
     const actionToken = (new URL(mail.link)).searchParams.get('action_token')
     await assert.rejects(ax.post(

@@ -111,7 +111,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   const orga = req.body
   orga.id = orga.id || shortid.generate()
   await storage.createOrganization(orga, req.user)
-  eventsLog.info('org-create', `a user created and organization ${orga.name} ${orga.id}`, logContext)
+  eventsLog.info('org-create', `a user created an organization: ${orga.name} (${orga.id})`, logContext)
   if (!req.user.adminMode || req.query.autoAdmin !== 'false') await storage.addMember(orga, req.user, 'admin')
   webhooks.postIdentity('organization', orga)
   orga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'

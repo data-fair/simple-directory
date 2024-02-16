@@ -5,9 +5,9 @@
   "main": "server/app.js",
   "scripts": {
     "test": "npm run test-file && npm run test-mongo && npm run test-ldap",
-    "test-file": "NODE_ENV=test STORAGE_TYPE=file mocha --exit --bail --timeout 20000 test/file/*.js",
-    "test-mongo": "NODE_ENV=test STORAGE_TYPE=mongo mocha --exit --bail --timeout 20000 test/mongo",
-    "test-ldap": "NODE_ENV=test STORAGE_TYPE=ldap mocha --exit --bail --timeout 20000 test/ldap",
+    "test-file": "NODE_ENV=test EVENTS_LOG_LEVEL=warn STORAGE_TYPE=file mocha --exit --bail --timeout 20000 test/file/*.js",
+    "test-mongo": "NODE_ENV=test EVENTS_LOG_LEVEL=warn STORAGE_TYPE=mongo mocha --exit --bail --timeout 20000 test/mongo",
+    "test-ldap": "NODE_ENV=test EVENTS_LOG_LEVEL=warn STORAGE_TYPE=ldap mocha --exit --bail --timeout 20000 test/ldap",
     "test-cover": "nyc npm test",
     "test-deps": "docker compose --profile test up -d",
     "report": "nyc report --reporter=html",

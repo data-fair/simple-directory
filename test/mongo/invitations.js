@@ -241,7 +241,6 @@ describe('organizations api', () => {
     await assert.rejects(anonymousAx.get(mail.link), (res) => {
       assert.equal(res.status, 302)
       redirect = res.headers.location
-      console.log(redirect)
       assert.ok(redirect.startsWith('http://127.0.0.1:5989/simple-directory/login?step=createUser&invit_token='))
       return true
     })

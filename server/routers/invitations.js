@@ -30,7 +30,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   if (storage.db) {
     const limit = await limits.get(storage.db, { type: 'organization', id: req.body.id }, 'store_nb_members')
     if (limit.consumption >= limit.limit && limit.limit > 0) {
-      eventsLog.warn('invitation-limit', `limit error for /invitations route with org ${req.body.id}`, logContext)
+      eventsLog.info('invitation-limit', `limit error for /invitations route with org ${req.body.id}`, logContext)
       return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
     }
   }
