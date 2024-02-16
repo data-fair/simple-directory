@@ -26,13 +26,11 @@ ADD i18n i18n
 
 # also install deps in types submodule
 ADD types types
-WORKDIR /webapp/types
-RUN npm ci --production && \
-    ../node_modules/.bin/clean-modules --yes
 WORKDIR /webapp
 
 # Build UI
 ENV NODE_ENV production
+RUN npm run build-types
 RUN npm run build
 
 # Adding server files
