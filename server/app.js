@@ -176,7 +176,7 @@ exports.run = async () => {
           for (const user of await storage.findInactiveUsers()) {
             console.log('plan deletion of inactive user', user)
             await storage.patchUser(user.id, { plannedDeletion })
-            eventsLog.warn('planned-deletion', 'planned deletion of inactive user', { user })
+            eventsLog.warn('sd.auto-delete.plan', 'planned deletion of inactive user', { user })
             const link = config.publicUrl + '/login?email=' + encodeURIComponent(user.email)
             const linkUrl = new URL(link)
             if (user.emailConfirmed || user.logged) {
@@ -194,14 +194,14 @@ exports.run = async () => {
                   cause: i18n.messages[i18n.defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', dayjs(user.logged || user.created.date).locale(i18n.defaultLocale).format('L'))
                 }
               })
-              eventsLog.warn('planned-deletion-email', `sent an email of planned deletion to inactive user ${user.email}`, { user })
+              eventsLog.warn('sd.auto-delete.email', `sent an email of planned deletion to inactive user ${user.email}`, { user })
             }
           }
         }
         for (const user of await storage.findUsersToDelete()) {
           console.log('execute planned deletion of user', user)
           await storage.deleteUser(user.id)
-          eventsLog.warn('planned-deletion-remove', 'deleted inactive user', { user })
+          eventsLog.warn('sd.auto-delete.delete', 'deleted inactive user', { user })
           webhooks.deleteIdentity('user', user.id)
         }
         await locks.release(storage.db, 'user-deletion-task')

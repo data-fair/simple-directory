@@ -156,12 +156,10 @@ exports.keepalive = async (req, res) => {
     org = await req.app.get('storage').getOrganization(req.user.organization.id)
     if (!org) {
       exports.unsetCookies(req, res)
-      eventsLog.info('keepalive-fail', 'a user tried to prolongate a session in invalid org', logContext)
+      eventsLog.info('sd.auth.keepalive.fail', 'a user tried to prolongate a session in invalid org', logContext)
       return res.status(401).send('Organization does not exist anymore')
     }
-    if (!logContext.account) {
-      logContext.account = { type: 'organization', id: org.id, name: org.name, department: org.department, departmentName: org.departmentName }
-    }
+    logContext.account = { type: 'organization', id: org.id, name: org.name, department: org.department, departmentName: org.departmentName }
   }
   let storage = req.app.get('storage')
   if (req.user.orgStorage && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
@@ -170,7 +168,7 @@ exports.keepalive = async (req, res) => {
   const user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
   if (!user) {
     exports.unsetCookies(req, res)
-    eventsLog.info('keepalive-fail', 'a delete user tried to prolongate a session', logContext)
+    eventsLog.info('sd.auth.keepalive.fail', 'a delete user tried to prolongate a session', logContext)
     return res.status(401).send('User does not exist anymore')
   }
 
@@ -194,7 +192,7 @@ exports.keepalive = async (req, res) => {
   const userOrg = cookies.get('id_token_org') && user.organizations.find(o => o.id === cookies.get('id_token_org') && (o.department || null) === (cookies.get('id_token_dep') ? decodeURIComponent(cookies.get('id_token_dep')) : null))
   exports.setCookieToken(req, res, token, userOrg)
 
-  eventsLog.info('keepalive-ok', 'a session was successfully prolongated', logContext)
+  eventsLog.info('sd.auth.keepalive.ok', 'a session was successfully prolongated', logContext)
 }
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
