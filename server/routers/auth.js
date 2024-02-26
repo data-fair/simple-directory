@@ -67,7 +67,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
     await limiter(req).consume(req.body.email, 1)
   } catch (err) {
     console.error('Rate limit error for /password route', requestIp.getClientIp(req), req.body.email, err)
-    eventsLog.warn('sd.auth.password.rate-limit', 'rate limit error for /auth/password route', logContext)
+    eventsLog.warn('sd.auth.password.rate-limit', `rate limit error for /auth/password route ${req.body.email}`, logContext)
     return returnError('rateLimitAuth', 429)
   }
 
@@ -228,7 +228,7 @@ router.post('/passwordless', asyncWrap(async (req, res, next) => {
   try {
     await limiter(req).consume(requestIp.getClientIp(req), 1)
   } catch (err) {
-    eventsLog.warn('sd.auth.passwordless.rate-limit', 'rate limit error for /auth/passwordless route', logContext)
+    eventsLog.warn('sd.auth.passwordless.rate-limit', `rate limit error for /auth/passwordless route ${req.body.email}`, logContext)
     return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
 
