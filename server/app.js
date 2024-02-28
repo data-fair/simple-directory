@@ -230,7 +230,7 @@ exports.run = async () => {
     app.use(cors(), nuxt.render)
   }
 
-  if (config.prometheus.active) {
+  if (config.observer.active) {
     const { startObserver } = await import('@data-fair/lib/node/observer.js')
     await metrics.init(storage.db)
     await startObserver()
@@ -253,7 +253,7 @@ exports.stop = async () => {
     await app.get('maildev').closeAsync()
   }
 
-  if (config.prometheus.active) {
+  if (config.observer.active) {
     const { stopObserver } = await import('@data-fair/lib/node/observer.js')
     await stopObserver()
   }

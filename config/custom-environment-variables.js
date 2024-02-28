@@ -333,12 +333,11 @@ module.exports = {
     __name: 'ALWAYS_ACCEPT_INVITATION',
     __format: 'json'
   },
-  prometheus: {
+  observer: {
     active: {
-      __name: 'PROMETHEUS_ACTIVE',
+      __name: 'OBSERVER_ACTIVE',
       __format: 'json'
-    },
-    port: 'PROMETHEUS_PORT'
+    }
   },
   depAdminIsOrgAdmin: {
     __name: 'DEP_ADMIN_IS_ORG_ADMIN',

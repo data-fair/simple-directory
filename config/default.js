@@ -272,9 +272,8 @@ module.exports = {
     deleteInactiveDelay: [3, 'years']
   },
   alwaysAcceptInvitation: false,
-  prometheus: {
-    active: true,
-    port: 9090
+  observer: {
+    active: true
   },
   // temporary option to prevent some regression
   depAdminIsOrgAdmin: false,
