@@ -3,8 +3,6 @@
 
 FROM node:20.11.1-alpine3.19 AS nativedeps
 
-RUN npm update -g npm
-
 RUN apk add --no-cache openssl graphicsmagick
 
 ######################################
