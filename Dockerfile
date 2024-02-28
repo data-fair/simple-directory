@@ -9,6 +9,8 @@ RUN apk add --no-cache openssl graphicsmagick
 # Stage: nodejs dependencies and build
 FROM nativedeps AS builder
 
+RUN npm update -g npm
+
 WORKDIR /webapp
 ADD package.json .
 ADD package-lock.json .
