@@ -12,7 +12,6 @@ const Cookies = require('cookies')
 const defaultConfig = require('../../config/default.js')
 const storages = require('../storages')
 const twoFA = require('../routers/2fa.js')
-const prometheus = require('./prometheus')
 
 exports.init = async () => {
   const keys = {}
@@ -147,14 +146,20 @@ exports.setCookieToken = (req, res, token, userOrg) => {
 }
 
 exports.keepalive = async (req, res) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const logContext = { req, account: req.site?.account }
+
   // User may have new organizations since last renew
   let org
   if (req.user.organization) {
     org = await req.app.get('storage').getOrganization(req.user.organization.id)
     if (!org) {
       exports.unsetCookies(req, res)
+      eventsLog.info('sd.auth.keepalive.fail', 'a user tried to prolongate a session in invalid org', logContext)
       return res.status(401).send('Organization does not exist anymore')
     }
+    logContext.account = { type: 'organization', id: org.id, name: org.name, department: org.department, departmentName: org.departmentName }
   }
   let storage = req.app.get('storage')
   if (req.user.orgStorage && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
@@ -163,6 +168,7 @@ exports.keepalive = async (req, res) => {
   const user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
   if (!user) {
     exports.unsetCookies(req, res)
+    eventsLog.info('sd.auth.keepalive.fail', 'a delete user tried to prolongate a session', logContext)
     return res.status(401).send('User does not exist anymore')
   }
 
@@ -175,9 +181,9 @@ exports.keepalive = async (req, res) => {
     payload.isAdmin = false
   } else {
     if (!storage.readonly) {
-      storage.updateLogged(req.user.id).catch((err) => {
-        console.error('(update-logged) error while updating logged date', err)
-        prometheus.internalError.inc({ errorCode: 'http' })
+      storage.updateLogged(req.user.id).catch(async (err) => {
+        const { internalError } = await import('@data-fair/lib/node/observer.js')
+        internalError('update-logged', 'error while updating logged date', err)
       })
     }
   }
@@ -185,6 +191,8 @@ exports.keepalive = async (req, res) => {
   const cookies = new Cookies(req, res)
   const userOrg = cookies.get('id_token_org') && user.organizations.find(o => o.id === cookies.get('id_token_org') && (o.department || null) === (cookies.get('id_token_dep') ? decodeURIComponent(cookies.get('id_token_dep')) : null))
   exports.setCookieToken(req, res, token, userOrg)
+
+  eventsLog.info('sd.auth.keepalive.ok', 'a session was successfully prolongated', logContext)
 }
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback

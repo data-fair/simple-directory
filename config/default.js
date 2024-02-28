@@ -42,7 +42,8 @@ module.exports = {
     },
     mongo: {
       url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development'),
-      readonly: false
+      readonly: false,
+      clientOptions: {}
     },
     ldap: {
       url: 'ldap://ldap:389',
@@ -271,9 +272,8 @@ module.exports = {
     deleteInactiveDelay: [3, 'years']
   },
   alwaysAcceptInvitation: false,
-  prometheus: {
-    active: true,
-    port: 9090
+  observer: {
+    active: true
   },
   // temporary option to prevent some regression
   depAdminIsOrgAdmin: false,

@@ -37,15 +37,15 @@ function prepareSelect (select) {
 class MongodbStorage {
   async init (params, org) {
     if (this.org) throw new Error('mongo storage is not compatible with per-org storage')
-    console.log('Connecting to mongodb ' + params.url)
+    console.log('Connecting to mongodb')
     const MongoClient = require('mongodb').MongoClient
     try {
-      this.client = await MongoClient.connect(params.url)
+      this.client = await MongoClient.connect(params.url, params.clientOptions)
     } catch (err) {
       // 1 retry after 1s
       // solve the quite common case in docker-compose of the service starting at the same time as the db
       await new Promise(resolve => setTimeout(resolve, 1000))
-      this.client = await MongoClient.connect(params.url)
+      this.client = await MongoClient.connect(params.url, params.clientOptions)
     }
 
     this.db = this.client.db()

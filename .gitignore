@@ -11,6 +11,7 @@
 config/local*
 .idea
 /data
+.type
 
 public/assets/css/
 public/assets/fonts/
