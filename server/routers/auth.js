@@ -851,7 +851,11 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
 
   const storage = req.app.get('storage')
 
-  const providerId = saml2.getProviderId(req.headers.referer)
+  let providerId
+  if (!req.headers.referer && Object.keys(saml2.idps).length === 1) providerId = Object.keys(saml2.idps)[0]
+  else providerId = saml2.getProviderId(req.headers.referer)
+  if (!providerId) res.status(404).send(`undefined saml2 providerId ${providerId}`)
+
   const idp = saml2.idps[providerId]
   if (!idp) return res.status(404).send(`unknown saml2 provider ${providerId}`)
 
