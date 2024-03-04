@@ -10,7 +10,7 @@ RUN apk add --no-cache openssl graphicsmagick
 FROM nativedeps AS builder
 
 # try to prevent ETIMEDOUT errors
-RUN npm config set maxsockets=5
+RUN npm config set maxsockets=1
 
 WORKDIR /webapp
 ADD package.json .
