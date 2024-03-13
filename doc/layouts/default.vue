@@ -74,7 +74,7 @@
     </v-content>
     <v-footer class="pa-3">
       <v-spacer />
-      <div>Powered by <a href="https://koumoul-dev.github.io/simple-directory/">Simple Directory</a></div>
+      <div>Powered by <a href="https://data-fair.github.io/simple-directory/">Simple Directory</a></div>
     </v-footer>
   </v-app>
 </template>
