@@ -144,8 +144,13 @@ class LdapStorage {
     client.unbind = promisify(client.unbind)
     client.add = promisify(client.add)
     client.del = promisify(client.del)
-    debug('bind service account', this.ldapParams.url, this.ldapParams.searchUserDN)
-    await client.bind(this.ldapParams.searchUserDN, passwordsUtils.decipherPassword(this.ldapParams.searchUserPassword))
+
+    if (this.ldapParams.searchUserDN && this.ldapParams.searchUserPassword) {
+      debug('bind service account', this.ldapParams.url, this.ldapParams.searchUserDN)
+      await client.bind(this.ldapParams.searchUserDN, passwordsUtils.decipherPassword(this.ldapParams.searchUserPassword))
+    } else {
+      console.warn('No ldap search user credentials configured, proceed without binding a service account')
+    }
     const promise = fn(client)
     promise.finally(() => client.unbind())
     return promise

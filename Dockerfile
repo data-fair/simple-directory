@@ -1,13 +1,16 @@
 ############################################################################################################
 # Stage: prepare a base image with all native utils pre-installed, used both by builder and definitive image
 
-FROM node:18.15.0-alpine3.17 AS nativedeps
+FROM node:20.11.1-alpine3.19 AS nativedeps
 
 RUN apk add --no-cache openssl graphicsmagick
 
 ######################################
 # Stage: nodejs dependencies and build
 FROM nativedeps AS builder
+
+# try to prevent ETIMEDOUT errors
+RUN npm config set maxsockets=1
 
 WORKDIR /webapp
 ADD package.json .
@@ -26,13 +29,11 @@ ADD i18n i18n
 
 # also install deps in types submodule
 ADD types types
-WORKDIR /webapp/types
-RUN npm ci --production && \
-    ../node_modules/.bin/clean-modules --yes
 WORKDIR /webapp
 
 # Build UI
 ENV NODE_ENV production
+RUN npm run build-types
 RUN npm run build
 
 # Adding server files

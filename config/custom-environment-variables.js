@@ -54,6 +54,10 @@ module.exports = {
       readonly: {
         __name: 'STORAGE_MONGO_READONLY',
         __format: 'json'
+      },
+      clientOptions: {
+        __name: 'STORAGE_MONGO_CLIENT_OPTIONS',
+        __format: 'json'
       }
     },
     ldap: {
@@ -71,6 +75,10 @@ module.exports = {
         overwrite: {
           __name: 'STORAGE_LDAP_USERS_OVERWRITE',
           __format: 'json'
+        },
+        extraFilters: {
+          __name: 'STORAGE_LDAP_USERS_EXTRA_FILTERS',
+          __format: 'json'
         }
       },
       organizations: {
@@ -86,6 +94,10 @@ module.exports = {
         },
         overwrite: {
           __name: 'STORAGE_LDAP_ORGS_OVERWRITE',
+          __format: 'json'
+        },
+        extraFilters: {
+          __name: 'STORAGE_LDAP_ORGS_EXTRA_FILTERS',
           __format: 'json'
         }
       },
@@ -321,12 +333,11 @@ module.exports = {
     __name: 'ALWAYS_ACCEPT_INVITATION',
     __format: 'json'
   },
-  prometheus: {
+  observer: {
     active: {
-      __name: 'PROMETHEUS_ACTIVE',
+      __name: 'OBSERVER_ACTIVE',
       __format: 'json'
-    },
-    port: 'PROMETHEUS_PORT'
+    }
   },
   depAdminIsOrgAdmin: {
     __name: 'DEP_ADMIN_IS_ORG_ADMIN',

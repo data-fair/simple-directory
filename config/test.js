@@ -17,7 +17,9 @@ module.exports = {
     },
     ldap: {
       url: 'ldap://localhost:389',
-      cacheMS: 0
+      cacheMS: 0,
+      searchUserDN: 'cn=admin,dc=example,dc=org',
+      searchUserPassword: 'admin'
     }
   },
   secretKeys: {

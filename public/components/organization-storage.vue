@@ -82,7 +82,7 @@ export default {
       config: {
         url: 'ldap://ldap:389',
         searchUserDN: 'cn=admin,dc=example,dc=org',
-        searchUserPassword: 'admin',
+        searchUserPassword: '',
         baseDN: 'dc=example,dc=org',
         users: {
           objectClass: 'inetOrgPerson',

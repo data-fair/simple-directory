@@ -1,9 +1,11 @@
 const express = require('express')
 const config = require('config')
-const ajv = require('ajv')()
+const Ajv = require('ajv')
 const asyncWrap = require('./async-wrap')
 
-const limitTypeSchema = { limit: { type: 'number' }, consumption: { type: 'number' } }
+const ajv = new Ajv({ strict: false })
+
+const limitTypeSchema = { type: 'object', properties: { limit: { type: 'number' }, consumption: { type: 'number' } } }
 const schema = {
   type: 'object',
   required: ['id', 'type', 'lastUpdate'],

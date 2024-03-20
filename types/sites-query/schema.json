@@ -1,6 +1,7 @@
 {
   "$id": "https://github.com/data-fair/simple-directory/sites-query",
   "x-exports": ["types", "validate"],
+  "x-ajv": {"coerceTypes": true},
   "title": "sites-query",
   "type":"object",
   "additionalProperties":false,
