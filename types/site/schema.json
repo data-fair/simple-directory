@@ -130,6 +130,11 @@
               "title": "Accepter les utilisateurs aux emails non vérifiés",
               "description": "Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."
             },
+            "coreIdProvider": {
+              "type": "boolean",
+              "title": "Traiter ce fournisseur comme une source principale d'identité",
+              "description": "Cette opton a plusieurs effets :\n  - un compte associé à ce fournisseur ne peut pas avoir d'autre moyen d'authentification (mot de posse ou autre fournisseur rattaché au même compte)\n  - les informations du compte seront en lecture seule et synchronisées automatiquement depuis le fournisseur quand l'utilisateur a une session active\n  - cette synchronisation inclue la destruction de la session et la désactivation du compte si celui-ci n'existe plus dans le fournisseur d'identité"
+            },
             "redirectMode": {
               "type": "object",
               "description": "Si vous utilisez un autre mode que 'bouton' alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.",

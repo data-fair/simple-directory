@@ -150,7 +150,41 @@ module.exports = {
         id: 'foo',
         secret: 'bar'
       }
-    }]
+    },
+    {
+      /* Instructions to create the keycloak test client
+        - login to keycloak (localhost:8888)
+        - section "Clients" > "Create"
+        - Client type: OpenID Connect
+        - Client ID: test-sd
+        - Name: test SD
+        - Client authentication: On
+        - Authorization: On
+        - Authentication flow: Standard flow
+        - Root URL: http://localhost:5689
+        - Valid Redirect URIs: http://localhost:5689/simple-directory/api/auth/oauth-callback
+        - Valid post logout redirect URIS: http://localhost:5689/simple-directory/api/auth/provider-logout
+        - > Create
+        - section "Advanced"
+        - Access Token Lifespan: short value for tests
+        - Client Session Idle and Client Session Max: longer to allow for refreshing tokens on keepalive
+        - section "Credentials", get the secret
+        - section "Realm Settings" > "General" > "Endpoints", get OIDC configuration URL
+
+        - section "Users" > "Add user" then "Credentials"
+
+      */
+      title: 'Test OIDC Keycloak',
+      color: '#62c4df',
+      img: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Keycloak_Logo.png',
+      discovery: 'http://localhost:8888/realms/master/.well-known/openid-configuration',
+      client: {
+        id: 'test-sd',
+        secret: 'zBqlw69dURcFIFww1RcjG38qmR41yKdS'
+      },
+      coreIdProvider: true
+    }
+    ]
   },
   manageSites: true,
   managePartners: true

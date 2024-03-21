@@ -5,6 +5,7 @@ const config = require('config')
 const { nanoid } = require('nanoid')
 const axios = require('axios')
 const slug = require('slugify')
+const tokens = require('./tokens')
 const debug = require('debug')('oauth')
 
 exports.getProviderId = (url) => {
@@ -223,7 +224,7 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
       })).data
       debug('fetch userInfo claims from oidc provider', claims)
       if (claims.email_verified === false && !p.ignoreEmailVerified) {
-        throw new Error('OAuth athentication invalid, email_verified is false.')
+        throw new Error('Authentification refusée depuis le fournisseur. L\'adresse est indiquée comme non validée.')
       }
       return {
         email: claims.email,
@@ -234,7 +235,7 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
       }
     }
   }
-  const oauthClient = oauth2.create({
+  const oauthClient = new oauth2.AuthorizationCode({
     client: p.client,
     auth: p.auth
   })
@@ -253,10 +254,15 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
   const callbackUri = p.discovery ? `${publicUrl}/api/auth/oauth-callback` : `${publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
-  p.authorizationUri = (relayState, email) => {
+  p.authorizationUri = (relayState, email, offlineAccess = false) => {
+    let scope = p.scope
+    if (offlineAccess) {
+      scope += ' offline_access'
+    }
+    console.log('AUTH SCOPE', scope)
     const params = {
       redirect_uri: callbackUri,
-      scope: p.scope,
+      scope,
       state: JSON.stringify(relayState),
       display: 'page',
       prompt: 'login'
@@ -266,25 +272,44 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
       // see https://openid.net/specs/openid-connect-basic-1_0.html
       params.login_hint = email
     }
-    const url = oauthClient.authorizationCode.authorizeURL(params)
+    const url = oauthClient.authorizeURL(params)
     return url
   }
 
   // get an access token from code sent as callback to login redirect
-  p.accessToken = async (code) => {
-    const token = await oauthClient.authorizationCode.getToken({
+  p.getToken = async (code, offlineAccess = false) => {
+    const scope = p.scope
+    /* if (offlineAccess) {
+      scope += ' offline_access'
+    } */
+    console.log('GET TOKEN', scope)
+    const tokenWrap = await oauthClient.getToken({
       code,
       redirect_uri: callbackUri,
-      scope: p.scope,
+      scope,
       client_id: p.client.id,
       client_secret: p.client.secret,
       grant_type: 'authorization_code'
     })
-    if (token.error) {
-      console.error('Bad OAuth code', token)
+    if (tokenWrap.error) {
+      console.error('Bad OAuth code', tokenWrap)
       throw new Error('Bad OAuth code')
     }
-    return token.access_token
+    const token = tokenWrap.token
+    const decodedRefreshToken = tokens.decode(token.refresh_token)
+    if (offlineAccess && decodedRefreshToken?.typ !== 'Offline') {
+      console.log(decodedRefreshToken)
+      throw new Error('Offline access not granted')
+    }
+    return tokenWrap.token
+  }
+
+  p.refreshExpiredToken = async (tokenObj) => {
+    console.log('tokenObj', tokenObj)
+    const token = oauthClient.createToken(tokenObj)
+    if (!token.expired()) return null
+    console.log('REFRESH TOKEN')
+    return (await token.refresh({ scope: p.scope })).token
   }
 
   return p

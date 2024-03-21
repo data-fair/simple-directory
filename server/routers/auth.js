@@ -437,9 +437,44 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
 }))
 
 router.post('/keepalive', asyncWrap(async (req, res, next) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+
   if (!req.user) return res.status(401).send('No active session to keep alive')
+  const storage = req.app.get('storage')
+  let user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
+
+  if (user.coreIdProvider && user.coreIdProvider.type === 'oauth') {
+    const tokenJson = user.oauth[user.coreIdProvider.id]?.token
+    if (!tokenJson) {
+      tokens.unsetCookies(req, res)
+      return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
+    }
+    const provider = oauth.providers.find(p => p.id === user.coreIdProvider.id)
+    if (!provider) {
+      tokens.unsetCookies(req, res)
+      return res.status(401).send('Fournisseur d\'identité principal inconnu')
+    }
+    try {
+      const newToken = await provider.refreshExpiredToken(tokenJson)
+      console.log('NEW TOKEN', newToken)
+      if (newToken) {
+        const userInfo = await provider.userInfo(newToken.access_token)
+        const patch = { [provider.type || 'oauth']: { ...user.oauth, [provider.id]: { ...user.oauth[provider.id], token: newToken } } }
+        patch.firstName = userInfo.firstName
+        patch.lastName = userInfo.lastName
+        user = await storage.patchUser(user.id, patch)
+        eventsLog.info('sd.auth.keepalive.main-id-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
+      }
+    } catch (err) {
+      tokens.unsetCookies(req, res)
+      eventsLog.info('sd.auth.keepalive.main-id-refresh-ko', `a user failed to refresh their info from their core identity provider ${provider.id} (${err.message})`, { req })
+      // TODO: can we be confident enough in this to actually delete the user ? or maybe flag it as disabled so that it is removed from listings ?
+      return res.status(401).send('Échec de prolongation de la session avec le fournisseur d\'identité principal')
+    }
+  }
+
   debug(`Exchange session token for user ${req.user.name}`)
-  await tokens.keepalive(req, res)
+  await tokens.keepalive(req, res, user)
   res.status(204).send()
 }))
 
@@ -628,7 +663,8 @@ const oauthLogin = asyncWrap(async (req, res, next) => {
     req.query.dep || '',
     req.query.invit_token || ''
   ]
-  const authorizationUri = provider.authorizationUri(relayState, req.query.email)
+  console.log('PROVIDER', provider)
+  const authorizationUri = provider.authorizationUri(relayState, req.query.email, provider.coreIdProvider)
   debugOAuth('login authorizationUri', authorizationUri)
   eventsLog.info('sd.auth.oauth.redirect', 'a user was redirected to a oauth provider', logContext)
   res.redirect(authorizationUri)
@@ -683,16 +719,23 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     return returnError('badIDPQuery', 500)
   }
 
-  const accessToken = await provider.accessToken(req.query.code)
+  const token = await provider.getToken(req.query.code, provider.coreIdProvider)
+  const accessToken = token.access_token
 
   const userInfo = await provider.userInfo(accessToken)
+
   if (!userInfo.email) {
     console.error('Email attribute not fetched from OAuth', provider.id, userInfo)
-    throw new Error('Email attribute not fetched from OAuth')
+    throw new Error('Email manquant dans les attributs de l\'utilisateur.')
   }
   debugOAuth('Got user info from oauth', provider.id, userInfo)
 
   const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
+  if (provider.coreIdProvider) {
+    oauthInfo.token = token
+    oauthInfo.coreId = true
+    userInfo.coreIdProvider = { type: provider.type || 'oauth', id: provider.id }
+  }
 
   // used to create a user and accept a member invitation at the same time
   // if the invitation is not valid, better not to proceed with the user creation
@@ -739,7 +782,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
       lastName: userInfo.lastName || '',
       emailConfirmed: true,
       [provider.type || 'oauth']: {
-        [provider.id]: oauthInfo
+        [provider.id]: { ...oauthInfo }
       }
     }
     if (req.site) user.host = req.site.host
@@ -749,6 +792,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     }
     user.name = userName(user)
     debugOAuth('Create user authenticated through oauth', user)
+    logContext.user = user
     eventsLog.info('sd.auth.oauth.create-user', `a user was created in oauth callback ${user.id}`, logContext)
     await storage.createUser(user, null, new URL(redirect).host)
 
@@ -770,9 +814,10 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     }
   } else {
     debugOAuth('Existing user authenticated through oauth', user, userInfo)
-    const patch = { [provider.type | 'oauth']: { ...user.oauth, [provider.id]: oauthInfo }, emailConfirmed: true }
-    if (userInfo.firstName && !user.firstName) patch.firstName = userInfo.firstName
-    if (userInfo.lastName && !user.lastName) patch.lastName = userInfo.lastName
+    const patch = { [provider.type || 'oauth']: { ...user.oauth, [provider.id]: oauthInfo }, emailConfirmed: true }
+    if (userInfo.coreIdProvider) patch.coreIdProvider = userInfo.coreIdProvider
+    if (userInfo.firstName && (!user.firstName || userInfo.coreIdProvider)) patch.firstName = userInfo.firstName
+    if (userInfo.lastName && (!user.lastName || userInfo.coreIdProvider)) patch.lastName = userInfo.lastName
     eventsLog.info('sd.auth.oauth.update-user', `a user was updated in oauth callback ${user.id}`, logContext)
     await storage.patchUser(user.id, patch)
   }

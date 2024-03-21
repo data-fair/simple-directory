@@ -73,12 +73,13 @@ services:
       - dev
       - test
     image: quay.io/keycloak/keycloak:23.0.4
+    user: root
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
     network_mode: host
     volumes:
-      - ./data/keycloak:/opt/jboss/keycloak/standalone/data/
+      - ./data/keycloak:/opt/keycloak/data/
     command: ["start-dev", "--http-port=8888"]
   
   notify:
