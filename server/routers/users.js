@@ -17,6 +17,11 @@ const { send: sendNotification } = require('../utils/notifications')
 
 const router = express.Router()
 
+const rejectCoreIdUser = (req, res, next) => {
+  if (req.user?.coreIdProvider) return res.status(403).send('This route is not available for users with a core identity provider')
+  next()
+}
+
 // Get the list of users
 router.get('', asyncWrap(async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
@@ -200,7 +205,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
 // Update some parts of a user as himself
 const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'defaultDep', 'plannedDeletion']
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
-router.patch('/:userId', asyncWrap(async (req, res, next) => {
+router.patch('/:userId', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -281,7 +286,7 @@ router.delete('/:userId', asyncWrap(async (req, res, next) => {
 }))
 
 // Change password of a user using an action token sent in a mail
-router.post('/:userId/password', asyncWrap(async (req, res, next) => {
+router.post('/:userId/password', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -307,7 +312,7 @@ router.post('/:userId/password', asyncWrap(async (req, res, next) => {
 }))
 
 // Change host of a user using an action token sent in a mail
-router.post('/:userId/host', asyncWrap(async (req, res, next) => {
+router.post('/:userId/host', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }

@@ -529,11 +529,14 @@ class MongodbStorage {
   }
 
   /**
-   * @param {any} provider
-   * @returns {Promise<any[]>}
+   * @returns {Promise<{count: number, results: any[]}>}
    */
-  async readProviderOAuthTokens (provider) {
-    return this.db.collection('oauth-tokens').find({ 'provider.id': provider.id }).limit(10000).project({ user: 1 }).toArray()
+  async readOAuthTokens () {
+    const tokens = await this.db.collection('oauth-tokens').find().limit(10000).project({ user: 1, 'token.expires_at': 1 }).toArray()
+    return {
+      count: tokens.length,
+      results: tokens
+    }
   }
 }
 

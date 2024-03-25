@@ -86,6 +86,14 @@
             >
               {{ $t(`common.sites`) }}
             </v-btn>
+            <v-btn
+              :to="localePath('admin-oauth-tokens')"
+              color="admin"
+              dark
+              depressed
+            >
+              {{ $t(`common.oauthTokens`) }}
+            </v-btn>
           </template>
           <v-btn
             v-if="env.anonymousContactForm"

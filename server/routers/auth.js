@@ -40,8 +40,13 @@ async function confirmLog (storage, user) {
   }
 }
 
+const rejectCoreIdUser = (req, res, next) => {
+  if (req.user?.coreIdProvider) return res.status(403).send('This route is not available for users with a core identity provider')
+  next()
+}
+
 // Authenticate a user based on his email address and password
-router.post('/password', asyncWrap(async (req, res, next) => {
+router.post('/password', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -216,7 +221,7 @@ router.post('/password', asyncWrap(async (req, res, next) => {
 
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
-router.post('/passwordless', asyncWrap(async (req, res, next) => {
+router.post('/passwordless', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -457,13 +462,14 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
     }
     try {
       const newToken = await provider.refreshExpiredToken(tokenJson)
-      console.log('NEW TOKEN', newToken)
       if (newToken) {
         const userInfo = await provider.userInfo(newToken.access_token)
-        const patch = { [provider.type || 'oauth']: { ...user.oauth, [provider.id]: { ...user.oauth[provider.id], token: newToken } } }
-        patch.firstName = userInfo.firstName
-        patch.lastName = userInfo.lastName
+        const patch = { [provider.type || 'oauth']: { ...user.oauth, [provider.id]: { ...user.oauth[provider.id] } } }
+        // keep email immutable ?
+        delete userInfo.email
+        Object.assign(patch, userInfo)
         user = await storage.patchUser(user.id, patch)
+        await storage.writeOAuthToken(user, provider, newToken)
         eventsLog.info('sd.auth.keepalive.main-id-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }
     } catch (err) {
@@ -664,7 +670,6 @@ const oauthLogin = asyncWrap(async (req, res, next) => {
     req.query.dep || '',
     req.query.invit_token || ''
   ]
-  console.log('PROVIDER', provider)
   const authorizationUri = provider.authorizationUri(relayState, req.query.email, provider.coreIdProvider)
   debugOAuth('login authorizationUri', authorizationUri)
   eventsLog.info('sd.auth.oauth.redirect', 'a user was redirected to a oauth provider', logContext)
@@ -776,7 +781,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
       return returnError('userUnknown', 403)
     }
     user = {
-      email: userInfo.email,
+      ...userInfo,
       id: shortid.generate(),
       firstName: userInfo.firstName || '',
       lastName: userInfo.lastName || '',
@@ -813,6 +818,10 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
       }
     }
   } else {
+    if (user.coreIdProvider && (user.coreIdProvider.type !== provider.type || user.coreIdProvider.id !== provider.id)) {
+      return res.status(400).send('Utilisateur déjà lié à un autre fournisseur d\'identité principale')
+    }
+
     debugOAuth('Existing user authenticated through oauth', user, userInfo)
     const patch = { [provider.type || 'oauth']: { ...user.oauth, [provider.id]: oauthInfo }, emailConfirmed: true }
     if (userInfo.coreIdProvider) patch.coreIdProvider = userInfo.coreIdProvider
@@ -994,6 +1003,9 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
     await storage.createUser(user, null, new URL(redirect).host)
     eventsLog.info('sd.auth.saml.create-user', `a user was created in saml callback ${user.id}`, logContext)
   } else {
+    if (user.coreIdProvider && (user.coreIdProvider.type !== 'saml' || user.coreIdProvider.id !== providerId)) {
+      return res.status(400).send('Utilisateur déjà lié à un autre fournisseur d\'identité principale')
+    }
     debugSAML('Existing user authenticated', providerId, user)
     const patch = { saml2: { ...user.saml2, [providerId]: samlInfo }, emailConfirmed: true }
     // TODO: map more attributes ? lastName, firstName, avatarUrl ?

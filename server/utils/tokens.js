@@ -81,6 +81,7 @@ exports.getPayload = (user) => {
   if (user.readonly) payload.readonly = user.readonly
   if (user.ipa) payload.ipa = 1
   if (user.plannedDeletion) payload.pd = user.plannedDeletion
+  if (user.coreIdProvider) payload.idp = user.coreIdProvider
   return payload
 }
 

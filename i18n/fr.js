@@ -86,7 +86,8 @@ module.exports = {
     loginSignin: 'Se connecter / créer un compte',
     sort: 'Tri',
     all: 'tous',
-    creationStep: 'Étape de création'
+    creationStep: 'Étape de création',
+    oauthTokens: 'Jetons OAUTH'
   },
   doc: {
     about: {

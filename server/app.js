@@ -105,6 +105,8 @@ app.get('/api/metrics', require('./routers/metrics'))
 if (config.manageSites) {
   app.use('/api/sites', setSite, session.auth, require('./routers/sites'))
 }
+app.use('/api/oauth-tokens', setSite, session.auth, require('./routers/oauth-tokens'))
+
 let info = { version: process.env.NODE_ENV }
 try { info = require('../BUILD.json') } catch (err) {}
 app.get('/api/info', session.requiredAuth, (req, res) => {

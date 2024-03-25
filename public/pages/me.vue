@@ -269,7 +269,7 @@ export default {
     ...mapState(['userDetails', 'env', 'authProviders']),
     ...mapGetters(['contrastColor']),
     readonly () {
-      return this.env.readonly || this.user.orgStorage
+      return this.env.readonly || this.user.orgStorage || this.user.idp
     },
     maxCreatedOrgs () {
       if (!this.userDetails) return 0
