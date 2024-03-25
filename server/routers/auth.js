@@ -444,15 +444,16 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
   let user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
 
   if (user.coreIdProvider && user.coreIdProvider.type === 'oauth') {
-    const tokenJson = user.oauth[user.coreIdProvider.id]?.token
-    if (!tokenJson) {
-      tokens.unsetCookies(req, res)
-      return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
-    }
     const provider = oauth.providers.find(p => p.id === user.coreIdProvider.id)
     if (!provider) {
       tokens.unsetCookies(req, res)
       return res.status(401).send('Fournisseur d\'identité principal inconnu')
+    }
+    const tokenJson = (await storage.readOAuthToken(user, provider)).token
+
+    if (!tokenJson) {
+      tokens.unsetCookies(req, res)
+      return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
     }
     try {
       const newToken = await provider.refreshExpiredToken(tokenJson)
@@ -732,7 +733,6 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
 
   const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
   if (provider.coreIdProvider) {
-    oauthInfo.token = token
     oauthInfo.coreId = true
     userInfo.coreIdProvider = { type: provider.type || 'oauth', id: provider.id }
   }
@@ -836,6 +836,10 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
       title: req.__all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
     })
     if (storage.db) await limits.setNbMembers(storage.db, invitOrga.id)
+  }
+
+  if (provider.coreIdProvider) {
+    await storage.writeOAuthToken(user, provider, token)
   }
 
   const payload = { ...tokens.getPayload(user), temporary: true }

@@ -48,7 +48,7 @@ class MongodbStorage {
       this.client = await MongoClient.connect(params.url, params.clientOptions)
     }
 
-    this.db = this.client.db()
+    this._db = this.client.db()
     // An index for comparison case and diacritics insensitive
     await mongoUtils.ensureIndex(this.db, 'users', { email: 1, host: 1 }, { unique: true, collation, name: 'email_1' })
     await mongoUtils.ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
@@ -59,7 +59,14 @@ class MongodbStorage {
     await mongoUtils.ensureIndex(this.db, 'limits', { type: 1, id: 1 }, { name: 'limits-find-current', unique: true })
     await mongoUtils.ensureIndex(this.db, 'sites', { host: 1 }, { name: 'sites-host', unique: true })
     await mongoUtils.ensureIndex(this.db, 'sites', { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }, { name: 'sites-owner' })
+    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'user.id': 1, 'provider.id': 1 }, { name: 'oauth-tokens-key', unique: true })
+    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'provider.id': 1 }, { name: 'oauth-tokens-provider', unique: true })
     return this
+  }
+
+  get db () {
+    if (!this._db) throw new Error('Mongo storage not initialized')
+    return this._db
   }
 
   async getUser (filter) {
@@ -144,6 +151,7 @@ class MongodbStorage {
 
   async deleteUser (userId) {
     await this.db.collection('users').deleteOne({ _id: userId })
+    await this.db.collection('oauth-tokens').deleteMany({ 'user.id': userId })
   }
 
   async findUsers (params = {}) {
@@ -491,6 +499,41 @@ class MongodbStorage {
       { _id: orgId, 'partners.partnerId': partnerId },
       { $set: { 'partners.$.name': partner.name, 'partners.$.id': partner.id } }
     )
+  }
+
+  /**
+   *
+   * @param {import('@data-fair/lib/shared/session.js').User} user
+   * @param {any} provider
+   * @param {any} token
+   */
+  async writeOAuthToken (user, provider, token) {
+    await this.db.collection('oauth-tokens')
+      .updateOne({ 'user.id': user.id, 'provider.id': provider.id }, {
+        $set: {
+          user: { id: user.id, email: user.email, name: user.name },
+          provider: { id: provider.id, type: provider.type, title: provider.title },
+          token: token
+        }
+      }, { upsert: true })
+  }
+
+  /**
+   *
+   * @param {any} user
+   * @param {any} provider
+   * @returns {Promise<any | null>}
+   */
+  async readOAuthToken (user, provider) {
+    return this.db.collection('oauth-tokens').findOne({ 'user.id': user.id, 'provider.id': provider.id })
+  }
+
+  /**
+   * @param {any} provider
+   * @returns {Promise<any[]>}
+   */
+  async readProviderOAuthTokens (provider) {
+    return this.db.collection('oauth-tokens').find({ 'provider.id': provider.id }).limit(10000).project({ user: 1 }).toArray()
   }
 }
 
