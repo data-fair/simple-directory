@@ -461,15 +461,14 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
       return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
     }
     try {
-      const newToken = await provider.refreshExpiredToken(tokenJson)
+      const { newToken, offlineRefreshToken } = await provider.refreshExpiredToken(tokenJson)
       if (newToken) {
         const userInfo = await provider.userInfo(newToken.access_token)
-        const patch = { [provider.type || 'oauth']: { ...user.oauth, [provider.id]: { ...user.oauth[provider.id] } } }
+        const patch = { ...userInfo }
         // keep email immutable ?
-        delete userInfo.email
-        Object.assign(patch, userInfo)
+        delete patch.email
         user = await storage.patchUser(user.id, patch)
-        await storage.writeOAuthToken(user, provider, newToken)
+        await storage.writeOAuthToken(user, provider, newToken, offlineRefreshToken)
         eventsLog.info('sd.auth.keepalive.main-id-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }
     } catch (err) {
@@ -860,6 +859,8 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
 // kept for retro-compatibility
 router.get('/oauth/:oauthId/callback', oauthCallback)
 router.get('/oauth-callback', oauthCallback)
+
+router.get('/oauth-logout', oauthCallback)
 
 // SAML 2
 const debugSAML = require('debug')('saml')

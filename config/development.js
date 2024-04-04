@@ -163,7 +163,7 @@ module.exports = {
         - Authentication flow: Standard flow
         - Root URL: http://localhost:5689
         - Valid Redirect URIs: http://localhost:5689/simple-directory/api/auth/oauth-callback
-        - Valid post logout redirect URIS: http://localhost:5689/simple-directory/api/auth/provider-logout
+        - Backchannel logout URL: http://localhost:5689/simple-directory/api/auth/oauth-logout
         - > Create
         - section "Advanced"
         - Access Token Lifespan: short value for tests

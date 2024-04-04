@@ -224,7 +224,7 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
       })).data
       debug('fetch userInfo claims from oidc provider', claims)
       if (claims.email_verified === false && !p.ignoreEmailVerified) {
-        throw new Error('Authentification refusée depuis le fournisseur. L\'adresse est indiquée comme non validée.')
+        throw new Error('Authentification refusée depuis le fournisseur. L\'adresse mail est indiquée comme non validée.')
       }
       return {
         email: claims.email,
@@ -305,11 +305,13 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
   }
 
   p.refreshExpiredToken = async (tokenObj) => {
-    console.log('tokenObj', tokenObj)
     const token = oauthClient.createToken(tokenObj)
+    console.log('expired', token.expired())
     if (!token.expired()) return null
-    console.log('REFRESH TOKEN')
-    return (await token.refresh({ scope: p.scope })).token
+    const newToken = (await token.refresh({ scope: p.scope })).token
+    const decodedRefreshToken = tokens.decode(newToken.refresh_token)
+    const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'
+    return { newToken, offlineRefreshToken }
   }
 
   return p

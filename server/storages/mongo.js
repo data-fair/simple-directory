@@ -60,7 +60,8 @@ class MongodbStorage {
     await mongoUtils.ensureIndex(this.db, 'sites', { host: 1 }, { name: 'sites-host', unique: true })
     await mongoUtils.ensureIndex(this.db, 'sites', { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }, { name: 'sites-owner' })
     await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'user.id': 1, 'provider.id': 1 }, { name: 'oauth-tokens-key', unique: true })
-    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'provider.id': 1 }, { name: 'oauth-tokens-provider', unique: true })
+    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'provider.id': 1 }, { name: 'oauth-tokens-provider' })
+    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { offlineRefreshToken: 1 }, { name: 'oauth-tokens-offline' })
     return this
   }
 
@@ -506,14 +507,16 @@ class MongodbStorage {
    * @param {import('@data-fair/lib/shared/session.js').User} user
    * @param {any} provider
    * @param {any} token
+   * @param {boolean} offlineRefreshToken
    */
-  async writeOAuthToken (user, provider, token) {
+  async writeOAuthToken (user, provider, token, offlineRefreshToken) {
     await this.db.collection('oauth-tokens')
       .updateOne({ 'user.id': user.id, 'provider.id': provider.id }, {
         $set: {
           user: { id: user.id, email: user.email, name: user.name },
           provider: { id: provider.id, type: provider.type, title: provider.title },
-          token: token
+          token,
+          offlineRefreshToken
         }
       }, { upsert: true })
   }
@@ -532,7 +535,7 @@ class MongodbStorage {
    * @returns {Promise<{count: number, results: any[]}>}
    */
   async readOAuthTokens () {
-    const tokens = await this.db.collection('oauth-tokens').find().limit(10000).project({ user: 1, 'token.expires_at': 1 }).toArray()
+    const tokens = await this.db.collection('oauth-tokens').find().limit(10000).project({ user: 1, 'token.expires_at': 1, offlineRefreshToken: 1 }).toArray()
     return {
       count: tokens.length,
       results: tokens
