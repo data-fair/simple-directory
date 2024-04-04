@@ -78,6 +78,17 @@ export default {
       return this.siteLoginUrl(this.mainHost)
     }
   },
+  watch: {
+    authProviders: {
+      handler () {
+        const alwaysRedirectProvider = this.authProviders?.find(p => p.redirectMode?.type === 'always')
+        if (alwaysRedirectProvider) {
+          window.location.href = this.loginURL(alwaysRedirectProvider)
+        }
+      },
+      immediate: true
+    }
+  },
   methods: {
     loginURL (authProvider) {
       if (authProvider.type === 'otherSite') {

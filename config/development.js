@@ -182,7 +182,10 @@ module.exports = {
         id: 'test-sd',
         secret: 'zBqlw69dURcFIFww1RcjG38qmR41yKdS'
       },
-      coreIdProvider: true
+      coreIdProvider: true,
+      redirectMode: {
+        type: 'always'
+      }
     }
     ]
   },

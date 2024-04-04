@@ -461,8 +461,9 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
       return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
     }
     try {
-      const { newToken, offlineRefreshToken } = await provider.refreshExpiredToken(tokenJson)
-      if (newToken) {
+      const refreshedToken = await provider.refreshExpiredToken(tokenJson)
+      if (refreshedToken) {
+        const { newToken, offlineRefreshToken } = refreshedToken
         const userInfo = await provider.userInfo(newToken.access_token)
         const patch = { ...userInfo }
         // keep email immutable ?
@@ -817,7 +818,8 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
       }
     }
   } else {
-    if (user.coreIdProvider && (user.coreIdProvider.type !== provider.type || user.coreIdProvider.id !== provider.id)) {
+    if (user.coreIdProvider && (user.coreIdProvider.type !== 'oauth' || user.coreIdProvider.id !== provider.id)) {
+      console.log(provider, user.coreIdProvider)
       return res.status(400).send('Utilisateur déjà lié à un autre fournisseur d\'identité principale')
     }
 
