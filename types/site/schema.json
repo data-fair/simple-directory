@@ -125,6 +125,16 @@
                 } }
               ]
             },
+            "memberRole": {
+              "type": "string",
+              "description": "Le rôle des membres créés automatiquement par ce fournisseur d'identité.",
+              "default": {"type": "none"},
+              "oneOf": [
+                {"title": "Aucun rôle par défaut (simple utilisateur)", "properties": {"type": {"const": "none", "title": "Attribution du rôle des membres"} } },
+                {"title": "Tout le temps ce rôle : ", "properties": {"type": {"const": "static"}, "role": {"type": "string", "title": "Rôle des membres"}}},
+                {"title": "Rôle lu dans un attribut de l'identité", "properties": {"type": {"const": "attribute"}, "attribute": {"type": "string", "title": "Nom de l'attribut"}}}
+              ]
+            },
             "ignoreEmailVerified": {
               "type": "boolean",
               "title": "Accepter les utilisateurs aux emails non vérifiés",
@@ -133,7 +143,7 @@
             "coreIdProvider": {
               "type": "boolean",
               "title": "Traiter ce fournisseur comme une source principale d'identité",
-              "description": "Cette opton a plusieurs effets :\n  - un compte associé à ce fournisseur ne peut pas avoir d'autre moyen d'authentification (mot de posse ou autre fournisseur rattaché au même compte)\n  - les informations du compte seront en lecture seule et synchronisées automatiquement depuis le fournisseur quand l'utilisateur a une session active\n  - cette synchronisation inclue la destruction de la session et la désactivation du compte si celui-ci n'existe plus dans le fournisseur d'identité"
+              "description": "Cette option a plusieurs effets :\n  - un compte associé à ce fournisseur ne peut pas avoir d'autre moyen d'authentification (mot de posse ou autre fournisseur rattaché au même compte)\n  - les informations du compte seront en lecture seule et synchronisées automatiquement depuis le fournisseur quand l'utilisateur a une session active\n  - cette synchronisation inclue la destruction de la session et la désactivation du compte si celui-ci n'existe plus dans le fournisseur d'identité\n - si l'option \"Rôle des membres\" est utilisée le rôle sera lui aussi synchronisé et ne sera pas éditable dans le back-office"
             },
             "redirectMode": {
               "type": "object",

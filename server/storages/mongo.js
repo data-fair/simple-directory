@@ -331,7 +331,7 @@ class MongodbStorage {
     return { count, results: organizations.map(cleanOrganization) }
   }
 
-  async addMember (orga, user, role, department = null) {
+  async addMember (orga, user, role, department = null, readOnly = false) {
     user.organizations = user.organizations || []
 
     let userOrga = user.organizations.find(o => o.id === orga.id && (o.department || null) === department)
@@ -361,6 +361,7 @@ class MongodbStorage {
       user.organizations.push(userOrga)
     }
     userOrga.role = role
+    if (readOnly) userOrga.readOnly = readOnly
     await this.db.collection('users').updateOne(
       { _id: user.id },
       { $set: { organizations: user.organizations } }

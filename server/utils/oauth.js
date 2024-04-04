@@ -36,16 +36,18 @@ const standardProviders = {
       ])
       debug('user info from github', res[0].data, res[1].data)
       const userInfo = {
-        login: res[0].data.login,
+        data: res[0].data,
+        user: {
+          name: res[0].data.name,
+          avatarUrl: res[0].data.avatar_url
+        },
         id: res[0].data.id,
-        name: res[0].data.name,
-        url: res[0].data.html_url,
-        avatarUrl: res[0].data.avatar_url
+        url: res[0].data.html_url
       }
       let email = res[1].data.find(e => e.primary)
       if (!email) email = res[1].data.find(e => e.verified)
       if (!email) email = res[1].data[0]
-      if (email) userInfo.email = email.email
+      if (email) userInfo.user.email = email.email
       return userInfo
     }
   },
@@ -65,11 +67,14 @@ const standardProviders = {
       const res = await axios.get('https://graph.facebook.com/me', { params: { access_token: accessToken, fields: 'name,first_name,last_name,email' } })
       debug('user info from facebook', res.data)
       return {
+        data: res.data,
+        user: {
+          name: res.data.name,
+          firstName: res.data.first_name,
+          lastName: res.data.last_name,
+          email: res.data.email
+        },
         id: res.data.id,
-        name: res.data.name,
-        firstName: res.data.first_name,
-        lastName: res.data.last_name,
-        email: res.data.email,
         url: 'https://www.facebook.com'
       }
     }
@@ -89,12 +94,15 @@ const standardProviders = {
       const res = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', { params: { alt: 'json', access_token: accessToken } })
       debug('user info from google', res.data)
       return {
+        data: res.data,
+        user: {
+          name: res.data.name,
+          firstName: res.data.given_name,
+          lastName: res.data.family_name,
+          email: res.data.email,
+          avatarUrl: res.data.picture // is this URL temporary ?
+        },
         id: res.data.id,
-        name: res.data.name,
-        firstName: res.data.given_name,
-        lastName: res.data.family_name,
-        email: res.data.email,
-        avatarUrl: res.data.picture, // is this URL temporary ?
         url: 'https://www.google.com'
       }
     }
@@ -152,20 +160,23 @@ const standardProviders = {
       debug('user info from linkedin', res[0].data, res[1].data)
 
       const userInfo = {
+        data: res[0].data,
+        user: {
+          firstName: res[0].data.localizedFirstName,
+          lastName: res[0].data.localizedLastName,
+          email: res[1].data.elements[0]['handle~'].emailAddress
+        },
         id: res[0].data.id,
-        firstName: res[0].data.localizedFirstName,
-        lastName: res[0].data.localizedLastName,
-        email: res[1].data.elements[0]['handle~'].emailAddress,
         // building profile url would require the r_basicprofile authorization, but it is possible only after requesting special authorization by linkein
         url: 'https://www.linkedin.com'
       }
-      userInfo.name = userInfo.firstName + ' ' + userInfo.lastName
+      userInfo.user.name = userInfo.user.firstName + ' ' + userInfo.user.lastName
 
       if (res[0].data.profilePicture && res[0].data.profilePicture['displayImage~']) {
         const displayImage = res[0].data.profilePicture['displayImage~'].elements
           .find(e => e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'] && e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'].displaySize.width === 100)
         const displayImageIdentifier = displayImage && displayImage.identifiers.find(i => i.identifierType === 'EXTERNAL_URL')
-        if (displayImageIdentifier) userInfo.avatarUrl = displayImageIdentifier.identifier // is this URL temporary ?
+        if (displayImageIdentifier) userInfo.user.avatarUrl = displayImageIdentifier.identifier // is this URL temporary ?
       }
 
       return userInfo
@@ -226,13 +237,24 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
       if (claims.email_verified === false && !p.ignoreEmailVerified) {
         throw new Error('Authentification refusée depuis le fournisseur. L\'adresse mail est indiquée comme non validée.')
       }
-      return {
-        email: claims.email,
-        avatarUrl: claims.picture,
-        name: claims.name,
-        url: claims.profile,
-        sub: claims.sub
+      const userInfo = {
+        data: claims,
+        user: {
+          email: claims.email,
+          avatarUrl: claims.picture
+        },
+        id: claims.sub
       }
+      if (claims.given_name) {
+        userInfo.user.firstName = claims.given_name
+      }
+      if (claims.family_name) {
+        userInfo.user.lastName = claims.family_name
+      }
+      if (claims.name) {
+        userInfo.user.name = claims.name
+      }
+      return userInfo
     }
   }
   const oauthClient = new oauth2.AuthorizationCode({

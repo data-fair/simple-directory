@@ -446,7 +446,7 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
 
   if (!req.user) return res.status(401).send('No active session to keep alive')
   const storage = req.app.get('storage')
-  let user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
+  const user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
 
   if (user.coreIdProvider && user.coreIdProvider.type === 'oauth') {
     const provider = oauth.providers.find(p => p.id === user.coreIdProvider.id)
@@ -465,10 +465,8 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
         const userInfo = await provider.userInfo(newToken.access_token)
-        const patch = { ...userInfo }
-        // keep email immutable ?
-        delete patch.email
-        user = await storage.patchUser(user.id, patch)
+        const memberInfo = await authCoreProviderMemberInfo(storage, req.site, provider, user)
+        await patchCoreOAuthUser(storage, provider, user, userInfo, memberInfo)
         await storage.writeOAuthToken(user, provider, newToken, offlineRefreshToken)
         eventsLog.info('sd.auth.keepalive.main-id-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }
@@ -679,6 +677,54 @@ const oauthLogin = asyncWrap(async (req, res, next) => {
 router.get('/oauth/:oauthId/login', oauthLogin)
 router.get('/oidc/:oauthId/login', oauthLogin)
 
+const patchCoreOAuthUser = async (storage, provider, user, oauthInfo, memberInfo) => {
+  const patch = { [provider.type || 'oauth']: { ...user.oauth, [provider.id]: { ...user.oauth[provider.id], ...oauthInfo } }, emailConfirmed: true }
+  if (oauthInfo.user.coreIdProvider) {
+    Object.assign(patch, oauthInfo.user)
+    if (!memberInfo.readOnly) {
+      if (memberInfo.create) {
+        patch.defaultOrg = memberInfo.org.id
+        patch.ignorePersonalAccount = true
+        await storage.addMember(memberInfo.org, user, memberInfo.role, null, memberInfo.readOnly)
+      } else {
+        await storage.removeMember(memberInfo.org.id, user.id)
+      }
+    }
+  } else {
+    if (oauthInfo.user.firstName && !user.firstName) patch.firstName = oauthInfo.user.firstName
+    if (oauthInfo.user.lastName && !user.lastName) patch.lastName = oauthInfo.user.lastName
+  }
+  await storage.patchUser(user.id, patch)
+}
+
+const authCoreProviderMemberInfo = async (storage, site, provider, user, oauthInfo) => {
+  let create = false
+  if (provider.createMember === true) {
+    // retro-compatibility for when createMember was a boolean
+    create = true
+  } else if (provider.createMember && provider.createMember.type === 'always') {
+    create = true
+  } else if (provider.createMember && provider.createMember.type === 'emailDomain' && user.email.endsWith(`@${provider.createMember.emailDomain}`)) {
+    create = true
+  }
+
+  const org = create && await storage.getOrganization(site ? site.owner.id : config.defaultOrg)
+
+  let role = 'user'
+  let readOnly = false
+  if (provider.coreIdProvider && provider.memberRole && provider.memberRole?.type !== 'none') {
+    readOnly = true
+  }
+  if (provider.memberRole?.type === 'static') {
+    role = provider.memberRole.role
+  }
+  if (provider.memberRole?.type === 'attribute') {
+    role = oauthInfo.data[provider.memberRole.attribute]
+  }
+
+  return { create, org, readOnly, role }
+}
+
 const oauthCallback = asyncWrap(async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
@@ -730,7 +776,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
 
   const userInfo = await provider.userInfo(accessToken)
 
-  if (!userInfo.email) {
+  if (!userInfo.user.email) {
     console.error('Email attribute not fetched from OAuth', provider.id, userInfo)
     throw new Error('Email manquant dans les attributs de l\'utilisateur.')
   }
@@ -739,7 +785,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
   const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
   if (provider.coreIdProvider) {
     oauthInfo.coreId = true
-    userInfo.coreIdProvider = { type: provider.type || 'oauth', id: provider.id }
+    userInfo.user.coreIdProvider = { type: provider.type || 'oauth', id: provider.id }
   }
 
   // used to create a user and accept a member invitation at the same time
@@ -754,11 +800,11 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     }
     invitOrga = await storage.getOrganization(invit.id)
     if (!invitOrga) return returnError('orgaUnknown', 400)
-    if (invit.email !== userInfo.email) return returnError('badProviderInvitEmail', 400)
+    if (invit.email !== userInfo.user.email) return returnError('badProviderInvitEmail', 400)
   }
 
   // check for user with same email
-  let user = await storage.getUserByEmail(userInfo.email, req.site)
+  let user = await storage.getUserByEmail(userInfo.user.email, req.site)
   logContext.user = user
 
   if (!user && !invit && config.onlyCreateInvited) {
@@ -776,26 +822,17 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     }
   }
 
+  const memberInfo = await authCoreProviderMemberInfo(storage, req.site, provider, user, oauthInfo)
+
+  if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
+
   if (!user) {
     if ((!invit && config.onlyCreateInvited) || storage.readonly) {
       return returnError('userUnknown', 403)
     }
-    let createMember = false
-    if (invit) {
-      // nothing
-    } else if (provider.createMember === true) {
-      // retro-compatibility for when createMember was a boolean
-      createMember = true
-    } else if (provider.createMember && provider.createMember.type === 'always') {
-      createMember = true
-    } else if (provider.createMember && provider.createMember.type === 'emailDomain' && user.email.endsWith(`@${provider.createMember.emailDomain}`)) {
-      createMember = true
-    }
-
-    const createMemberOrga = await storage.getOrganization(req.site ? req.site.owner.id : config.defaultOrg)
 
     user = {
-      ...userInfo,
+      ...userInfo.user,
       id: shortid.generate(),
       firstName: userInfo.firstName || '',
       lastName: userInfo.lastName || '',
@@ -808,8 +845,8 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     if (invit) {
       user.defaultOrg = invitOrga.id
       user.ignorePersonalAccount = true
-    } else if (createMember) {
-      user.defaultOrg = createMemberOrga.id
+    } else if (memberInfo.create) {
+      user.defaultOrg = memberInfo.org.id
       user.ignorePersonalAccount = true
     }
     user.name = userName(user)
@@ -818,23 +855,17 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     eventsLog.info('sd.auth.oauth.create-user', `a user was created in oauth callback ${user.id}`, logContext)
     await storage.createUser(user, null, new URL(redirect).host)
 
-    if (createMember) {
-      eventsLog.info('sd.auth.oauth.create-member', `a user was added as a member in oauth callback ${user.id}`, logContext)
-      await storage.addMember(createMemberOrga, user, 'user')
+    if (memberInfo.create) {
+      logContext.account = { type: 'organization', ...memberInfo.org }
+      eventsLog.info('sd.auth.oauth.create-member', `a user was added as a member in oauth callback ${user.id} / ${memberInfo.role}`, logContext)
+      await storage.addMember(memberInfo.org, user, memberInfo.role, null, memberInfo.readOnly)
     }
   } else {
     if (user.coreIdProvider && (user.coreIdProvider.type !== 'oauth' || user.coreIdProvider.id !== provider.id)) {
-      console.log(provider, user.coreIdProvider)
       return res.status(400).send('Utilisateur déjà lié à un autre fournisseur d\'identité principale')
     }
-
     debugOAuth('Existing user authenticated through oauth', user, userInfo)
-    const patch = { [provider.type || 'oauth']: { ...user.oauth, [provider.id]: oauthInfo }, emailConfirmed: true }
-    if (userInfo.coreIdProvider) patch.coreIdProvider = userInfo.coreIdProvider
-    if (userInfo.firstName && (!user.firstName || userInfo.coreIdProvider)) patch.firstName = userInfo.firstName
-    if (userInfo.lastName && (!user.lastName || userInfo.coreIdProvider)) patch.lastName = userInfo.lastName
-    eventsLog.info('sd.auth.oauth.update-user', `a user was updated in oauth callback ${user.id}`, logContext)
-    await storage.patchUser(user.id, patch)
+    await patchCoreOAuthUser(storage, provider, user, oauthInfo, memberInfo)
   }
 
   if (invit && !config.alwaysAcceptInvitation) {
