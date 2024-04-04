@@ -188,6 +188,10 @@ module.exports = {
       },
       createMember: {
         type: 'always'
+      },
+      memberRole: {
+        type: 'static',
+        role: 'admin'
       }
     }
     ]

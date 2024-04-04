@@ -23,7 +23,18 @@
         {{ $t('pages.organization.confirmDeleteMemberTitle', {name: member.name}) }}
       </v-card-title>
       <v-card-text>
-        {{ $t('pages.organization.confirmDeleteMemberMsg', {org: orga.name + (member.department ? (' / ' + (member.departmentName || member.department)) : '')}) }}
+        <v-alert
+          v-if="member.readOnly"
+          type="warning"
+          border="left"
+          outlined
+          dense
+        >
+          {{ $t('pages.organization.memberReadOnly') }}
+        </v-alert>
+        <template v-else>
+          {{ $t('pages.organization.confirmDeleteMemberMsg', {org: orga.name + (member.department ? (' / ' + (member.departmentName || member.department)) : '')}) }}
+        </template>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -35,6 +46,7 @@
         </v-btn>
         <v-btn
           color="warning"
+          :disabled="member.readOnly"
           @click="menu = false;$emit('delete', member)"
         >
           {{ $t('common.confirmOk') }}

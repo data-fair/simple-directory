@@ -253,6 +253,7 @@ class MongodbStorage {
         }
         if (user.host) member.host = user.host
         if (userOrga.createdAt) member.createdAt = userOrga.createdAt
+        if (userOrga.readOnly) member.readOnly = userOrga.readOnly
         results.push(member)
       }
     }
