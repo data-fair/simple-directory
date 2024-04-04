@@ -780,6 +780,20 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     if ((!invit && config.onlyCreateInvited) || storage.readonly) {
       return returnError('userUnknown', 403)
     }
+    let createMember = false
+    if (invit) {
+      // nothing
+    } else if (provider.createMember === true) {
+      // retro-compatibility for when createMember was a boolean
+      createMember = true
+    } else if (provider.createMember && provider.createMember.type === 'always') {
+      createMember = true
+    } else if (provider.createMember && provider.createMember.type === 'emailDomain' && user.email.endsWith(`@${provider.createMember.emailDomain}`)) {
+      createMember = true
+    }
+
+    const createMemberOrga = await storage.getOrganization(req.site ? req.site.owner.id : config.defaultOrg)
+
     user = {
       ...userInfo,
       id: shortid.generate(),
@@ -794,6 +808,9 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     if (invit) {
       user.defaultOrg = invitOrga.id
       user.ignorePersonalAccount = true
+    } else if (createMember) {
+      user.defaultOrg = createMemberOrga.id
+      user.ignorePersonalAccount = true
     }
     user.name = userName(user)
     debugOAuth('Create user authenticated through oauth', user)
@@ -801,21 +818,9 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     eventsLog.info('sd.auth.oauth.create-user', `a user was created in oauth callback ${user.id}`, logContext)
     await storage.createUser(user, null, new URL(redirect).host)
 
-    if (req.site) {
-      let createMember = false
-      if (provider.createMember === true) {
-        // retro-compatibility for when createMember was a boolean
-        createMember = true
-      } else if (provider.createMember && provider.createMember.type === 'always') {
-        createMember = true
-      } else if (provider.createMember && provider.createMember.type === 'emailDomain' && user.email.endsWith(`@${provider.createMember.emailDomain}`)) {
-        createMember = true
-      }
-      if (createMember) {
-        const siteOrga = await storage.getOrganization(req.site.owner.id)
-        eventsLog.info('sd.auth.oauth.create-member', `a user was added as a member in oauth callback ${user.id}`, logContext)
-        await storage.addMember(siteOrga, user, 'user')
-      }
+    if (createMember) {
+      eventsLog.info('sd.auth.oauth.create-member', `a user was added as a member in oauth callback ${user.id}`, logContext)
+      await storage.addMember(createMemberOrga, user, 'user')
     }
   } else {
     if (user.coreIdProvider && (user.coreIdProvider.type !== 'oauth' || user.coreIdProvider.id !== provider.id)) {

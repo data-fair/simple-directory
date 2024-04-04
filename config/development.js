@@ -185,10 +185,14 @@ module.exports = {
       coreIdProvider: true,
       redirectMode: {
         type: 'always'
+      },
+      createMember: {
+        type: 'always'
       }
     }
     ]
   },
   manageSites: true,
-  managePartners: true
+  managePartners: true,
+  defaultOrg: 'ZCIVhECIu'
 }
