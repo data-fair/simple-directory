@@ -265,6 +265,25 @@ router.patch('/:userId', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
   res.send(patchedUser)
 }))
 
+router.delete('/:userId/plannedDeletion', asyncWrap(async (req, res, next) => {
+  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const logContext = { req }
+
+  if (!req.user) return res.status(401).send()
+  if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+  const patch = { plannedDeletion: null }
+
+  await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
+
+  // update session info
+  await tokens.keepalive(req, res)
+
+  eventsLog.info('sd.user.cancelDeletion', 'user cancelled their planned deletion', logContext)
+
+  res.status(204).send()
+}))
+
 router.delete('/:userId', asyncWrap(async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */

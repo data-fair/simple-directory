@@ -56,7 +56,7 @@ exports.incrementConsumption = async (db, consumer, type, inc) => {
 
 exports.setNbMembers = async (db, organizationId) => {
   const consumer = { type: 'organization', id: organizationId }
-  return exports.setConsumption(db, consumer, 'store_nb_members', await db.collection('users').countDocuments({ 'organizations.id': organizationId }))
+  return exports.setConsumption(db, consumer, 'store_nb_members', await db.collection('users').countDocuments({ 'organizations.id': organizationId, plannedDeletion: { $exists: false } }))
 }
 
 exports.setConsumption = async (db, consumer, type, value) => {

@@ -98,7 +98,7 @@ module.exports = {
     ttl: 20
   },
   cleanup: {
-    // cron: '*/1 * * * *',
+    cron: '*/1 * * * *',
     deleteInactive: true,
     deleteInactiveDelay: [1, 'days']
   },
@@ -183,9 +183,9 @@ module.exports = {
         secret: 'zBqlw69dURcFIFww1RcjG38qmR41yKdS'
       },
       coreIdProvider: true,
-      redirectMode: {
+      /* redirectMode: {
         type: 'always'
-      },
+      }, */
       createMember: {
         type: 'always'
       },
@@ -198,5 +198,5 @@ module.exports = {
   },
   manageSites: true,
   managePartners: true,
-  defaultOrg: 'ZCIVhECIu'
+  defaultOrg: 'SxSXFxu5X'
 }

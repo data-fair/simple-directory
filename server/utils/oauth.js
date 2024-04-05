@@ -304,7 +304,6 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
     /* if (offlineAccess) {
       scope += ' offline_access'
     } */
-    console.log('GET TOKEN', scope)
     const tokenWrap = await oauthClient.getToken({
       code,
       redirect_uri: callbackUri,
@@ -319,17 +318,16 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
     }
     const token = tokenWrap.token
     const decodedRefreshToken = tokens.decode(token.refresh_token)
-    if (offlineAccess && decodedRefreshToken?.typ !== 'Offline') {
-      console.log(decodedRefreshToken)
+    const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'
+    if (offlineAccess && !offlineRefreshToken) {
       throw new Error('Offline access not granted')
     }
-    return tokenWrap.token
+    return { token, offlineRefreshToken }
   }
 
-  p.refreshExpiredToken = async (tokenObj) => {
+  p.refreshToken = async (tokenObj, onlyIfExpired = false) => {
     const token = oauthClient.createToken(tokenObj)
-    console.log('expired', token.expired())
-    if (!token.expired()) return null
+    if (onlyIfExpired && !token.expired()) return null
     const newToken = (await token.refresh({ scope: p.scope })).token
     const decodedRefreshToken = tokens.decode(newToken.refresh_token)
     const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'

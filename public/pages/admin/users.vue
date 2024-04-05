@@ -38,7 +38,7 @@
       :options.sync="pagination"
       :server-items-length="pagination.totalItems"
       :loading="loading"
-      class="elevation-1"
+      class="elevation-1 users-table"
       item-key="id"
       :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
     >
@@ -115,6 +115,7 @@
           </td>
           <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
           <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
+          <td>{{ props.item.plannedDeletion && $d(new Date(props.item.plannedDeletion)) }}</td>
           <td class="justify-center layout px-0">
             <v-btn
               :title="$t('common.asAdmin')"
@@ -349,6 +350,7 @@ export default {
       }
       this.headers.push({ text: this.$t('common.updatedAt'), value: 'updated.date' })
       this.headers.push({ text: this.$t('common.loggedAt'), value: 'logged' })
+      this.headers.push({ text: this.$t('common.plannedDeletion'), value: 'plannedDeletion' })
     }
     this.headers.push({ text: '', value: 'actions', sortable: false })
   },
@@ -420,4 +422,8 @@ export default {
 </script>
 
 <style lang="css">
+.users-table td, .users-table th {
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
 </style>

@@ -252,6 +252,7 @@ class MongodbStorage {
           emailConfirmed: user.emailConfirmed
         }
         if (user.host) member.host = user.host
+        if (user.plannedDeletion) member.plannedDeletion = user.plannedDeletion
         if (userOrga.createdAt) member.createdAt = userOrga.createdAt
         if (userOrga.readOnly) member.readOnly = userOrga.readOnly
         results.push(member)
@@ -512,15 +513,14 @@ class MongodbStorage {
    * @param {boolean} offlineRefreshToken
    */
   async writeOAuthToken (user, provider, token, offlineRefreshToken) {
+    const tokenInfo = {
+      user: { id: user.id, email: user.email, name: user.name },
+      provider: { id: provider.id, type: provider.type, title: provider.title },
+      token
+    }
+    if (offlineRefreshToken) tokenInfo.offlineRefreshToken = true
     await this.db.collection('oauth-tokens')
-      .updateOne({ 'user.id': user.id, 'provider.id': provider.id }, {
-        $set: {
-          user: { id: user.id, email: user.email, name: user.name },
-          provider: { id: provider.id, type: provider.type, title: provider.title },
-          token,
-          offlineRefreshToken
-        }
-      }, { upsert: true })
+      .replaceOne({ 'user.id': user.id, 'provider.id': provider.id }, tokenInfo, { upsert: true })
   }
 
   /**
@@ -534,14 +534,34 @@ class MongodbStorage {
   }
 
   /**
+   *
+   * @param {any} user
+   * @param {any} provider
+   * @returns {Promise<null>}
+   */
+  async deleteOAuthToken (user, provider) {
+    await this.db.collection('oauth-tokens').deleteOne({ 'user.id': user.id, 'provider.id': provider.id })
+  }
+
+  /**
    * @returns {Promise<{count: number, results: any[]}>}
    */
   async readOAuthTokens () {
-    const tokens = await this.db.collection('oauth-tokens').find().limit(10000).project({ user: 1, 'token.expires_at': 1, offlineRefreshToken: 1 }).toArray()
+    const tokens = await this.db.collection('oauth-tokens').find().limit(10000).project({
+      user: 1,
+      'token.expires_at': 1,
+      offlineRefreshToken: 1,
+      provider: 1
+    }).toArray()
     return {
       count: tokens.length,
       results: tokens
     }
+  }
+
+  async findOfflineOAuthTokens () {
+    const tokens = await this.db.collection('oauth-tokens').find({ offlineRefreshToken: true }).limit(10000).toArray()
+    return tokens
   }
 }
 

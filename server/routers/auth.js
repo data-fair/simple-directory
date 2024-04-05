@@ -449,30 +449,36 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
   const user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
 
   if (user.coreIdProvider && user.coreIdProvider.type === 'oauth') {
-    const provider = oauth.providers.find(p => p.id === user.coreIdProvider.id)
+    let provider
+    if (!req.site) {
+      provider = oauth.providers.find(p => p.id === user.coreIdProvider.id)
+    } else {
+      const providerInfo = req.site.authProviders.find(p => oauth.getProviderId(p.discovery) === user.coreIdProvider.id)
+      provider = await oauth.initProvider({ ...providerInfo }, req.publicBaseUrl)
+    }
     if (!provider) {
       tokens.unsetCookies(req, res)
       return res.status(401).send('Fournisseur d\'identité principal inconnu')
     }
-    const tokenJson = (await storage.readOAuthToken(user, provider)).token
+    const tokenJson = (await storage.readOAuthToken(user, provider))?.token
 
     if (!tokenJson) {
       tokens.unsetCookies(req, res)
       return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
     }
     try {
-      const refreshedToken = await provider.refreshExpiredToken(tokenJson)
+      const refreshedToken = await provider.refreshToken(tokenJson, true)
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
         const userInfo = await provider.userInfo(newToken.access_token)
         const memberInfo = await authCoreProviderMemberInfo(storage, req.site, provider, user)
         await patchCoreOAuthUser(storage, provider, user, userInfo, memberInfo)
         await storage.writeOAuthToken(user, provider, newToken, offlineRefreshToken)
-        eventsLog.info('sd.auth.keepalive.main-id-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
+        eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }
     } catch (err) {
       tokens.unsetCookies(req, res)
-      eventsLog.info('sd.auth.keepalive.main-id-refresh-ko', `a user failed to refresh their info from their core identity provider ${provider.id} (${err.message})`, { req })
+      eventsLog.info('sd.auth.keepalive.oauth-refresh-ko', `a user failed to refresh their info from their core identity provider ${provider.id} (${err.message})`, { req })
       // TODO: can we be confident enough in this to actually delete the user ? or maybe flag it as disabled so that it is removed from listings ?
       return res.status(401).send('Échec de prolongation de la session avec le fournisseur d\'identité principal')
     }
@@ -677,9 +683,13 @@ const oauthLogin = asyncWrap(async (req, res, next) => {
 router.get('/oauth/:oauthId/login', oauthLogin)
 router.get('/oidc/:oauthId/login', oauthLogin)
 
-const patchCoreOAuthUser = async (storage, provider, user, oauthInfo, memberInfo) => {
+const patchCoreOAuthUser = exports.patchCoreOAuthUser = async (storage, provider, user, oauthInfo, memberInfo) => {
+  if (provider.coreIdProvider) {
+    oauthInfo.coreId = true
+    oauthInfo.user.coreIdProvider = { type: provider.type || 'oauth', id: provider.id }
+  }
   const patch = { [provider.type || 'oauth']: { ...user.oauth, [provider.id]: { ...user.oauth[provider.id], ...oauthInfo } }, emailConfirmed: true }
-  if (oauthInfo.user.coreIdProvider) {
+  if (provider.coreIdProvider) {
     Object.assign(patch, oauthInfo.user)
     if (!memberInfo.readOnly) {
       if (memberInfo.create) {
@@ -697,7 +707,7 @@ const patchCoreOAuthUser = async (storage, provider, user, oauthInfo, memberInfo
   await storage.patchUser(user.id, patch)
 }
 
-const authCoreProviderMemberInfo = async (storage, site, provider, user, oauthInfo) => {
+const authCoreProviderMemberInfo = exports.authCoreProviderMemberInfo = async (storage, site, provider, user, oauthInfo) => {
   let create = false
   if (provider.createMember === true) {
     // retro-compatibility for when createMember was a boolean
@@ -708,7 +718,12 @@ const authCoreProviderMemberInfo = async (storage, site, provider, user, oauthIn
     create = true
   }
 
-  const org = create && await storage.getOrganization(site ? site.owner.id : config.defaultOrg)
+  let org
+  if (create) {
+    const orgId = site ? site.owner.id : config.defaultOrg
+    org = await storage.getOrganization(orgId)
+    if (!org) throw new Error(`Organization not found ${orgId}`)
+  }
 
   let role = 'user'
   let readOnly = false
@@ -771,7 +786,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     return returnError('badIDPQuery', 500)
   }
 
-  const token = await provider.getToken(req.query.code, provider.coreIdProvider)
+  const { token, offlineRefreshToken } = await provider.getToken(req.query.code, provider.coreIdProvider)
   const accessToken = token.access_token
 
   const userInfo = await provider.userInfo(accessToken)
@@ -783,10 +798,6 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
   debugOAuth('Got user info from oauth', provider.id, userInfo)
 
   const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
-  if (provider.coreIdProvider) {
-    oauthInfo.coreId = true
-    userInfo.user.coreIdProvider = { type: provider.type || 'oauth', id: provider.id }
-  }
 
   // used to create a user and accept a member invitation at the same time
   // if the invitation is not valid, better not to proceed with the user creation
@@ -829,6 +840,11 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
   if (!user) {
     if ((!invit && config.onlyCreateInvited) || storage.readonly) {
       return returnError('userUnknown', 403)
+    }
+
+    if (provider.coreIdProvider) {
+      oauthInfo.coreId = true
+      userInfo.user.coreIdProvider = { type: provider.type || 'oauth', id: provider.id }
     }
 
     user = {
@@ -885,7 +901,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
   }
 
   if (provider.coreIdProvider) {
-    await storage.writeOAuthToken(user, provider, token)
+    await storage.writeOAuthToken(user, provider, token, offlineRefreshToken)
   }
 
   const payload = { ...tokens.getPayload(user), temporary: true }
