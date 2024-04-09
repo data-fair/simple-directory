@@ -253,6 +253,7 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   const filter = { ids: [req.params.userId] }
   if (dep) filter.departments = [dep]
   const member = (await storage.findMembers(req.params.organizationId, filter)).results[0]
+  if (!member) return res.status(404).send('member not found')
 
   // Only allowed for the organizations that the user is admin of
   const userOrg = getUserOrg(req)
@@ -270,12 +271,13 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
 
-  eventsLog.info('sd.org.member.del', `a user removed a member from an organization ${member.bame} (${member.id}), ${userOrg.name} (${userOrg.id})`, logContext)
+  eventsLog.info('sd.org.member.del', `a user removed a member from an organization ${member.name} (${member.id}), ${userOrg.name} (${userOrg.id})`, logContext)
   await storage.removeMember(req.params.organizationId, req.params.userId, dep)
   if (storage.db) {
     await limits.setNbMembers(storage.db, req.params.organizationId)
   }
   const user = await storage.getUser({ id: req.params.userId })
+  if (!user) return res.status(404).send('user not found')
   if (config.onlyCreateInvited && !user.organizations.length) {
     eventsLog.info('sd.org.member.del-user', `a user was removed after being excluded from last organization ${user.name} (${user.id})`, logContext)
     await storage.deleteUser(req.params.userId)
