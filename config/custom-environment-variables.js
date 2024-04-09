@@ -351,8 +351,5 @@ module.exports = {
     __name: 'MANAGE_PARTNERS',
     __format: 'json'
   },
-  defaultOrg: {
-    __name: 'DEFAULT_ORG',
-    __format: 'json'
-  }
+  defaultOrg: 'DEFAULT_ORG'
 }
