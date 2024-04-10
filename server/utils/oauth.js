@@ -217,8 +217,10 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
     if (await fs.pathExists(discoveryContentPath)) {
       // TODO: refetch once in a while ? is there a rule of thumb for this ?
       discoveryContent = await fs.readJson(discoveryContentPath, 'utf8')
+      debug(`Read pre-fetched OIDC discovery info from ${discoveryContentPath}`, discoveryContent)
     } else {
       discoveryContent = (await axios.get(p.discovery)).data
+      debug(`Fetched OIDC discovery info from ${p.discovery}`, discoveryContent)
       await fs.writeJson(discoveryContentPath, discoveryContent, { spaces: 2 })
     }
     const tokenURL = new URL(discoveryContent.token_endpoint)
