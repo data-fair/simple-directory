@@ -45,7 +45,8 @@ ADD .eslintignore .eslintignore
 RUN npm run lint
 ADD test test
 RUN npm run test
-RUN npm audit --omit=dev --audit-level=critical
+# disabled, waiting for this https://github.com/maildev/maildev/issues/467
+# RUN npm audit --omit=dev --audit-level=critical
 
 # Cleanup /webapp/node_modules so it can be copied by next stage
 RUN npm prune --production
