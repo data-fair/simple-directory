@@ -1,5 +1,6 @@
 <template>
   <v-row
+    v-show="!delayedRendering"
     justify="space-around"
     data-iframe-height
     class="mt-6"
@@ -814,6 +815,17 @@ export default {
     },
     separateEmailPasswordSteps () {
       return this.authProviders?.find(p => p.redirectMode?.type === 'emailDomain')
+    },
+    delayedRendering () {
+      // step not yet affected, do not render anything
+      if (this.step === null) return true
+      // step is not login, render immediately
+      if (this.step !== 'login') return false
+      // we have to wait for auth providers
+      if (!this.authProviders) return true
+      // we have to wait for the redirection to be done by auth-providers-login-links.vue
+      if (this.authProviders.find(p => p.redirectMode?.type === 'always')) return true
+      return false
     }
   },
   async created () {
