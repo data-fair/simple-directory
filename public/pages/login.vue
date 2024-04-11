@@ -88,10 +88,11 @@
               >
                 {{ $t('pages.login.adminMode') }}
               </p>
-              <template v-if="!adminMode && !orgStorage && !separateEmailPasswordSteps">
+              <template v-if="!orgStorage && !separateEmailPasswordSteps">
                 <auth-providers-login-links
                   :redirect="redirectUrl"
                   :email="email"
+                  :admin-mode="adminMode"
                 />
               </template>
 

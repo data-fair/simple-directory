@@ -288,7 +288,7 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
       scope,
       state: JSON.stringify(relayState),
       display: 'page',
-      prompt: 'login'
+      prompt: 'login' // WARN: if we change that to allow for authentication without prompting for password, we should still use this value in case of adminMode
     }
     if (email) {
       // send email in login_hint

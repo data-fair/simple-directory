@@ -678,7 +678,8 @@ const oauthLogin = asyncWrap(async (req, res, next) => {
     (req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl).replace('?id_token=', ''),
     req.query.org || '',
     req.query.dep || '',
-    req.query.invit_token || ''
+    req.query.invit_token || '',
+    req.query.adminMode || ''
   ]
   const authorizationUri = provider.authorizationUri(relayState, req.query.email, provider.coreIdProvider)
   debugOAuth('login authorizationUri', authorizationUri)
@@ -758,7 +759,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     console.error('missing OAuth state')
     throw new Error('Bad OAuth state')
   }
-  const [providerState, loginReferer, redirect, org, dep, invitToken] = JSON.parse(req.query.state)
+  const [providerState, loginReferer, redirect, org, dep, invitToken, adminMode] = JSON.parse(req.query.state)
 
   const returnError = (error, errorCode) => {
     eventsLog.info('sd.auth.oauth.fail', `a user failed to authenticate with oauth due to ${error}`, logContext)
@@ -911,6 +912,14 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
   }
 
   const payload = { ...tokens.getPayload(user), temporary: true }
+  if (adminMode) {
+    // TODO: also check that the user actually inputted the password on this redirect
+    if (payload.isAdmin) payload.adminMode = true
+    else {
+      eventsLog.alert('sd.auth.password.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
+      return returnError('adminModeOnly', 403)
+    }
+  }
   const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? { id: invit.id, department: invit.department } : { id: org, department: dep })
   debugOAuth(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)

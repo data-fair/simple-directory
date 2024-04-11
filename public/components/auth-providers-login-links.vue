@@ -65,7 +65,7 @@
 import { mapState, mapGetters } from 'vuex'
 
 export default {
-  props: ['redirect', 'email', 'invitToken'],
+  props: ['redirect', 'email', 'invitToken', 'adminMode'],
   computed: {
     ...mapState(['env', 'authProviders', 'sitePublic']),
     ...mapGetters(['mainHost']),
@@ -102,6 +102,7 @@ export default {
       if (this.redirect) url.searchParams.append('redirect', this.redirect)
       if (this.email) url.searchParams.append('email', this.email)
       if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
+      if (this.adminMode) url.searchParams.append('adminMode', 'true')
       return url.href
     },
     siteLoginUrl (host) {
@@ -109,6 +110,7 @@ export default {
       if (this.redirect) url.searchParams.append('redirect', this.redirect)
       if (this.email) url.searchParams.append('email', this.email)
       if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
+      if (this.adminMode) url.searchParams.append('adminMode', 'true')
       return url.href
     }
   }
