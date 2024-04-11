@@ -283,7 +283,6 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
     if (offlineAccess) {
       scope += ' offline_access'
     }
-    console.log('AUTH SCOPE', scope)
     const params = {
       redirect_uri: callbackUri,
       scope,
@@ -321,9 +320,6 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
     const token = tokenWrap.token
     const decodedRefreshToken = tokens.decode(token.refresh_token)
     const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'
-    if (offlineAccess && !offlineRefreshToken) {
-      throw new Error('Offline access not granted')
-    }
     return { token, offlineRefreshToken }
   }
 

@@ -216,17 +216,13 @@ exports.run = async () => {
           } else if (!user) {
             console.error('offline token for unknown user', token)
           } else {
-            console.log('update offline token ?', Object.keys(token.token))
             try {
               const refreshedToken = await provider.refreshToken(token.token, false)
-              console.log('refreshedToken ?', !!refreshedToken)
               const { newToken, offlineRefreshToken } = refreshedToken
               const userInfo = await provider.userInfo(newToken.access_token)
-              console.log(userInfo)
               const memberInfo = await auth.authCoreProviderMemberInfo(storage, null, provider, user)
-              console.log(memberInfo)
               await auth.patchCoreOAuthUser(storage, provider, user, userInfo, memberInfo)
-              await storage.writeOAuthToken(user, provider, newToken, offlineRefreshToken)
+              await storage.writeOAuthToken(user, provider, newToken, offlineRefreshToken, token.loggedOut)
               eventsLog.info('sd.cleanup-cron.offline-token.refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { user })
             } catch (err) {
               if (err?.data?.payload?.error === 'invalid_grant') {

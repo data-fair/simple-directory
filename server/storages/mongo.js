@@ -62,6 +62,7 @@ class MongodbStorage {
     await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'user.id': 1, 'provider.id': 1 }, { name: 'oauth-tokens-key', unique: true })
     await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'provider.id': 1 }, { name: 'oauth-tokens-provider' })
     await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { offlineRefreshToken: 1 }, { name: 'oauth-tokens-offline' })
+    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'token.session_state': 1 }, { name: 'oauth-tokens-sid' })
     return this
   }
 
@@ -511,14 +512,16 @@ class MongodbStorage {
    * @param {any} provider
    * @param {any} token
    * @param {boolean} offlineRefreshToken
+   * @param {Date} loggedOut
    */
-  async writeOAuthToken (user, provider, token, offlineRefreshToken) {
+  async writeOAuthToken (user, provider, token, offlineRefreshToken, loggedOut) {
     const tokenInfo = {
       user: { id: user.id, email: user.email, name: user.name },
       provider: { id: provider.id, type: provider.type, title: provider.title },
       token
     }
     if (offlineRefreshToken) tokenInfo.offlineRefreshToken = true
+    if (loggedOut) tokenInfo.loggedOut = loggedOut
     await this.db.collection('oauth-tokens')
       .replaceOne({ 'user.id': user.id, 'provider.id': provider.id }, tokenInfo, { upsert: true })
   }
@@ -550,8 +553,10 @@ class MongodbStorage {
     const tokens = await this.db.collection('oauth-tokens').find().limit(10000).project({
       user: 1,
       'token.expires_at': 1,
+      'token.session_state': 1,
       offlineRefreshToken: 1,
-      provider: 1
+      provider: 1,
+      loggedOut: 1
     }).toArray()
     return {
       count: tokens.length,
@@ -562,6 +567,10 @@ class MongodbStorage {
   async findOfflineOAuthTokens () {
     const tokens = await this.db.collection('oauth-tokens').find({ offlineRefreshToken: true }).limit(10000).toArray()
     return tokens
+  }
+
+  async logoutOAuthToken (sid) {
+    await this.db.collection('oauth-tokens').updateOne({ 'token.session_state': sid }, { $set: { loggedOut: new Date() } })
   }
 }
 

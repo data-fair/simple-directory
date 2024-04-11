@@ -198,5 +198,5 @@ module.exports = {
   },
   manageSites: true,
   managePartners: true,
-  defaultOrg: 'SxSXFxu5X'
+  defaultOrg: 'admins-org'
 }

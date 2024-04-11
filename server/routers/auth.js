@@ -460,12 +460,18 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
       tokens.unsetCookies(req, res)
       return res.status(401).send('Fournisseur d\'identité principal inconnu')
     }
-    const tokenJson = (await storage.readOAuthToken(user, provider))?.token
+    const oauthToken = (await storage.readOAuthToken(user, provider))
 
-    if (!tokenJson) {
+    if (!oauthToken) {
       tokens.unsetCookies(req, res)
       return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
     }
+    if (oauthToken.loggedOut) {
+      tokens.unsetCookies(req, res)
+      return res.status(401).send('Utilisateur déconnecté depuis le fournisseur d\'identité principal')
+    }
+    const tokenJson = oauthToken.token
+
     try {
       const refreshedToken = await provider.refreshToken(tokenJson, true)
       if (refreshedToken) {
@@ -914,7 +920,19 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
 router.get('/oauth/:oauthId/callback', oauthCallback)
 router.get('/oauth-callback', oauthCallback)
 
-router.get('/oauth-logout', oauthCallback)
+const oauthLogoutCallback = asyncWrap(async (req, res, next) => {
+  if (!req.body.logout_token) return res.status(400).send('missing logout_token')
+  const decoded = tokens.decode(req.body.logout_token)
+  if (!decoded) return res.status(400).send('invalid logout_token')
+  if (decoded.typ !== 'Logout') return res.status(400).send('invalid logout_token type')
+  if (!decoded.sid) return res.status(400).send('missing sid in logout_token')
+  const storage = req.app.get('storage')
+  await storage.logoutOAuthToken(decoded.sid)
+  res.status(204).send()
+})
+
+router.get('/oauth-logout', oauthLogoutCallback)
+router.post('/oauth-logout', oauthLogoutCallback)
 
 // SAML 2
 const debugSAML = require('debug')('saml')
