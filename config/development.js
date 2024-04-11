@@ -163,6 +163,8 @@ module.exports = {
         - Authentication flow: Standard flow
         - Root URL: http://localhost:5689
         - Valid Redirect URIs: http://localhost:5689/simple-directory/api/auth/oauth-callback
+        - Front channel logout: Off
+        - Backchannel logout session required : On
         - Backchannel logout URL: http://localhost:5689/simple-directory/api/auth/oauth-logout
         - > Create
         - section "Advanced"
