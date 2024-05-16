@@ -271,7 +271,7 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
     return res.status(403).send(req.messages.errors.permissionDenied)
   }
 
-  eventsLog.info('sd.org.member.del', `a user removed a member from an organization ${member.name} (${member.id}), ${userOrg.name} (${userOrg.id})`, logContext)
+  eventsLog.info('sd.org.member.del', `a user removed a member from an organization ${member.name} (${member.id}), ${userOrg?.name || req.params.organizationId} (${userOrg?.id || req.params.organizationId})`, logContext)
   await storage.removeMember(req.params.organizationId, req.params.userId, dep)
   if (storage.db) {
     await limits.setNbMembers(storage.db, req.params.organizationId)
