@@ -70,7 +70,8 @@ exports.init = async () => {
       title: providerConfig.title,
       color: providerConfig.color,
       icon: providerConfig.icon,
-      img: providerConfig.img
+      img: providerConfig.img,
+      redirectMode: providerConfig.redirectMode
     })
   }
 }
