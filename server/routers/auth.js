@@ -679,7 +679,7 @@ const oauthLogin = asyncWrap(async (req, res, next) => {
     req.query.org || '',
     req.query.dep || '',
     req.query.invit_token || '',
-    req.query.adminMode || ''
+    req.query.adminMode || '' // TODO: force re-submit password in this case ?
   ]
   const authorizationUri = provider.authorizationUri(relayState, req.query.email, provider.coreIdProvider)
   debugOAuth('login authorizationUri', authorizationUri)
@@ -916,7 +916,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     // TODO: also check that the user actually inputted the password on this redirect
     if (payload.isAdmin) payload.adminMode = true
     else {
-      eventsLog.alert('sd.auth.password.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
+      eventsLog.alert('sd.auth.oauth.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
       return returnError('adminModeOnly', 403)
     }
   }
@@ -970,7 +970,8 @@ router.get('/saml2/:providerId/login', asyncWrap(async (req, res) => {
     req.headers.referer,
     (req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl).replace('?id_token=', ''),
     req.query.org || '',
-    req.query.invit_token || ''
+    req.query.invit_token || '',
+    req.query.adminMode || '' // TODO: force re-submit password in this case ?
   ]
   // relay state should be a request level parameter but it is not in current version of samlify
   // cf https://github.com/tngan/samlify/issues/163
@@ -1003,7 +1004,7 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
   const samlResponse = await saml2.sp.parseLoginResponse(idp, 'post', req)
   debugSAML('login success', JSON.stringify(samlResponse.extract, null, 2))
 
-  const [loginReferer, redirect, org, invitToken] = JSON.parse(req.body.RelayState)
+  const [loginReferer, redirect, org, invitToken, adminMode] = JSON.parse(req.body.RelayState)
 
   const returnError = (error, errorCode) => {
     eventsLog.info('sd.auth.saml.fail', `a user failed to authenticate with saml due to ${error}`, logContext)
@@ -1112,6 +1113,14 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
   }
 
   const payload = { ...tokens.getPayload(user), temporary: true }
+  if (adminMode) {
+    // TODO: also check that the user actually inputted the password on this redirect
+    if (payload.isAdmin) payload.adminMode = true
+    else {
+      eventsLog.alert('sd.auth.saml.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
+      return returnError('adminModeOnly', 403)
+    }
+  }
   const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? invitOrga.id : org)
   debugSAML(`SAML based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
