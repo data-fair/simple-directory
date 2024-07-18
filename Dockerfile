@@ -47,12 +47,11 @@ ADD test test
 RUN npm run test
 RUN npm audit --omit=dev --audit-level=critical
 
+# Cleanup /webapp/node_modules so it can be copied by next stage
+RUN npm prune --production
 # maildev installed separately to avoid flagging vulnerability https://github.com/advisories/GHSA-vc6q-ccj9-9r89
 # not too bug a deal, as it is used only in pre-production
 RUN npm install maildev --no-save
-
-# Cleanup /webapp/node_modules so it can be copied by next stage
-RUN npm prune --production
 RUN rm -rf node_modules/.cache
 
 ##################################
