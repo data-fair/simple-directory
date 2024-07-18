@@ -5,6 +5,7 @@ const config = require('config')
 const { nanoid } = require('nanoid')
 const axios = require('axios')
 const slug = require('slugify')
+const tokens = require('./tokens')
 const debug = require('debug')('oauth')
 
 exports.getProviderId = (url) => {
@@ -35,16 +36,18 @@ const standardProviders = {
       ])
       debug('user info from github', res[0].data, res[1].data)
       const userInfo = {
-        login: res[0].data.login,
+        data: res[0].data,
+        user: {
+          name: res[0].data.name,
+          avatarUrl: res[0].data.avatar_url
+        },
         id: res[0].data.id,
-        name: res[0].data.name,
-        url: res[0].data.html_url,
-        avatarUrl: res[0].data.avatar_url
+        url: res[0].data.html_url
       }
       let email = res[1].data.find(e => e.primary)
       if (!email) email = res[1].data.find(e => e.verified)
       if (!email) email = res[1].data[0]
-      if (email) userInfo.email = email.email
+      if (email) userInfo.user.email = email.email
       return userInfo
     }
   },
@@ -64,11 +67,14 @@ const standardProviders = {
       const res = await axios.get('https://graph.facebook.com/me', { params: { access_token: accessToken, fields: 'name,first_name,last_name,email' } })
       debug('user info from facebook', res.data)
       return {
+        data: res.data,
+        user: {
+          name: res.data.name,
+          firstName: res.data.first_name,
+          lastName: res.data.last_name,
+          email: res.data.email
+        },
         id: res.data.id,
-        name: res.data.name,
-        firstName: res.data.first_name,
-        lastName: res.data.last_name,
-        email: res.data.email,
         url: 'https://www.facebook.com'
       }
     }
@@ -88,12 +94,15 @@ const standardProviders = {
       const res = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', { params: { alt: 'json', access_token: accessToken } })
       debug('user info from google', res.data)
       return {
+        data: res.data,
+        user: {
+          name: res.data.name,
+          firstName: res.data.given_name,
+          lastName: res.data.family_name,
+          email: res.data.email,
+          avatarUrl: res.data.picture // is this URL temporary ?
+        },
         id: res.data.id,
-        name: res.data.name,
-        firstName: res.data.given_name,
-        lastName: res.data.family_name,
-        email: res.data.email,
-        avatarUrl: res.data.picture, // is this URL temporary ?
         url: 'https://www.google.com'
       }
     }
@@ -151,20 +160,23 @@ const standardProviders = {
       debug('user info from linkedin', res[0].data, res[1].data)
 
       const userInfo = {
+        data: res[0].data,
+        user: {
+          firstName: res[0].data.localizedFirstName,
+          lastName: res[0].data.localizedLastName,
+          email: res[1].data.elements[0]['handle~'].emailAddress
+        },
         id: res[0].data.id,
-        firstName: res[0].data.localizedFirstName,
-        lastName: res[0].data.localizedLastName,
-        email: res[1].data.elements[0]['handle~'].emailAddress,
         // building profile url would require the r_basicprofile authorization, but it is possible only after requesting special authorization by linkein
         url: 'https://www.linkedin.com'
       }
-      userInfo.name = userInfo.firstName + ' ' + userInfo.lastName
+      userInfo.user.name = userInfo.user.firstName + ' ' + userInfo.user.lastName
 
       if (res[0].data.profilePicture && res[0].data.profilePicture['displayImage~']) {
         const displayImage = res[0].data.profilePicture['displayImage~'].elements
           .find(e => e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'] && e.data['com.linkedin.digitalmedia.mediaartifact.StillImage'].displaySize.width === 100)
         const displayImageIdentifier = displayImage && displayImage.identifiers.find(i => i.identifierType === 'EXTERNAL_URL')
-        if (displayImageIdentifier) userInfo.avatarUrl = displayImageIdentifier.identifier // is this URL temporary ?
+        if (displayImageIdentifier) userInfo.user.avatarUrl = displayImageIdentifier.identifier // is this URL temporary ?
       }
 
       return userInfo
@@ -205,8 +217,10 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
     if (await fs.pathExists(discoveryContentPath)) {
       // TODO: refetch once in a while ? is there a rule of thumb for this ?
       discoveryContent = await fs.readJson(discoveryContentPath, 'utf8')
+      debug(`Read pre-fetched OIDC discovery info from ${discoveryContentPath}`, discoveryContent)
     } else {
       discoveryContent = (await axios.get(p.discovery)).data
+      debug(`Fetched OIDC discovery info from ${p.discovery}`, discoveryContent)
       await fs.writeJson(discoveryContentPath, discoveryContent, { spaces: 2 })
     }
     const tokenURL = new URL(discoveryContent.token_endpoint)
@@ -223,18 +237,29 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
       })).data
       debug('fetch userInfo claims from oidc provider', claims)
       if (claims.email_verified === false && !p.ignoreEmailVerified) {
-        throw new Error('OAuth athentication invalid, email_verified is false.')
+        throw new Error('Authentification refusée depuis le fournisseur. L\'adresse mail est indiquée comme non validée.')
       }
-      return {
-        email: claims.email,
-        avatarUrl: claims.picture,
-        name: claims.name,
-        url: claims.profile,
-        sub: claims.sub
+      const userInfo = {
+        data: claims,
+        user: {
+          email: claims.email,
+          avatarUrl: claims.picture
+        },
+        id: claims.sub
       }
+      if (claims.given_name) {
+        userInfo.user.firstName = claims.given_name
+      }
+      if (claims.family_name) {
+        userInfo.user.lastName = claims.family_name
+      }
+      if (claims.name) {
+        userInfo.user.name = claims.name
+      }
+      return userInfo
     }
   }
-  const oauthClient = oauth2.create({
+  const oauthClient = new oauth2.AuthorizationCode({
     client: p.client,
     auth: p.auth
   })
@@ -253,38 +278,58 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
   const callbackUri = p.discovery ? `${publicUrl}/api/auth/oauth-callback` : `${publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
-  p.authorizationUri = (relayState, email) => {
+  p.authorizationUri = (relayState, email, offlineAccess = false) => {
+    let scope = p.scope
+    if (offlineAccess) {
+      scope += ' offline_access'
+    }
     const params = {
       redirect_uri: callbackUri,
-      scope: p.scope,
+      scope,
       state: JSON.stringify(relayState),
       display: 'page',
-      prompt: 'login'
+      prompt: 'login' // WARN: if we change that to allow for authentication without prompting for password, we should still use this value in case of adminMode
     }
     if (email) {
       // send email in login_hint
       // see https://openid.net/specs/openid-connect-basic-1_0.html
       params.login_hint = email
     }
-    const url = oauthClient.authorizationCode.authorizeURL(params)
+    const url = oauthClient.authorizeURL(params)
     return url
   }
 
   // get an access token from code sent as callback to login redirect
-  p.accessToken = async (code) => {
-    const token = await oauthClient.authorizationCode.getToken({
+  p.getToken = async (code, offlineAccess = false) => {
+    const scope = p.scope
+    /* if (offlineAccess) {
+      scope += ' offline_access'
+    } */
+    const tokenWrap = await oauthClient.getToken({
       code,
       redirect_uri: callbackUri,
-      scope: p.scope,
+      scope,
       client_id: p.client.id,
       client_secret: p.client.secret,
       grant_type: 'authorization_code'
     })
-    if (token.error) {
-      console.error('Bad OAuth code', token)
+    if (tokenWrap.error) {
+      console.error('Bad OAuth code', tokenWrap)
       throw new Error('Bad OAuth code')
     }
-    return token.access_token
+    const token = tokenWrap.token
+    const decodedRefreshToken = tokens.decode(token.refresh_token)
+    const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'
+    return { token, offlineRefreshToken }
+  }
+
+  p.refreshToken = async (tokenObj, onlyIfExpired = false) => {
+    const token = oauthClient.createToken(tokenObj)
+    if (onlyIfExpired && !token.expired()) return null
+    const newToken = (await token.refresh({ scope: p.scope })).token
+    const decodedRefreshToken = tokens.decode(newToken.refresh_token)
+    const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'
+    return { newToken, offlineRefreshToken }
   }
 
   return p

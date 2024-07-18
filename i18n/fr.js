@@ -86,7 +86,9 @@ module.exports = {
     loginSignin: 'Se connecter / créer un compte',
     sort: 'Tri',
     all: 'tous',
-    creationStep: 'Étape de création'
+    creationStep: 'Étape de création',
+    oauthTokens: 'Jetons OAUTH',
+    plannedDeletion: 'Suppression programmée'
   },
   doc: {
     about: {
@@ -213,6 +215,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       disableInvite: 'Cette organisation a atteint son nombre maximal de membres.',
       deleteMember: 'Supprimer cet utilisateur de la liste des membres de l\'organisation',
       editMember: 'Modifier le rôle de cet utilisateur dans l\'organisation',
+      memberReadOnly: 'L\'appartenance de cet utilisateur à l\'organisation est issue d\'un fournisseur d\'identité et ne peut pas être modifiée ici.',
       confirmEditMemberTitle: 'Modifier {name}',
       confirmDeleteMemberTitle: 'Exclure {name}',
       confirmDeleteMemberMsg: 'Voulez vous vraiment supprimer cet utilisateur de la liste des membres de l\'organisation {org} ?',

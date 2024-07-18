@@ -134,6 +134,12 @@
               >
                 {{ $t('common.host') }} = {{ member.host }}
               </v-list-item-subtitle>
+              <v-list-item-subtitle
+                v-if="member.plannedDeletion"
+                style="white-space:normal;"
+              >
+                {{ $t('common.plannedDeletion') }} = {{ $d(new Date(member.plannedDeletion)) }}
+              </v-list-item-subtitle>
             </template>
             <v-list-item-subtitle style="white-space:normal;">
               <span v-if="member.department">{{ orga.departmentLabel || $t('common.department') }} = {{ member.departmentName || member.department }}, </span>

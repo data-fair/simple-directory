@@ -3,7 +3,7 @@ module.exports = {
   publicUrl: 'http://localhost:5689/simple-directory',
   // use this host when debugging a data-fair inside a virtualbox vm
   // publicUrl: 'http://10.0.2.2:5689',
-  admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com'],
+  admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com', 'admin@test.com'],
   adminsOrg: { id: 'admins-org', name: 'Admins organization' },
   admins2FA: false,
   adminCredentials: {
@@ -98,7 +98,7 @@ module.exports = {
     ttl: 20
   },
   cleanup: {
-    // cron: '*/1 * * * *',
+    cron: '*/1 * * * *',
     deleteInactive: true,
     deleteInactiveDelay: [1, 'days']
   },
@@ -110,6 +110,9 @@ module.exports = {
       title: 'Test SAML IDP',
       color: '#444791',
       icon: 'mdi-connection',
+      /* redirectMode: {
+        type: 'always'
+      }, */
       metadata: `<?xml version="1.0"?>
       <md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" entityID="http://localhost:8080/simplesaml/saml2/idp/metadata.php">
         <md:IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
@@ -150,8 +153,55 @@ module.exports = {
         id: 'foo',
         secret: 'bar'
       }
-    }]
+    },
+    {
+      /* Instructions to create the keycloak test client
+        - login to keycloak (localhost:8888)
+        - section "Clients" > "Create"
+        - Client type: OpenID Connect
+        - Client ID: test-sd
+        - Name: test SD
+        - Client authentication: On
+        - Authorization: On
+        - Authentication flow: Standard flow
+        - Root URL: http://localhost:5689
+        - Valid Redirect URIs: http://localhost:5689/simple-directory/api/auth/oauth-callback
+        - Front channel logout: Off
+        - Backchannel logout session required : On
+        - Backchannel logout URL: http://localhost:5689/simple-directory/api/auth/oauth-logout
+        - > Create
+        - section "Advanced"
+        - Access Token Lifespan: short value for tests
+        - Client Session Idle and Client Session Max: longer to allow for refreshing tokens on keepalive
+        - section "Credentials", get the secret
+        - section "Realm Settings" > "General" > "Endpoints", get OIDC configuration URL
+
+        - section "Users" > "Add user" then "Credentials"
+
+      */
+      title: 'Test OIDC Keycloak',
+      color: '#62c4df',
+      img: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Keycloak_Logo.png',
+      discovery: 'http://localhost:8888/realms/master/.well-known/openid-configuration',
+      client: {
+        id: 'test-sd',
+        secret: 'zBqlw69dURcFIFww1RcjG38qmR41yKdS'
+      },
+      coreIdProvider: true,
+      /* redirectMode: {
+        type: 'always'
+      }, */
+      createMember: {
+        type: 'always'
+      },
+      memberRole: {
+        type: 'static',
+        role: 'admin'
+      }
+    }
+    ]
   },
   manageSites: true,
-  managePartners: true
+  managePartners: true,
+  defaultOrg: 'admins-org'
 }

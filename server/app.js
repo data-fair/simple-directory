@@ -18,6 +18,7 @@ const saml2 = require('./utils/saml2')
 const oauth = require('./utils/oauth')
 const metrics = require('./utils/metrics')
 const twoFA = require('./routers/2fa.js')
+const auth = require('./routers/auth')
 const session = require('@data-fair/sd-express')({
   directoryUrl: config.publicUrl,
   privateDirectoryUrl: 'http://localhost:' + config.port
@@ -93,7 +94,7 @@ const setSite = asyncWrap(async (req, res, next) => {
 const apiDocs = require('../contract/api-docs')
 app.get('/api/api-docs.json', cors(), (req, res) => res.json(apiDocs))
 app.get('/api/auth/anonymous-action', cors(), require('./routers/anonymous-action'))
-app.use('/api/auth', setSite, session.auth, require('./routers/auth').router)
+app.use('/api/auth', setSite, session.auth, auth.router)
 app.use('/api/mails', session.auth, require('./routers/mails'))
 app.use('/api/users', setSite, session.auth, fullUser, require('./routers/users'))
 app.use('/api/organizations', setSite, session.auth, fullUser, require('./routers/organizations'))
@@ -105,6 +106,8 @@ app.get('/api/metrics', require('./routers/metrics'))
 if (config.manageSites) {
   app.use('/api/sites', setSite, session.auth, require('./routers/sites'))
 }
+app.use('/api/oauth-tokens', setSite, session.auth, require('./routers/oauth-tokens'))
+
 let info = { version: process.env.NODE_ENV }
 try { info = require('../BUILD.json') } catch (err) {}
 app.get('/api/info', session.requiredAuth, (req, res) => {
@@ -166,48 +169,83 @@ exports.run = async () => {
     // a simple cron to manage user deletions
     const cron = require('node-cron')
     const moment = require('moment')
-    console.info('run user deletion cron loop', config.cleanupCron)
+    console.info('run user cleanup cron loop', config.cleanupCron)
+
+    const planDeletion = async (user) => {
+      const plannedDeletion = moment().add(config.plannedDeletionDelay, 'days').format('YYYY-MM-DD')
+      await storage.patchUser(user.id, { plannedDeletion })
+      eventsLog.warn('sd.cleanup-cron.plan-deletion', 'planned deletion of inactive user', { user })
+      const link = config.publicUrl + '/login?email=' + encodeURIComponent(user.email)
+      const linkUrl = new URL(link)
+      if (user.emailConfirmed || user.logged) {
+        await mails.send({
+          transport: mailTransport,
+          key: 'plannedDeletion',
+          messages: i18n.messages[i18n.defaultLocale], // TODO: use a locale stored on the user ?
+          to: user.email,
+          params: {
+            link,
+            host: linkUrl.host,
+            origin: linkUrl.origin,
+            user: user.name,
+            plannedDeletion: dayjs(plannedDeletion).locale(i18n.defaultLocale).format('L'),
+            cause: i18n.messages[i18n.defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', dayjs(user.logged || user.created.date).locale(i18n.defaultLocale).format('L'))
+          }
+        })
+        eventsLog.warn('sd.cleanup-cron.inactive.email', `sent an email of planned deletion to inactive user ${user.email}`, { user })
+      }
+    }
+
     cron.schedule(config.cleanup.cron, async () => {
+      const { internalError } = await import('@data-fair/lib/node/observer.js')
       try {
-        console.info('run user deletion cron task')
+        console.info('run user cleanup cron task')
         await locks.acquire(storage.db, 'user-deletion-task')
-        const plannedDeletion = moment().add(config.plannedDeletionDelay, 'days').format('YYYY-MM-DD')
         if (config.cleanup.deleteInactive) {
           for (const user of await storage.findInactiveUsers()) {
-            console.log('plan deletion of inactive user', user)
-            await storage.patchUser(user.id, { plannedDeletion })
-            eventsLog.warn('sd.auto-delete.plan', 'planned deletion of inactive user', { user })
-            const link = config.publicUrl + '/login?email=' + encodeURIComponent(user.email)
-            const linkUrl = new URL(link)
-            if (user.emailConfirmed || user.logged) {
-              await mails.send({
-                transport: mailTransport,
-                key: 'plannedDeletion',
-                messages: i18n.messages[i18n.defaultLocale], // TODO: use a locale stored on the user ?
-                to: user.email,
-                params: {
-                  link,
-                  host: linkUrl.host,
-                  origin: linkUrl.origin,
-                  user: user.name,
-                  plannedDeletion: dayjs(plannedDeletion).locale(i18n.defaultLocale).format('L'),
-                  cause: i18n.messages[i18n.defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', dayjs(user.logged || user.created.date).locale(i18n.defaultLocale).format('L'))
-                }
-              })
-              eventsLog.warn('sd.auto-delete.email', `sent an email of planned deletion to inactive user ${user.email}`, { user })
+            await planDeletion(user)
+          }
+        }
+
+        for (const token of await storage.findOfflineOAuthTokens()) {
+          // TODO manage offline tokens from site level providers
+          const provider = oauth.providers.find(p => p.id === token.provider.id)
+          const user = await storage.getUser({ id: token.user.id })
+          if (!provider) {
+            console.error('offline token for unknown provider', token)
+          } else if (!user) {
+            console.error('offline token for unknown user', token)
+          } else {
+            try {
+              const refreshedToken = await provider.refreshToken(token.token, false)
+              const { newToken, offlineRefreshToken } = refreshedToken
+              const userInfo = await provider.userInfo(newToken.access_token)
+              const memberInfo = await auth.authCoreProviderMemberInfo(storage, null, provider, user)
+              await auth.patchCoreOAuthUser(storage, provider, user, userInfo, memberInfo)
+              await storage.writeOAuthToken(user, provider, newToken, offlineRefreshToken, token.loggedOut)
+              eventsLog.info('sd.cleanup-cron.offline-token.refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { user })
+            } catch (err) {
+              if (err?.data?.payload?.error === 'invalid_grant') {
+                await storage.deleteOAuthToken(user, provider)
+                eventsLog.warn('sd.cleanup-cron.offline-token.delete', `deleted invalid offline token for user ${user.id} and provider ${provider.id}`, { user })
+                await planDeletion(user)
+              } else {
+                internalError('cleanup-refresh-token', err)
+              }
             }
           }
         }
+
         for (const user of await storage.findUsersToDelete()) {
           console.log('execute planned deletion of user', user)
           await storage.deleteUser(user.id)
-          eventsLog.warn('sd.auto-delete.delete', 'deleted inactive user', { user })
+          eventsLog.warn('sd.cleanup-cron.delete', 'deleted user', { user })
           webhooks.deleteIdentity('user', user.id)
         }
         await locks.release(storage.db, 'user-deletion-task')
-        console.info('user deletion cron task done\n\n')
+        console.info('user cleanup cron task done\n\n')
       } catch (err) {
-        console.error('problem while running user deletion cron task', err)
+        internalError('cleanup-cron', err)
       }
     })
   }

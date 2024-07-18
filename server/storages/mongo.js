@@ -48,7 +48,7 @@ class MongodbStorage {
       this.client = await MongoClient.connect(params.url, params.clientOptions)
     }
 
-    this.db = this.client.db()
+    this._db = this.client.db()
     // An index for comparison case and diacritics insensitive
     await mongoUtils.ensureIndex(this.db, 'users', { email: 1, host: 1 }, { unique: true, collation, name: 'email_1' })
     await mongoUtils.ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
@@ -59,7 +59,16 @@ class MongodbStorage {
     await mongoUtils.ensureIndex(this.db, 'limits', { type: 1, id: 1 }, { name: 'limits-find-current', unique: true })
     await mongoUtils.ensureIndex(this.db, 'sites', { host: 1 }, { name: 'sites-host', unique: true })
     await mongoUtils.ensureIndex(this.db, 'sites', { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }, { name: 'sites-owner' })
+    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'user.id': 1, 'provider.id': 1 }, { name: 'oauth-tokens-key', unique: true })
+    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'provider.id': 1 }, { name: 'oauth-tokens-provider' })
+    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { offlineRefreshToken: 1 }, { name: 'oauth-tokens-offline' })
+    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'token.session_state': 1 }, { name: 'oauth-tokens-sid' })
     return this
+  }
+
+  get db () {
+    if (!this._db) throw new Error('Mongo storage not initialized')
+    return this._db
   }
 
   async getUser (filter) {
@@ -144,6 +153,7 @@ class MongodbStorage {
 
   async deleteUser (userId) {
     await this.db.collection('users').deleteOne({ _id: userId })
+    await this.db.collection('oauth-tokens').deleteMany({ 'user.id': userId })
   }
 
   async findUsers (params = {}) {
@@ -243,7 +253,9 @@ class MongodbStorage {
           emailConfirmed: user.emailConfirmed
         }
         if (user.host) member.host = user.host
+        if (user.plannedDeletion) member.plannedDeletion = user.plannedDeletion
         if (userOrga.createdAt) member.createdAt = userOrga.createdAt
+        if (userOrga.readOnly) member.readOnly = userOrga.readOnly
         results.push(member)
       }
     }
@@ -322,7 +334,7 @@ class MongodbStorage {
     return { count, results: organizations.map(cleanOrganization) }
   }
 
-  async addMember (orga, user, role, department = null) {
+  async addMember (orga, user, role, department = null, readOnly = false) {
     user.organizations = user.organizations || []
 
     let userOrga = user.organizations.find(o => o.id === orga.id && (o.department || null) === department)
@@ -352,6 +364,7 @@ class MongodbStorage {
       user.organizations.push(userOrga)
     }
     userOrga.role = role
+    if (readOnly) userOrga.readOnly = readOnly
     await this.db.collection('users').updateOne(
       { _id: user.id },
       { $set: { organizations: user.organizations } }
@@ -491,6 +504,73 @@ class MongodbStorage {
       { _id: orgId, 'partners.partnerId': partnerId },
       { $set: { 'partners.$.name': partner.name, 'partners.$.id': partner.id } }
     )
+  }
+
+  /**
+   *
+   * @param {import('@data-fair/lib/shared/session.js').User} user
+   * @param {any} provider
+   * @param {any} token
+   * @param {boolean} offlineRefreshToken
+   * @param {Date} loggedOut
+   */
+  async writeOAuthToken (user, provider, token, offlineRefreshToken, loggedOut) {
+    const tokenInfo = {
+      user: { id: user.id, email: user.email, name: user.name },
+      provider: { id: provider.id, type: provider.type, title: provider.title },
+      token
+    }
+    if (offlineRefreshToken) tokenInfo.offlineRefreshToken = true
+    if (loggedOut) tokenInfo.loggedOut = loggedOut
+    await this.db.collection('oauth-tokens')
+      .replaceOne({ 'user.id': user.id, 'provider.id': provider.id }, tokenInfo, { upsert: true })
+  }
+
+  /**
+   *
+   * @param {any} user
+   * @param {any} provider
+   * @returns {Promise<any | null>}
+   */
+  async readOAuthToken (user, provider) {
+    return this.db.collection('oauth-tokens').findOne({ 'user.id': user.id, 'provider.id': provider.id })
+  }
+
+  /**
+   *
+   * @param {any} user
+   * @param {any} provider
+   * @returns {Promise<null>}
+   */
+  async deleteOAuthToken (user, provider) {
+    await this.db.collection('oauth-tokens').deleteOne({ 'user.id': user.id, 'provider.id': provider.id })
+  }
+
+  /**
+   * @returns {Promise<{count: number, results: any[]}>}
+   */
+  async readOAuthTokens () {
+    const tokens = await this.db.collection('oauth-tokens').find().limit(10000).project({
+      user: 1,
+      'token.expires_at': 1,
+      'token.session_state': 1,
+      offlineRefreshToken: 1,
+      provider: 1,
+      loggedOut: 1
+    }).toArray()
+    return {
+      count: tokens.length,
+      results: tokens
+    }
+  }
+
+  async findOfflineOAuthTokens () {
+    const tokens = await this.db.collection('oauth-tokens').find({ offlineRefreshToken: true }).limit(10000).toArray()
+    return tokens
+  }
+
+  async logoutOAuthToken (sid) {
+    await this.db.collection('oauth-tokens').updateOne({ 'token.session_state': sid }, { $set: { loggedOut: new Date() } })
   }
 }
 

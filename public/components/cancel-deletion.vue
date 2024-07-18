@@ -26,7 +26,7 @@ export default {
   },
   methods: {
     async cancelDeletion () {
-      await this.$axios.$patch('api/users/' + this.userDetails.id, { plannedDeletion: null })
+      await this.$axios.$delete('api/users/' + this.userDetails.id + '/plannedDeletion')
       this.$emit('cancelled')
     }
   }

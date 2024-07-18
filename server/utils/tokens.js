@@ -56,6 +56,11 @@ exports.sign = (keys, payload, expiresIn, notBefore) => {
 
 exports.verify = async (keys, token) => asyncVerify(token, keys.public)
 
+/**
+ * @param {string} token
+ * @returns {import('jsonwebtoken').JwtPayload | null}
+ */
+// @ts-ignore
 exports.decode = (token) => jwt.decode(token)
 
 exports.getPayload = (user) => {
@@ -76,6 +81,7 @@ exports.getPayload = (user) => {
   if (user.readonly) payload.readonly = user.readonly
   if (user.ipa) payload.ipa = 1
   if (user.plannedDeletion) payload.pd = user.plannedDeletion
+  if (user.coreIdProvider) payload.idp = user.coreIdProvider
   return payload
 }
 
@@ -145,7 +151,7 @@ exports.setCookieToken = (req, res, token, userOrg) => {
   }
 }
 
-exports.keepalive = async (req, res) => {
+exports.keepalive = async (req, res, _user) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req, account: req.site?.account }
@@ -157,7 +163,7 @@ exports.keepalive = async (req, res) => {
     if (!org) {
       exports.unsetCookies(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user tried to prolongate a session in invalid org', logContext)
-      return res.status(401).send('Organization does not exist anymore')
+      return res.status(401).send('Organisation inexistante')
     }
     logContext.account = { type: 'organization', id: org.id, name: org.name, department: org.department, departmentName: org.departmentName }
   }
@@ -165,11 +171,11 @@ exports.keepalive = async (req, res) => {
   if (req.user.orgStorage && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
-  const user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
+  const user = _user || (req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id }))
   if (!user) {
     exports.unsetCookies(req, res)
     eventsLog.info('sd.auth.keepalive.fail', 'a delete user tried to prolongate a session', logContext)
-    return res.status(401).send('User does not exist anymore')
+    return res.status(401).send('Utilisateur inexistant')
   }
 
   const payload = exports.getPayload(user)
