@@ -94,9 +94,9 @@
     "typescript": "^5.3.3",
     "vue": "^2.7.16",
     "vue-cropperjs": "^4.1.0",
+    "vue-i18n": "^8.28.2",
     "vue-moment": "^4.1.0",
     "vue-router": "^3.6.5",
-    "vue-i18n": "^8.28.2",
     "vuetify": "2.6.14"
   },
   "dependencies": {
@@ -115,6 +115,7 @@
     "cookie-parser": "^1.4.3",
     "cookie-universal-nuxt": "^2.1.5",
     "cookies": "^0.7.3",
+    "cors": "^2.8.5",
     "csv-stringify": "^6.2.4",
     "dayjs": "^1.10.7",
     "debug": "^4.3.4",
@@ -135,7 +136,6 @@
     "jsonwebtoken": "^9.0.0",
     "jwks-rsa": "^3.0.1",
     "ldapjs": "^2.2.3",
-    "maildev": "^2.0.5",
     "material-colors": "^1.2.6",
     "memoizee": "^0.4.15",
     "mjml": "^4.8.1",
