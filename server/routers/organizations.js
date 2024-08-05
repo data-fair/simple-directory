@@ -233,7 +233,7 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
 
   if (req.query.format === 'csv') {
     res.setHeader('content-disposition', 'attachment; filename="members.csv"')
-    const csv = await csvStringify(members.results, { header: true, columns: ['name', 'email', 'role', 'department'] })
+    const csv = await csvStringify(members.results, { header: true, columns: ['name', 'email', 'role', 'department', 'departmentName'] })
     res.send(csv)
   } else {
     res.send(members)
