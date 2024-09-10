@@ -1,13 +1,14 @@
 const express = require('express')
 const config = require('config')
 const createError = require('http-errors')
+const { nanoid } = require('nanoid')
 const asyncWrap = require('../utils/async-wrap')
 const oauth = require('../utils/oauth')
 
 const router = module.exports = express.Router()
 
 const checkSecret = async (req) => {
-  if (!req.query.key || req.query.key !== config.secretKeys.sites) {
+  if (!req.user?.adminMode && (!req.query.key || req.query.key !== config.secretKeys.sites)) {
     throw createError(401, 'wrong sites secret key')
   }
 }
@@ -40,10 +41,10 @@ router.get('', asyncWrap(async (req, res, next) => {
 
 router.post('', asyncWrap(async (req, res, next) => {
   const sitePostSchema = await import('../../types/site-post/index.mjs')
-
   await checkSecret(req)
   // @ts-ignore
   sitePostSchema.assertValid(req.body)
+  req.body._id = req.body._id ?? nanoid()
   await req.app.get('storage').patchSite(req.body, true)
   res.type('json').send(sitePostSchema.stringify(req.body))
 }))

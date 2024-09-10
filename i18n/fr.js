@@ -88,7 +88,8 @@ module.exports = {
     all: 'tous',
     creationStep: 'Étape de création',
     oauthTokens: 'Jetons OAUTH',
-    plannedDeletion: 'Suppression programmée'
+    plannedDeletion: 'Suppression programmée',
+    owner: 'Propriéraire'
   },
   doc: {
     about: {
@@ -163,6 +164,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         limitOrganizationTitle: 'Modifiez les limites de l\'organisation',
         members: 'membre(s)',
         nbMembers: 'Nombre maximal de membres (0 pour aucune limite)'
+      },
+      sites: {
+        createSite: 'Déclarer un nouveau site'
       }
     },
     login: {

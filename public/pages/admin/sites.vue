@@ -6,6 +6,7 @@
     <v-row class="mt-3 mx-0">
       <h2 class="text-h6 mb-3">
         {{ $t('common.sites') }} <span v-if="sites">({{ $n(sites.count) }})</span>
+        <site-post @created="fetchSites" />
       </h2>
     </v-row>
 

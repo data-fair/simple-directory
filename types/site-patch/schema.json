@@ -10,6 +10,12 @@
       "readOnly": true,
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/_id"
     },
+    "theme": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/theme"
+    },
+    "logo": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/logo"
+    },
     "reducedPersonalInfoAtCreation": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/reducedPersonalInfoAtCreation"
     },

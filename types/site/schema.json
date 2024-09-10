@@ -12,7 +12,8 @@
       "$ref": "https://github.com/data-fair/lib/session-state#/$defs/account"
     },
     "host": {
-      "type": "string"
+      "type": "string",
+      "title": "Nom de domaine"
     },
     "theme": {
       "type": "object",
@@ -20,12 +21,14 @@
       "required": ["primaryColor"],
       "properties": {
         "primaryColor": {
-          "type": "string"
+          "type": "string",
+          "x-display": "color-picker"
         }
       }
     },
     "logo": {
-      "type": "string"
+      "type": "string",
+      "title": "URL d'un logo"
     },
     "authMode": {
       "default": "onlyBackOffice",
