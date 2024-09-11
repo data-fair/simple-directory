@@ -49,7 +49,7 @@ module.exports = {
     babel: {
       sourceType: 'unambiguous'
     },
-    publicPath: config.publicUrl + '/_nuxt/',
+    publicPath: config.basePath + '/_nuxt/',
     extend (webpackConfig, { isServer, isDev, isClient }) {
       const webpack = require('webpack')
       // webpackConfig.optimization.minimize = false
