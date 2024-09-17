@@ -91,6 +91,9 @@ ENV DEBUG db,upgrade*
 #USER node
 VOLUME /webapp/data
 VOLUME /webapp/security
+
+RUN chmod -R 777 ./nuxt-dist
+
 EXPOSE 8080
 
 CMD ["dumb-init", "node", "--max-http-header-size", "64000", "server"]
