@@ -1,6 +1,6 @@
 const i18n = require('./i18n')
 let config = require('config')
-config.basePath = process.env.NODE_ENV === 'development' ? '' : '/simple-directory'
+config.basePath = '/simple-directory'
 config.i18nMessages = i18n.messages
 config.i18nLocales = config.i18n.locales.join(',')
 config.readonly = config.storage.type !== 'mongo'
