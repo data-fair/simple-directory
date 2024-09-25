@@ -1,4 +1,3 @@
-const URL = require('url').URL
 const i18n = require('./i18n')
 let config = require('config')
 config.basePath = process.env.NODE_ENV === 'development' ? '' : '/simple-directory'
