@@ -129,7 +129,7 @@
               ]
             },
             "memberRole": {
-              "type": "string",
+              "type": "object",
               "description": "Le rôle des membres créés automatiquement par ce fournisseur d'identité.",
               "default": {"type": "none"},
               "oneOf": [
