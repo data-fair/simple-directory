@@ -21,7 +21,7 @@
       v-if="editPartner"
       data-iframe-height
       :width="500"
-      :loading="!redirects"
+      :loading="env.manageSites && !redirects"
     >
       <v-card-title class="text-h6">
         {{ $t('pages.organization.addPartner') }}
@@ -73,7 +73,7 @@
         </v-btn>
         <v-btn
           color="primary"
-          :disabled="!redirects"
+          :disabled="env.manageSites && !redirects"
           @click="confirmCreate"
         >
           {{ $t('common.confirmOk') }}
