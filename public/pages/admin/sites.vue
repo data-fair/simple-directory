@@ -82,6 +82,23 @@
             :sites="sites.results"
             @change="fetchSites"
           />
+          <confirm-menu
+            yes-color="warning"
+            @confirm="deleteSite(props.item)"
+          >
+            <template #activator="{on, attrs}">
+              <v-btn
+                :title="$t('common.delete')"
+                v-bind="attrs"
+                text
+                icon
+                color="warning"
+                v-on="on"
+              >
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </template>
+          </confirm-menu>
         </td>
       </tr>
     </v-data-table>
@@ -89,7 +106,7 @@
 </template>
 
 <script>
-import { mapState, mapGetters } from 'vuex'
+import { mapState, mapGetters, mapActions } from 'vuex'
 import eventBus from '../../event-bus'
 export default {
   data: () => ({
@@ -118,6 +135,7 @@ export default {
     ])
   },
   methods: {
+    ...mapActions(['deleteSite']),
     async fetchSites () {
       this.loading = true
       try {
@@ -128,6 +146,15 @@ export default {
         eventBus.$emit('notification', { error })
       }
       this.loading = false
+    },
+    async deleteSite (site) {
+      this.loading = true
+      try {
+        await this.$axios.$delete(`api/sites/${site._id}`)
+        this.fetchSites()
+      } catch (error) {
+        eventBus.$emit('notification', { error })
+      }
     }
   }
 }

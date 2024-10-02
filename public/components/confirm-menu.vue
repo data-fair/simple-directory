@@ -19,13 +19,19 @@
         </template>
         <span>{{ tooltip }}</span>
       </v-tooltip>-->
-      <v-btn
-        :color="yesColor"
-        v-bind="attrs"
-        v-on="on"
+      <slot
+        name="activator"
+        :attrs="attrs"
+        :on="on"
       >
-        {{ buttonText }}
-      </v-btn>
+        <v-btn
+          :color="yesColor"
+          v-bind="attrs"
+          v-on="on"
+        >
+          {{ buttonText }}
+        </v-btn>
+      </slot>
     </template>
     <v-card data-iframe-height>
       <v-card-title class="text-h6">
@@ -58,7 +64,7 @@
         </v-btn>
         <v-btn
           :color="yesColor"
-          :disabled="checkText && !checked"
+          :disabled="!!checkText && !checked"
           @click="$emit('confirm'); menu= false"
         >
           {{ $t('common.confirmOk') }}
