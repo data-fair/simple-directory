@@ -77,7 +77,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import eventBus from '../event-bus'
 
 export default {
@@ -92,7 +92,8 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['redirects'])
+    ...mapGetters(['redirects']),
+    ...mapState(['env'])
   },
   mounted () {
     this.redirect = this.$route.query.redirect || ''
