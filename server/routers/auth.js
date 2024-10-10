@@ -691,11 +691,17 @@ router.get('/oauth/:oauthId/login', oauthLogin)
 router.get('/oidc/:oauthId/login', oauthLogin)
 
 const patchCoreOAuthUser = exports.patchCoreOAuthUser = async (storage, provider, user, oauthInfo, memberInfo) => {
+  const providerType = provider.type || 'oauth'
   if (provider.coreIdProvider) {
     oauthInfo.coreId = true
-    oauthInfo.user.coreIdProvider = { type: provider.type || 'oauth', id: provider.id }
+    oauthInfo.user.coreIdProvider = { type: providerType, id: provider.id }
   }
-  const patch = { [provider.type || 'oauth']: { ...user.oauth, [provider.id]: { ...user.oauth[provider.id], ...oauthInfo } }, emailConfirmed: true }
+  const existingOAuthInfo = user[providerType]?.[provider.id]
+  const patch = {
+    [providerType]: { ...user[providerType] },
+    emailConfirmed: true
+  }
+  patch[providerType][provider.id] = { ...existingOAuthInfo, ...oauthInfo }
   if (provider.coreIdProvider) {
     Object.assign(patch, oauthInfo.user)
     if (!memberInfo.readOnly) {
