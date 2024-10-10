@@ -477,7 +477,7 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
         const userInfo = await provider.userInfo(newToken.access_token)
-        const memberInfo = await authCoreProviderMemberInfo(storage, req.site, provider, user)
+        const memberInfo = await authCoreProviderMemberInfo(storage, req.site, provider, user.email)
         await patchCoreOAuthUser(storage, provider, user, userInfo, memberInfo)
         await storage.writeOAuthToken(user, provider, newToken, offlineRefreshToken)
         eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
@@ -720,14 +720,14 @@ const patchCoreOAuthUser = exports.patchCoreOAuthUser = async (storage, provider
   await storage.patchUser(user.id, patch)
 }
 
-const authCoreProviderMemberInfo = exports.authCoreProviderMemberInfo = async (storage, site, provider, user, oauthInfo) => {
+const authCoreProviderMemberInfo = exports.authCoreProviderMemberInfo = async (storage, site, provider, email, oauthInfo) => {
   let create = false
   if (provider.createMember === true) {
     // retro-compatibility for when createMember was a boolean
     create = true
   } else if (provider.createMember && provider.createMember.type === 'always') {
     create = true
-  } else if (provider.createMember && provider.createMember.type === 'emailDomain' && user.email.endsWith(`@${provider.createMember.emailDomain}`)) {
+  } else if (provider.createMember && provider.createMember.type === 'emailDomain' && email.endsWith(`@${provider.createMember.emailDomain}`)) {
     create = true
   }
 
@@ -846,7 +846,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
     }
   }
 
-  const memberInfo = await authCoreProviderMemberInfo(storage, req.site, provider, user, oauthInfo)
+  const memberInfo = await authCoreProviderMemberInfo(storage, req.site, provider, userInfo.user.email, oauthInfo)
 
   if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
 
