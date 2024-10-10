@@ -220,7 +220,7 @@ exports.run = async () => {
               const refreshedToken = await provider.refreshToken(token.token, false)
               const { newToken, offlineRefreshToken } = refreshedToken
               const userInfo = await provider.userInfo(newToken.access_token)
-              const memberInfo = await auth.authCoreProviderMemberInfo(storage, null, provider, user.email)
+              const memberInfo = await auth.authCoreProviderMemberInfo(storage, null, provider, user.email, userInfo)
               await auth.patchCoreOAuthUser(storage, provider, user, userInfo, memberInfo)
               await storage.writeOAuthToken(user, provider, newToken, offlineRefreshToken, token.loggedOut)
               eventsLog.info('sd.cleanup-cron.offline-token.refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { user })
