@@ -4,15 +4,11 @@ import i18n from 'i18n'
 import { session } from '@data-fair/lib-express/index.js'
 import { startObserver, stopObserver } from '@data-fair/lib-node/observer.js'
 import * as locks from '@data-fair/lib-node/locks.js'
-import * as wsServer from '@data-fair/lib-express/ws-server.js'
-import * as wsEmitter from '@data-fair/lib-node/ws-emitter.js'
 // import upgradeScripts from '@data-fair/lib-node/upgrade-scripts.js'
-import mongo from './mongo.ts'
+import mongo from '#mongo'
 import { createHttpTerminator } from 'http-terminator'
 import { app } from './app.ts'
 import config from '#config'
-import * as webhooksWorker from './webhooks/worker.ts'
-import * as pushService from './push/service.ts'
 
 const server = createServer(app)
 const httpTerminator = createHttpTerminator({ server })
@@ -32,15 +28,7 @@ export const start = async () => {
   await locks.init(mongo.db)
   // await upgradeScripts(mongo.db, resolve(import.meta.dirname, '../..'))
 
-  await wsServer.start(server, mongo.db, async (channel, sessionState) => {
-    const [ownerType, ownerId] = channel.split(':')
-    if (!sessionState.user) return false
-    if (sessionState.user.adminMode) return true
-    return ownerType === 'user' && ownerId === sessionState.user.id
-  })
-  await wsEmitter.init(mongo.db)
-  await pushService.init()
-  await webhooksWorker.start()
+  // TODO: run users planned deletion worker
 
   server.listen(config.port)
   await new Promise(resolve => server.once('listening', resolve))
@@ -50,8 +38,6 @@ export const start = async () => {
 
 export const stop = async () => {
   await httpTerminator.terminate()
-  await webhooksWorker.stop()
-  await wsServer.stop()
   if (config.observer.active) await stopObserver()
   await mongo.client.close()
 }

@@ -114,19 +114,6 @@ app.get('/api/info', session.requiredAuth, (req, res) => {
   res.send(info)
 })
 
-/*
-*  WARNING:
-*  the next few lines are here only to maintain compatibility for installed clients
-*  that have an older version of sd-vue
-*/
-app.post('/api/session/keepalive', setSite, session.auth, asyncWrap(async (req, res, next) => {
-  if (!req.user) return res.status(401).send('No active session to keep alive')
-  debug(`Exchange session token for user ${req.user.name}`)
-  await tokens.keepalive(req, res)
-  res.status(204).send()
-}))
-// end of compatibility only section
-
 app.use('/api/', (req, res) => {
   return res.status(404).send('unknown api endpoint')
 })

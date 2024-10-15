@@ -1,4 +1,7 @@
 {
+  "$id": "https://github.com/data-fair/simple-directory/organization",
+  "x-exports": ["types"],
+  "title": "Organization",
   "type": "object",
   "additionalProperties": false,
   "required": ["id", "name"],
@@ -43,6 +46,8 @@
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name"],
         "properties": {
           "id": {
             "type": "string"

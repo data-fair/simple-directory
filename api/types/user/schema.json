@@ -1,7 +1,10 @@
 {
+  "$id": "https://github.com/data-fair/simple-directory/user",
+  "x-exports": ["types"],
+  "title": "User",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "email"],
+  "required": ["id", "email", "name"],
   "properties": {
     "id": {
       "description": "The unique id of the user",
@@ -24,6 +27,10 @@
       "description": "Family name of the user",
       "type": "string",
       "maxLength": 100
+    },
+    "name": {
+      "type": "string",
+      "readOnly": true
     },
     "isAdmin": {
       "description": "Is this user a global admin (independant of organizations)",
@@ -61,6 +68,12 @@
     "plannedDeletion": {
       "type": "string",
       "format": "date"
+    },
+    "organizations": {
+      "type": "array",
+      "items": {
+        "$ref": "https://github.com/data-fair/lib/session-state#/$defs/organizationMembership"
+      }
     }
   }
 }

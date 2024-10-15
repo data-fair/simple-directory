@@ -1,0 +1,91 @@
+{
+  "$id": "https://github.com/data-fair/events/api/config",
+  "x-exports": [
+    "types",
+    "validate"
+  ],
+  "x-ajv": {
+    "coerceTypes": "array"
+  },
+  "type": "object",
+  "title": "Api config",
+  "additionalProperties": false,
+  "required": [
+    "mongoUrl",
+    "port",
+    "observer",
+    "secretKeys",
+    "theme",
+    "i18n"
+  ],
+  "properties": {
+    "mongoUrl": {
+      "type": "string"
+    },
+    "port": {
+      "type": "number"
+    },
+    "secretKeys": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "identities": {
+          "type": ["string", "null"]
+        },
+        "events": {
+          "type": ["string", "null"]
+        },
+        "sendMails": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "observer": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean"
+        },
+        "port": {
+          "type": "number"
+        }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logo", "notificationIcon", "notificationBadge"],
+      "properties": {
+        "logo": {
+          "type": ["string", "null"]
+        },
+        "notificationIcon": {
+          "type": ["string", "null"]
+        },
+        "notificationBadge": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "i18n": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["locales", "defaultLocale"],
+      "properties": {
+        "locales": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "defaultLocale": {
+          "type": "string",
+          "default": "fr"
+        }
+      }
+    },
+    "util": {},
+    "get": {},
+    "has": {}
+  }
+}
