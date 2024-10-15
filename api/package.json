@@ -1,0 +1,28 @@
+{
+  "name": "api",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "NODE_ENV=development DEBUG=upgrade node --watch --experimental-strip-types index.ts"
+  },
+  "imports": {
+    "#config": "./src/config.ts",
+    "#mongo": "./src/mongo.ts",
+    "#doc": "./doc/index.ts",
+    "#doc/*": "./doc/*",
+    "#types": "./types/index.ts",
+    "#types/*": "./types/*"
+  },
+  "dependencies": {
+    "@data-fair/lib-express": "^1.0.4",
+    "@data-fair/lib-node": "^1.0.1",
+    "config": "^3.3.11",
+    "express": "^5.0.0",
+    "http-terminator": "^3.2.0",
+    "i18n": "^0.15.1",
+    "mongodb": "^6.8.0",
+    "nanoid": "^5.0.7",
+    "prom-client": "^15.1.2"
+  },
+  "devDependencies": {}
+}
