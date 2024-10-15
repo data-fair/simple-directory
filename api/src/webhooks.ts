@@ -6,14 +6,14 @@ const axios = require('axios')
 const userName = require('./utils/user-name')
 const debug = require('debug')('webhooks')
 
-export async function postUserIdentity(user: User) {
+export async function postUserIdentity (user: User) {
   await postIdentity({ type: 'user', id: user.id, name: user.name, organizations: user.organizations })
 }
-export async function postOrganizationIdentity(org: Organization) {
+export async function postOrganizationIdentity (org: Organization) {
   await postIdentity({ type: 'organization', id: org.id, name: org.name, departments: org.departments })
 }
 
-const postIdentity = async (identity: PostIdentityReq["body"] & PostIdentityReq["params"]) => {
+const postIdentity = async (identity: PostIdentityReq['body'] & PostIdentityReq['params']) => {
   for (const webhook of config.webhooks.identities) {
     const url = `${webhook.base}/${identity.type}/${identity.id}`
     debug(`Send identity name webhook to ${url} : `, identity)

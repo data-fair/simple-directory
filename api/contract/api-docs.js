@@ -27,7 +27,7 @@ module.exports = {
   openapi: '3.0.0',
   info: Object.assign({
     title: 'API documentation',
-    version: version
+    version
   }, config.info),
   servers: [{
     url: config.publicUrl,

@@ -479,7 +479,7 @@ class MongodbStorage {
   }
 
   async getSiteByHost (host) {
-    return await this.db.collection('sites').findOne({ host: host })
+    return await this.db.collection('sites').findOne({ host })
   }
 
   async deleteSite (siteId) {
@@ -496,7 +496,7 @@ class MongodbStorage {
   }
 
   async deletePartner (orgId, partnerId) {
-    await this.db.collection('organizations').updateOne({ _id: orgId }, { $pull: { partners: { partnerId: partnerId } } })
+    await this.db.collection('organizations').updateOne({ _id: orgId }, { $pull: { partners: { partnerId } } })
   }
 
   async validatePartner (orgId, partnerId, partner) {

@@ -21,7 +21,7 @@ export class SdMongo {
   get organizations () {
     return mongo.db.collection<User>('users')
   }
-  
+
   get secrets () {
     return mongo.db.collection<{ _id: string, data: any } >('secret')
   }
@@ -30,15 +30,15 @@ export class SdMongo {
     await mongo.connect(config.mongoUrl)
     await mongo.configure({
       users: {
-        'email_1': [
+        email_1: [
           { email: 1, host: 1 },
           { unique: true, collation, name: 'email_1' }
         ],
-        'logged_1': [ // for metrics
+        logged_1: [ // for metrics
           { logged: 1 },
           { sparse: true }
         ],
-        'plannedDeletion_1': [
+        plannedDeletion_1: [
           { plannedDeletion: 1 },
           { sparse: true }
         ],
@@ -50,11 +50,11 @@ export class SdMongo {
       avatars: {
         'owner.type_1_owner.id_1': [
           { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 },
-          { unique: true}
+          { unique: true }
         ]
       },
       limits: {
-        'fulltext': { id: 'text', name: 'text' },
+        fulltext: { id: 'text', name: 'text' },
         'limits-find-current': [
           { type: 1, id: 1 },
           { unique: true }
@@ -62,13 +62,13 @@ export class SdMongo {
       },
       sites: {
         'sites-host': [
-          {host: 1},
-          {unique: true}
+          { host: 1 },
+          { unique: true }
         ],
-        'sites-owner': {'owner.type': 1, 'owner.id': 1, 'owner.department': 1}
+        'sites-owner': { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }
       },
       'oauth-tokens': {
-        'oauth-tokens-key': [{ 'user.id': 1, 'provider.id': 1 }, {unique: true}],
+        'oauth-tokens-key': [{ 'user.id': 1, 'provider.id': 1 }, { unique: true }],
         'oauth-tokens-provider': { 'provider.id': 1 },
         'oauth-tokens-offline': { offlineRefreshToken: 1 },
         'oauth-tokens-sid': { 'token.session_state': 1 }

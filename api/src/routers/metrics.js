@@ -47,7 +47,7 @@ module.exports = asyncWrap(async (req, res, next) => {
     for (const role of config.roles.defaults) {
       membersGauge.set(
         { org: org._id, role },
-        await db.collection('users').countDocuments({ organizations: { $elemMatch: { id: org._id, role: role } } })
+        await db.collection('users').countDocuments({ organizations: { $elemMatch: { id: org._id, role } } })
       )
     }
   }
