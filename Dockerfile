@@ -1,100 +1,75 @@
-############################################################################################################
-# Stage: prepare a base image with all native utils pre-installed, used both by builder and definitive image
+##########################
+FROM node:22.9.0-alpine3.19 AS base
 
-FROM node:20.11.1-alpine3.19 AS nativedeps
+WORKDIR /app
+ENV NODE_ENV=production
+
+##########################
+FROM base AS native-deps
 
 RUN apk add --no-cache openssl graphicsmagick
 
-######################################
-# Stage: nodejs dependencies and build
-FROM nativedeps AS builder
+##########################
+FROM base AS package-strip
 
-# try to prevent ETIMEDOUT errors
-RUN npm config set maxsockets=1
+RUN apk add --no-cache jq moreutils
+ADD package.json package-lock.json ./
+# remove version from manifest for better caching when building a release
+RUN jq '.version="build"' package.json | sponge package.json
+RUN jq '.version="build"' package-lock.json | sponge package-lock.json
 
-WORKDIR /webapp
-ADD package.json .
-ADD package-lock.json .
-ADD patches patches
-# use clean-modules on the same line as npm ci to be lighter in the cache
-RUN npm ci && npm install --no-save maildev && \
-    ./node_modules/.bin/clean-modules --yes --exclude mocha/lib/test.js --exclude "**/*.mustache"
+##########################
+FROM base AS installer
 
-# Adding UI files
-ADD public public
-ADD nuxt.config.js .
-ADD config config
-ADD contract contract
-ADD i18n i18n
+RUN apk add --no-cache python3 make g++ git jq moreutils
+RUN npm i -g clean-modules@3.0.4
+COPY --from=package-strip /app/package.json package.json
+COPY --from=package-strip /app/package-lock.json package-lock.json
+ADD ui/package.json ui/package.json
+ADD api/package.json api/package.json
+# full deps install used for types and ui building
+# also used to fill the npm cache for faster install of api deps
+RUN npm ci --omit=dev --omit=optional --omit=peer --no-audit --no-fund
 
-# also install deps in types submodule
-ADD types types
-WORKDIR /webapp
+##########################
+FROM installer AS types
 
-# Build UI
-ENV NODE_ENV production
+ADD api/types api/types
+ADD api/doc api/doc
+ADD api/config api/config
 RUN npm run build-types
-RUN npm run build
 
-# Adding server files
-ADD server server
-ADD scripts scripts
+##########################
+FROM installer AS ui
 
-# Check quality
-ADD .eslintignore .eslintignore
-RUN npm run lint
-RUN npm audit --omit=dev --audit-level=critical
-ADD test test
-RUN npm run test
+RUN npm i --no-save @rollup/rollup-linux-x64-musl
+COPY --from=types /app/api/config api/config
+COPY --from=types /app/api/types api/types
+ADD /api/src/config.ts api/src/config.ts
+ADD /ui ui
+RUN npm -w ui run build
 
-# Cleanup /webapp/node_modules so it can be copied by next stage
-RUN npm prune --production
-# maildev installed separately to avoid flagging vulnerability https://github.com/advisories/GHSA-vc6q-ccj9-9r89
-# not too bug a deal, as it is used only in pre-production
-RUN npm install maildev --no-save
-RUN rm -rf node_modules/.cache
+##########################
+FROM installer AS api-installer
 
-##################################
-# Stage: main nodejs service stage
-FROM nativedeps
-MAINTAINER "contact@koumoul.com"
+# remove other workspaces and reinstall, otherwise we can get rig have some peer dependencies from other workspaces
+RUN npm ci -w api --prefer-offline --omit=dev --omit=optional --omit=peer --no-audit --no-fund && \
+    npx clean-modules --yes "!ramda/src/test.js"
+RUN mkdir -p /app/api/node_modules
 
-RUN apk add --no-cache dumb-init
+##########################
+FROM native-deps AS main
 
-WORKDIR /webapp
-
-# We could copy /webapp whole, but this is better for layering / efficient cache use
-COPY --from=builder /webapp/node_modules /webapp/node_modules
-COPY --from=builder /webapp/package.json /webapp/package.json
-COPY --from=builder /webapp/nuxt-dist /webapp/nuxt-dist
-COPY --from=builder /webapp/types /webapp/types
-ADD nuxt.config.js nuxt.config.js
-ADD i18n i18n
-ADD server server
-ADD scripts scripts
-ADD config/default.js config/
-ADD config/production.js config/
-ADD config/custom-environment-variables.js config/
-ADD contract contract
-
-# Adding licence, manifests, etc.
-ADD README.md BUILD.json* ./
-ADD LICENSE .
-ADD nodemon.json .
-
-# configure node webapp environment
-ENV NODE_ENV production
-ENV DEBUG db,upgrade*
-# the following line would be a good practice
-# unfortunately it is a problem to activate now that the service was already deployed
-# with volumes belonging to root
-#USER node
-VOLUME /webapp/data
-VOLUME /webapp/security
-
-RUN chmod -R 777 ./nuxt-dist
-
+COPY --from=api-installer /app/node_modules node_modules
+ADD /api api
+COPY --from=types /app/api/types api/types
+COPY --from=types /app/api/doc api/doc
+COPY --from=types /app/api/config api/config
+COPY --from=api-installer /app/api/node_modules api/node_modules
+COPY --from=ui /app/ui/dist ui/dist
+ADD package.json README.md LICENSE BUILD.json* ./
 EXPOSE 8080
-
-CMD ["dumb-init", "node", "--max-http-header-size", "64000", "server"]
-
+EXPOSE 9090
+USER node
+WORKDIR /app/api
+CMD ["node", "--max-http-header-size", "64000", "--experimental-strip-types", "index.ts"]
