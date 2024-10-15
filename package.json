@@ -9,7 +9,7 @@
     "test-mongo": "NODE_ENV=test EVENTS_LOG_LEVEL=warn STORAGE_TYPE=mongo mocha --exit --bail --timeout 20000 test/mongo",
     "test-ldap": "NODE_ENV=test EVENTS_LOG_LEVEL=warn STORAGE_TYPE=ldap mocha --exit --bail --timeout 20000 test/ldap",
     "test-cover": "nyc npm test",
-    "test-deps": "docker compose --profile test up -d",
+    "test-deps": "docker compose --profile test up -d --wait",
     "report": "nyc report --reporter=html",
     "lint": "eslint --ext js,vue .",
     "lint-fix": "eslint --fix --ext js,vue .",
@@ -27,7 +27,8 @@
     "build-types": "df-build-types --mjs types",
     "postinstall": "patch-package",
     "prepare": "husky install",
-    "check-types": "tsc"
+    "check-types": "tsc",
+    "quality": "npm run test-deps && npm run lint && npm run build-types && npm run check-types && npm run test"
   },
   "repository": {
     "type": "git",
