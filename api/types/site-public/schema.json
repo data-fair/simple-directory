@@ -1,6 +1,6 @@
 {
   "$id": "https://github.com/data-fair/simple-directory/site-public",
-  "x-exports": ["types", "stringify"],
+  "x-exports": ["types"],
   "title": "site-public",
   "type":"object",
   "additionalProperties":false,

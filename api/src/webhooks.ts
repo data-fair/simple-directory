@@ -1,9 +1,15 @@
+import { User } from '@data-fair/lib-express'
+import type { PostIdentityReq } from '@data-fair/lib-express/identities/types/post-req/index.js'
 const config = require('config')
 const axios = require('axios')
 const userName = require('./utils/user-name')
 const debug = require('debug')('webhooks')
 
-exports.postIdentity = async (type, identity) => {
+export async function postUser(user: User) {
+  await postIdentity('user', {name: user.name})
+}
+
+const postIdentity = async (type: string, identity: PostIdentityReq["body"]) => {
   const name = type === 'user' ? userName(identity) : identity.name
   const body = { name }
   if (type === 'user' && identity.organizations) body.organizations = identity.organizations

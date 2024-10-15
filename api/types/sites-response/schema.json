@@ -1,6 +1,6 @@
 {
   "$id": "https://github.com/data-fair/simple-directory/sites-response",
-  "x-exports": ["types", "stringify"],
+  "x-exports": ["types"],
   "title": "sites-response",
   "type":"object",
   "additionalProperties":false,

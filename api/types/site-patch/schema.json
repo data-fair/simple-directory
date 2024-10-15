@@ -1,6 +1,6 @@
 {
   "$id": "https://github.com/data-fair/simple-directory/site-patch",
-  "x-exports": ["types", "validate", "stringify", "resolvedSchemaJson"],
+  "x-exports": ["types", "validate", "resolvedSchemaJson"],
   "title": "site-patch",
   "type":"object",
   "additionalProperties":false,

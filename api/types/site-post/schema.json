@@ -1,6 +1,6 @@
 {
   "$id": "https://github.com/data-fair/simple-directory/site-post",
-  "x-exports": ["types", "validate", "stringify", "resolvedSchemaJson"],
+  "x-exports": ["types", "validate", "resolvedSchemaJson"],
   "title": "site-post",
   "type":"object",
   "additionalProperties":false,

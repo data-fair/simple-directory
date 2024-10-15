@@ -47,5 +47,11 @@
     "husky": "^9.1.6",
     "neostandard": "^0.11.5",
     "typescript": "^5.5.4"
+  },
+  "relativeDependencies": {
+    "@data-fair/lib-express": "../lib/packages/express"
+  },
+  "dependencies": {
+    "@data-fair/lib-types-builder": "^1.0.2"
   }
 }

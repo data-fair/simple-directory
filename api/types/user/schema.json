@@ -18,12 +18,12 @@
     "firstName": {
       "description": "First name of the user",
       "type": "string",
-      "maxLength": "100"
+      "maxLength": 100
     },
     "lastName": {
       "description": "Family name of the user",
       "type": "string",
-      "maxLength": "100"
+      "maxLength": 100
     },
     "isAdmin": {
       "description": "Is this user a global admin (independant of organizations)",
