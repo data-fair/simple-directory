@@ -8,8 +8,7 @@
   "additionalProperties": false,
   "required": [
     "id",
-    "email",
-    "name"
+    "email"
   ],
   "properties": {
     "id": {
@@ -19,6 +18,9 @@
     "email": {
       "description": "The main email of the user",
       "type": "string"
+    },
+    "emailConfirmed": {
+      "type": "boolean"
     },
     "host": {
       "description": "Site where the user created his account (leave empty if it is the main public site)",

@@ -35,34 +35,8 @@ function prepareSelect (select) {
 }
 
 class MongodbStorage {
-  async init (params, org) {
-    if (this.org) throw new Error('mongo storage is not compatible with per-org storage')
-    console.log('Connecting to mongodb')
-    const MongoClient = require('mongodb').MongoClient
-    try {
-      this.client = await MongoClient.connect(params.url, params.clientOptions)
-    } catch (err) {
-      // 1 retry after 1s
-      // solve the quite common case in docker-compose of the service starting at the same time as the db
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      this.client = await MongoClient.connect(params.url, params.clientOptions)
-    }
-
-    this._db = this.client.db()
-    // An index for comparison case and diacritics insensitive
-    await mongoUtils.ensureIndex(this.db, 'users', { email: 1, host: 1 }, { unique: true, collation, name: 'email_1' })
-    await mongoUtils.ensureIndex(this.db, 'users', { logged: 1 }, { sparse: true }) // for metrics
-    await mongoUtils.ensureIndex(this.db, 'users', { plannedDeletion: 1 }, { sparse: true })
-    await mongoUtils.ensureIndex(this.db, 'users', { 'organizations.id': 1 }, { sparse: true })
-    await mongoUtils.ensureIndex(this.db, 'avatars', { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }, { unique: true, name: 'owner.type_1_owner.id_1' })
-    await mongoUtils.ensureIndex(this.db, 'limits', { id: 'text', name: 'text' }, { name: 'fulltext' })
-    await mongoUtils.ensureIndex(this.db, 'limits', { type: 1, id: 1 }, { name: 'limits-find-current', unique: true })
-    await mongoUtils.ensureIndex(this.db, 'sites', { host: 1 }, { name: 'sites-host', unique: true })
-    await mongoUtils.ensureIndex(this.db, 'sites', { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }, { name: 'sites-owner' })
-    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'user.id': 1, 'provider.id': 1 }, { name: 'oauth-tokens-key', unique: true })
-    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'provider.id': 1 }, { name: 'oauth-tokens-provider' })
-    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { offlineRefreshToken: 1 }, { name: 'oauth-tokens-offline' })
-    await mongoUtils.ensureIndex(this.db, 'oauth-tokens', { 'token.session_state': 1 }, { name: 'oauth-tokens-sid' })
+  async init (params, org?: string) {
+    if (org) throw new Error('mongo storage is not compatible with per-org storage')
     return this
   }
 

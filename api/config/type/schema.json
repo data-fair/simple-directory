@@ -21,7 +21,8 @@
     "secretKeys",
     "theme",
     "i18n",
-    "admins"
+    "admins",
+    "storage"
   ],
   "properties": {
     "port": {
@@ -113,7 +114,16 @@
       }
     },
     "adminsOrg": {
-      "type": "string"
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
     },
     "adminCredentials": {
       "type": "object",
@@ -125,6 +135,42 @@
           "type": "object"
         }
       }
+    },
+    "storage": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["file", "mongo", "ldap"]
+        },
+        "file": {
+          "type": "object",
+          "required": ["users", "organizations"],
+          "properties": {
+            "users": {
+              "type": "string"
+            },
+            "organizations": {
+              "type": "string"
+            }
+          }
+        },
+        "mongo": {
+          "type": "object",
+          "properties": {
+            "readonly": {
+              "type": "boolean"
+            }
+          }
+        },
+        "ldap": {
+          "type": "object"
+        }
+      }
+    },
+    "onlyCreateInvited": {
+      "type": "boolean"
     }
   }
 }

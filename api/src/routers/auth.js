@@ -96,7 +96,7 @@ router.post('/password', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
 
   let storage = req.app.get('storage')
   if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
 
   if (config.adminCredentials?.password?.hash && config.adminCredentials.email === req.body.email) {
@@ -248,7 +248,7 @@ router.post('/passwordless', rejectCoreIdUser, asyncWrap(async (req, res, next) 
 
   let storage = req.app.get('storage')
   if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
   const user = await storage.getUserByEmail(req.body.email, req.site)
   logContext.user = user
@@ -346,7 +346,7 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
   }
   let storage = req.app.get('storage')
   if (req.query.org_storage === 'true' && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
   const user = decoded.id === '_superadmin' ? decoded : await storage.getUser({ id: decoded.id })
   logContext.user = user

@@ -193,7 +193,7 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
   if (req.user.id === req.params.userId && req.user.orgStorage && req.user.organization) {
     const org = await req.app.get('storage').getOrganization(req.user.organization.id)
     if (!org) return res.status(401).send('Organization does not exist anymore')
-    storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
   const user = await storage.getUser({ id: req.params.userId })
   if (!user) return res.status(404).send()

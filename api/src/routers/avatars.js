@@ -54,7 +54,7 @@ const readAvatar = asyncWrap(async (req, res, next) => {
   if (req.params.type === 'user' && req.user && req.user.organization && req.params.id.startsWith('ldap_' + req.user.organization.id + '_')) {
     const org = await req.app.get('storage').getOrganization(req.user.organization.id)
     if (!org) return res.status(401).send('Organization does not exist anymore')
-    storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
 
   const owner = req.params

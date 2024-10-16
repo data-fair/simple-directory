@@ -109,7 +109,7 @@ export const keepalive = async (req: Request, res: Response, _user: User) => {
   }
   let storage = req.app.get('storage')
   if (req.user.orgStorage && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    storage = await storages.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
   const user = _user || (req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id }))
   if (!user) {
