@@ -6,7 +6,7 @@ const pbkdf2 = util.promisify(crypto.pbkdf2)
 
 const params = { iterations: 100000, size: 64, alg: 'sha512' }
 
-exports.validate = (password, errorMessages) => {
+exports.validate = (password) => {
   if (password.length < 8) return false
   if (!/[a-z]/.exec(password)) return false
   if (!/[A-Z]/.exec(password)) return false

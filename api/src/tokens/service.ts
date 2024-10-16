@@ -1,75 +1,38 @@
-const config = require('config')
-const path = require('path')
-const util = require('util')
-const { exec } = require('child_process')
-const execAsync = util.promisify(exec)
-const fs = require('fs-extra')
-const express = require('express')
-const jwt = require('jsonwebtoken')
-const asyncVerify = util.promisify(jwt.verify)
-const JSONWebKey = require('json-web-key')
-const Cookies = require('cookies')
-const defaultConfig = require('../../config/default.js')
-const storages = require('../storages')
-const twoFA = require('../routers/2fa.js')
+import type { User } from '#types'
+import type { OrganizationMembership, SessionState } from '@data-fair/lib-common-types/session/index.js'
+import type { Request, Response } from 'express'
+import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import config from '#config'
+import jwt, { type SignOptions, type JwtPayload } from 'jsonwebtoken'
+import Cookies from 'cookies'
+import defaultConfig from '../../config/default.js'
+import storage from '../storages'
+import twoFA from '../routers/2fa.js'
+import { getSignatureKeys } from './keys-manager.ts'
 
-exports.init = async () => {
-  const keys = {}
-  const privateKeyPath = path.resolve(config.secret.private)
-  const publicKeyPath = path.resolve(config.secret.public)
-  try {
-    await fs.access(privateKeyPath, fs.constants.F_OK)
-  } catch (err) {
-    if (err.code !== 'ENOENT') throw (err)
-    console.log(`Private key ${privateKeyPath} doesn't exist. Create it with openssl.`)
-    await fs.ensureDir(path.dirname(privateKeyPath))
-    await fs.ensureDir(path.dirname(publicKeyPath))
-    await execAsync(`openssl genpkey -algorithm RSA -out ${privateKeyPath} -pkeyopt rsa_keygen_bits:2048`)
-    await execAsync(`openssl rsa -in ${privateKeyPath} -outform PEM -pubout -out  ${publicKeyPath}`)
-  }
-  keys.private = await fs.readFile(privateKeyPath)
-  keys.public = await fs.readFile(publicKeyPath)
-  return keys
-}
-
-exports.router = (keys) => {
-  const router = express.Router()
-  const publicKey = JSONWebKey.fromPEM(keys.public)
-  publicKey.kid = config.kid
-  publicKey.alg = 'RS256'
-  publicKey.use = 'sig'
-  router.get('/.well-known/jwks.json', (req, res) => {
-    res.json({ keys: [publicKey.toJSON()] })
-  })
-  return router
-}
-
-exports.sign = (keys, payload, expiresIn, notBefore) => {
-  const params = {
-    algorithm: 'RS256',
-    expiresIn,
-    keyid: config.kid
+export const sign = async (payload: any, expiresIn: string, notBefore?: string) => {
+  const signatureKeys = await getSignatureKeys()
+  const webKey = signatureKeys.webKeys[0]
+  const params: SignOptions = {
+    algorithm: webKey.alg,
+    keyid: webKey.kid,
+    expiresIn
   }
   if (notBefore) params.notBefore = notBefore
-  return jwt.sign(payload, keys.private, params)
+  return jwt.sign(payload, signatureKeys.privateKey, params)
 }
 
-exports.verify = async (keys, token) => asyncVerify(token, keys.public)
+export const decode = (token: string) => jwt.decode(token) as JwtPayload
 
-/**
- * @param {string} token
- * @returns {import('jsonwebtoken').JwtPayload | null}
- */
-// @ts-ignore
-exports.decode = (token) => jwt.decode(token)
-
-exports.getPayload = (user) => {
-  const payload = {
+export const getPayload = (user: User) => {
+  const payload: SessionState['user'] = {
     id: user.id,
     email: user.email,
     name: user.name,
-    organizations: (user.organizations || []).map(o => ({ ...o })),
-    isAdmin: config.admins.includes(user.email) || (config.adminCredentials?.password?.hash && config.adminCredentials?.email === user.email)
+    organizations: (user.organizations || []).map(o => ({ ...o }))
+  }
+  if (config.admins.includes(user.email) || (config.adminCredentials?.password && config.adminCredentials?.email === user.email)) {
+    payload.isAdmin = 1
   }
   if (user.defaultOrg) {
     let defaultOrg = payload.organizations.find(o => o.id === user.defaultOrg)
@@ -77,15 +40,14 @@ exports.getPayload = (user) => {
     if (defaultOrg) defaultOrg.dflt = 1
   }
   if (user.ignorePersonalAccount) payload.ipa = 1
-  if (user.orgStorage) payload.orgStorage = user.orgStorage
-  if (user.readonly) payload.readonly = user.readonly
-  if (user.ipa) payload.ipa = 1
   if (user.plannedDeletion) payload.pd = user.plannedDeletion
-  if (user.coreIdProvider) payload.idp = user.coreIdProvider
+  if (user.orgStorage) payload.os = 1
+  // if (user.readonly) payload.readonly = user.readonly
+  if (user.coreIdProvider) payload.idp = 1
   return payload
 }
 
-exports.getDefaultUserOrg = (user, reqOrgId, reqDepId) => {
+export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: string) => {
   if (!user.organizations || !user.organizations.length) return null
   if (reqOrgId) {
     let reqOrg
@@ -104,43 +66,23 @@ exports.getDefaultUserOrg = (user, reqOrgId, reqDepId) => {
   return null
 }
 
-exports.unsetCookies = (req, res) => {
+export const unsetCookies = (req: Request, res: Response) => {
   const cookies = new Cookies(req, res)
   // use '' instead of null because instant cookie expiration is not properly applied on all safari versions
   cookies.set('id_token', '')
   cookies.set('id_token_sign', '')
   cookies.set('id_token_org', '')
   cookies.set('id_token_dep', '')
-
-  // remove cookies on deprecated domain (stop using wildcard domain cookies)
-  if (config.oldSessionDomain) {
-    cookies.set('id_token', null, { domain: config.oldSessionDomain })
-    cookies.set('id_token_sign', null, { domain: config.oldSessionDomain })
-    cookies.set('id_token_org', null, { domain: config.oldSessionDomain })
-    cookies.set('id_token_dep', null, { domain: config.oldSessionDomain })
-    cookies.set('id_token_2fa', null, { domain: config.oldSessionDomain })
-    if (req.user) cookies.set(twoFA.cookieName(req.user.id), null, { domain: config.oldSessionDomain })
-  }
 }
 
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
 // the header and payload are not httpOnly to be readable by client
 // all cookies use sameSite for CSRF prevention
-exports.setCookieToken = (req, res, token, userOrg) => {
+export const setCookieToken = (req: Request, res: Response, token: string, userOrg) => {
   const cookies = new Cookies(req, res)
-
-  // remove cookies on deprecated domain (stop using wildcard domain cookies)
-  if (config.oldSessionDomain) {
-    cookies.set('id_token', null, { domain: config.oldSessionDomain })
-    cookies.set('id_token_sign', null, { domain: config.oldSessionDomain })
-    cookies.set('id_token_org', null, { domain: config.oldSessionDomain })
-    cookies.set('id_token_dep', null, { domain: config.oldSessionDomain })
-    cookies.set('id_token_2fa', null, { domain: config.oldSessionDomain })
-  }
-
   const payload = exports.decode(token)
   const parts = token.split('.')
-  const opts = { sameSite: 'lax' }
+  const opts: Cookies.SetOption = { sameSite: 'lax' }
   if (payload.rememberMe) opts.expires = new Date(payload.exp * 1000)
   cookies.set('id_token', parts[0] + '.' + parts[1], { ...opts, httpOnly: false })
   cookies.set('id_token_sign', parts[2], { ...opts, httpOnly: true })
@@ -151,10 +93,8 @@ exports.setCookieToken = (req, res, token, userOrg) => {
   }
 }
 
-exports.keepalive = async (req, res, _user) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
-  const logContext = { req, account: req.site?.account }
+export const keepalive = async (req: Request, res: Response, _user: User) => {
+  const logContext: EventLogContext = { req, account: req.site?.account }
 
   // User may have new organizations since last renew
   let org
@@ -203,7 +143,7 @@ exports.keepalive = async (req, res, _user) => {
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
 // this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
-exports.prepareCallbackUrl = (req, payload, redirect, userOrg, orgStorage) => {
+export const prepareCallbackUrl = (req: Request, payload: any, redirect?: string, userOrg?:OrganizationMembership, orgStorage?: boolean) => {
   redirect = redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me'
   const redirectUrl = new URL(redirect)
   const token = exports.sign(req.app.get('keys'), { ...payload, temporary: true }, config.jwtDurations.initialToken)

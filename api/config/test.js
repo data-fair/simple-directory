@@ -37,7 +37,6 @@ module.exports = {
   maildev: {
     active: true
   },
-  noUI: false,
   manageSites: true,
   oidc: {
     providers: [{

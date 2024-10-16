@@ -7,7 +7,7 @@ import * as locks from '@data-fair/lib-node/locks.js'
 // import upgradeScripts from '@data-fair/lib-node/upgrade-scripts.js'
 import mongo from '#mongo'
 import { createHttpTerminator } from 'http-terminator'
-import { app } from './app.ts'
+import app from './app.ts'
 import config from '#config'
 
 const server = createServer(app)

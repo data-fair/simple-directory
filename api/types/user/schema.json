@@ -1,10 +1,16 @@
 {
   "$id": "https://github.com/data-fair/simple-directory/user",
-  "x-exports": ["types"],
+  "x-exports": [
+    "types"
+  ],
   "title": "User",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "email", "name"],
+  "required": [
+    "id",
+    "email",
+    "name"
+  ],
   "properties": {
     "id": {
       "description": "The unique id of the user",
@@ -72,8 +78,48 @@
     "organizations": {
       "type": "array",
       "items": {
-        "$ref": "https://github.com/data-fair/lib/session-state#/$defs/organizationMembership"
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "departmentName": {
+            "type": "string"
+          }
+        }
       }
+    },
+    "coreIdProvider": {
+      "type": "object",
+      "title": "Is the user coming from a core ID provider ?",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "orgStorage": {
+      "type": "boolean"
     }
   }
 }

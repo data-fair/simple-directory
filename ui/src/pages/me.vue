@@ -7,7 +7,7 @@
   >
     <h2 class="text-h4 mb-4">
       <v-icon
-        large
+        size="large"
         color="primary"
         style="top:-2px"
       >
@@ -42,8 +42,8 @@
             :disabled="!userDetails || readonly"
             name="firstName"
             :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
-            outlined
-            dense
+            variant="outlined"
+            density="compact"
             @change="save"
           />
         </v-col>
@@ -54,8 +54,8 @@
             :disabled="!userDetails || readonly"
             name="lastName"
             :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
-            outlined
-            dense
+            variant="outlined"
+            density="compact"
             @change="save"
           />
         </v-col>
@@ -72,26 +72,26 @@
             max-width="290px"
             min-width="290px"
           >
-            <template #activator="{ on }">
+            <template #activator="{ props }">
               <v-text-field
-                :value="patch.birthday && $d(new Date(patch.birthday))"
+                :model-value="patch.birthday && $d(new Date(patch.birthday))"
                 :label="$t('common.birthday')"
                 :disabled="!userDetails || readonly"
                 append-icon="mdi-calendar"
                 readonly
                 clearable
-                outlined
-                dense
+                variant="outlined"
+                density="compact"
                 hide-details
-                v-on="on"
+                v-bind="props"
                 @click:clear="patch.birthday = null; save()"
               />
             </template>
             <v-date-picker
               v-model="patch.birthday"
+              v-model:active-picker="activeBirthDayPicker"
               :max="maxBirthday"
               no-title
-              :active-picker.sync="activeBirthDayPicker"
               @change="birthdayMenu = false; save()"
             />
           </v-menu>
@@ -99,7 +99,7 @@
         <v-col v-if="!readonly">
           <v-btn
             color="primary"
-            text
+            variant="text"
             :title="$t('pages.login.changePasswordTooltip')"
             @click="changePasswordAction"
           >
@@ -119,10 +119,10 @@
           :href="identity.user.url"
           target="_blank"
           dark
-          small
+          size="small"
           rounded
-          depressed
-          class="pl-0 pr-3 mr-2 mb-1 text-none white--text"
+          variant="flat"
+          class="pl-0 pr-3 mr-2 mb-1 text-none text-white"
         >
           <v-avatar
             size="28"
@@ -148,7 +148,7 @@
 
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
-          large
+          size="large"
           color="primary"
           style="top:-2px"
         >
@@ -186,7 +186,7 @@
 
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
-          large
+          size="large"
           color="primary"
           style="top:-2px"
         >
@@ -205,7 +205,7 @@
           :label="$t('pages.me.ignorePersonalAccount')"
           :disabled="readonly"
           name="ignorePersonalAccount"
-          @change="save"
+          @update:model-value="save"
         />
         <v-select
           v-if="defaultOrgItems.length > 1"
@@ -215,12 +215,12 @@
           name="defaultOrg"
           :items="defaultOrgItems"
           :item-value="(org) => org.id + ( org.department ? '-' + org.department : '')"
-          :item-text="(org) => `${org.name}` + (org.department ? ` - ${org.departmentName || org.department}` : '')"
+          :item-title="(org) => `${org.name}` + (org.department ? ` - ${org.departmentName || org.department}` : '')"
           clearable
-          outlined
-          dense
+          variant="outlined"
+          density="compact"
           return-object
-          @change="save"
+          @update:model-value="save"
         />
       </template>
 
@@ -269,7 +269,7 @@ export default {
     ...mapState(['userDetails', 'env', 'authProviders']),
     ...mapGetters(['contrastColor']),
     readonly () {
-      return this.env.readonly || this.user.orgStorage || this.user.idp
+      return this.env.readonly || this.user.os || this.user.idp
     },
     maxCreatedOrgs () {
       if (!this.userDetails) return 0

@@ -1,13 +1,15 @@
 module.exports = {
   port: 8080,
-  noUI: false,
+  mongo: {
+    url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development'),
+    options: {}
+  },
   publicUrl: 'http://localhost:8080',
   kid: 'simple-directory',
-  secret: {
+  secret: { // DEPRECATED parameters, kept to transition to mongodb storage
     public: './security/simple-directory.key.pub',
     private: './security/simple-directory.key'
   },
-  oldSessionDomain: null, // used to cleanup cookies from older domain
   jwtDurations: {
     initialToken: '15m',
     exchangedToken: '30d',
@@ -23,8 +25,7 @@ module.exports = {
   // or to test stuff while email sending is not working yet, etc
   adminCredentials: null,
   roles: {
-    defaults: ['admin', 'user'],
-    editable: false
+    defaults: ['admin', 'user']
   },
   contact: 'contact@test.com',
   anonymousContactForm: false,
@@ -41,9 +42,7 @@ module.exports = {
       organizations: './data/organizations.json'
     },
     mongo: {
-      url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development'),
-      readonly: false,
-      clientOptions: {}
+      readonly: false
     },
     ldap: {
       url: 'ldap://ldap:389',

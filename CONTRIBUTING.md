@@ -33,12 +33,6 @@ curl -H "Content-Type: application/json" -XPOST "http://localhost:5689/simple-di
 curl -H "Content-Type: application/json" -XPOST "http://localhost:5689/simple-directory/api/sites?key=secret-sites" -d '
 {"_id":"devsite2","owner":{"type":"organization","id":"admins-org","name":"Admins organization"},"host":"localhost:5999","theme":{"primaryColor":"#FF4D40"}}'
 
-Test built nuxt distributable in dev:
-
-   # first set noUI to false in config/development.js
-   NODE_ENV=development npm run build
-   npm run dev-server
-
 ## Docker image
 
 Test building the docker image:

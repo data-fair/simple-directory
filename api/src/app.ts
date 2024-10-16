@@ -2,12 +2,7 @@ const config = require('config')
 const express = require('express')
 const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser')
-const http = require('http')
 const util = require('util')
-const eventToPromise = require('event-to-promise')
-const cors = require('cors')
-const { createHttpTerminator } = require('http-terminator')
-const createHttpError = require('http-errors')
 const dayjs = require('./utils/dayjs')
 const storages = require('./storages')
 const mails = require('./mails')
@@ -19,22 +14,11 @@ const oauth = require('./utils/oauth')
 const metrics = require('./utils/metrics')
 const twoFA = require('./routers/2fa.js')
 const auth = require('./routers/auth')
-const session = require('@data-fair/sd-express')({
-  directoryUrl: config.publicUrl,
-  privateDirectoryUrl: 'http://localhost:' + config.port
-})
 const i18n = require('../i18n')
 const debug = require('debug')('app')
 
 const app = express()
-const server = http.createServer(app)
-const httpTerminator = createHttpTerminator({ server })
-
-// cf https://connectreport.com/blog/tuning-http-keep-alive-in-node-js/
-// timeout is often 60s on the reverse proxy, better to a have a longer one here
-// so that interruption is managed downstream instead of here
-server.keepAliveTimeout = (60 * 1000) + 1000
-server.headersTimeout = (60 * 1000) + 2000
+export default app
 
 app.set('json spaces', 2)
 
@@ -92,8 +76,8 @@ const setSite = asyncWrap(async (req, res, next) => {
 })
 
 const apiDocs = require('../contract/api-docs')
-app.get('/api/api-docs.json', cors(), (req, res) => res.json(apiDocs))
-app.get('/api/auth/anonymous-action', cors(), require('./routers/anonymous-action'))
+app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))
+app.get('/api/auth/anonymous-action', require('./routers/anonymous-action'))
 app.use('/api/auth', setSite, session.auth, auth.router)
 app.use('/api/mails', session.auth, require('./routers/mails'))
 app.use('/api/users', setSite, session.auth, fullUser, require('./routers/users'))
@@ -167,14 +151,6 @@ exports.run = async () => {
     maildev.closeAsync = util.promisify(maildev.close)
     await maildev.listenAsync()
     app.set('maildev', maildev)
-  }
-
-  if (!config.noUI) {
-    app.use(session.auth)
-    debug('prepare nuxt')
-    const nuxt = await require('./nuxt')()
-    app.set('nuxt', nuxt.instance)
-    app.use(cors(), nuxt.render)
   }
 
   if (config.observer.active) {

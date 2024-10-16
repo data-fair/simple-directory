@@ -87,7 +87,6 @@ module.exports = {
     notifications: 'secret-notifications',
     sites: 'secret-sites'
   },
-  noUI: true,
   perOrgStorageTypes: ['ldap'],
   cipherPassword: 'dev',
   notifyUrl: 'http://localhost:5689/notify',

@@ -1,8 +1,16 @@
+/**
+ * @param {string} key
+ */
+const jsonEnv = (key) => ({ __name: key, __format: 'json' })
+
 module.exports = {
   port: 'PORT',
+  mongo: {
+    url: 'MONGO_URL',
+    options: jsonEnv('MONGO_OPTIONS')
+  },
   publicUrl: 'PUBLIC_URL',
   kid: 'JWT_KID',
-  oldSessionDomain: 'OLD_SESSION_DOMAIN',
   jwtDurations: {
     initialToken: 'JWT_DURATION_INITIAL',
     exchangedToken: 'JWT_DURATION_EXCHANGED',
@@ -14,24 +22,11 @@ module.exports = {
     __name: 'ADMINS',
     __format: 'json'
   },
-  adminsOrg: {
-    __name: 'ADMINS_ORG',
-    __format: 'json'
-  },
-  admins2FA: {
-    __name: 'ADMINS_2FA',
-    __format: 'json'
-  },
-  adminCredentials: {
-    __name: 'ADMIN_CREDENTIALS',
-    __format: 'json'
-  },
+  adminsOrg: 'ADMINS_ORG',
+  admins2FA: 'ADMINS_2FA',
+  adminCredentials: jsonEnv('ADMIN_CREDENTIALS'),
   roles: {
-    defaults: {
-      __name: 'ROLES_DEFAULTS',
-      __format: 'json'
-    },
-    editable: 'ROLES_EDITABLE'
+    defaults: jsonEnv('ROLES_DEFAULTS')
   },
   contact: 'CONTACT',
   anonymousAction: {
@@ -50,15 +45,7 @@ module.exports = {
       organizations: 'STORAGE_FILE_ORGS'
     },
     mongo: {
-      url: 'STORAGE_MONGO_URL',
-      readonly: {
-        __name: 'STORAGE_MONGO_READONLY',
-        __format: 'json'
-      },
-      clientOptions: {
-        __name: 'STORAGE_MONGO_CLIENT_OPTIONS',
-        __format: 'json'
-      }
+      readonly: 'STORAGE_MONGO_READONLY'
     },
     ldap: {
       url: 'STORAGE_LDAP_URL',
@@ -68,80 +55,38 @@ module.exports = {
       users: {
         objectClass: 'STORAGE_LDAP_USERS_OBJECT_CLASS',
         dnKey: 'STORAGE_LDAP_USERS_DN_KEY',
-        mapping: {
-          __name: 'STORAGE_LDAP_USERS_MAPPING',
-          __format: 'json'
-        },
-        overwrite: {
-          __name: 'STORAGE_LDAP_USERS_OVERWRITE',
-          __format: 'json'
-        },
-        extraFilters: {
-          __name: 'STORAGE_LDAP_USERS_EXTRA_FILTERS',
-          __format: 'json'
-        }
+        mapping: jsonEnv('STORAGE_LDAP_USERS_MAPPING'),
+        overwrite: jsonEnv('STORAGE_LDAP_USERS_OVERWRITE'),
+        extraFilters: jsonEnv('STORAGE_LDAP_USERS_EXTRA_FILTERS')
       },
       organizations: {
-        staticSingleOrg: {
-          __name: 'STORAGE_LDAP_ORGS_STATIC_SINGLE_ORG',
-          __format: 'json'
-        },
+        staticSingleOrg: jsonEnv('STORAGE_LDAP_ORGS_STATIC_SINGLE_ORG'),
         objectClass: 'STORAGE_LDAP_ORGS_OBJECT_CLASS',
         dnKey: 'STORAGE_LDAP_ORGS_DN_KEY',
-        mapping: {
-          __name: 'STORAGE_LDAP_ORGS_MAPPING',
-          __format: 'json'
-        },
-        overwrite: {
-          __name: 'STORAGE_LDAP_ORGS_OVERWRITE',
-          __format: 'json'
-        },
-        extraFilters: {
-          __name: 'STORAGE_LDAP_ORGS_EXTRA_FILTERS',
-          __format: 'json'
-        }
+        mapping: jsonEnv('STORAGE_LDAP_ORGS_MAPPING'),
+        overwrite: jsonEnv('STORAGE_LDAP_ORGS_OVERWRITE'),
+        extraFilters: jsonEnv('STORAGE_LDAP_ORGS_EXTRA_FILTERS')
       },
       members: {
-        organizationAsDC: {
-          __name: 'STORAGE_LDAP_MEMBERS_ORG_AS_DC',
-          __format: 'json'
-        },
-        onlyWithRole: {
-          __name: 'STORAGE_LDAP_ONLY_WITH_ROLE',
-          __format: 'json'
-        },
+        organizationAsDC: 'STORAGE_LDAP_MEMBERS_ORG_AS_DC',
+        onlyWithRole: 'STORAGE_LDAP_ONLY_WITH_ROLE',
         role: {
           attr: 'STORAGE_LDAP_MEMBERS_ROLE_ATTR',
-          values: {
-            __name: 'STORAGE_LDAP_MEMBERS_ROLE_VALUES',
-            __format: 'json'
-          },
+          values: jsonEnv('STORAGE_LDAP_MEMBERS_ROLE_VALUES'),
           default: 'STORAGE_LDAP_MEMBERS_ROLE_DEFAULT'
         },
-        overwrite: {
-          __name: 'STORAGE_LDAP_MEMBERS_OVERWRITE',
-          __format: 'json'
-        }
+        overwrite: jsonEnv('STORAGE_LDAP_MEMBERS_OVERWRITE')
       }
     }
   },
-  analytics: {
-    __name: 'ANALYTICS',
-    __format: 'json'
-  },
+  analytics: jsonEnv('ANALYTICS'),
   webhooks: {
-    identities: {
-      __name: 'IDENTITIES_WEBHOOKS',
-      __format: 'json'
-    }
+    identities: jsonEnv('IDENTITIES_WEBHOOKS')
   },
   theme: {
     logo: 'THEME_LOGO',
     favicon: 'THEME_FAVICON',
-    dark: {
-      __name: 'THEME_DARK',
-      __format: 'json'
-    },
+    dark: 'THEME_DARK',
     colors: {
       primary: 'THEME_PRIMARY',
       secondary: 'THEME_SECONDARY',
@@ -164,56 +109,29 @@ module.exports = {
     cssText: 'THEME_CSS_TEXT'
   },
   i18n: {
-    locales: {
-      __name: 'I18N_LOCALES',
-      __format: 'json'
-    }
+    locales: jsonEnv('I18N_LOCALES')
   },
   mails: {
-    transport: {
-      __name: 'MAILS_TRANSPORT',
-      __format: 'json'
-    },
+    transport: jsonEnv('MAILS_TRANSPORT'),
     from: 'MAILS_FROM',
-    extraParams: {
-      __name: 'MAILS_EXTRA_PARAMS',
-      __format: 'json'
-    }
+    extraParams: jsonEnv('MAILS_EXTRA_PARAMS')
   },
   maildev: {
     url: 'MAILDEV_URL',
-    active: {
-      __name: 'MAILDEV_ACTIVE',
-      __format: 'json'
-    },
+    active: 'MAILDEV_ACTIVE',
     smtp: 'MAILDEV_SMTP',
     web: 'MAILDEV_WEB'
   },
   quotas: {
-    defaultMaxCreatedOrgs: {
-      __name: 'DEFAULT_MAX_CREATED_ORGS',
-      __format: 'json'
-    },
-    defaultMaxNbMembers: {
-      __name: 'DEFAULT_MAX_NB_MEMBERS',
-      __format: 'json'
-    }
+    defaultMaxCreatedOrgs: 'DEFAULT_MAX_CREATED_ORGS',
+    defaultMaxNbMembers: 'DEFAULT_MAX_NB_MEMBERS'
   },
   listEntitiesMode: 'LIST_ENTITIES_MODE',
   listUsersMode: 'LIST_USERS_MODE',
   listOrganizationsMode: 'LIST_ORGANIZATIONS_MODE',
-  onlyCreateInvited: {
-    __name: 'ONLY_CREATE_INVITED',
-    __format: 'json'
-  },
-  singleMembership: {
-    __name: 'SINGLE_MEMBERSHIP',
-    __format: 'json'
-  },
-  userSelfDelete: {
-    __name: 'USER_SELF_DELETE',
-    __format: 'json'
-  },
+  onlyCreateInvited: 'ONLY_CREATE_INVITED',
+  singleMembership: 'SINGLE_MEMBERSHIP',
+  userSelfDelete: 'USER_SELF_DELETE',
   defaultLoginRedirect: 'DEFAULT_LOGIN_REDIRECT',
   invitationRedirect: 'INVITATION_REDIRECT',
   secretKeys: {
@@ -224,42 +142,17 @@ module.exports = {
     notifications: 'SECRET_NOTIFICATIONS',
     sites: 'SECRET_SITES'
   },
-  listenWhenReady: {
-    __name: 'LISTEN_WHEN_READY',
-    __format: 'json'
-  },
-  noUI: {
-    __name: 'NO_UI',
-    __format: 'json'
-  },
+  listenWhenReady: 'LISTEN_WHEN_READY',
   tosUrl: 'TOS_URL',
-  manageDepartments: {
-    __name: 'MANAGE_DEPARTMENTS',
-    __format: 'json'
-  },
-  manageDepartmentLabel: {
-    __name: 'MANAGE_DEPARTMENT_LABEL',
-    __format: 'json'
-  },
-  passwordless: {
-    __name: 'PASSWORDLESS',
-    __format: 'json'
-  },
+  manageDepartments: 'MANAGE_DEPARTMENTS',
+  manageDepartmentLabel: 'MANAGE_DEPARTMENT_LABEL',
+  passwordless: 'PASSWORDLESS',
   authRateLimit: {
-    attempts: {
-      __name: 'AUTHRATELIMIT_ATTEMPTS',
-      __format: 'json'
-    },
-    duration: {
-      __name: 'AUTHRATELIMIT_DURATION',
-      __format: 'json'
-    }
+    attempts: 'AUTHRATELIMIT_ATTEMPTS',
+    duration: 'AUTHRATELIMIT_DURATION'
   },
   oauth: {
-    providers: {
-      __name: 'OAUTH_PROVIDERS',
-      __format: 'json'
-    },
+    providers: jsonEnv('OAUTH_PROVIDERS'),
     github: {
       id: 'OAUTH_GITHUB_ID',
       secret: 'OAUTH_GITHUB_SECRET'
@@ -278,78 +171,33 @@ module.exports = {
     }
   },
   saml2: {
-    sp: {
-      __name: 'SAML2_SP',
-      __format: 'json'
-    },
-    providers: {
-      __name: 'SAML2_PROVIDERS',
-      __format: 'json'
-    }
+    sp: jsonEnv('SAML2_SP'),
+    providers: jsonEnv('SAML2_PROVIDERS')
   },
   oidc: {
-    providers: {
-      __name: 'OIDC_PROVIDERS',
-      __format: 'json'
-    }
+    providers: jsonEnv('OIDC_PROVIDERS')
   },
-  noBirthday: {
-    __name: 'NO_BIRTHDAY',
-    __format: 'json'
-  },
+  noBirthday: 'NO_BIRTHDAY',
   avatars: {
-    users: {
-      __name: 'AVATARS_USERS',
-      __format: 'json'
-    },
-    orgs: {
-      __name: 'AVATARS_ORGS',
-      __format: 'json'
-    }
+    users: 'AVATARS_USERS',
+    orgs: 'AVATARS_ORGS'
   },
-  perOrgStorageTypes: {
-    __name: 'PER_ORG_STORAGE_TYPES',
-    __format: 'json'
-  },
+  perOrgStorageTypes: jsonEnv('PER_ORG_STORAGE_TYPES'),
   cipherPassword: 'CIPHER_PASSWORD',
   notifyUrl: 'NOTIFY_URL',
   privateNotifyUrl: 'PRIVATE_NOTIFY_URL',
-  plannedDeletionDelay: {
-    __name: 'PLANNED_DELETION_DELAY',
-    __format: 'json'
-  },
+  plannedDeletionDelay: 'PLANNED_DELETION_DELAY',
   cleanup: {
     cron: 'CLEANUP_CRON',
-    deleteInactive: {
-      __name: 'CLEANUP_DELETE_INACTIVE',
-      __format: 'json'
-    },
-    deleteInactiveDelay: {
-      __name: 'CLEANUP_DELETE_INACTIVE_DELAY',
-      __format: 'json'
-    }
+    deleteInactive: 'CLEANUP_DELETE_INACTIVE',
+    deleteInactiveDelay: 'CLEANUP_DELETE_INACTIVE_DELAY'
   },
-  alwaysAcceptInvitation: {
-    __name: 'ALWAYS_ACCEPT_INVITATION',
-    __format: 'json'
-  },
+  alwaysAcceptInvitation: 'ALWAYS_ACCEPT_INVITATION',
   observer: {
-    active: {
-      __name: 'OBSERVER_ACTIVE',
-      __format: 'json'
-    }
+    active: 'OBSERVER_ACTIVE'
   },
-  depAdminIsOrgAdmin: {
-    __name: 'DEP_ADMIN_IS_ORG_ADMIN',
-    __format: 'json'
-  },
-  manageSites: {
-    __name: 'MANAGE_SITES',
-    __format: 'json'
-  },
-  managePartners: {
-    __name: 'MANAGE_PARTNERS',
-    __format: 'json'
-  },
+  depAdminIsOrgAdmin: 'DEP_ADMIN_IS_ORG_ADMIN',
+  manageSites: 'MANAGE_SITES',
+  managePartners: 'MANAGE_PARTNERS',
   defaultOrg: 'DEFAULT_ORG'
 }

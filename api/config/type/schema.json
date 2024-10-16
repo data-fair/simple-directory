@@ -7,27 +7,51 @@
   "x-ajv": {
     "coerceTypes": "array"
   },
+  "x-jstt": {
+    "additionalProperties": false
+  },
   "type": "object",
   "title": "Api config",
-  "additionalProperties": false,
   "required": [
-    "mongoUrl",
+    "secret",
+    "kid",
+    "mongo",
     "port",
     "observer",
     "secretKeys",
     "theme",
-    "i18n"
+    "i18n",
+    "admins"
   ],
   "properties": {
-    "mongoUrl": {
-      "type": "string"
-    },
     "port": {
       "type": "number"
     },
+    "mongo": {
+      "type": "object",
+      "required": ["url", "options"],
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "options": {
+          "type": "object"
+        }
+      }
+    },
+    "secret": {
+      "type": "object",
+      "required": ["public", "private"],
+      "properties": {
+        "public": {"type": "string"},
+        "private": {"type": "string"}
+      }
+    },
+    "kid": {
+      "type": "string"
+    },
     "secretKeys": {
       "type": "object",
-      "additionalProperties": false,
       "properties": {
         "identities": {
           "type": ["string", "null"]
@@ -53,7 +77,6 @@
     },
     "theme": {
       "type": "object",
-      "additionalProperties": false,
       "required": ["logo", "notificationIcon", "notificationBadge"],
       "properties": {
         "logo": {
@@ -69,7 +92,6 @@
     },
     "i18n": {
       "type": "object",
-      "additionalProperties": false,
       "required": ["locales", "defaultLocale"],
       "properties": {
         "locales": {
@@ -84,8 +106,25 @@
         }
       }
     },
-    "util": {},
-    "get": {},
-    "has": {}
+    "admins": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "adminsOrg": {
+      "type": "string"
+    },
+    "adminCredentials": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "object"
+        }
+      }
+    }
   }
 }

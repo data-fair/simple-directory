@@ -19,15 +19,15 @@ export class SdMongo {
   }
 
   get organizations () {
-    return mongo.db.collection<User>('users')
+    return mongo.db.collection<Organization>('organizations')
   }
 
   get secrets () {
-    return mongo.db.collection<{ _id: string, data: any } >('secret')
+    return mongo.db.collection<{ _id: string, data: any } >('secrets')
   }
 
   init = async () => {
-    await mongo.connect(config.mongoUrl)
+    await mongo.connect(config.mongo.url, config.mongo.options)
     await mongo.configure({
       users: {
         email_1: [
