@@ -18,8 +18,8 @@ const router = module.exports = Router()
 
 // Invitation for a user to join an organization from an admin of this organization
 router.post('', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -181,8 +181,8 @@ router.post('', async (req, res, next) => {
 })
 
 router.get('/_accept', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   let invit

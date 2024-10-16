@@ -96,8 +96,8 @@ router.get('/:organizationId/roles', async (req, res, next) => {
 
 // Create an organization
 router.post('', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -126,8 +126,8 @@ router.post('', async (req, res, next) => {
 // Update some parts of an organization as admin of it
 const patchKeys = ['name', 'description', 'departments', 'departmentLabel', '2FA']
 router.patch('/:organizationId', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -176,8 +176,8 @@ router.patch('/:organizationId', async (req, res, next) => {
 
 // Get the members of an organization. i.e. a partial user object (id, name, role).
 router.get('/:organizationId/members', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -242,8 +242,8 @@ router.get('/:organizationId/members', async (req, res, next) => {
 
 // Exclude a member of the organization
 router.delete('/:organizationId/members/:userId', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -294,8 +294,8 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
 
 // Change the role of the user in the organization
 router.patch('/:organizationId/members/:userId', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -338,8 +338,8 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
 
 // Super admin and orga admin can delete an organization for now
 router.delete('/:organizationId', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -360,8 +360,8 @@ if (config.managePartners) {
   // Invitation for an organization to join us as partners
   const debugPartners = require('debug')('partners')
   router.post('/:organizationId/partners', async (req, res, next) => {
-    const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-    /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+    const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+    /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
     const logContext = { req }
 
     const { assertValid } = await import('../../types/partner-post/index.mjs')
@@ -415,8 +415,8 @@ if (config.managePartners) {
   })
 
   router.post('/:organizationId/partners/_accept', async (req, res, next) => {
-    const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-    /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+    const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+    /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
     const logContext = { req }
 
     const { assertValid } = await import('../../types/partner-accept/index.mjs')
@@ -472,8 +472,8 @@ if (config.managePartners) {
   })
 
   router.delete('/:organizationId/partners/:partnerId', async (req, res, next) => {
-    const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-    /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+    const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+    /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
     const logContext = { req }
 
     if (!reqUser(req)) return res.status(401).send()

@@ -24,8 +24,8 @@ const rejectCoreIdUser = (req, res, next) => {
 
 // Get the list of users
 router.get('', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   const listMode = config.listUsersMode || config.listEntitiesMode
@@ -56,8 +56,8 @@ router.get('', async (req, res, next) => {
 const createKeys = ['firstName', 'lastName', 'email', 'password', 'birthday', 'createOrganization']
 // TODO: block when onlyCreateInvited is true ?
 router.post('', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
@@ -206,8 +206,8 @@ router.get('/:userId', async (req, res, next) => {
 const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'defaultDep', 'plannedDeletion']
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -266,8 +266,8 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
 })
 
 router.delete('/:userId/plannedDeletion', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -285,8 +285,8 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
 })
 
 router.delete('/:userId', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -306,8 +306,8 @@ router.delete('/:userId', async (req, res, next) => {
 
 // Change password of a user using an action token sent in a mail
 router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   if (!req.body.password) return res.status(400).send()
@@ -332,8 +332,8 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
 
 // Change host of a user using an action token sent in a mail
 router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
-  /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
   const storage = req.app.get('storage')

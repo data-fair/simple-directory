@@ -35,7 +35,7 @@ exports.isValid = (twoFA, token) => {
 exports.cookieName = (userId) => 'id_token_2fa_' + userId
 
 router.post('/', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
+  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
 
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
