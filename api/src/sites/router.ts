@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import config from '#config'
+import { reqUser } from '@data-fair/lib-express'
 const createError = require('http-errors')
 const { nanoid } = require('nanoid')
 const oauth = require('../utils/oauth')
@@ -7,7 +8,7 @@ const oauth = require('../utils/oauth')
 const router = module.exports = Router()
 
 const checkSecret = async (req) => {
-  if (!req.user?.adminMode && (!req.query.key || req.query.key !== config.secretKeys.sites)) {
+  if (!reqUser(req)?.adminMode && (!req.query.key || req.query.key !== config.secretKeys.sites)) {
     throw createError(401, 'wrong sites secret key')
   }
 }
@@ -17,12 +18,12 @@ router.get('', async (req, res, next) => {
   const sitesResponsePublicSchema = await import('../../types/sites-response-public/index.mjs')
   const sitesQuerySchema = await import('../../types/sites-query/index.mjs')
 
-  if (!req.user) return res.status(401).send()
+  if (!reqUser(req)) return res.status(401).send()
   const query = req.query
   // @ts-ignore
   sitesQuerySchema.assertValid(query)
-  if (query.showAll && !req.user.adminMode) return res.status(403).send()
-  const response = query.showAll ? await req.app.get('storage').findAllSites() : await req.app.get('storage').findOwnerSites(req.user.accountOwner)
+  if (query.showAll && !reqUser(req).adminMode) return res.status(403).send()
+  const response = query.showAll ? await req.app.get('storage').findAllSites() : await req.app.get('storage').findOwnerSites(reqUser(req).accountOwner)
   for (const result of response.results) {
     result.logo = result.logo || `${req.publicBaseUrl}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
     if (result.authProviders) {
@@ -51,8 +52,8 @@ router.post('', async (req, res, next) => {
 router.patch('/:id', async (req, res, next) => {
   const sitePatchSchema = await import('../../types/site-patch/index.mjs')
 
-  if (!req.user) return res.status(401).send()
-  if (!req.user.adminMode) return res.status(403).send()
+  if (!reqUser(req)) return res.status(401).send()
+  if (!reqUser(req).adminMode) return res.status(403).send()
   // @ts-ignore
   sitePatchSchema.assertValid(req.body)
   await req.app.get('storage').patchSite(req.body)

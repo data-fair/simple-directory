@@ -70,11 +70,11 @@ const limiter = (req) => {
 }
 
 router.post('/contact', async (req, res) => {
-  if (!req.user && !config.anonymousContactForm) return res.status(401).send()
+  if (!reqUser(req) && !config.anonymousContactForm) return res.status(401).send()
 
   if (!emailValidator.validate(req.body.from)) return res.status(400).send(req.messages.errors.badEmail)
 
-  if (!req.user) {
+  if (!reqUser(req)) {
     if (!req.body.token) return res.status(401).send()
 
     // 1rst level of anti-spam prevention, no cross origin requests on this route

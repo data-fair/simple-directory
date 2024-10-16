@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import config from '#config'
+import { reqUser } from '@data-fair/lib-express'
 const shortid = require('shortid')
 const dayjs = require('dayjs')
 const URL = require('url').URL
@@ -21,7 +22,7 @@ router.post('', async (req, res, next) => {
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  if (!req.user) return res.status(401).send()
+  if (!reqUser(req)) return res.status(401).send()
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
   debug('new invitation', req.body)
@@ -37,16 +38,16 @@ router.post('', async (req, res, next) => {
   const skipMail = req.query.skip_mail === 'true'
 
   const invitation = req.body
-  let userOrga = req.user.organizations.find(o => o.id === invitation.id)
+  let userOrga = reqUser(req).organizations.find(o => o.id === invitation.id)
   if (config.depAdminIsOrgAdmin) {
-    if (!req.user.isAdmin && (!userOrga || userOrga.role !== 'admin')) {
+    if (!reqUser(req).isAdmin && (!userOrga || userOrga.role !== 'admin')) {
       return res.status(403).send(req.messages.errors.permissionDenied)
     }
   } else {
     if (invitation.department) {
-      userOrga = req.user.organizations.find(o => o.id === invitation.id && o.department === invitation.department) || userOrga
+      userOrga = reqUser(req).organizations.find(o => o.id === invitation.id && o.department === invitation.department) || userOrga
     }
-    if (!req.user.isAdmin && (!userOrga || userOrga.role !== 'admin' || (userOrga.department && userOrga.department !== invitation.department))) {
+    if (!reqUser(req).isAdmin && (!userOrga || userOrga.role !== 'admin' || (userOrga.department && userOrga.department !== invitation.department))) {
       return res.status(403).send(req.messages.errors.permissionDenied)
     }
   }
@@ -101,7 +102,7 @@ router.post('', async (req, res, next) => {
       if (invitation.department) newUser.defaultDep = invitation.department
       newUser.name = userName(newUser)
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUser)
-      await storage.createUser(newUser, req.user)
+      await storage.createUser(newUser, reqUser(req))
       await storage.addMember(orga, newUser, invitation.role, invitation.department)
       if (storage.db) await limits.setNbMembers(storage.db, orga.id)
       const reboundRedirect = new URL(invitation.redirect || config.invitationRedirect || `${req.publicBaseUrl}/invitation`)
@@ -141,7 +142,7 @@ router.post('', async (req, res, next) => {
         recipient: { id: newUser.id, name: newUser.name }
       })
 
-      if (req.user.adminMode || req.user.asAdmin) {
+      if (reqUser(req).adminMode || reqUser(req).asAdmin) {
         return res.send(params)
       }
     }
@@ -171,7 +172,7 @@ router.post('', async (req, res, next) => {
       title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
     })
 
-    if (req.user.adminMode || req.user.asAdmin) {
+    if (reqUser(req).adminMode || reqUser(req).asAdmin) {
       return res.send(params)
     }
   }
@@ -244,7 +245,7 @@ router.get('/_accept', async (req, res, next) => {
       debug('redirect to changePassword step', redirectUrl.href)
       return res.redirect(redirectUrl.href)
     }
-    if (!req.user || req.user.email !== invit.email) {
+    if (!reqUser(req) || reqUser(req).email !== invit.email) {
       const reboundRedirect = redirectUrl.href
       redirectUrl = new URL(`${req.publicBaseUrl}/login`)
       redirectUrl.searchParams.set('email', invit.email)

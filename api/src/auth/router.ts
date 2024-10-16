@@ -1,5 +1,6 @@
 import config from '#config'
 import { Router } from 'express'
+import { reqUser } from '@data-fair/lib-express'
 const URL = require('url').URL
 const emailValidator = require('email-validator')
 const bodyParser = require('body-parser')
@@ -40,7 +41,7 @@ async function confirmLog (storage, user) {
 }
 
 const rejectCoreIdUser = (req, res, next) => {
-  if (req.user?.coreIdProvider) return res.status(403).send('This route is not available for users with a core identity provider')
+  if (reqUser(req)?.idp) return res.status(403).send('This route is not available for users with a core identity provider')
   next()
 }
 
@@ -304,10 +305,10 @@ router.post('/site_redirect', async (req, res, next) => {
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  if (!req.user) return res.status(403).send()
+  if (!reqUser(req)) return res.status(403).send()
   if (req.site) return res.status(400).send()
   const storage = req.app.get('storage')
-  const user = await storage.getUserByEmail(req.user.email)
+  const user = await storage.getUserByEmail(reqUser(req).email)
   if (!user) return res.status(404).send('user not found')
   if (!req.body.redirect) return res.status(400).send()
   const site = await storage.getSiteByHost(new URL(req.body.redirect).host)
@@ -443,9 +444,9 @@ router.post('/exchange', async (req, res, next) => {
 router.post('/keepalive', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
 
-  if (!req.user) return res.status(401).send('No active session to keep alive')
+  if (!reqUser(req)) return res.status(401).send('No active session to keep alive')
   const storage = req.app.get('storage')
-  const user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
+  const user = reqUser(req).id === '_superadmin' ? reqUser(req) : await storage.getUser({ id: reqUser(req).id })
 
   if (user.coreIdProvider && user.coreIdProvider.type === 'oauth') {
     let provider
@@ -489,7 +490,7 @@ router.post('/keepalive', async (req, res, next) => {
     }
   }
 
-  debug(`Exchange session token for user ${req.user.name}`)
+  debug(`Exchange session token for user ${reqUser(req).name}`)
   await tokens.keepalive(req, res, user)
   res.status(204).send()
 })
@@ -565,9 +566,9 @@ router.post('/action', async (req, res, next) => {
 })
 
 router.delete('/adminmode', async (req, res, next) => {
-  if (!req.user) return res.status(401).send('No active session')
-  if (!req.user.adminMode) return res.status(403).send('This route is only available in admin mode')
-  debug(`Exchange session token without adminMode for user ${req.user.name}`)
+  if (!reqUser(req)) return res.status(401).send('No active session')
+  if (!reqUser(req).adminMode) return res.status(403).send('This route is only available in admin mode')
+  debug(`Exchange session token without adminMode for user ${reqUser(req).name}`)
   req.query.noAdmin = 'true'
   await tokens.keepalive(req, res)
 
@@ -580,14 +581,14 @@ router.post('/asadmin', async (req, res, next) => {
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  if (!req.user) return res.status(401).send()
-  if (!req.user.isAdmin) return res.status(403).send('This functionality is for admins only')
+  if (!reqUser(req)) return res.status(401).send()
+  if (!reqUser(req).isAdmin) return res.status(403).send('This functionality is for admins only')
   const storage = req.app.get('storage')
   const user = await storage.getUser({ id: req.body.id })
   if (!user) return res.status(404).send('User does not exist')
   const payload = tokens.getPayload(user)
   payload.name += ' (administration)'
-  payload.asAdmin = { id: req.user.id, name: req.user.name }
+  payload.asAdmin = { id: reqUser(req).id, name: reqUser(req).name }
   payload.isAdmin = false
   const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
@@ -603,10 +604,10 @@ router.delete('/asadmin', async (req, res, next) => {
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  if (!req.user) return res.status(401).send('No active session to keep alive')
-  if (!req.user.asAdmin) return res.status(403).send('This functionality is for admins only')
+  if (!reqUser(req)) return res.status(401).send('No active session to keep alive')
+  if (!reqUser(req).asAdmin) return res.status(403).send('This functionality is for admins only')
   const storage = req.app.get('storage')
-  const user = req.user.asAdmin.id === '_superadmin' ? req.user.asAdmin : await storage.getUser({ id: req.user.asAdmin.id })
+  const user = reqUser(req).asAdmin.id === '_superadmin' ? reqUser(req).asAdmin : await storage.getUser({ id: reqUser(req).asAdmin.id })
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = tokens.getPayload(user)
   payload.adminMode = true
@@ -620,8 +621,8 @@ router.delete('/asadmin', async (req, res, next) => {
 })
 
 router.get('/me', (req, res) => {
-  if (!req.user) return res.status(404).send()
-  else res.send(req.user)
+  if (!reqUser(req)) return res.status(404).send()
+  else res.send(reqUser(req))
 })
 
 router.get('/providers', async (req, res) => {

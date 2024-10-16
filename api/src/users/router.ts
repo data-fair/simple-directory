@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import config from '#config'
+import { reqUser } from '@data-fair/lib-express'
 const shortid = require('shortid')
 const emailValidator = require('email-validator')
 const userName = require('../utils/user-name')
@@ -17,7 +18,7 @@ const { send: sendNotification } = require('../utils/notifications')
 const router = Router()
 
 const rejectCoreIdUser = (req, res, next) => {
-  if (req.user?.coreIdProvider) return res.status(403).send('This route is not available for users with a core identity provider')
+  if (reqUser(req)?.idp) return res.status(403).send('This route is not available for users with a core identity provider')
   next()
 }
 
@@ -28,15 +29,15 @@ router.get('', async (req, res, next) => {
   const logContext = { req }
 
   const listMode = config.listUsersMode || config.listEntitiesMode
-  if (listMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
-  if (listMode === 'admin' && !(req.user && req.user.adminMode)) return res.send({ results: [], count: 0 })
+  if (listMode === 'authenticated' && !reqUser(req)) return res.send({ results: [], count: 0 })
+  if (listMode === 'admin' && !reqUser(req)?.adminMode) return res.send({ results: [], count: 0 })
 
   const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
   if (allFields) {
-    if (!req.user || !req.user.adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
+    if (!reqUser(req)?.adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
   } else {
     params.select = ['id', 'name']
   }
@@ -185,12 +186,12 @@ router.post('', async (req, res, next) => {
 })
 
 router.get('/:userId', async (req, res, next) => {
-  if (!req.user) return res.status(401).send()
-  if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
-  if (req.user.id === '_superadmin') return res.json(req.user)
+  if (!reqUser(req)) return res.status(401).send()
+  if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (reqUser(req).id === '_superadmin') return res.json(reqUser(req))
   let storage = req.app.get('storage')
-  if (req.user.id === req.params.userId && req.user.orgStorage && req.user.organization) {
-    const org = await req.app.get('storage').getOrganization(req.user.organization.id)
+  if (reqUser(req).id === req.params.userId && reqUser(req).orgStorage && reqUser(req).organization) {
+    const org = await req.app.get('storage').getOrganization(reqUser(req).organization.id)
     if (!org) return res.status(401).send('Organization does not exist anymore')
     storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
@@ -209,46 +210,46 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  if (!req.user) return res.status(401).send()
-  if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (!reqUser(req)) return res.status(401).send()
+  if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
 
   const unpatchableKey = Object.keys(req.body).find(key => !patchKeys.concat(adminKeys).includes(key))
   if (unpatchableKey) return res.status(400).send('Only some parts of the user can be modified through this route')
   const adminKey = Object.keys(req.body).find(key => adminKeys.includes(key))
-  if (adminKey && !req.user.adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (adminKey && !reqUser(req).adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
 
   const patch = req.body
-  const name = userName({ ...req.user, ...patch }, true)
-  if (name !== req.user.name) {
+  const name = userName({ ...reqUser(req), ...patch }, true)
+  if (name !== reqUser(req).name) {
     patch.name = name
-    webhooks.postIdentity('user', { ...req.user, ...patch })
+    webhooks.postIdentity('user', { ...reqUser(req), ...patch })
   }
 
   if (patch.plannedDeletion) {
     if (config.userSelfDelete) {
-      if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+      if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
     } else {
-      if (!req.user.adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
+      if (!reqUser(req).adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
     }
   }
 
-  const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
+  const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, reqUser(req))
 
   eventsLog.info('sd.user.patch', `user was patched ${patchedUser.name} (${patchedUser.id})`, logContext)
 
-  const link = req.publicBaseUrl + '/login?email=' + encodeURIComponent(req.user.email)
+  const link = req.publicBaseUrl + '/login?email=' + encodeURIComponent(reqUser(req).email)
   const linkUrl = new URL(link)
   if (patch.plannedDeletion) {
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'plannedDeletion',
       messages: req.messages,
-      to: req.user.email,
+      to: reqUser(req).email,
       params: {
         link,
         host: linkUrl.host,
         origin: linkUrl.origin,
-        user: req.user.name,
+        user: reqUser(req).name,
         plannedDeletion: req.localeDate(patch.plannedDeletion).format('L'),
         cause: ''
       }
@@ -269,11 +270,11 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  if (!req.user) return res.status(401).send()
-  if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (!reqUser(req)) return res.status(401).send()
+  if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
   const patch = { plannedDeletion: null }
 
-  await req.app.get('storage').patchUser(req.params.userId, patch, req.user)
+  await req.app.get('storage').patchUser(req.params.userId, patch, reqUser(req))
 
   // update session info
   await tokens.keepalive(req, res)
@@ -288,11 +289,11 @@ router.delete('/:userId', async (req, res, next) => {
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  if (!req.user) return res.status(401).send()
+  if (!reqUser(req)) return res.status(401).send()
   if (config.userSelfDelete) {
-    if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
+    if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
   } else {
-    if (!req.user.adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
+    if (!reqUser(req).adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
   }
 
   await req.app.get('storage').deleteUser(req.params.userId)

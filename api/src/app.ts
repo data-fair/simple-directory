@@ -24,15 +24,15 @@ app.set('json spaces', 2)
 app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))
 app.use(i18n.middleware)
-// Replaces req.user from session with full and fresh user object from storage
+// Replaces reqUser(req) from session with full and fresh user object from storage
 // also minimalist api key management
 const fullUser = async (req, res, next) => {
-  if (req.user && !req.user.orgStorage && req.user.id !== '_superadmin') {
-    req.user = {
-      ...await req.app.get('storage').getUser({ id: req.user.id }),
-      isAdmin: req.user.isAdmin,
-      adminMode: req.user.adminMode,
-      activeAccount: req.user.activeAccount
+  if (reqUser(req) && !reqUser(req).orgStorage && reqUser(req).id !== '_superadmin') {
+    reqUser(req) = {
+      ...await req.app.get('storage').getUser({ id: reqUser(req).id }),
+      isAdmin: reqUser(req).isAdmin,
+      adminMode: reqUser(req).adminMode,
+      activeAccount: reqUser(req).activeAccount
     }
   }
 
@@ -42,7 +42,7 @@ const fullUser = async (req, res, next) => {
       return res.status(401).send('bad api key')
     } else {
       if (req.method !== 'GET') return res.status(403).send('api key is only for read endpoints')
-      req.user = {
+      reqUser(req) = {
         isAdmin: true,
         adminMode: true,
         id: 'readAll',

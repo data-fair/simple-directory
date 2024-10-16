@@ -1,5 +1,5 @@
 import type { User, Organization } from '#types'
-import type { UserRef } from '@data-fair/lib-common-types/session/index.js'
+import type { UserRef } from '@data-fair/lib-express'
 
 export interface SdStorage {
   init(conf: any): Promise<void>

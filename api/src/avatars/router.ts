@@ -1,5 +1,5 @@
-const path = require('path')
 import { Router } from 'express'
+import { reqUser } from '@data-fair/lib-express'
 const gm = require('gm')
 const colors = require('material-colors')
 const seedrandom = require('seedrandom')
@@ -50,8 +50,8 @@ const readAvatar = async (req, res, next) => {
 
   // TODO: what happens if someone outside of the org requests an avatar ?
   // TODO: other type of org storage than ldap ?
-  if (req.params.type === 'user' && req.user && req.user.organization && req.params.id.startsWith('ldap_' + req.user.organization.id + '_')) {
-    const org = await req.app.get('storage').getOrganization(req.user.organization.id)
+  if (req.params.type === 'user' && reqUser(req) && reqUser(req).organization && req.params.id.startsWith('ldap_' + reqUser(req).organization.id + '_')) {
+    const org = await req.app.get('storage').getOrganization(reqUser(req).organization.id)
     if (!org) return res.status(401).send('Organization does not exist anymore')
     storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
@@ -100,11 +100,11 @@ const upload = multer({
 })
 
 const isAdmin = (req, res, next) => {
-  if (!req.user) return res.status(401).send()
-  if (req.user.adminMode) return next()
-  if (req.params.type === 'user' && req.params.id === req.user.id) return next()
-  if (req.params.type === 'organization' && !req.params.department && (req.user.organizations || []).find(o => o.id === req.params.id && o.role === 'admin' && !o.department)) return next()
-  if (req.params.type === 'organization' && req.params.department && (req.user.organizations || []).find(o => o.id === req.params.id && o.role === 'admin' && (!o.department || o.department === req.params.department))) return next()
+  if (!reqUser(req)) return res.status(401).send()
+  if (reqUser(req).adminMode) return next()
+  if (req.params.type === 'user' && req.params.id === reqUser(req).id) return next()
+  if (req.params.type === 'organization' && !req.params.department && (reqUser(req).organizations || []).find(o => o.id === req.params.id && o.role === 'admin' && !o.department)) return next()
+  if (req.params.type === 'organization' && req.params.department && (reqUser(req).organizations || []).find(o => o.id === req.params.id && o.role === 'admin' && (!o.department || o.department === req.params.department))) return next()
   res.status(403).send()
 }
 
