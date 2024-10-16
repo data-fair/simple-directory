@@ -5,7 +5,7 @@ const URL = require('url').URL
 const emailValidator = require('email-validator')
 const bodyParser = require('body-parser')
 const requestIp = require('request-ip')
-const shortid = require('shortid')
+import { nanoid } from 'nanoid'
 const Cookies = require('cookies')
 const slug = require('slugify')
 const tokens = require('../utils/tokens')
@@ -862,7 +862,7 @@ const oauthCallback = async (req, res, next) => {
 
     user = {
       ...userInfo.user,
-      id: shortid.generate(),
+      id: nanoid()(),
       firstName: userInfo.firstName || '',
       lastName: userInfo.lastName || '',
       emailConfirmed: true,
@@ -1072,7 +1072,7 @@ router.post('/saml2-assert', async (req, res) => {
     }
     user = {
       email,
-      id: shortid.generate(),
+      id: nanoid()(),
       emailConfirmed: true,
       saml2: {
         [providerId]: samlInfo

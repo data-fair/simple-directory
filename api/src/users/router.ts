@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import config from '#config'
 import { reqUser } from '@data-fair/lib-express'
-const shortid = require('shortid')
+import { nanoid } from 'nanoid'
 const emailValidator = require('email-validator')
 const userName = require('../utils/user-name')
 const findUtils = require('../utils/find')
@@ -87,7 +87,7 @@ router.post('', async (req, res, next) => {
   // create user
   const newUser = {
     email: req.body.email,
-    id: shortid.generate(),
+    id: nanoid()(),
     firstName: req.body.firstName,
     lastName: req.body.lastName,
     emailConfirmed: false

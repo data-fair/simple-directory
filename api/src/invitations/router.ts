@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import config from '#config'
 import { reqUser } from '@data-fair/lib-express'
-const shortid = require('shortid')
+import { nanoid } from 'nanoid'
 const dayjs = require('dayjs')
 const URL = require('url').URL
 const tokens = require('../utils/tokens')
@@ -92,7 +92,7 @@ router.post('', async (req, res, next) => {
     } else {
       const newUser = {
         email: invitation.email,
-        id: user ? user.id : shortid.generate(),
+        id: user ? user.id : nanoid()(),
         organizations: user ? user.organizations : [],
         emailConfirmed: false,
         defaultOrg: invitation.id,

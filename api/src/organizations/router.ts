@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { reqUser } from '@data-fair/lib-express'
-const shortid = require('shortid')
+import { nanoid } from 'nanoid'
 import config from '#config'
 const csvStringify = require('util').promisify(require('csv-stringify').stringify)
 const { nanoid } = require('nanoid')
@@ -109,7 +109,7 @@ router.post('', async (req, res, next) => {
     if (maxCreatedOrgs !== -1 && createdOrgs >= maxCreatedOrgs) return res.status(429).send(req.messages.errors.maxCreatedOrgs)
   }
   const orga = req.body
-  orga.id = orga.id || shortid.generate()
+  orga.id = orga.id || nanoid()()
   logContext.account = { type: 'organization', id: orga.id, name: orga.name }
   await storage.createOrganization(orga, reqUser(req))
   eventsLog.info('sd.org.create', `a user created an organization: ${orga.name} (${orga.id})`, logContext)
