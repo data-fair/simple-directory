@@ -50,7 +50,7 @@ class StorageManager {
   }
 
   async createStorage (type: string, conf: any, org?: string): Promise<SdStorage> {
-    const factory = (await import('./' + type)).default
+    const factory = (await import('./' + type + '.ts')).default
     const storage = await factory.init(conf, org)
     storage.readonly = factory.readonly
     return storage

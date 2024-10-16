@@ -1,3 +1,4 @@
+import type { SdStorage } from './interface.ts'
 const config = require('config')
 const path = require('path')
 const fs = require('fs')
@@ -36,7 +37,7 @@ function sortCompare (sort) {
   }
 }
 
-class FileStorage {
+class FileStorage implements SdStorage {
   async init (params, org) {
     if (this.org) throw new Error('mongo storage is not compatible with per-org storage')
     this.users = JSON.parse(await readFile(path.resolve(__dirname, '../..', params.users), 'utf-8'))

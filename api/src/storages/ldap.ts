@@ -1,3 +1,4 @@
+import type { SdStorage } from './interface.ts'
 const config = require('config')
 const { promisify } = require('util')
 const ldap = require('ldapjs')
@@ -67,7 +68,7 @@ function buildMappingFn (mapping, required, multiValued, objectClass, secondaryO
   }
 }
 
-class LdapStorage {
+class LdapStorage implements SdStorage {
   async init (params, org) {
     this.ldapParams = params
     this.org = org

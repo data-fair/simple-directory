@@ -1,3 +1,4 @@
+import type { SdStorage } from './interface.ts'
 const createError = require('http-errors')
 const config = require('config')
 const moment = require('moment')
@@ -34,7 +35,7 @@ function prepareSelect (select) {
   return select.reduce((a, key) => { a[key] = true; return a }, {})
 }
 
-class MongodbStorage {
+class MongodbStorage implements SdStorage {
   async init (params, org?: string) {
     if (org) throw new Error('mongo storage is not compatible with per-org storage')
     return this
