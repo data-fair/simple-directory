@@ -1,5 +1,5 @@
 const { RateLimiterMongo, RateLimiterMemory } = require('rate-limiter-flexible')
-const config = require('config')
+import config from '#config'
 
 // protect authentication routes with rate limiting to prevent brute force attacks
 let _limiter

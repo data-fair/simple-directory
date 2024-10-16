@@ -1,8 +1,7 @@
-const express = require('express')
-const config = require('config')
+import { Router } from 'express'
+import config from '#config'
 const shortid = require('shortid')
 const emailValidator = require('email-validator')
-const asyncWrap = require('../utils/async-wrap')
 const userName = require('../utils/user-name')
 const findUtils = require('../utils/find')
 const tokens = require('../utils/tokens')
@@ -15,7 +14,7 @@ const { unshortenInvit } = require('../utils/invitations')
 const defaultConfig = require('../../config/default.js')
 const { send: sendNotification } = require('../utils/notifications')
 
-const router = express.Router()
+const router = Router()
 
 const rejectCoreIdUser = (req, res, next) => {
   if (req.user?.coreIdProvider) return res.status(403).send('This route is not available for users with a core identity provider')
@@ -23,7 +22,7 @@ const rejectCoreIdUser = (req, res, next) => {
 }
 
 // Get the list of users
-router.get('', asyncWrap(async (req, res, next) => {
+router.get('', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -51,11 +50,11 @@ router.get('', asyncWrap(async (req, res, next) => {
   eventsLog.info('sd.list-users', 'list users', logContext)
 
   res.json(users)
-}))
+})
 
 const createKeys = ['firstName', 'lastName', 'email', 'password', 'birthday', 'createOrganization']
 // TODO: block when onlyCreateInvited is true ?
-router.post('', asyncWrap(async (req, res, next) => {
+router.post('', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -183,9 +182,9 @@ router.post('', asyncWrap(async (req, res, next) => {
     // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
     return res.status(204).send()
   }
-}))
+})
 
-router.get('/:userId', asyncWrap(async (req, res, next) => {
+router.get('/:userId', async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   if (!req.user.adminMode && req.user.id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
   if (req.user.id === '_superadmin') return res.json(req.user)
@@ -200,12 +199,12 @@ router.get('/:userId', asyncWrap(async (req, res, next) => {
   user.isAdmin = config.admins.includes(user.email)
   user.avatarUrl = req.publicBaseUrl + '/api/avatars/user/' + user.id + '/avatar.png'
   res.json(user)
-}))
+})
 
 // Update some parts of a user as himself
 const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'defaultDep', 'plannedDeletion']
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
-router.patch('/:userId', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
+router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -263,9 +262,9 @@ router.patch('/:userId', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
   await tokens.keepalive(req, res)
 
   res.send(patchedUser)
-}))
+})
 
-router.delete('/:userId/plannedDeletion', asyncWrap(async (req, res, next) => {
+router.delete('/:userId/plannedDeletion', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -282,9 +281,9 @@ router.delete('/:userId/plannedDeletion', asyncWrap(async (req, res, next) => {
   eventsLog.info('sd.user.cancelDeletion', 'user cancelled their planned deletion', logContext)
 
   res.status(204).send()
-}))
+})
 
-router.delete('/:userId', asyncWrap(async (req, res, next) => {
+router.delete('/:userId', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -302,10 +301,10 @@ router.delete('/:userId', asyncWrap(async (req, res, next) => {
 
   webhooks.deleteIdentity('user', req.params.userId)
   res.status(204).send()
-}))
+})
 
 // Change password of a user using an action token sent in a mail
-router.post('/:userId/password', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
+router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -328,10 +327,10 @@ router.post('/:userId/password', rejectCoreIdUser, asyncWrap(async (req, res, ne
   eventsLog.info('sd.user.change-password', `user changed password ${req.params.userId}`, logContext)
 
   res.status(204).send()
-}))
+})
 
 // Change host of a user using an action token sent in a mail
-router.post('/:userId/host', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
+router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -364,6 +363,6 @@ router.post('/:userId/host', rejectCoreIdUser, asyncWrap(async (req, res, next) 
   } else {
     res.status(204).send()
   }
-}))
+})
 
 module.exports = router

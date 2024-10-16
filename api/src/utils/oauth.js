@@ -1,7 +1,7 @@
 const oauth2 = require('simple-oauth2')
 const path = require('path')
 const fs = require('fs-extra')
-const config = require('config')
+import config from '#config'
 const { nanoid } = require('nanoid')
 const axios = require('axios')
 const slug = require('slugify')

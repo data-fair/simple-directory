@@ -1,4 +1,4 @@
-const config = require('config')
+import config from '#config'
 const axios = require('./axios')
 const debug = require('debug')('notifications')
 

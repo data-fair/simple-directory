@@ -1,6 +1,6 @@
 import type { SdStorage } from './interface.ts'
 const createError = require('http-errors')
-const config = require('config')
+import config from '#config'
 const moment = require('moment')
 const escapeStringRegexp = require('escape-string-regexp')
 const mongoUtils = require('../utils/mongo')

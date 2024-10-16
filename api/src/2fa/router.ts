@@ -1,17 +1,16 @@
-const config = require('config')
+import config from '#config'
 const { authenticator } = require('otplib')
 const qrcode = require('qrcode')
-const express = require('express')
+import { Router } from 'express'
 const requestIp = require('request-ip')
 const emailValidator = require('email-validator')
 const { v4: uuidv4 } = require('uuid')
 const tokens = require('../utils/tokens')
-const asyncWrap = require('../utils/async-wrap')
 const limiter = require('../utils/limiter')
 const passwords = require('../utils/passwords')
 // const debug = require('debug')('2fa')
 
-const router = exports.router = express.Router()
+const router = exports.router = Router()
 
 // TODO: apply some rate limiting
 
@@ -35,7 +34,7 @@ exports.isValid = (twoFA, token) => {
 
 exports.cookieName = (userId) => 'id_token_2fa_' + userId
 
-router.post('/', asyncWrap(async (req, res, next) => {
+router.post('/', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
 
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
@@ -83,4 +82,4 @@ router.post('/', asyncWrap(async (req, res, next) => {
     eventsLog.info('sf.2fa.recover', `user recovered 2fa with initial token ${req.body.email}`, { req, user })
     res.send({ recovery })
   }
-}))
+})

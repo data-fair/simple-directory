@@ -2,7 +2,7 @@
 // https://medium.com/disney-streaming/setup-a-single-sign-on-saml-test-environment-with-docker-and-nodejs-c53fc1a984c9
 
 const fs = require('fs-extra')
-const config = require('config')
+import config from '#config'
 const slug = require('slugify')
 const samlify = require('samlify')
 const util = require('util')

@@ -1,5 +1,5 @@
 import type { SdStorage } from './interface.ts'
-const config = require('config')
+import config from '#config'
 const { promisify } = require('util')
 const ldap = require('ldapjs')
 const passwordsUtils = require('../utils/passwords')

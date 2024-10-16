@@ -1,10 +1,9 @@
-const express = require('express')
-const config = require('config')
+import { Router } from 'express'
+import config from '#config'
 const shortid = require('shortid')
 const dayjs = require('dayjs')
 const URL = require('url').URL
 const tokens = require('../utils/tokens')
-const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
 const userName = require('../utils/user-name')
 const limits = require('../utils/limits')
@@ -14,10 +13,10 @@ const webhooks = require('../webhooks')
 const emailValidator = require('email-validator')
 const debug = require('debug')('invitations')
 
-const router = module.exports = express.Router()
+const router = module.exports = Router()
 
 // Invitation for a user to join an organization from an admin of this organization
-router.post('', asyncWrap(async (req, res, next) => {
+router.post('', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -178,9 +177,9 @@ router.post('', asyncWrap(async (req, res, next) => {
   }
 
   res.status(201).send()
-}))
+})
 
-router.get('/_accept', asyncWrap(async (req, res, next) => {
+router.get('/_accept', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -303,4 +302,4 @@ router.get('/_accept', asyncWrap(async (req, res, next) => {
   if (storage.db) await limits.setNbMembers(storage.db, orga.id)
 
   res.redirect(redirectUrl.href)
-}))
+})

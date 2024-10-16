@@ -1,5 +1,5 @@
 const crypto = require('crypto')
-const config = require('config')
+import config from '#config'
 const util = require('util')
 const randomBytes = util.promisify(crypto.randomBytes)
 const pbkdf2 = util.promisify(crypto.pbkdf2)

@@ -1,10 +1,9 @@
-const express = require('express')
+import { Router } from 'express'
 const shortid = require('shortid')
-const config = require('config')
+import config from '#config'
 const csvStringify = require('util').promisify(require('csv-stringify').stringify)
 const { nanoid } = require('nanoid')
 const slug = require('slugify')
-const asyncWrap = require('../utils/async-wrap')
 const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
 const mails = require('../mails')
@@ -16,7 +15,7 @@ const partnersUtils = require('../utils/partners')
 const defaultConfig = require('../../config/default.js')
 const { send: sendNotification } = require('../utils/notifications')
 
-const router = module.exports = express.Router()
+const router = module.exports = Router()
 
 function getUserOrg (req, noDep = true) {
   return (req.user.organizations || []).find(o => o.id === req.params.organizationId && !(noDep && o.department))
@@ -38,7 +37,7 @@ function isMember (req) {
 }
 
 // Get the list of organizations
-router.get('', asyncWrap(async (req, res, next) => {
+router.get('', async (req, res, next) => {
   const listMode = config.listOrganizationsMode || config.listEntitiesMode
   if (listMode === 'authenticated' && !req.user) return res.send({ results: [], count: 0 })
   if (listMode === 'admin' && !(req.user && req.user.adminMode)) return res.send({ results: [], count: 0 })
@@ -64,10 +63,10 @@ router.get('', asyncWrap(async (req, res, next) => {
     })
   }
   res.json(organizations)
-}))
+})
 
 // Get details of an organization
-router.get('/:organizationId', asyncWrap(async (req, res, next) => {
+router.get('/:organizationId', async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only allowed for the organizations that the user belongs to
   if (!isMember(req)) {
@@ -79,11 +78,11 @@ router.get('/:organizationId', asyncWrap(async (req, res, next) => {
   orga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
   if (!req.user.adminMode && orga.orgStorage) delete orga.orgStorage.config
   res.send(orga)
-}))
+})
 
 // Get the list of organization roles
 // TODO: keep temporarily for compatibility.. but later a simpler GET on the orga will be enough
-router.get('/:organizationId/roles', asyncWrap(async (req, res, next) => {
+router.get('/:organizationId/roles', async (req, res, next) => {
   if (!req.user) return res.status(401).send()
   // Only search through the organizations that the user belongs to
   if (!isMember(req)) {
@@ -92,10 +91,10 @@ router.get('/:organizationId/roles', asyncWrap(async (req, res, next) => {
   const orga = await req.app.get('storage').getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   res.send(orga.roles || config.roles.defaults)
-}))
+})
 
 // Create an organization
-router.post('', asyncWrap(async (req, res, next) => {
+router.post('', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -121,11 +120,11 @@ router.post('', asyncWrap(async (req, res, next) => {
   await tokens.keepalive(req, res)
 
   res.status(201).send(orga)
-}))
+})
 
 // Update some parts of an organization as admin of it
 const patchKeys = ['name', 'description', 'departments', 'departmentLabel', '2FA']
-router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
+router.patch('/:organizationId', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -172,10 +171,10 @@ router.patch('/:organizationId', asyncWrap(async (req, res, next) => {
   await tokens.keepalive(req, res)
 
   res.send(patchedOrga)
-}))
+})
 
 // Get the members of an organization. i.e. a partial user object (id, name, role).
-router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
+router.get('/:organizationId/members', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -238,10 +237,10 @@ router.get('/:organizationId/members', asyncWrap(async (req, res, next) => {
   } else {
     res.send(members)
   }
-}))
+})
 
 // Exclude a member of the organization
-router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, next) => {
+router.delete('/:organizationId/members/:userId', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -290,10 +289,10 @@ router.delete('/:organizationId/members/:userId', asyncWrap(async (req, res, nex
   await tokens.keepalive(req, res)
 
   res.status(204).send()
-}))
+})
 
 // Change the role of the user in the organization
-router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next) => {
+router.patch('/:organizationId/members/:userId', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -334,10 +333,10 @@ router.patch('/:organizationId/members/:userId', asyncWrap(async (req, res, next
   await tokens.keepalive(req, res)
 
   res.status(204).send()
-}))
+})
 
 // Super admin and orga admin can delete an organization for now
-router.delete('/:organizationId', asyncWrap(async (req, res, next) => {
+router.delete('/:organizationId', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -354,12 +353,12 @@ router.delete('/:organizationId', asyncWrap(async (req, res, next) => {
   await tokens.keepalive(req, res)
 
   res.status(204).send()
-}))
+})
 
 if (config.managePartners) {
   // Invitation for an organization to join us as partners
   const debugPartners = require('debug')('partners')
-  router.post('/:organizationId/partners', asyncWrap(async (req, res, next) => {
+  router.post('/:organizationId/partners', async (req, res, next) => {
     const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
     /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
     const logContext = { req }
@@ -412,9 +411,9 @@ if (config.managePartners) {
     })
 
     res.status(201).send()
-  }))
+  })
 
-  router.post('/:organizationId/partners/_accept', asyncWrap(async (req, res, next) => {
+  router.post('/:organizationId/partners/_accept', async (req, res, next) => {
     const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
     /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
     const logContext = { req }
@@ -469,9 +468,9 @@ if (config.managePartners) {
     debugPartners(notif)
 
     res.status(201).send()
-  }))
+  })
 
-  router.delete('/:organizationId/partners/:partnerId', asyncWrap(async (req, res, next) => {
+  router.delete('/:organizationId/partners/:partnerId', async (req, res, next) => {
     const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
     /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
     const logContext = { req }
@@ -483,9 +482,9 @@ if (config.managePartners) {
 
     eventsLog.info('sd.org.partner.delete', `a user removed a partner from an organization ${req.params.partnerId} ${req.params.organizationId}`, logContext)
     res.status(201).send()
-  }))
+  })
 
-  router.get('/:organizationId/partners/_user-partners', asyncWrap(async (req, res, next) => {
+  router.get('/:organizationId/partners/_user-partners', async (req, res, next) => {
     if (!req.user) return res.status(401).send()
     const storage = req.app.get('storage')
     const orga = await storage.getOrganization(req.params.organizationId)
@@ -497,5 +496,5 @@ if (config.managePartners) {
       userPartners.push(userOrg)
     }
     res.send(userPartners)
-  }))
+  })
 }

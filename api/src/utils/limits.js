@@ -1,7 +1,6 @@
-const express = require('express')
-const config = require('config')
+import { Router } from 'express'
+import config from '#config'
 const Ajv = require('ajv')
-const asyncWrap = require('./async-wrap')
 
 const ajv = new Ajv({ strict: false })
 
@@ -69,7 +68,7 @@ exports.updateName = async (db, identity) => {
     .updateMany({ type: identity.type, id: identity.id }, { $set: { name: identity.name } })
 }
 
-const router = exports.router = express.Router()
+const router = exports.router = Router()
 
 const isSuperAdmin = (req, res, next) => {
   if (req.user && req.user.adminMode) return next()
@@ -93,7 +92,7 @@ const isAccountMember = (req, res, next) => {
 }
 
 // Endpoint for customers service to create/update limits
-router.post('/:type/:id', isSuperAdmin, asyncWrap(async (req, res, next) => {
+router.post('/:type/:id', isSuperAdmin, async (req, res, next) => {
   req.body.type = req.params.type
   req.body.id = req.params.id
   const valid = validate(req.body)
@@ -101,16 +100,16 @@ router.post('/:type/:id', isSuperAdmin, asyncWrap(async (req, res, next) => {
   await req.app.get('storage').db.collection('limits')
     .replaceOne({ type: req.params.type, id: req.params.id }, req.body, { upsert: true })
   res.send(req.body)
-}))
+})
 
 // A user can get limits information for himself only
-router.get('/:type/:id', isAccountMember, asyncWrap(async (req, res, next) => {
+router.get('/:type/:id', isAccountMember, async (req, res, next) => {
   const limit = await exports.getLimits(req.app.get('storage').db, { type: req.params.type, id: req.params.id })
   delete limit._id
   res.send(limit)
-}))
+})
 
-router.get('/', isSuperAdmin, asyncWrap(async (req, res, next) => {
+router.get('/', isSuperAdmin, async (req, res, next) => {
   const filter = {}
   if (req.query.type) filter.type = req.query.type
   if (req.query.id) filter.id = req.query.id
@@ -121,4 +120,4 @@ router.get('/', isSuperAdmin, asyncWrap(async (req, res, next) => {
     .limit(10000)
     .toArray()
   res.send({ results, count: results.length })
-}))
+})

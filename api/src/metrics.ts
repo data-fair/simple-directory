@@ -1,9 +1,8 @@
 // produces OpenMetrics, compatible with our stats service but also prometheus, etc
 
-const config = require('config')
+import config from '#config'
 const promClient = require('prom-client')
 const dayjs = require('dayjs')
-const asyncWrap = require('../utils/async-wrap')
 
 const orgsGauge = new promClient.Gauge({
   name: 'sd_organizations',
@@ -26,7 +25,7 @@ const membersGauge = new promClient.Gauge({
   labelNames: ['org', 'role']
 })
 
-module.exports = asyncWrap(async (req, res, next) => {
+module.exports = async (req, res, next) => {
   if (!config.secretKeys.metrics || req.query.apiKey !== config.secretKeys.metrics) return res.status(401).send()
   const storage = req.app.get('storage')
   if (!storage.db) return res.status(404).send('no metrics for this storage mode')

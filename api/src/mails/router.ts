@@ -1,15 +1,14 @@
-const config = require('config')
-const express = require('express')
+import config from '#config'
+import { Router } from 'express'
 const emailValidator = require('email-validator')
 const { RateLimiterMongo, RateLimiterMemory } = require('rate-limiter-flexible')
 const requestIp = require('request-ip')
-const asyncWrap = require('../utils/async-wrap')
 const tokens = require('../utils/tokens')
 
-const router = module.exports = express.Router()
+const router = module.exports = Router()
 
 // Used by the users' directory to notify name updates
-router.post('/', asyncWrap(async (req, res) => {
+router.post('/', async (req, res) => {
   const key = req.query.key
   if (!config.secretKeys.sendMails || config.secretKeys.sendMails !== key) {
     return res.status(403).send('Bad secret in "key" parameter')
@@ -48,7 +47,7 @@ router.post('/', asyncWrap(async (req, res) => {
     results.push(await transport.sendMailAsync(mail))
   }
   res.send(results)
-}))
+})
 
 // protect contact route with rate limiting to prevent spam
 let _limiter
@@ -70,7 +69,7 @@ const limiter = (req) => {
   return _limiter
 }
 
-router.post('/contact', asyncWrap(async (req, res) => {
+router.post('/contact', async (req, res) => {
   if (!req.user && !config.anonymousContactForm) return res.status(401).send()
 
   if (!emailValidator.validate(req.body.from)) return res.status(400).send(req.messages.errors.badEmail)
@@ -111,4 +110,4 @@ router.post('/contact', asyncWrap(async (req, res) => {
 
   await req.app.get('mailTransport').sendMailAsync(mail)
   res.send(req.body)
-}))
+})

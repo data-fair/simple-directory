@@ -1,5 +1,5 @@
-const config = require('config')
-const express = require('express')
+import config from '#config'
+import { Router } from 'express'
 const URL = require('url').URL
 const emailValidator = require('email-validator')
 const bodyParser = require('body-parser')
@@ -8,7 +8,6 @@ const shortid = require('shortid')
 const Cookies = require('cookies')
 const slug = require('slugify')
 const tokens = require('../utils/tokens')
-const asyncWrap = require('../utils/async-wrap')
 const mails = require('../mails')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
@@ -24,7 +23,7 @@ const { send: sendNotification } = require('../utils/notifications')
 const limits = require('../utils/limits')
 const debug = require('debug')('auth')
 
-const router = exports.router = express.Router()
+const router = exports.router = Router()
 
 // these routes accept url encoded form data so that they can be used from basic
 // html forms
@@ -46,7 +45,7 @@ const rejectCoreIdUser = (req, res, next) => {
 }
 
 // Authenticate a user based on his email address and password
-router.post('/password', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
+router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -217,11 +216,11 @@ router.post('/password', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
     debug(`Password based authentication of user ${user.name}, ajax mode`, callbackUrl)
     res.send(callbackUrl)
   }
-}))
+})
 
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
-router.post('/passwordless', rejectCoreIdUser, asyncWrap(async (req, res, next) => {
+router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -297,10 +296,10 @@ router.post('/passwordless', rejectCoreIdUser, asyncWrap(async (req, res, next) 
   })
   eventsLog.info('sd.auth.passwordless.ok', 'a user successfully sent a authentication email', logContext)
   res.status(204).send()
-}))
+})
 
 // use current session and redirect to a secondary site
-router.post('/site_redirect', asyncWrap(async (req, res, next) => {
+router.post('/site_redirect', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -319,9 +318,9 @@ router.post('/site_redirect', asyncWrap(async (req, res, next) => {
 
   eventsLog.info('sd.auth.redirect-site', 'a authenticated user is redirected to secondary site with session', logContext)
   res.send(callbackUrl)
-}))
+})
 
-router.get('/token_callback', asyncWrap(async (req, res, next) => {
+router.get('/token_callback', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -383,11 +382,11 @@ router.get('/token_callback', asyncWrap(async (req, res, next) => {
   } else {
     res.redirect(reboundRedirect)
   }
-}))
+})
 
 // Used to extend an older but still valid token from a user
 // TODO: deprecate this whole route, replaced by simpler /keepalive
-router.post('/exchange', asyncWrap(async (req, res, next) => {
+router.post('/exchange', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -439,9 +438,9 @@ router.post('/exchange', asyncWrap(async (req, res, next) => {
   // TODO: sending token in response is deprecated and will be removed ?
   res.set('Deprecation', 'true')
   res.send(token)
-}))
+})
 
-router.post('/keepalive', asyncWrap(async (req, res, next) => {
+router.post('/keepalive', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
 
   if (!req.user) return res.status(401).send('No active session to keep alive')
@@ -493,9 +492,9 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
   debug(`Exchange session token for user ${req.user.name}`)
   await tokens.keepalive(req, res, user)
   res.status(204).send()
-}))
+})
 
-router.delete('/', asyncWrap(async (req, res) => {
+router.delete('/', async (req, res) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -503,10 +502,10 @@ router.delete('/', asyncWrap(async (req, res) => {
   tokens.unsetCookies(req, res)
   eventsLog.info('sd.auth.session-delete', 'a session was deleted', logContext)
   res.status(204).send()
-}))
+})
 
 // Send an email to confirm user identity before authorizing an action
-router.post('/action', asyncWrap(async (req, res, next) => {
+router.post('/action', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -563,9 +562,9 @@ router.post('/action', asyncWrap(async (req, res, next) => {
   })
   eventsLog.info('sd.auth.action.ok', `an action email ${action} was sent`, logContext)
   res.status(204).send()
-}))
+})
 
-router.delete('/adminmode', asyncWrap(async (req, res, next) => {
+router.delete('/adminmode', async (req, res, next) => {
   if (!req.user) return res.status(401).send('No active session')
   if (!req.user.adminMode) return res.status(403).send('This route is only available in admin mode')
   debug(`Exchange session token without adminMode for user ${req.user.name}`)
@@ -573,10 +572,10 @@ router.delete('/adminmode', asyncWrap(async (req, res, next) => {
   await tokens.keepalive(req, res)
 
   res.status(204).send()
-}))
+})
 
 // create a session as a user but from a super admin session
-router.post('/asadmin', asyncWrap(async (req, res, next) => {
+router.post('/asadmin', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -597,9 +596,9 @@ router.post('/asadmin', asyncWrap(async (req, res, next) => {
   eventsLog.info('sd.auth.asadmin.ok', 'a session was created as a user from an admin session', logContext)
 
   res.status(204).send()
-}))
+})
 
-router.delete('/asadmin', asyncWrap(async (req, res, next) => {
+router.delete('/asadmin', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -618,14 +617,14 @@ router.delete('/asadmin', asyncWrap(async (req, res, next) => {
   eventsLog.info('sd.auth.asadmin.done', 'a session as a user from an admin session was terminated', logContext)
 
   res.status(204).send()
-}))
+})
 
 router.get('/me', (req, res) => {
   if (!req.user) return res.status(404).send()
   else res.send(req.user)
 })
 
-router.get('/providers', asyncWrap(async (req, res) => {
+router.get('/providers', async (req, res) => {
   if (!req.site) {
     res.send(saml2.publicProviders.concat(oauth.publicProviders))
   } else {
@@ -651,12 +650,12 @@ router.get('/providers', asyncWrap(async (req, res) => {
     }
     res.send(providersInfos)
   }
-}))
+})
 
 // OAUTH
 const debugOAuth = require('debug')('oauth')
 
-const oauthLogin = asyncWrap(async (req, res, next) => {
+const oauthLogin = async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -685,7 +684,7 @@ const oauthLogin = asyncWrap(async (req, res, next) => {
   debugOAuth('login authorizationUri', authorizationUri)
   eventsLog.info('sd.auth.oauth.redirect', 'a user was redirected to a oauth provider', logContext)
   res.redirect(authorizationUri)
-})
+}
 
 router.get('/oauth/:oauthId/login', oauthLogin)
 router.get('/oidc/:oauthId/login', oauthLogin)
@@ -753,7 +752,7 @@ const authCoreProviderMemberInfo = exports.authCoreProviderMemberInfo = async (s
   return { create, org, readOnly, role }
 }
 
-const oauthCallback = asyncWrap(async (req, res, next) => {
+const oauthCallback = async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -929,13 +928,13 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
   const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? { id: invit.id, department: invit.department } : { id: org, department: dep })
   debugOAuth(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
-})
+}
 
 // kept for retro-compatibility
 router.get('/oauth/:oauthId/callback', oauthCallback)
 router.get('/oauth-callback', oauthCallback)
 
-const oauthLogoutCallback = asyncWrap(async (req, res, next) => {
+const oauthLogoutCallback = async (req, res, next) => {
   if (!req.body.logout_token) return res.status(400).send('missing logout_token')
   const decoded = tokens.decode(req.body.logout_token)
   if (!decoded) return res.status(400).send('invalid logout_token')
@@ -944,7 +943,7 @@ const oauthLogoutCallback = asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   await storage.logoutOAuthToken(decoded.sid)
   res.status(204).send()
-})
+}
 
 router.get('/oauth-logout', oauthLogoutCallback)
 router.post('/oauth-logout', oauthLogoutCallback)
@@ -959,7 +958,7 @@ router.get('/saml2-metadata.xml', (req, res) => {
 })
 
 // starts login
-router.get('/saml2/:providerId/login', asyncWrap(async (req, res) => {
+router.get('/saml2/:providerId/login', async (req, res) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -988,10 +987,10 @@ router.get('/saml2/:providerId/login', asyncWrap(async (req, res) => {
   debugSAML('redirect', parsedURL.href)
   eventsLog.info('sd.auth.saml.redirect', 'a user was redirected to a saml provider', logContext)
   res.redirect(parsedURL.href)
-}))
+})
 
 // login confirm by IDP
-router.post('/saml2-assert', asyncWrap(async (req, res) => {
+router.post('/saml2-assert', async (req, res) => {
   const eventsLog = (await import('@data-fair/lib/express/events-log.js')).default
   /** @type {import('@data-fair/lib/express/events-log.js').EventLogContext} */
   const logContext = { req }
@@ -1135,7 +1134,7 @@ router.post('/saml2-assert', asyncWrap(async (req, res) => {
   // Note:  In practice these should be saved in the user session, not globally.
   // name_id = saml_response.user.name_id;
   // session_index = saml_response.user.session_index;
-}))
+})
 
 // logout not implemented
 router.get('/saml2-logout', (req, res) => {

@@ -1,5 +1,5 @@
 const { nanoid } = require('nanoid')
-const config = require('config')
+import config from '#config'
 const debug = require('debug')('locks')
 
 const pid = nanoid()

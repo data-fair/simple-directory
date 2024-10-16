@@ -1,11 +1,10 @@
-const express = require('express')
-const config = require('config')
+import { Router } from 'express'
+import config from '#config'
 const createError = require('http-errors')
 const { nanoid } = require('nanoid')
-const asyncWrap = require('../utils/async-wrap')
 const oauth = require('../utils/oauth')
 
-const router = module.exports = express.Router()
+const router = module.exports = Router()
 
 const checkSecret = async (req) => {
   if (!req.user?.adminMode && (!req.query.key || req.query.key !== config.secretKeys.sites)) {
@@ -13,7 +12,7 @@ const checkSecret = async (req) => {
   }
 }
 
-router.get('', asyncWrap(async (req, res, next) => {
+router.get('', async (req, res, next) => {
   const sitesResponseSchema = await import('../../types/sites-response/index.mjs')
   const sitesResponsePublicSchema = await import('../../types/sites-response-public/index.mjs')
   const sitesQuerySchema = await import('../../types/sites-query/index.mjs')
@@ -37,9 +36,9 @@ router.get('', asyncWrap(async (req, res, next) => {
   } else {
     res.type('json').send(sitesResponsePublicSchema.stringify(response))
   }
-}))
+})
 
-router.post('', asyncWrap(async (req, res, next) => {
+router.post('', async (req, res, next) => {
   const sitePostSchema = await import('../../types/site-post/index.mjs')
   await checkSecret(req)
   // @ts-ignore
@@ -47,9 +46,9 @@ router.post('', asyncWrap(async (req, res, next) => {
   req.body._id = req.body._id ?? nanoid()
   await req.app.get('storage').patchSite(req.body, true)
   res.type('json').send(sitePostSchema.stringify(req.body))
-}))
+})
 
-router.patch('/:id', asyncWrap(async (req, res, next) => {
+router.patch('/:id', async (req, res, next) => {
   const sitePatchSchema = await import('../../types/site-patch/index.mjs')
 
   if (!req.user) return res.status(401).send()
@@ -58,19 +57,19 @@ router.patch('/:id', asyncWrap(async (req, res, next) => {
   sitePatchSchema.assertValid(req.body)
   await req.app.get('storage').patchSite(req.body)
   res.type('json').send(sitePatchSchema.stringify(req.body))
-}))
+})
 
-router.delete('/:id', asyncWrap(async (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   await checkSecret(req)
   await req.app.get('storage').deleteSite(req.params.id)
   res.status(204).send()
-}))
+})
 
-router.get('/_public', asyncWrap(async (req, res, next) => {
+router.get('/_public', async (req, res, next) => {
   const sitePublicSchema = await import('../../types/site-public/index.mjs')
 
   if (!req.site) return res.status(404).send()
   req.site.logo = req.site.logo || `${req.publicBaseUrl}/api/avatars/${req.site.owner.type}/${req.site.owner.id}/avatar.png`
   // stringify will keep only parts that are public knowledge
   res.type('json').send(sitePublicSchema.stringify(req.site))
-}))
+})

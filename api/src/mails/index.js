@@ -2,7 +2,7 @@ const mjml2html = require('mjml')
 const util = require('util')
 const path = require('path')
 const fs = require('fs')
-const config = require('config')
+import config from '#config'
 const nodemailer = require('nodemailer')
 const flatten = require('flat')
 const EventEmitter = require('events')

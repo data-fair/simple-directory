@@ -1,5 +1,5 @@
 const path = require('path')
-const express = require('express')
+import { Router } from 'express'
 const gm = require('gm')
 const colors = require('material-colors')
 const seedrandom = require('seedrandom')
@@ -7,12 +7,11 @@ const colorKeys = Object.keys(colors).filter(c => colors[c] && colors[c]['600'])
 const initialsModule = require('initials')
 const capitalize = require('capitalize')
 const multer = require('multer')
-const asyncWrap = require('../utils/async-wrap')
 const storages = require('../storages')
 const userName = require('../utils/user-name')
 const defaultConfig = require('../../config/default.js')
 
-const router = module.exports = express.Router()
+const router = module.exports = Router()
 
 const randomColor = (seed) => colors[colorKeys[Math.floor(seedrandom(seed)() * colorKeys.length)]]['600']
 
@@ -43,7 +42,7 @@ const makeAvatar = async (text, color) => {
   })
 }
 
-const readAvatar = asyncWrap(async (req, res, next) => {
+const readAvatar = async (req, res, next) => {
   if (!['user', 'organization'].includes(req.params.type)) {
     return res.status(400).send('Owner type must be "user" or "organization"')
   }
@@ -91,7 +90,7 @@ const readAvatar = asyncWrap(async (req, res, next) => {
 
   res.set('Content-Type', 'image/png')
   res.send(avatar.buffer)
-})
+}
 router.get('/:type/:id/avatar.png', readAvatar)
 router.get('/:type/:id/:department/avatar.png', readAvatar)
 
@@ -109,13 +108,13 @@ const isAdmin = (req, res, next) => {
   res.status(403).send()
 }
 
-const writeAvatar = asyncWrap(async (req, res, next) => {
+const writeAvatar = async (req, res, next) => {
   await req.app.get('storage').setAvatar({
     owner: req.params,
     buffer: req.file.buffer
   })
   res.status(201).send()
-})
+}
 
 router.post('/:type/:id/avatar.png', isAdmin, upload.single('avatar'), writeAvatar)
 router.post('/:type/:id/:department/avatar.png', isAdmin, upload.single('avatar'), writeAvatar)

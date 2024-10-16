@@ -1,5 +1,5 @@
 import type { SdStorage } from './interface.ts'
-const config = require('config')
+import config from '#config'
 const path = require('path')
 const fs = require('fs')
 const util = require('util')

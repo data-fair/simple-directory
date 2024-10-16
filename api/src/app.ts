@@ -1,12 +1,11 @@
-const config = require('config')
-const express = require('express')
+import config from '#config'
+import { Router } from 'express'
 const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser')
 const util = require('util')
 const dayjs = require('./utils/dayjs')
 const storages = require('./storages')
 const mails = require('./mails')
-const asyncWrap = require('./utils/async-wrap')
 const tokens = require('./utils/tokens')
 const limits = require('./utils/limits')
 const saml2 = require('./utils/saml2')
@@ -27,7 +26,7 @@ app.use(bodyParser.json({ limit: '100kb' }))
 app.use(i18n.middleware)
 // Replaces req.user from session with full and fresh user object from storage
 // also minimalist api key management
-const fullUser = asyncWrap(async (req, res, next) => {
+const fullUser = async (req, res, next) => {
   if (req.user && !req.user.orgStorage && req.user.id !== '_superadmin') {
     req.user = {
       ...await req.app.get('storage').getUser({ id: req.user.id }),
@@ -52,13 +51,13 @@ const fullUser = asyncWrap(async (req, res, next) => {
     }
   }
   next()
-})
+}
 
 // set current baseUrl, i.e. the url of simple-directory on the current user's domain
 const publicUrl = new URL(config.publicUrl)
 let basePath = publicUrl.pathname
 if (basePath.endsWith('/')) basePath = basePath.slice(0, -1)
-const setSite = asyncWrap(async (req, res, next) => {
+const setSite = async (req, res, next) => {
   const host = req.get('host')
   if (host && ![publicUrl.host, `simple-directory:${config.port}`].includes(host) && !(process.env.NODE_ENV === 'production' && host === `localhost:${config.port}`)) {
     if (!config.manageSites) throw createHttpError(400, `multi-sites not supported by this install of simple-directory, host=${host}, declared host=${publicUrl.host}`)
@@ -73,7 +72,7 @@ const setSite = asyncWrap(async (req, res, next) => {
   }
   req.publicBasePath = basePath
   next()
-})
+}
 
 const apiDocs = require('../contract/api-docs')
 app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))

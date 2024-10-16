@@ -1,7 +1,7 @@
 import type { User } from '#types/user/index.ts'
 import type { Organization } from '#types/organization/index.ts'
 import type { PostIdentityReq } from '@data-fair/lib-express/identities/types/post-req/index.js'
-const config = require('config')
+import config from '#config'
 const axios = require('axios')
 const userName = require('./utils/user-name')
 const debug = require('debug')('webhooks')
