@@ -11,7 +11,8 @@
     "#doc": "./doc/index.ts",
     "#doc/*": "./doc/*",
     "#types": "./types/index.ts",
-    "#types/*": "./types/*"
+    "#types/*": "./types/*",
+    "#storages": "./storages/index.ts"
   },
   "dependencies": {
     "@data-fair/lib-express": "^1.0.4",
