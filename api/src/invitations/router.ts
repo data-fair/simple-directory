@@ -6,7 +6,7 @@ const dayjs = require('dayjs')
 const URL = require('url').URL
 const tokens = require('../utils/tokens')
 const mails = require('../mails')
-const userName = require('../utils/user-name')
+import userName from '../utils/user-name.ts'
 const limits = require('../utils/limits')
 const { shortenInvit, unshortenInvit } = require('../utils/invitations')
 const { send: sendNotification } = require('../utils/notifications')

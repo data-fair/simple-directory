@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   port: 8080,
   mongo: {
     url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development'),

@@ -12,21 +12,27 @@
     "#doc/*": "./doc/*",
     "#types": "./types/index.ts",
     "#types/*": "./types/*",
-    "#storages": "./storages/index.ts"
+    "#storages": "./src/storages/index.ts"
   },
   "dependencies": {
     "@data-fair/lib-express": "^1.1.0",
     "@data-fair/lib-node": "^1.0.1",
+    "capitalize": "^2.0.4",
     "config": "^3.3.11",
     "cookies": "^0.9.1",
     "dayjs": "^1.11.13",
     "express": "^5.0.0",
+    "gm": "^1.25.0",
     "http-terminator": "^3.2.0",
     "i18n": "^0.15.1",
+    "initials": "^3.1.2",
     "json-web-key": "^0.4.0",
+    "material-colors": "^1.2.6",
     "memoizee": "^0.4.17",
     "mongodb": "^6.8.0",
+    "multer": "^1.4.5-lts.1",
     "nanoid": "^5.0.7",
-    "prom-client": "^15.1.2"
+    "prom-client": "^15.1.2",
+    "seedrandom": "^3.0.5"
   }
 }

@@ -3,7 +3,7 @@ import config from '#config'
 const path = require('path')
 const fs = require('fs')
 const util = require('util')
-const userName = require('../utils/user-name')
+import userName from '../utils/user-name.ts'
 const readFile = util.promisify(fs.readFile)
 
 function applySelect (resources, select) {

@@ -3,7 +3,7 @@
  */
 const jsonEnv = (key) => ({ __name: key, __format: 'json' })
 
-module.exports = {
+export default  {
   port: 'PORT',
   mongo: {
     url: 'MONGO_URL',

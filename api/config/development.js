@@ -1,4 +1,4 @@
-module.exports = {
+export default  {
   port: 5690,
   publicUrl: 'http://localhost:5689/simple-directory',
   // use this host when debugging a data-fair inside a virtualbox vm

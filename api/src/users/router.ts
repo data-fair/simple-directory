@@ -3,13 +3,13 @@ import config from '#config'
 import { reqUser } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
 const emailValidator = require('email-validator')
-const userName = require('../utils/user-name')
+import userName from '../utils/user-name.ts'
 const findUtils = require('../utils/find')
 const tokens = require('../utils/tokens')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 const mails = require('../mails')
-const storages = require('../storages')
+import storages from '#storages'
 const limits = require('../utils/limits')
 const { unshortenInvit } = require('../utils/invitations')
 const defaultConfig = require('../../config/default.js')

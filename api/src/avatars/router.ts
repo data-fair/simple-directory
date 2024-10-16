@@ -1,15 +1,17 @@
-import { Router } from 'express'
+import { Router, type Request, type Response, type NextFunction } from 'express'
+import { resolve } from 'node:path'
 import { reqUser } from '@data-fair/lib-express'
-const gm = require('gm')
-const colors = require('material-colors')
-const seedrandom = require('seedrandom')
+import gm from 'gm'
+import colors from 'material-colors'
+import seedrandom from 'seedrandom'
+import initialsModule from 'initials'
+import capitalize from 'capitalize'
+import multer from 'multer'
+import storages from '#storages'
+import userName from '../utils/user-name.ts'
+import defaultConfig from '../../config/default.js'
+
 const colorKeys = Object.keys(colors).filter(c => colors[c] && colors[c]['600'])
-const initialsModule = require('initials')
-const capitalize = require('capitalize')
-const multer = require('multer')
-const storages = require('../storages')
-const userName = require('../utils/user-name')
-const defaultConfig = require('../../config/default.js')
 
 const router = module.exports = Router()
 
@@ -27,7 +29,7 @@ const getInitials = (type, identity) => {
 
 // inspired by https://github.com/thatisuday/npm-no-avatar/blob/master/lib/make.js
 // const font = path.resolve('./node_modules/no-avatar/lib/font.ttf')
-const font = path.resolve('./server/resources/nunito-ttf/Nunito-ExtraBold.ttf')
+const font = resolve('./server/resources/nunito-ttf/Nunito-ExtraBold.ttf')
 const makeAvatar = async (text, color) => {
   return new Promise((resolve, reject) => {
     gm(100, 100, color)
@@ -42,7 +44,7 @@ const makeAvatar = async (text, color) => {
   })
 }
 
-const readAvatar = async (req, res, next) => {
+const readAvatar = async (req: Request, res: Response, next: NextFunction) => {
   if (!['user', 'organization'].includes(req.params.type)) {
     return res.status(400).send('Owner type must be "user" or "organization"')
   }

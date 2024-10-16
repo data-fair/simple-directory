@@ -14,10 +14,10 @@ const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
 const oauth = require('../utils/oauth')
 const saml2 = require('../utils/saml2')
-const userName = require('../utils/user-name')
+import userName from '../utils/user-name.ts'
 const twoFA = require('./2fa.js')
 const limiter = require('../utils/limiter')
-const storages = require('../storages')
+import storages from '#storages'
 const defaultConfig = require('../../config/default.js')
 const { unshortenInvit } = require('../utils/invitations')
 const { send: sendNotification } = require('../utils/notifications')
