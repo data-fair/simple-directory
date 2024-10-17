@@ -6,40 +6,73 @@ import { resolve } from 'node:path'
 import { readFile, access, constants } from 'node:fs/promises'
 import memoize from 'memoizee'
 import JSONWebKey from 'json-web-key'
-import { nanoid } from 'nanoid'
+import { randomUUID } from 'node:crypto'
+import dayjs from 'dayjs'
+import * as locks from '@data-fair/lib-node/locks.js'
+import { cipher, decipher } from '../utils/cipher.ts'
 
 type WebKey = { alg: 'RS256', kid: string, use: 'sig' }
-type SignatureKeys = { privateKey: string, publicKey: string, webKeys: [WebKey, WebKey?] }
+type SignatureKeys = { privateKey: string, publicKey: string, webKeys: [WebKey, WebKey?], lastUpdate: Date }
 
 const execAsync = promisify(exec)
 
-export const init = async () => {
+let stopped = false
+let rotatePromise: Promise<void> | undefined
+
+export const start = async () => {
   const existingKeys = await readSignatureKeys()
   if (existingKeys) return
 
   // manage transition with old FS based persistence of keys
   const existingFSKeys = await readDeprecatedSignatureKeys()
   if (existingFSKeys) {
-    const signatureKeys: SignatureKeys = { ...existingFSKeys, webKeys: [createWekKey(existingFSKeys.publicKey)] }
-    await mongo.secrets.insertOne({ _id: 'signatureKeys', data: signatureKeys })
+    const signatureKeys: SignatureKeys = { ...existingFSKeys, webKeys: [createWekKey(existingFSKeys.publicKey)], lastUpdate: new Date() }
+    await writeSignatureKeys(signatureKeys)
     return
   }
 
   const newKeys = await createKeys()
-  const signatureKeys: SignatureKeys = { ...newKeys, webKeys: [createWekKey(newKeys.publicKey)] }
-  await mongo.secrets.insertOne({ _id: 'signatureKeys', data: signatureKeys })
+  const signatureKeys: SignatureKeys = { ...newKeys, webKeys: [createWekKey(newKeys.publicKey)], lastUpdate: new Date() }
+  await writeSignatureKeys(signatureKeys)
+
+  // eslint-disable-next-line no-unmodified-loop-condition
+  while (!stopped) {
+    if (await locks.acquire('signature-keys-rotation')) {
+      const signatureKeys = await getSignatureKeys()
+      if (dayjs().diff(dayjs(signatureKeys.lastUpdate), 'day') > 15) {
+        rotatePromise = rotateKeys()
+        await rotatePromise
+      }
+      await locks.release('signature-keys-rotation')
+    }
+    await new Promise(resolve => setTimeout(resolve, 10 * 60 * 1000))
+  }
+}
+
+export const stop = async () => {
+  stopped = true
+  if (rotatePromise) await rotatePromise
 }
 
 export const getSignatureKeys = memoize(async () => {
   const signatureKeys = await readSignatureKeys()
   if (!signatureKeys) throw new Error('signature keys were not initialized')
-  // TODO, call rotateKeys if current key is too old
   return signatureKeys
 }, { promise: true, maxAge: 10000 })
 
 const readSignatureKeys = async () => {
   const secret = await mongo.secrets.findOne({ _id: 'signatureKeys' })
-  if (secret) return secret.data as SignatureKeys
+  if (secret) {
+    const signatureKeys = secret.data
+    signatureKeys.privateKey = decipher(signatureKeys.privateKey)
+    return signatureKeys as SignatureKeys
+  }
+}
+
+const writeSignatureKeys = async (signatureKeys: SignatureKeys) => {
+  const storedSignatureKeys = { ...signatureKeys } as any
+  storedSignatureKeys.privateKey = cipher(signatureKeys.privateKey)
+  await mongo.secrets.insertOne({ _id: 'signatureKeys', data: storedSignatureKeys })
 }
 
 const readDeprecatedSignatureKeys = async () => {
@@ -59,13 +92,14 @@ const readDeprecatedSignatureKeys = async () => {
 
 const createWekKey = (publicKey: string) => {
   const webKey = JSONWebKey.fromPEM(publicKey)
-  webKey.kid = config.kid + '-' + nanoid()
+  webKey.kid = config.kid + '-' + randomUUID()
   webKey.alg = 'RS256'
   webKey.use = 'sig'
   return webKey.toJSON() as WebKey
 }
 
-const rotateKeys = async () => {
+// TODO: a script to force key rotation for testing ?
+export const rotateKeys = async () => {
   const existingKeys = await readSignatureKeys()
   const newKeys = await createKeys()
   const webKeys = [createWekKey(newKeys.publicKey)]

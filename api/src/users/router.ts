@@ -46,7 +46,7 @@ router.get('', async (req, res, next) => {
     if (req.query.ids) params.ids = req.query.ids.split(',')
     if (req.query.q) params.q = req.query.q
   }
-  const users = await req.app.get('storage').findUsers(params)
+  const users = await storages.globalStorage.findUsers(params)
 
   eventsLog.info('sd.list-users', 'list users', logContext)
 
@@ -65,7 +65,7 @@ router.post('', async (req, res, next) => {
   const invalidKey = Object.keys(req.body).find(key => !createKeys.concat(adminKeys).includes(key))
   if (invalidKey) return res.status(400).send(`Attribute ${invalidKey} is not accepted`)
 
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
 
   // used to create a user and accept a member invitation at the same time
   // if the invitation is not valid, better not to proceed with the user creation
@@ -110,7 +110,7 @@ router.post('', async (req, res, next) => {
     newUser.password = await passwords.hashPassword(req.body.password)
   }
 
-  const user = await req.app.get('storage').getUserByEmail(req.body.email, req.site)
+  const user = await storages.globalStorage.getUserByEmail(req.body.email, req.site)
 
   // email is already taken, send a conflict email
   const link = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl
@@ -189,9 +189,9 @@ router.get('/:userId', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send()
   if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
   if (reqUser(req).id === '_superadmin') return res.json(reqUser(req))
-  let storage = req.app.get('storage')
+  let storage = storages.globalStorage
   if (reqUser(req).id === req.params.userId && reqUser(req).orgStorage && reqUser(req).organization) {
-    const org = await req.app.get('storage').getOrganization(reqUser(req).organization.id)
+    const org = await storages.globalStorage.getOrganization(reqUser(req).organization.id)
     if (!org) return res.status(401).send('Organization does not exist anymore')
     storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
@@ -233,7 +233,7 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
-  const patchedUser = await req.app.get('storage').patchUser(req.params.userId, patch, reqUser(req))
+  const patchedUser = await storages.globalStorage.patchUser(req.params.userId, patch, reqUser(req))
 
   eventsLog.info('sd.user.patch', `user was patched ${patchedUser.name} (${patchedUser.id})`, logContext)
 
@@ -256,7 +256,7 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
     })
   }
 
-  if (req.app.get('storage').db) await req.app.get('storage').db.collection('limits').updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
+  if (storages.globalStorage.db) await storages.globalStorage.db.collection('limits').updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
   patchedUser.avatarUrl = req.publicBaseUrl + '/api/avatars/user/' + patchedUser.id + '/avatar.png'
 
   // update session info
@@ -274,7 +274,7 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
   if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(req.messages.errors.permissionDenied)
   const patch = { plannedDeletion: null }
 
-  await req.app.get('storage').patchUser(req.params.userId, patch, reqUser(req))
+  await storages.globalStorage.patchUser(req.params.userId, patch, reqUser(req))
 
   // update session info
   await tokens.keepalive(req, res)
@@ -296,7 +296,7 @@ router.delete('/:userId', async (req, res, next) => {
     if (!reqUser(req).adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
   }
 
-  await req.app.get('storage').deleteUser(req.params.userId)
+  await storages.globalStorage.deleteUser(req.params.userId)
 
   eventsLog.info('sd.user.del', `user was deleted ${req.params.userId}`, logContext)
 
@@ -323,7 +323,7 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
   if (decoded.action !== 'changePassword') return res.status(401).send('wrong action for this token')
   if (!passwords.validate(req.body.password)) return res.status(400).send(req.messages.errors.malformedPassword)
   const storedPassword = await passwords.hashPassword(req.body.password)
-  await req.app.get('storage').patchUser(req.params.userId, { password: storedPassword })
+  await storages.globalStorage.patchUser(req.params.userId, { password: storedPassword })
 
   eventsLog.info('sd.user.change-password', `user changed password ${req.params.userId}`, logContext)
 
@@ -336,7 +336,7 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   if (!req.body.host) return res.status(400).send()
   const actionToken = req.query.action_token
   if (!actionToken) return res.status(401).send('action_token param is required')

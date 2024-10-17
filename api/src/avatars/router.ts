@@ -48,12 +48,12 @@ const readAvatar = async (req: Request, res: Response, next: NextFunction) => {
   if (!['user', 'organization'].includes(req.params.type)) {
     return res.status(400).send('Owner type must be "user" or "organization"')
   }
-  let storage = req.app.get('storage')
+  let storage = storages.globalStorage
 
   // TODO: what happens if someone outside of the org requests an avatar ?
   // TODO: other type of org storage than ldap ?
   if (req.params.type === 'user' && reqUser(req) && reqUser(req).organization && req.params.id.startsWith('ldap_' + reqUser(req).organization.id + '_')) {
-    const org = await req.app.get('storage').getOrganization(reqUser(req).organization.id)
+    const org = await storages.globalStorage.getOrganization(reqUser(req).organization.id)
     if (!org) return res.status(401).send('Organization does not exist anymore')
     storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
@@ -111,7 +111,7 @@ const isAdmin = (req, res, next) => {
 }
 
 const writeAvatar = async (req, res, next) => {
-  await req.app.get('storage').setAvatar({
+  await storages.globalStorage.setAvatar({
     owner: req.params,
     buffer: req.file.buffer
   })

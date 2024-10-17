@@ -5,7 +5,7 @@ export default {
     options: {}
   },
   publicUrl: 'http://localhost:8080',
-  kid: 'simple-directory',
+  kid: 'sd',
   secret: { // DEPRECATED parameters, kept to transition to mongodb storage
     public: './security/simple-directory.key.pub',
     private: './security/simple-directory.key'
@@ -260,10 +260,6 @@ export default {
   cipherPassword: null,
   notifyUrl: null,
   privateNotifyUrl: null,
-  locks: {
-    // in seconds
-    ttl: 600
-  },
   plannedDeletionDelay: 14,
   cleanup: {
     cron: '0 5 * * *',

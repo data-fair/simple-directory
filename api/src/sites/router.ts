@@ -23,7 +23,7 @@ router.get('', async (req, res, next) => {
   // @ts-ignore
   sitesQuerySchema.assertValid(query)
   if (query.showAll && !reqUser(req).adminMode) return res.status(403).send()
-  const response = query.showAll ? await req.app.get('storage').findAllSites() : await req.app.get('storage').findOwnerSites(reqUser(req).accountOwner)
+  const response = query.showAll ? await storages.globalStorage.findAllSites() : await storages.globalStorage.findOwnerSites(reqUser(req).accountOwner)
   for (const result of response.results) {
     result.logo = result.logo || `${req.publicBaseUrl}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
     if (result.authProviders) {
@@ -45,7 +45,7 @@ router.post('', async (req, res, next) => {
   // @ts-ignore
   sitePostSchema.assertValid(req.body)
   req.body._id = req.body._id ?? nanoid()
-  await req.app.get('storage').patchSite(req.body, true)
+  await storages.globalStorage.patchSite(req.body, true)
   res.type('json').send(sitePostSchema.stringify(req.body))
 })
 
@@ -56,13 +56,13 @@ router.patch('/:id', async (req, res, next) => {
   if (!reqUser(req).adminMode) return res.status(403).send()
   // @ts-ignore
   sitePatchSchema.assertValid(req.body)
-  await req.app.get('storage').patchSite(req.body)
+  await storages.globalStorage.patchSite(req.body)
   res.type('json').send(sitePatchSchema.stringify(req.body))
 })
 
 router.delete('/:id', async (req, res, next) => {
   await checkSecret(req)
-  await req.app.get('storage').deleteSite(req.params.id)
+  await storages.globalStorage.deleteSite(req.params.id)
   res.status(204).send()
 })
 

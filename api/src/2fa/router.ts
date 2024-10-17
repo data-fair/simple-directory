@@ -1,16 +1,18 @@
 import config from '#config'
 import { authenticator } from 'otplib'
 import qrcode from 'qrcode'
-import { nanoid } from 'nanoid'
+import { randomUUID } from 'node:crypto'
 import { Router, type Request } from 'express'
 import { reqIp } from '@data-fair/lib-express'
 import emailValidator from 'email-validator'
+import storages from '#storages'
 import tokens from '../tokens/service.ts'
 import limiter from '../utils/limiter.js'
 import passwords from '../utils/passwords.js'
 // const debug = require('debug')('2fa')
 
-const router = export const  router = Router()
+const router = Router()
+export default router
 
 // TODO: apply some rate limiting
 
@@ -42,13 +44,13 @@ router.post('/', async (req, res, next) => {
   if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
 
   try {
-    await limiter(req).consume(requestIp.getClientIp(req), 1)
+    await limiter(req).consume(reqIp(req), 1)
   } catch (err) {
     eventsLog.warn('sd.2fa.rate-limit', `rate limit error for /2fa route with email ${req.body.email}`, { req })
     return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
 
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   const user = await storage.getUserByEmail(req.body.email, req.site)
   if (!user || user.emailConfirmed === false) return res.status(400).send(req.messages.errors.badCredentials)
   if (storage.getPassword) {
@@ -77,7 +79,7 @@ router.post('/', async (req, res, next) => {
     // validate secret with initial token
     const isValid = authenticator.check(req.body.token, user2FA.secret)
     if (!isValid) return res.status(400).send(req.messages.errors.bad2FAToken)
-    const recovery = uuidv4()
+    const recovery = randomUUID()
     await storage.patchUser(user.id, { '2FA': { ...user2FA, active: true, recovery: await passwords.hashPassword(recovery) } })
     eventsLog.info('sf.2fa.recover', `user recovered 2fa with initial token ${req.body.email}`, { req, user })
     res.send({ recovery })

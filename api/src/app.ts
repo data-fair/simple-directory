@@ -29,7 +29,7 @@ app.use(i18n.middleware)
 const fullUser = async (req, res, next) => {
   if (reqUser(req) && !reqUser(req).orgStorage && reqUser(req).id !== '_superadmin') {
     reqUser(req) = {
-      ...await req.app.get('storage').getUser({ id: reqUser(req).id }),
+      ...await storages.globalStorage.getUser({ id: reqUser(req).id }),
       isAdmin: reqUser(req).isAdmin,
       adminMode: reqUser(req).adminMode,
       activeAccount: reqUser(req).activeAccount

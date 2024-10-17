@@ -97,14 +97,14 @@ router.post('/:type/:id', isSuperAdmin, async (req, res, next) => {
   req.body.id = req.params.id
   const valid = validate(req.body)
   if (!valid) return res.status(400).send(validate.errors)
-  await req.app.get('storage').db.collection('limits')
+  await storages.globalStorage.db.collection('limits')
     .replaceOne({ type: req.params.type, id: req.params.id }, req.body, { upsert: true })
   res.send(req.body)
 })
 
 // A user can get limits information for himself only
 router.get('/:type/:id', isAccountMember, async (req, res, next) => {
-  const limit = await export const  getLimits(req.app.get('storage').db, { type: req.params.type, id: req.params.id })
+  const limit = await export const  getLimits(storages.globalStorage.db, { type: req.params.type, id: req.params.id })
   delete limit._id
   res.send(limit)
 })
@@ -113,7 +113,7 @@ router.get('/', isSuperAdmin, async (req, res, next) => {
   const filter = {}
   if (req.query.type) filter.type = req.query.type
   if (req.query.id) filter.id = req.query.id
-  const results = await req.app.get('storage').db.collection('limits')
+  const results = await storages.globalStorage.db.collection('limits')
     .find(filter)
     .sort({ lastUpdate: -1 })
     .project({ _id: 0 })

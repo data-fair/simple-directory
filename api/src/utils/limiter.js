@@ -11,8 +11,8 @@ const limiterOptions = {
 export default  (req) => {
   if (config.storage.type === 'mongo') {
     _limiter = _limiter || new RateLimiterMongo({
-      storeClient: req.app.get('storage').client,
-      dbName: req.app.get('storage').db.databaseName,
+      storeClient: storages.globalStorage.client,
+      dbName: storages.globalStorage.db.databaseName,
       ...limiterOptions
     })
   } else {

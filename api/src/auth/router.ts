@@ -68,10 +68,10 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   }
 
   try {
-    await limiter(req).consume(requestIp.getClientIp(req), 1)
+    await limiter(req).consume(reqIp(req), 1)
     await limiter(req).consume(req.body.email, 1)
   } catch (err) {
-    console.error('Rate limit error for /password route', requestIp.getClientIp(req), req.body.email, err)
+    console.error('Rate limit error for /password route', reqIp(req), req.body.email, err)
     eventsLog.warn('sd.auth.password.rate-limit', `rate limit error for /auth/password route ${req.body.email}`, logContext)
     return returnError('rateLimitAuth', 429)
   }
@@ -80,7 +80,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   const depId = req.body.dep || req.query.dep
   let org, dep
   if (orgId && typeof orgId === 'string') {
-    org = await req.app.get('storage').getOrganization(orgId)
+    org = await storages.globalStorage.getOrganization(orgId)
     if (!org) {
       eventsLog.info('sd.auth.password.fail', `a user failed to authenticate due to unknown org ${orgId}`, logContext)
       return returnError('badCredentials', 400)
@@ -94,7 +94,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
-  let storage = req.app.get('storage')
+  let storage = storages.globalStorage
   if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
@@ -181,7 +181,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
         if (user2FA) {
           const validRecovery = await passwords.checkPassword(req.body['2fa'].trim(), user2FA.recovery)
           if (validRecovery) {
-            await req.app.get('storage').patchUser(user.id, { '2FA': { active: false } })
+            await storages.globalStorage.patchUser(user.id, { '2FA': { active: false } })
             eventsLog.info('sd.auth.password.fail', 'a user tried to use a recovery token as a normal token', logContext)
             return returnError('2fa-missing', 403)
           }
@@ -231,7 +231,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
 
   try {
-    await limiter(req).consume(requestIp.getClientIp(req), 1)
+    await limiter(req).consume(reqIp(req), 1)
   } catch (err) {
     eventsLog.warn('sd.auth.passwordless.rate-limit', `rate limit error for /auth/passwordless route ${req.body.email}`, logContext)
     return res.status(429).send(req.messages.errors.rateLimitAuth)
@@ -239,14 +239,14 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
 
   let org
   if (req.body.org) {
-    org = await req.app.get('storage').getOrganization(req.body.org)
+    org = await storages.globalStorage.getOrganization(req.body.org)
     if (!org) {
       eventsLog.info('sd.auth.passwordless.fail', `a passwordless authentication failed due to unknown org ${req.body.org}`, logContext)
       return res.status(404).send(req.messages.errors.orgaUnknown)
     }
   }
 
-  let storage = req.app.get('storage')
+  let storage = storages.globalStorage
   if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
@@ -307,7 +307,7 @@ router.post('/site_redirect', async (req, res, next) => {
 
   if (!reqUser(req)) return res.status(403).send()
   if (req.site) return res.status(400).send()
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   const user = await storage.getUserByEmail(reqUser(req).email)
   if (!user) return res.status(404).send('user not found')
   if (!req.body.redirect) return res.status(400).send()
@@ -341,10 +341,10 @@ router.get('/token_callback', async (req, res, next) => {
 
   let org
   if (req.query.id_token_org) {
-    org = await req.app.get('storage').getOrganization(req.query.id_token_org)
+    org = await storages.globalStorage.getOrganization(req.query.id_token_org)
     if (!org) return redirectError('orgaUnknown')
   }
-  let storage = req.app.get('storage')
+  let storage = storages.globalStorage
   if (req.query.org_storage === 'true' && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
@@ -405,7 +405,7 @@ router.post('/exchange', async (req, res, next) => {
   }
 
   // User may have new organizations since last renew
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   const user = decoded.id === '_superadmin' ? decoded : await storage.getUser({ id: decoded.id })
   logContext.user = user
 
@@ -445,7 +445,7 @@ router.post('/keepalive', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
 
   if (!reqUser(req)) return res.status(401).send('No active session to keep alive')
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   const user = reqUser(req).id === '_superadmin' ? reqUser(req) : await storage.getUser({ id: reqUser(req).id })
 
   if (user.coreIdProvider && user.coreIdProvider.type === 'oauth') {
@@ -516,14 +516,14 @@ router.post('/action', async (req, res, next) => {
   if (!req.body.action) return res.status(400).send(req.messages.errors.badCredentials)
 
   try {
-    await limiter(req).consume(requestIp.getClientIp(req), 1)
+    await limiter(req).consume(reqIp(req), 1)
   } catch (err) {
-    console.error('Rate limit error for /action route', requestIp.getClientIp(req), req.body.email, err)
+    console.error('Rate limit error for /action route', reqIp(req), req.body.email, err)
     eventsLog.warn('sd.auth.action.rate-limit', 'rate limit error for /action route', logContext)
     return res.status(429).send(req.messages.errors.rateLimitAuth)
   }
 
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   let user = await storage.getUserByEmail(req.body.email, req.site)
   logContext.user = user
   let action = req.body.action
@@ -583,7 +583,7 @@ router.post('/asadmin', async (req, res, next) => {
 
   if (!reqUser(req)) return res.status(401).send()
   if (!reqUser(req).isAdmin) return res.status(403).send('This functionality is for admins only')
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   const user = await storage.getUser({ id: req.body.id })
   if (!user) return res.status(404).send('User does not exist')
   const payload = tokens.getPayload(user)
@@ -606,7 +606,7 @@ router.delete('/asadmin', async (req, res, next) => {
 
   if (!reqUser(req)) return res.status(401).send('No active session to keep alive')
   if (!reqUser(req).asAdmin) return res.status(403).send('This functionality is for admins only')
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   const user = reqUser(req).asAdmin.id === '_superadmin' ? reqUser(req).asAdmin : await storage.getUser({ id: reqUser(req).asAdmin.id })
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = tokens.getPayload(user)
@@ -643,7 +643,7 @@ router.get('/providers', async (req, res) => {
         })
       }
       if (p.type === 'otherSite') {
-        const site = await req.app.get('storage').getSiteByHost(p.site)
+        const site = await storages.globalStorage.getSiteByHost(p.site)
         if (site && site.owner.type === req.site.owner.type && site.owner.id === req.site.owner.id) {
           providersInfos.push({ type: 'otherSite', id: slug(site.host, { lower: true, strict: true }), title: p.title, color: site.theme?.primaryColor, img: site.logo, host: site.host })
         }
@@ -758,7 +758,7 @@ const oauthCallback = async (req, res, next) => {
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   debugOAuth('oauth login callback')
 
   if (!req.query.state) {
@@ -941,7 +941,7 @@ const oauthLogoutCallback = async (req, res, next) => {
   if (!decoded) return res.status(400).send('invalid logout_token')
   if (decoded.typ !== 'Logout') return res.status(400).send('invalid logout_token type')
   if (!decoded.sid) return res.status(400).send('missing sid in logout_token')
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   await storage.logoutOAuthToken(decoded.sid)
   res.status(204).send()
 }
@@ -996,7 +996,7 @@ router.post('/saml2-assert', async (req, res) => {
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
 
   let providerId
   if (!req.headers.referer && Object.keys(saml2.idps).length === 1) providerId = Object.keys(saml2.idps)[0]

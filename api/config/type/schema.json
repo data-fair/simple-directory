@@ -22,7 +22,8 @@
     "theme",
     "i18n",
     "admins",
-    "storage"
+    "storage",
+    "cipherPassword"
   ],
   "properties": {
     "port": {
@@ -135,6 +136,9 @@
           "type": "object"
         }
       }
+    },
+    "cipherPassword": {
+      "type": "string"
     },
     "storage": {
       "type": "object",

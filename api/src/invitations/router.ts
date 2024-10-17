@@ -26,7 +26,7 @@ router.post('', async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
   debug('new invitation', req.body)
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   if (storage.db) {
     const limit = await limits.get(storage.db, { type: 'organization', id: req.body.id }, 'store_nb_members')
     if (limit.consumption >= limit.limit && limit.limit > 0) {
@@ -206,7 +206,7 @@ router.get('/_accept', async (req, res, next) => {
     verified = false
   }
   debug('accept invitation', invit, verified)
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
 
   const user = await storage.getUserByEmail(invit.email, req.site)
   logContext.user = user

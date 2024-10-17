@@ -100,7 +100,7 @@ export const keepalive = async (req: Request, res: Response, _user: User) => {
   // User may have new organizations since last renew
   let org
   if (reqUser(req).organization) {
-    org = await req.app.get('storage').getOrganization(reqUser(req).organization.id)
+    org = await storages.globalStorage.getOrganization(reqUser(req).organization.id)
     if (!org) {
       export const  unsetCookies(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user tried to prolongate a session in invalid org', logContext)
@@ -108,7 +108,7 @@ export const keepalive = async (req: Request, res: Response, _user: User) => {
     }
     logContext.account = { type: 'organization', id: org.id, name: org.name, department: org.department, departmentName: org.departmentName }
   }
-  let storage = req.app.get('storage')
+  let storage = storages.globalStorage
   if (reqUser(req).orgStorage && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }

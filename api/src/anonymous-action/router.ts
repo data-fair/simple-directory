@@ -7,7 +7,7 @@ const tokens = require('../utils/tokens')
 // useful to ensure that the user is human and waits for a little while before submitting a form
 export default  async (req, res, next) => {
   try {
-    await limiter(req).consume(requestIp.getClientIp(req), 1)
+    await limiter(req).consume(reqIp(req), 1)
   } catch (err) {
     const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
     eventsLog.warn('sd.anonym-action.rate-limit', 'rate limit error for /anonymous-action route', { req })

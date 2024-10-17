@@ -27,7 +27,7 @@ const membersGauge = new promClient.Gauge({
 
 export default  async (req, res, next) => {
   if (!config.secretKeys.metrics || req.query.apiKey !== config.secretKeys.metrics) return res.status(401).send()
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   if (!storage.db) return res.status(404).send('no metrics for this storage mode')
   const db = storage.db
 

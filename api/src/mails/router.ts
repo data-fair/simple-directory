@@ -13,7 +13,7 @@ router.post('/', async (req, res) => {
   if (!config.secretKeys.sendMails || config.secretKeys.sendMails !== key) {
     return res.status(403).send('Bad secret in "key" parameter')
   }
-  const storage = req.app.get('storage')
+  const storage = storages.globalStorage
   const transport = req.app.get('mailTransport')
   const results = []
   for (const t of req.body.to) {
@@ -59,8 +59,8 @@ const limiterOptions = {
 const limiter = (req) => {
   if (config.storage.type === 'mongo') {
     _limiter = _limiter || new RateLimiterMongo({
-      storeClient: req.app.get('storage').client,
-      dbName: req.app.get('storage').db.databaseName,
+      storeClient: storages.globalStorage.client,
+      dbName: storages.globalStorage.db.databaseName,
       ...limiterOptions
     })
   } else {
@@ -95,9 +95,9 @@ router.post('/contact', async (req, res) => {
   }
   try {
     // 3rd level of anti-spam protection, simple rate limiting based on ip
-    await limiter(req).consume(requestIp.getClientIp(req), 1)
+    await limiter(req).consume(reqIp(req), 1)
   } catch (err) {
-    console.error('Rate limit error for /mails/contact route', requestIp.getClientIp(req), req.body.email, err)
+    console.error('Rate limit error for /mails/contact route', reqIp(req), req.body.email, err)
     return res.status(429).send('Trop de messages dans un bref interval. Veuillez patienter avant d\'essayer de nouveau.')
   }
 
