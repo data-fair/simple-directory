@@ -24,7 +24,8 @@
     "i18n",
     "admins",
     "storage",
-    "cipherPassword"
+    "cipherPassword",
+    "anonymousAction"
   ],
   "properties": {
     "port": {
@@ -191,6 +192,18 @@
     },
     "manageDepartmentLabel": {
       "type": "boolean"
+    },
+    "anonymousAction": {
+      "type": "object",
+      "required": ["expiresIn", "notBefore"],
+      "properties": {
+        "expiresIn": {
+          "type": "string"
+        },
+        "notBefore": {
+          "type": "string"
+        }
+      }
     }
   }
 }
