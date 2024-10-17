@@ -8,7 +8,8 @@ const params = { iterations: 100000, size: 64, alg: 'sha512' as const }
 
 type ClearPassword = { clear: string }
 type HashedPassword = { hash: string, salt: string, iterations: number, size: number, alg: 'sha512' }
-type Password = ClearPassword | HashedPassword
+export type Password = ClearPassword | HashedPassword
+
 function isClearPassword (password: Password): password is ClearPassword {
   return 'clear' in password
 }

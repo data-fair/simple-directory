@@ -79,8 +79,7 @@ class FileStorage implements SdStorage {
   async getPassword (userId) {
     // Case insensitive comparison
     const user = this.users.find(u => u.id === userId)
-    if (!user) return null
-    return user && user.password
+    return user?.password
   }
 
   async findUsers (params = {}) {
@@ -179,5 +178,5 @@ class FileStorage implements SdStorage {
   }
 }
 
-export const  init = async (params, org) => new FileStorage().init(params, org)
-export const  readonly = true
+export const init = async (params, org) => new FileStorage().init(params, org)
+export const readonly = true

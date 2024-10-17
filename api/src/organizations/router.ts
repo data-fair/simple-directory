@@ -76,7 +76,7 @@ router.get('/:organizationId', async (req, res, next) => {
   const orga = await storages.globalStorage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   orga.roles = orga.roles || config.roles.defaults
-  orga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
+  orga.avatarUrl = reqSiteUrl(req) + '/simple-directory' + '/api/avatars/organization/' + orga.id + '/avatar.png'
   if (!reqUser(req).adminMode && orga.orgStorage) delete orga.orgStorage.config
   res.send(orga)
 })
@@ -115,7 +115,7 @@ router.post('', async (req, res, next) => {
   eventsLog.info('sd.org.create', `a user created an organization: ${orga.name} (${orga.id})`, logContext)
   if (!reqUser(req).adminMode || req.query.autoAdmin !== 'false') await storage.addMember(orga, reqUser(req), 'admin')
   webhooks.postIdentity('organization', orga)
-  orga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + orga.id + '/avatar.png'
+  orga.avatarUrl = reqSiteUrl(req) + '/simple-directory' + '/api/avatars/organization/' + orga.id + '/avatar.png'
 
   // update session info
   await tokens.keepalive(req, res)
@@ -166,7 +166,7 @@ router.patch('/:organizationId', async (req, res, next) => {
 
   if (storages.globalStorage.db) await storages.globalStorage.db.collection('limits').updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
   webhooks.postIdentity('organization', patchedOrga)
-  patchedOrga.avatarUrl = req.publicBaseUrl + '/api/avatars/organization/' + patchedOrga.id + '/avatar.png'
+  patchedOrga.avatarUrl = reqSiteUrl(req) + '/simple-directory' + '/api/avatars/organization/' + patchedOrga.id + '/avatar.png'
 
   // update session info
   await tokens.keepalive(req, res)
@@ -386,10 +386,10 @@ if (config.managePartners) {
     await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
     eventsLog.info('sd.org.partner.invite', `a user invited an organization to be a partner ${partnerPost.name} ${partnerPost.contactEmail} ${orga.name} ${orga.id}`, logContext)
 
-    const linkUrl = new URL(req.publicBaseUrl + '/login')
+    const linkUrl = new URL(reqSiteUrl(req) + '/simple-directory' + '/login')
     linkUrl.searchParams.set('step', 'partnerInvitation')
     linkUrl.searchParams.set('partner_invit_token', token)
-    linkUrl.searchParams.set('redirect', partnerPost.redirect || req.publicBaseUrl)
+    linkUrl.searchParams.set('redirect', partnerPost.redirect || reqSiteUrl(req) + '/simple-directory')
     const params = {
       link: linkUrl.href,
       organization: orga.name,

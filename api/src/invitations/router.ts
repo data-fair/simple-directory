@@ -52,8 +52,8 @@ router.post('', async (req, res, next) => {
     }
   }
 
-  let invitSite = req.site
-  let invitPublicBaseUrl = req.publicBaseUrl
+  let invitSite = reqSite(req)
+  let invitPublicBaseUrl = reqSiteUrl(req) + '/simple-directory'
   if (invitation.redirect) {
     const host = new URL(invitation.redirect).host
     invitSite = await storage.getSiteByHost(host)
@@ -105,8 +105,8 @@ router.post('', async (req, res, next) => {
       await storage.createUser(newUser, reqUser(req))
       await storage.addMember(orga, newUser, invitation.role, invitation.department)
       if (storage.db) await limits.setNbMembers(storage.db, orga.id)
-      const reboundRedirect = new URL(invitation.redirect || config.invitationRedirect || `${req.publicBaseUrl}/invitation`)
-      const linkUrl = new URL(`${req.publicBaseUrl}/login`)
+      const reboundRedirect = new URL(invitation.redirect || config.invitationRedirect || `${reqSiteUrl(req) + '/simple-directory'}/invitation`)
+      const linkUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
       linkUrl.searchParams.set('step', 'createUser')
       linkUrl.searchParams.set('invit_token', token)
       linkUrl.searchParams.set('redirect', reboundRedirect.href)
@@ -187,7 +187,7 @@ router.get('/_accept', async (req, res, next) => {
 
   let invit
   let verified
-  const errorUrl = new URL(`${req.publicBaseUrl}/login`)
+  const errorUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
   try {
     invit = unshortenInvit(await tokens.verify(req.app.get('keys'), req.query.invit_token))
     verified = true
@@ -208,7 +208,7 @@ router.get('/_accept', async (req, res, next) => {
   debug('accept invitation', invit, verified)
   const storage = storages.globalStorage
 
-  const user = await storage.getUserByEmail(invit.email, req.site)
+  const user = await storage.getUserByEmail(invit.email, reqSite(req))
   logContext.user = user
   if (!user && storage.readonly) {
     errorUrl.searchParams.set('error', 'userUnknown')
@@ -222,7 +222,7 @@ router.get('/_accept', async (req, res, next) => {
   }
   logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invit.department }
 
-  let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${req.publicBaseUrl}/invitation`)
+  let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${reqSiteUrl(req) + '/simple-directory'}/invitation`)
   redirectUrl.searchParams.set('email', invit.email)
   redirectUrl.searchParams.set('id_token_org', invit.id)
   if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
@@ -235,7 +235,7 @@ router.get('/_accept', async (req, res, next) => {
       const payload = { id: user.id, email: user.email, action: 'changePassword' }
       const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
       const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${req.publicBaseUrl}/login`)
+      redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
       redirectUrl.searchParams.set('step', 'changePassword')
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
@@ -247,7 +247,7 @@ router.get('/_accept', async (req, res, next) => {
     }
     if (!reqUser(req) || reqUser(req).email !== invit.email) {
       const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${req.publicBaseUrl}/login`)
+      redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
       if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
@@ -273,7 +273,7 @@ router.get('/_accept', async (req, res, next) => {
 
   if (!user) {
     const reboundRedirect = redirectUrl.href
-    redirectUrl = new URL(`${req.publicBaseUrl}/login`)
+    redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
     redirectUrl.searchParams.set('step', 'createUser')
     redirectUrl.searchParams.set('invit_token', req.query.invit_token)
     redirectUrl.searchParams.set('redirect', reboundRedirect)

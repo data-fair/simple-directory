@@ -92,7 +92,7 @@ router.post('', async (req, res, next) => {
     lastName: req.body.lastName,
     emailConfirmed: false
   }
-  if (req.site) newUser.host = req.site.host
+  if (reqSite(req)) newUser.host = reqSite(req).host
   newUser.name = userName(newUser)
   logContext.user = newUser
   if (invit) {
@@ -110,10 +110,10 @@ router.post('', async (req, res, next) => {
     newUser.password = await passwords.hashPassword(req.body.password)
   }
 
-  const user = await storages.globalStorage.getUserByEmail(req.body.email, req.site)
+  const user = await storages.globalStorage.getUserByEmail(req.body.email, reqSite(req))
 
   // email is already taken, send a conflict email
-  const link = req.query.redirect || config.defaultLoginRedirect || req.publicBaseUrl
+  const link = req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
   if (user && user.emailConfirmed !== false) {
     const linkUrl = new URL(link)
     await mails.send({
@@ -198,7 +198,7 @@ router.get('/:userId', async (req, res, next) => {
   const user = await storage.getUser({ id: req.params.userId })
   if (!user) return res.status(404).send()
   user.isAdmin = config.admins.includes(user.email)
-  user.avatarUrl = req.publicBaseUrl + '/api/avatars/user/' + user.id + '/avatar.png'
+  user.avatarUrl = reqSiteUrl(req) + '/simple-directory' + '/api/avatars/user/' + user.id + '/avatar.png'
   res.json(user)
 })
 
@@ -237,7 +237,7 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
 
   eventsLog.info('sd.user.patch', `user was patched ${patchedUser.name} (${patchedUser.id})`, logContext)
 
-  const link = req.publicBaseUrl + '/login?email=' + encodeURIComponent(reqUser(req).email)
+  const link = reqSiteUrl(req) + '/simple-directory' + '/login?email=' + encodeURIComponent(reqUser(req).email)
   const linkUrl = new URL(link)
   if (patch.plannedDeletion) {
     await mails.send({
@@ -257,7 +257,7 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
   }
 
   if (storages.globalStorage.db) await storages.globalStorage.db.collection('limits').updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
-  patchedUser.avatarUrl = req.publicBaseUrl + '/api/avatars/user/' + patchedUser.id + '/avatar.png'
+  patchedUser.avatarUrl = reqSiteUrl(req) + '/simple-directory' + '/api/avatars/user/' + patchedUser.id + '/avatar.png'
 
   // update session info
   await tokens.keepalive(req, res)

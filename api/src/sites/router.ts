@@ -25,7 +25,7 @@ router.get('', async (req, res, next) => {
   if (query.showAll && !reqUser(req).adminMode) return res.status(403).send()
   const response = query.showAll ? await storages.globalStorage.findAllSites() : await storages.globalStorage.findOwnerSites(reqUser(req).accountOwner)
   for (const result of response.results) {
-    result.logo = result.logo || `${req.publicBaseUrl}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
+    result.logo = result.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
     if (result.authProviders) {
       for (const p of result.authProviders) {
         if (p.type === 'oidc') p.id = oauth.getProviderId(p.discovery)
@@ -69,8 +69,8 @@ router.delete('/:id', async (req, res, next) => {
 router.get('/_public', async (req, res, next) => {
   const sitePublicSchema = await import('../../types/site-public/index.mjs')
 
-  if (!req.site) return res.status(404).send()
-  req.site.logo = req.site.logo || `${req.publicBaseUrl}/api/avatars/${req.site.owner.type}/${req.site.owner.id}/avatar.png`
+  if (!reqSite(req)) return res.status(404).send()
+  reqSite(req).logo = reqSite(req).logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${reqSite(req).owner.type}/${reqSite(req).owner.id}/avatar.png`
   // stringify will keep only parts that are public knowledge
-  res.type('json').send(sitePublicSchema.stringify(req.site))
+  res.type('json').send(sitePublicSchema.stringify(reqSite(req)))
 })

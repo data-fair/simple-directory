@@ -1,4 +1,4 @@
-import type { User, Organization } from '#types'
+import type { User, Organization, Site } from '#types'
 
 import mongo from '@data-fair/lib-node/mongo.js'
 import config from './config.ts'
@@ -20,6 +20,10 @@ export class SdMongo {
 
   get organizations () {
     return mongo.db.collection<Organization>('organizations')
+  }
+
+  get sites () {
+    return mongo.db.collection<Site>('sites')
   }
 
   get secrets () {

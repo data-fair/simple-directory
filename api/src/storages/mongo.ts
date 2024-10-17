@@ -1,6 +1,7 @@
 import type { SdStorage } from './interface.ts'
 const createError = require('http-errors')
 import config from '#config'
+import { TwoFA } from '../2fa/service.ts'
 const moment = require('moment')
 const escapeStringRegexp = require('escape-string-regexp')
 const mongoUtils = require('../utils/mongo')
@@ -426,39 +427,13 @@ class MongodbStorage implements SdStorage {
     return false
   }
 
-  async get2FA (userId) {
+  async get2FA (userId: string) {
     const user = await this.db.collection('users').findOne({ _id: userId })
     return user && user['2FA']
   }
 
-  async findOwnerSites (owner) {
-    const filter = { 'owner.type': owner.type, 'owner.id': owner.id }
-    if (owner.department) filter['owner.department'] = owner.department
-    const sites = await this.db.collection('sites').find(filter).limit(10000).toArray()
-    return {
-      count: sites.length,
-      results: sites
-    }
-  }
-
-  async findAllSites (owner) {
-    const sites = await this.db.collection('sites').find().limit(10000).toArray()
-    return {
-      count: sites.length,
-      results: sites
-    }
-  }
-
-  async patchSite (site, createIfMissing = false) {
-    await this.db.collection('sites').updateOne({ _id: site._id }, { $set: site }, { upsert: createIfMissing })
-  }
-
-  async getSiteByHost (host) {
-    return await this.db.collection('sites').findOne({ host })
-  }
-
-  async deleteSite (siteId) {
-    await this.db.collection('sites').deleteOne({ _id: siteId })
+  async set2FA (userId: string, twoFA: TwoFA) {
+    await this.db.collection('users').updateOne({ _id: userId }, { $set: { '2FA': twoFA } })
   }
 
   async addPartner (orgId, partner) {

@@ -298,9 +298,9 @@ class LdapStorage implements SdStorage {
     return this._getUser({ email })
   }
 
-  async checkPassword (id, password) {
+  async checkPassword (id: string, password: string) {
     const user = await this._getUser({ id }, false)
-    if (!user) return
+    if (!user) return false
     const dn = user.entry.objectName
 
     const client = ldap.createClient({ url: this.ldapParams.url, reconnect: false, timeout: 4000 })
@@ -556,6 +556,6 @@ class LdapStorage implements SdStorage {
   }
 }
 
-export const  init = async (params, org) => new LdapStorage().init(params, org)
-export const  readonly = true
-export const  overwrite = config.storage.ldap.overwrite
+export const init = async (params, org) => new LdapStorage().init(params, org)
+export const readonly = true
+export const overwrite = config.storage.ldap.overwrite

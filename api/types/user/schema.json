@@ -126,6 +126,16 @@
     },
     "password": {
       "type": "object"
+    },
+    "2FA": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["active", "recovery"],
+      "properties": {
+        "active": {
+          "type": "boolean"
+        }
+      }
     }
   }
 }

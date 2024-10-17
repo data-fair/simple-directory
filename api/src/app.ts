@@ -53,27 +53,6 @@ const fullUser = async (req, res, next) => {
   next()
 }
 
-// set current baseUrl, i.e. the url of simple-directory on the current user's domain
-const publicUrl = new URL(config.publicUrl)
-let basePath = publicUrl.pathname
-if (basePath.endsWith('/')) basePath = basePath.slice(0, -1)
-const setSite = async (req, res, next) => {
-  const host = req.get('host')
-  if (host && ![publicUrl.host, `simple-directory:${config.port}`].includes(host) && !(process.env.NODE_ENV === 'production' && host === `localhost:${config.port}`)) {
-    if (!config.manageSites) throw createHttpError(400, `multi-sites not supported by this install of simple-directory, host=${host}, declared host=${publicUrl.host}`)
-    // TODO: use a small memory cache for this very frequent query ?
-    req.site = await app.get('storage').getSiteByHost(host)
-    if (!req.site) return res.status(404).send('unknown site')
-    const url = new URL(config.publicUrl)
-    url.host = host
-    req.publicBaseUrl = url.href
-  } else {
-    req.publicBaseUrl = config.publicUrl
-  }
-  req.publicBasePath = basePath
-  next()
-}
-
 const apiDocs = require('../contract/api-docs')
 app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))
 app.get('/api/auth/anonymous-action', require('./routers/anonymous-action'))

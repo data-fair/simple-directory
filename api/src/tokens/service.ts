@@ -95,7 +95,7 @@ export const setCookieToken = (req: Request, res: Response, token: string, userO
 }
 
 export const keepalive = async (req: Request, res: Response, _user: User) => {
-  const logContext: EventLogContext = { req, account: req.site?.account }
+  const logContext: EventLogContext = { req, account: reqSite(req)?.account }
 
   // User may have new organizations since last renew
   let org
@@ -145,10 +145,11 @@ export const keepalive = async (req: Request, res: Response, _user: User) => {
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
 // this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
 export const prepareCallbackUrl = (req: Request, payload: any, redirect?: string, userOrg?:OrganizationMembership, orgStorage?: boolean) => {
-  redirect = redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me'
+  redirect = redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory' + '/me'
   const redirectUrl = new URL(redirect)
   const token = export const  sign(req.app.get('keys'), { ...payload, temporary: true }, config.jwtDurations.initialToken)
-  const tokenCallback = redirectUrl.origin + req.publicBasePath + '/api/auth/token_callback'
+  // TODO: properly manage site on subpath here
+  const tokenCallback = redirectUrl.origin + '/simple-directory/api/auth/token_callback'
   const tokenCallbackUrl = new URL(tokenCallback)
   tokenCallbackUrl.searchParams.set('id_token', token)
   if (redirect) tokenCallbackUrl.searchParams.set('redirect', redirect)

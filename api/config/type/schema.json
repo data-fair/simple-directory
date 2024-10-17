@@ -13,6 +13,7 @@
   "type": "object",
   "title": "Api config",
   "required": [
+    "publicUrl",
     "secret",
     "kid",
     "mongo",
@@ -28,6 +29,9 @@
   "properties": {
     "port": {
       "type": "number"
+    },
+    "publicUrl": {
+      "type": "string"
     },
     "mongo": {
       "type": "object",
@@ -174,6 +178,18 @@
       }
     },
     "onlyCreateInvited": {
+      "type": "boolean"
+    },
+    "manageSites": {
+      "type": "boolean"
+    },
+    "managePartners": {
+      "type": "boolean"
+    },
+    "manageDepartments": {
+      "type": "boolean"
+    },
+    "manageDepartmentLabel": {
       "type": "boolean"
     }
   }
