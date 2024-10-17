@@ -1,4 +1,4 @@
-exports.ensureIndex = async (db, collection, key, options = {}) => {
+export const  ensureIndex = async (db, collection, key, options = {}) => {
   try {
     await db.collection(collection).createIndex(key, options)
   } catch (err) {

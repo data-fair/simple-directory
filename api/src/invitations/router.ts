@@ -14,7 +14,7 @@ const webhooks = require('../webhooks')
 const emailValidator = require('email-validator')
 const debug = require('debug')('invitations')
 
-const router = module.exports = Router()
+const router = export default  Router()
 
 // Invitation for a user to join an organization from an admin of this organization
 router.post('', async (req, res, next) => {

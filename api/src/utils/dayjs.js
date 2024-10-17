@@ -7,4 +7,4 @@ require('dayjs/locale/it')
 require('dayjs/locale/pt')
 const localizedFormat = require('dayjs/plugin/localizedFormat')
 dayjs.extend(localizedFormat)
-module.exports = dayjs
+export default  dayjs

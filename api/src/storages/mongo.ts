@@ -549,5 +549,5 @@ class MongodbStorage implements SdStorage {
   }
 }
 
-exports.init = async (params, org) => new MongodbStorage().init(params, org)
-exports.readonly = config.storage.mongo.readonly
+export const init = async (params, org) => new MongodbStorage().init(params, org)
+export const readonly = config.storage.mongo.readonly

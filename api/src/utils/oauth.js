@@ -8,7 +8,7 @@ const slug = require('slugify')
 const tokens = require('./tokens')
 const debug = require('debug')('oauth')
 
-exports.getProviderId = (url) => {
+export const  getProviderId = (url) => {
   let host = url
   try {
     host = new URL(url).host
@@ -188,15 +188,15 @@ config.oauth.providers.forEach(p => {
   if (!standardProviders[p]) throw new Error('Unknown oauth provider ' + p)
 })
 
-exports.providers = []
+export const  providers = []
 
 for (const p of config.oidc.providers) {
-  exports.providers.push({
+  export const  providers.push({
     ...p
   })
 }
 for (const p of config.oauth.providers) {
-  exports.providers.push({
+  export const  providers.push({
     ...standardProviders[p],
     id: p,
     client: config.oauth[p],
@@ -206,7 +206,7 @@ for (const p of config.oauth.providers) {
 
 const statesDir = path.resolve(__dirname, '../..', config.oauth.statesDir)
 
-exports.initProvider = async (p, publicUrl = config.publicUrl) => {
+export const  initProvider = async (p, publicUrl = config.publicUrl) => {
   // persence of p.discovery means we are on an OIDC provider
   if (p.discovery) {
     p.id = this.getProviderId(p.discovery)
@@ -335,14 +335,14 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
   return p
 }
 
-exports.init = async () => {
+export const  init = async () => {
   await fs.ensureDir(statesDir)
 
-  for (const p of exports.providers) {
+  for (const p of export const  providers) {
     await this.initProvider(p)
   }
 
-  exports.publicProviders = exports.providers.map(p => ({
+  export const  publicProviders = export const  providers.map(p => ({
     type: 'oauth',
     id: p.id,
     title: p.title,

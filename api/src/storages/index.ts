@@ -60,5 +60,5 @@ class StorageManager {
 const storageManager = new StorageManager()
 export default storageManager
 
-// exports.readonly = () => require('./' + config.storage.type).readonly
-// exports.overwrite = () => require('./' + config.storage.type).overwrite || []
+// export const  readonly = () => require('./' + config.storage.type).readonly
+// export const  overwrite = () => require('./' + config.storage.type).overwrite || []

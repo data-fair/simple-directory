@@ -25,7 +25,7 @@ const membersGauge = new promClient.Gauge({
   labelNames: ['org', 'role']
 })
 
-module.exports = async (req, res, next) => {
+export default  async (req, res, next) => {
   if (!config.secretKeys.metrics || req.query.apiKey !== config.secretKeys.metrics) return res.status(401).send()
   const storage = req.app.get('storage')
   if (!storage.db) return res.status(404).send('no metrics for this storage mode')

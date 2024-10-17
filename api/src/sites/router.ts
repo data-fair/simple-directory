@@ -5,7 +5,7 @@ const createError = require('http-errors')
 const { nanoid } = require('nanoid')
 const oauth = require('../utils/oauth')
 
-const router = module.exports = Router()
+const router = export default  Router()
 
 const checkSecret = async (req) => {
   if (!reqUser(req)?.adminMode && (!req.query.key || req.query.key !== config.secretKeys.sites)) {

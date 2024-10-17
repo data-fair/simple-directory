@@ -1,7 +1,7 @@
 // WARN: do not use underscore in keys, it is used as delimiter when reading
 // messages from environment variables
 
-module.exports = {
+export default  {
   root: {
     title: 'Simple Directory',
     description: 'Easy users and organizations management for modern Web-oriented architectures.'

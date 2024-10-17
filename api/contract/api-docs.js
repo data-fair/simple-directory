@@ -23,7 +23,7 @@ const authenticationParams = [{
   }
 }]
 
-module.exports = {
+export default  {
   openapi: '3.0.0',
   info: Object.assign({
     title: 'API documentation',

@@ -8,7 +8,7 @@ const limiterOptions = {
   points: config.authRateLimit.attempts,
   duration: config.authRateLimit.duration
 }
-module.exports = (req) => {
+export default  (req) => {
   if (config.storage.type === 'mongo') {
     _limiter = _limiter || new RateLimiterMongo({
       storeClient: req.app.get('storage').client,

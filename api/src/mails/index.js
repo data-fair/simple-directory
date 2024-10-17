@@ -7,7 +7,7 @@ const nodemailer = require('nodemailer')
 const flatten = require('flat')
 const EventEmitter = require('events')
 
-const events = exports.events = new EventEmitter()
+const events = export const  events = new EventEmitter()
 
 const mjmlTemplate = fs.readFileSync(path.join(__dirname, 'mail.mjml'), 'utf8')
 const mjmlNoButtonTemplate = fs.readFileSync(path.join(__dirname, 'mail-nobutton.mjml'), 'utf8')
@@ -18,7 +18,7 @@ const maildevTransport = {
   host: '127.0.0.1'
 }
 
-exports.init = async () => {
+export const  init = async () => {
   const transport = nodemailer.createTransport(config.maildev.active ? maildevTransport : config.mails.transport)
   transport.sendMailAsync = util.promisify(transport.sendMail)
   return transport
@@ -33,7 +33,7 @@ function applyParams (txt, params) {
   return txt
 }
 
-exports.send = async ({ transport, key, messages, to, params }) => {
+export const  send = async ({ transport, key, messages, to, params }) => {
   params = {
     ...params,
     ...flatten({ theme: config.theme }),

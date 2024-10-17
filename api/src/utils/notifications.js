@@ -2,7 +2,7 @@ import config from '#config'
 const axios = require('./axios')
 const debug = require('debug')('notifications')
 
-exports.send = async (notification) => {
+export const  send = async (notification) => {
   debug('send notification', notification)
   if (!config.notifyUrl) return
   if (process.env.NODE_ENV !== 'test') {

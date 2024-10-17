@@ -5,7 +5,7 @@ const tokens = require('../utils/tokens')
 
 // simply get a token to perform an anonymous action in the close future
 // useful to ensure that the user is human and waits for a little while before submitting a form
-module.exports = async (req, res, next) => {
+export default  async (req, res, next) => {
   try {
     await limiter(req).consume(requestIp.getClientIp(req), 1)
   } catch (err) {

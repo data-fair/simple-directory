@@ -81,7 +81,7 @@ export const unsetCookies = (req: Request, res: Response) => {
 // all cookies use sameSite for CSRF prevention
 export const setCookieToken = (req: Request, res: Response, token: string, userOrg) => {
   const cookies = new Cookies(req, res)
-  const payload = exports.decode(token)
+  const payload = export const  decode(token)
   const parts = token.split('.')
   const opts: Cookies.SetOption = { sameSite: 'lax' }
   if (payload.rememberMe) opts.expires = new Date(payload.exp * 1000)
@@ -102,7 +102,7 @@ export const keepalive = async (req: Request, res: Response, _user: User) => {
   if (reqUser(req).organization) {
     org = await req.app.get('storage').getOrganization(reqUser(req).organization.id)
     if (!org) {
-      exports.unsetCookies(req, res)
+      export const  unsetCookies(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user tried to prolongate a session in invalid org', logContext)
       return res.status(401).send('Organisation inexistante')
     }
@@ -114,12 +114,12 @@ export const keepalive = async (req: Request, res: Response, _user: User) => {
   }
   const user = _user || (reqUser(req).id === '_superadmin' ? reqUser(req) : await storage.getUser({ id: reqUser(req).id }))
   if (!user) {
-    exports.unsetCookies(req, res)
+    export const  unsetCookies(req, res)
     eventsLog.info('sd.auth.keepalive.fail', 'a delete user tried to prolongate a session', logContext)
     return res.status(401).send('Utilisateur inexistant')
   }
 
-  const payload = exports.getPayload(user)
+  const payload = export const  getPayload(user)
   if (reqUser(req).isAdmin && reqUser(req).adminMode && req.query.noAdmin !== 'true') payload.adminMode = true
   if (reqUser(req).rememberMe) payload.rememberMe = true
   if (reqUser(req).asAdmin) {
@@ -134,10 +134,10 @@ export const keepalive = async (req: Request, res: Response, _user: User) => {
       })
     }
   }
-  const token = exports.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  const token = export const  sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
   const cookies = new Cookies(req, res)
   const userOrg = cookies.get('id_token_org') && user.organizations.find(o => o.id === cookies.get('id_token_org') && (o.department || null) === (cookies.get('id_token_dep') ? decodeURIComponent(cookies.get('id_token_dep')) : null))
-  exports.setCookieToken(req, res, token, userOrg)
+  export const  setCookieToken(req, res, token, userOrg)
 
   eventsLog.info('sd.auth.keepalive.ok', 'a session was successfully prolongated', logContext)
 }
@@ -147,7 +147,7 @@ export const keepalive = async (req: Request, res: Response, _user: User) => {
 export const prepareCallbackUrl = (req: Request, payload: any, redirect?: string, userOrg?:OrganizationMembership, orgStorage?: boolean) => {
   redirect = redirect || config.defaultLoginRedirect || req.publicBaseUrl + '/me'
   const redirectUrl = new URL(redirect)
-  const token = exports.sign(req.app.get('keys'), { ...payload, temporary: true }, config.jwtDurations.initialToken)
+  const token = export const  sign(req.app.get('keys'), { ...payload, temporary: true }, config.jwtDurations.initialToken)
   const tokenCallback = redirectUrl.origin + req.publicBasePath + '/api/auth/token_callback'
   const tokenCallbackUrl = new URL(tokenCallback)
   tokenCallbackUrl.searchParams.set('id_token', token)

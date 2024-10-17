@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { reqUser } from '@data-fair/lib-express'
 
-const router = module.exports = Router()
+const router = export default  Router()
 
 router.get('', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send()

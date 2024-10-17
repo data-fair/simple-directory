@@ -179,5 +179,5 @@ class FileStorage implements SdStorage {
   }
 }
 
-exports.init = async (params, org) => new FileStorage().init(params, org)
-exports.readonly = true
+export const  init = async (params, org) => new FileStorage().init(params, org)
+export const  readonly = true

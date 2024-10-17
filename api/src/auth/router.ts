@@ -24,7 +24,7 @@ const { send: sendNotification } = require('../utils/notifications')
 const limits = require('../utils/limits')
 const debug = require('debug')('auth')
 
-const router = exports.router = Router()
+const router = export const  router = Router()
 
 // these routes accept url encoded form data so that they can be used from basic
 // html forms
@@ -690,7 +690,7 @@ const oauthLogin = async (req, res, next) => {
 router.get('/oauth/:oauthId/login', oauthLogin)
 router.get('/oidc/:oauthId/login', oauthLogin)
 
-const patchCoreOAuthUser = exports.patchCoreOAuthUser = async (storage, provider, user, oauthInfo, memberInfo) => {
+const patchCoreOAuthUser = export const  patchCoreOAuthUser = async (storage, provider, user, oauthInfo, memberInfo) => {
   const providerType = provider.type || 'oauth'
   if (provider.coreIdProvider) {
     oauthInfo.coreId = true
@@ -720,7 +720,7 @@ const patchCoreOAuthUser = exports.patchCoreOAuthUser = async (storage, provider
   await storage.patchUser(user.id, patch)
 }
 
-const authCoreProviderMemberInfo = exports.authCoreProviderMemberInfo = async (storage, site, provider, email, oauthInfo) => {
+const authCoreProviderMemberInfo = export const  authCoreProviderMemberInfo = async (storage, site, provider, email, oauthInfo) => {
   let create = false
   if (provider.createMember === true) {
     // retro-compatibility for when createMember was a boolean

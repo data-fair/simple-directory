@@ -25,7 +25,7 @@ const postIdentity = async (identity: PostIdentityReq['body'] & PostIdentityReq[
   }
 }
 
-exports.deleteIdentity = async (type: string, id: string) => {
+export const  deleteIdentity = async (type: string, id: string) => {
   for (const webhook of config.webhooks.identities) {
     const url = `${webhook.base}/${type}/${id}`
     debug(`Send identity delete webhook to ${url}`)

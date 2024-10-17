@@ -18,7 +18,7 @@ const schema = {
 }
 const validate = ajv.compile(schema)
 
-exports.getLimits = async (db, consumer) => {
+export const  getLimits = async (db, consumer) => {
   const coll = db.collection('limits')
   let limit = await coll.findOne({ type: consumer.type, id: consumer.id })
   if (!limit || !limit.store_nb_members) {
@@ -32,7 +32,7 @@ exports.getLimits = async (db, consumer) => {
     await coll.replaceOne({ type: consumer.type, id: consumer.id }, limit, { upsert: true })
   }
   if (limit.store_nb_members.consumption === undefined) {
-    if (consumer.type === 'organization') limit = await exports.setNbMembers(db, consumer.id)
+    if (consumer.type === 'organization') limit = await export const  setNbMembers(db, consumer.id)
     else limit.store_nb_members.consumption = 1
   }
   if (limit.store_nb_members.limit === undefined) {
@@ -41,34 +41,34 @@ exports.getLimits = async (db, consumer) => {
   return limit
 }
 
-exports.get = async (db, consumer, type) => {
-  const limit = await exports.getLimits(db, consumer)
+export const  get = async (db, consumer, type) => {
+  const limit = await export const  getLimits(db, consumer)
   const res = limit[type]
   res.type = type
   return res
 }
 
-exports.incrementConsumption = async (db, consumer, type, inc) => {
+export const  incrementConsumption = async (db, consumer, type, inc) => {
   return (await db.collection('limits')
     .findOneAndUpdate({ type: consumer.type, id: consumer.id }, { $inc: { [`${type}.consumption`]: inc } }, { returnDocument: 'after', upsert: true })).value
 }
 
-exports.setNbMembers = async (db, organizationId) => {
+export const  setNbMembers = async (db, organizationId) => {
   const consumer = { type: 'organization', id: organizationId }
-  return exports.setConsumption(db, consumer, 'store_nb_members', await db.collection('users').countDocuments({ 'organizations.id': organizationId, plannedDeletion: { $exists: false } }))
+  return export const  setConsumption(db, consumer, 'store_nb_members', await db.collection('users').countDocuments({ 'organizations.id': organizationId, plannedDeletion: { $exists: false } }))
 }
 
-exports.setConsumption = async (db, consumer, type, value) => {
+export const  setConsumption = async (db, consumer, type, value) => {
   return (await db.collection('limits')
     .findOneAndUpdate({ type: consumer.type, id: consumer.id }, { $set: { [`${type}.consumption`]: value } }, { returnDocument: 'after', upsert: true })).value
 }
 
-exports.updateName = async (db, identity) => {
+export const  updateName = async (db, identity) => {
   await db.collection('limits')
     .updateMany({ type: identity.type, id: identity.id }, { $set: { name: identity.name } })
 }
 
-const router = exports.router = Router()
+const router = export const  router = Router()
 
 const isSuperAdmin = (req, res, next) => {
   if (reqUser(req)?.adminMode) return next()
@@ -104,7 +104,7 @@ router.post('/:type/:id', isSuperAdmin, async (req, res, next) => {
 
 // A user can get limits information for himself only
 router.get('/:type/:id', isAccountMember, async (req, res, next) => {
-  const limit = await exports.getLimits(req.app.get('storage').db, { type: req.params.type, id: req.params.id })
+  const limit = await export const  getLimits(req.app.get('storage').db, { type: req.params.type, id: req.params.id })
   delete limit._id
   res.send(limit)
 })

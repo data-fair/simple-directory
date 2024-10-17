@@ -5,7 +5,7 @@ const { RateLimiterMongo, RateLimiterMemory } = require('rate-limiter-flexible')
 const requestIp = require('request-ip')
 const tokens = require('../utils/tokens')
 
-const router = module.exports = Router()
+const router = export default  Router()
 
 // Used by the users' directory to notify name updates
 router.post('/', async (req, res) => {

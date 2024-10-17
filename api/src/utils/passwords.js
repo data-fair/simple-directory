@@ -6,7 +6,7 @@ const pbkdf2 = util.promisify(crypto.pbkdf2)
 
 const params = { iterations: 100000, size: 64, alg: 'sha512' }
 
-exports.validate = (password) => {
+export const  validate = (password) => {
   if (password.length < 8) return false
   if (!/[a-z]/.exec(password)) return false
   if (!/[A-Z]/.exec(password)) return false
@@ -16,14 +16,14 @@ exports.validate = (password) => {
 
 // Derive a hashed key from a password, and return the key and all associated params
 // so that we can verify keys even if hashing params are changed
-exports.hashPassword = async (password) => {
+export const  hashPassword = async (password) => {
   const salt = await randomBytes(16)
   const hash = await pbkdf2(password, salt, params.iterations, params.size, params.alg)
   return { hash: hash.toString('hex'), salt: salt.toString('hex'), ...params }
 }
 
 // Use the same salt and params as used to derive the original key
-exports.checkPassword = async (password, storedPassword) => {
+export const  checkPassword = async (password, storedPassword) => {
   if (!password || !storedPassword) return false
   // minimalist storage engines can store password in clear text
   if (storedPassword.clear) {
@@ -43,7 +43,7 @@ if (config.cipherPassword) {
 
 // contrary to a hash password the ciphered password can be read,
 // we use this to store ldap credentials for example
-exports.cipherPassword = (password) => {
+export const  cipherPassword = (password) => {
   const initVector = crypto.randomBytes(16)
   if (!config.cipherPassword) throw new Error('cipherPassword config option is missing')
   const algo = 'aes256'
@@ -57,7 +57,7 @@ exports.cipherPassword = (password) => {
   }
 }
 
-exports.decipherPassword = (storedPassword) => {
+export const  decipherPassword = (storedPassword) => {
   if (typeof storedPassword === 'string') return storedPassword
   if (!config.cipherPassword) throw new Error('cipherPassword config option is missing')
   const decipher = crypto.createDecipheriv(storedPassword.alg, securityKey, Buffer.from(storedPassword.iv, 'hex'))

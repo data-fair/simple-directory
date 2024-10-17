@@ -1,6 +1,6 @@
 const { Gauge } = require('prom-client')
 
-exports.init = async (db) => {
+export const  init = async (db) => {
   // global metrics based on db connection
   if (db) {
     const { servicePromRegistry } = await import('@data-fair/lib/node/observer.js')

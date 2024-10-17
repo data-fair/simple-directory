@@ -4,9 +4,9 @@ const acceptLangParser = require('accept-language-parser')
 const flatOpts = { delimiter: '_' }
 
 // cannot be changed at runtime for now, because it impacts the build
-exports.defaultLocale = 'fr'
+export const  defaultLocale = 'fr'
 // this the full list of available langs, the proposed list is overwritten in config.i18n.locales
-exports.locales = [
+export const  locales = [
   { code: 'fr' },
   { code: 'en' },
   { code: 'de' },
@@ -18,8 +18,8 @@ exports.locales = [
 // Build a map of messages of this form
 // {fr: {msg1: 'libellé 1'}, en: {msg1: 'label 1'}}
 const messages = {}
-exports.locales.forEach(l => {
-  messages[l.code] = { ...require('./' + exports.defaultLocale), ...require('./' + l.code) }
+export const  locales.forEach(l => {
+  messages[l.code] = { ...require('./' + export const  defaultLocale), ...require('./' + l.code) }
 })
 
 const flatMessages = flatten(messages, flatOpts)
@@ -32,33 +32,33 @@ Object.keys(process.env).forEach(k => {
   }
 })
 
-exports.messages = unflatten(flatMessages, flatOpts)
+export const  messages = unflatten(flatMessages, flatOpts)
 
 // A subset of messages for UI separated for performance.
-exports.publicMessages = unflatten(
+export const  publicMessages = unflatten(
   Object.keys(flatMessages)
     .filter(k => ['common', 'pages', 'doc'].includes(k.split('_')[1]))
     .reduce((a, k) => { a[k] = flatMessages[k]; return a }, {})
   , flatOpts)
 
-exports.middleware = (req, res, next) => {
+export const  middleware = (req, res, next) => {
   const locales = acceptLangParser.parse(req.get('Accept-Language'))
-  const localeCode = req.cookies.i18n_lang || (locales && locales[0] && locales[0].code) || exports.defaultLocale
+  const localeCode = req.cookies.i18n_lang || (locales && locales[0] && locales[0].code) || export const  defaultLocale
   req.locale = localeCode
-  req.messages = exports.messages[localeCode] || exports.messages[exports.defaultLocale]
+  req.messages = export const  messages[localeCode] || export const  messages[export const  defaultLocale]
 
   // TODO: memoize ? use standard i18n module ?
 
   req.__ = (key, params = {}) => {
     key = key.replace(/\./g, '_')
-    let value = flatMessages[localeCode + '_' + key] || flatMessages[exports.defaultLocale + '_' + key] || ''
+    let value = flatMessages[localeCode + '_' + key] || flatMessages[export const  defaultLocale + '_' + key] || ''
     Object.keys(params).forEach(key => { value = value.replace(`{${key}}`, params[key]) })
     return value
   }
   req.__all = (key, params = {}) => {
     key = key.replace(/\./g, '_')
     const res = {}
-    for (const locale of exports.locales) {
+    for (const locale of export const  locales) {
       let value = flatMessages[locale.code + '_' + key]
       if (value) {
         Object.keys(params).forEach(key => { value = value.replace(`{${key}}`, params[key]) })

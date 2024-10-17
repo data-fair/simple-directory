@@ -1,21 +1,21 @@
 import config from '#config'
-const { authenticator } = require('otplib')
-const qrcode = require('qrcode')
-import { Router } from 'express'
-const requestIp = require('request-ip')
-const emailValidator = require('email-validator')
-const { v4: uuidv4 } = require('uuid')
-const tokens = require('../utils/tokens')
-const limiter = require('../utils/limiter')
-const passwords = require('../utils/passwords')
+import { authenticator } from 'otplib'
+import qrcode from 'qrcode'
+import { nanoid } from 'nanoid'
+import { Router, type Request } from 'express'
+import { reqIp } from '@data-fair/lib-express'
+import emailValidator from 'email-validator'
+import tokens from '../tokens/service.ts'
+import limiter from '../utils/limiter.js'
+import passwords from '../utils/passwords.js'
 // const debug = require('debug')('2fa')
 
-const router = exports.router = Router()
+const router = export const  router = Router()
 
 // TODO: apply some rate limiting
 
-exports.checkSession = async (req, userId) => {
-  const token = req.cookies[exports.cookieName(userId)]
+export const  checkSession = async (req: Request, userId: string) => {
+  const token = req.cookies[export const  cookieName(userId)]
   if (!token) return false
   let decoded
   try {
@@ -28,11 +28,11 @@ exports.checkSession = async (req, userId) => {
   return true
 }
 
-exports.isValid = (twoFA, token) => {
+export const isValid = (twoFA, token: string) => {
   return authenticator.check(token, twoFA.secret)
 }
 
-exports.cookieName = (userId) => 'id_token_2fa_' + userId
+export const cookieName = (userId: string) => 'id_token_2fa_' + userId
 
 router.post('/', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default

@@ -1,6 +1,6 @@
 // Util functions shared accross the main find (GET on collection) endpoints
 
-exports.pagination = (query, defaultSize = 10) => {
+export const  pagination = (query, defaultSize = 10) => {
   let size = defaultSize
   if (query && query.size && !isNaN(parseInt(query.size))) {
     size = parseInt(query.size)
@@ -14,7 +14,7 @@ exports.pagination = (query, defaultSize = 10) => {
   return { skip, size }
 }
 
-exports.sort = (sortStr) => {
+export const  sort = (sortStr) => {
   const sort = {}
   if (!sortStr) return sort
   sortStr.split(',').forEach(s => {

@@ -556,6 +556,6 @@ class LdapStorage implements SdStorage {
   }
 }
 
-exports.init = async (params, org) => new LdapStorage().init(params, org)
-exports.readonly = true
-exports.overwrite = config.storage.ldap.overwrite
+export const  init = async (params, org) => new LdapStorage().init(params, org)
+export const  readonly = true
+export const  overwrite = config.storage.ldap.overwrite

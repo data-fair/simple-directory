@@ -101,7 +101,7 @@ app.use('/api/', (req, res) => {
   return res.status(404).send('unknown api endpoint')
 })
 
-exports.run = async () => {
+export const run = async () => {
   debug('start run method')
 
   const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
@@ -167,7 +167,7 @@ exports.run = async () => {
   return app
 }
 
-exports.stop = async () => {
+export const stop = async () => {
   await httpTerminator.terminate()
 
   app.get('mailTransport').close()

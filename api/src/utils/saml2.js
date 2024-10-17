@@ -19,13 +19,13 @@ samlify.setSchemaValidator({
   }
 })
 
-exports.idps = {}
+export const  idps = {}
 
-exports.getProviderId = (url) => {
+export const  getProviderId = (url) => {
   return slug(new URL(url).host, { lower: true, strict: true })
 }
 
-exports.init = async () => {
+export const  init = async () => {
   // prepare certificates and their private keys
   await fs.ensureDir(config.saml2.certsDirectory)
   for (const name of ['signing', 'encrypt']) {
@@ -45,7 +45,7 @@ exports.init = async () => {
     Location: `${config.publicUrl}/api/auth/saml2-assert`
   }]
   debug('config service provider')
-  exports.sp = samlify.ServiceProvider({
+  export const  sp = samlify.ServiceProvider({
     entityID: `${config.publicUrl}/api/auth/saml2-metadata.xml`,
     assertionConsumerService,
     signingCert: (await fs.readFile(config.saml2.certsDirectory + '/signing.crt')).toString(),
@@ -55,16 +55,16 @@ exports.init = async () => {
     ...config.saml2.sp
   })
 
-  exports.publicProviders = []
+  export const  publicProviders = []
 
   debug('config identity providers')
   for (const providerConfig of config.saml2.providers) {
     const idp = new samlify.IdentityProvider(providerConfig)
     if (!idp.entityMeta.meta.entityID) throw new Error('missing entityID in saml IDP metadata')
-    const id = exports.getProviderId(idp.entityMeta.meta.entityID)
-    if (exports.idps[id]) throw new Error('Duplicate SAML provider id ' + id)
-    exports.idps[id] = idp
-    exports.publicProviders.push({
+    const id = export const  getProviderId(idp.entityMeta.meta.entityID)
+    if (export const  idps[id]) throw new Error('Duplicate SAML provider id ' + id)
+    export const  idps[id] = idp
+    export const  publicProviders.push({
       type: 'saml2',
       id,
       title: providerConfig.title,

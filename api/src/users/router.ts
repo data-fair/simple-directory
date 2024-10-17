@@ -366,4 +366,4 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
   }
 })
 
-module.exports = router
+export default router

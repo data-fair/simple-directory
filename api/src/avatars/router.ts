@@ -13,7 +13,7 @@ import defaultConfig from '../../config/default.js'
 
 const colorKeys = Object.keys(colors).filter(c => colors[c] && colors[c]['600'])
 
-const router = module.exports = Router()
+const router = export default  Router()
 
 const randomColor = (seed) => colors[colorKeys[Math.floor(seedrandom(seed)() * colorKeys.length)]]['600']
 
@@ -30,7 +30,7 @@ const getInitials = (type, identity) => {
 // inspired by https://github.com/thatisuday/npm-no-avatar/blob/master/lib/make.js
 // const font = path.resolve('./node_modules/no-avatar/lib/font.ttf')
 const font = resolve('./server/resources/nunito-ttf/Nunito-ExtraBold.ttf')
-const makeAvatar = async (text, color) => {
+const makeAvatar = async (text: string, color: string) => {
   return new Promise((resolve, reject) => {
     gm(100, 100, color)
       .fill('#FFFFFF')

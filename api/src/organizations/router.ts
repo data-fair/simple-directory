@@ -16,7 +16,7 @@ const partnersUtils = require('../utils/partners')
 const defaultConfig = require('../../config/default.js')
 const { send: sendNotification } = require('../utils/notifications')
 
-const router = module.exports = Router()
+const router = export default  Router()
 
 function getUserOrg (req, noDep = true) {
   return (reqUser(req).organizations || []).find(o => o.id === req.params.organizationId && !(noDep && o.department))

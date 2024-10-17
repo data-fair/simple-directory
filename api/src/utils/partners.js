@@ -1,4 +1,4 @@
-exports.shortenPartnerInvitation = (partner, org, partnerId) => {
+export const  shortenPartnerInvitation = (partner, org, partnerId) => {
   return {
     o: org.id,
     on: org.name,
@@ -8,7 +8,7 @@ exports.shortenPartnerInvitation = (partner, org, partnerId) => {
   }
 }
 
-exports.unshortenPartnerInvitation = (partnerPayload) => {
+export const  unshortenPartnerInvitation = (partnerPayload) => {
   return {
     orgId: partnerPayload.o,
     partnerId: partnerPayload.p,

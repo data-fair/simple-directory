@@ -11,12 +11,12 @@ const httpsAgent = new https.Agent({})
 cacheableLookup.install(httpAgent)
 cacheableLookup.install(httpsAgent)
 
-module.exports = axios.create({
+export default  axios.create({
   httpAgent,
   httpsAgent
 })
 
-module.exports.interceptors.response.use(response => response, error => {
+module.export const  interceptors.response.use(response => response, error => {
   if (!error.response) return Promise.reject(error)
   delete error.response.request
   delete error.response.headers
