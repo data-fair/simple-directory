@@ -1,4 +1,5 @@
 import type { User, Organization, Site } from '#types'
+import type { Avatar } from './avatars/service.ts'
 
 import mongo from '@data-fair/lib-node/mongo.js'
 import config from './config.ts'
@@ -28,6 +29,10 @@ export class SdMongo {
 
   get secrets () {
     return mongo.db.collection<{ _id: string, data: any } >('secrets')
+  }
+
+  get avatars () {
+    return mongo.db.collection<Avatar>('avatars')
   }
 
   init = async () => {

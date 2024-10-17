@@ -64,6 +64,11 @@
       "type": "object",
       "readOnly": true
     },
+    "oidc": {
+      "description": "Identity rattached to OIDC providers",
+      "type": "object",
+      "readOnly": true
+    },
     "defaultOrg": {
       "type": "string"
     },

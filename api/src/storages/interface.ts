@@ -8,11 +8,11 @@ export interface SdStorage {
 
   readonly?: boolean
 
+  getUser(userId: string): Promise<User | undefined>
   createUser(user: User): Promise<void>
   getUserByEmail(email: string, site?: Site): Promise<User>
 
   getOrganization(ordId: string): Promise<Organization | undefined>
-
   createOrganization(org: Organization, user: UserRef): Promise<void>
 
   getPassword(userId: string): Password

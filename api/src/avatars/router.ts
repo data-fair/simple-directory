@@ -1,29 +1,24 @@
 import { Router, type Request, type Response, type NextFunction } from 'express'
 import { resolve } from 'node:path'
-import { reqUser } from '@data-fair/lib-express'
+import { Account, assertAccountRole, httpError, reqSession } from '@data-fair/lib-express'
 import gm from 'gm'
 import colors from 'material-colors'
-import seedrandom from 'seedrandom'
 import initialsModule from 'initials'
 import capitalize from 'capitalize'
 import multer from 'multer'
+import { getAvatar, setAvatar } from './service.ts'
 import storages from '#storages'
-import userName from '../utils/user-name.ts'
-import defaultConfig from '../../config/default.js'
 
-const colorKeys = Object.keys(colors).filter(c => colors[c] && colors[c]['600'])
+const colorCodes = Object.values(colors).filter(c => (c as any)['600']).map(c => (c as any)['600']) as string[]
 
-const router = export default  Router()
+const router = Router()
+export default Router
 
-const randomColor = (seed) => colors[colorKeys[Math.floor(seedrandom(seed)() * colorKeys.length)]]['600']
+const randomColor = () => {
+  return colorCodes[Math.floor(Math.random() * colorCodes.length)]
+}
 
-const getInitials = (type, identity) => {
-  let name
-  if (type === 'user') {
-    name = userName(identity, true)
-  } else {
-    name = identity.name
-  }
+const getInitials = (name: string) => {
   return initialsModule(capitalize.words(name, true).replace('La ', 'la ').replace('Le ', 'le ').replace('De ', 'de ').replace('D\'', 'd\'').replace('L\'', 'l\'')).slice(0, 3)
 }
 
@@ -31,7 +26,7 @@ const getInitials = (type, identity) => {
 // const font = path.resolve('./node_modules/no-avatar/lib/font.ttf')
 const font = resolve('./server/resources/nunito-ttf/Nunito-ExtraBold.ttf')
 const makeAvatar = async (text: string, color: string) => {
-  return new Promise((resolve, reject) => {
+  return new Promise<BinaryData>((resolve, reject) => {
     gm(100, 100, color)
       .fill('#FFFFFF')
       .font(font)
@@ -48,45 +43,49 @@ const readAvatar = async (req: Request, res: Response, next: NextFunction) => {
   if (!['user', 'organization'].includes(req.params.type)) {
     return res.status(400).send('Owner type must be "user" or "organization"')
   }
-  let storage = storages.globalStorage
-
-  // TODO: what happens if someone outside of the org requests an avatar ?
-  // TODO: other type of org storage than ldap ?
-  if (req.params.type === 'user' && reqUser(req) && reqUser(req).organization && req.params.id.startsWith('ldap_' + reqUser(req).organization.id + '_')) {
-    const org = await storages.globalStorage.getOrganization(reqUser(req).organization.id)
-    if (!org) return res.status(401).send('Organization does not exist anymore')
-    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
-  }
-
-  const owner = req.params
-  let avatar = storage.getAvatar && await storage.getAvatar(owner)
+  const owner = req.params as unknown as Account
+  let avatar = await getAvatar(owner)
   if (!avatar || avatar.initials) {
-    let identity = req.params.type === 'organization' ? (await storage.getOrganization(req.params.id)) : (await storage.getUser({ id: req.params.id }))
-    if (req.params.department) identity = identity.departments.find(d => d.id === req.params.department)
-    if (!identity && req.params.type === 'user' && req.params.id === '_superadmin') identity = { firstName: 'Super', lastName: 'Admin' }
-    if (!identity) return res.status(404).send()
-
-    if (req.params.type === 'user' && identity.oauth) {
-      const oauthWithAvatar = Object.keys(identity.oauth).find(oauth => !!identity.oauth[oauth].avatarUrl)
-      if (oauthWithAvatar) return res.redirect(identity.oauth[oauthWithAvatar].avatarUrl)
+    let name
+    if (req.params.type === 'organization') {
+      const org = await storages.globalStorage.getOrganization(req.params.id)
+      if (!org) throw httpError(404)
+      name = org.name
+      if (req.params.department) {
+        const dep = org.departments?.find(d => d.id === req.params.department)
+        if (!dep) throw httpError(404)
+        name = dep.name
+      }
+    } else {
+      if (req.params.id === '_superadmin') {
+        name = 'Super Admin'
+      } else {
+        const user = await storages.globalStorage.getUser(req.params.id)
+        if (!user) throw httpError(404)
+        name = user.name
+        if (user.oauth) {
+          const oauthWithAvatar = Object.values(user.oauth).find(oauth => !!(oauth as any).avatarUrl)
+          if (oauthWithAvatar) return res.redirect((oauthWithAvatar as any).avatarUrl)
+        }
+        if (user.oidc) {
+          const oidcWithAvatar = Object.values(user.oidc).find(oauth => !!(oauth as any).avatarUrl)
+          if (oidcWithAvatar) return res.redirect((oidcWithAvatar as any).avatarUrl)
+        }
+      }
     }
-    if (req.params.type === 'user' && identity.oidc) {
-      const oidcWithAvatar = Object.keys(identity.oidc).find(oauth => !!identity.oidc[oauth].avatarUrl)
-      if (oidcWithAvatar) return res.redirect(identity.oidc[oidcWithAvatar].avatarUrl)
-    }
 
-    const initials = getInitials(req.params.type, identity)
+    const initials = getInitials(name)
 
     if (!avatar) {
       // create a initials based avatar
-      const color = randomColor(JSON.stringify(req.params))
+      const color = randomColor()
       const buffer = await makeAvatar(initials, color)
       avatar = { initials, color, buffer, owner }
-      if (storage.setAvatar) await storage.setAvatar(avatar)
+      await setAvatar(avatar)
     } else if (avatar.initials !== initials) {
       // this initials based avatar needs to be updated
-      avatar.buffer = await makeAvatar(initials, avatar.color)
-      await storage.setAvatar(avatar)
+      avatar.buffer = await makeAvatar(initials, avatar.color ?? randomColor())
+      await setAvatar(avatar)
     }
   }
 
@@ -101,20 +100,14 @@ const upload = multer({
   limits: { fileSize: 200000, files: 1, fields: 0 }
 })
 
-const isAdmin = (req, res, next) => {
-  if (!reqUser(req)) return res.status(401).send()
-  if (reqUser(req).adminMode) return next()
-  if (req.params.type === 'user' && req.params.id === reqUser(req).id) return next()
-  if (req.params.type === 'organization' && !req.params.department && (reqUser(req).organizations || []).find(o => o.id === req.params.id && o.role === 'admin' && !o.department)) return next()
-  if (req.params.type === 'organization' && req.params.department && (reqUser(req).organizations || []).find(o => o.id === req.params.id && o.role === 'admin' && (!o.department || o.department === req.params.department))) return next()
-  res.status(403).send()
+const isAdmin = (req: Request, res: Response, next: NextFunction) => {
+  assertAccountRole(reqSession(req), req.params as unknown as Account, 'admin')
+  return next()
 }
 
-const writeAvatar = async (req, res, next) => {
-  await storages.globalStorage.setAvatar({
-    owner: req.params,
-    buffer: req.file.buffer
-  })
+const writeAvatar = async (req: Request, res: Response, next: NextFunction) => {
+  if (!req.file) throw httpError(400)
+  await setAvatar({ owner: req.params as unknown as Account, buffer: req.file.buffer })
   res.status(201).send()
 }
 

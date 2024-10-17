@@ -47,13 +47,9 @@ class MongodbStorage implements SdStorage {
     return this._db
   }
 
-  async getUser (filter) {
-    if ('id' in filter) {
-      filter._id = filter.id
-      delete filter.id
-    }
-    const user = await this.db.collection('users').findOne(filter)
-    if (!user) return null
+  async getUser (userId: string) {
+    const user = await this.db.collection('users').findOne({ _id: userId })
+    if (!user) return
     return cleanUser(user)
   }
 
@@ -70,7 +66,7 @@ class MongodbStorage implements SdStorage {
       filter.host = { $exists: false }
     }
     const user = (await this.db.collection('users').find(filter).collation(collation).toArray())[0]
-    if (!user) return null
+    if (!user) return
     return cleanUser(user)
   }
 
@@ -401,20 +397,6 @@ class MongodbStorage implements SdStorage {
   async removeMember (organizationId, userId, department = null) {
     await this.db.collection('users')
       .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId, department } } })
-  }
-
-  async setAvatar (avatar) {
-    const filter = { 'owner.type': avatar.owner.type, 'owner.id': avatar.owner.id }
-    if (avatar.owner.department) filter['owner.department'] = avatar.owner.department
-    await this.db.collection('avatars').replaceOne(filter, avatar, { upsert: true })
-  }
-
-  async getAvatar (owner) {
-    const filter = { 'owner.type': owner.type, 'owner.id': owner.id }
-    if (owner.department) filter['owner.department'] = owner.department
-    const avatar = await this.db.collection('avatars').findOne(filter)
-    if (avatar && avatar.buffer) avatar.buffer = avatar.buffer.buffer
-    return avatar
   }
 
   async required2FA (user) {
