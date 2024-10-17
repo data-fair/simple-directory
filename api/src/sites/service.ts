@@ -5,7 +5,7 @@ import { reqHost, httpError, type Account } from '@data-fair/lib-express'
 import mongo from '#mongo'
 import memoize from 'memoizee'
 
-const getSiteByHost = memoize(async (host: string) => {
+export const getSiteByHost = memoize(async (host: string) => {
   return await mongo.sites.findOne({ host })
 }, {
   promise: true,

@@ -1,12 +1,17 @@
+import { type UserWritable } from '#types'
 import { Router } from 'express'
 import config from '#config'
-import { reqUser } from '@data-fair/lib-express'
+import { assertAccountRole, reqUser, reqSession, reqSiteUrl, type Account } from '@data-fair/lib-express'
+import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
-const dayjs = require('dayjs')
-const URL = require('url').URL
+import dayjs from 'dayjs'
+import { reqI18n } from '#i18n'
+import storages from '#storages'
+import { getLimits, setNbMembers } from '../limits/service.ts'
+import { reqSite, getSiteByHost } from '../sites/service.ts'
+import { __all } from '#i18n'
 const tokens = require('../utils/tokens')
 const mails = require('../mails')
-import userName from '../utils/user-name.ts'
 const limits = require('../utils/limits')
 const { shortenInvit, unshortenInvit } = require('../utils/invitations')
 const { send: sendNotification } = require('../utils/notifications')
@@ -14,49 +19,35 @@ const webhooks = require('../webhooks')
 const emailValidator = require('email-validator')
 const debug = require('debug')('invitations')
 
-const router = export default  Router()
+const router = Router()
+export default router
 
 // Invitation for a user to join an organization from an admin of this organization
 router.post('', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   debug('new invitation', req.body)
   const storage = storages.globalStorage
-  if (storage.db) {
-    const limit = await limits.get(storage.db, { type: 'organization', id: req.body.id }, 'store_nb_members')
-    if (limit.consumption >= limit.limit && limit.limit > 0) {
-      eventsLog.info('sd.invite.limit', `limit error for /invitations route with org ${req.body.id}`, logContext)
-      return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
-    }
+  const limits = await getLimits({ type: 'organization', id: req.body.id } as Account)
+
+  if (limits.store_nb_members.limit && limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption && (limits.store_nb_members.consumption ?? 0) >= limits.store_nb_members.limit) {
+    eventsLog.info('sd.invite.limit', `limit error for /invitations route with org ${req.body.id}`, logContext)
+    return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
   }
 
   const skipMail = req.query.skip_mail === 'true'
 
   const invitation = req.body
-  let userOrga = reqUser(req).organizations.find(o => o.id === invitation.id)
-  if (config.depAdminIsOrgAdmin) {
-    if (!reqUser(req).isAdmin && (!userOrga || userOrga.role !== 'admin')) {
-      return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
-    }
-  } else {
-    if (invitation.department) {
-      userOrga = reqUser(req).organizations.find(o => o.id === invitation.id && o.department === invitation.department) || userOrga
-    }
-    if (!reqUser(req).isAdmin && (!userOrga || userOrga.role !== 'admin' || (userOrga.department && userOrga.department !== invitation.department))) {
-      return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
-    }
-  }
+  assertAccountRole(reqSession(req), invitation as Account, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
 
-  let invitSite = reqSite(req)
+  let invitSite = await reqSite(req)
   let invitPublicBaseUrl = reqSiteUrl(req) + '/simple-directory'
   if (invitation.redirect) {
     const host = new URL(invitation.redirect).host
-    invitSite = await storage.getSiteByHost(host)
+    invitSite = (await getSiteByHost(host)) ?? undefined
     if (invitSite) {
       const url = new URL(config.publicUrl)
       url.host = host
@@ -83,16 +74,16 @@ router.post('', async (req, res, next) => {
     if (user && user.emailConfirmed) {
       debug('in alwaysAcceptInvitation and the user already exists, immediately add it as member', invitation.email)
       await storage.addMember(orga, user, invitation.role, invitation.department)
-      if (storage.db) await limits.setNbMembers(storage.db, orga.id)
+      await setNbMembers(orga.id)
       sendNotification({
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
         topic: { key: 'simple-directory:invitation-sent' },
         title: __all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
       })
     } else {
-      const newUser = {
+      const newUser: UserWritable = {
         email: invitation.email,
-        id: user ? user.id : nanoid()(),
+        id: user ? user.id : nanoid(),
         organizations: user ? user.organizations : [],
         emailConfirmed: false,
         defaultOrg: invitation.id,
@@ -100,12 +91,11 @@ router.post('', async (req, res, next) => {
       }
       if (invitSite) newUser.host = invitSite.host
       if (invitation.department) newUser.defaultDep = invitation.department
-      newUser.name = userName(newUser)
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUser)
-      await storage.createUser(newUser, reqUser(req))
-      await storage.addMember(orga, newUser, invitation.role, invitation.department)
-      if (storage.db) await limits.setNbMembers(storage.db, orga.id)
       const reboundRedirect = new URL(invitation.redirect || config.invitationRedirect || `${reqSiteUrl(req) + '/simple-directory'}/invitation`)
+      await storage.createUser(newUser, reqUser(req), new URL(reboundRedirect).host)
+      await storage.addMember(orga, newUser, invitation.role, invitation.department)
+      await setNbMembers(orga.id)
       const linkUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
       linkUrl.searchParams.set('step', 'createUser')
       linkUrl.searchParams.set('invit_token', token)
@@ -208,7 +198,7 @@ router.get('/_accept', async (req, res, next) => {
   debug('accept invitation', invit, verified)
   const storage = storages.globalStorage
 
-  const user = await storage.getUserByEmail(invit.email, reqSite(req))
+  const user = await storage.getUserByEmail(invit.email, await reqSite(req))
   logContext.user = user
   if (!user && storage.readonly) {
     errorUrl.searchParams.set('error', 'userUnknown')

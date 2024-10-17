@@ -25,7 +25,8 @@
     "admins",
     "storage",
     "cipherPassword",
-    "anonymousAction"
+    "anonymousAction",
+    "quotas"
   ],
   "properties": {
     "port": {
@@ -67,6 +68,15 @@
           "type": ["string", "null"]
         },
         "sendMails": {
+          "type": ["string", "null"]
+        },
+        "limits": {
+          "type": ["string", "null"]
+        },
+        "readAll": {
+          "type": ["string", "null"]
+        },
+        "sites": {
           "type": ["string", "null"]
         }
       }
@@ -204,6 +214,27 @@
           "type": "string"
         }
       }
+    },
+    "quotas": {
+      "type": "object",
+      "required": ["defaultMaxCreatedOrgs", "defaultMaxNbMembers"],
+      "properties": {
+        "defaultMaxCreatedOrgs": {
+          "type": "number"
+        },
+        "defaultMaxNbMembers": {
+          "type": "number"
+        }
+      }
+    },
+    "depAdminIsOrgAdmin": {
+      "type": "boolean"
+    },
+    "alwaysAcceptInvitation": {
+      "type": "boolean"
+    },
+    "invitationRedirect": {
+      "type": "string"
     }
   }
 }

@@ -1,3 +1,5 @@
 export type { User } from './user/index.ts'
+export type { UserWritable } from './user-writable/index.ts'
 export type { Organization } from './organization/index.ts'
 export type { Site } from './site/index.ts'
+export type { Limits } from './limits/index.ts'

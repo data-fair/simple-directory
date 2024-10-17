@@ -9,7 +9,7 @@ const router = export default  Router()
 
 const checkSecret = async (req) => {
   if (!reqUser(req)?.adminMode && (!req.query.key || req.query.key !== config.secretKeys.sites)) {
-    throw createError(401, 'wrong sites secret key')
+    throw httpError(401, 'wrong sites secret key')
   }
 }
 
@@ -69,8 +69,8 @@ router.delete('/:id', async (req, res, next) => {
 router.get('/_public', async (req, res, next) => {
   const sitePublicSchema = await import('../../types/site-public/index.mjs')
 
-  if (!reqSite(req)) return res.status(404).send()
-  reqSite(req).logo = reqSite(req).logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${reqSite(req).owner.type}/${reqSite(req).owner.id}/avatar.png`
+  if (!await reqSite(req)) return res.status(404).send()
+  await reqSite(req).logo = await reqSite(req).logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${await reqSite(req).owner.type}/${await reqSite(req).owner.id}/avatar.png`
   // stringify will keep only parts that are public knowledge
-  res.type('json').send(sitePublicSchema.stringify(reqSite(req)))
+  res.type('json').send(sitePublicSchema.stringify(await reqSite(req)))
 })

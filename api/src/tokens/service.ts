@@ -29,7 +29,7 @@ export const getPayload = (user: User) => {
   const payload: SessionState['user'] = {
     id: user.id,
     email: user.email,
-    name: userName(user),
+    name: user.name,
     organizations: (user.organizations || []).map(o => ({ ...o }))
   }
   if (config.admins.includes(user.email) || (config.adminCredentials?.password && config.adminCredentials?.email === user.email)) {
@@ -95,7 +95,7 @@ export const setCookieToken = (req: Request, res: Response, token: string, userO
 }
 
 export const keepalive = async (req: Request, res: Response, _user: User) => {
-  const logContext: EventLogContext = { req, account: reqSite(req)?.account }
+  const logContext: EventLogContext = { req, account: await reqSite(req)?.account }
 
   // User may have new organizations since last renew
   let org

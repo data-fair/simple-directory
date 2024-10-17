@@ -1,7 +1,6 @@
 import type { User } from '#types'
 
-export default (user: User, ignoreExisting = true): string => {
-  if (user.name && !ignoreExisting) return user.name
+export default (user: Partial<User> & Pick<User, 'email'>, ignoreExisting = true): string => {
   const lastName = user.lastName !== user.email ? user.lastName : ''
   if (user.firstName || lastName) return ((user.firstName || '') + ' ' + (lastName || '')).trim()
   // const oauthWithName = Object.keys(user.oauth || {}).find(p => !!user.oauth[p].name)

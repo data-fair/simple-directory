@@ -87,12 +87,12 @@ router.post('', async (req, res, next) => {
   // create user
   const newUser = {
     email: req.body.email,
-    id: nanoid()(),
+    id: nanoid(),
     firstName: req.body.firstName,
     lastName: req.body.lastName,
     emailConfirmed: false
   }
-  if (reqSite(req)) newUser.host = reqSite(req).host
+  if (await reqSite(req)) newUser.host = await reqSite(req).host
   newUser.name = userName(newUser)
   logContext.user = newUser
   if (invit) {
@@ -110,7 +110,7 @@ router.post('', async (req, res, next) => {
     newUser.password = await passwords.hashPassword(req.body.password)
   }
 
-  const user = await storages.globalStorage.getUserByEmail(req.body.email, reqSite(req))
+  const user = await storages.globalStorage.getUserByEmail(req.body.email, await reqSite(req))
 
   // email is already taken, send a conflict email
   const link = req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'

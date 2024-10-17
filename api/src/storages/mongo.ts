@@ -1,12 +1,16 @@
+import type { UserWritable, User, Organization } from '#types'
 import type { SdStorage } from './interface.ts'
-const createError = require('http-errors')
+import userName from '../utils/user-name.ts'
 import config from '#config'
 import { TwoFA } from '../2fa/service.ts'
+import { httpError } from '@data-fair/lib-express'
 const moment = require('moment')
 const escapeStringRegexp = require('escape-string-regexp')
-const mongoUtils = require('../utils/mongo')
 
 const collation = { locale: 'en', strength: 1 }
+
+export type UserInDb = Omit<User, 'id'> & { _id: string }
+export type OrgInDb = Omit<Organization, 'id'> & { _id: string }
 
 function cleanUser (resource) {
   resource.id = resource._id
@@ -25,10 +29,8 @@ function cleanOrganization (resource) {
   return resource
 }
 
-function cloneWithId (resource) {
-  const resourceClone = { ...resource, _id: resource.id }
-  delete resourceClone.id
-  return resourceClone
+function cloneWithId <T extends { id: string }> (resource: T): Omit<T, 'id'> & { _id: string } {
+  return { ...resource, _id: resource.id, id: undefined }
 }
 
 function prepareSelect (select) {
@@ -75,15 +77,19 @@ class MongodbStorage implements SdStorage {
     return user && user.password
   }
 
-  async createUser (user, byUser, host) {
+  async createUser (user: UserWritable, byUser: { id: string, name: string }, host: string) {
     byUser = byUser || user
-    host = host || new URL(config.publicUrl).host
-    const clonedUser = cloneWithId(user)
-    clonedUser.organizations = clonedUser.organizations || []
-    const date = new Date()
-    clonedUser.created = { id: byUser.id, name: byUser.name, date, host }
-    clonedUser.updated = { id: byUser.id, name: byUser.name, date }
-    await this.db.collection('users').findOneAndReplace({ _id: user.id }, clonedUser, { upsert: true })
+    const date = new Date().toISOString()
+    const fullUser: UserInDb = {
+      ...cloneWithId(user),
+      organizations: user.organizations ?? [],
+      created: { id: byUser.id, name: byUser.name, date },
+      updated: { id: byUser.id, name: byUser.name, date },
+      name: userName(user),
+      host: host || new URL(config.publicUrl).host
+    }
+
+    await this.db.collection('users').findOneAndReplace({ _id: user.id }, fullUser, { upsert: true })
     return user
   }
 
@@ -306,21 +312,21 @@ class MongodbStorage implements SdStorage {
     return { count, results: organizations.map(cleanOrganization) }
   }
 
-  async addMember (orga, user, role, department = null, readOnly = false) {
+  async addMember (orga: Organization, user: User, role: string, department: string | null = null, readOnly = false) {
     user.organizations = user.organizations || []
 
     let userOrga = user.organizations.find(o => o.id === orga.id && (o.department || null) === department)
 
     if (config.singleMembership && !userOrga && user.organizations.find(o => o.id === orga.id)) {
-      throw createError(400, 'cet utilisateur est déjà membre de cette organisation.')
+      throw httpError(400, 'cet utilisateur est déjà membre de cette organisation.')
     }
 
     if (!userOrga) {
       if (department && user.organizations.find(o => o.id === orga.id && !o.department)) {
-        throw createError(400, 'cet utilisateur est membre de l\'organisation parente, il ne peut pas être ajouté dans un département.')
+        throw httpError(400, 'cet utilisateur est membre de l\'organisation parente, il ne peut pas être ajouté dans un département.')
       }
       if (!department && user.organizations.find(o => o.id === orga.id && o.department)) {
-        throw createError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
+        throw httpError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
       }
       userOrga = {
         id: orga.id,
@@ -329,7 +335,7 @@ class MongodbStorage implements SdStorage {
       }
       if (department) {
         const fullDepartment = orga.departments.find(d => d.id === department)
-        if (!fullDepartment) throw createError(404, 'department not found')
+        if (!fullDepartment) throw httpError(404, 'department not found')
         userOrga.department = department
         userOrga.departmentName = fullDepartment.name
       }
@@ -352,16 +358,16 @@ class MongodbStorage implements SdStorage {
     // patch.department is the optional new department of the membership
 
     const org = await this.db.collection('organizations').findOne({ _id: organizationId })
-    if (!org) throw createError(404, 'organisation inconnue.')
+    if (!org) throw httpError(404, 'organisation inconnue.')
     let patchDepartmentObject
     if (patch.department) {
       patchDepartmentObject = org.departments.find(d => d.id === patch.department)
-      if (!patchDepartmentObject) throw createError(404, 'département inconnu.')
+      if (!patchDepartmentObject) throw httpError(404, 'département inconnu.')
     }
     const user = await this.db.collection('users').findOne({ _id: userId })
-    if (!user) throw createError(404, 'utilisateur inconnu.')
+    if (!user) throw httpError(404, 'utilisateur inconnu.')
     const userOrg = user.organizations.find(o => o.id === organizationId && (o.department || null) === (department || null))
-    if (!userOrg) throw createError(404, 'information de membre inconnue.')
+    if (!userOrg) throw httpError(404, 'information de membre inconnue.')
 
     // if we are switching department remove potential conflict
     if ((patch.department || null) !== (department || null)) {
@@ -382,10 +388,10 @@ class MongodbStorage implements SdStorage {
     }
 
     if (patch.department && user.organizations.find(o => o.id === organizationId && !o.department)) {
-      throw createError(400, 'cet utilisateur est membre de l\'organisation parente, il ne peut pas être ajouté dans un département.')
+      throw httpError(400, 'cet utilisateur est membre de l\'organisation parente, il ne peut pas être ajouté dans un département.')
     }
     if (!patch.department && user.organizations.find(o => o.id === organizationId && o.department)) {
-      throw createError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
+      throw httpError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
     }
 
     await this.db.collection('users').updateOne(

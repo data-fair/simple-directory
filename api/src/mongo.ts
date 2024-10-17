@@ -1,5 +1,6 @@
-import type { User, Organization, Site } from '#types'
+import type { Site, Limits } from '#types'
 import type { Avatar } from './avatars/service.ts'
+import type { OrgInDb, UserInDb } from './storages/mongo.ts'
 
 import mongo from '@data-fair/lib-node/mongo.js'
 import config from './config.ts'
@@ -16,11 +17,11 @@ export class SdMongo {
   }
 
   get users () {
-    return mongo.db.collection<User>('users')
+    return mongo.db.collection<UserInDb>('users')
   }
 
   get organizations () {
-    return mongo.db.collection<Organization>('organizations')
+    return mongo.db.collection<OrgInDb>('organizations')
   }
 
   get sites () {
@@ -33,6 +34,10 @@ export class SdMongo {
 
   get avatars () {
     return mongo.db.collection<Avatar>('avatars')
+  }
+
+  get limits () {
+    return mongo.db.collection<Limits>('limits')
   }
 
   init = async () => {

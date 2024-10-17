@@ -115,11 +115,11 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
-  let user = await storage.getUserByEmail(req.body.email, reqSite(req))
+  let user = await storage.getUserByEmail(req.body.email, await reqSite(req))
   logContext.user = user
   let userFromMainHost = false
   if (!user || user.emailConfirmed === false) {
-    if (reqSite(req)) {
+    if (await reqSite(req)) {
       user = await storage.getUserByEmail(req.body.email)
       userFromMainHost = true
     }
@@ -150,7 +150,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       action: 'changeHost'
     }
     const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
-    const changeHostUrl = new URL((reqSite(req).host.startsWith('localhost') ? 'http://' : 'https://') + reqSite(req).host + '/simple-directory/login')
+    const changeHostUrl = new URL((await reqSite(req).host.startsWith('localhost') ? 'http://' : 'https://') + await reqSite(req).host + '/simple-directory/login')
     changeHostUrl.searchParams.set('action_token', token)
     eventsLog.info('sd.auth.password.change-host', 'a user is suggested to switch to secondary host', logContext)
     if (req.is('application/x-www-form-urlencoded')) {
@@ -250,7 +250,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
-  const user = await storage.getUserByEmail(req.body.email, reqSite(req))
+  const user = await storage.getUserByEmail(req.body.email, await reqSite(req))
   logContext.user = user
 
   const redirect = req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
@@ -306,7 +306,7 @@ router.post('/site_redirect', async (req, res, next) => {
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(403).send()
-  if (reqSite(req)) return res.status(400).send()
+  if (await reqSite(req)) return res.status(400).send()
   const storage = storages.globalStorage
   const user = await storage.getUserByEmail(reqUser(req).email)
   if (!user) return res.status(404).send('user not found')
@@ -450,10 +450,10 @@ router.post('/keepalive', async (req, res, next) => {
 
   if (user.coreIdProvider && user.coreIdProvider.type === 'oauth') {
     let provider
-    if (!reqSite(req)) {
+    if (!await reqSite(req)) {
       provider = oauth.providers.find(p => p.id === user.coreIdProvider.id)
     } else {
-      const providerInfo = reqSite(req).authProviders.find(p => oauth.getProviderId(p.discovery) === user.coreIdProvider.id)
+      const providerInfo = await reqSite(req).authProviders.find(p => oauth.getProviderId(p.discovery) === user.coreIdProvider.id)
       provider = await oauth.initProvider({ ...providerInfo }, reqSiteUrl(req) + '/simple-directory')
     }
     if (!provider) {
@@ -477,7 +477,7 @@ router.post('/keepalive', async (req, res, next) => {
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
         const userInfo = await provider.userInfo(newToken.access_token)
-        const memberInfo = await authCoreProviderMemberInfo(storage, reqSite(req), provider, user.email, userInfo)
+        const memberInfo = await authCoreProviderMemberInfo(storage, await reqSite(req), provider, user.email, userInfo)
         await patchCoreOAuthUser(storage, provider, user, userInfo, memberInfo)
         await storage.writeOAuthToken(user, provider, newToken, offlineRefreshToken)
         eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
@@ -524,10 +524,10 @@ router.post('/action', async (req, res, next) => {
   }
 
   const storage = storages.globalStorage
-  let user = await storage.getUserByEmail(req.body.email, reqSite(req))
+  let user = await storage.getUserByEmail(req.body.email, await reqSite(req))
   logContext.user = user
   let action = req.body.action
-  if (!user && reqSite(req)) {
+  if (!user && await reqSite(req)) {
     user = await storage.getUserByEmail(req.body.email)
     action = 'changeHost'
   }
@@ -626,10 +626,10 @@ router.get('/me', (req, res) => {
 })
 
 router.get('/providers', async (req, res) => {
-  if (!reqSite(req)) {
+  if (!await reqSite(req)) {
     res.send(saml2.publicProviders.concat(oauth.publicProviders))
   } else {
-    const providers = reqSite(req).authProviders || []
+    const providers = await reqSite(req).authProviders || []
     const providersInfos = []
     for (const p of providers) {
       if (p.type === 'oidc') {
@@ -644,7 +644,7 @@ router.get('/providers', async (req, res) => {
       }
       if (p.type === 'otherSite') {
         const site = await storages.globalStorage.getSiteByHost(p.site)
-        if (site && site.owner.type === reqSite(req).owner.type && site.owner.id === reqSite(req).owner.id) {
+        if (site && site.owner.type === await reqSite(req).owner.type && site.owner.id === await reqSite(req).owner.id) {
           providersInfos.push({ type: 'otherSite', id: slug(site.host, { lower: true, strict: true }), title: p.title, color: site.theme?.primaryColor, img: site.logo, host: site.host })
         }
       }
@@ -662,10 +662,10 @@ const oauthLogin = async (req, res, next) => {
   const logContext = { req }
 
   let provider
-  if (!reqSite(req)) {
+  if (!await reqSite(req)) {
     provider = oauth.providers.find(p => p.id === req.params.oauthId)
   } else {
-    const providerInfo = reqSite(req).authProviders.find(p => oauth.getProviderId(p.discovery) === req.params.oauthId)
+    const providerInfo = await reqSite(req).authProviders.find(p => oauth.getProviderId(p.discovery) === req.params.oauthId)
     provider = await oauth.initProvider({ ...providerInfo }, reqSiteUrl(req) + '/simple-directory')
   }
   if (!provider) {
@@ -780,10 +780,10 @@ const oauthCallback = async (req, res, next) => {
   }
 
   let provider
-  if (!reqSite(req)) {
+  if (!await reqSite(req)) {
     provider = oauth.providers.find(p => p.state === providerState)
   } else {
-    for (const providerInfo of reqSite(req).authProviders) {
+    for (const providerInfo of await reqSite(req).authProviders) {
       const p = await oauth.initProvider({ ...providerInfo }, reqSiteUrl(req) + '/simple-directory')
       if (p.state === providerState) {
         provider = p
@@ -828,7 +828,7 @@ const oauthCallback = async (req, res, next) => {
   }
 
   // check for user with same email
-  let user = await storage.getUserByEmail(userInfo.user.email, reqSite(req))
+  let user = await storage.getUserByEmail(userInfo.user.email, await reqSite(req))
   logContext.user = user
 
   if (!user && !invit && config.onlyCreateInvited) {
@@ -846,7 +846,7 @@ const oauthCallback = async (req, res, next) => {
     }
   }
 
-  const memberInfo = await authCoreProviderMemberInfo(storage, reqSite(req), provider, userInfo.user.email, oauthInfo)
+  const memberInfo = await authCoreProviderMemberInfo(storage, await reqSite(req), provider, userInfo.user.email, oauthInfo)
 
   if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
 
@@ -870,7 +870,7 @@ const oauthCallback = async (req, res, next) => {
         [provider.id]: { ...oauthInfo }
       }
     }
-    if (reqSite(req)) user.host = reqSite(req).host
+    if (await reqSite(req)) user.host = await reqSite(req).host
     if (invit) {
       user.defaultOrg = invitOrga.id
       user.ignorePersonalAccount = true
@@ -1049,7 +1049,7 @@ router.post('/saml2-assert', async (req, res) => {
   }
 
   // check for user with same email
-  let user = await storage.getUserByEmail(email, reqSite(req))
+  let user = await storage.getUserByEmail(email, await reqSite(req))
 
   if (!user && !invit && config.onlyCreateInvited) {
     return returnError('onlyCreateInvited', 400)
@@ -1079,7 +1079,7 @@ router.post('/saml2-assert', async (req, res) => {
       }
     }
     logContext.user = user
-    if (reqSite(req)) user.host = reqSite(req).host
+    if (await reqSite(req)) user.host = await reqSite(req).host
     if (invit) {
       user.defaultOrg = invitOrga.id
       user.ignorePersonalAccount = true
@@ -1149,7 +1149,7 @@ router.post('/saml2-logout', (req, res) => {
 
 router.get('/saml2/providers', (req, res) => {
   // TODO: per-site auth providers
-  if (reqSite(req)) return res.send([])
+  if (await reqSite(req)) return res.send([])
   res.send(oauth.publicProviders)
 })
 

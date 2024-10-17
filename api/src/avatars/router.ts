@@ -1,3 +1,4 @@
+import config from '#config'
 import { Router, type Request, type Response, type NextFunction } from 'express'
 import { resolve } from 'node:path'
 import { Account, assertAccountRole, httpError, reqSession } from '@data-fair/lib-express'
@@ -101,7 +102,7 @@ const upload = multer({
 })
 
 const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  assertAccountRole(reqSession(req), req.params as unknown as Account, 'admin')
+  assertAccountRole(reqSession(req), req.params as unknown as Account, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
   return next()
 }
 

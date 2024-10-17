@@ -9,7 +9,7 @@ export interface SdStorage {
   readonly?: boolean
 
   getUser(userId: string): Promise<User | undefined>
-  createUser(user: User): Promise<void>
+  createUser(user: User, byUser?: { id: string, name: string }, host?: string): Promise<void>
   getUserByEmail(email: string, site?: Site): Promise<User>
 
   getOrganization(ordId: string): Promise<Organization | undefined>
@@ -19,4 +19,6 @@ export interface SdStorage {
   checkPassword(userId: string, password: string): Promise<boolean>
   get2FA(userId: string): Promise<TwoFA>
   set2FA(userId: string, twoFA: TwoFA): Promise<void>
+
+  addMember (orga: Organization, user: User, role: string, department: string | null, readOnly?: boolean): Promise<void>
 }

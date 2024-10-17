@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "lastUpdate",
+    "store_nb_members"
+  ],
+  "properties": {
+    "type": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "lastUpdate": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "store_nb_members": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "number"
+        },
+        "consumption": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}
