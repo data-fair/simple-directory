@@ -72,7 +72,7 @@ const limiter = (req) => {
 router.post('/contact', async (req, res) => {
   if (!reqUser(req) && !config.anonymousContactForm) return res.status(401).send()
 
-  if (!emailValidator.validate(req.body.from)) return res.status(400).send(req.messages.errors.badEmail)
+  if (!emailValidator.validate(req.body.from)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
 
   if (!reqUser(req)) {
     if (!req.body.token) return res.status(401).send()

@@ -1,4 +1,4 @@
-export default  {
+export default {
   port: 5690,
   publicUrl: 'http://localhost:5689/simple-directory',
   // use this host when debugging a data-fair inside a virtualbox vm
@@ -92,10 +92,6 @@ export default  {
   notifyUrl: 'http://localhost:5689/notify',
   privateNotifyUrl: 'http://localhost:8088',
   plannedDeletionDelay: 1,
-  locks: {
-    // in seconds
-    ttl: 20
-  },
   cleanup: {
     cron: '*/1 * * * *',
     deleteInactive: true,

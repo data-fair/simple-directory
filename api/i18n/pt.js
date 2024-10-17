@@ -1,7 +1,7 @@
 // WARN: do not use underscore in keys, it is used as delimiter when reading
 // messages from environment variables
 
-export default  {
+export default {
   root: {
     title: 'Simple Directory',
     description: 'Uma gestão simplificada dos seus utilizadores e organizações numa arquitectura moderna orientada para a web.'

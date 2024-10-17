@@ -51,9 +51,9 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
-  if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
-  if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
+  if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  if (!req.body.password) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
 
   const returnError = async (error, errorCode) => {
     // prevent attacker from analyzing response time
@@ -63,7 +63,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       refererUrl.searchParams.set('error', error)
       res.redirect(refererUrl.href)
     } else {
-      res.status(errorCode).send(req.messages.errors[error] || error)
+      res.status(errorCode).send(reqI18n(req).messages.errors[error] || error)
     }
   }
 
@@ -226,15 +226,15 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  if (!config.passwordless) return res.status(400).send(req.messages.errors.noPasswordless)
-  if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
-  if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
+  if (!config.passwordless) return res.status(400).send(reqI18n(req).messages.errors.noPasswordless)
+  if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
 
   try {
     await limiter(req).consume(reqIp(req), 1)
   } catch (err) {
     eventsLog.warn('sd.auth.passwordless.rate-limit', `rate limit error for /auth/passwordless route ${req.body.email}`, logContext)
-    return res.status(429).send(req.messages.errors.rateLimitAuth)
+    return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }
 
   let org
@@ -242,7 +242,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
     org = await storages.globalStorage.getOrganization(req.body.org)
     if (!org) {
       eventsLog.info('sd.auth.passwordless.fail', `a passwordless authentication failed due to unknown org ${req.body.org}`, logContext)
-      return res.status(404).send(req.messages.errors.orgaUnknown)
+      return res.status(404).send(reqI18n(req).messages.errors.orgaUnknown)
     }
   }
 
@@ -261,7 +261,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'noCreation',
-      messages: req.messages,
+      messages: reqI18n(req).messages,
       to: req.body.email,
       params: { link: redirect, host: redirectUrl.host, origin: redirectUrl.origin }
     })
@@ -272,7 +272,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   if (org && req.body.membersOnly === 'true' && !user.organizations.find(o => o.id === org.id)) {
     if (!org) {
       eventsLog.info('sd.auth.passwordless.fail', `a passwordless authentication failed due to unknown org ${req.body.org}`, logContext)
-      return res.status(404).send(req.messages.errors.orgaUnknown)
+      return res.status(404).send(reqI18n(req).messages.errors.orgaUnknown)
     }
   }
 
@@ -283,7 +283,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   // passwordless is not compatible with 2FA for now
   if (await storage.get2FA(user.id) || await storage.required2FA(payload)) {
     eventsLog.info('sd.auth.passwordless.fail', 'a passwordless authentication failed due to incompatibility with 2fa', logContext)
-    return res.status(400).send(req.messages.errors.passwordless2FA)
+    return res.status(400).send(reqI18n(req).messages.errors.passwordless2FA)
   }
 
   const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, req.body.org, req.body.dep), req.body.orgStorage)
@@ -291,7 +291,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'login',
-    messages: req.messages,
+    messages: reqI18n(req).messages,
     to: user.email,
     params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
   })
@@ -511,16 +511,16 @@ router.post('/action', async (req, res, next) => {
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
-  if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
-  if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
-  if (!req.body.action) return res.status(400).send(req.messages.errors.badCredentials)
+  if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  if (!req.body.action) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
 
   try {
     await limiter(req).consume(reqIp(req), 1)
   } catch (err) {
     console.error('Rate limit error for /action route', reqIp(req), req.body.email, err)
     eventsLog.warn('sd.auth.action.rate-limit', 'rate limit error for /action route', logContext)
-    return res.status(429).send(req.messages.errors.rateLimitAuth)
+    return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }
 
   const storage = storages.globalStorage
@@ -538,7 +538,7 @@ router.post('/action', async (req, res, next) => {
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'noCreation',
-      messages: req.messages,
+      messages: reqI18n(req).messages,
       to: req.body.email,
       params: { link, host: linkUrl.host, origin: linkUrl.origin }
     })
@@ -557,7 +557,7 @@ router.post('/action', async (req, res, next) => {
   await mails.send({
     transport: req.app.get('mailTransport'),
     key: 'action',
-    messages: req.messages,
+    messages: reqI18n(req).messages,
     to: user.email,
     params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
   })
@@ -775,7 +775,7 @@ const oauthCallback = async (req, res, next) => {
       refererUrl.searchParams.set('error', error)
       res.redirect(refererUrl.href)
     } else {
-      res.status(errorCode).send(req.messages.errors[error] || error)
+      res.status(errorCode).send(reqI18n(req).messages.errors[error] || error)
     }
   }
 
@@ -901,14 +901,14 @@ const oauthCallback = async (req, res, next) => {
     if (storage.db) {
       const consumer = { type: 'organization', id: invitOrga.id }
       const limit = await limits.get(storage.db, consumer, 'store_nb_members')
-      if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(req.messages.errors.maxNbMembers)
+      if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }
     await storage.addMember(invitOrga, user, invit.role, invit.department)
     eventsLog.info('sd.auth.oauth.accept-invite', `a user accepted an invitation in oauth callback ${user.id}`, logContext)
     sendNotification({
       sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
-      title: req.__all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
+      title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
     })
     if (storage.db) await limits.setNbMembers(storage.db, invitOrga.id)
   }
@@ -1020,7 +1020,7 @@ router.post('/saml2-assert', async (req, res) => {
       refererUrl.searchParams.set('error', error)
       res.redirect(refererUrl.href)
     } else {
-      res.status(errorCode).send(req.messages.errors[error] || error)
+      res.status(errorCode).send(reqI18n(req).messages.errors[error] || error)
     }
   }
 
@@ -1106,14 +1106,14 @@ router.post('/saml2-assert', async (req, res) => {
     if (storage.db) {
       const consumer = { type: 'organization', id: invitOrga.id }
       const limit = await limits.get(storage.db, consumer, 'store_nb_members')
-      if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(req.messages.errors.maxNbMembers)
+      if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }
     await storage.addMember(invitOrga, user, invit.role, invit.department)
     eventsLog.info('sd.auth.saml.accept-invite', `a user accepted an invitation in saml callback ${user.id}`, logContext)
     sendNotification({
       sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
-      title: req.__all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
+      title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
     })
     if (storage.db) await limits.setNbMembers(storage.db, invitOrga.id)
   }

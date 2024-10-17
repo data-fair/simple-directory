@@ -48,7 +48,7 @@ router.get('', async (req, res, next) => {
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
   if (allFields) {
-    if (!reqUser(req) || !reqUser(req).adminMode) return res.status(403).send(req.messages.errors.permissionDenied)
+    if (!reqUser(req) || !reqUser(req).adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   } else {
     params.select = ['id', 'name']
   }
@@ -71,7 +71,7 @@ router.get('/:organizationId', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send()
   // Only allowed for the organizations that the user belongs to
   if (!isMember(req)) {
-    return res.status(403).send(req.messages.errors.permissionDenied)
+    return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   }
   const orga = await storages.globalStorage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
@@ -87,7 +87,7 @@ router.get('/:organizationId/roles', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send()
   // Only search through the organizations that the user belongs to
   if (!isMember(req)) {
-    return res.status(403).send(req.messages.errors.permissionDenied)
+    return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   }
   const orga = await storages.globalStorage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
@@ -106,7 +106,7 @@ router.post('', async (req, res, next) => {
     const createdOrgs = (await storage.findOrganizations({ size: 0, skip: 0, creator: reqUser(req).id })).count
     let maxCreatedOrgs = (await storage.getUser({ id: reqUser(req).id })).maxCreatedOrgs
     if (maxCreatedOrgs === undefined || maxCreatedOrgs === null) maxCreatedOrgs = config.quotas.defaultMaxCreatedOrgs
-    if (maxCreatedOrgs !== -1 && createdOrgs >= maxCreatedOrgs) return res.status(429).send(req.messages.errors.maxCreatedOrgs)
+    if (maxCreatedOrgs !== -1 && createdOrgs >= maxCreatedOrgs) return res.status(429).send(reqI18n(req).messages.errors.maxCreatedOrgs)
   }
   const orga = req.body
   orga.id = orga.id || nanoid()()
@@ -133,7 +133,7 @@ router.patch('/:organizationId', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send()
   // Only allowed for the organizations that the user is admin of
   if (!isOrgAdmin(req)) {
-    return res.status(403).send(req.messages.errors.permissionDenied)
+    return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   }
   const fullPatchKeys = reqUser(req).adminMode ? [...patchKeys, 'orgStorage'] : patchKeys
   const patchedKeys = Object.keys(req.body)
@@ -146,7 +146,7 @@ router.patch('/:organizationId', async (req, res, next) => {
     for (const dep of req.body.departments) {
       if (!dep.id) {
         if (req.body.departments.find(d => d.id && d.name === dep.name)) {
-          return res.status(400).send(req.messages.errors.duplicateDep)
+          return res.status(400).send(reqI18n(req).messages.errors.duplicateDep)
         }
         const baseId = slug(dep.name, { lower: true, strict: true })
         let id = baseId
@@ -183,7 +183,7 @@ router.get('/:organizationId/members', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send()
   // Only search through the organizations that the user belongs to
   if (!isMember(req)) {
-    return res.status(403).send(req.messages.errors.permissionDenied)
+    return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   }
 
   const org = await storages.globalStorage.getOrganization(req.params.organizationId)
@@ -268,7 +268,7 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
   } else if (member && dep && userDep && userDep.role === 'admin') {
     // ok
   } else {
-    return res.status(403).send(req.messages.errors.permissionDenied)
+    return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   }
 
   eventsLog.info('sd.org.member.del', `a user removed a member from an organization ${member.name} (${member.id}), ${userOrg?.name || req.params.organizationId} (${userOrg?.id || req.params.organizationId})`, logContext)
@@ -319,13 +319,13 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
     // ok
   } else {
     console.log()
-    return res.status(403).send(req.messages.errors.permissionDenied)
+    return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   }
   const orga = await storage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   logContext.account = { type: 'organization', id: orga.id, name: orga.name }
   const roles = orga.roles || config.roles.defaults
-  if (!roles.includes(req.body.role)) return res.status(400).send(req.messages.errors.unknownRole.replace('{role}', req.body.role))
+  if (!roles.includes(req.body.role)) return res.status(400).send(reqI18n(req).messages.errors.unknownRole.replace('{role}', req.body.role))
   await storage.patchMember(req.params.organizationId, req.params.userId, req.query.department, req.body)
   eventsLog.info('sd.org.member.patch', `a user changed the role of a member in an organization ${member.name} (${member.id}) ${req.body.role}, ${userOrg.name} (${userOrg.id})`, logContext)
   webhooks.postIdentity('user', await storage.getUser({ id: req.params.userId }))
@@ -343,9 +343,9 @@ router.delete('/:organizationId', async (req, res, next) => {
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
-  if (!isOrgAdmin(req)) return res.status(403).send(req.messages.errors.permissionDenied)
+  if (!isOrgAdmin(req)) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   const { count } = await storages.globalStorage.findMembers(req.params.organizationId, { size: 0, skip: 0 })
-  if (count > 1) return res.status(400).send(req.messages.errors.nonEmptyOrganization)
+  if (count > 1) return res.status(400).send(reqI18n(req).messages.errors.nonEmptyOrganization)
   await storages.globalStorage.deleteOrganization(req.params.organizationId)
   eventsLog.info('sd.org.delete', `a user deleted an organization ${req.params.organizationId}`, logContext)
   webhooks.deleteIdentity('organization', req.params.organizationId)
@@ -367,7 +367,7 @@ if (config.managePartners) {
     const { assertValid } = await import('../../types/partner-post/index.mjs')
 
     if (!reqUser(req)) return res.status(401).send()
-    if (!isOrgAdmin(req)) return res.status(403).send(req.messages.errors.permissionDenied)
+    if (!isOrgAdmin(req)) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
 
     const partnerPost = req.body
     // @ts-ignore
@@ -400,7 +400,7 @@ if (config.managePartners) {
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'partnerInvitation',
-      messages: req.messages,
+      messages: reqI18n(req).messages,
       to: partnerPost.contactEmail,
       params
     })
@@ -408,7 +408,7 @@ if (config.managePartners) {
     sendNotification({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
       topic: { key: 'simple-directory:partner-invitation-sent' },
-      title: req.__all('notifications.sentPartnerInvitation', { partnerName: partnerPost.name, email: partnerPost.contactEmail, orgName: orga.name })
+      title: __all('notifications.sentPartnerInvitation', { partnerName: partnerPost.name, email: partnerPost.contactEmail, orgName: orga.name })
     })
 
     res.status(201).send()
@@ -463,7 +463,7 @@ if (config.managePartners) {
     const notif = {
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
       topic: { key: 'simple-directory:partner-invitation-accepted' },
-      title: req.__all('notifications.acceptedPartnerInvitation', { email: partnerAccept.contactEmail, partnerName: partnerOrga.name, orgName: orga.name })
+      title: __all('notifications.acceptedPartnerInvitation', { email: partnerAccept.contactEmail, partnerName: partnerOrga.name, orgName: orga.name })
     }
     // send notif to all admins subscribed to the topic
     debugPartners(notif)
@@ -477,7 +477,7 @@ if (config.managePartners) {
     const logContext = { req }
 
     if (!reqUser(req)) return res.status(401).send()
-    if (!isOrgAdmin(req)) return res.status(403).send(req.messages.errors.permissionDenied)
+    if (!isOrgAdmin(req)) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
     const storage = storages.globalStorage
     await storage.deletePartner(req.params.organizationId, req.params.partnerId)
 

@@ -23,8 +23,8 @@ router.post('', async (req, res, next) => {
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
-  if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
-  if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
+  if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   debug('new invitation', req.body)
   const storage = storages.globalStorage
   if (storage.db) {
@@ -41,14 +41,14 @@ router.post('', async (req, res, next) => {
   let userOrga = reqUser(req).organizations.find(o => o.id === invitation.id)
   if (config.depAdminIsOrgAdmin) {
     if (!reqUser(req).isAdmin && (!userOrga || userOrga.role !== 'admin')) {
-      return res.status(403).send(req.messages.errors.permissionDenied)
+      return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
     }
   } else {
     if (invitation.department) {
       userOrga = reqUser(req).organizations.find(o => o.id === invitation.id && o.department === invitation.department) || userOrga
     }
     if (!reqUser(req).isAdmin && (!userOrga || userOrga.role !== 'admin' || (userOrga.department && userOrga.department !== invitation.department))) {
-      return res.status(403).send(req.messages.errors.permissionDenied)
+      return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
     }
   }
 
@@ -87,7 +87,7 @@ router.post('', async (req, res, next) => {
       sendNotification({
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
         topic: { key: 'simple-directory:invitation-sent' },
-        title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
+        title: __all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
       })
     } else {
       const newUser = {
@@ -122,7 +122,7 @@ router.post('', async (req, res, next) => {
         await mails.send({
           transport: req.app.get('mailTransport'),
           key: 'invitation',
-          messages: req.messages,
+          messages: reqI18n(req).messages,
           to: req.body.email,
           params
         })
@@ -132,7 +132,7 @@ router.post('', async (req, res, next) => {
       const notif = {
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
         topic: { key: 'simple-directory:add-member' },
-        title: req.__all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
+        title: __all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
       }
       // send notif to all admins subscribed to the topic
       sendNotification(notif)
@@ -159,7 +159,7 @@ router.post('', async (req, res, next) => {
       await mails.send({
         transport: req.app.get('mailTransport'),
         key: 'invitation',
-        messages: req.messages,
+        messages: reqI18n(req).messages,
         to: req.body.email,
         params
       })
@@ -169,7 +169,7 @@ router.post('', async (req, res, next) => {
     sendNotification({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
       topic: { key: 'simple-directory:invitation-sent' },
-      title: req.__all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
+      title: __all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
     })
 
     if (reqUser(req).adminMode || reqUser(req).asAdmin) {
@@ -288,7 +288,7 @@ router.get('/_accept', async (req, res, next) => {
   const notif = {
     sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },
     topic: { key: 'simple-directory:invitation-accepted' },
-    title: req.__all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
+    title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
   }
   // send notif to all admins subscribed to the topic
   sendNotification(notif)

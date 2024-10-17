@@ -11,7 +11,7 @@ export default  async (req, res, next) => {
   } catch (err) {
     const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
     eventsLog.warn('sd.anonym-action.rate-limit', 'rate limit error for /anonymous-action route', { req })
-    return res.status(429).send(req.messages.errors.rateLimitAuth)
+    return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }
   const payload = { anonymousAction: true, validation: 'wait' }
   const token = tokens.sign(req.app.get('keys'), payload, config.anonymousAction.expiresIn, config.anonymousAction.notBefore)

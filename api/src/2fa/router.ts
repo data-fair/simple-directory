@@ -6,9 +6,10 @@ import { Router, type Request } from 'express'
 import { reqIp } from '@data-fair/lib-express'
 import emailValidator from 'email-validator'
 import storages from '#storages'
-import tokens from '../tokens/service.ts'
+import { session } from '@data-fair/lib-express'
+import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.js'
-import passwords from '../utils/passwords.js'
+import { checkPassword, hashPassword } from '../utils/passwords.ts'
 // const debug = require('debug')('2fa')
 
 const router = Router()
@@ -16,12 +17,13 @@ export default router
 
 // TODO: apply some rate limiting
 
-export const  checkSession = async (req: Request, userId: string) => {
-  const token = req.cookies[export const  cookieName(userId)]
+export const checkSession = async (req: Request, userId: string) => {
+  const token = req.cookies[cookieName(userId)]
   if (!token) return false
   let decoded
   try {
-    decoded = await tokens.verify(req.app.get('keys'), token)
+    // TODO: use jwks store same as session token verification
+    decoded = await session.verifyToken(token)
   } catch (err) {
     console.error('invalid 2fa token', err)
     return false
@@ -39,33 +41,33 @@ export const cookieName = (userId: string) => 'id_token_2fa_' + userId
 router.post('/', async (req, res, next) => {
   const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
 
-  if (!req.body || !req.body.email) return res.status(400).send(req.messages.errors.badEmail)
-  if (!emailValidator.validate(req.body.email)) return res.status(400).send(req.messages.errors.badEmail)
-  if (!req.body.password) return res.status(400).send(req.messages.errors.badCredentials)
+  if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  if (!req.body.password) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
 
   try {
     await limiter(req).consume(reqIp(req), 1)
   } catch (err) {
     eventsLog.warn('sd.2fa.rate-limit', `rate limit error for /2fa route with email ${req.body.email}`, { req })
-    return res.status(429).send(req.messages.errors.rateLimitAuth)
+    return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }
 
   const storage = storages.globalStorage
   const user = await storage.getUserByEmail(req.body.email, req.site)
-  if (!user || user.emailConfirmed === false) return res.status(400).send(req.messages.errors.badCredentials)
+  if (!user || user.emailConfirmed === false) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
   if (storage.getPassword) {
     const storedPassword = await storage.getPassword(user.id)
-    const validPassword = await passwords.checkPassword(req.body.password, storedPassword)
-    if (!validPassword) return res.status(400).send(req.messages.errors.badCredentials)
+    const validPassword = await checkPassword(req.body.password, storedPassword)
+    if (!validPassword) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
   } else {
     if (!await storage.checkPassword(user.id, req.body.password)) {
-      return res.status(400).send(req.messages.errors.badCredentials)
+      return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
     }
   }
 
   const user2FA = await storage.get2FA(user.id)
   if (user2FA && user2FA.active) {
-    return res.status(400).send(req.messages.errors.conflict2FA)
+    return res.status(400).send(reqI18n(req).messages.errors.conflict2FA)
   }
 
   if (!req.body.token) {
@@ -78,9 +80,9 @@ router.post('/', async (req, res, next) => {
   } else {
     // validate secret with initial token
     const isValid = authenticator.check(req.body.token, user2FA.secret)
-    if (!isValid) return res.status(400).send(req.messages.errors.bad2FAToken)
+    if (!isValid) return res.status(400).send(reqI18n(req).messages.errors.bad2FAToken)
     const recovery = randomUUID()
-    await storage.patchUser(user.id, { '2FA': { ...user2FA, active: true, recovery: await passwords.hashPassword(recovery) } })
+    await storage.patchUser(user.id, { '2FA': { ...user2FA, active: true, recovery: await hashPassword(recovery) } })
     eventsLog.info('sf.2fa.recover', `user recovered 2fa with initial token ${req.body.email}`, { req, user })
     res.send({ recovery })
   }
