@@ -1,3 +1,5 @@
+import { deleteOAuthToken, writeOAuthToken } from '../oauth-tokens/service.ts'
+
 // this single small worker loop doesn't rellay justify running in separate processes
 // we simply run it as part of the api server
 
@@ -48,11 +50,11 @@ const task = async () => {
           const userInfo = await provider.userInfo(newToken.access_token)
           const memberInfo = await auth.authCoreProviderMemberInfo(storage, null, provider, user.email, userInfo)
           await auth.patchCoreOAuthUser(storage, provider, user, userInfo, memberInfo)
-          await storage.writeOAuthToken(user, provider, newToken, offlineRefreshToken, token.loggedOut)
+          await writeOAuthToken(user, provider, newToken, offlineRefreshToken, token.loggedOut)
           eventsLog.info('sd.cleanup-cron.offline-token.refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { user })
         } catch (err) {
           if (err?.data?.payload?.error === 'invalid_grant') {
-            await storage.deleteOAuthToken(user, provider)
+            await deleteOAuthToken(user, provider)
             eventsLog.warn('sd.cleanup-cron.offline-token.delete', `deleted invalid offline token for user ${user.id} and provider ${provider.id}`, { user })
             await planDeletion(user)
           } else {

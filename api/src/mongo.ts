@@ -1,4 +1,4 @@
-import type { Site, Limits } from '#types'
+import type { Site, Limits, OAuthToken } from '#types'
 import type { Avatar } from './avatars/service.ts'
 import type { OrgInDb, UserInDb } from './storages/mongo.ts'
 
@@ -38,6 +38,10 @@ export class SdMongo {
 
   get limits () {
     return mongo.db.collection<Limits>('limits')
+  }
+
+  get oauthTokens () {
+    return mongo.db.collection<OAuthToken>('oauth-tokens')
   }
 
   init = async () => {

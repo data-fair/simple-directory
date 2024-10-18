@@ -1,11 +1,12 @@
 import { Router } from 'express'
 import { reqUser } from '@data-fair/lib-express'
+import { readOAuthTokens } from './service.ts'
 
-const router = export default  Router()
+const router = Router()
+export default router
 
 router.get('', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send()
   if (!reqUser(req)?.adminMode) return res.status(403).send()
-  const oauthTokens = await storages.globalStorage.readOAuthTokens()
-  res.send(oauthTokens)
+  res.send(await readOAuthTokens())
 })

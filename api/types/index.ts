@@ -10,3 +10,11 @@ export type { Invitation } from './invitation/index.ts'
 export type UserWritable = Omit<User, 'created' | 'updated' | 'name'>
 
 export type Member = Pick<User, 'email' | 'emailConfirmed' | 'host' | 'plannedDeletion'> & OrganizationMembership
+
+export type OAuthToken = {
+  token: any,
+  provider: { type: string, id: string, title: string },
+  user: { id: string, name: string, email: string },
+  offlineRefreshToken?: boolean,
+  loggedOut?: Date
+}
