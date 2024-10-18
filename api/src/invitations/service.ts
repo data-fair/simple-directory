@@ -1,3 +1,5 @@
+import { type Invitation } from '#types'
+
 const mapping = [
   ['n', 'name'],
   ['e', 'email'],
@@ -6,10 +8,10 @@ const mapping = [
 ]
 
 // prepare a smaller version of the invitation object to minimize token size
-export const  shortenInvit = (invit) => {
-  const shortInvit = { ...invit }
-  Object.keys(invit).forEach(key => {
-    if (invit[key] === null) delete shortInvit[key]
+export const shortenInvit = (invit: Invitation): any => {
+  const shortInvit: any = { ...invit }
+  Object.entries(invit).forEach(([key, value]) => {
+    if (value === null) delete shortInvit[key]
   })
   for (const [shortKey, longKey] of mapping) {
     if (longKey in shortInvit) {
@@ -20,7 +22,7 @@ export const  shortenInvit = (invit) => {
   return shortInvit
 }
 
-export const  unshortenInvit = (shortInvit) => {
+export const unshortenInvit = (shortInvit: any) => {
   const invit = { ...shortInvit }
   for (const [shortKey, longKey] of mapping) {
     if (shortKey in invit) {
@@ -28,5 +30,5 @@ export const  unshortenInvit = (shortInvit) => {
       delete invit[shortKey]
     }
   }
-  return invit
+  return invit as Invitation
 }

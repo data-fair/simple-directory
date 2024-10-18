@@ -1,39 +1,34 @@
-import type {Limits} from '#types'
+import type { Organization, Limits } from '#types'
 import config from '#config'
 import mongo from '#mongo'
-import { reqUser, httpError, type Account } from '@data-fair/lib-express'
+import { type Account } from '@data-fair/lib-express'
 
-export const  getLimits = async (consumer: Account) => {
-  let limit: Limits | null = await mongo.limits.findOne({ type: consumer.type, id: consumer.id }, {projection: {_id: 0}})
+export const getLimits = async (org: Organization) => {
+  let limit: Limits | null = await mongo.limits.findOne({ type: 'organization', id: org.id }, { projection: { _id: 0 } })
   if (!limit || !limit.store_nb_members) {
     limit = {
-      type: consumer.type,
-      id: consumer.id,
-      name: consumer.name || consumer.id,
+      type: 'organization',
+      id: org.id,
+      name: org.name,
       lastUpdate: new Date().toISOString(),
-      store_nb_members: { limit: config.quotas.defaultMaxNbMembers }
+      store_nb_members: { limit: config.quotas.defaultMaxNbMembers, consumption: await getNbMembers(org.id) }
     }
-    await mongo.limits.replaceOne({ type: consumer.type, id: consumer.id }, limit, { upsert: true })
-  }
-  if (limit.store_nb_members.consumption === undefined) {
-    if (consumer.type === 'organization') limit = await setNbMembers(consumer.id)
-    else limit.store_nb_members.consumption = 1
-  }
-  if (limit.store_nb_members.limit === undefined) {
-    limit.store_nb_members.limit = config.quotas.defaultMaxNbMembers
+    await mongo.limits.replaceOne({ type: 'organization', id: org.id }, limit, { upsert: true })
   }
   return limit
 }
 
-export const  setNbMembers = async (organizationId: string) => {
-  const nbMembers =  await mongo.users.countDocuments({ 'organizations.id': organizationId, plannedDeletion: { $exists: false } })
-  const limits = await mongo.limits
-    .findOneAndUpdate({ type: 'organization', id: organizationId }, { $set: { ['store_nb_members.consumption': value } }, { returnDocument: 'after', upsert: true })
-  if (!limits) throw httpError(404, 'impossible error')
-  return limits
+export const getNbMembers = async (orgId: string) => {
+  return mongo.users.countDocuments({ 'organizations.id': orgId, plannedDeletion: { $exists: false } })
 }
 
-export const  updateName = async (identity: Account) => {
+export const setNbMembers = async (orgId: string) => {
+  const nbMembers = await getNbMembers(orgId)
+  await mongo.limits
+    .updateOne({ type: 'organization', id: orgId }, { $set: { 'store_nb_members.consumption': nbMembers } })
+}
+
+export const updateName = async (identity: Account) => {
   await mongo.limits
     .updateMany({ type: identity.type, id: identity.id }, { $set: { name: identity.name } })
 }

@@ -39,7 +39,7 @@ function prepareSelect (select) {
 }
 
 class MongodbStorage implements SdStorage {
-  async init (params, org?: string) {
+  async init (params: any, org?: Organization) {
     if (org) throw new Error('mongo storage is not compatible with per-org storage')
     return this
   }
@@ -53,11 +53,6 @@ class MongodbStorage implements SdStorage {
     const user = await this.db.collection('users').findOne({ _id: userId })
     if (!user) return
     return cleanUser(user)
-  }
-
-  async hasPassword (email) {
-    const user = (await this.db.collection('users').find({ email }).collation(collation).toArray())[0]
-    return !!(user && user.password)
   }
 
   async getUserByEmail (email, site) {

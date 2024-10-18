@@ -22,6 +22,7 @@
     },
     "store_nb_members": {
       "type": "object",
+      "required": ["limit", "consumption"],
       "properties": {
         "limit": {
           "type": "number"

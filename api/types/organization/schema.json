@@ -107,6 +107,8 @@
     "orgStorage": {
       "type": "object",
       "description": "Manage a secondary user storage per-organization (super admin only)",
+      "additionalProperties": false,
+      "required": ["type", "config"],
       "properties": {
         "active": {"type": "boolean"},
         "type": {

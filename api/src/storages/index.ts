@@ -1,8 +1,7 @@
-import type { User } from '#types'
+import type { Organization, UserWritable } from '#types'
 import config from '#config'
-import type { SdStorage } from './interface.ts'
+import type { SdStorage, SdStorageFactory } from './interface.ts'
 import { nanoid } from 'nanoid'
-import userName from '../utils/user-name.js'
 
 class StorageManager {
   private _globalStorage?: SdStorage
@@ -25,7 +24,7 @@ class StorageManager {
       for (const adminEmail of config.admins) {
         const admin = await storage.getUserByEmail(adminEmail)
         if (!admin) {
-          const newAdmin: User = {
+          const newAdmin: UserWritable = {
             email: adminEmail,
             id: nanoid(),
             maxCreatedOrgs: -1,
@@ -33,7 +32,6 @@ class StorageManager {
             emailConfirmed: true,
             ignorePersonalAccount: config.onlyCreateInvited
           }
-          newAdmin.name = userName(newAdmin)
           if (config.adminsOrg) {
             newAdmin.organizations?.push({ ...config.adminsOrg, role: 'admin' })
           }
@@ -49,8 +47,8 @@ class StorageManager {
     this._globalStorage = storage
   }
 
-  async createStorage (type: string, conf: any, org?: string): Promise<SdStorage> {
-    const factory = (await import('./' + type + '.ts')).default
+  async createStorage (type: string, conf: any, org?: Organization): Promise<SdStorage> {
+    const factory = (await import('./' + type + '.ts')).default as SdStorageFactory
     const storage = await factory.init(conf, org)
     storage.readonly = factory.readonly
     return storage

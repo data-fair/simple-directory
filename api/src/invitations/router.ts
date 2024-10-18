@@ -1,7 +1,7 @@
-import { type UserWritable } from '#types'
+import { type UserWritable, type Invitation } from '#types'
 import { Router } from 'express'
 import config from '#config'
-import { assertAccountRole, reqUser, reqSession, reqSiteUrl, type Account } from '@data-fair/lib-express'
+import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, type Account, httpError } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
@@ -10,13 +10,13 @@ import storages from '#storages'
 import { getLimits, setNbMembers } from '../limits/service.ts'
 import { reqSite, getSiteByHost } from '../sites/service.ts'
 import { __all } from '#i18n'
-const tokens = require('../utils/tokens')
+import * as postReq from '#doc/invitations/post-req/index.ts'
+import emailValidator from 'email-validator'
+import { shortenInvit, unshortenInvit } from './service.ts'
+import * as tokens from '../tokens/service.ts'
 const mails = require('../mails')
-const limits = require('../utils/limits')
-const { shortenInvit, unshortenInvit } = require('../utils/invitations')
 const { send: sendNotification } = require('../utils/notifications')
 const webhooks = require('../webhooks')
-const emailValidator = require('email-validator')
 const debug = require('debug')('invitations')
 
 const router = Router()
@@ -24,24 +24,18 @@ export default router
 
 // Invitation for a user to join an organization from an admin of this organization
 router.post('', async (req, res, next) => {
+  const user = reqUser(req)
+
+  const { query, body } = postReq.returnValid(req, { name: 'req' })
+
   const logContext: EventLogContext = { req }
 
-  if (!reqUser(req)) return res.status(401).send()
-  if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
-  if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
-  debug('new invitation', req.body)
+  if (!user) return res.status(401).send()
+  if (!emailValidator.validate(body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  debug('new invitation', body)
   const storage = storages.globalStorage
-  const limits = await getLimits({ type: 'organization', id: req.body.id } as Account)
-
-  if (limits.store_nb_members.limit && limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption && (limits.store_nb_members.consumption ?? 0) >= limits.store_nb_members.limit) {
-    eventsLog.info('sd.invite.limit', `limit error for /invitations route with org ${req.body.id}`, logContext)
-    return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
-  }
-
-  const skipMail = req.query.skip_mail === 'true'
-
-  const invitation = req.body
-  assertAccountRole(reqSession(req), invitation as Account, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
+  const invitation = body
+  assertAccountRole(reqSession(req), { type: 'organization', id: invitation.id, department: invitation.department }, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
 
   let invitSite = await reqSite(req)
   let invitPublicBaseUrl = reqSiteUrl(req) + '/simple-directory'
@@ -57,43 +51,51 @@ router.post('', async (req, res, next) => {
 
   const orga = await storage.getOrganization(invitation.id)
   if (!orga) return res.status(404).send('unknown organization')
+
+  const limits = await getLimits({ type: 'organization', id: body.id } as Account)
+
+  if (limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+    eventsLog.info('sd.invite.limit', `limit error for /invitations route with org ${body.id}`, logContext)
+    return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
+  }
+
   let dep
   if (invitation.department) {
     dep = orga.departments && orga.departments.find(d => d.id === invitation.department)
     if (!dep) return res.status(404).send('unknown department')
   }
-  logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invitation.department, departmentName: dep ? dep.name : null }
+  logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invitation.department, departmentName: dep?.name }
 
-  const token = tokens.sign(req.app.get('keys'), shortenInvit(invitation), config.jwtDurations.invitationToken)
+  const token = await tokens.sign(shortenInvit(invitation), config.jwtDurations.invitationToken)
 
   if (config.alwaysAcceptInvitation) {
     eventsLog.info('sd.invite.user-creation', `invitation sent in always accept mode immediately creates a user or adds it as member ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
     // in 'always accept invitation' mode the user is not sent an email to accept the invitation
     // he is simple added to the list of members and created if needed
-    const user = await storage.getUserByEmail(invitation.email, invitSite)
-    if (user && user.emailConfirmed) {
+    const existingUser = await storage.getUserByEmail(invitation.email, invitSite)
+    if (existingUser && existingUser.emailConfirmed) {
       debug('in alwaysAcceptInvitation and the user already exists, immediately add it as member', invitation.email)
-      await storage.addMember(orga, user, invitation.role, invitation.department)
+      await storage.addMember(orga, existingUser, invitation.role, invitation.department)
       await setNbMembers(orga.id)
       sendNotification({
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
         topic: { key: 'simple-directory:invitation-sent' },
-        title: __all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
+        title: __all('notifications.sentInvitation', { email: body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
       })
     } else {
-      const newUser: UserWritable = {
+      const newUserDraft: UserWritable = {
         email: invitation.email,
-        id: user ? user.id : nanoid(),
-        organizations: user ? user.organizations : [],
+        id: existingUser ? existingUser.id : nanoid(),
+        organizations: existingUser ? existingUser.organizations : [],
         emailConfirmed: false,
         defaultOrg: invitation.id,
         ignorePersonalAccount: true
       }
-      if (invitSite) newUser.host = invitSite.host
-      if (invitation.department) newUser.defaultDep = invitation.department
-      debug('in alwaysAcceptInvitation and the user does not exist, create it', newUser)
+      if (invitSite) newUserDraft.host = invitSite.host
+      if (invitation.department) newUserDraft.defaultDep = invitation.department
+      debug('in alwaysAcceptInvitation and the user does not exist, create it', newUserDraft)
       const reboundRedirect = new URL(invitation.redirect || config.invitationRedirect || `${reqSiteUrl(req) + '/simple-directory'}/invitation`)
-      await storage.createUser(newUser, reqUser(req), new URL(reboundRedirect).host)
+      const newUser = await storage.createUser(newUserDraft, user, new URL(reboundRedirect).host)
       await storage.addMember(orga, newUser, invitation.role, invitation.department)
       await setNbMembers(orga.id)
       const linkUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
@@ -108,15 +110,15 @@ router.post('', async (req, res, next) => {
         origin: linkUrl.origin
       }
       // send the mail either if the user does not exist or it was created more that 24 hours ago
-      if (!skipMail && (!user || req.query.force_mail === 'true' || dayjs().diff(dayjs(user.created.date), 'day', true) < 1)) {
+      if (!query.skip_mail && (!existingUser || query.force_mail || dayjs().diff(dayjs(existingUser.created.date), 'day', true) < 1)) {
         await mails.send({
           transport: req.app.get('mailTransport'),
           key: 'invitation',
           messages: reqI18n(req).messages,
-          to: req.body.email,
+          to: body.email,
           params
         })
-        eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.tole} ${invitation.department}`, logContext)
+        eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
       }
 
       const notif = {
@@ -132,7 +134,7 @@ router.post('', async (req, res, next) => {
         recipient: { id: newUser.id, name: newUser.name }
       })
 
-      if (reqUser(req).adminMode || reqUser(req).asAdmin) {
+      if (user.adminMode || user.asAdmin) {
         return res.send(params)
       }
     }
@@ -145,24 +147,24 @@ router.post('', async (req, res, next) => {
       host: linkUrl.host,
       origin: linkUrl.origin
     }
-    if (!skipMail) {
+    if (!query.skip_mail) {
       await mails.send({
         transport: req.app.get('mailTransport'),
         key: 'invitation',
         messages: reqI18n(req).messages,
-        to: req.body.email,
+        to: body.email,
         params
       })
-      eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.tole} ${invitation.department}`, logContext)
+      eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
     }
 
     sendNotification({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
       topic: { key: 'simple-directory:invitation-sent' },
-      title: __all('notifications.sentInvitation', { email: req.body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
+      title: __all('notifications.sentInvitation', { email: body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
     })
 
-    if (reqUser(req).adminMode || reqUser(req).asAdmin) {
+    if (user.adminMode || user.asAdmin) {
       return res.send(params)
     }
   }
@@ -171,17 +173,17 @@ router.post('', async (req, res, next) => {
 })
 
 router.get('/_accept', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const loggedUser = reqUser(req)
+  const logContext: EventLogContext = { req }
+  if (typeof req.query.invit_token !== 'string') throw httpError(400)
 
-  let invit
+  let invit: Invitation
   let verified
   const errorUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
   try {
-    invit = unshortenInvit(await tokens.verify(req.app.get('keys'), req.query.invit_token))
+    invit = unshortenInvit(await session.verifyToken(req.query.invit_token))
     verified = true
-  } catch (err) {
+  } catch (err: any) {
     if (err.name !== 'TokenExpiredError') {
       debug('invalid invitation', err)
       errorUrl.searchParams.set('error', 'invalidInvitationToken')
@@ -192,15 +194,15 @@ router.get('/_accept', async (req, res, next) => {
     // if the token was once valid, but deprecated we accept it partially
     // meaning that we will not perform writes based on it
     // but we accept to check the user's existence and create the best redirect for him
-    invit = tokens.decode(req.query.invit_token)
+    invit = unshortenInvit(tokens.decode(req.query.invit_token))
     verified = false
   }
   debug('accept invitation', invit, verified)
   const storage = storages.globalStorage
 
-  const user = await storage.getUserByEmail(invit.email, await reqSite(req))
-  logContext.user = user
-  if (!user && storage.readonly) {
+  const existingUser = await storage.getUserByEmail(invit.email, await reqSite(req))
+  logContext.user = existingUser
+  if (!existingUser && storage.readonly) {
     errorUrl.searchParams.set('error', 'userUnknown')
     return res.redirect(errorUrl.href)
   }
@@ -218,12 +220,12 @@ router.get('/_accept', async (req, res, next) => {
   if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
 
   // case where the invitation was already accepted, but we still want the user to proceed
-  if (user && user.organizations && user.organizations.find(o => o.id === invit.id && (o.department || null) === (invit.department || null))) {
+  if (existingUser && existingUser.organizations && existingUser.organizations.find(o => o.id === invit.id && (o.department || null) === (invit.department || null))) {
     debug('invitation was already accepted, redirect', redirectUrl.href)
     // missing password, invitation must have been accepted without completing account creation
-    if (!await storage.hasPassword(invit.email) && !config.passwordless) {
-      const payload = { id: user.id, email: user.email, action: 'changePassword' }
-      const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+    if (!await storage.getPassword(invit.email) && !config.passwordless) {
+      const payload = { id: existingUser.id, email: existingUser.email, action: 'changePassword' }
+      const token = await tokens.sign(payload, config.jwtDurations.initialToken)
       const reboundRedirect = redirectUrl.href
       redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
       redirectUrl.searchParams.set('step', 'changePassword')
@@ -235,7 +237,7 @@ router.get('/_accept', async (req, res, next) => {
       debug('redirect to changePassword step', redirectUrl.href)
       return res.redirect(redirectUrl.href)
     }
-    if (!reqUser(req) || reqUser(req).email !== invit.email) {
+    if (!loggedUser || loggedUser.email !== invit.email) {
       const reboundRedirect = redirectUrl.href
       redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
       redirectUrl.searchParams.set('email', invit.email)
@@ -252,16 +254,13 @@ router.get('/_accept', async (req, res, next) => {
     return res.redirect(errorUrl.href)
   }
 
-  if (storage.db) {
-    const consumer = { type: 'organization', id: orga.id }
-    const limit = await limits.get(storage.db, consumer, 'store_nb_members')
-    if (limit.consumption >= limit.limit && limit.limit > 0) {
-      errorUrl.searchParams.set('error', 'maxNbMembers')
-      return res.redirect(errorUrl.href)
-    }
+  const limits = await getLimits(orga)
+  if (limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+    errorUrl.searchParams.set('error', 'maxNbMembers')
+    return res.redirect(errorUrl.href)
   }
 
-  if (!user) {
+  if (!existingUser) {
     const reboundRedirect = redirectUrl.href
     redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
     redirectUrl.searchParams.set('step', 'createUser')
@@ -271,26 +270,26 @@ router.get('/_accept', async (req, res, next) => {
     return res.redirect(redirectUrl.href)
   }
 
-  await storage.addMember(orga, user, invit.role, invit.department)
+  await storage.addMember(orga, existingUser, invit.role, invit.department)
 
   eventsLog.info('sd.invite.accepted', `invitation accepted ${invit.email}, ${orga.id} ${orga.name} ${invit.department} ${invit.role}`, logContext)
 
   const notif = {
     sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },
     topic: { key: 'simple-directory:invitation-accepted' },
-    title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
+    title: __all('notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
   }
   // send notif to all admins subscribed to the topic
   sendNotification(notif)
   // send same notif to user himself
   sendNotification({
     ...notif,
-    recipient: { id: user.id, name: user.name }
+    recipient: { id: existingUser.id, name: existingUser.name }
   })
 
-  webhooks.postIdentity('user', await storage.getUser({ id: user.id }))
+  webhooks.postIdentity('user', await storage.getUser(existingUser.id))
 
-  if (storage.db) await limits.setNbMembers(storage.db, orga.id)
+  await setNbMembers(orga.id)
 
   res.redirect(redirectUrl.href)
 })

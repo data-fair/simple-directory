@@ -17,6 +17,6 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }
   const payload = { anonymousAction: true, validation: 'wait' }
-  const token = tokens.sign(req.app.get('keys'), payload, config.anonymousAction.expiresIn, config.anonymousAction.notBefore)
+  const token = await tokens.sign(payload, config.anonymousAction.expiresIn, config.anonymousAction.notBefore)
   res.send(token)
 }

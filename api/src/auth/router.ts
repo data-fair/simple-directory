@@ -2,7 +2,6 @@ import config from '#config'
 import { Router } from 'express'
 import { reqUser } from '@data-fair/lib-express'
 const URL = require('url').URL
-const emailValidator = require('email-validator')
 const bodyParser = require('body-parser')
 const requestIp = require('request-ip')
 import { nanoid } from 'nanoid'
@@ -105,7 +104,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       const superadmin = { id: '_superadmin', name: 'Super Admin', email: req.body.email }
       const payload = tokens.getPayload(superadmin)
       payload.adminMode = true
-      const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect).href
+      const callbackUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect).href
       debug('Password based authentication of superadmin with password from config', callbackUrl)
       eventsLog.info('sd.auth.admin-auth', 'a user authenticated using the /auth/password route with special admin account', logContext)
       return res.send(callbackUrl)
@@ -149,7 +148,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       email: user.email,
       action: 'changeHost'
     }
-    const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+    const token = await tokens.sign(payload, config.jwtDurations.initialToken)
     const changeHostUrl = new URL((await reqSite(req).host.startsWith('localhost') ? 'http://' : 'https://') + await reqSite(req).host + '/simple-directory/login')
     changeHostUrl.searchParams.set('action_token', token)
     eventsLog.info('sd.auth.password.change-host', 'a user is suggested to switch to secondary host', logContext)
@@ -191,7 +190,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       } else {
         // 2FA token sent alongside email/password
         const cookies = new Cookies(req, res)
-        const token = tokens.sign(req.app.get('keys'), { user: user.id }, config.jwtDurations['2FAToken'])
+        const token = await tokens.sign({ user: user.id }, config.jwtDurations['2FAToken'])
         cookies.set(twoFA.cookieName(user.id), token, { expires: new Date(tokens.decode(token).exp * 1000), sameSite: 'lax', httpOnly: true })
       }
     } else {
@@ -208,12 +207,12 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   eventsLog.info('sd.auth.password.ok', 'a user successfully authenticated using password', logContext)
   // this is used by data-fair app integrated login
   if (req.is('application/x-www-form-urlencoded')) {
-    const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+    const token = await tokens.sign(payload, config.jwtDurations.exchangedToken)
     tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
     res.redirect(req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me')
   } else {
-    const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, orgId, depId), req.body.orgStorage).href
+    const callbackUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, orgId, depId), req.body.orgStorage).href
     debug(`Password based authentication of user ${user.name}, ajax mode`, callbackUrl)
     res.send(callbackUrl)
   }
@@ -286,7 +285,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
     return res.status(400).send(reqI18n(req).messages.errors.passwordless2FA)
   }
 
-  const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, req.body.org, req.body.dep), req.body.orgStorage)
+  const linkUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, req.body.org, req.body.dep), req.body.orgStorage)
   debug(`Passwordless authentication of user ${user.name}`)
   await mails.send({
     transport: req.app.get('mailTransport'),
@@ -314,7 +313,7 @@ router.post('/site_redirect', async (req, res, next) => {
   const site = await storage.getSiteByHost(new URL(req.body.redirect).host)
   if (!user) return res.status(404).send('site not found')
   const payload = tokens.getPayload(user)
-  const callbackUrl = tokens.prepareCallbackUrl(req, payload, req.body.redirect, tokens.getDefaultUserOrg(user, req.body.org, req.body.dep)).href
+  const callbackUrl = await tokens.prepareCallbackUrl(req, payload, req.body.redirect, tokens.getDefaultUserOrg(user, req.body.org, req.body.dep)).href
   debug(`Redirect auth of user ${user.name} to site ${site.host}`, callbackUrl)
 
   eventsLog.info('sd.auth.redirect-site', 'a authenticated user is redirected to secondary site with session', logContext)
@@ -334,7 +333,7 @@ router.get('/token_callback', async (req, res, next) => {
   if (!req.query.id_token) return redirectError('missingToken')
   let decoded
   try {
-    decoded = await tokens.verify(req.app.get('keys'), req.query.id_token)
+    decoded = await session.verifyToken(req.query.id_token)
   } catch (err) {
     return redirectError('invalidToken')
   }
@@ -360,7 +359,7 @@ router.get('/token_callback', async (req, res, next) => {
   const payload = tokens.getPayload(user)
   if (decoded.rememberMe) payload.rememberMe = true
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = true
-  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  const token = await tokens.sign(payload, config.jwtDurations.exchangedToken)
 
   await confirmLog(storage, user)
   tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user, req.query.id_token_org, req.query.id_token_dep))
@@ -398,7 +397,7 @@ router.post('/exchange', async (req, res, next) => {
   }
   let decoded
   try {
-    decoded = await tokens.verify(req.app.get('keys'), idToken)
+    decoded = await session.verifyToken(idToken)
   } catch (err) {
     eventsLog.info('sd.auth.exchange.fail', 'a user tried to prolongate a session with invalid token', logContext)
     return res.status(401).send('Invalid id_token')
@@ -430,7 +429,7 @@ router.post('/exchange', async (req, res, next) => {
     }
   }
   if (decoded.rememberMe) payload.rememberMe = true
-  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  const token = await tokens.sign(payload, config.jwtDurations.exchangedToken)
 
   eventsLog.info('sd.auth.exchange.ok', 'a session token was successfully exchanged for a new one', logContext)
 
@@ -550,7 +549,7 @@ router.post('/action', async (req, res, next) => {
     email: user.email,
     action
   }
-  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+  const token = await tokens.sign(payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(req.body.target || reqSiteUrl(req) + '/simple-directory' + '/login')
   linkUrl.searchParams.set('action_token', token)
 
@@ -590,7 +589,7 @@ router.post('/asadmin', async (req, res, next) => {
   payload.name += ' (administration)'
   payload.asAdmin = { id: reqUser(req).id, name: reqUser(req).name }
   payload.isAdmin = false
-  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  const token = await tokens.sign(payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
   tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user))
 
@@ -611,7 +610,7 @@ router.delete('/asadmin', async (req, res, next) => {
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = tokens.getPayload(user)
   payload.adminMode = true
-  const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  const token = await tokens.sign(payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
   tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user))
 
@@ -817,7 +816,7 @@ const oauthCallback = async (req, res, next) => {
   let invit, invitOrga
   if (invitToken) {
     try {
-      invit = unshortenInvit(await tokens.verify(req.app.get('keys'), invitToken))
+      invit = unshortenInvit(await session.verifyToken(invitToken))
       eventsLog.info('sd.auth.oauth.invit', `a user was invited to join an organization ${invit.id}`, logContext)
     } catch (err) {
       return returnError(err.name === 'TokenExpiredError' ? 'expiredInvitationToken' : 'invalidInvitationToken', 400)
@@ -926,7 +925,7 @@ const oauthCallback = async (req, res, next) => {
       return returnError('adminModeOnly', 403)
     }
   }
-  const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? { id: invit.id, department: invit.department } : { id: org, department: dep })
+  const linkUrl = await tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? { id: invit.id, department: invit.department } : { id: org, department: dep })
   debugOAuth(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 }
@@ -1039,7 +1038,7 @@ router.post('/saml2-assert', async (req, res) => {
   let invit, invitOrga
   if (invitToken) {
     try {
-      invit = unshortenInvit(await tokens.verify(req.app.get('keys'), invitToken))
+      invit = unshortenInvit(await session.verifyToken(invitToken))
     } catch (err) {
       return returnError(err.name === 'TokenExpiredError' ? 'expiredInvitationToken' : 'invalidInvitationToken', 400)
     }
@@ -1127,7 +1126,7 @@ router.post('/saml2-assert', async (req, res) => {
       return returnError('adminModeOnly', 403)
     }
   }
-  const linkUrl = tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? invitOrga.id : org)
+  const linkUrl = await tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? invitOrga.id : org)
   debugSAML(`SAML based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 

@@ -1,6 +1,5 @@
 import config from '#config'
 import { Router } from 'express'
-const emailValidator = require('email-validator')
 const { RateLimiterMongo, RateLimiterMemory } = require('rate-limiter-flexible')
 const requestIp = require('request-ip')
 const tokens = require('../utils/tokens')
@@ -84,7 +83,7 @@ router.post('/contact', async (req, res) => {
 
     try {
       // 2nd level of anti-spam protection, validate that the user was present on the page for a few seconds before sending
-      await tokens.verify(req.app.get('keys'), req.body.token)
+      await session.verifyToken(req.body.token)
     } catch (err) {
       if (err.name === 'NotBeforeError') {
         return res.status(429).send('Message refusé, l\'activité ressemble à celle d\'un robot spammeur.')

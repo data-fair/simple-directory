@@ -1,15 +1,15 @@
 import type { User } from '#types'
-import type { OrganizationMembership, SessionState } from '@data-fair/lib-express'
 import type { Request, Response } from 'express'
+import { reqSession, httpError, reqSiteUrl, type OrganizationMembership, type SessionState } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import { internalError } from '@data-fair/lib-node/observer.js'
 import config from '#config'
 import jwt, { type SignOptions, type JwtPayload } from 'jsonwebtoken'
 import Cookies from 'cookies'
 import defaultConfig from '../../config/default.js'
-import storage from '../storages'
-import twoFA from '../routers/2fa.js'
+import storages from '#storages'
 import { getSignatureKeys } from './keys-manager.ts'
-import userName from '../utils/user-name.ts'
+import { reqSite } from '../sites/service.ts'
 
 export const sign = async (payload: any, expiresIn: string, notBefore?: string) => {
   const signatureKeys = await getSignatureKeys()
@@ -79,12 +79,12 @@ export const unsetCookies = (req: Request, res: Response) => {
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
 // the header and payload are not httpOnly to be readable by client
 // all cookies use sameSite for CSRF prevention
-export const setCookieToken = (req: Request, res: Response, token: string, userOrg) => {
+export const setCookieToken = (req: Request, res: Response, token: string, userOrg?: OrganizationMembership) => {
   const cookies = new Cookies(req, res)
-  const payload = export const  decode(token)
+  const payload = decode(token)
   const parts = token.split('.')
   const opts: Cookies.SetOption = { sameSite: 'lax' }
-  if (payload.rememberMe) opts.expires = new Date(payload.exp * 1000)
+  if (payload.rememberMe && payload.exp) opts.expires = new Date(payload.exp * 1000)
   cookies.set('id_token', parts[0] + '.' + parts[1], { ...opts, httpOnly: false })
   cookies.set('id_token_sign', parts[2], { ...opts, httpOnly: true })
   // set the same params to id_token_org cookie so that it doesn't expire before the rest
@@ -95,59 +95,65 @@ export const setCookieToken = (req: Request, res: Response, token: string, userO
 }
 
 export const keepalive = async (req: Request, res: Response, _user: User) => {
-  const logContext: EventLogContext = { req, account: await reqSite(req)?.account }
+  const session = reqSession(req)
+  if (!session.account || !session.user) throw httpError(401)
+  const logContext: EventLogContext = { req, account: (await reqSite(req))?.owner }
 
   // User may have new organizations since last renew
   let org
-  if (reqUser(req).organization) {
-    org = await storages.globalStorage.getOrganization(reqUser(req).organization.id)
+  if (session.organization) {
+    org = await storages.globalStorage.getOrganization(session.organization.id)
     if (!org) {
-      export const  unsetCookies(req, res)
+      unsetCookies(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user tried to prolongate a session in invalid org', logContext)
       return res.status(401).send('Organisation inexistante')
     }
-    logContext.account = { type: 'organization', id: org.id, name: org.name, department: org.department, departmentName: org.departmentName }
+    logContext.account = { type: 'organization', id: org.id, name: org.name, department: session.organization.department, departmentName: session.organization.departmentName }
   }
   let storage = storages.globalStorage
-  if (reqUser(req).orgStorage && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
+  if (session.user.os && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
-  const user = _user || (reqUser(req).id === '_superadmin' ? reqUser(req) : await storage.getUser({ id: reqUser(req).id }))
+  const user = _user || await storage.getUser(session.user.id)
   if (!user) {
-    export const  unsetCookies(req, res)
+    unsetCookies(req, res)
     eventsLog.info('sd.auth.keepalive.fail', 'a delete user tried to prolongate a session', logContext)
     return res.status(401).send('Utilisateur inexistant')
   }
 
-  const payload = export const  getPayload(user)
-  if (reqUser(req).isAdmin && reqUser(req).adminMode && req.query.noAdmin !== 'true') payload.adminMode = true
-  if (reqUser(req).rememberMe) payload.rememberMe = true
-  if (reqUser(req).asAdmin) {
-    payload.asAdmin = reqUser(req).asAdmin
-    payload.name = reqUser(req).name
-    payload.isAdmin = false
+  const payload = getPayload(user)
+  if (session.user.isAdmin && session.user.adminMode && req.query.noAdmin !== 'true') payload.adminMode = 1
+  if (session.user.rememberMe) payload.rememberMe = true
+  if (session.user.asAdmin) {
+    payload.asAdmin = session.user.asAdmin
+    payload.name = session.user.name
+    delete payload.isAdmin
   } else {
     if (!storage.readonly) {
-      storage.updateLogged(reqUser(req).id).catch(async (err) => {
-        const { internalError } = await import('@data-fair/lib/node/observer.js')
+      storage.updateLogged(session.user.id).catch(async (err: any) => {
         internalError('update-logged', 'error while updating logged date', err)
       })
     }
   }
-  const token = export const  sign(req.app.get('keys'), payload, config.jwtDurations.exchangedToken)
+  const token = await sign(payload, config.jwtDurations.exchangedToken)
   const cookies = new Cookies(req, res)
-  const userOrg = cookies.get('id_token_org') && user.organizations.find(o => o.id === cookies.get('id_token_org') && (o.department || null) === (cookies.get('id_token_dep') ? decodeURIComponent(cookies.get('id_token_dep')) : null))
-  export const  setCookieToken(req, res, token, userOrg)
+  const idTokenOrg = cookies.get('id_token_org')
+  const idTokenDep = cookies.get('id_token_dep')
+  let userOrg
+  if (idTokenOrg) {
+    userOrg = user.organizations.find(o => o.id === idTokenOrg && (o.department || null) === (idTokenDep ? decodeURIComponent(idTokenDep) : null))
+  }
+  setCookieToken(req, res, token, userOrg)
 
   eventsLog.info('sd.auth.keepalive.ok', 'a session was successfully prolongated', logContext)
 }
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
 // this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
-export const prepareCallbackUrl = (req: Request, payload: any, redirect?: string, userOrg?:OrganizationMembership, orgStorage?: boolean) => {
+export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:OrganizationMembership, orgStorage?: boolean) => {
   redirect = redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory' + '/me'
   const redirectUrl = new URL(redirect)
-  const token = export const  sign(req.app.get('keys'), { ...payload, temporary: true }, config.jwtDurations.initialToken)
+  const token = await sign({ ...payload, temporary: true }, config.jwtDurations.initialToken)
   // TODO: properly manage site on subpath here
   const tokenCallback = redirectUrl.origin + '/simple-directory/api/auth/token_callback'
   const tokenCallbackUrl = new URL(tokenCallback)

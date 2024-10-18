@@ -2,7 +2,6 @@ import { Router } from 'express'
 import config from '#config'
 import { reqUser } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
-const emailValidator = require('email-validator')
 import userName from '../utils/user-name.ts'
 const findUtils = require('../utils/find')
 const tokens = require('../utils/tokens')
@@ -72,7 +71,7 @@ router.post('', async (req, res, next) => {
   let invit, orga
   if (req.query.invit_token) {
     try {
-      invit = unshortenInvit(await tokens.verify(req.app.get('keys'), req.query.invit_token))
+      invit = unshortenInvit(await session.verifyToken(req.query.invit_token))
     } catch (err) {
       return res.status(400).send(err.name === 'TokenExpiredError' ? reqI18n(req).messages.errors.expiredInvitationToken : reqI18n(req).messages.errors.invalidInvitationToken)
     }
@@ -166,13 +165,13 @@ router.post('', async (req, res, next) => {
     // no need to confirm email if the user already comes from an invitation link
     // we already created the user with emailConfirmed=true
     const payload = { ...tokens.getPayload(newUser), temporary: true }
-    const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(newUser, invit && invit.id, invit && invit.department))
+    const linkUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(newUser, invit && invit.id, invit && invit.department))
     return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication
     // the user will be validated and authenticated at the same time by the token_callback route
     const payload = { ...tokens.getPayload(newUser), emailConfirmed: true, temporary: true }
-    const linkUrl = tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(newUser, req.query.org, req.query.dep))
+    const linkUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(newUser, req.query.org, req.query.dep))
     await mails.send({
       transport: req.app.get('mailTransport'),
       key: 'creation',
@@ -315,7 +314,7 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
   if (!actionToken) return res.status(401).send('action_token param is required')
   let decoded
   try {
-    decoded = await tokens.verify(req.app.get('keys'), actionToken)
+    decoded = await session.verifyToken(actionToken)
   } catch (err) {
     return res.status(401).send(reqI18n(req).messages.errors.invalidToken)
   }
@@ -342,7 +341,7 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
   if (!actionToken) return res.status(401).send('action_token param is required')
   let decoded
   try {
-    decoded = await tokens.verify(req.app.get('keys'), actionToken)
+    decoded = await session.verifyToken(actionToken)
   } catch (err) {
     return res.status(401).send(reqI18n(req).messages.errors.invalidToken)
   }
@@ -359,7 +358,7 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
       email: decoded.email,
       action: 'changePassword'
     }
-    const token = tokens.sign(req.app.get('keys'), payload, config.jwtDurations.initialToken)
+    const token = await tokens.sign(payload, config.jwtDurations.initialToken)
     res.send(token)
   } else {
     res.status(204).send()
