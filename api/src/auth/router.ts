@@ -342,7 +342,7 @@ router.get('/token_callback', async (req, res, next) => {
     return redirectError('badCredentials')
   }
 
-  const reboundRedirect = req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory' + '/me'
+  const reboundRedirect = req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me'
 
   const payload = tokens.getPayload(user)
   if (decoded.rememberMe) payload.rememberMe = true
@@ -520,7 +520,7 @@ router.post('/action', async (req, res, next) => {
   }
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
-    const link = req.body.target || config.defaultLoginRedirect || (reqSiteUrl(req) + '/simple-directory' + '/login')
+    const link = req.body.target || config.defaultLoginRedirect || (reqSiteUrl(req) + '/simple-directory/login')
     const linkUrl = new URL(link)
     await sendMail('noCreation', reqI18n(req).messages, req.body.email, { link, host: linkUrl.host, origin: linkUrl.origin })
     eventsLog.info('sd.auth.action.fail', `an action ${action} failed because of missing user and a warning mail was sent ${req.body.email}`, logContext)
@@ -532,7 +532,7 @@ router.post('/action', async (req, res, next) => {
     action
   }
   const token = await tokens.sign(payload, config.jwtDurations.initialToken)
-  const linkUrl = new URL(req.body.target || reqSiteUrl(req) + '/simple-directory' + '/login')
+  const linkUrl = new URL(req.body.target || reqSiteUrl(req) + '/simple-directory/login')
   linkUrl.searchParams.set('action_token', token)
 
   await sendMail('action', reqI18n(req).messages, user.email,{ link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
@@ -542,7 +542,7 @@ router.post('/action', async (req, res, next) => {
 
 router.delete('/adminmode', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send('No active session')
-  if (!reqUser(req).adminMode) return res.status(403).send('This route is only available in admin mode')
+  if (!reqUser(req)?.adminMode) return res.status(403).send('This route is only available in admin mode')
   debug(`Exchange session token without adminMode for user ${reqUser(req).name}`)
   req.query.noAdmin = 'true'
   await tokens.keepalive(req, res)
@@ -837,7 +837,7 @@ const oauthCallback = async (req, res, next) => {
 
     user = {
       ...userInfo.user,
-      id: nanoid()(),
+      id: nanoid(),
       firstName: userInfo.firstName || '',
       lastName: userInfo.lastName || '',
       emailConfirmed: true,
@@ -1047,7 +1047,7 @@ router.post('/saml2-assert', async (req, res) => {
     }
     user = {
       email,
-      id: nanoid()(),
+      id: nanoid(),
       emailConfirmed: true,
       saml2: {
         [providerId]: samlInfo
@@ -1072,7 +1072,7 @@ router.post('/saml2-assert', async (req, res) => {
     }
     debugSAML('Existing user authenticated', providerId, user)
     const patch = { saml2: { ...user.saml2, [providerId]: samlInfo }, emailConfirmed: true }
-    // TODO: map more attributes ? lastName, firstName, avatarUrl ?
+    // TODO: map more attributes ? lastName, firstName ?
     await storage.patchUser(user.id, patch)
     eventsLog.info('sd.auth.saml.update-user', `a user was updated in saml callback ${user.id}`, logContext)
   }

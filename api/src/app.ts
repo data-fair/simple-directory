@@ -31,7 +31,7 @@ const fullUser = async (req, res, next) => {
     reqUser(req) = {
       ...await storages.globalStorage.getUser({ id: reqUser(req).id }),
       isAdmin: reqUser(req).isAdmin,
-      adminMode: reqUser(req).adminMode,
+      adminMode: reqUser(req)?.adminMode,
       activeAccount: reqUser(req).activeAccount
     }
   }

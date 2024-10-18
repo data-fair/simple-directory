@@ -22,7 +22,7 @@ router.get('', async (req, res, next) => {
   const query = req.query
   // @ts-ignore
   sitesQuerySchema.assertValid(query)
-  if (query.showAll && !reqUser(req).adminMode) return res.status(403).send()
+  if (query.showAll && !reqUser(req)?.adminMode) return res.status(403).send()
   const response = query.showAll ? await storages.globalStorage.findAllSites() : await storages.globalStorage.findOwnerSites(reqUser(req).accountOwner)
   for (const result of response.results) {
     result.logo = result.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
@@ -53,7 +53,7 @@ router.patch('/:id', async (req, res, next) => {
   const sitePatchSchema = await import('../../types/site-patch/index.mjs')
 
   if (!reqUser(req)) return res.status(401).send()
-  if (!reqUser(req).adminMode) return res.status(403).send()
+  if (!reqUser(req)?.adminMode) return res.status(403).send()
   // @ts-ignore
   sitePatchSchema.assertValid(req.body)
   await storages.globalStorage.patchSite(req.body)

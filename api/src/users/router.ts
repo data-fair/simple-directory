@@ -174,7 +174,7 @@ router.post('', async (req, res, next) => {
 
 router.get('/:userId', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send()
-  if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+  if (!reqUser(req)?.adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   if (reqUser(req).id === '_superadmin') return res.json(reqUser(req))
   let storage = storages.globalStorage
   if (reqUser(req).id === req.params.userId && reqUser(req).orgStorage && reqUser(req).organization) {
@@ -185,7 +185,6 @@ router.get('/:userId', async (req, res, next) => {
   const user = await storage.getUser({ id: req.params.userId })
   if (!user) return res.status(404).send()
   user.isAdmin = config.admins.includes(user.email)
-  user.avatarUrl = reqSiteUrl(req) + '/simple-directory' + '/api/avatars/user/' + user.id + '/avatar.png'
   res.json(user)
 })
 
@@ -198,12 +197,12 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
-  if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+  if (!reqUser(req)?.adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
 
   const unpatchableKey = Object.keys(req.body).find(key => !patchKeys.concat(adminKeys).includes(key))
   if (unpatchableKey) return res.status(400).send('Only some parts of the user can be modified through this route')
   const adminKey = Object.keys(req.body).find(key => adminKeys.includes(key))
-  if (adminKey && !reqUser(req).adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+  if (adminKey && !reqUser(req)?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
 
   const patch = req.body
   const name = userName({ ...reqUser(req), ...patch }, true)
@@ -214,9 +213,9 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
 
   if (patch.plannedDeletion) {
     if (config.userSelfDelete) {
-      if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+      if (!reqUser(req)?.adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
     } else {
-      if (!reqUser(req).adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+      if (!reqUser(req)?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
     }
   }
 
@@ -224,7 +223,7 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
 
   eventsLog.info('sd.user.patch', `user was patched ${patchedUser.name} (${patchedUser.id})`, logContext)
 
-  const link = reqSiteUrl(req) + '/simple-directory' + '/login?email=' + encodeURIComponent(reqUser(req).email)
+  const link = reqSiteUrl(req) + '/simple-directory/login?email=' + encodeURIComponent(reqUser(req).email)
   const linkUrl = new URL(link)
   if (patch.plannedDeletion) {
     await sendMail('plannedDeletion', reqI18n(req).messages, reqUser(req).email, {
@@ -236,7 +235,6 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
   }
 
   if (storages.globalStorage.db) await storages.globalStorage.db.collection('limits').updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
-  patchedUser.avatarUrl = reqSiteUrl(req) + '/simple-directory' + '/api/avatars/user/' + patchedUser.id + '/avatar.png'
 
   // update session info
   await tokens.keepalive(req, res)
@@ -250,7 +248,7 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
   const logContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
-  if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+  if (!reqUser(req)?.adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   const patch = { plannedDeletion: null }
 
   await storages.globalStorage.patchUser(req.params.userId, patch, reqUser(req))
@@ -270,9 +268,9 @@ router.delete('/:userId', async (req, res, next) => {
 
   if (!reqUser(req)) return res.status(401).send()
   if (config.userSelfDelete) {
-    if (!reqUser(req).adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+    if (!reqUser(req)?.adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   } else {
-    if (!reqUser(req).adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+    if (!reqUser(req)?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   }
 
   await storages.globalStorage.deleteUser(req.params.userId)

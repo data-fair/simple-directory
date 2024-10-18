@@ -1,9 +1,10 @@
-import type { UserWritable, User, Organization, Member } from '#types'
-import type { SdStorage, FindMembersParams } from './interface.ts'
+import type { UserWritable, User, Organization, Member, Partner } from '#types'
+import type { SdStorage, FindMembersParams, FindOrganizationsParams } from './interface.ts'
+import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
 import config from '#config'
 import { TwoFA } from '../2fa/service.ts'
-import { httpError, OrganizationMembership } from '@data-fair/lib-express'
+import { httpError, type UserRef } from '@data-fair/lib-express'
 const moment = require('moment')
 const escapeStringRegexp = require('escape-string-regexp')
 
@@ -116,15 +117,15 @@ class MongodbStorage implements SdStorage {
     return user
   }
 
-  async updateLogged (id) {
+  async updateLogged (id: string) {
     this.db.collection('users').updateOne({ _id: id }, { $set: { logged: new Date() } })
   }
 
-  async confirmEmail (id) {
+  async confirmEmail (id: string) {
     this.db.collection('users').updateOne({ _id: id }, { $set: { emailConfirmed: true } })
   }
 
-  async deleteUser (userId) {
+  async deleteUser (userId: string) {
     await this.db.collection('users').deleteOne({ _id: userId })
     await this.db.collection('oauth-tokens').deleteMany({ 'user.id': userId })
   }
@@ -250,8 +251,8 @@ class MongodbStorage implements SdStorage {
     return orga
   }
 
-  async patchOrganization (id, patch, user) {
-    patch.updated = { id: user.id, name: user.name, date: new Date() }
+  async patchOrganization (id: string, patch: Partial<Organization>, user: UserRef) {
+    patch.updated = { id: user.id, name: user.name, date: new Date().toISOString() }
     const mongoRes = await this.db.collection('organizations').findOneAndUpdate(
       { _id: id },
       { $set: patch },
@@ -277,14 +278,14 @@ class MongodbStorage implements SdStorage {
     return orga
   }
 
-  async deleteOrganization (organizationId) {
+  async deleteOrganization (organizationId: string) {
     await this.db.collection('users')
       .updateMany({}, { $pull: { organizations: { id: organizationId } } })
     await this.db.collection('organizations').deleteOne({ _id: organizationId })
   }
 
-  async findOrganizations (params = {}) {
-    const filter = {}
+  async findOrganizations (params: FindOrganizationsParams = {}) {
+    const filter: any = {}
     if (params.ids) {
       filter._id = { $in: params.ids }
     }
@@ -348,7 +349,7 @@ class MongodbStorage implements SdStorage {
     return this.db.collection('users').countDocuments({ 'organizations.id': organizationId })
   }
 
-  async patchMember (organizationId, userId, department = null, patch) {
+  async patchMember (organizationId: string, userId: string, department = null, patch: PatchMemberBody) {
     // department is the optional department of the membership we are trying to change
     // patch.department is the optional new department of the membership
 
@@ -395,7 +396,7 @@ class MongodbStorage implements SdStorage {
     )
   }
 
-  async removeMember (organizationId, userId, department = null) {
+  async removeMember (organizationId: string, userId: string, department?: string) {
     await this.db.collection('users')
       .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId, department } } })
   }
@@ -419,7 +420,7 @@ class MongodbStorage implements SdStorage {
     await this.db.collection('users').updateOne({ _id: userId }, { $set: { '2FA': twoFA } })
   }
 
-  async addPartner (orgId, partner) {
+  async addPartner (orgId: string, partner: Partner) {
     await this.db.collection('organizations').updateOne({ _id: orgId }, {
       $pull: { partners: { contactEmail: partner.contactEmail, id: { $exists: false } } }
     })

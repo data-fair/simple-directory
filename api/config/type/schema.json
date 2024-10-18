@@ -30,7 +30,9 @@
     "jwtDurations",
     "perOrgStorageTypes",
     "mails",
-    "maildev"
+    "maildev",
+    "roles",
+    "listEntitiesMode"
   ],
   "properties": {
     "port": {
@@ -299,6 +301,27 @@
         },
         "web": {
           "type": "number"
+        }
+      }
+    },
+    "listEntitiesMode": {
+      "enum": ["anonymous", "authenticated", "admin"]
+    },
+    "listUserMode": {
+      "enum": ["anonymous", "authenticated", "admin", null]
+    },
+    "listOrganizationsMode": {
+      "enum": ["anonymous", "authenticated", "admin", null]
+    },
+    "roles": {
+      "type": "object",
+      "required": ["defaults"],
+      "properties": {
+        "defaults": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

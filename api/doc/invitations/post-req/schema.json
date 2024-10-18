@@ -1,7 +1,7 @@
 {
   "$id": "https://github.com/data-fair/simple-directory/invitations/post-req",
   "x-exports": ["types", "validate"],
-  "title": "site-post",
+  "title": "Post invitation req",
   "type":"object",
   "required": ["body", "query"],
   "properties":{

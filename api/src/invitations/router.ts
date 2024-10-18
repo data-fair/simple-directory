@@ -14,7 +14,6 @@ import * as postReq from '#doc/invitations/post-req/index.ts'
 import emailValidator from 'email-validator'
 import { shortenInvit, unshortenInvit } from './service.ts'
 import * as tokens from '../tokens/service.ts'
-const mails = require('../mails')
 const { send: sendNotification } = require('../utils/notifications')
 const webhooks = require('../webhooks')
 const debug = require('debug')('invitations')

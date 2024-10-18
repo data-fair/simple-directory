@@ -1,23 +1,35 @@
-import { Router } from 'express'
-import { reqUser } from '@data-fair/lib-express'
+import { type Member } from '#types'
+import { Router, type Request } from 'express'
+import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, type EventLogContext } from '@data-fair/lib-express'
+import eventsLog from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
 import config from '#config'
+import { reqI18n } from '#i18n'
+import storages from '#storages'
+import mongo from '#mongo'
+import * as patchReq from '#doc/organizations/patch-req/index.ts'
+import * as postReq from '#doc/organizations/post-req/index.ts'
+import * as patchMemberReq from '#doc/organizations/patch-member-req/index.ts'
+import * as postPartnerReq from '#doc/organizations/post-partner-req/index.ts'
+import * as postPartnerAcceptReq from '#doc/organizations/post-partner-accept-req/index.ts'
+import { FindMembersParams, SdStorage } from '../storages/interface.ts'
+import { setNbMembers } from '../limits/service.ts'
+import { sendMail } from '../mails/service.ts'
+import { __all } from '#i18n'
+
 const csvStringify = require('util').promisify(require('csv-stringify').stringify)
-const { nanoid } = require('nanoid')
 const slug = require('slugify')
 const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
-const mails = require('../mails')
-const limits = require('../utils/limits')
 const tokens = require('../utils/tokens')
-const storageFactory = require('../storages')
 const passwordsUtils = require('../utils/passwords')
 const partnersUtils = require('../utils/partners')
 const defaultConfig = require('../../config/default.js')
 const { send: sendNotification } = require('../utils/notifications')
 
-const router = export default  Router()
-
+const router = Router()
+export default router
+/*
 function getUserOrg (req, noDep = true) {
   return (reqUser(req).organizations || []).find(o => o.id === req.params.organizationId && !(noDep && o.department))
 }
@@ -25,20 +37,23 @@ function getUserOrgDep (req) {
   return (reqUser(req).organizations || []).find(o => o.id === req.params.organizationId && req.query.department && o.department === req.query.department)
 }
 
+*/
+
 // Either a super admin, or an admin of the current organization
-function isOrgAdmin (req) {
-  const userOrg = getUserOrg(req, false)
-  if (config.depAdminIsOrgAdmin) return reqUser(req).adminMode || (userOrg && userOrg.role === 'admin')
-  return reqUser(req).adminMode || (userOrg && userOrg.role === 'admin' && !userOrg.department)
+function isOrgAdmin (req: Request) {
+  const role = getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: config.depAdminIsOrgAdmin })
+  return role === 'admin'
 }
 
 // Either a super admin, or a member of the current organization
-function isMember (req) {
-  return reqUser(req).adminMode || getUserOrg(req, false)
+function isMember (req: Request) {
+  return !!getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: true })
 }
 
 // Get the list of organizations
 router.get('', async (req, res, next) => {
+  const user = reqUser(req)
+
   const listMode = config.listOrganizationsMode || config.listEntitiesMode
   if (listMode === 'authenticated' && !reqUser(req)) return res.send({ results: [], count: 0 })
   if (listMode === 'admin' && !(reqUser(req)?.adminMode)) return res.send({ results: [], count: 0 })
@@ -48,12 +63,12 @@ router.get('', async (req, res, next) => {
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
   if (allFields) {
-    if (!reqUser(req) || !reqUser(req).adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+    if (!user?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   } else {
     params.select = ['id', 'name']
   }
 
-  if (req.query.ids) params.ids = req.query.ids.split(',')
+  if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
   if (req.query.q) params.q = req.query.q
   if (req.query.creator) params.creator = req.query.creator
 
@@ -76,8 +91,7 @@ router.get('/:organizationId', async (req, res, next) => {
   const orga = await storages.globalStorage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   orga.roles = orga.roles || config.roles.defaults
-  orga.avatarUrl = reqSiteUrl(req) + '/simple-directory' + '/api/avatars/organization/' + orga.id + '/avatar.png'
-  if (!reqUser(req).adminMode && orga.orgStorage) delete orga.orgStorage.config
+  if (!reqUser(req)?.adminMode && orga.orgStorage) delete orga.orgStorage.config
   res.send(orga)
 })
 
@@ -96,26 +110,25 @@ router.get('/:organizationId/roles', async (req, res, next) => {
 
 // Create an organization
 router.post('', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const user = reqUser(req)
+  const logContext: EventLogContext = { req }
 
-  if (!reqUser(req)) return res.status(401).send()
+  if (!user) return res.status(401).send()
   const storage = storages.globalStorage
-  if (!reqUser(req).adminMode) {
-    const createdOrgs = (await storage.findOrganizations({ size: 0, skip: 0, creator: reqUser(req).id })).count
-    let maxCreatedOrgs = (await storage.getUser({ id: reqUser(req).id })).maxCreatedOrgs
+  if (!user.adminMode) {
+    const createdOrgs = (await storage.findOrganizations({ size: 0, skip: 0, creator: user.id })).count
+    let maxCreatedOrgs = (await storage.getUser(user.id))?.maxCreatedOrgs
     if (maxCreatedOrgs === undefined || maxCreatedOrgs === null) maxCreatedOrgs = config.quotas.defaultMaxCreatedOrgs
     if (maxCreatedOrgs !== -1 && createdOrgs >= maxCreatedOrgs) return res.status(429).send(reqI18n(req).messages.errors.maxCreatedOrgs)
   }
-  const orga = req.body
-  orga.id = orga.id || nanoid()()
+  const { body: orga } = postReq.returnValid(req, { name: 'req' })
+
+  orga.id = orga.id || nanoid()
   logContext.account = { type: 'organization', id: orga.id, name: orga.name }
-  await storage.createOrganization(orga, reqUser(req))
+  const createdOrga = await storage.createOrganization(orga, user)
   eventsLog.info('sd.org.create', `a user created an organization: ${orga.name} (${orga.id})`, logContext)
-  if (!reqUser(req).adminMode || req.query.autoAdmin !== 'false') await storage.addMember(orga, reqUser(req), 'admin')
+  if (!reqUser(req)?.adminMode || req.query.autoAdmin !== 'false') await storage.addMember(createdOrga, user, 'admin')
   webhooks.postIdentity('organization', orga)
-  orga.avatarUrl = reqSiteUrl(req) + '/simple-directory' + '/api/avatars/organization/' + orga.id + '/avatar.png'
 
   // update session info
   await tokens.keepalive(req, res)
@@ -124,34 +137,31 @@ router.post('', async (req, res, next) => {
 })
 
 // Update some parts of an organization as admin of it
-const patchKeys = ['name', 'description', 'departments', 'departmentLabel', '2FA']
 router.patch('/:organizationId', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const user = reqUser(req)
+  const logContext: EventLogContext = { req }
 
-  if (!reqUser(req)) return res.status(401).send()
+  if (!user) return res.status(401).send()
   // Only allowed for the organizations that the user is admin of
   if (!isOrgAdmin(req)) {
     return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   }
-  const fullPatchKeys = reqUser(req).adminMode ? [...patchKeys, 'orgStorage'] : patchKeys
-  const patchedKeys = Object.keys(req.body)
-  const forbiddenKey = patchedKeys.find(key => !fullPatchKeys.includes(key))
-  if (forbiddenKey) return res.status(400).send('Only some parts of the organization can be modified through this route')
-  if (req.body.orgStorage?.config?.searchUserPassword && typeof req.body.orgStorage.config.searchUserPassword === 'string') {
-    req.body.orgStorage.config.searchUserPassword = passwordsUtils.cipherPassword(req.body.orgStorage.config.searchUserPassword)
+
+  const { body: patch } = patchReq.returnValid(req, { name: 'req' })
+  if (patch.orgStorage && !user.adminMode) throw httpError(403)
+  if (patch.orgStorage?.config?.searchUserPassword && typeof patch.orgStorage.config.searchUserPassword === 'string') {
+    patch.orgStorage.config.searchUserPassword = passwordsUtils.cipherPassword(patch.orgStorage.config.searchUserPassword)
   }
-  if (req.body.departments) {
-    for (const dep of req.body.departments) {
+  if (patch.departments) {
+    for (const dep of patch.departments) {
       if (!dep.id) {
-        if (req.body.departments.find(d => d.id && d.name === dep.name)) {
+        if (patch.departments.find(d => d.id && d.name === dep.name)) {
           return res.status(400).send(reqI18n(req).messages.errors.duplicateDep)
         }
         const baseId = slug(dep.name, { lower: true, strict: true })
         let id = baseId
         let i = 1
-        while (req.body.departments.find(d => d.id === id)) {
+        while (patch.departments.find(d => d.id === id)) {
           i += 1
           id = baseId + '-' + i
         }
@@ -159,14 +169,13 @@ router.patch('/:organizationId', async (req, res, next) => {
       }
     }
   }
-  const patchedOrga = await storages.globalStorage.patchOrganization(req.params.organizationId, req.body, reqUser(req))
+  const patchedOrga = await storages.globalStorage.patchOrganization(req.params.organizationId, patch, user)
 
   logContext.account = { type: 'organization', id: patchedOrga.id, name: patchedOrga.name }
-  eventsLog.info('sd.org.patch', `a user patched the organization info ${patchedKeys} - ${patchedOrga.name} ${patchedOrga.id}`, logContext)
+  eventsLog.info('sd.org.patch', `a user patched the organization info ${Object.keys(patch).join(', ')} - ${patchedOrga.name} ${patchedOrga.id}`, logContext)
 
-  if (storages.globalStorage.db) await storages.globalStorage.db.collection('limits').updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
+  await mongo.limits.updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
   webhooks.postIdentity('organization', patchedOrga)
-  patchedOrga.avatarUrl = reqSiteUrl(req) + '/simple-directory' + '/api/avatars/organization/' + patchedOrga.id + '/avatar.png'
 
   // update session info
   await tokens.keepalive(req, res)
@@ -176,9 +185,7 @@ router.patch('/:organizationId', async (req, res, next) => {
 
 // Get the members of an organization. i.e. a partial user object (id, name, role).
 router.get('/:organizationId/members', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
   // Only search through the organizations that the user belongs to
@@ -190,30 +197,31 @@ router.get('/:organizationId/members', async (req, res, next) => {
   if (!org) return res.status(404).send('organization not found')
   logContext.account = { type: 'organization', id: org.id, name: org.name }
 
-  const storages = [storages.globalStorage]
+  const orgStorages: (SdStorage & { orgStorage?: boolean })[] = [storages.globalStorage]
   if (org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
     // org_storage can be yes, no or both (both is default)
     if (req.query.org_storage === 'false') {
       // nothing todo
     } else {
-      const secondaryStorage = await storageFactory.init(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+      const secondaryStorage: SdStorage & { orgStorage?: boolean } = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
       secondaryStorage.orgStorage = true
       if (req.query.org_storage === 'true') {
-        storages[0] = secondaryStorage
+        orgStorages[0] = secondaryStorage
       } else {
-        storages.push(secondaryStorage)
+        orgStorages.push(secondaryStorage)
       }
     }
   }
 
   const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
   if (req.query.q) params.q = req.query.q
-  if (req.query.ids || req.query.id) params.ids = (req.query.ids || req.query.id).split(',')
-  if (req.query.role) params.roles = req.query.role.split(',')
-  if (req.query.department) params.departments = req.query.department.split(',')
-  if (req.query.email_confirmed) params.emailConfirmed = req.query.email_confirmed === 'true'
-  const members = { count: 0, results: [] }
-  for (const storage of storages) {
+  if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
+  else if (typeof req.query.id === 'string') params.ids = req.query.id.split(',')
+  if (typeof req.query.role === 'string') params.roles = req.query.role.split(',')
+  if (typeof req.query.department === 'string') params.departments = req.query.department.split(',')
+  if (typeof req.query.email_confirmed === 'string') params.emailConfirmed = req.query.email_confirmed === 'true'
+  const members = { count: 0, results: [] as Member[] }
+  for (const storage of orgStorages) {
     // do our best to mix results in "org_storage=both" mode
     if (members.count <= (params.skip + params.size)) {
       params.skip -= members.count
@@ -242,41 +250,32 @@ router.get('/:organizationId/members', async (req, res, next) => {
 
 // Exclude a member of the organization
 router.delete('/:organizationId/members/:userId', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
   const storage = storages.globalStorage
 
-  const dep = req.query.department
-  const filter = { ids: [req.params.userId] }
+  const dep = typeof req.query.department === 'string' ? req.query.department : undefined
+  const filter: FindMembersParams = { ids: [req.params.userId] }
   if (dep) filter.departments = [dep]
   const member = (await storage.findMembers(req.params.organizationId, filter)).results[0]
   if (!member) return res.status(404).send('member not found')
 
   // Only allowed for the organizations that the user is admin of
-  const userOrg = getUserOrg(req)
-  const userOrgAnyDep = getUserOrg(req, false)
-  const userDep = getUserOrgDep(req)
-  if (reqUser(req).adminMode) {
-    // ok
-  } else if (config.depAdminIsOrgAdmin && member && userOrgAnyDep && userOrgAnyDep.role === 'admin') {
-    // ok
-  } else if (member && userOrg && userOrg.role === 'admin') {
-    // ok
-  } else if (member && dep && userDep && userDep.role === 'admin') {
-    // ok
-  } else {
-    return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
-  }
 
-  eventsLog.info('sd.org.member.del', `a user removed a member from an organization ${member.name} (${member.id}), ${userOrg?.name || req.params.organizationId} (${userOrg?.id || req.params.organizationId})`, logContext)
+  // Only allowed for the organizations that the user is admin of (or admin of the member's department)
+  const role = getAccountRole(
+    reqSession(req),
+    { type: 'organization', id: req.params.organizationId, department: dep },
+    { acceptDepAsRoot: config.depAdminIsOrgAdmin }
+  )
+  if (role !== 'admin') return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+
+  eventsLog.info('sd.org.member.del', `a user removed a member from an organization ${member.name} (${member.id}), ${req.params.organizationId}`, logContext)
   await storage.removeMember(req.params.organizationId, req.params.userId, dep)
-  if (storage.db) {
-    await limits.setNbMembers(storage.db, req.params.organizationId)
-  }
-  const user = await storage.getUser({ id: req.params.userId })
+  await setNbMembers(req.params.organizationId)
+
+  const user = await storage.getUser(req.params.userId)
   if (!user) return res.status(404).send('user not found')
   if (config.onlyCreateInvited && !user.organizations.length) {
     eventsLog.info('sd.org.member.del-user', `a user was removed after being excluded from last organization ${user.name} (${user.id})`, logContext)
@@ -294,41 +293,32 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
 
 // Change the role of the user in the organization
 router.patch('/:organizationId/members/:userId', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
+
+  const { query, body } = patchMemberReq.returnValid(req, { name: 'req' })
   const storage = storages.globalStorage
-  const dep = req.query.department
-  const filter = { ids: [req.params.userId] }
-  if (dep) filter.departments = [dep]
-  const member = (await storage.findMembers(req.params.organizationId, { ids: [req.params.userId] })).results[0]
+  const dep = query.department
+  const filter: FindMembersParams = { ids: [req.params.userId] }
+  if (typeof dep === 'string') filter.departments = [dep]
+  const member = (await storage.findMembers(req.params.organizationId, filter)).results[0]
 
   // Only allowed for the organizations that the user is admin of (or admin of the member's department)
-  const userOrg = getUserOrg(req)
-  const userOrgAnyDep = getUserOrg(req, false)
-  const userDep = getUserOrgDep(req)
-  if (reqUser(req).adminMode) {
-    // ok
-  } else if (config.depAdminIsOrgAdmin && member && userOrgAnyDep && userOrgAnyDep.role === 'admin') {
-    // ok
-  } else if (member && userOrg && userOrg.role === 'admin') {
-    // ok
-  } else if (member && dep && userDep && userDep.role === 'admin' && dep === req.body.department) {
-    // ok
-  } else {
-    console.log()
-    return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
-  }
+  const role = getAccountRole(
+    reqSession(req),
+    { type: 'organization', id: req.params.organizationId, department: query.department },
+    { acceptDepAsRoot: config.depAdminIsOrgAdmin }
+  )
+  if (role !== 'admin') return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   const orga = await storage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   logContext.account = { type: 'organization', id: orga.id, name: orga.name }
   const roles = orga.roles || config.roles.defaults
-  if (!roles.includes(req.body.role)) return res.status(400).send(reqI18n(req).messages.errors.unknownRole.replace('{role}', req.body.role))
-  await storage.patchMember(req.params.organizationId, req.params.userId, req.query.department, req.body)
+  if (!roles.includes(body.role)) return res.status(400).send(reqI18n(req).messages.errors.unknownRole.replace('{role}', req.body.role))
+  await storage.patchMember(req.params.organizationId, req.params.userId, query.department, body)
   eventsLog.info('sd.org.member.patch', `a user changed the role of a member in an organization ${member.name} (${member.id}) ${req.body.role}, ${userOrg.name} (${userOrg.id})`, logContext)
-  webhooks.postIdentity('user', await storage.getUser({ id: req.params.userId }))
+  webhooks.postIdentity('user', await storage.getUser(req.params.userId))
 
   // update session info
   await tokens.keepalive(req, res)
@@ -360,19 +350,13 @@ if (config.managePartners) {
   // Invitation for an organization to join us as partners
   const debugPartners = require('debug')('partners')
   router.post('/:organizationId/partners', async (req, res, next) => {
-    const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
-    /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-    const logContext = { req }
-
-    const { assertValid } = await import('../../types/partner-post/index.mjs')
+    const logContext: EventLogContext = { req }
 
     if (!reqUser(req)) return res.status(401).send()
     if (!isOrgAdmin(req)) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
 
-    const partnerPost = req.body
-    // @ts-ignore
-    assertValid(partnerPost)
-    debugPartners('new partner', partnerPost, reqUser(req).activeAccount)
+    const { body: partnerPost } = postPartnerReq.returnValid(req)
+
     const storage = storages.globalStorage
 
     const orga = await storage.getOrganization(req.params.organizationId)
@@ -386,7 +370,7 @@ if (config.managePartners) {
     await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
     eventsLog.info('sd.org.partner.invite', `a user invited an organization to be a partner ${partnerPost.name} ${partnerPost.contactEmail} ${orga.name} ${orga.id}`, logContext)
 
-    const linkUrl = new URL(reqSiteUrl(req) + '/simple-directory' + '/login')
+    const linkUrl = new URL(reqSiteUrl(req) + '/simple-directory/login')
     linkUrl.searchParams.set('step', 'partnerInvitation')
     linkUrl.searchParams.set('partner_invit_token', token)
     linkUrl.searchParams.set('redirect', partnerPost.redirect || reqSiteUrl(req) + '/simple-directory')
@@ -395,7 +379,7 @@ if (config.managePartners) {
       organization: orga.name,
       partner: partnerPost.name
     }
-    await sendMail('partnerInvitation',reqI18n(req).messages,partnerPost.contactEmail,params)
+    await sendMail('partnerInvitation', reqI18n(req).messages, partnerPost.contactEmail, params)
 
     sendNotification({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
