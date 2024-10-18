@@ -1,9 +1,9 @@
-import type { UserWritable, User, Organization } from '#types'
-import type { SdStorage } from './interface.ts'
+import type { UserWritable, User, Organization, Member } from '#types'
+import type { SdStorage, FindMembersParams } from './interface.ts'
 import userName from '../utils/user-name.ts'
 import config from '#config'
 import { TwoFA } from '../2fa/service.ts'
-import { httpError } from '@data-fair/lib-express'
+import { httpError, OrganizationMembership } from '@data-fair/lib-express'
 const moment = require('moment')
 const escapeStringRegexp = require('escape-string-regexp')
 
@@ -174,8 +174,8 @@ class MongodbStorage implements SdStorage {
       .toArray()).map(cleanUser)
   }
 
-  async findMembers (organizationId, params = {}) {
-    const filter = { organizations: { $elemMatch: { id: organizationId } } }
+  async findMembers (organizationId: string, params: FindMembersParams = {}) {
+    const filter: any = { organizations: { $elemMatch: { id: organizationId } } }
     if (params.ids && params.ids.length) {
       filter._id = { $in: params.ids }
     }
@@ -216,7 +216,7 @@ class MongodbStorage implements SdStorage {
         if (params.departments && params.departments.length) {
           if (!params.departments.includes(userOrga.department || '-')) continue
         }
-        const member = {
+        const member: Member = {
           id: user._id,
           name: user.name,
           email: user.email,
@@ -227,8 +227,8 @@ class MongodbStorage implements SdStorage {
         }
         if (user.host) member.host = user.host
         if (user.plannedDeletion) member.plannedDeletion = user.plannedDeletion
-        if (userOrga.createdAt) member.createdAt = userOrga.createdAt
-        if (userOrga.readOnly) member.readOnly = userOrga.readOnly
+        // if (userOrga.createdAt) member.createdAt = userOrga.createdAt
+        // if (userOrga.readOnly) member.readOnly = userOrga.readOnly
         results.push(member)
       }
     }

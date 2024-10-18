@@ -28,7 +28,9 @@
     "anonymousAction",
     "quotas",
     "jwtDurations",
-    "perOrgStorageTypes"
+    "perOrgStorageTypes",
+    "mails",
+    "maildev"
   ],
   "properties": {
     "port": {
@@ -205,6 +207,13 @@
     "manageDepartmentLabel": {
       "type": "boolean"
     },
+    "contact": {
+      "type": "string",
+      "format": "email"
+    },
+    "anonymousContactForm": {
+      "type": "boolean"
+    },
     "anonymousAction": {
       "type": "object",
       "required": ["expiresIn", "notBefore"],
@@ -260,6 +269,38 @@
     },
     "defaultLoginRedirect": {
       "type": "string"
+    },
+    "mails": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "transport": {
+          "type": "object"
+        },
+        "extraParams": {
+          "type": "object"
+        }
+      }
+    },
+    "maildev": {
+      "type": "object",
+      "required": ["url", "active", "smtp", "web"],
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "smtp": {
+          "type": "number"
+        },
+        "web": {
+          "type": "number"
+        }
+      }
     }
   }
 }

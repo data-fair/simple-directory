@@ -11,19 +11,12 @@ const planDeletion = async (user) => {
   const link = config.publicUrl + '/login?email=' + encodeURIComponent(user.email)
   const linkUrl = new URL(link)
   if (user.emailConfirmed || user.logged) {
-    await mails.send({
-      transport: mailTransport,
-      key: 'plannedDeletion',
-      messages: i18n.messages[i18n.defaultLocale], // TODO: use a locale stored on the user ?
-      to: user.email,
-      params: {
-        link,
-        host: linkUrl.host,
-        origin: linkUrl.origin,
-        user: user.name,
-        plannedDeletion: dayjs(plannedDeletion).locale(i18n.defaultLocale).format('L'),
-        cause: i18n.messages[i18n.defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', dayjs(user.logged || user.created.date).locale(i18n.defaultLocale).format('L'))
-      }
+    // TODO: use a locale stored on the user ?
+    await sendMail('plannedDeletion', i18n.messages[i18n.defaultLocale], user.email, {
+      link,
+      user: user.name,
+      plannedDeletion: dayjs(plannedDeletion).locale(i18n.defaultLocale).format('L'),
+      cause: i18n.messages[i18n.defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', dayjs(user.logged || user.created.date).locale(i18n.defaultLocale).format('L'))
     })
     eventsLog.warn('sd.cleanup-cron.inactive.email', `sent an email of planned deletion to inactive user ${user.email}`, { user })
   }

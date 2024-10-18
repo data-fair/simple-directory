@@ -1,31 +1,36 @@
 import config from '#config'
 import { Router } from 'express'
-const { RateLimiterMongo, RateLimiterMemory } = require('rate-limiter-flexible')
-const requestIp = require('request-ip')
-const tokens = require('../utils/tokens')
+import { reqSiteUrl, reqIp, reqUser, session } from '@data-fair/lib-express'
+import { type SendMailOptions } from 'nodemailer'
+import storages from '#storages'
+import mongo from '#mongo'
+import { RateLimiterMongo } from 'rate-limiter-flexible'
+import emailValidator from 'email-validator'
+import { reqI18n } from '#i18n'
+import { sendMailRaw } from './service.ts'
+import { FindMembersParams } from '../storages/interface.ts'
 
-const router = export default  Router()
+const router = Router()
+export default Router
 
-// Used by the users' directory to notify name updates
 router.post('/', async (req, res) => {
   const key = req.query.key
   if (!config.secretKeys.sendMails || config.secretKeys.sendMails !== key) {
     return res.status(403).send('Bad secret in "key" parameter')
   }
   const storage = storages.globalStorage
-  const transport = req.app.get('mailTransport')
   const results = []
   for (const t of req.body.to) {
     // separte mail per recipient, prevents showing email addresses from other users
     // but a single mail per orgs/members, showing emails is not a problem in this case
-    const to = new Set([])
+    const to = new Set<string>([])
     if (t.type === 'user') {
-      const user = (await storage.getUser({ id: t.id }))
+      const user = (await storage.getUser(t.id))
       if (user) to.add(user.email)
       else console.error('Trying to send an email to a user that doesn\'t exist anymore')
     }
     if (t.type === 'organization') {
-      const membersParams = { size: 10000, skip: 0 }
+      const membersParams: FindMembersParams = { size: 10000, skip: 0 }
       if (t.role) membersParams.roles = [t.role]
       if (t.department && t.department !== '*') membersParams.departments = [t.department]
       if (!t.department) membersParams.departments = ['-']
@@ -33,7 +38,7 @@ router.post('/', async (req, res) => {
       members.results.forEach(member => to.add(member.email))
     }
 
-    const mail = {
+    const mail: SendMailOptions = {
       from: config.mails.from,
       to: [...to].join(', '),
       subject: req.body.subject,
@@ -43,31 +48,13 @@ router.post('/', async (req, res) => {
     if (req.body.html) {
       mail.html = req.body.html
     }
-    results.push(await transport.sendMailAsync(mail))
+    results.push(await sendMailRaw(mail))
   }
   res.send(results)
 })
 
 // protect contact route with rate limiting to prevent spam
-let _limiter
-const limiterOptions = {
-  keyPrefix: 'sd-rate-limiter-contact',
-  points: 1,
-  duration: 60
-}
-const limiter = (req) => {
-  if (config.storage.type === 'mongo') {
-    _limiter = _limiter || new RateLimiterMongo({
-      storeClient: storages.globalStorage.client,
-      dbName: storages.globalStorage.db.databaseName,
-      ...limiterOptions
-    })
-  } else {
-    _limiter = _limiter || new RateLimiterMemory(limiterOptions)
-  }
-  return _limiter
-}
-
+let _contactLimiter: RateLimiterMongo | undefined
 router.post('/contact', async (req, res) => {
   if (!reqUser(req) && !config.anonymousContactForm) return res.status(401).send()
 
@@ -77,14 +64,14 @@ router.post('/contact', async (req, res) => {
     if (!req.body.token) return res.status(401).send()
 
     // 1rst level of anti-spam prevention, no cross origin requests on this route
-    if (req.headers.origin && !reqSiteUrl(req) + '/simple-directory'.startsWith(req.headers.origin)) {
+    if (req.headers.origin && !reqSiteUrl(req).startsWith(req.headers.origin)) {
       return res.status(405).send('Appel depuis un domaine extérieur non supporté')
     }
 
     try {
       // 2nd level of anti-spam protection, validate that the user was present on the page for a few seconds before sending
       await session.verifyToken(req.body.token)
-    } catch (err) {
+    } catch (err: any) {
       if (err.name === 'NotBeforeError') {
         return res.status(429).send('Message refusé, l\'activité ressemble à celle d\'un robot spammeur.')
       } else {
@@ -94,19 +81,31 @@ router.post('/contact', async (req, res) => {
   }
   try {
     // 3rd level of anti-spam protection, simple rate limiting based on ip
-    await limiter(req).consume(reqIp(req), 1)
+    _contactLimiter = _contactLimiter ?? new RateLimiterMongo({
+      storeClient: mongo.client,
+      dbName: mongo.db.databaseName,
+      keyPrefix: 'sd-rate-limiter-contact',
+      points: 1,
+      duration: 60
+    })
+    await _contactLimiter.consume(reqIp(req), 1)
   } catch (err) {
     console.error('Rate limit error for /mails/contact route', reqIp(req), req.body.email, err)
     return res.status(429).send('Trop de messages dans un bref interval. Veuillez patienter avant d\'essayer de nouveau.')
   }
 
-  const mail = {
-    from: req.body.from,
+  const text = `Message transmis par le formulaire de contact de ${reqSiteUrl(req)}
+  Adresse mail renseignée par l'utilisateur : ${req.body.from}
+  
+  ${req.body.text}`
+
+  const mail: SendMailOptions = {
+    from: config.mails.from,
     to: config.contact,
     subject: req.body.subject,
-    text: req.body.text
+    text
   }
 
-  await req.app.get('mailTransport').sendMailAsync(mail)
+  await sendMailRaw(mail)
   res.send(req.body)
 })

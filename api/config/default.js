@@ -27,7 +27,7 @@ export default {
   roles: {
     defaults: ['admin', 'user']
   },
-  contact: 'contact@test.com',
+  contact: null,
   anonymousContactForm: false,
   anonymousAction: {
     expiresIn: '1d',

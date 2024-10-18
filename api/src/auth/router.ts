@@ -257,13 +257,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
 
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
-    await mails.send({
-      transport: req.app.get('mailTransport'),
-      key: 'noCreation',
-      messages: reqI18n(req).messages,
-      to: req.body.email,
-      params: { link: redirect, host: redirectUrl.host, origin: redirectUrl.origin }
-    })
+    await sendMail('noCreation', reqI18n(req).messages, req.body.email, { link: redirect, host: redirectUrl.host, origin: redirectUrl.origin })
     eventsLog.info('sd.auth.passwordless.no-user', `a passwordless authentication failed because of missing user and a warning mail was sent ${req.body.email}`, logContext)
     return res.status(204).send()
   }
@@ -287,13 +281,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
 
   const linkUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, req.body.org, req.body.dep), req.body.orgStorage)
   debug(`Passwordless authentication of user ${user.name}`)
-  await mails.send({
-    transport: req.app.get('mailTransport'),
-    key: 'login',
-    messages: reqI18n(req).messages,
-    to: user.email,
-    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
-  })
+  await sendMail('login', reqI18n(req).messages, user.email,{ link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
   eventsLog.info('sd.auth.passwordless.ok', 'a user successfully sent a authentication email', logContext)
   res.status(204).send()
 })
@@ -534,13 +522,7 @@ router.post('/action', async (req, res, next) => {
   if (!user || user.emailConfirmed === false) {
     const link = req.body.target || config.defaultLoginRedirect || (reqSiteUrl(req) + '/simple-directory' + '/login')
     const linkUrl = new URL(link)
-    await mails.send({
-      transport: req.app.get('mailTransport'),
-      key: 'noCreation',
-      messages: reqI18n(req).messages,
-      to: req.body.email,
-      params: { link, host: linkUrl.host, origin: linkUrl.origin }
-    })
+    await sendMail('noCreation', reqI18n(req).messages, req.body.email, { link, host: linkUrl.host, origin: linkUrl.origin })
     eventsLog.info('sd.auth.action.fail', `an action ${action} failed because of missing user and a warning mail was sent ${req.body.email}`, logContext)
     return res.status(204).send()
   }
@@ -553,13 +535,7 @@ router.post('/action', async (req, res, next) => {
   const linkUrl = new URL(req.body.target || reqSiteUrl(req) + '/simple-directory' + '/login')
   linkUrl.searchParams.set('action_token', token)
 
-  await mails.send({
-    transport: req.app.get('mailTransport'),
-    key: 'action',
-    messages: reqI18n(req).messages,
-    to: user.email,
-    params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
-  })
+  await sendMail('action', reqI18n(req).messages, user.email,{ link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
   eventsLog.info('sd.auth.action.ok', `an action email ${action} was sent`, logContext)
   res.status(204).send()
 })

@@ -99,10 +99,6 @@ export const run = async () => {
   const storage = await storages.initGlobal()
   app.set('storage', storage)
 
-  debug('prepare mail transport')
-  const mailTransport = await mails.init()
-  app.set('mailTransport', mailTransport)
-
   debug('prepare oauth providers')
   await oauth.init()
   debug('prepare saml2 providers')

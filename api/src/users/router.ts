@@ -115,13 +115,7 @@ router.post('', async (req, res, next) => {
   const link = req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
   if (user && user.emailConfirmed !== false) {
     const linkUrl = new URL(link)
-    await mails.send({
-      transport: req.app.get('mailTransport'),
-      key: 'conflict',
-      messages: reqI18n(req).messages,
-      to: req.body.email,
-      params: { host: linkUrl.host, origin: linkUrl.origin }
-    })
+    await sendMail('conflict', reqI18n(req).messages, req.body.email, { host: linkUrl.host, origin: linkUrl.origin })
     return res.status(204).send()
   }
 
@@ -172,13 +166,7 @@ router.post('', async (req, res, next) => {
     // the user will be validated and authenticated at the same time by the token_callback route
     const payload = { ...tokens.getPayload(newUser), emailConfirmed: true, temporary: true }
     const linkUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(newUser, req.query.org, req.query.dep))
-    await mails.send({
-      transport: req.app.get('mailTransport'),
-      key: 'creation',
-      messages: reqI18n(req).messages,
-      to: req.body.email,
-      params: { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin }
-    })
+    await sendMail('creation', reqI18n(req).messages, req.body.email, { link: linkUrl.href })
     // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
     return res.status(204).send()
   }
@@ -239,19 +227,11 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
   const link = reqSiteUrl(req) + '/simple-directory' + '/login?email=' + encodeURIComponent(reqUser(req).email)
   const linkUrl = new URL(link)
   if (patch.plannedDeletion) {
-    await mails.send({
-      transport: req.app.get('mailTransport'),
-      key: 'plannedDeletion',
-      messages: reqI18n(req).messages,
-      to: reqUser(req).email,
-      params: {
-        link,
-        host: linkUrl.host,
-        origin: linkUrl.origin,
-        user: reqUser(req).name,
-        plannedDeletion: req.localeDate(patch.plannedDeletion).format('L'),
-        cause: ''
-      }
+    await sendMail('plannedDeletion', reqI18n(req).messages, reqUser(req).email, {
+      link,
+      user: reqUser(req).name,
+      plannedDeletion: req.localeDate(patch.plannedDeletion).format('L'),
+      cause: ''
     })
   }
 

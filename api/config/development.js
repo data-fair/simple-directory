@@ -18,6 +18,7 @@ export default {
     }
   },
   homePage: 'https://koumoul.com',
+  contact: 'contact@test.com',
   anonymousContactForm: true,
   jwtDurations: {
     initialToken: '5m',

@@ -105,19 +105,11 @@ router.post('', async (req, res, next) => {
       debug('send email with link to createUser step', linkUrl.href)
       const params = {
         link: linkUrl.href,
-        organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : ''),
-        host: linkUrl.host,
-        origin: linkUrl.origin
+        organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '')
       }
       // send the mail either if the user does not exist or it was created more that 24 hours ago
       if (!query.skip_mail && (!existingUser || query.force_mail || dayjs().diff(dayjs(existingUser.created.date), 'day', true) < 1)) {
-        await mails.send({
-          transport: req.app.get('mailTransport'),
-          key: 'invitation',
-          messages: reqI18n(req).messages,
-          to: body.email,
-          params
-        })
+        await sendMail('invitation', reqI18n(req).messages, body.email, params)
         eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
       }
 
@@ -143,18 +135,10 @@ router.post('', async (req, res, next) => {
     linkUrl.searchParams.set('invit_token', token)
     const params = {
       link: linkUrl.href,
-      organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : ''),
-      host: linkUrl.host,
-      origin: linkUrl.origin
+      organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '')
     }
     if (!query.skip_mail) {
-      await mails.send({
-        transport: req.app.get('mailTransport'),
-        key: 'invitation',
-        messages: reqI18n(req).messages,
-        to: body.email,
-        params
-      })
+      await sendMail('invitation', reqI18n(req).messages, body.email, params)
       eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
     }
 

@@ -393,17 +393,9 @@ if (config.managePartners) {
     const params = {
       link: linkUrl.href,
       organization: orga.name,
-      host: linkUrl.host,
-      origin: linkUrl.origin,
       partner: partnerPost.name
     }
-    await mails.send({
-      transport: req.app.get('mailTransport'),
-      key: 'partnerInvitation',
-      messages: reqI18n(req).messages,
-      to: partnerPost.contactEmail,
-      params
-    })
+    await sendMail('partnerInvitation',reqI18n(req).messages,partnerPost.contactEmail,params)
 
     sendNotification({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },

@@ -1,4 +1,4 @@
-export default  {
+export default {
   port: 5690,
   publicUrl: 'http://127.0.0.1:5689/simple-directory',
   secret: {
@@ -6,6 +6,7 @@ export default  {
     private: './test/resources/test.key'
   },
   admins: ['admin@test.com', 'alban.mouton@koumoul.com'],
+  contact: 'contact@test.com',
   storage: {
     type: 'file',
     file: {

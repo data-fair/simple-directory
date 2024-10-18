@@ -1,7 +1,17 @@
-import type { User, UserWritable, Organization, Site } from '#types'
+import type { User, UserWritable, Organization, Site, Member } from '#types'
 import type { UserRef } from '@data-fair/lib-express'
 import type { Password } from '../utils/passwords.ts'
 import type { TwoFA } from '../2fa/service.ts'
+
+export type FindMembersParams = {
+  q?: string,
+  ids?: string[],
+  roles?: string[],
+  departments?: string[],
+  size?: number,
+  skip?: number,
+  sort?: any
+}
 
 export interface SdStorageFactory {
   init(conf: any, org?: Organization): Promise<SdStorage>
@@ -27,4 +37,5 @@ export interface SdStorage {
   set2FA(userId: string, twoFA: TwoFA): Promise<void>
 
   addMember (orga: Organization, user: User, role: string, department: string | undefined | null, readOnly?: boolean): Promise<void>
+  findMembers (organizationId: string, params: FindMembersParams): Promise<{ count: number, results: Member[] }>
 }
