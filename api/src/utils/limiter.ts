@@ -4,7 +4,7 @@ import config from '#config'
 import mongo from '#mongo'
 
 // protect authentication routes with rate limiting to prevent brute force attacks
-let _limiter
+let _limiter: RateLimiterMongo | undefined
 const limiterOptions = {
   keyPrefix: 'sd-rate-limiter-auth',
   points: config.authRateLimit.attempts,

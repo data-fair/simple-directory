@@ -41,7 +41,8 @@ export interface SdStorage {
   getUserByEmail(email: string, site?: Site): Promise<User>
   updateLogged(userId: string): Promise<void>
   deleteUser(userId: string): Promise<void>
-  patchMember(orgId: string, userId: string, department: string | null | undefined, patch: PatchMemberBody): Promise<void>
+  patchUser (userId: string, patch: Partial<User>, byUser?: { id: string, name: string }): Promise<User>
+  findInactiveUsers (): Promise<User[]>
 
   getOrganization(ordId: string): Promise<Organization | undefined>
   createOrganization(org: OrganizationPost, user: UserRef): Promise<Organization>
@@ -57,6 +58,7 @@ export interface SdStorage {
   addMember (orga: Organization, user: UserRef, role: string, department?: string | null, readOnly?: boolean): Promise<void>
   findMembers (organizationId: string, params: FindMembersParams): Promise<{ count: number, results: Member[] }>
   removeMember (orgId: string, userId: string, department?: string): Promise<void>
+  patchMember(orgId: string, userId: string, department: string | null | undefined, patch: PatchMemberBody): Promise<void>
 
   addPartner (orgId: string, partner: Partner): Promise<void>
   deletePartner (orgId: string, partnerId: string): Promise<void>

@@ -146,6 +146,10 @@ export default {
           type: 'boolean'
         }
       }
+    },
+    logged: {
+      type: 'string',
+      format: 'date-time'
     }
   }
 }

@@ -89,17 +89,19 @@ class MongodbStorage implements SdStorage {
     return user
   }
 
-  async patchUser (id, patch, byUser) {
-    if (byUser) patch.updated = { id: byUser.id, name: byUser.name, date: new Date() }
-    const unset = {}
-    Object.keys(patch).forEach(key => {
-      if (patch[key] === null) {
+  async patchUser (id: string, patch: Partial<User>, byUser?: { id: string, name: string }) {
+    if (byUser) patch.updated = { id: byUser.id, name: byUser.name, date: new Date().toISOString() }
+    const unset: Record<string, string> = {}
+    const set: any = {}
+    Object.entries(patch).forEach(([key, value]) => {
+      if (value === null) {
         unset[key] = ''
-        delete patch[key]
+      } else {
+        set[key] = value
       }
     })
     const operation = {}
-    if (Object.keys(patch).length) operation.$set = patch
+    if (Object.keys(set).length) operation.$set = set
     if (Object.keys(unset).length) operation.$unset = unset
     const mongoRes = await this.db.collection('users').findOneAndUpdate(
       { _id: id },
@@ -107,13 +109,6 @@ class MongodbStorage implements SdStorage {
       { returnDocument: 'after' }
     )
     const user = cleanUser(mongoRes.value)
-    // "name" was modified, also update all references in created and updated events
-    if (patch.name) {
-      this.db.collection('users').updateMany({ 'created.id': id }, { $set: { 'created.name': patch.name } })
-      this.db.collection('users').updateMany({ 'updated.id': id }, { $set: { 'updated.name': patch.name } })
-      this.db.collection('organizations').updateMany({ 'created.id': id }, { $set: { 'created.name': patch.name } })
-      this.db.collection('organizations').updateMany({ 'updated.id': id }, { $set: { 'updated.name': patch.name } })
-    }
     return user
   }
 

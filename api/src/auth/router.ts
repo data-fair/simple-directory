@@ -694,38 +694,6 @@ export const patchCoreOAuthUser = async (storage, provider, user, oauthInfo, mem
   await storage.patchUser(user.id, patch)
 }
 
-export const authCoreProviderMemberInfo = async (storage, site, provider, email, oauthInfo) => {
-  let create = false
-  if (provider.createMember === true) {
-    // retro-compatibility for when createMember was a boolean
-    create = true
-  } else if (provider.createMember && provider.createMember.type === 'always') {
-    create = true
-  } else if (provider.createMember && provider.createMember.type === 'emailDomain' && email.endsWith(`@${provider.createMember.emailDomain}`)) {
-    create = true
-  }
-
-  let org
-  if (create) {
-    const orgId = site ? site.owner.id : config.defaultOrg
-    org = await storage.getOrganization(orgId)
-    if (!org) throw new Error(`Organization not found ${orgId}`)
-  }
-
-  let role = 'user'
-  let readOnly = false
-  if (provider.coreIdProvider && provider.memberRole && provider.memberRole?.type !== 'none') {
-    readOnly = true
-  }
-  if (provider.memberRole?.type === 'static') {
-    role = provider.memberRole.role
-  }
-  if (provider.memberRole?.type === 'attribute') {
-    role = oauthInfo.data[provider.memberRole.attribute]
-  }
-
-  return { create, org, readOnly, role }
-}
 
 const oauthCallback = async (req, res, next) => {
   

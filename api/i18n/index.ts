@@ -2,9 +2,6 @@ import { type Request } from 'express'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import { flatten, unflatten } from 'flat'
 import acceptLangParser from 'accept-language-parser'
-import type { Dayjs, ConfigType } from 'dayjs'
-import type { App } from 'vue'
-import { inject } from 'vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/fr'
 import 'dayjs/locale/en'
@@ -15,6 +12,8 @@ import 'dayjs/locale/pt'
 import localizedFormat from 'dayjs/plugin/localizedFormat.js'
 
 dayjs.extend(localizedFormat)
+
+export const localizedDayjs = dayjs
 
 const flatOpts = { delimiter: '_' }
 
@@ -32,11 +31,11 @@ export const locales = [
 
 // Build a map of messages of this form
 // {fr: {msg1: 'libellé 1'}, en: {msg1: 'label 1'}}
-let messages: any = {}
+const _messages: any = {}
 for (const l of locales) {
-  messages[l.code] = await import ('./' + l.code + '.js')
+  _messages[l.code] = await import ('./' + l.code + '.js')
 }
-const flatMessages = flatten(messages, flatOpts) as Record<string, string>
+const flatMessages = flatten(_messages, flatOpts) as Record<string, string>
 
 // Manage overriding by environment variables of this form
 // 'I18N_en_msg1="another label"'
@@ -45,7 +44,7 @@ for (const [key, value] of Object.entries(process.env)) {
     flatMessages[key.replace('I18N_', '')] = value
   }
 }
-messages = unflatten(flatMessages, flatOpts)
+export const messages: any = unflatten(flatMessages, flatOpts)
 
 // A subset of messages for UI separated for performance.
 const flatPublicMessages = { ...flatMessages }

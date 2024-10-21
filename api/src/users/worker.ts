@@ -1,44 +1,53 @@
+import { type User } from '#types'
+import config from '#config'
+import cron from 'node-cron'
 import { deleteOAuthToken, writeOAuthToken } from '../oauth-tokens/service.ts'
+import { internalError } from '@data-fair/lib-node/observer.js'
+import dayjs from 'dayjs'
+import eventsLog from '@data-fair/lib-express/events-log.js'
+import { defaultLocale, localizedDayjs, messages } from '#i18n'
+import { sendMail } from '../mails/service.ts'
+import * as locks from '@data-fair/lib-node/locks.js'
+import storages from '#storages'
+import { findOfflineOAuthTokens, oauthGlobalProviders } from '../oauth/service.ts'
 
-// this single small worker loop doesn't rellay justify running in separate processes
+// this single small worker loop doesn't really justify running in separate processes
 // we simply run it as part of the api server
 
 let stopped = false
 let taskPromise
 
-const planDeletion = async (user) => {
-  const plannedDeletion = moment().add(config.plannedDeletionDelay, 'days').format('YYYY-MM-DD')
-  await storage.patchUser(user.id, { plannedDeletion })
+const planDeletion = async (user: User) => {
+  const plannedDeletion = dayjs().add(config.plannedDeletionDelay, 'days').format('YYYY-MM-DD')
+  await storages.globalStorage.patchUser(user.id, { plannedDeletion })
   eventsLog.warn('sd.cleanup-cron.plan-deletion', 'planned deletion of inactive user', { user })
   const link = config.publicUrl + '/login?email=' + encodeURIComponent(user.email)
-  const linkUrl = new URL(link)
   if (user.emailConfirmed || user.logged) {
     // TODO: use a locale stored on the user ?
-    await sendMail('plannedDeletion', i18n.messages[i18n.defaultLocale], user.email, {
+    await sendMail('plannedDeletion', messages[defaultLocale], user.email, {
       link,
       user: user.name,
       plannedDeletion: dayjs(plannedDeletion).locale(i18n.defaultLocale).format('L'),
-      cause: i18n.messages[i18n.defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', dayjs(user.logged || user.created.date).locale(i18n.defaultLocale).format('L'))
+      cause: messages[defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', localizedDayjs(user.logged || user.created.date).locale(defaultLocale).format('L'))
     })
     eventsLog.warn('sd.cleanup-cron.inactive.email', `sent an email of planned deletion to inactive user ${user.email}`, { user })
   }
 }
 
 const task = async () => {
-  const { internalError } = await import('@data-fair/lib/node/observer.js')
   try {
     console.info('run user cleanup cron task')
-    await locks.acquire(storage.db, 'user-deletion-task')
+    await locks.acquire('user-deletion-task')
     if (config.cleanup.deleteInactive) {
-      for (const user of await storage.findInactiveUsers()) {
+      for (const user of await storages.globalStorage.findInactiveUsers()) {
         await planDeletion(user)
       }
     }
 
-    for (const token of await storage.findOfflineOAuthTokens()) {
+    for (const token of await findOfflineOAuthTokens()) {
       // TODO manage offline tokens from site level providers
-      const provider = oauth.providers.find(p => p.id === token.provider.id)
-      const user = await storage.getUser({ id: token.user.id })
+      const provider = oauthGlobalProviders().find(p => p.id === token.provider.id)
+      const user = await storages.globalStorage.getUser(token.user.id)
       if (!provider) {
         console.error('offline token for unknown provider', token)
       } else if (!user) {
@@ -64,13 +73,13 @@ const task = async () => {
       }
     }
 
-    for (const user of await storage.findUsersToDelete()) {
+    for (const user of await storages.globalStorage.findUsersToDelete()) {
       console.log('execute planned deletion of user', user)
-      await storage.deleteUser(user.id)
+      await storages.globalStorage.deleteUser(user.id)
       eventsLog.warn('sd.cleanup-cron.delete', 'deleted user', { user })
       webhooks.deleteIdentity('user', user.id)
     }
-    await locks.release(storage.db, 'user-deletion-task')
+    await locks.release(storages.globalStorage.db, 'user-deletion-task')
     console.info('user cleanup cron task done\n\n')
   } catch (err) {
     internalError('cleanup-cron', err)

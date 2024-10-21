@@ -37,7 +37,9 @@
     "oidc",
     "saml2",
     "webhooks",
-    "authRateLimit"
+    "authRateLimit",
+    "plannedDeletionDelay",
+    "cleanup"
   ],
   "properties": {
     "port": {
@@ -523,7 +525,10 @@
     },
     "authRateLimit": {
       "type": "object",
-      "required": ["attempts", "duration"],
+      "required": [
+        "attempts",
+        "duration"
+      ],
       "properties": {
         "attempts": {
           "type": "integer"
@@ -532,6 +537,39 @@
           "type": "integer"
         }
       }
+    },
+    "plannedDeletionDelay": {
+      "type": "integer"
+    },
+    "cleanup": {
+      "type": "object",
+      "required": [
+        "cron",
+        "deleteInactive",
+        "deleteInactiveDelay"
+      ],
+      "properties": {
+        "cron": {
+          "type": "string"
+        },
+        "deleteInactive": {
+          "type": "boolean"
+        },
+        "deleteInactiveDelay": {
+          "type": "array",
+          "items": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "defaultOrg": {
+      "type": ["string", "null"]
     }
   },
   "$defs": {
@@ -558,32 +596,17 @@
         "discovery",
         "client"
       ],
-      "properties": {
-        "title": {
-          "type": "string"
-        },
-        "color": {
-          "type": "string"
-        },
-        "img": {
-          "type": "string"
-        },
-        "discovery": {
-          "type": "string"
-        },
-        "client": {
-          "$ref": "#/$defs/oauthClient"
-        },
-        "ignoreEmailVerified": {
-          "type": "boolean"
-        },
-        "coreIdProvider": {
-          "type": "boolean"
-        },
-        "redirectMode": {
-          "$ref": "#/$defs/redirectMode"
+      "allOf": [
+        {
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          }
+        }, {
+          "$ref": "https://github.com/data-fair/simple-directory/site#/$defs/oidcProvider"
         }
-      }
+      ]
     },
     "saml2Provider": {
       "type": "object",
