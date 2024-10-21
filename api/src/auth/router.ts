@@ -18,7 +18,6 @@ import userName from '../utils/user-name.ts'
 const twoFA = require('./2fa.js')
 const limiter = require('../utils/limiter')
 import storages from '#storages'
-const defaultConfig = require('../../config/default.js')
 const { unshortenInvit } = require('../utils/invitations')
 const limits = require('../utils/limits')
 const debug = require('debug')('auth')
@@ -95,7 +94,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
 
   let storage = storages.globalStorage
   if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+    storage = await storages.createOrgStorage(org)
   }
 
   if (config.adminCredentials?.password?.hash && config.adminCredentials.email === req.body.email) {
@@ -148,7 +147,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       email: user.email,
       action: 'changeHost'
     }
-    const token = await tokens.sign(payload, config.jwtDurations.initialToken)
+    const token = await sign(payload, config.jwtDurations.initialToken)
     const changeHostUrl = new URL((await reqSite(req).host.startsWith('localhost') ? 'http://' : 'https://') + await reqSite(req).host + '/simple-directory/login')
     changeHostUrl.searchParams.set('action_token', token)
     eventsLog.info('sd.auth.password.change-host', 'a user is suggested to switch to secondary host', logContext)
@@ -190,7 +189,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       } else {
         // 2FA token sent alongside email/password
         const cookies = new Cookies(req, res)
-        const token = await tokens.sign({ user: user.id }, config.jwtDurations['2FAToken'])
+        const token = await sign({ user: user.id }, config.jwtDurations['2FAToken'])
         cookies.set(twoFA.cookieName(user.id), token, { expires: new Date(tokens.decode(token).exp * 1000), sameSite: 'lax', httpOnly: true })
       }
     } else {
@@ -207,7 +206,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   eventsLog.info('sd.auth.password.ok', 'a user successfully authenticated using password', logContext)
   // this is used by data-fair app integrated login
   if (req.is('application/x-www-form-urlencoded')) {
-    const token = await tokens.sign(payload, config.jwtDurations.exchangedToken)
+    const token = await sign(payload, config.jwtDurations.exchangedToken)
     tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
     res.redirect(req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me')
@@ -247,7 +246,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
 
   let storage = storages.globalStorage
   if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+    storage = await storages.createOrgStorage(org)
   }
   const user = await storage.getUserByEmail(req.body.email, await reqSite(req))
   logContext.user = user
@@ -332,8 +331,8 @@ router.get('/token_callback', async (req, res, next) => {
     if (!org) return redirectError('orgaUnknown')
   }
   let storage = storages.globalStorage
-  if (req.query.org_storage === 'true' && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+  if (req.query.org_storage === 'true') {
+    storage = storage ?? await storages.createOrgStorage(org)
   }
   const user = decoded.id === '_superadmin' ? decoded : await storage.getUser({ id: decoded.id })
   logContext.user = user
@@ -347,7 +346,7 @@ router.get('/token_callback', async (req, res, next) => {
   const payload = tokens.getPayload(user)
   if (decoded.rememberMe) payload.rememberMe = true
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = true
-  const token = await tokens.sign(payload, config.jwtDurations.exchangedToken)
+  const token = await sign(payload, config.jwtDurations.exchangedToken)
 
   await confirmLog(storage, user)
   tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user, req.query.id_token_org, req.query.id_token_dep))
@@ -417,7 +416,7 @@ router.post('/exchange', async (req, res, next) => {
     }
   }
   if (decoded.rememberMe) payload.rememberMe = true
-  const token = await tokens.sign(payload, config.jwtDurations.exchangedToken)
+  const token = await sign(payload, config.jwtDurations.exchangedToken)
 
   eventsLog.info('sd.auth.exchange.ok', 'a session token was successfully exchanged for a new one', logContext)
 
@@ -478,7 +477,7 @@ router.post('/keepalive', async (req, res, next) => {
   }
 
   debug(`Exchange session token for user ${reqUser(req).name}`)
-  await tokens.keepalive(req, res, user)
+  await keepalive(req, res, user)
   res.status(204).send()
 })
 
@@ -531,7 +530,7 @@ router.post('/action', async (req, res, next) => {
     email: user.email,
     action
   }
-  const token = await tokens.sign(payload, config.jwtDurations.initialToken)
+  const token = await sign(payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(req.body.target || reqSiteUrl(req) + '/simple-directory/login')
   linkUrl.searchParams.set('action_token', token)
 
@@ -545,7 +544,7 @@ router.delete('/adminmode', async (req, res, next) => {
   if (!reqUser(req)?.adminMode) return res.status(403).send('This route is only available in admin mode')
   debug(`Exchange session token without adminMode for user ${reqUser(req).name}`)
   req.query.noAdmin = 'true'
-  await tokens.keepalive(req, res)
+  await keepalive(req, res)
 
   res.status(204).send()
 })
@@ -565,7 +564,7 @@ router.post('/asadmin', async (req, res, next) => {
   payload.name += ' (administration)'
   payload.asAdmin = { id: reqUser(req).id, name: reqUser(req).name }
   payload.isAdmin = false
-  const token = await tokens.sign(payload, config.jwtDurations.exchangedToken)
+  const token = await sign(payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
   tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user))
 
@@ -586,7 +585,7 @@ router.delete('/asadmin', async (req, res, next) => {
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = tokens.getPayload(user)
   payload.adminMode = true
-  const token = await tokens.sign(payload, config.jwtDurations.exchangedToken)
+  const token = await sign(payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
   tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user))
 

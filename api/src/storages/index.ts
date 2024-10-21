@@ -2,6 +2,7 @@ import type { Organization, UserWritable } from '#types'
 import config from '#config'
 import type { SdStorage, SdStorageFactory } from './interface.ts'
 import { nanoid } from 'nanoid'
+import defaultConfig from '../../config/default.js'
 
 class StorageManager {
   private _globalStorage?: SdStorage
@@ -52,6 +53,11 @@ class StorageManager {
     const storage = await factory.init(conf, org)
     storage.readonly = factory.readonly
     return storage
+  }
+
+  async createOrgStorage (org: Organization): Promise<SdStorage | undefined> {
+    if (!org.orgStorage?.active || !config.perOrgStorageTypes.includes(org.orgStorage.type)) return
+    return this.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
 }
 

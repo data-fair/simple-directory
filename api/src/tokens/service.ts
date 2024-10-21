@@ -6,7 +6,6 @@ import { internalError } from '@data-fair/lib-node/observer.js'
 import config from '#config'
 import jwt, { type SignOptions, type JwtPayload } from 'jsonwebtoken'
 import Cookies from 'cookies'
-import defaultConfig from '../../config/default.js'
 import storages from '#storages'
 import { getSignatureKeys } from './keys-manager.ts'
 import { reqSite } from '../sites/service.ts'
@@ -94,7 +93,7 @@ export const setCookieToken = (req: Request, res: Response, token: string, userO
   }
 }
 
-export const keepalive = async (req: Request, res: Response, _user: User) => {
+export const keepalive = async (req: Request, res: Response, _user?: User) => {
   const session = reqSession(req)
   if (!session.account || !session.user) throw httpError(401)
   const logContext: EventLogContext = { req, account: (await reqSite(req))?.owner }
@@ -111,8 +110,8 @@ export const keepalive = async (req: Request, res: Response, _user: User) => {
     logContext.account = { type: 'organization', id: org.id, name: org.name, department: session.organization.department, departmentName: session.organization.departmentName }
   }
   let storage = storages.globalStorage
-  if (session.user.os && org && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+  if (session.user.os && org) {
+    storage = await storages.createOrgStorage(org) ?? storage
   }
   const user = _user || await storage.getUser(session.user.id)
   if (!user) {

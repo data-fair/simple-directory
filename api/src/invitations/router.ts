@@ -66,7 +66,7 @@ router.post('', async (req, res, next) => {
   }
   logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invitation.department, departmentName: dep?.name }
 
-  const token = await tokens.sign(shortenInvit(invitation), config.jwtDurations.invitationToken)
+  const token = await sign(shortenInvit(invitation), config.jwtDurations.invitationToken)
 
   if (config.alwaysAcceptInvitation) {
     eventsLog.info('sd.invite.user-creation', `invitation sent in always accept mode immediately creates a user or adds it as member ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
@@ -209,7 +209,7 @@ router.get('/_accept', async (req, res, next) => {
     // missing password, invitation must have been accepted without completing account creation
     if (!await storage.getPassword(invit.email) && !config.passwordless) {
       const payload = { id: existingUser.id, email: existingUser.email, action: 'changePassword' }
-      const token = await tokens.sign(payload, config.jwtDurations.initialToken)
+      const token = await sign(payload, config.jwtDurations.initialToken)
       const reboundRedirect = redirectUrl.href
       redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
       redirectUrl.searchParams.set('step', 'changePassword')

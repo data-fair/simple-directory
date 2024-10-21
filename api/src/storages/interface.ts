@@ -12,7 +12,8 @@ export type FindMembersParams = {
   departments?: string[],
   size?: number,
   skip?: number,
-  sort?: any
+  sort?: any,
+  emailConfirmed?: boolean
 }
 
 export type FindOrganizationsParams = {

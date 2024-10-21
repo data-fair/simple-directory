@@ -18,13 +18,12 @@ import { setNbMembers } from '../limits/service.ts'
 import { sendMail } from '../mails/service.ts'
 import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
+import { postOrganizationIdentity, postUserIdentity, deleteIdentity } from '../webhooks.ts'
+import _slug from 'slugify'
+import { keepalive, sign } from '../tokens/service.ts'
+import { cipher } from '../utils/cipher.ts'
 
-const slug = require('slugify')
-const findUtils = require('../utils/find')
-const webhooks = require('../webhooks')
-const tokens = require('../utils/tokens')
-const passwordsUtils = require('../utils/passwords')
-const defaultConfig = require('../../config/default.js')
+const slug = _slug.default
 
 const router = Router()
 export default router
@@ -127,10 +126,10 @@ router.post('', async (req, res, next) => {
   const createdOrga = await storage.createOrganization(orga, user)
   eventsLog.info('sd.org.create', `a user created an organization: ${orga.name} (${orga.id})`, logContext)
   if (!reqUser(req)?.adminMode || req.query.autoAdmin !== 'false') await storage.addMember(createdOrga, user, 'admin')
-  webhooks.postIdentity('organization', orga)
+  postOrganizationIdentity(orga)
 
   // update session info
-  await tokens.keepalive(req, res)
+  await keepalive(req, res)
 
   res.status(201).send(orga)
 })
@@ -149,7 +148,7 @@ router.patch('/:organizationId', async (req, res, next) => {
   const { body: patch } = patchReq.returnValid(req, { name: 'req' })
   if (patch.orgStorage && !user.adminMode) throw httpError(403)
   if (patch.orgStorage?.config?.searchUserPassword && typeof patch.orgStorage.config.searchUserPassword === 'string') {
-    patch.orgStorage.config.searchUserPassword = passwordsUtils.cipherPassword(patch.orgStorage.config.searchUserPassword)
+    patch.orgStorage.config.searchUserPassword = cipher(patch.orgStorage.config.searchUserPassword)
   }
   if (patch.departments) {
     for (const dep of patch.departments) {
@@ -174,10 +173,10 @@ router.patch('/:organizationId', async (req, res, next) => {
   eventsLog.info('sd.org.patch', `a user patched the organization info ${Object.keys(patch).join(', ')} - ${patchedOrga.name} ${patchedOrga.id}`, logContext)
 
   await mongo.limits.updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
-  webhooks.postIdentity('organization', patchedOrga)
+  postOrganizationIdentity(patchedOrga)
 
   // update session info
-  await tokens.keepalive(req, res)
+  await keepalive(req, res)
 
   res.send(patchedOrga)
 })
@@ -197,12 +196,13 @@ router.get('/:organizationId/members', async (req, res, next) => {
   logContext.account = { type: 'organization', id: org.id, name: org.name }
 
   const orgStorages: (SdStorage & { orgStorage?: boolean })[] = [storages.globalStorage]
-  if (org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    // org_storage can be yes, no or both (both is default)
-    if (req.query.org_storage === 'false') {
-      // nothing todo
-    } else {
-      const secondaryStorage: SdStorage & { orgStorage?: boolean } = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+
+  // org_storage can be yes, no or both (both is default)
+  if (req.query.org_storage === 'false') {
+    // nothing todo
+  } else {
+    const secondaryStorage: undefined | (SdStorage & { orgStorage?: boolean }) = await storages.createOrgStorage(org)
+    if (secondaryStorage) {
       secondaryStorage.orgStorage = true
       if (req.query.org_storage === 'true') {
         orgStorages[0] = secondaryStorage
@@ -212,8 +212,9 @@ router.get('/:organizationId/members', async (req, res, next) => {
     }
   }
 
-  const params = { ...mongoPagination(req.query), sort: mongoSort(req.query.sort) }
-  if (req.query.q) params.q = req.query.q
+  const pagination = mongoPagination(req.query)
+  const params: FindMembersParams = { ...pagination, sort: mongoSort(req.query.sort) }
+  if (typeof req.query.q === 'string') params.q = req.query.q
   if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
   else if (typeof req.query.id === 'string') params.ids = req.query.id.split(',')
   if (typeof req.query.role === 'string') params.roles = req.query.role.split(',')
@@ -222,10 +223,10 @@ router.get('/:organizationId/members', async (req, res, next) => {
   const members = { count: 0, results: [] as Member[] }
   for (const storage of orgStorages) {
     // do our best to mix results in "org_storage=both" mode
-    if (members.count <= (params.skip + params.size)) {
-      params.skip -= members.count
-      if (params.skip < 0) {
-        params.size += params.skip
+    if (members.count <= (pagination.skip + pagination.size)) {
+      pagination.skip -= members.count
+      if (pagination.skip < 0) {
+        pagination.size += pagination.skip
         params.skip = 0
       }
       const storageMembers = await storage.findMembers(req.params.organizationId, params)
@@ -240,7 +241,7 @@ router.get('/:organizationId/members', async (req, res, next) => {
 
   if (req.query.format === 'csv') {
     res.setHeader('content-disposition', 'attachment; filename="members.csv"')
-    const csv = await csvStringify(members.results, { header: true, columns: ['name', 'email', 'role', 'department', 'departmentName'] })
+    const csv = csvStringify(members.results, { header: true, columns: ['name', 'email', 'role', 'department', 'departmentName'] })
     res.send(csv)
   } else {
     res.send(members)
@@ -279,13 +280,13 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
   if (config.onlyCreateInvited && !user.organizations.length) {
     eventsLog.info('sd.org.member.del-user', `a user was removed after being excluded from last organization ${user.name} (${user.id})`, logContext)
     await storage.deleteUser(req.params.userId)
-    webhooks.deleteIdentity('user', user.id)
+    deleteIdentity('user', user.id)
   } else {
-    webhooks.postIdentity('user', user)
+    postUserIdentity(user)
   }
 
   // update session info
-  await tokens.keepalive(req, res)
+  await keepalive(req, res)
 
   res.status(204).send()
 })
@@ -317,10 +318,10 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
   if (!roles.includes(body.role)) return res.status(400).send(reqI18n(req).messages.errors.unknownRole.replace('{role}', body.role))
   await storage.patchMember(req.params.organizationId, req.params.userId, query.department, body)
   eventsLog.info('sd.org.member.patch', `a user changed the role of a member in an organization ${member.name} (${member.id}) ${body.role} ${body.department ?? ''}`, logContext)
-  webhooks.postIdentity('user', await storage.getUser(req.params.userId))
+  postUserIdentity(await storage.getUser(req.params.userId))
 
   // update session info
-  await tokens.keepalive(req, res)
+  await keepalive(req, res)
 
   res.status(204).send()
 })
@@ -336,10 +337,10 @@ router.delete('/:organizationId', async (req, res, next) => {
   if (count > 1) return res.status(400).send(reqI18n(req).messages.errors.nonEmptyOrganization)
   await storages.globalStorage.deleteOrganization(req.params.organizationId)
   eventsLog.info('sd.org.delete', `a user deleted an organization ${req.params.organizationId}`, logContext)
-  webhooks.deleteIdentity('organization', req.params.organizationId)
+  deleteIdentity('organization', req.params.organizationId)
 
   // update session info
-  await tokens.keepalive(req, res)
+  await keepalive(req, res)
 
   res.status(204).send()
 })
@@ -363,7 +364,7 @@ if (config.managePartners) {
 
     const partnerId = nanoid()
 
-    const token = await tokens.sign(partnersUtils.shortenPartnerInvitation(partnerPost, orga, partnerId), config.jwtDurations.partnerInvitationToken)
+    const token = await sign(partnersUtils.shortenPartnerInvitation(partnerPost, orga, partnerId), config.jwtDurations.partnerInvitationToken)
 
     await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
     eventsLog.info('sd.org.partner.invite', `a user invited an organization to be a partner ${partnerPost.name} ${partnerPost.contactEmail} ${orga.name} ${orga.id}`, logContext)

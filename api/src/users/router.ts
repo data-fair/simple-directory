@@ -4,7 +4,7 @@ import { reqUser, mongoPagination, mongoSort } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
 import userName from '../utils/user-name.ts'
 import { pushEvent } from '@data-fair/lib-node/events-queue.js'
-const findUtils = require('../utils/find')
+
 const tokens = require('../utils/tokens')
 const passwords = require('../utils/passwords')
 const webhooks = require('../webhooks')
@@ -12,7 +12,6 @@ const mails = require('../mails')
 import storages from '#storages'
 const limits = require('../utils/limits')
 const { unshortenInvit } = require('../utils/invitations')
-const defaultConfig = require('../../config/default.js')
 
 const router = Router()
 
@@ -178,7 +177,7 @@ router.get('/:userId', async (req, res, next) => {
   if (reqUser(req).id === req.params.userId && reqUser(req).orgStorage && reqUser(req).organization) {
     const org = await storages.globalStorage.getOrganization(reqUser(req).organization.id)
     if (!org) return res.status(401).send('Organization does not exist anymore')
-    storage = await storages.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+    storage = await storages.createOrgStorage(org) ?? storage
   }
   const user = await storage.getUser({ id: req.params.userId })
   if (!user) return res.status(404).send()
@@ -234,7 +233,7 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
   if (storages.globalStorage.db) await storages.globalStorage.db.collection('limits').updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
 
   // update session info
-  await tokens.keepalive(req, res)
+  await keepalive(req, res)
 
   res.send(patchedUser)
 })
@@ -250,7 +249,7 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
   await storages.globalStorage.patchUser(req.params.userId, patch, reqUser(req))
 
   // update session info
-  await tokens.keepalive(req, res)
+  await keepalive(req, res)
 
   eventsLog.info('sd.user.cancelDeletion', 'user cancelled their planned deletion', logContext)
 
@@ -329,7 +328,7 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
       email: decoded.email,
       action: 'changePassword'
     }
-    const token = await tokens.sign(payload, config.jwtDurations.initialToken)
+    const token = await sign(payload, config.jwtDurations.initialToken)
     res.send(token)
   } else {
     res.status(204).send()
