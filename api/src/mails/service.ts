@@ -10,8 +10,8 @@ const EventEmitter = require('events')
 
 export const events = new EventEmitter()
 
-const mjmlTemplate = fs.readFileSync(path.join(__dirname, 'mail.mjml'), 'utf8')
-const mjmlNoButtonTemplate = fs.readFileSync(path.join(__dirname, 'mail-nobutton.mjml'), 'utf8')
+const mjmlTemplate = fs.readFileSync(path.join(import.meta.dirname, 'mail.mjml'), 'utf8')
+const mjmlNoButtonTemplate = fs.readFileSync(path.join(import.meta.dirname, 'mail-nobutton.mjml'), 'utf8')
 
 const maildevTransport = {
   port: config.maildev.smtp,

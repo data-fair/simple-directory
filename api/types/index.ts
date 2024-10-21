@@ -4,6 +4,7 @@ import { OrganizationMembership } from '@data-fair/lib-common-types/session/inde
 export type { User } from './user/index.ts'
 export type { Organization } from './organization/index.ts'
 export type { Site } from './site/index.ts'
+export type { SitePublic } from './site-public/index.ts'
 export type { Limits } from './limits/index.ts'
 export type { Invitation } from './invitation/index.ts'
 export type { Partner } from './partner/index.ts'

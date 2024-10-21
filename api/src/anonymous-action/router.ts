@@ -12,7 +12,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
   try {
     await limiter(req).consume(reqIp(req), 1)
   } catch (err) {
-    const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+    
     eventsLog.warn('sd.anonym-action.rate-limit', 'rate limit error for /anonymous-action route', { req })
     return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }

@@ -1,4 +1,4 @@
-import type { UserWritable, User, Organization, Member, Partner } from '#types'
+import type { UserWritable, User, Organization, Member, Partner, SitePublic } from '#types'
 import type { SdStorage, FindMembersParams, FindOrganizationsParams } from './interface.ts'
 import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
@@ -429,11 +429,11 @@ class MongodbStorage implements SdStorage {
     })
   }
 
-  async deletePartner (orgId, partnerId) {
+  async deletePartner (orgId: string, partnerId: string) {
     await this.db.collection('organizations').updateOne({ _id: orgId }, { $pull: { partners: { partnerId } } })
   }
 
-  async validatePartner (orgId, partnerId, partner) {
+  async validatePartner (orgId: string, partnerId: string, partner: Organization) {
     await this.db.collection('organizations').updateOne(
       { _id: orgId, 'partners.partnerId': partnerId },
       { $set: { 'partners.$.name': partner.name, 'partners.$.id': partner.id } }

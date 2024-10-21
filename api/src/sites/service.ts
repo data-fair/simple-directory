@@ -27,7 +27,9 @@ export const reqSite = async (req: Request): Promise<Site | undefined> => {
 export async function findOwnerSites (owner: Account) {
   const filter: any = { 'owner.type': owner.type, 'owner.id': owner.id }
   if (owner.department) filter['owner.department'] = owner.department
-  const sites = await mongo.sites.find(filter).limit(10000).toArray()
+  const sites = await mongo.sites.find(filter).limit(10000)
+    .project({ host: 1, theme: 1, logo: 1, reducedPersonalInfoAtCreation: 1, tosMessage: 1, authMode: 1, authOnlyOtherSite: 1 })
+    .toArray()
   return {
     count: sites.length,
     results: sites

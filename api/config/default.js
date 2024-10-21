@@ -221,7 +221,6 @@ export default {
   // }]}
   oauth: {
     providers: [],
-    statesDir: './security',
     github: {
       id: '',
       secret: ''
@@ -240,7 +239,7 @@ export default {
     }
   },
   saml2: {
-    certsDirectory: './security/saml2',
+    // certsDirectory: './security/saml2',
     // Accepts all samlify options for service providers https://samlify.js.org/#/sp-configuration
     sp: {},
     // providers have the usual title/color/icon/img attributes and all extra options accepted by samlify

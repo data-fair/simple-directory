@@ -1,6 +1,6 @@
 import { type Member } from '#types'
 import { Router, type Request } from 'express'
-import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, type EventLogContext } from '@data-fair/lib-express'
+import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, session, type EventLogContext } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
 import config from '#config'
@@ -23,7 +23,6 @@ const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')
 const tokens = require('../utils/tokens')
 const passwordsUtils = require('../utils/passwords')
-const partnersUtils = require('../utils/partners')
 const defaultConfig = require('../../config/default.js')
 const { send: sendNotification } = require('../utils/notifications')
 
@@ -315,9 +314,9 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
   if (!orga) return res.status(404).send()
   logContext.account = { type: 'organization', id: orga.id, name: orga.name }
   const roles = orga.roles || config.roles.defaults
-  if (!roles.includes(body.role)) return res.status(400).send(reqI18n(req).messages.errors.unknownRole.replace('{role}', req.body.role))
+  if (!roles.includes(body.role)) return res.status(400).send(reqI18n(req).messages.errors.unknownRole.replace('{role}', body.role))
   await storage.patchMember(req.params.organizationId, req.params.userId, query.department, body)
-  eventsLog.info('sd.org.member.patch', `a user changed the role of a member in an organization ${member.name} (${member.id}) ${req.body.role}, ${userOrg.name} (${userOrg.id})`, logContext)
+  eventsLog.info('sd.org.member.patch', `a user changed the role of a member in an organization ${member.name} (${member.id}) ${body.role} ${body.department ?? ''}`, logContext)
   webhooks.postIdentity('user', await storage.getUser(req.params.userId))
 
   // update session info
@@ -328,7 +327,6 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
 
 // Super admin and orga admin can delete an organization for now
 router.delete('/:organizationId', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -391,19 +389,14 @@ if (config.managePartners) {
   })
 
   router.post('/:organizationId/partners/_accept', async (req, res, next) => {
-    const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
-    /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-    const logContext = { req }
+    const logContext: EventLogContext = { req }
+    const user = reqUser(req)
 
-    const { assertValid } = await import('../../types/partner-accept/index.mjs')
-
-    if (!reqUser(req)) return res.status(401).send()
-    const partnerAccept = req.body
-    // @ts-ignore
-    assertValid(partnerAccept)
+    if (!user) return res.status(401).send()
+    const { body: partnerAccept } = postPartnerAcceptReq.returnValid(req)
 
     // user must be owner of the new partner
-    const userOrga = reqUser(req).organizations.find(o => o.id === partnerAccept.id && !o.department)
+    const userOrga = user.organizations.find(o => o.id === partnerAccept.id && !o.department)
     if (!userOrga || userOrga.role !== 'admin') return res.status(403).send()
     logContext.account = { type: 'organization', id: userOrga.id, name: userOrga.name }
 
@@ -414,7 +407,7 @@ if (config.managePartners) {
     let tokenPayload
     try {
       tokenPayload = partnersUtils.unshortenPartnerInvitation(await session.verifyToken(partnerAccept.token))
-    } catch (err) {
+    } catch (err: any) {
       return res.status(400).send(err.message)
     }
 
@@ -448,9 +441,7 @@ if (config.managePartners) {
   })
 
   router.delete('/:organizationId/partners/:partnerId', async (req, res, next) => {
-    const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
-    /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-    const logContext = { req }
+    const logContext: EventLogContext = { req }
 
     if (!reqUser(req)) return res.status(401).send()
     if (!isOrgAdmin(req)) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
@@ -462,13 +453,14 @@ if (config.managePartners) {
   })
 
   router.get('/:organizationId/partners/_user-partners', async (req, res, next) => {
-    if (!reqUser(req)) return res.status(401).send()
+    const user = reqUser(req)
+    if (!user) return res.status(401).send()
     const storage = storages.globalStorage
     const orga = await storage.getOrganization(req.params.organizationId)
     if (!orga) return res.status(404).send('unknown organization')
     const userPartners = []
     for (const partner of (orga.partners || [])) {
-      const userOrg = reqUser(req).organizations?.find(o => o.id === partner.id)
+      const userOrg = user.organizations?.find(o => o.id === partner.id)
       if (!userOrg) continue
       userPartners.push(userOrg)
     }

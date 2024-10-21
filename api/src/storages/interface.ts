@@ -58,4 +58,6 @@ export interface SdStorage {
   removeMember (orgId: string, userId: string, department?: string): Promise<void>
 
   addPartner (orgId: string, partner: Partner): Promise<void>
+  deletePartner (orgId: string, partnerId: string): Promise<void>
+  validatePartner (orgId: string, partnerId: string, partner: Organization): Promise<void>
 }

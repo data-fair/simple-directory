@@ -40,11 +40,11 @@ function sortCompare (sort) {
 class FileStorage implements SdStorage {
   async init (params, org) {
     if (this.org) throw new Error('mongo storage is not compatible with per-org storage')
-    this.users = JSON.parse(await readFile(path.resolve(__dirname, '../..', params.users), 'utf-8'))
+    this.users = JSON.parse(await readFile(path.resolve(import.meta.dirname, '../..', params.users), 'utf-8'))
     this.users.forEach(user => {
       user.name = userName(user)
     })
-    this.organizations = JSON.parse(await readFile(path.resolve(__dirname, '../..', params.organizations), 'utf-8'))
+    this.organizations = JSON.parse(await readFile(path.resolve(import.meta.dirname, '../..', params.organizations), 'utf-8'))
     this.organizations.forEach(orga => {
       orga.members = orga.members || []
       orga.departments = orga.departments || []

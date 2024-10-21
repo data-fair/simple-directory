@@ -83,7 +83,7 @@ app.use('/api/', (req, res) => {
 export const run = async () => {
   debug('start run method')
 
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
 
   const errorHandler = (await import('@data-fair/lib/express/error-handler.js')).default
 

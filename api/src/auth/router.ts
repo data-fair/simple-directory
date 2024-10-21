@@ -46,7 +46,7 @@ const rejectCoreIdUser = (req, res, next) => {
 
 // Authenticate a user based on his email address and password
 router.post('/password', rejectCoreIdUser, async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -221,7 +221,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
 router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -288,7 +288,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
 
 // use current session and redirect to a secondary site
 router.post('/site_redirect', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -309,7 +309,7 @@ router.post('/site_redirect', async (req, res, next) => {
 })
 
 router.get('/token_callback', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -375,7 +375,7 @@ router.get('/token_callback', async (req, res, next) => {
 // Used to extend an older but still valid token from a user
 // TODO: deprecate this whole route, replaced by simpler /keepalive
 router.post('/exchange', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -429,7 +429,7 @@ router.post('/exchange', async (req, res, next) => {
 })
 
 router.post('/keepalive', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
 
   if (!reqUser(req)) return res.status(401).send('No active session to keep alive')
   const storage = storages.globalStorage
@@ -483,7 +483,7 @@ router.post('/keepalive', async (req, res, next) => {
 })
 
 router.delete('/', async (req, res) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -494,7 +494,7 @@ router.delete('/', async (req, res) => {
 
 // Send an email to confirm user identity before authorizing an action
 router.post('/action', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -552,7 +552,7 @@ router.delete('/adminmode', async (req, res, next) => {
 
 // create a session as a user but from a super admin session
 router.post('/asadmin', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -575,7 +575,7 @@ router.post('/asadmin', async (req, res, next) => {
 })
 
 router.delete('/asadmin', async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -632,7 +632,7 @@ router.get('/providers', async (req, res) => {
 const debugOAuth = require('debug')('oauth')
 
 const oauthLogin = async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -729,7 +729,7 @@ const authCoreProviderMemberInfo = export const  authCoreProviderMemberInfo = as
 }
 
 const oauthCallback = async (req, res, next) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -935,7 +935,7 @@ router.get('/saml2-metadata.xml', (req, res) => {
 
 // starts login
 router.get('/saml2/:providerId/login', async (req, res) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -967,7 +967,7 @@ router.get('/saml2/:providerId/login', async (req, res) => {
 
 // login confirm by IDP
 router.post('/saml2-assert', async (req, res) => {
-  const eventsLog = (await import('@data-fair/lib-express/events-log.js')).default
+  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 

@@ -44,6 +44,10 @@ export class SdMongo {
     return mongo.db.collection<OAuthToken>('oauth-tokens')
   }
 
+  get oidcDiscovery () {
+    return mongo.db.collection<{ _id: string, content: any }>('oidc-discovery')
+  }
+
   init = async () => {
     await mongo.connect(config.mongo.url, config.mongo.options)
     await mongo.configure({

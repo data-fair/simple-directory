@@ -1,29 +1,25 @@
-import { Router } from 'express'
+import { Router, type Request } from 'express'
 import config from '#config'
-import { reqUser } from '@data-fair/lib-express'
-const createError = require('http-errors')
-const { nanoid } = require('nanoid')
-const oauth = require('../utils/oauth')
+import { reqUser, reqSiteUrl, httpError, reqSessionAuthenticated } from '@data-fair/lib-express'
+import { nanoid } from 'nanoid'
+import storages from '#storages'
+import * as listReq from '#doc/sites/list-req/index.ts'
+import { findAllSites, findOwnerSites } from './service.ts'
 
-const router = export default  Router()
+const router = Router()
+export default router
 
-const checkSecret = async (req) => {
+const checkSecret = async (req: Request) => {
   if (!reqUser(req)?.adminMode && (!req.query.key || req.query.key !== config.secretKeys.sites)) {
     throw httpError(401, 'wrong sites secret key')
   }
 }
 
 router.get('', async (req, res, next) => {
-  const sitesResponseSchema = await import('../../types/sites-response/index.mjs')
-  const sitesResponsePublicSchema = await import('../../types/sites-response-public/index.mjs')
-  const sitesQuerySchema = await import('../../types/sites-query/index.mjs')
-
-  if (!reqUser(req)) return res.status(401).send()
-  const query = req.query
-  // @ts-ignore
-  sitesQuerySchema.assertValid(query)
+  const sessionState = reqSessionAuthenticated(req)
+  const { query } = listReq.returnValid(req, { name: 'req' })
   if (query.showAll && !reqUser(req)?.adminMode) return res.status(403).send()
-  const response = query.showAll ? await storages.globalStorage.findAllSites() : await storages.globalStorage.findOwnerSites(reqUser(req).accountOwner)
+  const response = query.showAll ? await findAllSites() : await findOwnerSites(sessionState.account)
   for (const result of response.results) {
     result.logo = result.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
     if (result.authProviders) {
@@ -32,11 +28,7 @@ router.get('', async (req, res, next) => {
       }
     }
   }
-  if (query.showAll) {
-    res.type('json').send(sitesResponseSchema.stringify(response))
-  } else {
-    res.type('json').send(sitesResponsePublicSchema.stringify(response))
-  }
+  res.send(response)
 })
 
 router.post('', async (req, res, next) => {

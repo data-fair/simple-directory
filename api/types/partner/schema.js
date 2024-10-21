@@ -6,6 +6,7 @@ export default {
   additionalProperties: false,
   required: ['name', 'contactEmail', 'partnerId', 'createdAt'],
   properties: {
+    id: { type: 'string' },
     name: { type: 'string' },
     contactEmail: { type: 'string' },
     partnerId: { type: 'string' },
