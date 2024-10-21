@@ -26,6 +26,15 @@ export type FindOrganizationsParams = {
   select?: string[]
 }
 
+export type FindUsersParams = {
+  q?: string,
+  ids?: string[],
+  size?: number,
+  skip?: number,
+  sort?: any,
+  select?: string[]
+}
+
 export interface SdStorageFactory {
   init(conf: any, org?: Organization): Promise<SdStorage>
   readonly?: boolean
@@ -36,6 +45,7 @@ export interface SdStorage {
 
   readonly?: boolean
 
+  findUsers (params: FindUsersParams): Promise<{ count: number, results: User[] }>
   getUser(userId: string): Promise<User | undefined>
   createUser(user: UserWritable, byUser?: { id: string, name: string }, host?: string): Promise<User>
   getUserByEmail(email: string, site?: Site): Promise<User>

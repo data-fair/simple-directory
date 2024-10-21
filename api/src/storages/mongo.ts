@@ -1,5 +1,5 @@
 import type { UserWritable, User, Organization, Member, Partner, SitePublic } from '#types'
-import type { SdStorage, FindMembersParams, FindOrganizationsParams } from './interface.ts'
+import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersParams } from './interface.ts'
 import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
 import config from '#config'
@@ -120,8 +120,8 @@ class MongodbStorage implements SdStorage {
     await mongo.oauthTokens.deleteMany({ 'user.id': userId })
   }
 
-  async findUsers (params = {}) {
-    const filter = {}
+  async findUsers (params: FindUsersParams = {}) {
+    const filter: any = {}
     if (params.ids) {
       filter._id = { $in: params.ids }
     }
@@ -137,8 +137,8 @@ class MongodbStorage implements SdStorage {
       .find(filter)
       .project(prepareSelect(params.select))
       .sort(params.sort)
-      .skip(params.skip)
-      .limit(params.size)
+      .skip(params.skip ?? 0)
+      .limit(params.size ?? 10)
       .toArray()
     const count = await countPromise
     return { count, results: users.map(cleanUser) }

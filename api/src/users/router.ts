@@ -1,35 +1,37 @@
-import { Router } from 'express'
+import { type Organization, type UserWritable } from '#types'
+import { Router, type Request, type Response, type NextFunction } from 'express'
 import config from '#config'
-import { reqUser, mongoPagination, mongoSort } from '@data-fair/lib-express'
+import { reqUser, mongoPagination, mongoSort, session, reqSiteUrl } from '@data-fair/lib-express'
+import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
 import userName from '../utils/user-name.ts'
 import { pushEvent } from '@data-fair/lib-node/events-queue.js'
-
-const tokens = require('../utils/tokens')
-const passwords = require('../utils/passwords')
-const webhooks = require('../webhooks')
-const mails = require('../mails')
+import { reqI18n } from '#i18n'
 import storages from '#storages'
-const limits = require('../utils/limits')
-const { unshortenInvit } = require('../utils/invitations')
+import emailValidator from 'email-validator'
+import { FindUsersParams } from '../storages/interface.ts'
+import { unshortenInvit } from '../invitations/service.ts'
+import { reqSite } from '../sites/service.ts'
+import { validatePassword, hashPassword } from '../utils/passwords.ts'
+import { deleteIdentity } from '../webhooks.ts'
+import { sendMail } from '../mails/service.ts'
 
 const router = Router()
 
-const rejectCoreIdUser = (req, res, next) => {
+const rejectCoreIdUser = (req: Request, res: Response, next: NextFunction) => {
   if (reqUser(req)?.idp) return res.status(403).send('This route is not available for users with a core identity provider')
   next()
 }
 
 // Get the list of users
 router.get('', async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
   const listMode = config.listUsersMode || config.listEntitiesMode
   if (listMode === 'authenticated' && !reqUser(req)) return res.send({ results: [], count: 0 })
   if (listMode === 'admin' && !reqUser(req)?.adminMode) return res.send({ results: [], count: 0 })
 
-  const params = { ...mongoPagination(req.query), sort: mongoSort(req.query.sort) }
+  const params: FindUsersParams = { ...mongoPagination(req.query), sort: mongoSort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
@@ -40,8 +42,8 @@ router.get('', async (req, res, next) => {
   }
 
   if (req.query) {
-    if (req.query.ids) params.ids = req.query.ids.split(',')
-    if (req.query.q) params.q = req.query.q
+    if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
+    if (typeof req.query.q === 'string') params.q = req.query.q
   }
   const users = await storages.globalStorage.findUsers(params)
 
@@ -53,8 +55,7 @@ router.get('', async (req, res, next) => {
 const createKeys = ['firstName', 'lastName', 'email', 'password', 'birthday', 'createOrganization']
 // TODO: block when onlyCreateInvited is true ?
 router.post('', async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
@@ -65,11 +66,12 @@ router.post('', async (req, res, next) => {
 
   // used to create a user and accept a member invitation at the same time
   // if the invitation is not valid, better not to proceed with the user creation
-  let invit, orga
-  if (req.query.invit_token) {
+  let invit
+  let orga: Organization | undefined
+  if (typeof req.query.invit_token === 'string') {
     try {
       invit = unshortenInvit(await session.verifyToken(req.query.invit_token))
-    } catch (err) {
+    } catch (err: any) {
       return res.status(400).send(err.name === 'TokenExpiredError' ? reqI18n(req).messages.errors.expiredInvitationToken : reqI18n(req).messages.errors.invalidInvitationToken)
     }
     orga = await storage.getOrganization(invit.id)
@@ -81,16 +83,17 @@ router.post('', async (req, res, next) => {
   }
 
   // create user
-  const newUser = {
+  const newUser: UserWritable = {
     email: req.body.email,
     id: nanoid(),
     firstName: req.body.firstName,
     lastName: req.body.lastName,
-    emailConfirmed: false
+    emailConfirmed: false,
+    organizations: []
   }
-  if (await reqSite(req)) newUser.host = await reqSite(req).host
-  newUser.name = userName(newUser)
-  logContext.user = newUser
+  const site = await reqSite(req)
+  if (site) newUser.host = site.host
+
   if (invit) {
     newUser.emailConfirmed = true
     newUser.defaultOrg = invit.id
@@ -100,16 +103,16 @@ router.post('', async (req, res, next) => {
 
   // password is optional as we support passwordless auth
   if (![undefined, null].includes(req.body.password)) {
-    if (!passwords.validate(req.body.password)) {
+    if (!validatePassword(req.body.password)) {
       return res.status(400).send(reqI18n(req).messages.errors.malformedPassword)
     }
-    newUser.password = await passwords.hashPassword(req.body.password)
+    newUser.password = await hashPassword(req.body.password)
   }
 
   const user = await storages.globalStorage.getUserByEmail(req.body.email, await reqSite(req))
 
   // email is already taken, send a conflict email
-  const link = req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
+  const link = (req.query.redirect as string) || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
   if (user && user.emailConfirmed !== false) {
     const linkUrl = new URL(link)
     await sendMail('conflict', reqI18n(req).messages, req.body.email, { host: linkUrl.host, origin: linkUrl.origin })
@@ -117,12 +120,13 @@ router.post('', async (req, res, next) => {
   }
 
   // the user was invited in alwaysAcceptInvitations mode, but the membership was revoked
-  if (invit && config.alwaysAcceptInvitation && (!user || !user.organizations.find(o => o.id === orga.id))) {
+  if (invit && config.alwaysAcceptInvitation && (!user || !user.organizations.find(o => o.id === orga?.id))) {
     return res.status(400).send(reqI18n(req).messages.errors.invalidInvitationToken)
   }
 
   // Re-create a user that was never validated.. first clean temporary user
   if (user && user.emailConfirmed === false) {
+    logContext.user = user
     if (user.organizations && invit) {
       // This user was created empty from an invitation in 'alwaysAcceptInvitations' mode
       newUser.id = user.id
@@ -133,7 +137,7 @@ router.post('', async (req, res, next) => {
     }
   }
 
-  await storage.createUser(newUser, null, new URL(link).host)
+  await storage.createUser(newUser, undefined, new URL(link).host)
   eventsLog.info('sd.user.create', 'user was created', logContext)
 
   if (invit && !config.alwaysAcceptInvitation) {
@@ -271,7 +275,7 @@ router.delete('/:userId', async (req, res, next) => {
 
   eventsLog.info('sd.user.del', `user was deleted ${req.params.userId}`, logContext)
 
-  webhooks.deleteIdentity('user', req.params.userId)
+  deleteIdentity('user', req.params.userId)
   res.status(204).send()
 })
 
@@ -291,8 +295,8 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
   }
   if (decoded.id !== req.params.userId) return res.status(401).send('wrong user id in token')
   if (decoded.action !== 'changePassword') return res.status(401).send('wrong action for this token')
-  if (!passwords.validate(req.body.password)) return res.status(400).send(reqI18n(req).messages.errors.malformedPassword)
-  const storedPassword = await passwords.hashPassword(req.body.password)
+  if (!validatePassword(req.body.password)) return res.status(400).send(reqI18n(req).messages.errors.malformedPassword)
+  const storedPassword = await hashPassword(req.body.password)
   await storages.globalStorage.patchUser(req.params.userId, { password: storedPassword })
 
   eventsLog.info('sd.user.change-password', `user changed password ${req.params.userId}`, logContext)

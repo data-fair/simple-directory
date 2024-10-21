@@ -14,7 +14,7 @@ function isClearPassword (password: Password): password is ClearPassword {
   return 'clear' in password
 }
 
-export const validate = (password: string) => {
+export const validatePassword = (password: string) => {
   if (password.length < 8) return false
   if (!/[a-z]/.exec(password)) return false
   if (!/[A-Z]/.exec(password)) return false
