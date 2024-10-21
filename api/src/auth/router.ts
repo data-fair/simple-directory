@@ -1,6 +1,7 @@
 import config from '#config'
 import { Router } from 'express'
 import { reqUser } from '@data-fair/lib-express'
+import { pushEvent } from '@data-fair/lib-node/events-queue.js'
 const URL = require('url').URL
 const bodyParser = require('body-parser')
 const requestIp = require('request-ip')
@@ -19,7 +20,6 @@ const limiter = require('../utils/limiter')
 import storages from '#storages'
 const defaultConfig = require('../../config/default.js')
 const { unshortenInvit } = require('../utils/invitations')
-const { send: sendNotification } = require('../utils/notifications')
 const limits = require('../utils/limits')
 const debug = require('debug')('auth')
 
@@ -880,7 +880,7 @@ const oauthCallback = async (req, res, next) => {
     }
     await storage.addMember(invitOrga, user, invit.role, invit.department)
     eventsLog.info('sd.auth.oauth.accept-invite', `a user accepted an invitation in oauth callback ${user.id}`, logContext)
-    sendNotification({
+    pushEvent({
       sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
@@ -1085,7 +1085,7 @@ router.post('/saml2-assert', async (req, res) => {
     }
     await storage.addMember(invitOrga, user, invit.role, invit.department)
     eventsLog.info('sd.auth.saml.accept-invite', `a user accepted an invitation in saml callback ${user.id}`, logContext)
-    sendNotification({
+    pushEvent({
       sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })

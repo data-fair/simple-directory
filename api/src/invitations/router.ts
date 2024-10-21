@@ -1,8 +1,9 @@
 import { type UserWritable, type Invitation } from '#types'
 import { Router } from 'express'
 import config from '#config'
-import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, type Account, httpError } from '@data-fair/lib-express'
+import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import { pushEvent } from '@data-fair/lib-node/events-queue.js'
 import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 import { reqI18n } from '#i18n'
@@ -14,7 +15,7 @@ import * as postReq from '#doc/invitations/post-req/index.ts'
 import emailValidator from 'email-validator'
 import { shortenInvit, unshortenInvit } from './service.ts'
 import * as tokens from '../tokens/service.ts'
-const { send: sendNotification } = require('../utils/notifications')
+import { sendMail } from '../mails/service.ts'
 const webhooks = require('../webhooks')
 const debug = require('debug')('invitations')
 
@@ -51,7 +52,7 @@ router.post('', async (req, res, next) => {
   const orga = await storage.getOrganization(invitation.id)
   if (!orga) return res.status(404).send('unknown organization')
 
-  const limits = await getLimits({ type: 'organization', id: body.id } as Account)
+  const limits = await getLimits(orga)
 
   if (limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
     eventsLog.info('sd.invite.limit', `limit error for /invitations route with org ${body.id}`, logContext)
@@ -76,7 +77,7 @@ router.post('', async (req, res, next) => {
       debug('in alwaysAcceptInvitation and the user already exists, immediately add it as member', invitation.email)
       await storage.addMember(orga, existingUser, invitation.role, invitation.department)
       await setNbMembers(orga.id)
-      sendNotification({
+      pushEvent({
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
         topic: { key: 'simple-directory:invitation-sent' },
         title: __all('notifications.sentInvitation', { email: body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
@@ -118,9 +119,9 @@ router.post('', async (req, res, next) => {
         title: __all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
       }
       // send notif to all admins subscribed to the topic
-      sendNotification(notif)
+      pushEvent(notif)
       // send same notif to user himself
-      sendNotification({
+      pushEvent({
         ...notif,
         recipient: { id: newUser.id, name: newUser.name }
       })
@@ -141,7 +142,7 @@ router.post('', async (req, res, next) => {
       eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
     }
 
-    sendNotification({
+    pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
       topic: { key: 'simple-directory:invitation-sent' },
       title: __all('notifications.sentInvitation', { email: body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
@@ -263,9 +264,9 @@ router.get('/_accept', async (req, res, next) => {
     title: __all('notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
   }
   // send notif to all admins subscribed to the topic
-  sendNotification(notif)
+  pushEvent(notif)
   // send same notif to user himself
-  sendNotification({
+  pushEvent({
     ...notif,
     recipient: { id: existingUser.id, name: existingUser.name }
   })

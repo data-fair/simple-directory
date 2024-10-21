@@ -1,8 +1,9 @@
 import { Router } from 'express'
 import config from '#config'
-import { reqUser } from '@data-fair/lib-express'
+import { reqUser, mongoPagination, mongoSort } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
 import userName from '../utils/user-name.ts'
+import { pushEvent } from '@data-fair/lib-node/events-queue.js'
 const findUtils = require('../utils/find')
 const tokens = require('../utils/tokens')
 const passwords = require('../utils/passwords')
@@ -12,7 +13,6 @@ import storages from '#storages'
 const limits = require('../utils/limits')
 const { unshortenInvit } = require('../utils/invitations')
 const defaultConfig = require('../../config/default.js')
-const { send: sendNotification } = require('../utils/notifications')
 
 const router = Router()
 
@@ -23,7 +23,6 @@ const rejectCoreIdUser = (req, res, next) => {
 
 // Get the list of users
 router.get('', async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -31,7 +30,7 @@ router.get('', async (req, res, next) => {
   if (listMode === 'authenticated' && !reqUser(req)) return res.send({ results: [], count: 0 })
   if (listMode === 'admin' && !reqUser(req)?.adminMode) return res.send({ results: [], count: 0 })
 
-  const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
+  const params = { ...mongoPagination(req.query), sort: mongoSort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
@@ -55,7 +54,6 @@ router.get('', async (req, res, next) => {
 const createKeys = ['firstName', 'lastName', 'email', 'password', 'birthday', 'createOrganization']
 // TODO: block when onlyCreateInvited is true ?
 router.post('', async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -147,7 +145,7 @@ router.post('', async (req, res, next) => {
     }
     eventsLog.info('sd.user.accept-invite', 'user accepted an invitation', logContext)
     await storage.addMember(orga, newUser, invit.role, invit.department)
-    sendNotification({
+    pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: newUser.name, email: newUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
@@ -192,7 +190,6 @@ router.get('/:userId', async (req, res, next) => {
 const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'defaultDep', 'plannedDeletion']
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -243,7 +240,6 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
 })
 
 router.delete('/:userId/plannedDeletion', async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -262,7 +258,6 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
 })
 
 router.delete('/:userId', async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -283,7 +278,6 @@ router.delete('/:userId', async (req, res, next) => {
 
 // Change password of a user using an action token sent in a mail
 router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -309,7 +303,6 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
 
 // Change host of a user using an action token sent in a mail
 router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 

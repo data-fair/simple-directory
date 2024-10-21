@@ -1,7 +1,8 @@
 import { type Member } from '#types'
 import { Router, type Request } from 'express'
-import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, session, type EventLogContext } from '@data-fair/lib-express'
+import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, session, mongoPagination, mongoSort, type EventLogContext } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
+import { pushEvent } from '@data-fair/lib-node/events-queue.js'
 import { nanoid } from 'nanoid'
 import config from '#config'
 import { reqI18n } from '#i18n'
@@ -12,7 +13,7 @@ import * as postReq from '#doc/organizations/post-req/index.ts'
 import * as patchMemberReq from '#doc/organizations/patch-member-req/index.ts'
 import * as postPartnerReq from '#doc/organizations/post-partner-req/index.ts'
 import * as postPartnerAcceptReq from '#doc/organizations/post-partner-accept-req/index.ts'
-import { FindMembersParams, SdStorage } from '../storages/interface.ts'
+import { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
 import { setNbMembers } from '../limits/service.ts'
 import { sendMail } from '../mails/service.ts'
 import { __all } from '#i18n'
@@ -24,7 +25,6 @@ const webhooks = require('../webhooks')
 const tokens = require('../utils/tokens')
 const passwordsUtils = require('../utils/passwords')
 const defaultConfig = require('../../config/default.js')
-const { send: sendNotification } = require('../utils/notifications')
 
 const router = Router()
 export default router
@@ -57,7 +57,7 @@ router.get('', async (req, res, next) => {
   if (listMode === 'authenticated' && !reqUser(req)) return res.send({ results: [], count: 0 })
   if (listMode === 'admin' && !(reqUser(req)?.adminMode)) return res.send({ results: [], count: 0 })
 
-  const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
+  const params: FindOrganizationsParams = { ...mongoPagination(req.query), sort: mongoSort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
@@ -68,8 +68,8 @@ router.get('', async (req, res, next) => {
   }
 
   if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
-  if (req.query.q) params.q = req.query.q
-  if (req.query.creator) params.creator = req.query.creator
+  if (typeof req.query.q === 'string') params.q = req.query.q
+  if (typeof req.query.creator === 'string') params.creator = req.query.creator
 
   const organizations = await storages.globalStorage.findOrganizations(params)
   if (allFields) {
@@ -212,7 +212,7 @@ router.get('/:organizationId/members', async (req, res, next) => {
     }
   }
 
-  const params = { ...findUtils.pagination(req.query), sort: findUtils.sort(req.query.sort) }
+  const params = { ...mongoPagination(req.query), sort: mongoSort(req.query.sort) }
   if (req.query.q) params.q = req.query.q
   if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
   else if (typeof req.query.id === 'string') params.ids = req.query.id.split(',')
@@ -379,7 +379,7 @@ if (config.managePartners) {
     }
     await sendMail('partnerInvitation', reqI18n(req).messages, partnerPost.contactEmail, params)
 
-    sendNotification({
+    pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
       topic: { key: 'simple-directory:partner-invitation-sent' },
       title: __all('notifications.sentPartnerInvitation', { partnerName: partnerPost.name, email: partnerPost.contactEmail, orgName: orga.name })
