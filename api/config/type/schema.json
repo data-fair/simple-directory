@@ -36,7 +36,8 @@
     "oauth",
     "oidc",
     "saml2",
-    "webhooks"
+    "webhooks",
+    "authRateLimit"
   ],
   "properties": {
     "port": {
@@ -517,6 +518,18 @@
               }
             }
           }
+        }
+      }
+    },
+    "authRateLimit": {
+      "type": "object",
+      "required": ["attempts", "duration"],
+      "properties": {
+        "attempts": {
+          "type": "integer"
+        },
+        "duration": {
+          "type": "integer"
         }
       }
     }
