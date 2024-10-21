@@ -12,14 +12,9 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "_id",
         "authMode"
       ],
       "properties": {
-        "_id": {
-          "readOnly": true,
-          "$ref": "https://github.com/data-fair/simple-directory/site#/properties/_id"
-        },
         "theme": {
           "$ref": "https://github.com/data-fair/simple-directory/site#/properties/theme"
         },

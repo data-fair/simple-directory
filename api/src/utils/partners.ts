@@ -1,6 +1,6 @@
 import { Organization, type Partner } from '#types'
 
-export const shortenPartnerInvitation = (partner: Partner, org: Organization, partnerId: string) => {
+export const shortenPartnerInvitation = (partner: Pick<Partner, 'name' | 'contactEmail'>, org: Organization, partnerId: string) => {
   return {
     o: org.id,
     on: org.name,

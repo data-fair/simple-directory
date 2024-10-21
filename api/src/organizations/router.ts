@@ -22,6 +22,7 @@ import { postOrganizationIdentity, postUserIdentity, deleteIdentity } from '../w
 import _slug from 'slugify'
 import { keepalive, sign } from '../tokens/service.ts'
 import { cipher } from '../utils/cipher.ts'
+import { shortenPartnerInvitation, unshortenPartnerInvitation } from '../utils/partners.ts'
 
 const slug = _slug.default
 
@@ -364,7 +365,7 @@ if (config.managePartners) {
 
     const partnerId = nanoid()
 
-    const token = await sign(partnersUtils.shortenPartnerInvitation(partnerPost, orga, partnerId), config.jwtDurations.partnerInvitationToken)
+    const token = await sign(shortenPartnerInvitation(partnerPost, orga, partnerId), config.jwtDurations.partnerInvitationToken)
 
     await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
     eventsLog.info('sd.org.partner.invite', `a user invited an organization to be a partner ${partnerPost.name} ${partnerPost.contactEmail} ${orga.name} ${orga.id}`, logContext)
@@ -407,7 +408,7 @@ if (config.managePartners) {
 
     let tokenPayload
     try {
-      tokenPayload = partnersUtils.unshortenPartnerInvitation(await session.verifyToken(partnerAccept.token))
+      tokenPayload = unshortenPartnerInvitation(await session.verifyToken(partnerAccept.token))
     } catch (err: any) {
       return res.status(400).send(err.message)
     }

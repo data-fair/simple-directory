@@ -8,7 +8,7 @@ import _slug from 'slugify'
 const slug = _slug.default
 const debug = Debug('oauth')
 
-const getProviderId = (url: string) => {
+export const getProviderId = (url: string) => {
   let host = url
   try {
     host = new URL(url).host

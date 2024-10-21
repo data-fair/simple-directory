@@ -1,10 +1,14 @@
+import { type SitePublic } from '#types'
 import { Router, type Request } from 'express'
 import config from '#config'
-import { reqUser, reqSiteUrl, httpError, reqSessionAuthenticated } from '@data-fair/lib-express'
+import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
-import storages from '#storages'
 import * as listReq from '#doc/sites/list-req/index.ts'
-import { findAllSites, findOwnerSites } from './service.ts'
+import * as postReq from '#doc/sites/post-req/index.ts'
+import * as patchReq from '#doc/sites/patch-req/index.ts'
+import { findAllSites, findOwnerSites, patchSite, deleteSite } from './service.ts'
+import { reqSite } from './service.ts'
+import { getProviderId } from '../oauth/oidc.ts'
 
 const router = Router()
 export default router
@@ -24,7 +28,7 @@ router.get('', async (req, res, next) => {
     result.logo = result.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
     if (result.authProviders) {
       for (const p of result.authProviders) {
-        if (p.type === 'oidc') p.id = oauth.getProviderId(p.discovery)
+        if (p.type === 'oidc') p.id = getProviderId(p.discovery)
       }
     }
   }
@@ -32,37 +36,36 @@ router.get('', async (req, res, next) => {
 })
 
 router.post('', async (req, res, next) => {
-  const sitePostSchema = await import('../../types/site-post/index.mjs')
   await checkSecret(req)
-  // @ts-ignore
-  sitePostSchema.assertValid(req.body)
-  req.body._id = req.body._id ?? nanoid()
-  await storages.globalStorage.patchSite(req.body, true)
-  res.type('json').send(sitePostSchema.stringify(req.body))
+  const { body: site } = postReq.returnValid(req, { name: 'req' })
+  const patchedSite = await patchSite({ ...site, _id: site._id ?? nanoid() }, true)
+  res.send(patchedSite)
 })
 
 router.patch('/:id', async (req, res, next) => {
-  const sitePatchSchema = await import('../../types/site-patch/index.mjs')
-
-  if (!reqUser(req)) return res.status(401).send()
-  if (!reqUser(req)?.adminMode) return res.status(403).send()
-  // @ts-ignore
-  sitePatchSchema.assertValid(req.body)
-  await storages.globalStorage.patchSite(req.body)
-  res.type('json').send(sitePatchSchema.stringify(req.body))
+  if (!reqUserAuthenticated(req)?.adminMode) return res.status(403).send()
+  const { body: patch } = patchReq.returnValid(req, { name: 'req' })
+  const patchedSite = await patchSite({ _id: req.params.id, ...patch })
+  res.send(patchedSite)
 })
 
 router.delete('/:id', async (req, res, next) => {
   await checkSecret(req)
-  await storages.globalStorage.deleteSite(req.params.id)
+  await deleteSite(req.params.id)
   res.status(204).send()
 })
 
 router.get('/_public', async (req, res, next) => {
-  const sitePublicSchema = await import('../../types/site-public/index.mjs')
-
-  if (!await reqSite(req)) return res.status(404).send()
-  await reqSite(req).logo = await reqSite(req).logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${await reqSite(req).owner.type}/${await reqSite(req).owner.id}/avatar.png`
-  // stringify will keep only parts that are public knowledge
-  res.type('json').send(sitePublicSchema.stringify(await reqSite(req)))
+  const site = await reqSite(req)
+  if (!site) return res.status(404).send()
+  const sitePublic: SitePublic = {
+    host: site.host,
+    theme: site.theme,
+    logo: site.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`,
+    reducedPersonalInfoAtCreation: site.reducedPersonalInfoAtCreation,
+    tosMessage: site.tosMessage,
+    authMode: site.authMode,
+    authOnlyOtherSite: site.authOnlyOtherSite
+  }
+  res.send(sitePublic)
 })

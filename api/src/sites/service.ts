@@ -45,7 +45,7 @@ export async function findAllSites () {
 }
 
 export async function patchSite (patch: Partial<Site> & Pick<Site, '_id'>, createIfMissing = false) {
-  await mongo.sites.updateOne({ _id: patch._id }, { $set: patch }, { upsert: createIfMissing })
+  return (await mongo.sites.findOneAndUpdate({ _id: patch._id }, { $set: patch }, { upsert: createIfMissing, returnDocument: 'after' })) as Site
 }
 
 export async function deleteSite (siteId: string) {
