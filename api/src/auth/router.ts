@@ -665,7 +665,7 @@ const oauthLogin = async (req, res, next) => {
 router.get('/oauth/:oauthId/login', oauthLogin)
 router.get('/oidc/:oauthId/login', oauthLogin)
 
-const patchCoreOAuthUser = export const  patchCoreOAuthUser = async (storage, provider, user, oauthInfo, memberInfo) => {
+export const patchCoreOAuthUser = async (storage, provider, user, oauthInfo, memberInfo) => {
   const providerType = provider.type || 'oauth'
   if (provider.coreIdProvider) {
     oauthInfo.coreId = true
@@ -695,7 +695,7 @@ const patchCoreOAuthUser = export const  patchCoreOAuthUser = async (storage, pr
   await storage.patchUser(user.id, patch)
 }
 
-const authCoreProviderMemberInfo = export const  authCoreProviderMemberInfo = async (storage, site, provider, email, oauthInfo) => {
+export const authCoreProviderMemberInfo = async (storage, site, provider, email, oauthInfo) => {
   let create = false
   if (provider.createMember === true) {
     // retro-compatibility for when createMember was a boolean

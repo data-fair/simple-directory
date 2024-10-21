@@ -61,7 +61,7 @@ export const getSignatureKeys = memoize(async () => {
 }, { promise: true, maxAge: 10000 })
 
 const readSignatureKeys = async () => {
-  const secret = await mongo.secrets.findOne({ _id: 'signatureKeys' })
+  const secret = await mongo.secrets.findOne({ _id: 'signature-keys' })
   if (secret) {
     const signatureKeys = secret.data
     signatureKeys.privateKey = decipher(signatureKeys.privateKey)
@@ -72,7 +72,7 @@ const readSignatureKeys = async () => {
 const writeSignatureKeys = async (signatureKeys: SignatureKeys) => {
   const storedSignatureKeys = { ...signatureKeys } as any
   storedSignatureKeys.privateKey = cipher(signatureKeys.privateKey)
-  await mongo.secrets.insertOne({ _id: 'signatureKeys', data: storedSignatureKeys })
+  await mongo.secrets.insertOne({ _id: 'signature-keys', data: storedSignatureKeys })
 }
 
 const readDeprecatedSignatureKeys = async () => {
@@ -102,8 +102,9 @@ const createWekKey = (publicKey: string) => {
 export const rotateKeys = async () => {
   const existingKeys = await readSignatureKeys()
   const newKeys = await createKeys()
-  const webKeys = [createWekKey(newKeys.publicKey)]
+  const webKeys: [WebKey, WebKey?] = [createWekKey(newKeys.publicKey)]
   if (existingKeys) webKeys.push(existingKeys.webKeys[0])
+  await writeSignatureKeys({ ...newKeys, webKeys, lastUpdate: new Date() })
 }
 
 const createKeys = async () => {
