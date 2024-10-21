@@ -17,8 +17,8 @@ import { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storag
 import { setNbMembers } from '../limits/service.ts'
 import { sendMail } from '../mails/service.ts'
 import { __all } from '#i18n'
+import { stringify as csvStringify } from 'csv-stringify/sync'
 
-const csvStringify = require('util').promisify(require('csv-stringify').stringify)
 const slug = require('slugify')
 const findUtils = require('../utils/find')
 const webhooks = require('../webhooks')

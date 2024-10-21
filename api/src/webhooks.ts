@@ -1,10 +1,11 @@
 import type { User } from '#types/user/index.ts'
 import type { Organization } from '#types/organization/index.ts'
 import type { PostIdentityReq } from '@data-fair/lib-express/identities/types/post-req/index.js'
+import axios from '@data-fair/lib-node/axios.js'
 import config from '#config'
-const axios = require('axios')
-const userName = require('./utils/user-name')
-const debug = require('debug')('webhooks')
+import Debug from 'debug'
+
+const debug = Debug('webhooks')
 
 export async function postUserIdentity (user: User) {
   await postIdentity({ type: 'user', id: user.id, name: user.name, organizations: user.organizations })
@@ -25,7 +26,7 @@ const postIdentity = async (identity: PostIdentityReq['body'] & PostIdentityReq[
   }
 }
 
-export const  deleteIdentity = async (type: string, id: string) => {
+export const deleteIdentity = async (type: string, id: string) => {
   for (const webhook of config.webhooks.identities) {
     const url = `${webhook.base}/${type}/${id}`
     debug(`Send identity delete webhook to ${url}`)
