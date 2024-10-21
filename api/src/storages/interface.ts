@@ -43,6 +43,7 @@ export interface SdStorage {
   deleteUser(userId: string): Promise<void>
   patchUser (userId: string, patch: Partial<User>, byUser?: { id: string, name: string }): Promise<User>
   findInactiveUsers (): Promise<User[]>
+  findUsersToDelete (): Promise<User[]>
 
   getOrganization(ordId: string): Promise<Organization | undefined>
   createOrganization(org: OrganizationPost, user: UserRef): Promise<Organization>

@@ -5,8 +5,8 @@ import userName from '../utils/user-name.ts'
 import config from '#config'
 import { TwoFA } from '../2fa/service.ts'
 import { httpError, type UserRef } from '@data-fair/lib-express'
-const moment = require('moment')
-const escapeStringRegexp = require('escape-string-regexp')
+import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
+import mongo from '#mongo'
 
 const collation = { locale: 'en', strength: 1 }
 
@@ -45,13 +45,8 @@ class MongodbStorage implements SdStorage {
     return this
   }
 
-  get db () {
-    if (!this._db) throw new Error('Mongo storage not initialized')
-    return this._db
-  }
-
   async getUser (userId: string) {
-    const user = await this.db.collection('users').findOne({ _id: userId })
+    const user = await mongo.users.findOne({ _id: userId })
     if (!user) return
     return cleanUser(user)
   }
@@ -63,13 +58,13 @@ class MongodbStorage implements SdStorage {
     } else {
       filter.host = { $exists: false }
     }
-    const user = (await this.db.collection('users').find(filter).collation(collation).toArray())[0]
+    const user = (await mongo.users.find(filter).collation(collation).toArray())[0]
     if (!user) return
     return cleanUser(user)
   }
 
   async getPassword (userId) {
-    const user = await this.db.collection('users').findOne({ _id: userId })
+    const user = await mongo.users.findOne({ _id: userId })
     return user && user.password
   }
 
@@ -85,7 +80,7 @@ class MongodbStorage implements SdStorage {
       host: host || new URL(config.publicUrl).host
     }
 
-    await this.db.collection('users').findOneAndReplace({ _id: user.id }, fullUser, { upsert: true })
+    await mongo.users.findOneAndReplace({ _id: user.id }, fullUser, { upsert: true })
     return user
   }
 
@@ -103,7 +98,7 @@ class MongodbStorage implements SdStorage {
     const operation = {}
     if (Object.keys(set).length) operation.$set = set
     if (Object.keys(unset).length) operation.$unset = unset
-    const mongoRes = await this.db.collection('users').findOneAndUpdate(
+    const mongoRes = await mongo.users.findOneAndUpdate(
       { _id: id },
       operation,
       { returnDocument: 'after' }
@@ -113,16 +108,16 @@ class MongodbStorage implements SdStorage {
   }
 
   async updateLogged (id: string) {
-    this.db.collection('users').updateOne({ _id: id }, { $set: { logged: new Date() } })
+    mongo.users.updateOne({ _id: id }, { $set: { logged: new Date() } })
   }
 
   async confirmEmail (id: string) {
-    this.db.collection('users').updateOne({ _id: id }, { $set: { emailConfirmed: true } })
+    mongo.users.updateOne({ _id: id }, { $set: { emailConfirmed: true } })
   }
 
   async deleteUser (userId: string) {
-    await this.db.collection('users').deleteOne({ _id: userId })
-    await this.db.collection('oauth-tokens').deleteMany({ 'user.id': userId })
+    await mongo.users.deleteOne({ _id: userId })
+    await mongo.oauthTokens.deleteMany({ 'user.id': userId })
   }
 
   async findUsers (params = {}) {
@@ -132,13 +127,13 @@ class MongodbStorage implements SdStorage {
     }
     if (params.q) {
       filter.$or = [
-        { name: { $regex: escapeStringRegexp(params.q), $options: 'i' } },
-        { email: { $regex: escapeStringRegexp(params.q), $options: 'i' } }
+        { name: { $regex: escapeRegExp(params.q), $options: 'i' } },
+        { email: { $regex: escapeRegExp(params.q), $options: 'i' } }
       ]
     }
 
-    const countPromise = this.db.collection('users').countDocuments(filter)
-    const users = await this.db.collection('users')
+    const countPromise = mongo.users.countDocuments(filter)
+    const users = await mongo.users
       .find(filter)
       .project(prepareSelect(params.select))
       .sort(params.sort)
@@ -150,7 +145,7 @@ class MongodbStorage implements SdStorage {
   }
 
   async findUsersToDelete () {
-    return (await this.db.collection('users')
+    return (await mongo.users
       .find({ plannedDeletion: { $lt: moment().format('YYYY-MM-DD') } })
       .limit(10000)
       .toArray()).map(cleanUser)
@@ -158,7 +153,7 @@ class MongodbStorage implements SdStorage {
 
   async findInactiveUsers () {
     const inactiveDelayDate = moment().subtract(config.cleanup.deleteInactiveDelay[0], config.cleanup.deleteInactiveDelay[1]).toDate()
-    return (await this.db.collection('users')
+    return (await mongo.users
       .find({
         plannedDeletion: { $exists: false },
         $or: [
@@ -177,8 +172,8 @@ class MongodbStorage implements SdStorage {
     }
     if (params.q) {
       filter.$or = [
-        { name: { $regex: escapeStringRegexp(params.q), $options: 'i' } },
-        { email: { $regex: escapeStringRegexp(params.q), $options: 'i' } }
+        { name: { $regex: escapeRegExp(params.q), $options: 'i' } },
+        { email: { $regex: escapeRegExp(params.q), $options: 'i' } }
       ]
     }
     if (params.roles && params.roles.length) {
@@ -195,10 +190,10 @@ class MongodbStorage implements SdStorage {
     if ('emailConfirmed' in params) {
       filter.emailConfirmed = params.emailConfirmed
     }
-    const countPromise = this.db.collection('users').countDocuments(filter)
+    const countPromise = mongo.users.countDocuments(filter)
     const users = params.size === 0
       ? []
-      : (await this.db.collection('users')
+      : (await mongo.users
           .find(filter)
           .sort(params.sort)
           .skip(params.skip || 0)
@@ -232,7 +227,7 @@ class MongodbStorage implements SdStorage {
   }
 
   async getOrganization (id) {
-    const organization = await this.db.collection('organizations').findOne({ _id: id })
+    const organization = await mongo.organizations.findOne({ _id: id })
     if (!organization) return null
     return cleanOrganization(organization)
   }
@@ -242,13 +237,13 @@ class MongodbStorage implements SdStorage {
     const date = new Date()
     clonedOrga.created = { id: user.id, name: user.name, date }
     clonedOrga.updated = { id: user.id, name: user.name, date }
-    await this.db.collection('organizations').insertOne(clonedOrga)
+    await mongo.organizations.insertOne(clonedOrga)
     return orga
   }
 
   async patchOrganization (id: string, patch: Partial<Organization>, user: UserRef) {
     patch.updated = { id: user.id, name: user.name, date: new Date().toISOString() }
-    const mongoRes = await this.db.collection('organizations').findOneAndUpdate(
+    const mongoRes = await mongo.organizations.findOneAndUpdate(
       { _id: id },
       { $set: patch },
       { returnDocument: 'after' }
@@ -256,7 +251,7 @@ class MongodbStorage implements SdStorage {
     const orga = cleanOrganization(mongoRes.value)
     // also update all organizations references in users
     if (patch.name || patch.departments) {
-      for await (const user of this.db.collection('users').find({ organizations: { $elemMatch: { id } } })) {
+      for await (const user of mongo.users.find({ organizations: { $elemMatch: { id } } })) {
         for (const org of user.organizations) {
           if (org.id !== id) continue
           if (patch.name) org.name = patch.name
@@ -267,16 +262,16 @@ class MongodbStorage implements SdStorage {
             if (department) org.departmentName = department.name
           }
         }
-        await this.db.collection('users').updateOne({ _id: user._id }, { $set: { organizations: user.organizations } })
+        await mongo.users.updateOne({ _id: user._id }, { $set: { organizations: user.organizations } })
       }
     }
     return orga
   }
 
   async deleteOrganization (organizationId: string) {
-    await this.db.collection('users')
+    await mongo.users
       .updateMany({}, { $pull: { organizations: { id: organizationId } } })
-    await this.db.collection('organizations').deleteOne({ _id: organizationId })
+    await mongo.organizations.deleteOne({ _id: organizationId })
   }
 
   async findOrganizations (params: FindOrganizationsParams = {}) {
@@ -285,14 +280,14 @@ class MongodbStorage implements SdStorage {
       filter._id = { $in: params.ids }
     }
     if (params.q) {
-      filter.name = { $regex: escapeStringRegexp(params.q), $options: 'i' }
+      filter.name = { $regex: escapeRegExp(params.q), $options: 'i' }
     }
     if (params.creator) {
       filter['created.id'] = params.creator
     }
 
-    const countPromise = this.db.collection('organizations').countDocuments(filter)
-    const organizations = await this.db.collection('organizations')
+    const countPromise = mongo.organizations.countDocuments(filter)
+    const organizations = await mongo.organizations
       .find(filter)
       .sort(params.sort)
       .project(prepareSelect(params.select))
@@ -334,28 +329,28 @@ class MongodbStorage implements SdStorage {
     }
     userOrga.role = role
     if (readOnly) userOrga.readOnly = readOnly
-    await this.db.collection('users').updateOne(
+    await mongo.users.updateOne(
       { _id: user.id },
       { $set: { organizations: user.organizations } }
     )
   }
 
   async countMembers (organizationId) {
-    return this.db.collection('users').countDocuments({ 'organizations.id': organizationId })
+    return mongo.users.countDocuments({ 'organizations.id': organizationId })
   }
 
   async patchMember (organizationId: string, userId: string, department = null, patch: PatchMemberBody) {
     // department is the optional department of the membership we are trying to change
     // patch.department is the optional new department of the membership
 
-    const org = await this.db.collection('organizations').findOne({ _id: organizationId })
+    const org = await mongo.organizations.findOne({ _id: organizationId })
     if (!org) throw httpError(404, 'organisation inconnue.')
     let patchDepartmentObject
     if (patch.department) {
       patchDepartmentObject = org.departments.find(d => d.id === patch.department)
       if (!patchDepartmentObject) throw httpError(404, 'département inconnu.')
     }
-    const user = await this.db.collection('users').findOne({ _id: userId })
+    const user = await mongo.users.findOne({ _id: userId })
     if (!user) throw httpError(404, 'utilisateur inconnu.')
     const userOrg = user.organizations.find(o => o.id === organizationId && (o.department || null) === (department || null))
     if (!userOrg) throw httpError(404, 'information de membre inconnue.')
@@ -385,21 +380,21 @@ class MongodbStorage implements SdStorage {
       throw httpError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
     }
 
-    await this.db.collection('users').updateOne(
+    await mongo.users.updateOne(
       { _id: userId },
       { $set: { organizations: user.organizations } }
     )
   }
 
   async removeMember (organizationId: string, userId: string, department?: string) {
-    await this.db.collection('users')
+    await mongo.users
       .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId, department } } })
   }
 
   async required2FA (user) {
     if (user.isAdmin && config.admins2FA) return true
     for (const org of user.organizations) {
-      if (await this.db.collection('organizations').findOne({ _id: org.id, '2FA.roles': org.role })) {
+      if (await mongo.organizations.findOne({ _id: org.id, '2FA.roles': org.role })) {
         return true
       }
     }
@@ -407,29 +402,29 @@ class MongodbStorage implements SdStorage {
   }
 
   async get2FA (userId: string) {
-    const user = await this.db.collection('users').findOne({ _id: userId })
+    const user = await mongo.users.findOne({ _id: userId })
     return user && user['2FA']
   }
 
   async set2FA (userId: string, twoFA: TwoFA) {
-    await this.db.collection('users').updateOne({ _id: userId }, { $set: { '2FA': twoFA } })
+    await mongo.users.updateOne({ _id: userId }, { $set: { '2FA': twoFA } })
   }
 
   async addPartner (orgId: string, partner: Partner) {
-    await this.db.collection('organizations').updateOne({ _id: orgId }, {
+    await mongo.organizations.updateOne({ _id: orgId }, {
       $pull: { partners: { contactEmail: partner.contactEmail, id: { $exists: false } } }
     })
-    await this.db.collection('organizations').updateOne({ _id: orgId }, {
+    await mongo.organizations.updateOne({ _id: orgId }, {
       $push: { partners: partner }
     })
   }
 
   async deletePartner (orgId: string, partnerId: string) {
-    await this.db.collection('organizations').updateOne({ _id: orgId }, { $pull: { partners: { partnerId } } })
+    await mongo.organizations.updateOne({ _id: orgId }, { $pull: { partners: { partnerId } } })
   }
 
   async validatePartner (orgId: string, partnerId: string, partner: Organization) {
-    await this.db.collection('organizations').updateOne(
+    await mongo.organizations.updateOne(
       { _id: orgId, 'partners.partnerId': partnerId },
       { $set: { 'partners.$.name': partner.name, 'partners.$.id': partner.id } }
     )

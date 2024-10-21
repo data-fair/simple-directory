@@ -1,7 +1,7 @@
 import type { User, OAuthToken } from '#types'
 import mongo from '#mongo'
 
-export async function writeOAuthToken (user: User, provider: any, token: any, offlineRefreshToken: boolean, loggedOut: Date) {
+export async function writeOAuthToken (user: User, provider: any, token: any, offlineRefreshToken: boolean, loggedOut?: Date) {
   const tokenInfo: OAuthToken = {
     user: { id: user.id, email: user.email, name: user.name },
     provider: { id: provider.id, type: provider.type, title: provider.title },

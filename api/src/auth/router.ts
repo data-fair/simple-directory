@@ -664,36 +664,6 @@ const oauthLogin = async (req, res, next) => {
 router.get('/oauth/:oauthId/login', oauthLogin)
 router.get('/oidc/:oauthId/login', oauthLogin)
 
-export const patchCoreOAuthUser = async (storage, provider, user, oauthInfo, memberInfo) => {
-  const providerType = provider.type || 'oauth'
-  if (provider.coreIdProvider) {
-    oauthInfo.coreId = true
-    oauthInfo.user.coreIdProvider = { type: providerType, id: provider.id }
-  }
-  const existingOAuthInfo = user[providerType]?.[provider.id]
-  const patch = {
-    [providerType]: { ...user[providerType] },
-    emailConfirmed: true
-  }
-  patch[providerType][provider.id] = { ...existingOAuthInfo, ...oauthInfo }
-  if (provider.coreIdProvider) {
-    Object.assign(patch, oauthInfo.user)
-    if (!memberInfo.readOnly) {
-      if (memberInfo.create) {
-        patch.defaultOrg = memberInfo.org.id
-        patch.ignorePersonalAccount = true
-        await storage.addMember(memberInfo.org, user, memberInfo.role, null, memberInfo.readOnly)
-      } else {
-        await storage.removeMember(memberInfo.org.id, user.id)
-      }
-    }
-  } else {
-    if (oauthInfo.user.firstName && !user.firstName) patch.firstName = oauthInfo.user.firstName
-    if (oauthInfo.user.lastName && !user.lastName) patch.lastName = oauthInfo.user.lastName
-  }
-  await storage.patchUser(user.id, patch)
-}
-
 
 const oauthCallback = async (req, res, next) => {
   
