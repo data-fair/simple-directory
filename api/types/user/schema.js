@@ -118,6 +118,9 @@ export default {
           },
           departmentName: {
             type: 'string'
+          },
+          readOnly: {
+            type: 'boolean'
           }
         }
       }

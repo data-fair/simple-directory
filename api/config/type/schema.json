@@ -218,7 +218,10 @@
     "storage": {
       "type": "object",
       "required": [
-        "type"
+        "type",
+        "file",
+        "mongo",
+        "ldap"
       ],
       "properties": {
         "type": {
@@ -230,19 +233,7 @@
           ]
         },
         "file": {
-          "type": "object",
-          "required": [
-            "users",
-            "organizations"
-          ],
-          "properties": {
-            "users": {
-              "type": "string"
-            },
-            "organizations": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/$defs/fileParams"
         },
         "mongo": {
           "type": "object",
@@ -253,7 +244,7 @@
           }
         },
         "ldap": {
-          "type": "object"
+          "$ref": "https://github.com/data-fair/simple-directory/ldap-params"
         }
       }
     },
@@ -557,24 +548,37 @@
         },
         "deleteInactiveDelay": {
           "type": "array",
+          "minItems": 2,
           "items": [
             {
               "type": "integer"
             },
             {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "days",
+                "weeks",
+                "months",
+                "years"
+              ]
             }
           ]
         }
       }
     },
     "defaultOrg": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "userSelfDelete": {
       "type": "boolean"
     },
     "admins2FA": {
+      "type": "boolean"
+    },
+    "singleMembership": {
       "type": "boolean"
     }
   },
@@ -609,7 +613,8 @@
               "type": "string"
             }
           }
-        }, {
+        },
+        {
           "$ref": "https://github.com/data-fair/simple-directory/site#/$defs/oidcProvider"
         }
       ]
@@ -678,6 +683,21 @@
           }
         }
       ]
+    },
+    "fileParams": {
+      "type": "object",
+      "required": [
+        "users",
+        "organizations"
+      ],
+      "properties": {
+        "users": {
+          "type": "string"
+        },
+        "organizations": {
+          "type": "string"
+        }
+      }
     }
   }
 }

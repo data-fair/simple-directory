@@ -1,14 +1,21 @@
-import type { SdStorage } from './interface.ts'
+import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
 import config from '#config'
-const { promisify } = require('util')
-const ldap = require('ldapjs')
-const passwordsUtils = require('../utils/passwords')
-const mongoUtils = require('../utils/mongo')
-const memoize = require('memoizee')
-const debug = require('debug')('ldap')
+import type { LdapParams } from '#types'
+import { Organization, Partner, User, UserWritable } from '#types'
+import mongo from '#mongo'
+import memoize from 'memoizee'
+import { promisify } from 'util'
+import ldap from 'ldapjs'
+import Debug from 'debug'
+import { decipher } from '../utils/cipher.ts'
+import { OrganizationPost } from '#doc/organizations/post-req/index.ts'
+import { UserRef } from '@data-fair/lib-express'
+import { TwoFA } from '../2fa/service.ts'
 
-function sortCompare (sort) {
-  return function (a, b) {
+const debug = Debug('ldap')
+
+function sortCompare (sort: Record<string, 1 | -1>) {
+  return function (a: Record<string, any>, b: Record<string, any>) {
     for (const key of Object.keys(sort || {})) {
       if (a[key] > b[key]) return sort[key]
       if (a[key] < b[key]) return sort[key] * -1
@@ -17,13 +24,22 @@ function sortCompare (sort) {
   }
 }
 
-function buildMappingFn (mapping, required, multiValued, objectClass, secondaryObjectClass, prefixes) {
+type MappingFn = (from: Record<string, any>) => Record<string, any>
+
+function buildMappingFn (
+  mapping: Record<string, string>,
+  required: string[],
+  multiValued: string[],
+  objectClass: string,
+  secondaryObjectClass: string | undefined,
+  prefixes: Record<string, string>
+) {
   return {
-    from (attrs) {
-      const result = {}
+    from (attrs: Record<string, any>) {
+      const result: Record<string, any> = {}
       Object.keys(mapping).forEach(key => {
         if (attrs[mapping[key]] && attrs[mapping[key]][0]) {
-          const values = attrs[mapping[key]].map(v => {
+          const values = attrs[mapping[key]].map((v: any) => {
             return (prefixes[key] || '') + v
           })
           if (multiValued.includes(key)) {
@@ -37,8 +53,8 @@ function buildMappingFn (mapping, required, multiValued, objectClass, secondaryO
       })
       return result
     },
-    to (obj) {
-      const entry = { objectClass: secondaryObjectClass ? [objectClass, secondaryObjectClass] : objectClass }
+    to (obj: Record<string, any>) {
+      const entry: Record<string, any> = { objectClass: secondaryObjectClass ? [objectClass, secondaryObjectClass] : objectClass }
       Object.keys(mapping).forEach(key => {
         if (obj[key] && (!multiValued.includes(key) || obj[key].length)) {
           entry[mapping[key]] = obj[key] && obj[key].replace(prefixes[key] || '', '')
@@ -48,7 +64,7 @@ function buildMappingFn (mapping, required, multiValued, objectClass, secondaryO
       })
       return entry
     },
-    filter (obj, objectClass, extraFilters = []) {
+    filter (obj: Record<string, any>, objectClass: string, extraFilters: any[] = []) {
       const filters = [new ldap.EqualityFilter({ attribute: 'objectClass', value: objectClass })]
       Object.keys(obj)
         .filter(key => !!obj[key])
@@ -69,19 +85,31 @@ function buildMappingFn (mapping, required, multiValued, objectClass, secondaryO
 }
 
 class LdapStorage implements SdStorage {
-  async init (params, org) {
+  readonly?: boolean | undefined
+
+  private ldapParams: LdapParams
+  private org: Organization | undefined
+  private userMapping: ReturnType<typeof buildMappingFn>
+  private _orgMapping: ReturnType<typeof buildMappingFn> | undefined
+
+  private get orgMapping () {
+    if (!this._orgMapping) throw new Error('ldap not configured to run in multi-organizations mode')
+    return this._orgMapping
+  }
+
+  constructor (params: LdapParams, org?: Organization) {
     this.ldapParams = params
     this.org = org
     console.log('Connecting to ldap ' + params.url)
     // check connexion at startup
-    await this._client(async (client) => {})
-    const prefixes = org ? { id: `ldap_${org.id}_` } : {}
-    this._userMapping = buildMappingFn(
+
+    const prefixes: Record<string, string> = org ? { id: `ldap_${org.id}_` } : {}
+    this.userMapping = buildMappingFn(
       this.ldapParams.users.mapping,
       ['email'],
       [],
       this.ldapParams.users.objectClass,
-      null,
+      undefined,
       prefixes
     )
     if (!this.org) {
@@ -90,76 +118,58 @@ class LdapStorage implements SdStorage {
         ['id'],
         [],
         this.ldapParams.organizations.objectClass,
-        this.ldapParams.members.organizationAsDC ? 'dcObject' : null,
+        this.ldapParams.members.organizationAsDC ? 'dcObject' : undefined,
         {}
       )
     }
-
-    if (config.storage.mongo.url && (this.ldapParams.overwrite || []).includes('members')) {
-      console.log('Connecting to mongodb ' + config.storage.mongo.url)
-      const MongoClient = require('mongodb').MongoClient
-      try {
-        this.mongoClient = await MongoClient.connect(config.storage.mongo.url)
-      } catch (err) {
-      // 1 retry after 1s
-      // solve the quite common case in docker-compose of the service starting at the same time as the db
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        this.mongoClient = await MongoClient.connect(config.storage.mongo.url)
-      }
-
-      this.db = this.mongoClient.db()
-      await mongoUtils.ensureIndex(this.db, 'ldap-members-overwrite', { orgId: 1, userId: 1 }, { name: 'main-keys', unique: true })
-      await mongoUtils.ensureIndex(this.db, 'ldap-organizations-overwrite', { id: 1 }, { name: 'main-keys', unique: true })
-    } else {
-      console.log('LDAP without mongodb overwriting capabilities')
-    }
-
-    this._getAllUsers = memoize(async (client) => {
-      const attributes = Object.values(this.ldapParams.users.mapping)
-      const extraFilters = [...(this.ldapParams.users.extraFilters || [])]
-      if (this.ldapParams.members.role.attr) {
-        attributes.push(this.ldapParams.members.role.attr)
-      }
-      if (this.ldapParams.members.onlyWithRole) {
-        extraFilters.push(this._getRoleFilter(Object.keys(this.ldapParams.members.role.values)))
-      }
-      const res = await this._search(
-        client,
-        this.ldapParams.baseDN,
-        this._userMapping.filter({}, this.ldapParams.users.objectClass, extraFilters),
-        attributes,
-        this._userMapping.from,
-        false
-      )
-      return res
-    }, { maxAge: config.storage.ldap.cacheMS }) // 5 minutes cache
-
-    return this
   }
 
-  async _client (fn) {
+  async init () {
+    await this.withClient(async () => {})
+  }
+
+  private async withClient <T>(fn: (client: ldap.Client) => Promise<T>) {
     const client = ldap.createClient({ url: this.ldapParams.url, timeout: 4000 })
     client.on('error', err => console.error(err.message))
 
-    client.bind = promisify(client.bind)
-    client.unbind = promisify(client.unbind)
-    client.add = promisify(client.add)
-    client.del = promisify(client.del)
+    const bind = promisify(client.bind).bind(client)
+    const unbind = promisify(client.unbind).bind(client)
 
     if (this.ldapParams.searchUserDN && this.ldapParams.searchUserPassword) {
       debug('bind service account', this.ldapParams.url, this.ldapParams.searchUserDN)
-      await client.bind(this.ldapParams.searchUserDN, passwordsUtils.decipherPassword(this.ldapParams.searchUserPassword))
+      await bind(this.ldapParams.searchUserDN, decipher(this.ldapParams.searchUserPassword))
     } else {
       console.warn('No ldap search user credentials configured, proceed without binding a service account')
     }
-    const promise = fn(client)
-    promise.finally(() => client.unbind())
-    return promise
+    try {
+      return await fn(client)
+    } finally {
+      await unbind()
+    }
   }
 
+  _getAllUsers = memoize(async (client) => {
+    const attributes = Object.values(this.ldapParams.users.mapping)
+    const extraFilters: any[] = [...(this.ldapParams.users.extraFilters || [])]
+    if (this.ldapParams.members.role.attr) {
+      attributes.push(this.ldapParams.members.role.attr)
+    }
+    if (this.ldapParams.members.onlyWithRole) {
+      extraFilters.push(this._getRoleFilter(Object.keys(this.ldapParams.members.role.values ?? {})))
+    }
+    const res = await this._search<User>(
+      client,
+      this.ldapParams.baseDN,
+      this.userMapping.filter({}, this.ldapParams.users.objectClass, extraFilters),
+      attributes,
+      this.userMapping.from
+    )
+    return res
+  }, { maxAge: config.storage.ldap.cacheMS }) // 5 minutes cache
+
   // promisified search
-  async _search (client, base, filter, attributes, mappingFn, onlyItem = true) {
-    const results = await new Promise((resolve, reject) => {
+  async _search <T>(client: ldap.Client, base: string, filter: any, attributes: string[], mappingFn: MappingFn) {
+    const results = await new Promise<any[]>((resolve, reject) => {
       client.search(base, {
         filter,
         attributes: attributes.filter(key => !!key),
@@ -167,19 +177,20 @@ class LdapStorage implements SdStorage {
         paged: true
       }, (err, res) => {
         if (err) return reject(err)
-        const results = []
+        const results: any[] = []
         res.on('searchEntry', (entry) => {
-          const attrs = {}
+          const attrs: Record<string, any> = {}
           entry.attributes.forEach(attr => {
-            attrs[attr.type] = attr._vals.map(v => v.toString())
+            const values = typeof attr.values === 'string' ? [attr.values] : attr.values
+            attrs[attr.type] = values.map(v => v.toString())
           })
           try {
             results.push({ entry, attrs, item: mappingFn(attrs) })
-          } catch (err) {
+          } catch (err: any) {
             debug(err.message, entry)
           }
         })
-        res.on('error', (err) => {
+        res.on('error', (err: any) => {
           if (err.lde_message && err.lde_message === 'No Such Object') {
             return resolve([])
           }
@@ -198,13 +209,14 @@ class LdapStorage implements SdStorage {
   - first result: `, results[0])
     return {
       count: results.length,
+      fullResults: results as { entry: ldap.SearchEntry, attrs: Record<string, any>, item: T }[],
       results: results
-        .map(result => onlyItem ? result.item : result)
+        .map(result => result.item) as T[]
     }
   }
 
-  _userDN (user) {
-    const entry = this._userMapping.to(user)
+  private userDN (user: User) {
+    const entry = this.userMapping.to(user)
     const dnKey = this.ldapParams.users.dnKey
     if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
     if (this.ldapParams.organizations.staticSingleOrg || this.org) {
@@ -213,7 +225,7 @@ class LdapStorage implements SdStorage {
       if (!user.organizations || !user.organizations.length) {
         throw new Error('L\'utilisateur doit être associé à une organisation dès la création')
       }
-      const orgEntry = this._orgMapping.to(user.organizations[0])
+      const orgEntry = this.orgMapping.to(user.organizations[0])
       const orgDNKey = this.ldapParams.organizations.dnKey
       if (!orgEntry[orgDNKey]) throw new Error(`La clé ${orgDNKey} est obligatoire dans l'organisation`)
       return `${dnKey}=${entry[dnKey]}, ${orgDNKey}=${orgEntry[orgDNKey]}, ${this.ldapParams.baseDN}`
@@ -222,21 +234,21 @@ class LdapStorage implements SdStorage {
     }
   }
 
-  _orgDN (org) {
-    const entry = this._orgMapping.to(org)
+  private orgDN (org: { id: string }) {
+    const entry = this.orgMapping.to(org)
     const dnKey = this.ldapParams.organizations.dnKey
     if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
     return `${dnKey}=${entry[dnKey]}, ${this.ldapParams.baseDN}`
   }
 
-  async _setUserOrg (client, user, entry, attrs, orgCache = {}) {
-    let org
+  async _setUserOrg (client: ldap.Client, user: User, entry: any, attrs: any, orgCache: Record<string, Organization> = {}) {
+    let org: { id: string, name: string, department?: string } | undefined
     if (this.ldapParams.organizations.staticSingleOrg) {
       org = this.ldapParams.organizations.staticSingleOrg
     } else if (this.org) {
       org = { id: this.org.id, name: this.org.name }
     } else if (this.ldapParams.members.organizationAsDC) {
-      const dn = ldap.parseDN(entry.objectName)
+      const dn = ldap.parseDN(entry.objectName) as any
       const orgDC = dn.rdns[1].attrs.dc.value
       orgCache[orgDC] = orgCache[orgDC] || await this._getOrganization(client, orgDC)
       org = orgCache[orgDC]
@@ -249,13 +261,13 @@ class LdapStorage implements SdStorage {
       if (this.ldapParams.members.role.attr) {
         const ldapRoles = attrs[this.ldapParams.members.role.attr]
         if (ldapRoles) {
-          role = Object.keys(this.ldapParams.members.role.values)
-            .find(role => !!ldapRoles.find(ldapRole => this.ldapParams.members.role.values[role].includes(ldapRole)))
+          role = Object.keys(this.ldapParams.members.role.values ?? {})
+            .find(role => !!ldapRoles.find((ldapRole: string) => this.ldapParams.members.role.values?.[role].includes(ldapRole)))
         }
       }
       let overwrite
       if ((this.ldapParams.overwrite || []).includes('members')) {
-        overwrite = await this.db.collection('ldap-members-overwrite').findOne({ orgId: org.id, userId: user.id })
+        overwrite = await mongo.ldapMembersOverwrite.findOne({ orgId: org.id, userId: user.id })
       }
       overwrite = overwrite || (this.ldapParams.members.overwrite || [])
         .find(o => (o.orgId === org.id || !o.orgId) && o.email?.toLowerCase() === user.email?.toLowerCase())
@@ -266,49 +278,47 @@ class LdapStorage implements SdStorage {
     }
   }
 
-  async _getUser (filter, onlyItem = true) {
+  async _getUser (filter: any, onlyItem = true) {
     debug('search single user', filter)
     const attributes = Object.values(this.ldapParams.users.mapping)
     if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
-    return this._client(async (client) => {
-      const res = await this._search(
+    return this.withClient<{ user: User, entry: ldap.SearchEntry } | undefined>(async (client) => {
+      const res = await this._search<User>(
         client,
         this.ldapParams.baseDN,
-        this._userMapping.filter(filter, this.ldapParams.users.objectClass, this.ldapParams.users.extraFilters),
+        this.userMapping.filter(filter, this.ldapParams.users.objectClass, this.ldapParams.users.extraFilters),
         attributes,
-        this._userMapping.from,
-        false
+        this.userMapping.from
       )
       if (!res.results[0]) return
-      if (!onlyItem) return res.results[0]
-      const user = res.results[0].item
-      await this._setUserOrg(client, user, res.results[0].entry, res.results[0].attrs)
+      const user = { ...res.results[0] }
+      await this._setUserOrg(client, user, res.fullResults[0].entry, res.fullResults[0].attrs)
       const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email?.toLowerCase() === user.email?.toLowerCase())
       if (overwrite) Object.assign(user, overwrite)
       if (this.org) user.orgStorage = true
-      return user
+      return { ...res.fullResults[0], user }
     })
   }
 
-  async getUser (filter) {
-    return this._getUser(filter)
+  async getUser (id: string) {
+    return (await this._getUser({ id }))?.user
   }
 
-  async getUserByEmail (email) {
-    return this._getUser({ email })
+  async getUserByEmail (email: string) {
+    return (await this._getUser({ email }))?.user
   }
 
   async checkPassword (id: string, password: string) {
     const user = await this._getUser({ id }, false)
     if (!user) return false
     const dn = user.entry.objectName
+    if (!dn) return false
 
     const client = ldap.createClient({ url: this.ldapParams.url, reconnect: false, timeout: 4000 })
-    client.bind = promisify(client.bind)
-    client.unbind = promisify(client.unbind)
+    const bind = promisify(client.bind).bind(client)
     try {
       debug('try to bind user', dn)
-      await client.bind(dn, password)
+      await bind(dn, password)
       return true
     } catch (err) {
       debug('auth failure', id, err)
@@ -319,29 +329,32 @@ class LdapStorage implements SdStorage {
   }
 
   // ids, q, sort, select, skip, size
-  async findUsers (params = {}) {
+  async findUsers (params: FindUsersParams) {
     debug('find users', params)
-    return this._client(async (client) => {
-      let results = (await this._getAllUsers(client)).results.slice()
+    return this.withClient(async (client) => {
+      const fullresults = (await this._getAllUsers(client)).fullResults
+      let results: User[] = []
+
       const orgCache = {}
-      for (let i = 0; i < results.length; i++) {
-        const user = results[i].item
-        await this._setUserOrg(client, user, results[i].entry, results[i].attrs, orgCache)
+      for (let i = 0; i < fullresults.length; i++) {
+        const user = fullresults[i].item
+        await this._setUserOrg(client, user, fullresults[i].entry, fullresults[i].attrs, orgCache)
         const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email === user.email)
         if (overwrite) Object.assign(user, overwrite)
         // email is implicitly confirmed in ldap mode
         user.emailConfirmed = true
-        results[i] = user
+        results.push(user)
       }
-      if (params.ids) {
-        results = results.filter(user => (params.ids).find(id => user.id === id))
+      const ids = params.ids
+      if (ids) {
+        results = results.filter(user => ids.find(id => user.id === id))
       }
       if (params.q) {
         const lq = params.q.toLowerCase()
         results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
       }
-      results.sort(sortCompare(params.sort))
-      const count = results.length
+      fullresults.sort(sortCompare(params.sort))
+      const count = fullresults.length
       const skip = params.skip || 0
       const size = params.size || 20
       results = results.slice(skip, skip + size)
@@ -349,13 +362,13 @@ class LdapStorage implements SdStorage {
     })
   }
 
-  _getRoleFilter (roles) {
-    let roleAttrValues = []
+  private _getRoleFilter (roles: string[]) {
+    let roleAttrValues: string[] = []
     roles.forEach(role => {
-      roleAttrValues = roleAttrValues.concat(this.ldapParams.members.role.values[role] || (role === this.ldapParams.members.role.default ? [] : [role]))
+      roleAttrValues = roleAttrValues.concat(this.ldapParams.members.role.values?.[role] || (role === this.ldapParams.members.role.default ? [] : [role]))
     })
     if (roleAttrValues.length) {
-      const roleAttrFilters = roleAttrValues.map(value => new ldap.EqualityFilter({ attribute: this.ldapParams.members.role.attr, value }))
+      const roleAttrFilters = roleAttrValues.map(value => new ldap.EqualityFilter({ attribute: this.ldapParams.members.role.attr as string, value }))
       if (roleAttrFilters.length > 1) {
         // roleFilter = `(|${roleAttrFilters.join('')})`
         return new ldap.OrFilter({ filters: roleAttrFilters })
@@ -365,13 +378,14 @@ class LdapStorage implements SdStorage {
     }
   }
 
-  async findMembers (organizationId, params = {}) {
+  async findMembers (organizationId: string, params: FindMembersParams) {
     debug('find members', params)
     const users = (await this.findUsers({ ...params, sort: null, skip: 0, size: 10000 })).results
     let members = users
       .filter(user => user.organizations.find(o => o.id === organizationId))
       .map(user => {
         const userOrga = user.organizations.find(o => o.id === organizationId)
+        if (!userOrga) throw new Error('impossible error')
         return {
           id: user.id,
           name: user.name,
@@ -381,11 +395,13 @@ class LdapStorage implements SdStorage {
           emailConfirmed: true
         }
       })
-    if (params.roles && params.roles.length) {
-      members = members.filter(member => params.roles.includes(member.role))
+    const roles = params.roles
+    if (roles?.length) {
+      members = members.filter(member => roles.includes(member.role))
     }
-    if (params.departments && params.departments.length) {
-      members = members.filter(member => params.departments.includes(member.department))
+    const deps = params.departments
+    if (deps?.length) {
+      members = members.filter(member => member.department && deps.includes(member.department))
     }
     members.sort(sortCompare(params.sort))
     const count = members.length
@@ -398,65 +414,65 @@ class LdapStorage implements SdStorage {
     }
   }
 
-  async addMember (orga, user, role, department) {
+  async addMember (orga: Organization, user: User, role: string, department: string) {
     if (!(this.ldapParams.overwrite || []).includes('members')) throw new Error('ldap members overwrite not supported')
-    await this.db.collection('ldap-members-overwrite').replaceOne(
+    await mongo.ldapMembersOverwrite.replaceOne(
       { orgId: orga.id, userId: user.id },
       { orgId: orga.id, department, userId: user.id, role },
       { upsert: true }
     )
   }
 
-  async patchMember (orgId, userId, department = null, patch) {
+  async patchMember (orgId: string, userId: string, department = null, patch: any) {
     if (!(this.ldapParams.overwrite || []).includes('members')) throw new Error('ldap members overwrite not supported')
-    await this.db.collection('ldap-members-overwrite').replaceOne(
+    await mongo.ldapMembersOverwrite.replaceOne(
       { orgId, userId },
       { ...patch, orgId, userId },
       { upsert: true }
     )
   }
 
-  async removeMember (orgId, userId) {
+  async removeMember (orgId: string, userId: string) {
     if (!(this.ldapParams.overwrite || []).includes('members')) throw new Error('ldap members overwrite not supported')
-    await this.db.collection('ldap-members-overwrite')
+    await mongo.ldapMembersOverwrite
       .deleteOne({ orgId, userId })
   }
 
-  async _getOrganization (client, id) {
-    let org
+  async _getOrganization (client: ldap.Client, id: string) {
+    let org: Organization | undefined
     if (this.ldapParams.organizations.staticSingleOrg) {
       if (this.ldapParams.organizations.staticSingleOrg.id === id) {
         org = this.ldapParams.organizations.staticSingleOrg
       }
     } else {
-      const res = await this._search(
+      const res = await this._search<Organization>(
         client,
         this.ldapParams.baseDN,
-        this._orgMapping.filter({ id }, this.ldapParams.organizations.objectClass, this.ldapParams.organizations.extraFilters),
+        this.orgMapping.filter({ id }, this.ldapParams.organizations.objectClass, this.ldapParams.organizations.extraFilters),
         Object.values(this.ldapParams.organizations.mapping),
-        this._orgMapping.from
+        this.orgMapping.from
       )
       org = res.results[0]
     }
     if (org) {
       let overwrite
       if ((this.ldapParams.overwrite || []).includes('organizations') || (this.ldapParams.overwrite || []).includes('departments')) {
-        overwrite = await this.db.collection('ldap-organizations-overwrite').findOne({ id: org.id })
+        overwrite = await mongo.ldapOrganizationsOverwrite.findOne({ id: org.id })
       }
       overwrite = overwrite || (this.ldapParams.organizations.overwrite || []).find(o => (o.id === org.id))
       if (overwrite) Object.assign(org, overwrite)
       org.departments = org.departments || []
     }
-    return org
+    return org as Organization
   }
 
-  async getOrganization (id) {
-    return this._client(async (client) => {
+  async getOrganization (id: string) {
+    return this.withClient(async (client) => {
       return this._getOrganization(client, id)
     })
   }
 
-  async findOrganizations (params = {}) {
+  async findOrganizations (params: FindOrganizationsParams) {
     debug('find orgs', params)
     if (this.ldapParams.organizations.staticSingleOrg) {
       return {
@@ -465,26 +481,26 @@ class LdapStorage implements SdStorage {
       }
     }
     const extraFilters = [...(this.ldapParams.organizations.extraFilters || [])]
-    return this._client(async (client) => {
-      const res = this._search(
+    return this.withClient(async (client) => {
+      const res = await this._search<Organization>(
         client,
         this.ldapParams.baseDN,
-        this._orgMapping.filter({ q: params.q }, this.ldapParams.organizations.objectClass, extraFilters),
+        this.orgMapping.filter({ q: params.q }, this.ldapParams.organizations.objectClass, extraFilters),
         Object.values(this.ldapParams.organizations.mapping),
-        this._orgMapping.from
+        this.orgMapping.from
       )
       res.results.sort(sortCompare(params.sort))
-      return res
+      return { count: res.count, results: res.results }
     })
   }
 
-  async patchOrganization (id, patch, user) {
+  async patchOrganization (id: string, patch: any, user: UserRef) {
     if (!((this.ldapParams.overwrite || []).includes('organizations') || (this.ldapParams.overwrite || []).includes('departments'))) {
       throw new Error('ldap organizations overwrite not supported')
     }
     patch.updated = { id: user.id, name: user.name, date: new Date() }
     patch.id = id
-    await this.db.collection('ldap-organizations-overwrite').findOneAndUpdate(
+    await mongo.ldapOrganizationsOverwrite.findOneAndUpdate(
       { id },
       { $set: patch },
       { upsert: true }
@@ -492,70 +508,126 @@ class LdapStorage implements SdStorage {
     return await this.getOrganization(id)
   }
 
-  async required2FA (user) {
-    if (user.adminMode && config.admins2FA) return true
+  async required2FA (user: User) {
+    if (user.isAdmin && config.admins2FA) return true
     return false
   }
 
-  async get2FA (userId) {
-    return null
+  async get2FA (userId: string) {
+    return undefined
   }
 
   // WARNING: the following is used only in tests as ldap storage is always readonly
   // except for the overwritten properties stored in mongo
 
-  async _createUser (user) {
-    const entry = this._userMapping.to({ ...user, lastName: user.lastName || 'missing' })
-    const dn = this._userDN(user)
+  async _createUser (user: User) {
+    const entry = this.userMapping.to({ ...user, lastName: user.lastName || 'missing' })
+    const dn = this.userDN(user)
     if (user.organizations.length && this.ldapParams.members.role.attr) {
-      const roleValues = this.ldapParams.members.role.values[user.organizations[0].role]
-      const roleValue = roleValues && roleValues[0]
+      const roleValues = this.ldapParams.members.role.values?.[user.organizations[0].role]
+      const roleValue = roleValues?.[0]
       entry[this.ldapParams.members.role.attr] = roleValue || this.ldapParams.members.role.default
     }
 
     debug('add user to ldap', dn, entry)
-    await this._client(async (client) => {
-      await client.add(dn, entry)
+    await this.withClient(async (client) => {
+      const add = promisify(client.add).bind(client)
+      await add(dn, entry)
     })
     return user
   }
 
-  async _deleteUser (id) {
+  async _deleteUser (id: string) {
     const user = await this._getUser({ id }, false)
     if (!user) {
       debug('delete user not found')
       return
     }
-    const dn = user.entry.objectName
+    const dn = user.entry.objectName as string
     debug('delete user from ldap', dn)
-    await this._client(async (client) => {
-      await client.del(dn)
+    await this.withClient(async (client) => {
+      const del = promisify(client.del).bind(client)
+      await del(dn)
     })
   }
 
-  async _createOrganization (org) {
-    const entry = this._orgMapping.to(org)
-    const dn = this._orgDN(org)
+  async _createOrganization (org: Organization) {
+    const entry = this.orgMapping.to(org)
+    const dn = this.orgDN(org)
 
     // dc is in the dn string, not as an attribute
     delete entry.dc
 
     debug('add org to ldap', dn, entry)
-    await this._client(async (client) => {
-      await client.add(dn, entry)
+    await this.withClient(async (client) => {
+      const add = promisify(client.add).bind(client)
+      await add(dn, entry)
     })
     return org
   }
 
-  async _deleteOrganization (id) {
-    const dn = this._orgDN({ id })
+  async _deleteOrganization (id: string) {
+    const dn = this.orgDN({ id })
     debug('delete org from ldap', dn)
-    await this._client(async (client) => {
-      await client.del(dn)
+    await this.withClient(async (client) => {
+      const del = promisify(client.del).bind(client)
+      await del(dn)
     })
+  }
+
+  createUser (user: UserWritable, byUser?: { id: string; name: string }, host?: string): Promise<User> {
+    throw new Error('Method not implemented.')
+  }
+
+  updateLogged (userId: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  confirmEmail (userId: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  deleteUser (userId: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  patchUser (userId: string, patch: any, byUser?: { id: string; name: string }): Promise<User> {
+    throw new Error('Method not implemented.')
+  }
+
+  findInactiveUsers (): Promise<User[]> {
+    throw new Error('Method not implemented.')
+  }
+
+  findUsersToDelete (): Promise<User[]> {
+    throw new Error('Method not implemented.')
+  }
+
+  createOrganization (org: OrganizationPost, user: UserRef): Promise<Organization> {
+    throw new Error('Method not implemented.')
+  }
+
+  deleteOrganization (orgId: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  set2FA (userId: string, twoFA: TwoFA): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  addPartner (orgId: string, partner: Partner): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  deletePartner (orgId: string, partnerId: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  validatePartner (orgId: string, partnerId: string, partner: Organization): Promise<void> {
+    throw new Error('Method not implemented.')
   }
 }
 
-export const init = async (params, org) => new LdapStorage().init(params, org)
+export const init = async (params: LdapParams, org?: Organization) => new LdapStorage(params, org).init()
 export const readonly = true
 export const overwrite = config.storage.ldap.overwrite

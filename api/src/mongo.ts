@@ -1,4 +1,4 @@
-import type { Site, Limits, OAuthToken } from '#types'
+import type { Site, Limits, OAuthToken, MemberOverwrite, OrganizationOverwrite } from '#types'
 import type { Avatar } from './avatars/service.ts'
 import type { OrgInDb, UserInDb } from './storages/mongo.ts'
 
@@ -48,6 +48,14 @@ export class SdMongo {
     return mongo.db.collection<{ _id: string, content: any }>('oidc-discovery')
   }
 
+  get ldapMembersOverwrite () {
+    return mongo.db.collection<MemberOverwrite>('ldap-members-overwrite')
+  }
+
+  get ldapOrganizationsOverwrite () {
+    return mongo.db.collection<OrganizationOverwrite>('ldap-organizations-overwrite')
+  }
+
   init = async () => {
     await mongo.connect(config.mongo.url, config.mongo.options)
     await mongo.configure({
@@ -94,6 +102,12 @@ export class SdMongo {
         'oauth-tokens-provider': { 'provider.id': 1 },
         'oauth-tokens-offline': { offlineRefreshToken: 1 },
         'oauth-tokens-sid': { 'token.session_state': 1 }
+      },
+      'ldap-members-overwrite': {
+        'main-keys': [{ orgId: 1, userId: 1 }, { unique: true }],
+      },
+      'ldap-organizations-overwrite': {
+        'main-keys': [{ id: 1 }, { unique: true }]
       }
     })
   }

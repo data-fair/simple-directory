@@ -63,8 +63,8 @@ export default {
           email: 'mail',
           firstName: 'givenName',
           lastName: 'sn',
-          birthday: null,
-          avatarUrl: null
+          birthday: undefined,
+          avatarUrl: undefined
         },
         // an array of objects that can be used to overwrite any user properties based on matching "email" property
         overwrite: [],
@@ -75,7 +75,7 @@ export default {
       organizations: {
         // a single static organization, all users are in it
         // {id: ..., name: ...}
-        staticSingleOrg: null,
+        staticSingleOrg: undefined,
         objectClass: 'organization',
         dnKey: 'dc',
         mapping: {

@@ -4,7 +4,7 @@ export default {
   title: 'Organization',
   type: 'object',
   additionalProperties: false,
-  required: ['id', 'name', 'created', 'updated'],
+  required: ['id', 'name'],
   properties: {
     created: { $ref: 'https://github.com/data-fair/simple-directory/partial#/$defs/modifier' },
     updated: { $ref: 'https://github.com/data-fair/simple-directory/partial#/$defs/modifier' },
@@ -119,7 +119,7 @@ export default {
           enum: ['ldap']
         },
         readonly: { type: 'boolean' },
-        config: { type: 'object' }
+        config: { $ref: 'https://github.com/data-fair/simple-directory/ldap-params' }
       }
     },
     partners: {

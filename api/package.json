@@ -32,6 +32,7 @@
     "i18n": "^0.15.1",
     "initials": "^3.1.2",
     "json-web-key": "^0.4.0",
+    "ldapjs": "^3.0.7",
     "material-colors": "^1.2.6",
     "memoizee": "^0.4.17",
     "mjml": "^4.15.3",

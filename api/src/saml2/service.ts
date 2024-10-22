@@ -28,7 +28,7 @@ samlify.setSchemaValidator({
   }
 })
 
-export const getProviderId = (url: string) => {
+export const getSamlProviderId = (url: string) => {
   return slug(new URL(url).host, { lower: true, strict: true })
 }
 
@@ -102,7 +102,7 @@ export const init = async () => {
   for (const providerConfig of config.saml2.providers) {
     const idp = samlify.IdentityProvider(providerConfig)
     if (!idp.entityMeta.meta.entityID) throw new Error('missing entityID in saml IDP metadata')
-    const id = getProviderId(idp.entityMeta.meta.entityID)
+    const id = getSamlProviderId(idp.entityMeta.meta.entityID)
     _globalProviders.push({
       id,
       ...providerConfig,

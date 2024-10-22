@@ -10,8 +10,8 @@ export type FindMembersParams = {
   ids?: string[],
   roles?: string[],
   departments?: string[],
-  size?: number,
-  skip?: number,
+  size: number,
+  skip: number,
   sort?: any,
   emailConfirmed?: boolean
 }
@@ -19,8 +19,8 @@ export type FindMembersParams = {
 export type FindOrganizationsParams = {
   q?: string,
   ids?: string[],
-  size?: number,
-  skip?: number,
+  size: number,
+  skip: number,
   sort?: any,
   creator?: string,
   select?: string[]
@@ -29,8 +29,8 @@ export type FindOrganizationsParams = {
 export type FindUsersParams = {
   q?: string,
   ids?: string[],
-  size?: number,
-  skip?: number,
+  size: number,
+  skip: number,
   sort?: any,
   select?: string[]
 }
@@ -62,8 +62,8 @@ export interface SdStorage {
   patchOrganization(orgId: string, patch: any, user: UserRef): Promise<Organization>
   deleteOrganization(orgId: string): Promise<void>
 
-  getPassword(userId: string): Password
-  checkPassword(userId: string, password: string): Promise<boolean>
+  getPassword?(userId: string): Promise<Password | undefined>
+  checkPassword?(userId: string, password: string): Promise<boolean>
   required2FA(user: User): Promise<boolean>
   get2FA(userId: string): Promise<TwoFA | undefined>
   set2FA(userId: string, twoFA: TwoFA): Promise<void>

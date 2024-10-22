@@ -1,17 +1,24 @@
-import type { SdStorage } from './interface.ts'
+import { resolve } from 'node:path'
+import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
+import type { FileParams } from '../../config/type/index.ts'
 import config from '#config'
-const path = require('path')
-const fs = require('fs')
-const util = require('util')
 import userName from '../utils/user-name.ts'
-const readFile = util.promisify(fs.readFile)
+import { Member, Organization, Partner, User, UserWritable } from '#types'
+import { readFileSync } from 'node:fs'
+import { Password } from '../utils/passwords.ts'
+import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
+import { OrganizationPost } from '#doc/organizations/post-req/index.ts'
+import { UserRef } from '@data-fair/lib-express'
+import { TwoFA } from '../2fa/service.ts'
 
-function applySelect (resources, select) {
+type StoredOrganization = Omit<Organization, 'members'> & { members: { id: string, role: string, department?: string }[] }
+
+function applySelect (resources: Record<string, any>, select?: string[]) {
   if (!select || !select.length) return resources
-  return resources.map(resource => select.reduce((r, key) => { r[key] = resource[key]; return r }, {}))
+  return resources.map((resource: Record<string, any>) => select.reduce((r, key) => { r[key] = resource[key]; return r }, {} as Record<string, any>))
 }
 
-function getUserOrgas (organizations, user) {
+function getUserOrgas (organizations: StoredOrganization[], user: User) {
   const userOrgas = []
   for (const orga of organizations) {
     for (const member of orga.members) {
@@ -38,54 +45,61 @@ function sortCompare (sort) {
 }
 
 class FileStorage implements SdStorage {
-  async init (params, org) {
-    if (this.org) throw new Error('mongo storage is not compatible with per-org storage')
-    this.users = JSON.parse(await readFile(path.resolve(import.meta.dirname, '../..', params.users), 'utf-8'))
+  private users: User[]
+  private organizations: StoredOrganization[]
+
+  constructor (params: FileParams, org?: Organization) {
+    if (org) throw new Error('file storage is not compatible with per-org storage')
+    this.users = JSON.parse(readFileSync(resolve(import.meta.dirname, '../..', params.users), 'utf-8'))
     this.users.forEach(user => {
       user.name = userName(user)
     })
-    this.organizations = JSON.parse(await readFile(path.resolve(import.meta.dirname, '../..', params.organizations), 'utf-8'))
+    this.organizations = JSON.parse(readFileSync(resolve(import.meta.dirname, '../..', params.organizations), 'utf-8'))
     this.organizations.forEach(orga => {
       orga.members = orga.members || []
       orga.departments = orga.departments || []
     })
-    return this
   }
 
-  cleanUser (user) {
+  readonly = true
+
+  async init () { }
+
+  cleanUser (user: any): User {
     const res = { ...user, organizations: getUserOrgas(this.organizations, user) }
     delete res.password
     return res
   }
 
-  async getUser (filter) {
-    // Find user by strict equality of properties passed in filter
-    const user = this.users.find(u => Object.keys(filter).reduce((a, f) => a && u[f] === filter[f], true))
-    if (!user) return null
+  cleanOrga (org: StoredOrganization): Organization {
+    return { ...org, members: undefined }
+  }
 
-    // Set these organizations ids, names and the role of the user in them
+  async getUser (id: string) {
+    // Find user by strict equality of properties passed in filter
+    const user = this.users.find(u => u.id === id)
+    if (!user) return
     return this.cleanUser(user)
   }
 
-  async getUserByEmail (email) {
+  async getUserByEmail (email: string) {
     // Case insensitive comparison
     const user = this.users.find(u => u.email.toLowerCase() === email.toLowerCase())
-    if (!user) return null
-
-    // Set these organizations ids, names and the role of the user in them
+    if (!user) return
     return this.cleanUser(user)
   }
 
-  async getPassword (userId) {
+  async getPassword (userId: string) {
     // Case insensitive comparison
     const user = this.users.find(u => u.id === userId)
-    return user?.password
+    return user?.password as Password
   }
 
-  async findUsers (params = {}) {
+  async findUsers (params: FindUsersParams) {
     let filteredUsers = this.users.map(user => this.cleanUser(user))
-    if (params.ids) {
-      filteredUsers = filteredUsers.filter(user => (params.ids).find(id => user.id === id))
+    const ids = params.ids
+    if (ids?.length) {
+      filteredUsers = filteredUsers.filter(user => ids.find(id => user.id === id))
     }
     if (params.q) {
       const lq = params.q.toLowerCase()
@@ -100,26 +114,30 @@ class FileStorage implements SdStorage {
     }
   }
 
-  async findMembers (organizationId, params = {}) {
+  async findMembers (organizationId: string, params: FindMembersParams) {
     const orga = this.organizations.find(o => o.id === organizationId)
-    if (!orga) return null
-    let members = orga.members.map(m => {
+    if (!orga) throw Error('unknown organization ' + organizationId)
+    let members: Member[] = (orga.members ?? []).map(m => {
       const user = this.users.find(u => u.id === m.id)
+      if (!user) throw Error('unknown user as member ' + m.id)
       return { ...m, name: user.name, email: user.email }
     })
     if (params.q) {
       const lq = params.q.toLowerCase()
       members = members.filter(member => member.name.toLowerCase().indexOf(lq) >= 0)
     }
-    if (params.ids && params.ids.length) {
-      members = members.filter(member => params.ids.includes(member.id))
+    const ids = params.ids
+    if (ids?.length) {
+      members = members.filter(member => ids.includes(member.id))
     }
-    if (params.roles && params.roles.length) {
-      members = members.filter(member => params.roles.includes(member.role))
+    const roles = params.roles
+    if (roles?.length) {
+      members = members.filter(member => roles.includes(member.role))
     }
-    if (params.departments && params.departments.length) {
+    const departments = params.departments
+    if (departments?.length) {
       members = members.filter(member => {
-        for (const dep of params.departments) {
+        for (const dep of departments) {
           if (dep === '-' && !member.department) return true
           if (dep === member.department) return true
         }
@@ -136,7 +154,7 @@ class FileStorage implements SdStorage {
     }
   }
 
-  async getOrganization (id) {
+  async getOrganization (id: string) {
     const orga = this.organizations.find(o => o.id === id)
     if (!orga) return null
     const cloneOrga = JSON.parse(JSON.stringify(orga))
@@ -144,16 +162,13 @@ class FileStorage implements SdStorage {
     return cloneOrga
   }
 
-  async findOrganizations (params = {}) {
-    let filteredOrganizations = this.organizations.map(orga => {
-      const cloneOrga = { ...orga }
-      delete cloneOrga.members
-      return cloneOrga
-    })
+  async findOrganizations (params: FindOrganizationsParams) {
+    let filteredOrganizations = this.organizations.map(orga => this.cleanOrga(orga))
     // For convenience in the files the members are stored in the organizations
     // But the actual model exposed is the contrary
-    if (params.ids) {
-      filteredOrganizations = filteredOrganizations.filter(organization => (params.ids).find(id => organization.id === id))
+    const ids = params.ids
+    if (ids?.length) {
+      filteredOrganizations = filteredOrganizations.filter(organization => ids.find(id => organization.id === id))
     }
     if (params.q) {
       const lq = params.q.toLowerCase()
@@ -168,15 +183,87 @@ class FileStorage implements SdStorage {
     }
   }
 
-  async required2FA (user) {
-    if (user.adminMode && config.admins2FA) return true
+  async required2FA (user: User) {
+    if (user.isAdmin && config.admins2FA) return true
     return false
   }
 
-  async get2FA (userId) {
-    return null
+  async get2FA (userId: string) {
+    return undefined
+  }
+
+  createUser (user: UserWritable, byUser?: { id: string; name: string }, host?: string): Promise<User> {
+    throw new Error('Method not implemented.')
+  }
+
+  updateLogged (userId: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  confirmEmail (userId: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  deleteUser (userId: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  patchUser (userId: string, patch: any, byUser?: { id: string; name: string }): Promise<User> {
+    throw new Error('Method not implemented.')
+  }
+
+  findInactiveUsers (): Promise<User[]> {
+    throw new Error('Method not implemented.')
+  }
+
+  findUsersToDelete (): Promise<User[]> {
+    throw new Error('Method not implemented.')
+  }
+
+  createOrganization (org: OrganizationPost, user: UserRef): Promise<Organization> {
+    throw new Error('Method not implemented.')
+  }
+
+  patchOrganization (orgId: string, patch: any, user: UserRef): Promise<Organization> {
+    throw new Error('Method not implemented.')
+  }
+
+  deleteOrganization (orgId: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  checkPassword? (userId: string, password: string): Promise<boolean> {
+    throw new Error('Method not implemented.')
+  }
+
+  set2FA (userId: string, twoFA: TwoFA): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  addMember (orga: Organization, user: UserRef, role: string, department?: string | null, readOnly?: boolean): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  removeMember (orgId: string, userId: string, department?: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  patchMember (orgId: string, userId: string, department: string | null | undefined, patch: PatchMemberBody): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  addPartner (orgId: string, partner: Partner): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  deletePartner (orgId: string, partnerId: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  validatePartner (orgId: string, partnerId: string, partner: Organization): Promise<void> {
+    throw new Error('Method not implemented.')
   }
 }
 
-export const init = async (params, org) => new FileStorage().init(params, org)
+export const init = async (params: FileParams, org?: Organization) => new FileStorage(params, org).init()
 export const readonly = true

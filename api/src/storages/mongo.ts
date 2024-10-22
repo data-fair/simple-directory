@@ -1,4 +1,4 @@
-import type { UserWritable, User, Organization, Member, Partner, SitePublic } from '#types'
+import type { UserWritable, User, Organization, Member, Partner, Site } from '#types'
 import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersParams } from './interface.ts'
 import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
@@ -7,13 +7,16 @@ import { TwoFA } from '../2fa/service.ts'
 import { httpError, type UserRef } from '@data-fair/lib-express'
 import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
 import mongo from '#mongo'
+import { Password } from '../utils/passwords.ts'
+import dayjs from 'dayjs'
+import { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 
 const collation = { locale: 'en', strength: 1 }
 
 export type UserInDb = Omit<User, 'id'> & { _id: string }
 export type OrgInDb = Omit<Organization, 'id'> & { _id: string }
 
-function cleanUser (resource) {
+function cleanUser (resource: any): User {
   resource.id = resource._id
   delete resource._id
   delete resource.password
@@ -24,7 +27,7 @@ function cleanUser (resource) {
   return resource
 }
 
-function cleanOrganization (resource) {
+function cleanOrganization (resource: any): Organization {
   resource.id = resource._id
   delete resource._id
   return resource
@@ -34,15 +37,15 @@ function cloneWithId <T extends { id: string }> (resource: T): Omit<T, 'id'> & {
   return { ...resource, _id: resource.id, id: undefined }
 }
 
-function prepareSelect (select) {
+function prepareSelect (select?: string[]) {
   if (!select) return {}
-  return select.reduce((a, key) => { a[key] = true; return a }, {})
+  return select.reduce((a, key) => { a[key] = true; return a }, {} as Record<string, boolean>)
 }
 
 class MongodbStorage implements SdStorage {
+  readonly?: boolean | undefined
   async init (params: any, org?: Organization) {
     if (org) throw new Error('mongo storage is not compatible with per-org storage')
-    return this
   }
 
   async getUser (userId: string) {
@@ -51,8 +54,8 @@ class MongodbStorage implements SdStorage {
     return cleanUser(user)
   }
 
-  async getUserByEmail (email, site) {
-    const filter = { email }
+  async getUserByEmail (email: string, site?: Site) {
+    const filter: any = { email }
     if (site) {
       filter.host = site.host
     } else {
@@ -63,9 +66,9 @@ class MongodbStorage implements SdStorage {
     return cleanUser(user)
   }
 
-  async getPassword (userId) {
+  async getPassword (userId: string) {
     const user = await mongo.users.findOne({ _id: userId })
-    return user && user.password
+    if (user?.password) return user.password as Password
   }
 
   async createUser (user: UserWritable, byUser: { id: string, name: string }, host: string) {
@@ -81,7 +84,7 @@ class MongodbStorage implements SdStorage {
     }
 
     await mongo.users.findOneAndReplace({ _id: user.id }, fullUser, { upsert: true })
-    return user
+    return cleanUser(fullUser)
   }
 
   async patchUser (id: string, patch: any, byUser?: { id: string, name: string }) {
@@ -120,7 +123,7 @@ class MongodbStorage implements SdStorage {
     await mongo.oauthTokens.deleteMany({ 'user.id': userId })
   }
 
-  async findUsers (params: FindUsersParams = {}) {
+  async findUsers (params: FindUsersParams) {
     const filter: any = {}
     if (params.ids) {
       filter._id = { $in: params.ids }
@@ -137,8 +140,8 @@ class MongodbStorage implements SdStorage {
       .find(filter)
       .project(prepareSelect(params.select))
       .sort(params.sort)
-      .skip(params.skip ?? 0)
-      .limit(params.size ?? 10)
+      .skip(params.skip)
+      .limit(params.size)
       .toArray()
     const count = await countPromise
     return { count, results: users.map(cleanUser) }
@@ -146,13 +149,13 @@ class MongodbStorage implements SdStorage {
 
   async findUsersToDelete () {
     return (await mongo.users
-      .find({ plannedDeletion: { $lt: moment().format('YYYY-MM-DD') } })
+      .find({ plannedDeletion: { $lt: dayjs().format('YYYY-MM-DD') } })
       .limit(10000)
       .toArray()).map(cleanUser)
   }
 
   async findInactiveUsers () {
-    const inactiveDelayDate = moment().subtract(config.cleanup.deleteInactiveDelay[0], config.cleanup.deleteInactiveDelay[1]).toDate()
+    const inactiveDelayDate = dayjs().subtract(config.cleanup.deleteInactiveDelay[0], config.cleanup.deleteInactiveDelay[1]).toDate().toISOString()
     return (await mongo.users
       .find({
         plannedDeletion: { $exists: false },
@@ -165,7 +168,7 @@ class MongodbStorage implements SdStorage {
       .toArray()).map(cleanUser)
   }
 
-  async findMembers (organizationId: string, params: FindMembersParams = {}) {
+  async findMembers (organizationId: string, params: FindMembersParams) {
     const filter: any = { organizations: { $elemMatch: { id: organizationId } } }
     if (params.ids && params.ids.length) {
       filter._id = { $in: params.ids }
@@ -226,19 +229,22 @@ class MongodbStorage implements SdStorage {
     return { count, results }
   }
 
-  async getOrganization (id) {
+  async getOrganization (id: string) {
     const organization = await mongo.organizations.findOne({ _id: id })
-    if (!organization) return null
+    if (!organization) return
     return cleanOrganization(organization)
   }
 
-  async createOrganization (orga, user) {
-    const clonedOrga = cloneWithId(orga)
-    const date = new Date()
-    clonedOrga.created = { id: user.id, name: user.name, date }
-    clonedOrga.updated = { id: user.id, name: user.name, date }
-    await mongo.organizations.insertOne(clonedOrga)
-    return orga
+  async createOrganization (orga: OrganizationPost, user: UserRef) {
+    const date = new Date().toISOString()
+    const newOrga = {
+      created: { id: user.id, name: user.name, date },
+      updated: { id: user.id, name: user.name, date },
+      ...cloneWithId(orga),
+    }
+
+    await mongo.organizations.insertOne(newOrga)
+    return cleanOrganization(newOrga)
   }
 
   async patchOrganization (id: string, patch: any, user: UserRef) {
@@ -256,7 +262,7 @@ class MongodbStorage implements SdStorage {
           if (org.id !== id) continue
           if (patch.name) org.name = patch.name
           if (org.department && patch.departments) {
-            const department = patch.departments.find(d => d.id === org.department)
+            const department = patch.departments.find((d: any) => d.id === org.department)
             // TODO: if !department means that the department was deleted.
             // What to do in this case, remove the membershp entirely ?
             if (department) org.departmentName = department.name
@@ -274,7 +280,7 @@ class MongodbStorage implements SdStorage {
     await mongo.organizations.deleteOne({ _id: organizationId })
   }
 
-  async findOrganizations (params: FindOrganizationsParams = {}) {
+  async findOrganizations (params: FindOrganizationsParams) {
     const filter: any = {}
     if (params.ids) {
       filter._id = { $in: params.ids }
@@ -314,13 +320,9 @@ class MongodbStorage implements SdStorage {
       if (!department && user.organizations.find(o => o.id === orga.id && o.department)) {
         throw httpError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
       }
-      userOrga = {
-        id: orga.id,
-        name: orga.name,
-        createdAt: new Date().toISOString()
-      }
+      userOrga = { id: orga.id, name: orga.name, role }
       if (department) {
-        const fullDepartment = orga.departments.find(d => d.id === department)
+        const fullDepartment = orga.departments?.find(d => d.id === department)
         if (!fullDepartment) throw httpError(404, 'department not found')
         userOrga.department = department
         userOrga.departmentName = fullDepartment.name
@@ -335,7 +337,7 @@ class MongodbStorage implements SdStorage {
     )
   }
 
-  async countMembers (organizationId) {
+  async countMembers (organizationId: string) {
     return mongo.users.countDocuments({ 'organizations.id': organizationId })
   }
 
@@ -347,7 +349,7 @@ class MongodbStorage implements SdStorage {
     if (!org) throw httpError(404, 'organisation inconnue.')
     let patchDepartmentObject
     if (patch.department) {
-      patchDepartmentObject = org.departments.find(d => d.id === patch.department)
+      patchDepartmentObject = org.departments?.find(d => d.id === patch.department)
       if (!patchDepartmentObject) throw httpError(404, 'département inconnu.')
     }
     const user = await mongo.users.findOne({ _id: userId })
@@ -412,7 +414,7 @@ class MongodbStorage implements SdStorage {
 
   async addPartner (orgId: string, partner: Partner) {
     await mongo.organizations.updateOne({ _id: orgId }, {
-      $pull: { partners: { contactEmail: partner.contactEmail, id: { $exists: false } } }
+      $pull: { partners: { contactEmail: { $eq: partner.contactEmail }, id: { $exists: false } } }
     })
     await mongo.organizations.updateOne({ _id: orgId }, {
       $push: { partners: partner }
@@ -431,5 +433,5 @@ class MongodbStorage implements SdStorage {
   }
 }
 
-export const init = async (params, org) => new MongodbStorage().init(params, org)
+export const init = async (params: any, org?: Organization) => new MongodbStorage().init(params, org)
 export const readonly = config.storage.mongo.readonly
