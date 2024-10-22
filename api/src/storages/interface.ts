@@ -51,14 +51,14 @@ export interface SdStorage {
   getUserByEmail(email: string, site?: Site): Promise<User>
   updateLogged(userId: string): Promise<void>
   deleteUser(userId: string): Promise<void>
-  patchUser (userId: string, patch: Partial<User>, byUser?: { id: string, name: string }): Promise<User>
+  patchUser (userId: string, patch: any, byUser?: { id: string, name: string }): Promise<User>
   findInactiveUsers (): Promise<User[]>
   findUsersToDelete (): Promise<User[]>
 
   getOrganization(ordId: string): Promise<Organization | undefined>
   createOrganization(org: OrganizationPost, user: UserRef): Promise<Organization>
   findOrganizations(params: FindOrganizationsParams): Promise<{ count: number, results: Organization[] }>
-  patchOrganization(orgId: string, patch: Partial<Organization>, user: UserRef): Promise<Organization>
+  patchOrganization(orgId: string, patch: any, user: UserRef): Promise<Organization>
   deleteOrganization(orgId: string): Promise<void>
 
   getPassword(userId: string): Password

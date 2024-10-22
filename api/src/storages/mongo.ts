@@ -84,7 +84,7 @@ class MongodbStorage implements SdStorage {
     return user
   }
 
-  async patchUser (id: string, patch: Partial<User>, byUser?: { id: string, name: string }) {
+  async patchUser (id: string, patch: any, byUser?: { id: string, name: string }) {
     if (byUser) patch.updated = { id: byUser.id, name: byUser.name, date: new Date().toISOString() }
     const unset: Record<string, string> = {}
     const set: any = {}
@@ -95,7 +95,7 @@ class MongodbStorage implements SdStorage {
         set[key] = value
       }
     })
-    const operation = {}
+    const operation: any = {}
     if (Object.keys(set).length) operation.$set = set
     if (Object.keys(unset).length) operation.$unset = unset
     const mongoRes = await mongo.users.findOneAndUpdate(
@@ -103,7 +103,7 @@ class MongodbStorage implements SdStorage {
       operation,
       { returnDocument: 'after' }
     )
-    const user = cleanUser(mongoRes.value)
+    const user = cleanUser(mongoRes)
     return user
   }
 
@@ -241,14 +241,14 @@ class MongodbStorage implements SdStorage {
     return orga
   }
 
-  async patchOrganization (id: string, patch: Partial<Organization>, user: UserRef) {
+  async patchOrganization (id: string, patch: any, user: UserRef) {
     patch.updated = { id: user.id, name: user.name, date: new Date().toISOString() }
     const mongoRes = await mongo.organizations.findOneAndUpdate(
       { _id: id },
       { $set: patch },
       { returnDocument: 'after' }
     )
-    const orga = cleanOrganization(mongoRes.value)
+    const orga = cleanOrganization(mongoRes)
     // also update all organizations references in users
     if (patch.name || patch.departments) {
       for await (const user of mongo.users.find({ organizations: { $elemMatch: { id } } })) {

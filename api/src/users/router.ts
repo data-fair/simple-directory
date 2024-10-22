@@ -1,13 +1,13 @@
 import { type Organization, type UserWritable } from '#types'
 import { Router, type Request, type Response, type NextFunction } from 'express'
 import config from '#config'
-import { reqUser, mongoPagination, mongoSort, session, reqSiteUrl } from '@data-fair/lib-express'
+import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
-import userName from '../utils/user-name.ts'
 import { pushEvent } from '@data-fair/lib-node/events-queue.js'
-import { reqI18n } from '#i18n'
+import { reqI18n, __all, __date } from '#i18n'
 import storages from '#storages'
+import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import { FindUsersParams } from '../storages/interface.ts'
 import { unshortenInvit } from '../invitations/service.ts'
@@ -15,28 +15,38 @@ import { reqSite } from '../sites/service.ts'
 import { validatePassword, hashPassword } from '../utils/passwords.ts'
 import { deleteIdentity } from '../webhooks.ts'
 import { sendMail } from '../mails/service.ts'
+import { getLimits, setNbMembers } from '../limits/service.ts'
+import { getPayload, getDefaultUserOrg, prepareCallbackUrl } from '../tokens/service.ts'
+import * as postReq from '#doc/users/post-req/index.ts'
+import * as patchReq from '#doc/users/patch-req/index.ts'
+import * as postPasswordReq from '#doc/users/post-password-req/index.ts'
+import * as postHostReq from '#doc/users/post-host-req/index.ts'
+import { postUserIdentity } from '../webhooks.ts'
+import { keepalive } from '../tokens/service.ts'
 
 const router = Router()
 
 const rejectCoreIdUser = (req: Request, res: Response, next: NextFunction) => {
-  if (reqUser(req)?.idp) return res.status(403).send('This route is not available for users with a core identity provider')
+  const session = reqSession(req)
+  if (session.user?.idp) return res.status(403).send('This route is not available for users with a core identity provider')
   next()
 }
 
 // Get the list of users
 router.get('', async (req, res, next) => {
   const logContext: EventLogContext = { req }
+  const session = reqSession(req)
 
   const listMode = config.listUsersMode || config.listEntitiesMode
-  if (listMode === 'authenticated' && !reqUser(req)) return res.send({ results: [], count: 0 })
-  if (listMode === 'admin' && !reqUser(req)?.adminMode) return res.send({ results: [], count: 0 })
+  if (listMode === 'authenticated' && !session.user) return res.send({ results: [], count: 0 })
+  if (listMode === 'admin' && !session.user?.adminMode) return res.send({ results: [], count: 0 })
 
   const params: FindUsersParams = { ...mongoPagination(req.query), sort: mongoSort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
   if (allFields) {
-    if (!reqUser(req)?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+    if (!session.user?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   } else {
     params.select = ['id', 'name']
   }
@@ -52,15 +62,14 @@ router.get('', async (req, res, next) => {
   res.json(users)
 })
 
-const createKeys = ['firstName', 'lastName', 'email', 'password', 'birthday', 'createOrganization']
 // TODO: block when onlyCreateInvited is true ?
 router.post('', async (req, res, next) => {
   const logContext: EventLogContext = { req }
 
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
-  const invalidKey = Object.keys(req.body).find(key => !createKeys.concat(adminKeys).includes(key))
-  if (invalidKey) return res.status(400).send(`Attribute ${invalidKey} is not accepted`)
+
+  const { body, query } = postReq.returnValid(req, { name: 'req' })
 
   const storage = storages.globalStorage
 
@@ -77,17 +86,17 @@ router.post('', async (req, res, next) => {
     orga = await storage.getOrganization(invit.id)
     if (!orga) return res.status(400).send(reqI18n(req).messages.errors.orgaUnknown)
     logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invit.department, departmentName: invit.departmentName }
-    if (invit.email !== req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+    if (invit.email !== body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   } else if (config.onlyCreateInvited) {
     return res.status(400).send('users can only be created from an invitation')
   }
 
   // create user
   const newUser: UserWritable = {
-    email: req.body.email,
+    email: body.email,
     id: nanoid(),
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
+    firstName: body.firstName,
+    lastName: body.lastName,
     emailConfirmed: false,
     organizations: []
   }
@@ -102,20 +111,20 @@ router.post('', async (req, res, next) => {
   }
 
   // password is optional as we support passwordless auth
-  if (![undefined, null].includes(req.body.password)) {
+  if (body.password) {
     if (!validatePassword(req.body.password)) {
       return res.status(400).send(reqI18n(req).messages.errors.malformedPassword)
     }
-    newUser.password = await hashPassword(req.body.password)
+    newUser.password = await hashPassword(body.password)
   }
 
-  const user = await storages.globalStorage.getUserByEmail(req.body.email, await reqSite(req))
+  const user = await storages.globalStorage.getUserByEmail(body.email, await reqSite(req))
 
   // email is already taken, send a conflict email
   const link = (req.query.redirect as string) || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
   if (user && user.emailConfirmed !== false) {
     const linkUrl = new URL(link)
-    await sendMail('conflict', reqI18n(req).messages, req.body.email, { host: linkUrl.host, origin: linkUrl.origin })
+    await sendMail('conflict', reqI18n(req).messages, body.email, { host: linkUrl.host, origin: linkUrl.origin })
     return res.status(204).send()
   }
 
@@ -137,104 +146,97 @@ router.post('', async (req, res, next) => {
     }
   }
 
-  await storage.createUser(newUser, undefined, new URL(link).host)
+  const createdUser = await storage.createUser(newUser, undefined, new URL(link).host)
   eventsLog.info('sd.user.create', 'user was created', logContext)
 
-  if (invit && !config.alwaysAcceptInvitation) {
-    if (storage.db) {
-      const consumer = { type: 'organization', id: orga.id }
-      const limit = await limits.get(storage.db, consumer, 'store_nb_members')
-      if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
+  if (invit && !config.alwaysAcceptInvitation && orga) {
+    const limits = await getLimits(orga)
+    if (limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+      return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }
     eventsLog.info('sd.user.accept-invite', 'user accepted an invitation', logContext)
-    await storage.addMember(orga, newUser, invit.role, invit.department)
+    await storage.addMember(orga, createdUser, invit.role, invit.department)
     pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
-      title: __all('notifications.acceptedInvitation', { name: newUser.name, email: newUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
+      title: __all('notifications.acceptedInvitation', { name: createdUser.name, email: createdUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
     })
-    if (storage.db) await limits.setNbMembers(storage.db, orga.id)
+    await setNbMembers(orga.id)
   }
 
   if (invit) {
     // no need to confirm email if the user already comes from an invitation link
     // we already created the user with emailConfirmed=true
-    const payload = { ...tokens.getPayload(newUser), temporary: true }
-    const linkUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(newUser, invit && invit.id, invit && invit.department))
+    const payload = { ...getPayload(createdUser), temporary: true }
+    const linkUrl = await prepareCallbackUrl(req, payload, req.query.redirect as string | undefined, getDefaultUserOrg(createdUser, invit && invit.id, invit && invit.department))
     return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication
     // the user will be validated and authenticated at the same time by the token_callback route
-    const payload = { ...tokens.getPayload(newUser), emailConfirmed: true, temporary: true }
-    const linkUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(newUser, req.query.org, req.query.dep))
-    await sendMail('creation', reqI18n(req).messages, req.body.email, { link: linkUrl.href })
+    const payload = { ...getPayload(createdUser), emailConfirmed: true, temporary: true }
+    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, query.org, query.dep))
+    await sendMail('creation', reqI18n(req).messages, body.email, { link: linkUrl.href })
     // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
     return res.status(204).send()
   }
 })
 
 router.get('/:userId', async (req, res, next) => {
-  if (!reqUser(req)) return res.status(401).send()
-  if (!reqUser(req)?.adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
-  if (reqUser(req).id === '_superadmin') return res.json(reqUser(req))
+  const session = reqSessionAuthenticated(req)
+  if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+  if (session.user.id === '_superadmin') return res.json(session.user)
   let storage = storages.globalStorage
-  if (reqUser(req).id === req.params.userId && reqUser(req).orgStorage && reqUser(req).organization) {
-    const org = await storages.globalStorage.getOrganization(reqUser(req).organization.id)
+  if (session.user.id === req.params.userId && session.user.os && session.organization) {
+    const org = await storages.globalStorage.getOrganization(session.organization.id)
     if (!org) return res.status(401).send('Organization does not exist anymore')
     storage = await storages.createOrgStorage(org) ?? storage
   }
-  const user = await storage.getUser({ id: req.params.userId })
+  const user = await storage.getUser(req.params.userId)
   if (!user) return res.status(404).send()
   user.isAdmin = config.admins.includes(user.email)
   res.json(user)
 })
 
 // Update some parts of a user as himself
-const patchKeys = ['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'defaultDep', 'plannedDeletion']
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
-  if (!reqUser(req)) return res.status(401).send()
-  if (!reqUser(req)?.adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+  const session = reqSessionAuthenticated(req)
+  if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
 
-  const unpatchableKey = Object.keys(req.body).find(key => !patchKeys.concat(adminKeys).includes(key))
-  if (unpatchableKey) return res.status(400).send('Only some parts of the user can be modified through this route')
+  const { body: patch } = patchReq.returnValid(req, { name: 'req' })
+
   const adminKey = Object.keys(req.body).find(key => adminKeys.includes(key))
-  if (adminKey && !reqUser(req)?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
-
-  const patch = req.body
-  const name = userName({ ...reqUser(req), ...patch }, true)
-  if (name !== reqUser(req).name) {
-    patch.name = name
-    webhooks.postIdentity('user', { ...reqUser(req), ...patch })
-  }
+  if (adminKey && !session.user?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
 
   if (patch.plannedDeletion) {
     if (config.userSelfDelete) {
-      if (!reqUser(req)?.adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+      if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
     } else {
-      if (!reqUser(req)?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+      if (!session.user?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
     }
   }
 
-  const patchedUser = await storages.globalStorage.patchUser(req.params.userId, patch, reqUser(req))
+  const patchedUser = await storages.globalStorage.patchUser(req.params.userId, patch, session.user)
+
+  if (patchedUser.name !== session.user.name) {
+    postUserIdentity(patchedUser)
+  }
 
   eventsLog.info('sd.user.patch', `user was patched ${patchedUser.name} (${patchedUser.id})`, logContext)
 
-  const link = reqSiteUrl(req) + '/simple-directory/login?email=' + encodeURIComponent(reqUser(req).email)
-  const linkUrl = new URL(link)
+  const link = reqSiteUrl(req) + '/simple-directory/login?email=' + encodeURIComponent(session.user.email)
   if (patch.plannedDeletion) {
-    await sendMail('plannedDeletion', reqI18n(req).messages, reqUser(req).email, {
+    await sendMail('plannedDeletion', reqI18n(req).messages, session.user.email, {
       link,
-      user: reqUser(req).name,
-      plannedDeletion: req.localeDate(patch.plannedDeletion).format('L'),
+      user: session.user.name,
+      plannedDeletion: __date(req, patch.plannedDeletion).format('L'),
       cause: ''
     })
   }
 
-  if (storages.globalStorage.db) await storages.globalStorage.db.collection('limits').updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
+  await mongo.limits.updateOne({ type: 'user', id: patchedUser.id }, { $set: { name: patchedUser.name } })
 
   // update session info
   await keepalive(req, res)
@@ -243,14 +245,13 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
 })
 
 router.delete('/:userId/plannedDeletion', async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
+  const session = reqSessionAuthenticated(req)
 
-  if (!reqUser(req)) return res.status(401).send()
-  if (!reqUser(req)?.adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+  if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   const patch = { plannedDeletion: null }
 
-  await storages.globalStorage.patchUser(req.params.userId, patch, reqUser(req))
+  await storages.globalStorage.patchUser(req.params.userId, patch, session.user)
 
   // update session info
   await keepalive(req, res)
@@ -261,14 +262,13 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
 })
 
 router.delete('/:userId', async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
+  const session = reqSessionAuthenticated(req)
 
-  if (!reqUser(req)) return res.status(401).send()
   if (config.userSelfDelete) {
-    if (!reqUser(req)?.adminMode && reqUser(req).id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+    if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   } else {
-    if (!reqUser(req)?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+    if (!session.user?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   }
 
   await storages.globalStorage.deleteUser(req.params.userId)
@@ -281,22 +281,19 @@ router.delete('/:userId', async (req, res, next) => {
 
 // Change password of a user using an action token sent in a mail
 router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
+  const { body, query } = postPasswordReq.returnValid(req, { name: 'req' })
 
-  if (!req.body.password) return res.status(400).send()
-  const actionToken = req.query.action_token
-  if (!actionToken) return res.status(401).send('action_token param is required')
   let decoded
   try {
-    decoded = await session.verifyToken(actionToken)
+    decoded = await session.verifyToken(query.action_token)
   } catch (err) {
     return res.status(401).send(reqI18n(req).messages.errors.invalidToken)
   }
   if (decoded.id !== req.params.userId) return res.status(401).send('wrong user id in token')
   if (decoded.action !== 'changePassword') return res.status(401).send('wrong action for this token')
-  if (!validatePassword(req.body.password)) return res.status(400).send(reqI18n(req).messages.errors.malformedPassword)
-  const storedPassword = await hashPassword(req.body.password)
+  if (!validatePassword(body.password)) return res.status(400).send(reqI18n(req).messages.errors.malformedPassword)
+  const storedPassword = await hashPassword(body.password)
   await storages.globalStorage.patchUser(req.params.userId, { password: storedPassword })
 
   eventsLog.info('sd.user.change-password', `user changed password ${req.params.userId}`, logContext)
@@ -306,13 +303,12 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
 
 // Change host of a user using an action token sent in a mail
 router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
   const storage = storages.globalStorage
   if (!req.body.host) return res.status(400).send()
   const actionToken = req.query.action_token
-  if (!actionToken) return res.status(401).send('action_token param is required')
+  if (typeof actionToken !== 'string') return res.status(401).send('action_token param is required')
   let decoded
   try {
     decoded = await session.verifyToken(actionToken)

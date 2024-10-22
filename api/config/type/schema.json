@@ -570,6 +570,9 @@
     },
     "defaultOrg": {
       "type": ["string", "null"]
+    },
+    "userSelfDelete": {
+      "type": "boolean"
     }
   },
   "$defs": {

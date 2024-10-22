@@ -48,7 +48,7 @@ export const getPayload = (user: User) => {
 }
 
 export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: string) => {
-  if (!user.organizations || !user.organizations.length) return null
+  if (!user.organizations || !user.organizations.length) return
   if (reqOrgId) {
     let reqOrg
     if (reqDepId) {
@@ -63,7 +63,6 @@ export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: stri
     if (defaultOrg) return defaultOrg
   }
   if (user.ignorePersonalAccount) return user.organizations[0]
-  return null
 }
 
 export const unsetCookies = (req: Request, res: Response) => {

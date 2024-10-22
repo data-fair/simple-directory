@@ -17,6 +17,9 @@
     "department": {
       "type": "string"
     },
+    "departmentName": {
+      "type": "string"
+    },
     "redirect": {
       "type": "string"
     },
