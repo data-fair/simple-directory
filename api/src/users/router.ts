@@ -1,6 +1,6 @@
 import { type Organization, type UserWritable } from '#types'
 import { Router, type Request, type Response, type NextFunction } from 'express'
-import config from '#config'
+import config, { superadmin } from '#config'
 import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
@@ -22,7 +22,7 @@ import * as patchReq from '#doc/users/patch-req/index.ts'
 import * as postPasswordReq from '#doc/users/post-password-req/index.ts'
 import * as postHostReq from '#doc/users/post-host-req/index.ts'
 import { postUserIdentity } from '../webhooks.ts'
-import { keepalive } from '../tokens/service.ts'
+import { keepalive, sign } from '../tokens/service.ts'
 
 const router = Router()
 
@@ -167,13 +167,13 @@ router.post('', async (req, res, next) => {
   if (invit) {
     // no need to confirm email if the user already comes from an invitation link
     // we already created the user with emailConfirmed=true
-    const payload = { ...getPayload(createdUser), temporary: true }
+    const payload = getPayload(createdUser)
     const linkUrl = await prepareCallbackUrl(req, payload, req.query.redirect as string | undefined, getDefaultUserOrg(createdUser, invit && invit.id, invit && invit.department))
     return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication
     // the user will be validated and authenticated at the same time by the token_callback route
-    const payload = { ...getPayload(createdUser), emailConfirmed: true, temporary: true }
+    const payload = { ...getPayload(createdUser), emailConfirmed: true }
     const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, query.org, query.dep))
     await sendMail('creation', reqI18n(req).messages, body.email, { link: linkUrl.href })
     // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
@@ -184,7 +184,7 @@ router.post('', async (req, res, next) => {
 router.get('/:userId', async (req, res, next) => {
   const session = reqSessionAuthenticated(req)
   if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
-  if (session.user.id === '_superadmin') return res.json(session.user)
+  if (session.user.id === '_superadmin') return res.send(superadmin)
   let storage = storages.globalStorage
   if (session.user.id === req.params.userId && session.user.os && session.organization) {
     const org = await storages.globalStorage.getOrganization(session.organization.id)
@@ -304,20 +304,18 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
 // Change host of a user using an action token sent in a mail
 router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
   const logContext: EventLogContext = { req }
+  const { body, query } = postHostReq.returnValid(req, { name: 'req' })
 
   const storage = storages.globalStorage
-  if (!req.body.host) return res.status(400).send()
-  const actionToken = req.query.action_token
-  if (typeof actionToken !== 'string') return res.status(401).send('action_token param is required')
   let decoded
   try {
-    decoded = await session.verifyToken(actionToken)
+    decoded = await session.verifyToken(query.action_token)
   } catch (err) {
     return res.status(401).send(reqI18n(req).messages.errors.invalidToken)
   }
   if (decoded.id !== req.params.userId) return res.status(401).send('wrong user id in token')
   if (decoded.action !== 'changeHost') return res.status(401).send('wrong action for this token')
-  await storage.patchUser(req.params.userId, { host: req.body.host, oauth: null, oidc: null, saml: null })
+  await storage.patchUser(req.params.userId, { host: body.host, oauth: null, oidc: null, saml: null })
 
   eventsLog.info('sd.user.change-host', `user changed host ${req.params.userId}`, logContext)
 

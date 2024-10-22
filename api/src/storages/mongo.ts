@@ -108,7 +108,7 @@ class MongodbStorage implements SdStorage {
   }
 
   async updateLogged (id: string) {
-    mongo.users.updateOne({ _id: id }, { $set: { logged: new Date() } })
+    mongo.users.updateOne({ _id: id }, { $set: { logged: new Date().toISOString() } })
   }
 
   async confirmEmail (id: string) {
@@ -391,7 +391,7 @@ class MongodbStorage implements SdStorage {
       .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId, department } } })
   }
 
-  async required2FA (user) {
+  async required2FA (user: User) {
     if (user.isAdmin && config.admins2FA) return true
     for (const org of user.organizations) {
       if (await mongo.organizations.findOne({ _id: org.id, '2FA.roles': org.role })) {
@@ -403,7 +403,7 @@ class MongodbStorage implements SdStorage {
 
   async get2FA (userId: string) {
     const user = await mongo.users.findOne({ _id: userId })
-    return user && user['2FA']
+    if (user?.['2FA']) return user?.['2FA'] as TwoFA
   }
 
   async set2FA (userId: string, twoFA: TwoFA) {

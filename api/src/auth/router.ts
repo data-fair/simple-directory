@@ -1,63 +1,73 @@
-import config from '#config'
-import { Router } from 'express'
-import { reqUser } from '@data-fair/lib-express'
+import config, { superadmin } from '#config'
+import { Router, Request, Response, NextFunction } from 'express'
+import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError } from '@data-fair/lib-express'
 import { pushEvent } from '@data-fair/lib-node/events-queue.js'
-const URL = require('url').URL
-const bodyParser = require('body-parser')
-const requestIp = require('request-ip')
+import bodyParser from 'body-parser'
 import { nanoid } from 'nanoid'
-const Cookies = require('cookies')
-const slug = require('slugify')
-const tokens = require('../utils/tokens')
-const mails = require('../mails')
-const passwords = require('../utils/passwords')
-const webhooks = require('../webhooks')
-const oauth = require('../utils/oauth')
-const saml2 = require('../utils/saml2')
-import userName from '../utils/user-name.ts'
-const twoFA = require('./2fa.js')
-const limiter = require('../utils/limiter')
+import Cookies from 'cookies'
+import _slug from 'slugify'
+import Debug from 'debug'
+import { postUserIdentity } from '../webhooks.ts'
+import { SdStorage } from '../storages/interface.ts'
+import { User } from '#types'
+import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import emailValidator from 'email-validator'
+import { reqI18n, __all } from '#i18n'
+import limiter from '../utils/limiter.ts'
 import storages from '#storages'
-const { unshortenInvit } = require('../utils/invitations')
-const limits = require('../utils/limits')
-const debug = require('debug')('auth')
+import { checkPassword, type Password } from '../utils/passwords.ts'
+import { getPayload, prepareCallbackUrl, sign, decode, setCookieToken, getDefaultUserOrg } from '../tokens/service.ts'
+import * as postPasswordReq from '#doc/auth/post-password-req/index.ts'
+import * as postPasswordlessReq from '#doc/auth/post-passwordless-req/index.ts'
+import * as postTokenCallbackReq from '#doc/auth/post-token-callback-req/index.ts'
+import * as postExchangeReq from '#doc/auth/post-exchange-req/index.ts'
+import { reqSite, getSiteByHost } from '../sites/service.ts'
+import { check2FASession, is2FAValid, cookie2FAName } from '../2fa/service.ts'
+import { sendMail } from '../mails/service.ts'
+import { oauthGlobalProviders } from '../oauth/service.ts'
+import { getProviderId } from '../oauth/oidc.ts'
 
-const router = export const  router = Router()
+const debug = Debug('auth')
+const slug = _slug.default
+
+const router = Router()
+export default router
 
 // these routes accept url encoded form data so that they can be used from basic
 // html forms
 router.use(bodyParser.urlencoded({ limit: '100kb' }))
 
-async function confirmLog (storage, user) {
+async function confirmLog (storage: SdStorage, user: User) {
   if (!storage.readonly) {
     await storage.updateLogged(user.id)
     if (user.emailConfirmed === false) {
       await storage.confirmEmail(user.id)
-      webhooks.postIdentity('user', user)
+      postUserIdentity(user)
     }
   }
 }
 
-const rejectCoreIdUser = (req, res, next) => {
+const rejectCoreIdUser = (req: Request, res: Response, next: NextFunction) => {
   if (reqUser(req)?.idp) return res.status(403).send('This route is not available for users with a core identity provider')
   next()
 }
 
 // Authenticate a user based on his email address and password
 router.post('/password', rejectCoreIdUser, async (req, res, next) => {
-  
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!req.body.password) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
 
-  const returnError = async (error, errorCode) => {
+  const { body, query } = postPasswordReq.returnValid(req, { name: 'req' })
+
+  const returnError = async (error: string, errorCode: number) => {
     // prevent attacker from analyzing response time
     await new Promise(resolve => setTimeout(resolve, Math.round(Math.random() * 1000)))
-    if (req.is('application/x-www-form-urlencoded')) {
-      const refererUrl = new URL(req.headers.referer || req.headers.referrer)
+    const referer = req.headers.referer || req.headers.referrer
+    if (req.is('application/x-www-form-urlencoded') && typeof referer === 'string') {
+      const refererUrl = new URL(referer)
       refererUrl.searchParams.set('error', error)
       res.redirect(refererUrl.href)
     } else {
@@ -67,15 +77,15 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
 
   try {
     await limiter(req).consume(reqIp(req), 1)
-    await limiter(req).consume(req.body.email, 1)
+    await limiter(req).consume(body.email, 1)
   } catch (err) {
-    console.error('Rate limit error for /password route', reqIp(req), req.body.email, err)
-    eventsLog.warn('sd.auth.password.rate-limit', `rate limit error for /auth/password route ${req.body.email}`, logContext)
+    console.error('Rate limit error for /password route', reqIp(req), body.email, err)
+    eventsLog.warn('sd.auth.password.rate-limit', `rate limit error for /auth/password route ${body.email}`, logContext)
     return returnError('rateLimitAuth', 429)
   }
 
-  const orgId = req.body.org || req.query.org
-  const depId = req.body.dep || req.query.dep
+  const orgId = body.org || query.org
+  const depId = body.dep || query.dep
   let org, dep
   if (orgId && typeof orgId === 'string') {
     org = await storages.globalStorage.getOrganization(orgId)
@@ -84,7 +94,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       return returnError('badCredentials', 400)
     }
     if (depId) {
-      dep = org.departments.find(d => d.id === depId)
+      dep = org.departments?.find(d => d.id === depId)
       if (!dep) {
         eventsLog.info('sd.auth.password.fail', `a user failed to authenticate due to unknown dep ${orgId} / ${depId}`, logContext)
         return returnError('badCredentials', 400)
@@ -93,17 +103,16 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   }
 
   let storage = storages.globalStorage
-  if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    storage = await storages.createOrgStorage(org)
+  if (body.orgStorage && org) {
+    storage = await storages.createOrgStorage(org) ?? storage
   }
 
-  if (config.adminCredentials?.password?.hash && config.adminCredentials.email === req.body.email) {
-    const validPassword = await passwords.checkPassword(req.body.password, config.adminCredentials.password)
+  if (config.adminCredentials?.password && config.adminCredentials.email === body.email) {
+    const validPassword = await checkPassword(body.password, config.adminCredentials.password as Password)
     if (validPassword) {
-      const superadmin = { id: '_superadmin', name: 'Super Admin', email: req.body.email }
-      const payload = tokens.getPayload(superadmin)
-      payload.adminMode = true
-      const callbackUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect).href
+      const payload = getPayload(superadmin)
+      payload.adminMode = 1
+      const callbackUrl = (await prepareCallbackUrl(req, payload, query.redirect)).href
       debug('Password based authentication of superadmin with password from config', callbackUrl)
       eventsLog.info('sd.auth.admin-auth', 'a user authenticated using the /auth/password route with special admin account', logContext)
       return res.send(callbackUrl)
@@ -113,42 +122,43 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
-  let user = await storage.getUserByEmail(req.body.email, await reqSite(req))
+  const site = await reqSite(req)
+  let user = await storage.getUserByEmail(body.email, site)
   logContext.user = user
   let userFromMainHost = false
   if (!user || user.emailConfirmed === false) {
-    if (await reqSite(req)) {
-      user = await storage.getUserByEmail(req.body.email)
+    if (site) {
+      user = await storage.getUserByEmail(body.email)
       userFromMainHost = true
     }
     if (!user) return returnError('badCredentials', 400)
   }
   if (storage.getPassword) {
     const storedPassword = await storage.getPassword(user.id)
-    const validPassword = await passwords.checkPassword(req.body.password, storedPassword)
+    const validPassword = await checkPassword(body.password, storedPassword)
     if (!validPassword) {
-      eventsLog.info('sd.auth.password.fail', `a user failed to authenticate with a wrong password email=${req.body.email}`, logContext)
+      eventsLog.info('sd.auth.password.fail', `a user failed to authenticate with a wrong password email=${body.email}`, logContext)
       return returnError('badCredentials', 400)
     }
   } else {
-    if (!await storage.checkPassword(user.id, req.body.password)) {
-      eventsLog.info('sd.auth.password.fail', `a user failed to authenticate with a wrong password email=${req.body.email}`, logContext)
+    if (!await storage.checkPassword(user.id, body.password)) {
+      eventsLog.info('sd.auth.password.fail', `a user failed to authenticate with a wrong password email=${body.email}`, logContext)
       return returnError('badCredentials', 400)
     }
   }
-  if (org && req.body.membersOnly && !user.organizations.find(o => o.id === org.id)) {
+  if (org && body.membersOnly && !user.organizations.find(o => o.id === org.id)) {
     eventsLog.info('sd.auth.password.fail', 'a user failed to authenticate as they are not a member of targeted org', logContext)
     return returnError('badCredentials', 400)
   }
 
-  if (userFromMainHost) {
+  if (userFromMainHost && site) {
     const payload = {
       id: user.id,
       email: user.email,
       action: 'changeHost'
     }
     const token = await sign(payload, config.jwtDurations.initialToken)
-    const changeHostUrl = new URL((await reqSite(req).host.startsWith('localhost') ? 'http://' : 'https://') + await reqSite(req).host + '/simple-directory/login')
+    const changeHostUrl = new URL((site.host.startsWith('localhost') ? 'http://' : 'https://') + site.host + '/simple-directory/login')
     changeHostUrl.searchParams.set('action_token', token)
     eventsLog.info('sd.auth.password.change-host', 'a user is suggested to switch to secondary host', logContext)
     if (req.is('application/x-www-form-urlencoded')) {
@@ -158,26 +168,26 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
-  const payload = tokens.getPayload(user)
-  if (req.body.adminMode) {
-    if (payload.isAdmin) payload.adminMode = true
+  const payload = getPayload(user)
+  if (body.adminMode) {
+    if (payload.isAdmin) payload.adminMode = 1
     else {
       eventsLog.alert('sd.auth.password.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
       return returnError('adminModeOnly', 403)
     }
-  } else if (req.body.rememberMe) {
+  } else if (body.rememberMe) {
     payload.rememberMe = true
   }
   // 2FA management
   const user2FA = await storage.get2FA(user.id)
-  if ((user2FA && user2FA.active) || await storage.required2FA(payload)) {
-    if (await twoFA.checkSession(req, user.id)) {
+  if ((user2FA && user2FA.active) || await storage.required2FA(user)) {
+    if (await check2FASession(req, user.id)) {
       // 2FA was already validated earlier and present in a cookie
-    } else if (req.body['2fa']) {
-      if (!await twoFA.isValid(user2FA.secret, req.body['2fa'].trim())) {
+    } else if (body['2fa']) {
+      if (!await is2FAValid(user2FA?.secret, body['2fa'].trim())) {
         // a token was sent but it is not an actual 2FA token, instead it is the special recovery token
-        if (user2FA) {
-          const validRecovery = await passwords.checkPassword(req.body['2fa'].trim(), user2FA.recovery)
+        if (user2FA?.recovery) {
+          const validRecovery = await checkPassword(body['2fa'].trim(), user2FA.recovery)
           if (validRecovery) {
             await storages.globalStorage.patchUser(user.id, { '2FA': { active: false } })
             eventsLog.info('sd.auth.password.fail', 'a user tried to use a recovery token as a normal token', logContext)
@@ -190,7 +200,10 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
         // 2FA token sent alongside email/password
         const cookies = new Cookies(req, res)
         const token = await sign({ user: user.id }, config.jwtDurations['2FAToken'])
-        cookies.set(twoFA.cookieName(user.id), token, { expires: new Date(tokens.decode(token).exp * 1000), sameSite: 'lax', httpOnly: true })
+        const payload = decode(token)
+        const cookieOpts: Cookies.SetOption = { sameSite: 'lax', httpOnly: true }
+        if (payload?.exp) cookieOpts.expires = new Date(payload.exp * 1000)
+        cookies.set(cookie2FAName(user.id), token, cookieOpts)
       }
     } else {
       if (!user2FA || !user2FA.active) {
@@ -207,11 +220,11 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   // this is used by data-fair app integrated login
   if (req.is('application/x-www-form-urlencoded')) {
     const token = await sign(payload, config.jwtDurations.exchangedToken)
-    tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user, orgId, depId))
+    setCookieToken(req, res, token, getDefaultUserOrg(user, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
-    res.redirect(req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me')
+    res.redirect(query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me')
   } else {
-    const callbackUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, orgId, depId), req.body.orgStorage).href
+    const callbackUrl = (await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, orgId, depId), body.orgStorage)).href
     debug(`Password based authentication of user ${user.name}, ajax mode`, callbackUrl)
     res.send(callbackUrl)
   }
@@ -220,87 +233,84 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
 // Either find or create an user based on an email address then send a mail with a link and a token
 // to check that this address belongs to the user.
 router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
-  
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
   if (!config.passwordless) return res.status(400).send(reqI18n(req).messages.errors.noPasswordless)
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
 
+  const { body, query } = postPasswordlessReq.returnValid(req, { name: 'req' })
+
   try {
     await limiter(req).consume(reqIp(req), 1)
   } catch (err) {
-    eventsLog.warn('sd.auth.passwordless.rate-limit', `rate limit error for /auth/passwordless route ${req.body.email}`, logContext)
+    eventsLog.warn('sd.auth.passwordless.rate-limit', `rate limit error for /auth/passwordless route ${body.email}`, logContext)
     return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }
 
   let org
-  if (req.body.org) {
-    org = await storages.globalStorage.getOrganization(req.body.org)
+  if (body.org) {
+    org = await storages.globalStorage.getOrganization(body.org)
     if (!org) {
-      eventsLog.info('sd.auth.passwordless.fail', `a passwordless authentication failed due to unknown org ${req.body.org}`, logContext)
+      eventsLog.info('sd.auth.passwordless.fail', `a passwordless authentication failed due to unknown org ${body.org}`, logContext)
       return res.status(404).send(reqI18n(req).messages.errors.orgaUnknown)
     }
   }
 
   let storage = storages.globalStorage
-  if (req.body.orgStorage && org.orgStorage && org.orgStorage.active && config.perOrgStorageTypes.includes(org.orgStorage.type)) {
-    storage = await storages.createOrgStorage(org)
+  if (body.orgStorage && org) {
+    storage = await storages.createOrgStorage(org) ?? storage
   }
-  const user = await storage.getUserByEmail(req.body.email, await reqSite(req))
+  const user = await storage.getUserByEmail(body.email, await reqSite(req))
   logContext.user = user
 
-  const redirect = req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
+  const redirect = query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
   const redirectUrl = new URL(redirect)
 
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
-    await sendMail('noCreation', reqI18n(req).messages, req.body.email, { link: redirect, host: redirectUrl.host, origin: redirectUrl.origin })
+    await sendMail('noCreation', reqI18n(req).messages, body.email, { link: redirect, host: redirectUrl.host, origin: redirectUrl.origin })
     eventsLog.info('sd.auth.passwordless.no-user', `a passwordless authentication failed because of missing user and a warning mail was sent ${req.body.email}`, logContext)
     return res.status(204).send()
   }
 
-  if (org && req.body.membersOnly === 'true' && !user.organizations.find(o => o.id === org.id)) {
+  if (org && body.membersOnly && !user.organizations.find(o => o.id === org.id)) {
     if (!org) {
-      eventsLog.info('sd.auth.passwordless.fail', `a passwordless authentication failed due to unknown org ${req.body.org}`, logContext)
+      eventsLog.info('sd.auth.passwordless.fail', `a passwordless authentication failed due to unknown org ${body.org}`, logContext)
       return res.status(404).send(reqI18n(req).messages.errors.orgaUnknown)
     }
   }
 
-  const payload = tokens.getPayload(user)
+  const payload = getPayload(user)
   if (req.body.rememberMe) payload.rememberMe = true
-  payload.temporary = true
 
   // passwordless is not compatible with 2FA for now
-  if (await storage.get2FA(user.id) || await storage.required2FA(payload)) {
+  if (await storage.get2FA(user.id) || await storage.required2FA(user)) {
     eventsLog.info('sd.auth.passwordless.fail', 'a passwordless authentication failed due to incompatibility with 2fa', logContext)
     return res.status(400).send(reqI18n(req).messages.errors.passwordless2FA)
   }
 
-  const linkUrl = await tokens.prepareCallbackUrl(req, payload, req.query.redirect, tokens.getDefaultUserOrg(user, req.body.org, req.body.dep), req.body.orgStorage)
+  const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, body.org, body.dep), body.orgStorage)
   debug(`Passwordless authentication of user ${user.name}`)
-  await sendMail('login', reqI18n(req).messages, user.email,{ link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
+  await sendMail('login', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
   eventsLog.info('sd.auth.passwordless.ok', 'a user successfully sent a authentication email', logContext)
   res.status(204).send()
 })
 
 // use current session and redirect to a secondary site
 router.post('/site_redirect', async (req, res, next) => {
-  
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
-
-  if (!reqUser(req)) return res.status(403).send()
-  if (await reqSite(req)) return res.status(400).send()
+  const logContext: EventLogContext = { req }
+  const loggedUser = reqUserAuthenticated(req)
+  const currentSite = await reqSite(req)
+  if (currentSite) return res.status(400).send()
   const storage = storages.globalStorage
-  const user = await storage.getUserByEmail(reqUser(req).email)
+  const user = await storage.getUserByEmail(loggedUser.email)
   if (!user) return res.status(404).send('user not found')
   if (!req.body.redirect) return res.status(400).send()
-  const site = await storage.getSiteByHost(new URL(req.body.redirect).host)
-  if (!user) return res.status(404).send('site not found')
-  const payload = tokens.getPayload(user)
-  const callbackUrl = await tokens.prepareCallbackUrl(req, payload, req.body.redirect, tokens.getDefaultUserOrg(user, req.body.org, req.body.dep)).href
+  const site = await getSiteByHost(new URL(req.body.redirect).host)
+  if (!site) return res.status(404).send('site not found')
+  const payload = getPayload(user)
+  const callbackUrl = (await prepareCallbackUrl(req, payload, req.body.redirect, getDefaultUserOrg(user, req.body.org, req.body.dep))).href
   debug(`Redirect auth of user ${user.name} to site ${site.host}`, callbackUrl)
 
   eventsLog.info('sd.auth.redirect-site', 'a authenticated user is redirected to secondary site with session', logContext)
@@ -308,48 +318,48 @@ router.post('/site_redirect', async (req, res, next) => {
 })
 
 router.get('/token_callback', async (req, res, next) => {
-  
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
-  const redirectError = (error) => {
+  const { query } = postTokenCallbackReq.returnValid(req, { name: 'req' })
+
+  const redirectError = (error: string) => {
     eventsLog.info('sd.auth.callback.fail', `a token callback failed with error ${error}`, logContext)
     res.redirect(`${reqSiteUrl(req) + '/simple-directory'}/login?error=${encodeURIComponent(error)}`)
   }
 
-  if (!req.query.id_token) return redirectError('missingToken')
+  if (!query.id_token) return redirectError('missingToken')
   let decoded
   try {
-    decoded = await session.verifyToken(req.query.id_token)
+    decoded = await session.verifyToken(query.id_token)
   } catch (err) {
     return redirectError('invalidToken')
   }
 
   let org
-  if (req.query.id_token_org) {
-    org = await storages.globalStorage.getOrganization(req.query.id_token_org)
+  if (query.id_token_org) {
+    org = await storages.globalStorage.getOrganization(query.id_token_org)
     if (!org) return redirectError('orgaUnknown')
   }
   let storage = storages.globalStorage
-  if (req.query.org_storage === 'true') {
-    storage = storage ?? await storages.createOrgStorage(org)
+  if (req.query.org_storage === 'true' && org) {
+    storage = await storages.createOrgStorage(org) ?? storage
   }
-  const user = decoded.id === '_superadmin' ? decoded : await storage.getUser({ id: decoded.id })
+  const user = decoded.id === '_superadmin' ? superadmin : await storage.getUser(decoded.id)
   logContext.user = user
 
   if (!user || (decoded.emailConfirmed !== true && user.emailConfirmed === false)) {
     return redirectError('badCredentials')
   }
 
-  const reboundRedirect = req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me'
+  const reboundRedirect = query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me'
 
-  const payload = tokens.getPayload(user)
+  const payload = getPayload(user)
   if (decoded.rememberMe) payload.rememberMe = true
-  if (decoded.adminMode && payload.isAdmin) payload.adminMode = true
+  if (decoded.adminMode && payload.isAdmin) payload.adminMode = 1
   const token = await sign(payload, config.jwtDurations.exchangedToken)
 
   await confirmLog(storage, user)
-  tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user, req.query.id_token_org, req.query.id_token_dep))
+  setCookieToken(req, res, token, getDefaultUserOrg(user, query.id_token_org, query.id_token_dep))
 
   eventsLog.info('sd.auth.callback.ok', 'a session was initialized after successful auth', logContext)
 
@@ -374,11 +384,10 @@ router.get('/token_callback', async (req, res, next) => {
 // Used to extend an older but still valid token from a user
 // TODO: deprecate this whole route, replaced by simpler /keepalive
 router.post('/exchange', async (req, res, next) => {
-  
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
+  const { query } = postExchangeReq.returnValid(req, { name: 'req' })
 
-  const idToken = (req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop()) || req.query.id_token
+  const idToken = ((req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop()) || query.id_token) as string | undefined
   if (!idToken) {
     return res.status(401).send('No id_token cookie provided')
   }
@@ -392,26 +401,26 @@ router.post('/exchange', async (req, res, next) => {
 
   // User may have new organizations since last renew
   const storage = storages.globalStorage
-  const user = decoded.id === '_superadmin' ? decoded : await storage.getUser({ id: decoded.id })
+  const user = decoded.id === '_superadmin' ? superadmin : await storage.getUser(decoded.id)
   logContext.user = user
 
   if (!user) {
     eventsLog.info('sd.auth.exchange.fail', 'a deleted user tried to prolongate a session', logContext)
     return res.status(401).send('User does not exist anymore')
   }
-  const payload = tokens.getPayload(user)
-  if (decoded.adminMode && req.query.noAdmin !== 'true') payload.adminMode = true
+  const payload = getPayload(user)
+  if (decoded.adminMode && req.query.noAdmin !== 'true') payload.adminMode = 1
   if (decoded.asAdmin) {
     payload.asAdmin = decoded.asAdmin
     payload.name = decoded.name
-    payload.isAdmin = false
+    delete payload.isAdmin
   } else {
     if (!storage.readonly) {
       await storage.updateLogged(decoded.id)
       if (user.emailConfirmed === false) {
         eventsLog.info('sd.auth.exchange.fail', 'a email was confirmed for the first time', logContext)
         await storage.confirmEmail(decoded.id)
-        webhooks.postIdentity('user', user)
+        postUserIdentity(user)
       }
     }
   }
@@ -428,18 +437,19 @@ router.post('/exchange', async (req, res, next) => {
 })
 
 router.post('/keepalive', async (req, res, next) => {
-  
-
-  if (!reqUser(req)) return res.status(401).send('No active session to keep alive')
+  const loggedUser = reqUserAuthenticated(req)
   const storage = storages.globalStorage
-  const user = reqUser(req).id === '_superadmin' ? reqUser(req) : await storage.getUser({ id: reqUser(req).id })
+  const user = loggedUser.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.id)
+  if (!user) throw httpError(404)
 
-  if (user.coreIdProvider && user.coreIdProvider.type === 'oauth') {
+  const coreIdProvider = user.coreIdProvider
+  if (coreIdProvider && coreIdProvider.type === 'oauth') {
     let provider
-    if (!await reqSite(req)) {
-      provider = oauth.providers.find(p => p.id === user.coreIdProvider.id)
+    const site = await reqSite(req)
+    if (!site) {
+      provider = oauthGlobalProviders().find(p => p.id === coreIdProvider.id)
     } else {
-      const providerInfo = await reqSite(req).authProviders.find(p => oauth.getProviderId(p.discovery) === user.coreIdProvider.id)
+      const providerInfo = site.authProviders?.find(p => p.type === 'oidc' && getProviderId(p.discovery) === coreIdProvider.id)
       provider = await oauth.initProvider({ ...providerInfo }, reqSiteUrl(req) + '/simple-directory')
     }
     if (!provider) {
@@ -482,7 +492,6 @@ router.post('/keepalive', async (req, res, next) => {
 })
 
 router.delete('/', async (req, res) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -493,7 +502,6 @@ router.delete('/', async (req, res) => {
 
 // Send an email to confirm user identity before authorizing an action
 router.post('/action', async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -534,7 +542,7 @@ router.post('/action', async (req, res, next) => {
   const linkUrl = new URL(req.body.target || reqSiteUrl(req) + '/simple-directory/login')
   linkUrl.searchParams.set('action_token', token)
 
-  await sendMail('action', reqI18n(req).messages, user.email,{ link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
+  await sendMail('action', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
   eventsLog.info('sd.auth.action.ok', `an action email ${action} was sent`, logContext)
   res.status(204).send()
 })
@@ -551,7 +559,6 @@ router.delete('/adminmode', async (req, res, next) => {
 
 // create a session as a user but from a super admin session
 router.post('/asadmin', async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -574,7 +581,6 @@ router.post('/asadmin', async (req, res, next) => {
 })
 
 router.delete('/asadmin', async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -631,7 +637,6 @@ router.get('/providers', async (req, res) => {
 const debugOAuth = require('debug')('oauth')
 
 const oauthLogin = async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -664,9 +669,7 @@ const oauthLogin = async (req, res, next) => {
 router.get('/oauth/:oauthId/login', oauthLogin)
 router.get('/oidc/:oauthId/login', oauthLogin)
 
-
 const oauthCallback = async (req, res, next) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -829,10 +832,10 @@ const oauthCallback = async (req, res, next) => {
     await storage.writeOAuthToken(user, provider, token, offlineRefreshToken)
   }
 
-  const payload = { ...tokens.getPayload(user), temporary: true }
+  const payload = getPayload(user)
   if (adminMode) {
     // TODO: also check that the user actually inputted the password on this redirect
-    if (payload.isAdmin) payload.adminMode = true
+    if (payload.isAdmin) payload.adminMode = 1
     else {
       eventsLog.alert('sd.auth.oauth.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
       return returnError('adminModeOnly', 403)
@@ -872,7 +875,6 @@ router.get('/saml2-metadata.xml', (req, res) => {
 
 // starts login
 router.get('/saml2/:providerId/login', async (req, res) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -904,7 +906,6 @@ router.get('/saml2/:providerId/login', async (req, res) => {
 
 // login confirm by IDP
 router.post('/saml2-assert', async (req, res) => {
-  
   /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
   const logContext = { req }
 
@@ -1030,16 +1031,16 @@ router.post('/saml2-assert', async (req, res) => {
     if (storage.db) await limits.setNbMembers(storage.db, invitOrga.id)
   }
 
-  const payload = { ...tokens.getPayload(user), temporary: true }
+  const payload = getPayload(user)
   if (adminMode) {
     // TODO: also check that the user actually inputted the password on this redirect
-    if (payload.isAdmin) payload.adminMode = true
+    if (payload.isAdmin) payload.adminMode = 1
     else {
       eventsLog.alert('sd.auth.saml.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
       return returnError('adminModeOnly', 403)
     }
   }
-  const linkUrl = await tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? invitOrga.id : org)
+  const linkUrl = await prepareCallbackUrl(req, payload, redirect, invitOrga ? invitOrga.id : org)
   debugSAML(`SAML based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 
@@ -1059,7 +1060,7 @@ router.post('/saml2-logout', (req, res) => {
   res.send()
 })
 
-router.get('/saml2/providers', (req, res) => {
+router.get('/saml2/providers', async (req, res) => {
   // TODO: per-site auth providers
   if (await reqSite(req)) return res.send([])
   res.send(oauth.publicProviders)
@@ -1075,6 +1076,6 @@ router.get('/saml2/providers', (req, res) => {
   sp.create_logout_request_url(idp, options, function(err, logout_url) {
     if (err != null)
       return res.send(500);
-    res.redirect(logout_url);
+    res.redirect(logout_url);async
   });
 }) */

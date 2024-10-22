@@ -1,3 +1,4 @@
+import type { User } from '#types'
 import type { ApiConfig } from '../config/type/index.ts'
 import { assertValid } from '../config/type/index.ts'
 import config from 'config'
@@ -22,3 +23,12 @@ export default apiConfig as ApiConfig
 export type UiConfig = {}
 
 export const uiConfig: UiConfig = {}
+
+export const superadmin: User = {
+  created: { date: new Date().toISOString() },
+  updated: { date: new Date().toISOString() },
+  id: '_superadmin',
+  name: 'Super Admin',
+  email: apiConfig.adminCredentials?.email ?? '',
+  organizations: []
+}

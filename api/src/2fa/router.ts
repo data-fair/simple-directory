@@ -1,15 +1,13 @@
 import { authenticator } from 'otplib'
 import qrcode from 'qrcode'
 import { randomUUID } from 'node:crypto'
-import { Router, type Request } from 'express'
-import { reqIp, reqSiteUrl } from '@data-fair/lib-express'
+import { Router } from 'express'
+import { reqIp, reqSiteUrl, httpError } from '@data-fair/lib-express'
 import emailValidator from 'email-validator'
 import storages from '#storages'
-import { session } from '@data-fair/lib-express'
 import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.js'
 import { checkPassword, hashPassword } from '../utils/passwords.ts'
-import { cookieName } from './service.ts'
 import { reqSite } from '../sites/service.ts'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 // const debug = require('debug')('2fa')
@@ -18,21 +16,6 @@ const router = Router()
 export default router
 
 // TODO: apply some rate limiting
-
-export const checkSession = async (req: Request, userId: string) => {
-  const token = req.cookies[cookieName(userId)]
-  if (!token) return false
-  let decoded
-  try {
-    // TODO: use jwks store same as session token verification
-    decoded = await session.verifyToken(token)
-  } catch (err) {
-    console.error('invalid 2fa token', err)
-    return false
-  }
-  if (decoded.user !== userId) return false
-  return true
-}
 
 router.post('/', async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
@@ -73,6 +56,7 @@ router.post('/', async (req, res, next) => {
     res.send({ otpauth, qrcode: await qrcode.toDataURL(otpauth) })
   } else {
     // validate secret with initial token
+    if (!user2FA) throw httpError(400)
     const isValid = authenticator.check(req.body.token, user2FA.secret)
     if (!isValid) return res.status(400).send(reqI18n(req).messages.errors.bad2FAToken)
     const recovery = randomUUID()

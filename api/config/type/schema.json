@@ -573,6 +573,9 @@
     },
     "userSelfDelete": {
       "type": "boolean"
+    },
+    "admins2FA": {
+      "type": "boolean"
     }
   },
   "$defs": {

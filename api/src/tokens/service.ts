@@ -24,7 +24,7 @@ export const sign = async (payload: any, expiresIn: string, notBefore?: string) 
 
 export const decode = (token: string) => jwt.decode(token) as JwtPayload
 
-export const getPayload = (user: User) => {
+export const getPayload = (user: Omit<User, 'created' | 'updated'>) => {
   const payload: SessionState['user'] = {
     id: user.id,
     email: user.email,

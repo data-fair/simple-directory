@@ -50,6 +50,7 @@ export interface SdStorage {
   createUser(user: UserWritable, byUser?: { id: string, name: string }, host?: string): Promise<User>
   getUserByEmail(email: string, site?: Site): Promise<User>
   updateLogged(userId: string): Promise<void>
+  confirmEmail(userId: string): Promise<void>
   deleteUser(userId: string): Promise<void>
   patchUser (userId: string, patch: any, byUser?: { id: string, name: string }): Promise<User>
   findInactiveUsers (): Promise<User[]>
@@ -63,7 +64,8 @@ export interface SdStorage {
 
   getPassword(userId: string): Password
   checkPassword(userId: string, password: string): Promise<boolean>
-  get2FA(userId: string): Promise<TwoFA>
+  required2FA(user: User): Promise<boolean>
+  get2FA(userId: string): Promise<TwoFA | undefined>
   set2FA(userId: string, twoFA: TwoFA): Promise<void>
 
   addMember (orga: Organization, user: UserRef, role: string, department?: string | null, readOnly?: boolean): Promise<void>

@@ -1,5 +1,6 @@
 {
   "$id": "https://github.com/data-fair/simple-directory/invitations/post-req",
+  "x-ajv": { "coerceTypes": true },
   "x-exports": ["types", "validate"],
   "title": "Post invitation req",
   "type":"object",
