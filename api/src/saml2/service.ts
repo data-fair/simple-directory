@@ -51,7 +51,7 @@ const writeCertificates = async (certificates: Certificates) => {
 
 const _globalProviders: PreparedSaml2Provider[] = []
 let _sp: samlify.ServiceProviderInstance | undefined
-export const serviceProvider = () => {
+export const saml2ServiceProvider = () => {
   if (!_sp) throw new Error('Global Saml 2 providers ware not initialized')
   return _sp
 }

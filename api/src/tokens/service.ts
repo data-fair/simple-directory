@@ -148,7 +148,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
 // this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
-export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:OrganizationMembership, orgStorage?: boolean) => {
+export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:Pick<OrganizationMembership, 'id' | 'department'>, orgStorage?: boolean) => {
   redirect = redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me'
   const redirectUrl = new URL(redirect)
   const token = await sign({ ...payload, temporary: true }, config.jwtDurations.initialToken)

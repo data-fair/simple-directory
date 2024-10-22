@@ -5,7 +5,7 @@ import storages from '#storages'
 
 type OAuthMemberInfo = { create: boolean, org?: Organization, readOnly: boolean, role: string }
 
-export const authCoreProviderMemberInfo = async (site: Site | null, provider: OAuthProvider, email: string, oauthInfo: any): Promise<OAuthMemberInfo> => {
+export const authCoreProviderMemberInfo = async (site: Site | undefined, provider: OAuthProvider, email: string, oauthInfo: any): Promise<OAuthMemberInfo> => {
   let create = false
   if ((provider.createMember as unknown as boolean) === true) {
     // retro-compatibility for when createMember was a boolean

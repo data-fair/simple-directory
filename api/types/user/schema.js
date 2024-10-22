@@ -74,6 +74,11 @@ export default {
       type: 'object',
       readOnly: true
     },
+    saml2: {
+      description: 'Identity rattached to SAML 2 providers',
+      type: 'object',
+      readOnly: true
+    },
     defaultOrg: {
       type: 'string'
     },

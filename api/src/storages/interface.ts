@@ -48,7 +48,7 @@ export interface SdStorage {
   findUsers (params: FindUsersParams): Promise<{ count: number, results: User[] }>
   getUser(userId: string): Promise<User | undefined>
   createUser(user: UserWritable, byUser?: { id: string, name: string }, host?: string): Promise<User>
-  getUserByEmail(email: string, site?: Site): Promise<User>
+  getUserByEmail(email: string, site?: Site): Promise<User | undefined>
   updateLogged(userId: string): Promise<void>
   confirmEmail(userId: string): Promise<void>
   deleteUser(userId: string): Promise<void>

@@ -9,14 +9,14 @@ import _slug from 'slugify'
 import Debug from 'debug'
 import { postUserIdentity } from '../webhooks.ts'
 import { SdStorage } from '../storages/interface.ts'
-import { User } from '#types'
+import { User, UserWritable } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import emailValidator from 'email-validator'
 import { reqI18n, __all } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
 import { checkPassword, type Password } from '../utils/passwords.ts'
-import { getPayload, prepareCallbackUrl, sign, decode, setCookieToken, getDefaultUserOrg } from '../tokens/service.ts'
+import { getPayload, prepareCallbackUrl, sign, decode, setCookieToken, getDefaultUserOrg, unsetCookies, keepalive } from '../tokens/service.ts'
 import * as postPasswordReq from '#doc/auth/post-password-req/index.ts'
 import * as postPasswordlessReq from '#doc/auth/post-passwordless-req/index.ts'
 import * as postTokenCallbackReq from '#doc/auth/post-token-callback-req/index.ts'
@@ -24,11 +24,18 @@ import * as postExchangeReq from '#doc/auth/post-exchange-req/index.ts'
 import { reqSite, getSiteByHost } from '../sites/service.ts'
 import { check2FASession, is2FAValid, cookie2FAName } from '../2fa/service.ts'
 import { sendMail } from '../mails/service.ts'
-import { oauthGlobalProviders } from '../oauth/service.ts'
-import { getProviderId } from '../oauth/oidc.ts'
+import { oauthGlobalProviders, initOAuthProvider, PreparedOAuthProvider } from '../oauth/service.ts'
+import { getProviderId, completeOidcProvider } from '../oauth/oidc.ts'
+import { type OpenIDConnect } from '#types/site/index.ts'
+import { logoutOAuthToken, readOAuthToken, writeOAuthToken } from '../oauth-tokens/service.ts'
+import { authCoreProviderMemberInfo, patchCoreOAuthUser } from './service.ts'
+import { publicProviders } from './providers.ts'
+import { type OpenIDConnect1 } from '../../config/type/index.ts'
+import { unshortenInvit } from '../invitations/service.ts'
+import { getLimits, setNbMembers } from '../limits/service.ts'
+import { getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider } from '../saml2/service.ts'
 
 const debug = Debug('auth')
-const slug = _slug.default
 
 const router = Router()
 export default router
@@ -449,21 +456,21 @@ router.post('/keepalive', async (req, res, next) => {
     if (!site) {
       provider = oauthGlobalProviders().find(p => p.id === coreIdProvider.id)
     } else {
-      const providerInfo = site.authProviders?.find(p => p.type === 'oidc' && getProviderId(p.discovery) === coreIdProvider.id)
-      provider = await oauth.initProvider({ ...providerInfo }, reqSiteUrl(req) + '/simple-directory')
+      const providerInfo = site.authProviders?.find(p => p.type === 'oidc' && getProviderId(p.discovery) === coreIdProvider.id) as OpenIDConnect
+      provider = await initOAuthProvider(await completeOidcProvider(providerInfo), reqSiteUrl(req) + '/simple-directory')
     }
     if (!provider) {
-      tokens.unsetCookies(req, res)
+      unsetCookies(req, res)
       return res.status(401).send('Fournisseur d\'identité principal inconnu')
     }
-    const oauthToken = (await storage.readOAuthToken(user, provider))
+    const oauthToken = (await readOAuthToken(user, provider))
 
     if (!oauthToken) {
-      tokens.unsetCookies(req, res)
+      unsetCookies(req, res)
       return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
     }
     if (oauthToken.loggedOut) {
-      tokens.unsetCookies(req, res)
+      unsetCookies(req, res)
       return res.status(401).send('Utilisateur déconnecté depuis le fournisseur d\'identité principal')
     }
     const tokenJson = oauthToken.token
@@ -473,37 +480,35 @@ router.post('/keepalive', async (req, res, next) => {
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
         const userInfo = await provider.userInfo(newToken.access_token)
-        const memberInfo = await authCoreProviderMemberInfo(storage, await reqSite(req), provider, user.email, userInfo)
-        await patchCoreOAuthUser(storage, provider, user, userInfo, memberInfo)
-        await storage.writeOAuthToken(user, provider, newToken, offlineRefreshToken)
+        const memberInfo = await authCoreProviderMemberInfo(await reqSite(req), provider, user.email, userInfo)
+        await patchCoreOAuthUser(provider, user, userInfo, memberInfo)
+        await writeOAuthToken(user, provider, newToken, offlineRefreshToken)
         eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }
-    } catch (err) {
-      tokens.unsetCookies(req, res)
+    } catch (err: any) {
+      unsetCookies(req, res)
       eventsLog.info('sd.auth.keepalive.oauth-refresh-ko', `a user failed to refresh their info from their core identity provider ${provider.id} (${err.message})`, { req })
       // TODO: can we be confident enough in this to actually delete the user ? or maybe flag it as disabled so that it is removed from listings ?
       return res.status(401).send('Échec de prolongation de la session avec le fournisseur d\'identité principal')
     }
   }
 
-  debug(`Exchange session token for user ${reqUser(req).name}`)
+  debug(`Exchange session token for user ${loggedUser.name}`)
   await keepalive(req, res, user)
   res.status(204).send()
 })
 
 router.delete('/', async (req, res) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
-  tokens.unsetCookies(req, res)
+  unsetCookies(req, res)
   eventsLog.info('sd.auth.session-delete', 'a session was deleted', logContext)
   res.status(204).send()
 })
 
 // Send an email to confirm user identity before authorizing an action
 router.post('/action', async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
@@ -548,9 +553,8 @@ router.post('/action', async (req, res, next) => {
 })
 
 router.delete('/adminmode', async (req, res, next) => {
-  if (!reqUser(req)) return res.status(401).send('No active session')
-  if (!reqUser(req)?.adminMode) return res.status(403).send('This route is only available in admin mode')
-  debug(`Exchange session token without adminMode for user ${reqUser(req).name}`)
+  const user = reqUserAuthenticated(req)
+  if (!user.adminMode) return res.status(403).send('This route is only available in admin mode')
   req.query.noAdmin = 'true'
   await keepalive(req, res)
 
@@ -559,21 +563,19 @@ router.delete('/adminmode', async (req, res, next) => {
 
 // create a session as a user but from a super admin session
 router.post('/asadmin', async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
-
-  if (!reqUser(req)) return res.status(401).send()
-  if (!reqUser(req).isAdmin) return res.status(403).send('This functionality is for admins only')
+  const logContext: EventLogContext = { req }
+  const loggedUser = reqUserAuthenticated(req)
+  if (!loggedUser.adminMode) return res.status(403).send('This functionality is for admins only')
   const storage = storages.globalStorage
-  const user = await storage.getUser({ id: req.body.id })
+  const user = await storage.getUser(req.body.id)
   if (!user) return res.status(404).send('User does not exist')
-  const payload = tokens.getPayload(user)
+  const payload = getPayload(user)
   payload.name += ' (administration)'
-  payload.asAdmin = { id: reqUser(req).id, name: reqUser(req).name }
-  payload.isAdmin = false
+  payload.asAdmin = { id: loggedUser.id, name: loggedUser.name }
+  delete payload.isAdmin
   const token = await sign(payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
-  tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user))
+  setCookieToken(req, res, token, getDefaultUserOrg(user))
 
   eventsLog.info('sd.auth.asadmin.ok', 'a session was created as a user from an admin session', logContext)
 
@@ -581,19 +583,17 @@ router.post('/asadmin', async (req, res, next) => {
 })
 
 router.delete('/asadmin', async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
-
-  if (!reqUser(req)) return res.status(401).send('No active session to keep alive')
-  if (!reqUser(req).asAdmin) return res.status(403).send('This functionality is for admins only')
+  const logContext: EventLogContext = { req }
+  const loggedUser = reqUserAuthenticated(req)
+  if (!loggedUser.asAdmin) return res.status(403).send('This functionality is for admins only')
   const storage = storages.globalStorage
-  const user = reqUser(req).asAdmin.id === '_superadmin' ? reqUser(req).asAdmin : await storage.getUser({ id: reqUser(req).asAdmin.id })
+  const user = loggedUser.asAdmin.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.asAdmin.id)
   if (!user) return res.status(401).send('User does not exist anymore')
-  const payload = tokens.getPayload(user)
-  payload.adminMode = true
+  const payload = getPayload(user)
+  payload.adminMode = 1
   const token = await sign(payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
-  tokens.setCookieToken(req, res, token, tokens.getDefaultUserOrg(user))
+  setCookieToken(req, res, token, getDefaultUserOrg(user))
 
   eventsLog.info('sd.auth.asadmin.done', 'a session as a user from an admin session was terminated', logContext)
 
@@ -606,47 +606,39 @@ router.get('/me', (req, res) => {
 })
 
 router.get('/providers', async (req, res) => {
-  if (!await reqSite(req)) {
-    res.send(saml2.publicProviders.concat(oauth.publicProviders))
-  } else {
-    const providers = await reqSite(req).authProviders || []
-    const providersInfos = []
-    for (const p of providers) {
-      if (p.type === 'oidc') {
-        providersInfos.push({
-          type: p.type,
-          id: oauth.getProviderId(p.discovery),
-          title: p.title,
-          color: p.color,
-          img: p.img,
-          redirectMode: p.redirectMode
-        })
-      }
-      if (p.type === 'otherSite') {
-        const site = await storages.globalStorage.getSiteByHost(p.site)
-        if (site && site.owner.type === await reqSite(req).owner.type && site.owner.id === await reqSite(req).owner.id) {
-          providersInfos.push({ type: 'otherSite', id: slug(site.host, { lower: true, strict: true }), title: p.title, color: site.theme?.primaryColor, img: site.logo, host: site.host })
-        }
-      }
-    }
-    res.send(providersInfos)
-  }
+  res.send(await publicProviders(await reqSite(req)))
 })
 
 // OAUTH
-const debugOAuth = require('debug')('oauth')
+const debugOAuth = Debug('oauth')
 
-const oauthLogin = async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
-
-  let provider
-  if (!await reqSite(req)) {
-    provider = oauth.providers.find(p => p.id === req.params.oauthId)
+const getOAuthProviderById = async (req: Request, id: string): Promise<PreparedOAuthProvider | undefined> => {
+  const site = await reqSite(req)
+  if (!site) {
+    return oauthGlobalProviders().find(p => p.id === id)
   } else {
-    const providerInfo = await reqSite(req).authProviders.find(p => oauth.getProviderId(p.discovery) === req.params.oauthId)
-    provider = await oauth.initProvider({ ...providerInfo }, reqSiteUrl(req) + '/simple-directory')
+    const providerInfo = site.authProviders?.find(p => p.type === 'oidc' && getProviderId(p.discovery) === id) as OpenIDConnect1
+    return await initOAuthProvider(await completeOidcProvider(providerInfo), reqSiteUrl(req) + '/simple-directory')
   }
+}
+
+const getOAuthProviderByState = async (req: Request, state: string): Promise<PreparedOAuthProvider | undefined> => {
+  const site = await reqSite(req)
+  if (!site) {
+    return oauthGlobalProviders().find(p => p.state === state)
+  } else {
+    for (const providerInfo of site.authProviders ?? []) {
+      if (providerInfo.type === 'oidc') {
+        const p = await initOAuthProvider(await completeOidcProvider(providerInfo), reqSiteUrl(req) + '/simple-directory')
+        if (p.state === state) return p
+      }
+    }
+  }
+}
+
+const oauthLogin = async (req: Request, res: Response, next: NextFunction) => {
+  const logContext: EventLogContext = { req }
+  const provider = await getOAuthProviderById(req, req.params.oauthId)
   if (!provider) {
     eventsLog.info('sd.auth.oauth.fail', 'a user tried to login with an unknown oauth provider', logContext)
     return res.redirect(`${reqSiteUrl(req) + '/simple-directory'}/login?error=unknownOAuthProvider`)
@@ -654,13 +646,13 @@ const oauthLogin = async (req, res, next) => {
   const relayState = [
     provider.state,
     req.headers.referer,
-    (req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
+    (req.query.redirect as string || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
     req.query.org || '',
     req.query.dep || '',
     req.query.invit_token || '',
     req.query.adminMode || '' // TODO: force re-submit password in this case ?
   ]
-  const authorizationUri = provider.authorizationUri(relayState, req.query.email, provider.coreIdProvider)
+  const authorizationUri = provider.authorizationUri(relayState, req.query.email as string, provider.coreIdProvider)
   debugOAuth('login authorizationUri', authorizationUri)
   eventsLog.info('sd.auth.oauth.redirect', 'a user was redirected to a oauth provider', logContext)
   res.redirect(authorizationUri)
@@ -669,9 +661,9 @@ const oauthLogin = async (req, res, next) => {
 router.get('/oauth/:oauthId/login', oauthLogin)
 router.get('/oidc/:oauthId/login', oauthLogin)
 
-const oauthCallback = async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+const oauthCallback = async (req: Request, res: Response, next: NextFunction) => {
+  const logContext: EventLogContext = { req }
+  const site = await reqSite(req)
 
   const storage = storages.globalStorage
   debugOAuth('oauth login callback')
@@ -680,9 +672,9 @@ const oauthCallback = async (req, res, next) => {
     console.error('missing OAuth state')
     throw new Error('Bad OAuth state')
   }
-  const [providerState, loginReferer, redirect, org, dep, invitToken, adminMode] = JSON.parse(req.query.state)
+  const [providerState, loginReferer, redirect, org, dep, invitToken, adminMode] = JSON.parse(req.query.state as string)
 
-  const returnError = (error, errorCode) => {
+  const returnError = (error: string, errorCode: number) => {
     eventsLog.info('sd.auth.oauth.fail', `a user failed to authenticate with oauth due to ${error}`, logContext)
     debugOAuth('login return error', error, errorCode)
     if (loginReferer) {
@@ -694,18 +686,7 @@ const oauthCallback = async (req, res, next) => {
     }
   }
 
-  let provider
-  if (!await reqSite(req)) {
-    provider = oauth.providers.find(p => p.state === providerState)
-  } else {
-    for (const providerInfo of await reqSite(req).authProviders) {
-      const p = await oauth.initProvider({ ...providerInfo }, reqSiteUrl(req) + '/simple-directory')
-      if (p.state === providerState) {
-        provider = p
-        break
-      }
-    }
-  }
+  const provider = await getOAuthProviderByState(req, providerState)
   if (!provider) return res.status(404).send('Unknown OAuth provider')
   if (req.params.oauthId && req.params.oauthId !== provider.id) return res.status(404).send('Wrong OAuth provider id')
 
@@ -714,7 +695,7 @@ const oauthCallback = async (req, res, next) => {
     return returnError('badIDPQuery', 500)
   }
 
-  const { token, offlineRefreshToken } = await provider.getToken(req.query.code, provider.coreIdProvider)
+  const { token, offlineRefreshToken } = await provider.getToken(req.query.code as string, provider.coreIdProvider)
   const accessToken = token.access_token
 
   const userInfo = await provider.userInfo(accessToken)
@@ -734,7 +715,7 @@ const oauthCallback = async (req, res, next) => {
     try {
       invit = unshortenInvit(await session.verifyToken(invitToken))
       eventsLog.info('sd.auth.oauth.invit', `a user was invited to join an organization ${invit.id}`, logContext)
-    } catch (err) {
+    } catch (err: any) {
       return returnError(err.name === 'TokenExpiredError' ? 'expiredInvitationToken' : 'invalidInvitationToken', 400)
     }
     invitOrga = await storage.getOrganization(invit.id)
@@ -743,7 +724,7 @@ const oauthCallback = async (req, res, next) => {
   }
 
   // check for user with same email
-  let user = await storage.getUserByEmail(userInfo.user.email, await reqSite(req))
+  let user = await storage.getUserByEmail(userInfo.user.email, site)
   logContext.user = user
 
   if (!user && !invit && config.onlyCreateInvited) {
@@ -757,11 +738,11 @@ const oauthCallback = async (req, res, next) => {
     } else {
       eventsLog.info('sd.auth.oauth.del-temp-user', `a temporary user was deleted in oauth callback ${user.id}`, logContext)
       await storage.deleteUser(user.id)
-      user = null
+      user = undefined
     }
   }
 
-  const memberInfo = await authCoreProviderMemberInfo(storage, await reqSite(req), provider, userInfo.user.email, oauthInfo)
+  const memberInfo = await authCoreProviderMemberInfo(site, provider, userInfo.user.email, oauthInfo)
 
   if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
 
@@ -770,36 +751,30 @@ const oauthCallback = async (req, res, next) => {
       return returnError('userUnknown', 403)
     }
 
-    if (provider.coreIdProvider) {
-      oauthInfo.coreId = true
-      userInfo.user.coreIdProvider = { type: provider.type || 'oauth', id: provider.id }
-    }
-
-    user = {
+    const newUser: UserWritable = {
       ...userInfo.user,
       id: nanoid(),
-      firstName: userInfo.firstName || '',
-      lastName: userInfo.lastName || '',
       emailConfirmed: true,
       [provider.type || 'oauth']: {
-        [provider.id]: { ...oauthInfo }
-      }
+        [provider.id]: { ...oauthInfo, coreId: provider.coreIdProvider ? true : undefined }
+      },
+      coreIdProvider: provider.coreIdProvider ? { type: provider.type || 'oauth', id: provider.id } : undefined,
+      organizations: []
     }
-    if (await reqSite(req)) user.host = await reqSite(req).host
-    if (invit) {
-      user.defaultOrg = invitOrga.id
-      user.ignorePersonalAccount = true
-    } else if (memberInfo.create) {
-      user.defaultOrg = memberInfo.org.id
-      user.ignorePersonalAccount = true
+    if (site) newUser.host = site.host
+    if (invit && invitOrga) {
+      newUser.defaultOrg = invitOrga.id
+      newUser.ignorePersonalAccount = true
+    } else if (memberInfo.create && memberInfo.org) {
+      newUser.defaultOrg = memberInfo.org.id
+      newUser.ignorePersonalAccount = true
     }
-    user.name = userName(user)
     debugOAuth('Create user authenticated through oauth', user)
     logContext.user = user
-    eventsLog.info('sd.auth.oauth.create-user', `a user was created in oauth callback ${user.id}`, logContext)
-    await storage.createUser(user, null, new URL(redirect).host)
+    eventsLog.info('sd.auth.oauth.create-user', `a user was created in oauth callback ${newUser.id}`, logContext)
+    user = await storage.createUser(newUser, undefined, new URL(redirect).host)
 
-    if (memberInfo.create) {
+    if (memberInfo.create && memberInfo.org) {
       logContext.account = { type: 'organization', ...memberInfo.org }
       eventsLog.info('sd.auth.oauth.create-member', `a user was added as a member in oauth callback ${user.id} / ${memberInfo.role}`, logContext)
       await storage.addMember(memberInfo.org, user, memberInfo.role, null, memberInfo.readOnly)
@@ -809,15 +784,15 @@ const oauthCallback = async (req, res, next) => {
       return res.status(400).send('Utilisateur déjà lié à un autre fournisseur d\'identité principale')
     }
     debugOAuth('Existing user authenticated through oauth', user, userInfo)
-    await patchCoreOAuthUser(storage, provider, user, oauthInfo, memberInfo)
+    await patchCoreOAuthUser(provider, user, oauthInfo, memberInfo)
   }
 
-  if (invit && !config.alwaysAcceptInvitation) {
-    if (storage.db) {
-      const consumer = { type: 'organization', id: invitOrga.id }
-      const limit = await limits.get(storage.db, consumer, 'store_nb_members')
-      if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
+  if (invit && invitOrga && !config.alwaysAcceptInvitation) {
+    const limits = await getLimits(invitOrga)
+    if (limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+      return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }
+
     await storage.addMember(invitOrga, user, invit.role, invit.department)
     eventsLog.info('sd.auth.oauth.accept-invite', `a user accepted an invitation in oauth callback ${user.id}`, logContext)
     pushEvent({
@@ -825,11 +800,11 @@ const oauthCallback = async (req, res, next) => {
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
     })
-    if (storage.db) await limits.setNbMembers(storage.db, invitOrga.id)
+    await setNbMembers(invitOrga.id)
   }
 
   if (provider.coreIdProvider) {
-    await storage.writeOAuthToken(user, provider, token, offlineRefreshToken)
+    await writeOAuthToken(user, provider, token, offlineRefreshToken)
   }
 
   const payload = getPayload(user)
@@ -841,7 +816,9 @@ const oauthCallback = async (req, res, next) => {
       return returnError('adminModeOnly', 403)
     }
   }
-  const linkUrl = await tokens.prepareCallbackUrl(req, payload, redirect, invitOrga ? { id: invit.id, department: invit.department } : { id: org, department: dep })
+  const linkUrl = await prepareCallbackUrl(req, payload, redirect, (invit && invitOrga)
+    ? { id: invit.id, department: invit.department }
+    : { id: org as string, department: dep as string })
   debugOAuth(`OAuth based authentication of user ${user.name}`)
   res.redirect(linkUrl.href)
 }
@@ -850,14 +827,13 @@ const oauthCallback = async (req, res, next) => {
 router.get('/oauth/:oauthId/callback', oauthCallback)
 router.get('/oauth-callback', oauthCallback)
 
-const oauthLogoutCallback = async (req, res, next) => {
+const oauthLogoutCallback = async (req: Request, res: Response, next: NextFunction) => {
   if (!req.body.logout_token) return res.status(400).send('missing logout_token')
-  const decoded = tokens.decode(req.body.logout_token)
+  const decoded = decode(req.body.logout_token)
   if (!decoded) return res.status(400).send('invalid logout_token')
   if (decoded.typ !== 'Logout') return res.status(400).send('invalid logout_token type')
   if (!decoded.sid) return res.status(400).send('missing sid in logout_token')
-  const storage = storages.globalStorage
-  await storage.logoutOAuthToken(decoded.sid)
+  await logoutOAuthToken(decoded.sid)
   res.status(204).send()
 }
 
@@ -870,17 +846,16 @@ const debugSAML = require('debug')('saml')
 // expose metadata to declare ourselves to identity provider
 router.get('/saml2-metadata.xml', (req, res) => {
   res.type('application/xml')
-  res.send(saml2.sp.getMetadata())
+  res.send(saml2ServiceProvider().getMetadata())
 })
 
 // starts login
 router.get('/saml2/:providerId/login', async (req, res) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
   debugSAML('login request', req.params.providerId)
-  const idp = saml2.idps[req.params.providerId]
-  if (!idp) {
+  const provider = saml2GlobalProviders().find(p => p.id === req.params.providerId)
+  if (!provider) {
     eventsLog.info('sd.auth.saml.fail', 'a user tried to login with an unknown saml provider', logContext)
     return res.redirect(`${reqSiteUrl(req) + '/simple-directory'}/login?error=unknownSAMLProvider`)
   }
@@ -888,17 +863,21 @@ router.get('/saml2/:providerId/login', async (req, res) => {
   // relay_state is used to remember some information about the login attempt
   const relayState = [
     req.headers.referer,
-    (req.query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
+    (req.query.redirect as string || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
     req.query.org || '',
     req.query.invit_token || '',
     req.query.adminMode || '' // TODO: force re-submit password in this case ?
   ]
   // relay state should be a request level parameter but it is not in current version of samlify
   // cf https://github.com/tngan/samlify/issues/163
-  saml2.sp.entitySetting.relayState = JSON.stringify(relayState)
-  const { context: loginRequestURL } = saml2.sp.createLoginRequest(idp, 'redirect', { nameid: req.query.email })
+  const sp = saml2ServiceProvider()
+  sp.entitySetting.relayState = JSON.stringify(relayState)
+
+  // TODO: apply nameid parameter ? { nameid: req.query.email }
+  const { context: loginRequestURL } = sp.createLoginRequest(provider.idp, 'redirect')
+
   const parsedURL = new URL(loginRequestURL)
-  if (req.query.email) parsedURL.searchParams.append('login_hint', req.query.email)
+  if (typeof req.query.email === 'string') parsedURL.searchParams.append('login_hint', req.query.email)
   debugSAML('redirect', parsedURL.href)
   eventsLog.info('sd.auth.saml.redirect', 'a user was redirected to a saml provider', logContext)
   res.redirect(parsedURL.href)
@@ -906,26 +885,30 @@ router.get('/saml2/:providerId/login', async (req, res) => {
 
 // login confirm by IDP
 router.post('/saml2-assert', async (req, res) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
+  const logContext: EventLogContext = { req }
 
+  const site = await reqSite(req)
   const storage = storages.globalStorage
+  const providers = saml2GlobalProviders()
+  const sp = saml2ServiceProvider()
 
-  let providerId
-  if (!req.headers.referer && Object.keys(saml2.idps).length === 1) providerId = Object.keys(saml2.idps)[0]
-  else providerId = saml2.getProviderId(req.headers.referer)
-  if (!providerId) res.status(404).send(`undefined saml2 providerId ${providerId}`)
+  let provider
+  const referer = (req.headers.referer || req.headers.referrer) as string | undefined
+  if (!referer && providers.length === 1) provider = providers[0]
+  else if (referer) {
+    const providerId = getSamlProviderId(referer)
+    provider = providers.find(p => p.id === providerId)
+  }
 
-  const idp = saml2.idps[providerId]
-  if (!idp) return res.status(404).send(`unknown saml2 provider ${providerId}`)
+  if (!provider) return res.status(404).send('unknown saml2 provider')
 
   debugSAML('saml2 assert full body', req.body)
-  const samlResponse = await saml2.sp.parseLoginResponse(idp, 'post', req)
+  const samlResponse = await sp.parseLoginResponse(provider.idp, 'post', req)
   debugSAML('login success', JSON.stringify(samlResponse.extract, null, 2))
 
   const [loginReferer, redirect, org, invitToken, adminMode] = JSON.parse(req.body.RelayState)
 
-  const returnError = (error, errorCode) => {
+  const returnError = (error: string, errorCode: number) => {
     eventsLog.info('sd.auth.saml.fail', `a user failed to authenticate with saml due to ${error}`, logContext)
     debugSAML('login return error', error, errorCode)
     if (loginReferer) {
@@ -939,11 +922,11 @@ router.post('/saml2-assert', async (req, res) => {
 
   const email = samlResponse.extract.attributes.email || samlResponse.extract.attributes['urn:oid:0.9.2342.19200300.100.1.3']
   if (!email) {
-    console.error('Email attribute not fetched from SAML', providerId, samlResponse.extract.attributes)
+    console.error('Email attribute not fetched from SAML', provider.id, samlResponse.extract.attributes)
     eventsLog.info('sd.auth.saml.fail', 'a user failed to authenticate with saml due to missing email', logContext)
     throw new Error('Email attribute not fetched from OAuth')
   }
-  debugSAML('Got user info from saml', providerId, samlResponse.extract.attributes)
+  debugSAML('Got user info from saml', provider.id, samlResponse.extract.attributes)
 
   const samlInfo = { ...samlResponse.extract.attributes, logged: new Date().toISOString() }
 
@@ -953,7 +936,7 @@ router.post('/saml2-assert', async (req, res) => {
   if (invitToken) {
     try {
       invit = unshortenInvit(await session.verifyToken(invitToken))
-    } catch (err) {
+    } catch (err: any) {
       return returnError(err.name === 'TokenExpiredError' ? 'expiredInvitationToken' : 'invalidInvitationToken', 400)
     }
     invitOrga = await storage.getOrganization(invit.id)
@@ -962,7 +945,7 @@ router.post('/saml2-assert', async (req, res) => {
   }
 
   // check for user with same email
-  let user = await storage.getUserByEmail(email, await reqSite(req))
+  let user = await storage.getUserByEmail(email, site)
 
   if (!user && !invit && config.onlyCreateInvited) {
     return returnError('onlyCreateInvited', 400)
@@ -975,7 +958,7 @@ router.post('/saml2-assert', async (req, res) => {
     } else {
       eventsLog.info('sd.auth.saml.del-temp-user', `a temporary user was deleted in saml callback ${user.id}`, logContext)
       await storage.deleteUser(user.id)
-      user = null
+      user = undefined
     }
   }
 
@@ -983,43 +966,42 @@ router.post('/saml2-assert', async (req, res) => {
     if ((!invit && config.onlyCreateInvited) || storage.readonly) {
       return returnError('userUnknown', 403)
     }
-    user = {
+    const newUser: UserWritable = {
       email,
       id: nanoid(),
       emailConfirmed: true,
       saml2: {
-        [providerId]: samlInfo
-      }
+        [provider.id]: samlInfo
+      },
+      organizations: []
     }
-    logContext.user = user
-    if (await reqSite(req)) user.host = await reqSite(req).host
-    if (invit) {
-      user.defaultOrg = invitOrga.id
-      user.ignorePersonalAccount = true
+    if (site) newUser.host = site.host
+    if (invit && invitOrga) {
+      newUser.defaultOrg = invitOrga.id
+      newUser.ignorePersonalAccount = true
     }
     // TODO: also a dynamic mapping
-    if (samlInfo.firstName) user.firstName = samlInfo.firstName
-    if (samlInfo.lastName) user.lastName = samlInfo.lastName
-    user.name = userName(user)
-    debugSAML('Create user', user)
-    await storage.createUser(user, null, new URL(redirect).host)
+    if (samlInfo.firstName) newUser.firstName = samlInfo.firstName
+    if (samlInfo.lastName) newUser.lastName = samlInfo.lastName
+    debugSAML('Create user', newUser)
+    user = await storage.createUser(newUser, undefined, new URL(redirect).host)
+    logContext.user = user
     eventsLog.info('sd.auth.saml.create-user', `a user was created in saml callback ${user.id}`, logContext)
   } else {
-    if (user.coreIdProvider && (user.coreIdProvider.type !== 'saml' || user.coreIdProvider.id !== providerId)) {
+    if (user.coreIdProvider && (user.coreIdProvider.type !== 'saml' || user.coreIdProvider.id !== provider.id)) {
       return res.status(400).send('Utilisateur déjà lié à un autre fournisseur d\'identité principale')
     }
-    debugSAML('Existing user authenticated', providerId, user)
-    const patch = { saml2: { ...user.saml2, [providerId]: samlInfo }, emailConfirmed: true }
+    debugSAML('Existing user authenticated', provider.id, user)
+    const patch = { saml2: { ...user.saml2, [provider.id]: samlInfo }, emailConfirmed: true }
     // TODO: map more attributes ? lastName, firstName ?
     await storage.patchUser(user.id, patch)
     eventsLog.info('sd.auth.saml.update-user', `a user was updated in saml callback ${user.id}`, logContext)
   }
 
-  if (invit && !config.alwaysAcceptInvitation) {
-    if (storage.db) {
-      const consumer = { type: 'organization', id: invitOrga.id }
-      const limit = await limits.get(storage.db, consumer, 'store_nb_members')
-      if (limit.consumption >= limit.limit && limit.limit > 0) return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
+  if (invit && invitOrga && !config.alwaysAcceptInvitation) {
+    const limits = await getLimits(invitOrga)
+    if (limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+      return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }
     await storage.addMember(invitOrga, user, invit.role, invit.department)
     eventsLog.info('sd.auth.saml.accept-invite', `a user accepted an invitation in saml callback ${user.id}`, logContext)
@@ -1028,7 +1010,7 @@ router.post('/saml2-assert', async (req, res) => {
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
     })
-    if (storage.db) await limits.setNbMembers(storage.db, invitOrga.id)
+    await setNbMembers(invitOrga.id)
   }
 
   const payload = getPayload(user)
@@ -1058,12 +1040,6 @@ router.get('/saml2-logout', (req, res) => {
 router.post('/saml2-logout', (req, res) => {
   console.warn('SAML POST logout not yet implemented', req.headers, req.query, req.body)
   res.send()
-})
-
-router.get('/saml2/providers', async (req, res) => {
-  // TODO: per-site auth providers
-  if (await reqSite(req)) return res.send([])
-  res.send(oauth.publicProviders)
 })
 
 // starts logout

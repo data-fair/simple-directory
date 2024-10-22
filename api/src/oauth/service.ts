@@ -35,14 +35,14 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery'> & {
   userInfo: (accessToken: string) => Promise<OAuthUserInfo>
 }
 
-type PreparedOAuthProvider = OAuthProvider & {
+export type PreparedOAuthProvider = OAuthProvider & {
   state: string
-  authorizationUri (relayState: any, email: string, offlineAccess: boolean): string
-  getToken (code: string, offlineAccess: boolean): Promise<any>
+  authorizationUri (relayState: any, email: string, offlineAccess?: boolean): string
+  getToken (code: string, offlineAccess?: boolean): Promise<any>
   refreshToken (tokenObj: any, onlyIfExpired: boolean): Promise<any>
 }
 
-export async function initProvider (p: OAuthProvider, publicUrl = config.publicUrl): Promise<PreparedOAuthProvider> {
+export async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl): Promise<PreparedOAuthProvider> {
   const oauthClient = new oauth2.AuthorizationCode({
     client: p.client,
     auth: p.auth
@@ -125,10 +125,10 @@ let initialized = false
 const _globalProviders: PreparedOAuthProvider[] = []
 export const init = async () => {
   for (const p of standardProviders) {
-    _globalProviders.push(await initProvider(p))
+    _globalProviders.push(await initOAuthProvider(p))
   }
   for (const oidc of config.oidc.providers) {
-    _globalProviders.push(await initProvider(await completeOidcProvider(oidc)))
+    _globalProviders.push(await initOAuthProvider(await completeOidcProvider(oidc)))
   }
   initialized = true
 }
