@@ -278,11 +278,12 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
   const callbackUri = p.discovery ? `${publicUrl}/api/auth/oauth-callback` : `${publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
-  p.authorizationUri = (relayState, email, offlineAccess = false, prompt = 'none') => {
+  p.authorizationUri = (relayState, email, offlineAccess = false, forceLogin = false) => {
     let scope = p.scope
     if (offlineAccess) {
       scope += ' offline_access'
     }
+    const prompt = forceLogin ? 'login' : (p.prompt ?? 'login')
     const params = {
       redirect_uri: callbackUri,
       scope,

@@ -160,6 +160,16 @@
                 } },
                 {"title": "toujours rediriger implicitement", "properties": {"type": {"const": "always"}}}
               ]
+            },
+            "prompt": {
+              "type": "string",
+              "title": "Mode d'authentification sur le fournisseur",
+              "default": "login",
+              "oneOf": [
+                {"const": "login", "title": "toujours demander le login / mot de passe"},
+                {"const": "none", "title": "authentification silencieuse autant que possible"},
+                {"const": "consent", "title": "toujours demander le consentement"}
+              ]
             }
           }
         }, {
