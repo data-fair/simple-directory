@@ -278,7 +278,7 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
   const callbackUri = p.discovery ? `${publicUrl}/api/auth/oauth-callback` : `${publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
-  p.authorizationUri = (relayState, email, offlineAccess = false) => {
+  p.authorizationUri = (relayState, email, offlineAccess = false, prompt = 'none') => {
     let scope = p.scope
     if (offlineAccess) {
       scope += ' offline_access'
@@ -288,7 +288,7 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
       scope,
       state: JSON.stringify(relayState),
       display: 'page',
-      prompt: 'login' // WARN: if we change that to allow for authentication without prompting for password, we should still use this value in case of adminMode
+      prompt
     }
     if (email) {
       // send email in login_hint
