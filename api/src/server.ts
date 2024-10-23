@@ -1,11 +1,14 @@
 import { createServer } from 'node:http'
-import { resolve } from 'node:path'
-import i18n from 'i18n'
 import { session } from '@data-fair/lib-express/index.js'
 import { startObserver, stopObserver } from '@data-fair/lib-node/observer.js'
 import * as locks from '@data-fair/lib-node/locks.js'
 // import upgradeScripts from '@data-fair/lib-node/upgrade-scripts.js'
 import mongo from '#mongo'
+import * as usersWorker from './users/worker.ts'
+import * as keysManager from './tokens/keys-manager.ts'
+import * as oauth from './oauth/service.ts'
+import mailsTransport from './mails/transport.ts'
+import storages from '#storages'
 import { createHttpTerminator } from 'http-terminator'
 import app from './app.ts'
 import config from '#config'
@@ -19,13 +22,18 @@ const httpTerminator = createHttpTerminator({ server })
 server.keepAliveTimeout = (60 * 1000) + 1000
 server.headersTimeout = (60 * 1000) + 2000
 
-i18n.configure({ ...config.i18n, directory: resolve(import.meta.dirname, '../i18n') })
-
 export const start = async () => {
-  if (config.observer.active) await startObserver(config.observer.port)
-  session.init(config.privateDirectoryUrl)
+  session.init('http://localhost:' + config.port)
   await mongo.init()
-  await locks.init(mongo.db)
+  await Promise.all([
+    oauth.init(),
+    storages.init(),
+    config.observer.active && startObserver(config.observer.port),
+    locks.init(mongo.db),
+    usersWorker.start(),
+    mailsTransport.start(),
+    keysManager.start()
+  ])
   // await upgradeScripts(mongo.db, resolve(import.meta.dirname, '../..'))
 
   // TODO: run users planned deletion worker
@@ -38,6 +46,11 @@ export const start = async () => {
 
 export const stop = async () => {
   await httpTerminator.terminate()
-  if (config.observer.active) await stopObserver()
+  await Promise.all([
+    config.observer.active && stopObserver(),
+    usersWorker.stop(),
+    mailsTransport.stop(),
+    keysManager.start()
+  ])
   await mongo.client.close()
 }

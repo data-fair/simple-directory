@@ -12,6 +12,7 @@ const maildevTransport = {
 class MailsTransport {
   private transport: Transporter | undefined
   private sendMailAsync: ((opts: SendMailOptions) => Promise<unknown>) | undefined
+  private maildev: any
 
   get sendMail () {
     if (!this.sendMailAsync) throw new Error('mails transport was not initialized')
@@ -29,10 +30,22 @@ class MailsTransport {
     } catch (err) {
       internalError('mails-transport-verify', err)
     }
+
+    // Run a handy development mail server
+    if (config.maildev.active) {
+      const MailDev = (await import('maildev')).default
+      this.maildev = new MailDev(config.maildev)
+      const listenAsync = promisify(this.maildev.listen).bind(this.maildev)
+      await listenAsync()
+    }
   }
 
-  stop () {
+  async stop () {
     if (this.transport) this.transport.close()
+    if (this.maildev) {
+      const closeAsync = promisify(this.maildev.close).bind(this.maildev)
+      await closeAsync()
+    }
   }
 }
 

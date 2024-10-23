@@ -22,6 +22,7 @@
     "accept-language-parser": "^1.5.0",
     "capitalize": "^2.0.4",
     "config": "^3.3.11",
+    "cookie-parser": "^1.4.7",
     "cookies": "^0.9.1",
     "csv-stringify": "^6.5.1",
     "dayjs": "^1.11.13",
