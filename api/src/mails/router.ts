@@ -8,7 +8,7 @@ import { RateLimiterMongo } from 'rate-limiter-flexible'
 import emailValidator from 'email-validator'
 import { reqI18n } from '#i18n'
 import mailsTransport from './transport.ts'
-import { FindMembersParams } from '../storages/interface.ts'
+import type { FindMembersParams } from '../storages/interface.ts'
 
 const router = Router()
 export default Router

@@ -1,6 +1,6 @@
 import type { User, UserWritable, Organization, Site, Member, Partner } from '#types'
-import { OrganizationPost } from '#doc/organizations/post-req/index.ts'
-import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
+import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
+import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import type { UserRef } from '@data-fair/lib-express'
 import type { TwoFA, Password } from '#services'
 
@@ -40,7 +40,7 @@ export interface SdStorageFactory {
 }
 
 export interface SdStorage {
-  init(conf: any, org?: Organization): Promise<void>
+  init(conf: any, org?: Organization): Promise<SdStorage>
 
   readonly?: boolean
 

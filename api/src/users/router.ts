@@ -9,7 +9,7 @@ import { reqI18n, __all, __date } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
-import { FindUsersParams } from '../storages/interface.ts'
+import type { FindUsersParams } from '../storages/interface.ts'
 import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMail, getLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken } from '#services'
 
 const router = Router()

@@ -1,14 +1,15 @@
+import config from '#config'
 import { type Request } from 'express'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import { flatten, unflatten } from 'flat'
 import acceptLangParser from 'accept-language-parser'
 import dayjs from 'dayjs'
-import 'dayjs/locale/fr'
-import 'dayjs/locale/en'
-import 'dayjs/locale/de'
-import 'dayjs/locale/it'
-import 'dayjs/locale/es'
-import 'dayjs/locale/pt'
+import 'dayjs/locale/fr.js'
+import 'dayjs/locale/en.js'
+import 'dayjs/locale/de.js'
+import 'dayjs/locale/it.js'
+import 'dayjs/locale/es.js'
+import 'dayjs/locale/pt.js'
 import localizedFormat from 'dayjs/plugin/localizedFormat.js'
 
 dayjs.extend(localizedFormat)
@@ -18,7 +19,8 @@ export const localizedDayjs = dayjs
 const flatOpts = { delimiter: '_' }
 
 // cannot be changed at runtime for now, because it impacts the build
-export const defaultLocale = 'fr'
+export const defaultLocale = config.i18n.defaultLocale
+
 // this the full list of available langs, the proposed list is overwritten in config.i18n.locales
 export const locales = [
   { code: 'fr' },

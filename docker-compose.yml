@@ -1,4 +1,3 @@
-version: '3'
 services:
   #####
   # reverse proxy for the whole environment
@@ -111,7 +110,7 @@ services:
     ports:
       - 27017:27017
     volumes:
-      - mongo-data4:/data/db
+      - mongo-data:/data/db
 
 volumes:
   mongo-data:

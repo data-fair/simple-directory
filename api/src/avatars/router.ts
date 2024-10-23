@@ -1,7 +1,7 @@
 import config from '#config'
 import { Router, type Request, type Response, type NextFunction } from 'express'
 import { resolve } from 'node:path'
-import { Account, assertAccountRole, httpError, reqSession } from '@data-fair/lib-express'
+import { type Account, assertAccountRole, httpError, reqSession } from '@data-fair/lib-express'
 import gm from 'gm'
 import colors from 'material-colors'
 import initialsModule from 'initials'

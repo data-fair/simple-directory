@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   port: 8080,
   mongo: {
     url: 'mongodb://mongo:27017/simple-directory-' + (process.env.NODE_ENV || 'development'),
@@ -18,22 +18,22 @@ export default {
     '2FAToken': '30d'
   },
   admins: ['admin@test.com'],
-  adminsOrg: null,
+  adminsOrg: undefined,
   admins2FA: false,
   // special case where a email/password is defined at config level for a superadmin
   // useful when superadmins cannot be created in the storage (on-premise ldap with heavy constraints ?)
   // or to test stuff while email sending is not working yet, etc
-  adminCredentials: null,
+  adminCredentials: undefined,
   roles: {
     defaults: ['admin', 'user']
   },
-  contact: null,
+  contact: undefined,
   anonymousContactForm: false,
   anonymousAction: {
     expiresIn: '1d',
     notBefore: '8s'
   },
-  homePage: null,
+  homePage: undefined,
   storage: {
     // One of 'file', 'mongo' and 'ldap'
     type: 'mongo',
@@ -63,8 +63,8 @@ export default {
           email: 'mail',
           firstName: 'givenName',
           lastName: 'sn',
-          birthday: undefined,
-          avatarUrl: undefined
+          // birthday: '',
+          // avatarUrl: ''
         },
         // an array of objects that can be used to overwrite any user properties based on matching "email" property
         overwrite: [],
@@ -121,8 +121,8 @@ export default {
   },
   analytics: {}, // a "modules" definition for @koumoul/vue-multianalytics
   theme: {
-    logo: null,
-    favicon: null,
+    logo: undefined,
+    favicon: undefined,
     dark: false,
     colors: {
       // standard vuetify colors
@@ -139,11 +139,11 @@ export default {
       primary: '#2196F3', // blue.base
       success: '#00E676' // green.accent3
     },
-    cssUrl: null,
+    cssUrl: undefined,
     cssText: ''
   },
   i18n: {
-    locales: ['fr', 'en', 'es', 'pt', 'it', 'de']
+    defaultLocale: 'fr'
   },
   mails: {
     from: 'no-reply@test.com',
@@ -169,8 +169,8 @@ export default {
   // Restricts who can use the find endpoints on users and organizations
   // One of 'anonymous', 'authenticated' or 'admin'
   listEntitiesMode: 'authenticated',
-  listUsersMode: null, // same as listEntitiesMode but only for users
-  listOrganizationsMode: null, // same as listEntitiesMode but only for users
+  listUsersMode: undefined, // same as listEntitiesMode but only for users
+  listOrganizationsMode: undefined, // same as listEntitiesMode but only for users
   // Users can not be created at first email sent. They must be invited in an organization.
   // also they will not be able to log with personal account
   // and if removed from their last organization they will be deleted
@@ -180,21 +180,21 @@ export default {
   // users cannot delete their own account by default
   userSelfDelete: false,
   // Default redirection after login. If not specified user will go to his profile page.
-  defaultLoginRedirect: null,
+  defaultLoginRedirect: undefined,
   // Redirect after successful invitation to an organization.
   // If not specified user will go to a dedicated page on simple-directory.
-  invitationRedirect: null,
+  invitationRedirect: undefined,
   // secrets that can be used to configure global webhooks for example to send emails to users
   secretKeys: {
-    sendMails: null,
-    limits: null,
-    readAll: null,
-    metrics: null,
-    notifications: null,
-    sites: null
+    sendMails: undefined,
+    limits: undefined,
+    readAll: undefined,
+    metrics: undefined,
+    notifications: undefined,
+    sites: undefined
   },
   // A link to the terms of services for the site
-  tosUrl: null,
+  tosUrl: undefined,
   manageDepartments: false,
   manageDepartmentLabel: false,
   passwordless: true,
@@ -256,9 +256,9 @@ export default {
   },
   // allow configuring external storages per organization
   perOrgStorageTypes: [],
-  cipherPassword: null,
-  notifyUrl: null,
-  privateNotifyUrl: null,
+  cipherPassword: undefined,
+  notifyUrl: undefined,
+  privateNotifyUrl: undefined,
   plannedDeletionDelay: 14,
   cleanup: {
     cron: '0 5 * * *',
@@ -273,5 +273,5 @@ export default {
   depAdminIsOrgAdmin: false,
   manageSites: false,
   managePartners: false,
-  defaultOrg: null
+  defaultOrg: undefined
 }

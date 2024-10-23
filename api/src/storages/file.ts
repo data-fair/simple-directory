@@ -63,7 +63,9 @@ class FileStorage implements SdStorage {
 
   readonly = true
 
-  async init () { }
+  async init () {
+    return this
+  }
 
   cleanUser (user: any): User {
     const res = { ...user, organizations: getUserOrgas(this.organizations, user) }

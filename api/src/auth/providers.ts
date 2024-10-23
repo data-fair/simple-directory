@@ -1,6 +1,6 @@
 import { oauthGlobalProviders, getOidcProviderId, saml2GlobalProviders, getSiteByHost } from '#services'
 import type { RedirectMode } from '../../config/type/index.ts'
-import { Site } from '#types'
+import type { Site } from '#types'
 import _slug from 'slugify'
 
 const slug = _slug.default

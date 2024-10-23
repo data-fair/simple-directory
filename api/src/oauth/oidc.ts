@@ -26,7 +26,7 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
   } else {
     discoveryContent = (await axios.get(p.discovery)).data
     debug(`Fetched OIDC discovery info from ${p.discovery}`, discoveryContent)
-    await mongo.oidcDiscovery.insertOne({ _id: p.discovery, content: discoveryContent })
+    await mongo.oidcDiscovery.insertOne({ _id: id, content: discoveryContent })
   }
   const tokenURL = new URL(discoveryContent.token_endpoint)
   const authURL = new URL(discoveryContent.authorization_endpoint)

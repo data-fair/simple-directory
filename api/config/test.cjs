@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   port: 5690,
   publicUrl: 'http://127.0.0.1:5689/simple-directory',
   secret: {

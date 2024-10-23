@@ -7,6 +7,7 @@ import mongo from '#mongo'
 import * as usersWorker from './users/worker.ts'
 import * as keysManager from './tokens/keys-manager.ts'
 import * as oauth from './oauth/service.ts'
+import * as metrics from './utils/metrics.ts'
 import mailsTransport from './mails/transport.ts'
 import storages from '#storages'
 import { createHttpTerminator } from 'http-terminator'
@@ -32,7 +33,8 @@ export const start = async () => {
     locks.init(mongo.db),
     usersWorker.start(),
     mailsTransport.start(),
-    keysManager.start()
+    keysManager.start(),
+    metrics.init()
   ])
   // await upgradeScripts(mongo.db, resolve(import.meta.dirname, '../..'))
 

@@ -1,8 +1,10 @@
 import config from '#config'
+import apiDocs from '../contract/api-docs.ts'
 import express from 'express'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
 import { session, errorHandler } from '@data-fair/lib-express'
+import admin from './admin/router.ts'
 import anonymousAction from './anonymous-action/router.ts'
 import auth from './auth/router.ts'
 import limits from './limits/router.ts'
@@ -52,8 +54,8 @@ app.use(bodyParser.json({ limit: '100kb' }))
   next()
 } */
 
-const apiDocs = require('../contract/api-docs')
-app.get('/api/api-docs.json', (req, res) => res.json(apiDocs))
+app.get('/api/api-docs.json', (req, res) => res.send(apiDocs))
+app.get('/api/admin', admin)
 app.get('/api/auth/anonymous-action', anonymousAction)
 app.use('/api/auth', session.middleware(), auth)
 app.use('/api/mails', session.middleware(), mails)
@@ -67,13 +69,6 @@ app.use('/api/oauth-tokens', session.middleware(), oauthTokens)
 if (config.manageSites) {
   app.use('/api/sites', session.middleware(), (await import('./sites/router.ts')).default)
 }
-
-let info = { version: process.env.NODE_ENV }
-try { info = require('../BUILD.json') } catch (err) {}
-// TODO: see data-fair for latest admin info implementation
-app.get('/api/info', session.middleware({ required: true }), (req, res) => {
-  res.send(info)
-})
 
 app.use('/api/', (req, res) => {
   return res.status(404).send('unknown api endpoint')

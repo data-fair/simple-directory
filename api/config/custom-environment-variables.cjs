@@ -3,7 +3,7 @@
  */
 const jsonEnv = (key) => ({ __name: key, __format: 'json' })
 
-export default  {
+module.exports = {
   port: 'PORT',
   mongo: {
     url: 'MONGO_URL',
@@ -109,7 +109,7 @@ export default  {
     cssText: 'THEME_CSS_TEXT'
   },
   i18n: {
-    locales: jsonEnv('I18N_LOCALES')
+    defaultLocale: 'I18N_DEFAULT_LOCALE'
   },
   mails: {
     transport: jsonEnv('MAILS_TRANSPORT'),

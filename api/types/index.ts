@@ -1,5 +1,5 @@
-import { User } from './user/index.ts'
-import { OrganizationMembership } from '@data-fair/lib-common-types/session/index.js'
+import { type User } from './user/index.ts'
+import { type OrganizationMembership } from '@data-fair/lib-common-types/session/index.js'
 
 export type { User } from './user/index.ts'
 export type { Organization } from './organization/index.ts'

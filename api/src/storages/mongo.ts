@@ -1,15 +1,15 @@
 import type { UserWritable, User, Organization, Member, Partner, Site } from '#types'
 import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersParams } from './interface.ts'
-import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
+import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
 import config from '#config'
-import { TwoFA } from '#services'
+import type { TwoFA } from '#services'
 import { httpError, type UserRef } from '@data-fair/lib-express'
 import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
 import mongo from '#mongo'
-import { Password } from '../utils/passwords.ts'
+import type { Password } from '../utils/passwords.ts'
 import dayjs from 'dayjs'
-import { OrganizationPost } from '#doc/organizations/post-req/index.ts'
+import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 
 const collation = { locale: 'en', strength: 1 }
 
@@ -46,6 +46,7 @@ class MongodbStorage implements SdStorage {
   readonly?: boolean | undefined
   async init (params: any, org?: Organization) {
     if (org) throw new Error('mongo storage is not compatible with per-org storage')
+    return this
   }
 
   async getUser (userId: string) {
@@ -71,7 +72,7 @@ class MongodbStorage implements SdStorage {
     if (user?.password) return user.password as Password
   }
 
-  async createUser (user: UserWritable, byUser: { id: string, name: string }, host: string) {
+  async createUser (user: UserWritable, byUser: { id: string, name: string }, host?: string) {
     byUser = byUser || user
     const date = new Date().toISOString()
     const fullUser: UserInDb = {
@@ -80,10 +81,10 @@ class MongodbStorage implements SdStorage {
       created: { id: byUser.id, name: byUser.name, date },
       updated: { id: byUser.id, name: byUser.name, date },
       name: userName(user),
-      host: host || new URL(config.publicUrl).host
+      host
     }
 
-    await mongo.users.findOneAndReplace({ _id: user.id }, fullUser, { upsert: true })
+    await mongo.users.replaceOne({ _id: user.id }, fullUser, { upsert: true })
     return cleanUser(fullUser)
   }
 

@@ -20,6 +20,14 @@ class MailsTransport {
   }
 
   async start () {
+    // Run a handy development mail server
+    if (config.maildev.active) {
+      const MailDev = (await import('maildev')).default
+      this.maildev = new MailDev(config.maildev)
+      const listenAsync = promisify(this.maildev.listen).bind(this.maildev)
+      await listenAsync()
+    }
+
     this.transport = nodemailer.createTransport(config.maildev.active ? maildevTransport : config.mails.transport)
     this.sendMailAsync = promisify(this.transport.sendMail).bind(this.transport)
     // we check the connection but in a none blocking way, most of SD services can work even
@@ -29,14 +37,6 @@ class MailsTransport {
       await verifyAsync()
     } catch (err) {
       internalError('mails-transport-verify', err)
-    }
-
-    // Run a handy development mail server
-    if (config.maildev.active) {
-      const MailDev = (await import('maildev')).default
-      this.maildev = new MailDev(config.maildev)
-      const listenAsync = promisify(this.maildev.listen).bind(this.maildev)
-      await listenAsync()
     }
   }
 

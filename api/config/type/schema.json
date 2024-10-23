@@ -13,6 +13,7 @@
   "type": "object",
   "title": "Api config",
   "required": [
+    "info",
     "publicUrl",
     "secret",
     "kid",
@@ -43,6 +44,9 @@
     "cleanup"
   ],
   "properties": {
+    "info": {
+      "type": "object"
+    },
     "port": {
       "type": "number"
     },
@@ -86,40 +90,22 @@
       "type": "object",
       "properties": {
         "identities": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "events": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "sendMails": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "limits": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "readAll": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "sites": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         }
       }
     },
@@ -136,45 +122,25 @@
     },
     "theme": {
       "type": "object",
-      "required": [
-        "logo",
-        "notificationIcon",
-        "notificationBadge"
-      ],
+      "required": [],
       "properties": {
         "logo": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "notificationIcon": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "notificationBadge": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         }
       }
     },
     "i18n": {
       "type": "object",
       "required": [
-        "locales",
         "defaultLocale"
       ],
       "properties": {
-        "locales": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
         "defaultLocale": {
           "type": "string",
           "default": "fr"
@@ -397,16 +363,14 @@
       "enum": [
         "anonymous",
         "authenticated",
-        "admin",
-        null
+        "admin"
       ]
     },
     "listOrganizationsMode": {
       "enum": [
         "anonymous",
         "authenticated",
-        "admin",
-        null
+        "admin"
       ]
     },
     "roles": {
@@ -568,10 +532,7 @@
       }
     },
     "defaultOrg": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": "string"
     },
     "userSelfDelete": {
       "type": "boolean"

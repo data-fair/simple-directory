@@ -2,7 +2,6 @@
   "name": "simple-directory",
   "version": "7.12.2",
   "description": "Easy users and organizations management for modern Web-oriented architectures.",
-  "main": "server/app.js",
   "scripts": {
     "test": "npm run test-file && npm run test-mongo && npm run test-ldap",
     "test-file": "NODE_ENV=test EVENTS_LOG_LEVEL=warn STORAGE_TYPE=file mocha --exit --bail --timeout 20000 test/file/*.js",
@@ -55,6 +54,7 @@
     "@types/nodemailer": "^6.4.16",
     "@types/qrcode": "^1.5.5",
     "@types/seedrandom": "^3.0.8",
+    "@types/simple-oauth2": "^5.0.7",
     "commitlint": "^19.2.2",
     "eslint": "^9.10.0",
     "eslint-plugin-vue": "^9.29.0",

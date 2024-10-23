@@ -2,7 +2,7 @@ import type { Organization, UserWritable } from '#types'
 import config from '#config'
 import type { SdStorage, SdStorageFactory } from './interface.ts'
 import { nanoid } from 'nanoid'
-import defaultConfig from '../../config/default.js'
+import defaultConfig from '../../config/default.cjs'
 
 class StorageManager {
   private _globalStorage?: SdStorage
@@ -49,7 +49,7 @@ class StorageManager {
   }
 
   async createStorage (type: string, conf: any, org?: Organization): Promise<SdStorage> {
-    const factory = (await import('./' + type + '.ts')).default as SdStorageFactory
+    const factory = (await import('./' + type + '.ts')) as SdStorageFactory
     const storage = await factory.init(conf, org)
     storage.readonly = factory.readonly
     return storage

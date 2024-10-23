@@ -126,6 +126,7 @@ class LdapStorage implements SdStorage {
 
   async init () {
     await this.withClient(async () => {})
+    return this
   }
 
   private async withClient <T>(fn: (client: ldap.Client) => Promise<T>) {

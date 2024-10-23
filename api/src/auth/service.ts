@@ -1,5 +1,5 @@
 import config from '#config'
-import { type Site, User, Organization } from '#types'
+import type { Site, User, Organization } from '#types'
 import { type OAuthProvider } from '../oauth/service.ts'
 import storages from '#storages'
 

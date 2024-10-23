@@ -1,4 +1,7 @@
-export default {
+module.exports = {
+  mongo: {
+    url: 'mongodb://localhost:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
+  },
   port: 5690,
   publicUrl: 'http://localhost:5689/simple-directory',
   // use this host when debugging a data-fair inside a virtualbox vm
@@ -26,7 +29,7 @@ export default {
     invitationToken: '5m'
   },
   i18n: {
-    locales: ['fr', 'en', 'es', 'it', 'pt', 'de']
+    // defaultLocale: 'en'
   },
   maildev: {
     active: true
@@ -48,9 +51,6 @@ export default {
     file: {
       users: './test/resources/users.json',
       organizations: './test/resources/organizations.json'
-    },
-    mongo: {
-      url: 'mongodb://localhost:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
     },
     ldap: {
       url: 'ldap://localhost:389',

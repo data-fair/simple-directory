@@ -1,7 +1,7 @@
 import type { Request } from 'express'
 import type { OpenIDConnect } from '../../config/type/index.ts'
 import { reqSiteUrl } from '@data-fair/lib-express'
-import oauth2 from 'oauth2'
+import oauth2 from 'simple-oauth2'
 import { nanoid } from 'nanoid'
 import config from '#config'
 import mongo from '#mongo'
@@ -72,6 +72,7 @@ export const getOAuthProviderByState = async (req: Request, state: string): Prom
 }
 
 async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl): Promise<PreparedOAuthProvider> {
+  console.log(oauth2.AuthorizationCode)
   const oauthClient = new oauth2.AuthorizationCode({
     client: p.client,
     auth: p.auth

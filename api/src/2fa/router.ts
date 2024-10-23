@@ -7,9 +7,8 @@ import eventsLog from '@data-fair/lib-express/events-log.js'
 import emailValidator from 'email-validator'
 import storages from '#storages'
 import { reqI18n } from '#i18n'
-import limiter from '../utils/limiter.js'
+import limiter from '../utils/limiter.ts'
 import { checkPassword, hashPassword, reqSite } from '#services'
-// const debug = require('debug')('2fa')
 
 const router = Router()
 export default router

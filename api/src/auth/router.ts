@@ -1,5 +1,5 @@
 import config, { superadmin } from '#config'
-import { Router, Request, Response, NextFunction } from 'express'
+import { Router, type Request, type Response, type NextFunction } from 'express'
 import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError } from '@data-fair/lib-express'
 import { pushEvent } from '@data-fair/lib-node/events-queue.js'
 import bodyParser from 'body-parser'
@@ -7,15 +7,14 @@ import { nanoid } from 'nanoid'
 import Cookies from 'cookies'
 import Debug from 'debug'
 import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByHost, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, unsetSessionCookies, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider } from '#services'
-import { SdStorage } from '../storages/interface.ts'
-import { User, UserWritable } from '#types'
+import type { SdStorage } from '../storages/interface.ts'
+import type { User, UserWritable } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import emailValidator from 'email-validator'
 import { reqI18n, __all } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
 import { checkPassword, type Password } from '../utils/passwords.ts'
-import * as postExchangeReq from ''
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicProviders } from './providers.ts'
 
@@ -803,7 +802,7 @@ router.get('/oauth-logout', oauthLogoutCallback)
 router.post('/oauth-logout', oauthLogoutCallback)
 
 // SAML 2
-const debugSAML = require('debug')('saml')
+const debugSAML = Debug('saml')
 
 // expose metadata to declare ourselves to identity provider
 router.get('/saml2-metadata.xml', (req, res) => {

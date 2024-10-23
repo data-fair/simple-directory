@@ -8,12 +8,13 @@ import config from '#config'
 import { reqI18n } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
-import { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
+import type { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
 import { setNbMembersLimit, sendMail, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation } from '#services'
 import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
 import { cipher } from '../utils/cipher.ts'
+import Debug from 'debug'
 
 const slug = _slug.default
 
@@ -339,7 +340,7 @@ router.delete('/:organizationId', async (req, res, next) => {
 
 if (config.managePartners) {
   // Invitation for an organization to join us as partners
-  const debugPartners = require('debug')('partners')
+  const debugPartners = Debug('partners')
   router.post('/:organizationId/partners', async (req, res, next) => {
     const logContext: EventLogContext = { req }
 

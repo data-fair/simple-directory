@@ -1,9 +1,8 @@
-const config = require('config')
-const JWK = require('./JWK.json')
-const user = require('./user.json')
-const organization = require('./organization.json')
-const mail = require('./mail.json')
-const version = require('../package.json').version
+import config from '#config'
+import JWK from './JWK.ts'
+import user from '#types/user/schema.js'
+import organization from '#types/organization/schema.js'
+import mail from './mail.ts'
 
 const authenticationParams = [{
   name: 'Authorization',
@@ -23,11 +22,10 @@ const authenticationParams = [{
   }
 }]
 
-export default  {
+export default {
   openapi: '3.0.0',
   info: Object.assign({
     title: 'API documentation',
-    version
   }, config.info),
   servers: [{
     url: config.publicUrl,
