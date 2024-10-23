@@ -11,21 +11,7 @@ ldapConfig.members.role.values = { admin: ['administrator'], user: [] }
 
 describe('ldap single org', () => {
   before(startApiServer)
-  beforeEach(clean)
-
-  // clean ldap
-  before(async () => {
-    const ldapStorage = await import('../api/src/storages/ldap.ts')
-    const storage = await ldapStorage.init(ldapConfig)
-
-    const user = await storage.getUserByEmail('alban.mouton@koumoul.com')
-    if (user) await storage._deleteUser(user.id)
-    const user2 = await storage.getUserByEmail('test@test.com')
-    if (user2) await storage._deleteUser(user2.id)
-
-    const org = await storage.getOrganization('myorg')
-    if (org) await storage._deleteOrganization(org.id)
-  })
+  beforeEach(async () => await clean({ ldapConfig }))
   after(stopApiServer)
 
   it('create and find users in static single org', async () => {
@@ -41,7 +27,6 @@ describe('ldap single org', () => {
       organizations: [{ id: 'test-single-org', role: 'admin', name: 'test single org' }]
     })
     const users = await storage.findUsers({ skip: 0, size: 10 })
-    console.log(users)
     assert.equal(users.count, 1)
     assert.ok(users.results[0].id)
     assert.ok(users.results[0].email)

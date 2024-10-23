@@ -14,10 +14,10 @@ ldapConfig.organizations.staticSingleOrg = { id: 'test-ldap', name: 'Test single
 
 describe('ldap storage per organization', () => {
   before(startApiServer)
-  beforeEach(clean)
+  beforeEach(async () => await clean({ ldapConfig }))
 
   // prepare ldap directory
-  before(async () => {
+  beforeEach(async () => {
     const ldapStorage = await import('../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(ldapConfig)
 
@@ -43,16 +43,6 @@ describe('ldap storage per organization', () => {
     })
   })
 
-  // clean ldap
-  after(async () => {
-    const ldapStorage = await import('../api/src/storages/ldap.ts')
-    const storage = await ldapStorage.init(ldapConfig)
-
-    const user = await storage.getUserByEmail('alban.mouton@koumoul.com')
-    if (user) await storage._deleteUser(user.id)
-    const user2 = await storage.getUserByEmail('alban.mouton@gmail.com')
-    if (user2) await storage._deleteUser(user2.id)
-  })
   after(stopApiServer)
 
   it('find org members from secondary ldap storage', async () => {

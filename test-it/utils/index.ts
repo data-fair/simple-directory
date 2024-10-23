@@ -15,9 +15,20 @@ export const axiosAuth = (opts: string | Omit<AxiosAuthOptions, 'directoryUrl' |
   return _axiosAuth({ ...opts, password, axiosOpts, directoryUrl })
 }
 
-export const clean = async () => {
+export const clean = async (options?: { ldapConfig?: any }) => {
   for (const name of ['users', 'organizations']) {
     await mongo.db.collection(name).deleteMany({})
+  }
+  if (options?.ldapConfig) {
+    const ldapStorage = await import('../../api/src/storages/ldap.ts')
+    const storage = await ldapStorage.init(options.ldapConfig)
+
+    for (const email of ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'test@test.com']) {
+      const user = await storage.getUserByEmail(email)
+      if (user) await storage._deleteUser(user.id)
+    }
+    const org = await storage.getOrganization('myorg')
+    if (org) await storage._deleteOrganization(org.id)
   }
 }
 

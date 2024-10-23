@@ -3,11 +3,11 @@ import { it, describe, before, beforeEach, after } from 'node:test'
 import { axios, clean, startApiServer, stopApiServer } from './utils/index.ts'
 import { promisify } from 'node:util'
 
-describe.only('mails', () => {
+describe('mails', () => {
   before(startApiServer)
-  beforeEach(clean)
+  beforeEach(async () => await clean())
   after(stopApiServer)
-  it.only('Try to send mail whithout the secret', async () => {
+  it('Try to send mail whithout the secret', async () => {
     const ax = await axios()
     await assert.rejects(ax.post('/api/mails', {}), (res: any) => res.status === 403)
   })

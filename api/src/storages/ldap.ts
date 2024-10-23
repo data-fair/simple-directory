@@ -14,8 +14,12 @@ import type { TwoFA } from '#services'
 
 const debug = Debug('ldap')
 
-function sortCompare (sort: Record<string, 1 | -1>) {
+function sortCompare (sort: Record<string, 1 | -1>, propKey?: string) {
   return function (a: Record<string, any>, b: Record<string, any>) {
+    if (propKey) {
+      a = a[propKey]
+      b = b[propKey]
+    }
     for (const key of Object.keys(sort || {})) {
       if (a[key] > b[key]) return sort[key]
       if (a[key] < b[key]) return sort[key] * -1
@@ -239,18 +243,19 @@ class LdapStorage implements SdStorage {
     const entry = this.orgMapping.to(org)
     const dnKey = this.ldapParams.organizations.dnKey
     if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
-    return `${dnKey}=${entry[dnKey]}, ${this.ldapParams.baseDN}`
+    return `${dnKey}=${entry[dnKey]},${this.ldapParams.baseDN}`
   }
 
-  async _setUserOrg (client: ldap.Client, user: User, entry: any, attrs: any, orgCache: Record<string, Organization> = {}) {
+  async _setUserOrg (client: ldap.Client, user: User, entry: ldap.SearchEntry, attrs: Record<string, any>, orgCache: Record<string, Organization> = {}) {
     let org: { id: string, name: string, department?: string } | undefined
     if (this.ldapParams.organizations.staticSingleOrg) {
       org = this.ldapParams.organizations.staticSingleOrg
     } else if (this.org) {
       org = { id: this.org.id, name: this.org.name }
     } else if (this.ldapParams.members.organizationAsDC) {
-      const dn = ldap.parseDN(entry.objectName) as any
-      const orgDC = dn.rdns[1].attrs.dc.value
+      const dn = ldap.parseDN(entry.dn.toString())
+      dn.shift()
+      const orgDC = dn.shift().toString().replace('dc=', '')
       orgCache[orgDC] = orgCache[orgDC] || await this._getOrganization(client, orgDC)
       org = orgCache[orgDC]
     } else {
@@ -355,7 +360,8 @@ class LdapStorage implements SdStorage {
         results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
         fullresults = fullresults.filter(result => result.item.name.toLowerCase().indexOf(lq) >= 0)
       }
-      fullresults.sort(sortCompare(params.sort))
+      fullresults.sort(sortCompare(params.sort, 'item'))
+      results.sort(sortCompare(params.sort))
       const count = fullresults.length
       const skip = params.skip || 0
       const size = params.size || 20
