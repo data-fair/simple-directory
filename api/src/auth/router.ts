@@ -1,5 +1,5 @@
 import config, { superadmin } from '#config'
-import { Router, type Request, type Response, type NextFunction } from 'express'
+import { Router, type RequestHandler } from 'express'
 import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError } from '@data-fair/lib-express'
 import { pushEvent } from '@data-fair/lib-node/events-queue.js'
 import bodyParser from 'body-parser'
@@ -37,7 +37,7 @@ async function confirmLog (storage: SdStorage, user: User) {
   }
 }
 
-const rejectCoreIdUser = (req: Request, res: Response, next: NextFunction) => {
+const rejectCoreIdUser: RequestHandler = (req, res, next) => {
   if (reqUser(req)?.idp) return res.status(403).send('This route is not available for users with a core identity provider')
   next()
 }
@@ -597,7 +597,7 @@ router.get('/providers', async (req, res) => {
 // OAUTH
 const debugOAuth = Debug('oauth')
 
-const oauthLogin = async (req: Request, res: Response, next: NextFunction) => {
+const oauthLogin: RequestHandler = async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const provider = await getOAuthProviderById(req, req.params.oauthId)
   if (!provider) {
@@ -622,7 +622,7 @@ const oauthLogin = async (req: Request, res: Response, next: NextFunction) => {
 router.get('/oauth/:oauthId/login', oauthLogin)
 router.get('/oidc/:oauthId/login', oauthLogin)
 
-const oauthCallback = async (req: Request, res: Response, next: NextFunction) => {
+const oauthCallback: RequestHandler = async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const site = await reqSite(req)
 
@@ -788,7 +788,7 @@ const oauthCallback = async (req: Request, res: Response, next: NextFunction) =>
 router.get('/oauth/:oauthId/callback', oauthCallback)
 router.get('/oauth-callback', oauthCallback)
 
-const oauthLogoutCallback = async (req: Request, res: Response, next: NextFunction) => {
+const oauthLogoutCallback: RequestHandler = async (req, res, next) => {
   if (!req.body.logout_token) return res.status(400).send('missing logout_token')
   const decoded = decodeToken(req.body.logout_token)
   if (!decoded) return res.status(400).send('invalid logout_token')

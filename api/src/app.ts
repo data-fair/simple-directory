@@ -1,10 +1,10 @@
 import { resolve } from 'node:path'
 import config, { uiConfig } from '#config'
 import apiDocs from '../contract/api-docs.ts'
-import express from 'express'
+import express, { type RequestHandler } from 'express'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
-import { session, errorHandler, createSiteMiddleware, createSpaMiddleware } from '@data-fair/lib-express'
+import { session, errorHandler, createSiteMiddleware, createSpaMiddleware, setReqUser } from '@data-fair/lib-express'
 import admin from './admin/router.ts'
 import anonymousAction from './anonymous-action/router.ts'
 import auth from './auth/router.ts'
@@ -32,17 +32,16 @@ app.use(bodyParser.json({ limit: '100kb' }))
 app.use(createSiteMiddleware('simple-directory'))
 app.use(session.middleware())
 
-// Replaces reqUser(req) from session with full and fresh user object from storage
-// also minimalist api key management
-/* const fullUser = async (req, res, next) => {
-  if (reqUser(req) && !reqUser(req).orgStorage && reqUser(req).id !== '_superadmin') {
+// minimalist api key management
+const readApiKey: RequestHandler = async (req, res, next) => {
+  /* if (reqUser(req) && !reqUser(req).orgStorage && reqUser(req).id !== '_superadmin') {
     reqUser(req) = {
       ...await storages.globalStorage.getUser({ id: reqUser(req).id }),
       isAdmin: reqUser(req).isAdmin,
       adminMode: reqUser(req)?.adminMode,
       activeAccount: reqUser(req).activeAccount
     }
-  }
+  } */
 
   const apiKey = req.get('x-apiKey') || req.get('x-api-key') || req.query.apiKey
   if (apiKey) {
@@ -50,24 +49,27 @@ app.use(session.middleware())
       return res.status(401).send('bad api key')
     } else {
       if (req.method !== 'GET') return res.status(403).send('api key is only for read endpoints')
-      reqUser(req) = {
-        isAdmin: true,
-        adminMode: true,
+      console.log('SET REQ USER')
+      setReqUser(req, {
+        isAdmin: 1,
+        adminMode: 1,
         id: 'readAll',
+        email: 'read-all@api-key',
+        name: 'Read all API key',
         organizations: []
-      }
+      })
     }
   }
   next()
-} */
+}
 
 app.get('/api/api-docs.json', (req, res) => res.send(apiDocs))
 app.use('/api/admin', admin)
-app.use('/api/auth/anonymous-action', anonymousAction)
+app.get('/api/auth/anonymous-action', anonymousAction)
 app.use('/api/auth', auth)
 app.use('/api/mails', mails)
-app.use('/api/users', users)
-app.use('/api/organizations', organizations)
+app.use('/api/users', readApiKey, users)
+app.use('/api/organizations', readApiKey, organizations)
 app.use('/api/invitations', invitations)
 app.use('/api/avatars', avatars)
 app.use('/api/limits', auth, limits)

@@ -10,8 +10,6 @@ export default {
     'id',
     'email',
     'name',
-    'created',
-    'updated',
     'organizations'
   ],
   properties: {

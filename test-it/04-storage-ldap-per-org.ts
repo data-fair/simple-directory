@@ -1,56 +1,67 @@
+import { strict as assert } from 'node:assert'
+import { it, describe, before, beforeEach, after } from 'node:test'
+import { axiosAuth, clean, startApiServer, stopApiServer } from './utils/index.ts'
+
 process.env.PER_ORG_STORAGE_TYPES = '["ldap"]'
-
-const assert = require('assert').strict
-const testUtils = require('../utils')
-const ldapStorage = require('../../server/storages/ldap')
-
-const ldapConfig = JSON.parse(JSON.stringify(require('config').storage.ldap))
+process.env.NODE_CONFIG_DIR = 'api/config/'
+const config = (await import('../api/src/config.ts')).default
+const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
 ldapConfig.searchUserDN = 'cn=admin,dc=example,dc=org'
 ldapConfig.searchUserPassword = 'admin'
 ldapConfig.organizations.staticSingleOrg = { id: 'test-ldap', name: 'Test single org' }
 
 // see test/resources/organizations.json to see that the org "test-ldap" has a specific configuration
 
-describe('ldap per org', () => {
-  before('prepare ldap directory', async () => {
+describe('ldap storage per organization', () => {
+  before(startApiServer)
+  beforeEach(clean)
+
+  // prepare ldap directory
+  before(async () => {
+    const ldapStorage = await import('../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(ldapConfig)
 
-    const user = await storage.getUser({ email: 'alban.mouton@koumoul.com' })
+    const user = await storage.getUserByEmail('alban.mouton@koumoul.com')
     if (user) await storage._deleteUser(user.id)
-    const user2 = await storage.getUser({ email: 'alban.mouton@gmail.com' })
+    const user2 = await storage.getUserByEmail('alban.mouton@gmail.com')
     if (user2) await storage._deleteUser(user2.id)
     await storage._createUser({
+      id: 'alban',
       name: 'Alban Mouton',
       firstName: 'Alban',
       lastName: 'Mouton',
       email: 'alban.mouton@koumoul.com',
-      organizations: [{ id: 'test-ldap', role: 'admin' }]
+      organizations: [{ id: 'test-ldap', role: 'admin', name: 'test ldap' }]
     })
     await storage._createUser({
+      id: 'alban2',
       name: 'Alban',
       firstName: 'Alban',
       lastName: '',
       email: 'alban.mouton@gmail.com',
-      organizations: [{ id: 'test-ldap', role: 'admin' }]
+      organizations: [{ id: 'test-ldap', role: 'admin', name: 'test ldap' }]
     })
   })
 
-  after('clean ldap', async () => {
+  // clean ldap
+  after(async () => {
+    const ldapStorage = await import('../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(ldapConfig)
 
-    const user = await storage.getUser({ email: 'alban.mouton@koumoul.com' })
+    const user = await storage.getUserByEmail('alban.mouton@koumoul.com')
     if (user) await storage._deleteUser(user.id)
-    const user2 = await storage.getUser({ email: 'alban.mouton@gmail.com' })
+    const user2 = await storage.getUserByEmail('alban.mouton@gmail.com')
     if (user2) await storage._deleteUser(user2.id)
   })
+  after(stopApiServer)
 
   it('find org members from secondary ldap storage', async () => {
-    const ax = await testUtils.axios('dmeadus0@answers.com:testpasswd')
+    const ax = await axiosAuth({ email: 'dmeadus0@answers.com', org: 'test-ldap' })
     let res = await ax.get('/api/organizations/test-ldap')
     assert.equal(res.status, 200)
     assert.ok(res.data.orgStorage)
     assert.ok(!res.data.orgStorage.config)
-    const adminAx = await testUtils.axios('alban.mouton@koumoul.com:testpasswd:adminMode')
+    const adminAx = await axiosAuth({ email: 'alban.mouton@koumoul.com', adminMode: true })
     res = await adminAx.get('/api/organizations/test-ldap')
     assert.equal(res.status, 200)
     assert.ok(res.data.orgStorage)

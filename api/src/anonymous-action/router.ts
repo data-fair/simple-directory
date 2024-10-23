@@ -1,4 +1,4 @@
-import { type Request, type Response, type NextFunction } from 'express'
+import { type RequestHandler } from 'express'
 import config from '#config'
 import { reqIp } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
@@ -9,7 +9,7 @@ import { signToken } from '#services'
 
 // simply get a token to perform an anonymous action in the close future
 // useful to ensure that the user is human and waits for a little while before submitting a form
-export default async (req: Request, res: Response, next: NextFunction) => {
+const route: RequestHandler = async (req, res, next) => {
   try {
     await limiter(req).consume(reqIp(req), 1)
   } catch (err) {
@@ -20,3 +20,4 @@ export default async (req: Request, res: Response, next: NextFunction) => {
   const token = await signToken(payload, config.anonymousAction.expiresIn, config.anonymousAction.notBefore)
   res.send(token)
 }
+export default route

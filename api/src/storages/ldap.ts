@@ -1,16 +1,16 @@
 import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
 import config from '#config'
 import type { LdapParams } from '#types'
-import { Organization, Partner, User, UserWritable } from '#types'
+import type { Organization, Partner, User, UserWritable } from '#types'
 import mongo from '#mongo'
 import memoize from 'memoizee'
 import { promisify } from 'util'
 import ldap from 'ldapjs'
 import Debug from 'debug'
 import { decipher } from '../utils/cipher.ts'
-import { OrganizationPost } from '#doc/organizations/post-req/index.ts'
-import { UserRef } from '@data-fair/lib-express'
-import { TwoFA } from '#services'
+import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
+import type { UserRef } from '@data-fair/lib-express'
+import type { TwoFA } from '#services'
 
 const debug = Debug('ldap')
 
@@ -138,7 +138,7 @@ class LdapStorage implements SdStorage {
 
     if (this.ldapParams.searchUserDN && this.ldapParams.searchUserPassword) {
       debug('bind service account', this.ldapParams.url, this.ldapParams.searchUserDN)
-      await bind(this.ldapParams.searchUserDN, decipher(this.ldapParams.searchUserPassword))
+      await bind(this.ldapParams.searchUserDN, decipher(this.ldapParams.searchUserPassword as any))
     } else {
       console.warn('No ldap search user credentials configured, proceed without binding a service account')
     }
@@ -333,7 +333,7 @@ class LdapStorage implements SdStorage {
   async findUsers (params: FindUsersParams) {
     debug('find users', params)
     return this.withClient(async (client) => {
-      const fullresults = (await this._getAllUsers(client)).fullResults
+      let fullresults = (await this._getAllUsers(client)).fullResults
       let results: User[] = []
 
       const orgCache = {}
@@ -353,6 +353,7 @@ class LdapStorage implements SdStorage {
       if (params.q) {
         const lq = params.q.toLowerCase()
         results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
+        fullresults = fullresults.filter(result => result.item.name.toLowerCase().indexOf(lq) >= 0)
       }
       fullresults.sort(sortCompare(params.sort))
       const count = fullresults.length

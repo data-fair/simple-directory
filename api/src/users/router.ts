@@ -1,5 +1,5 @@
 import { type Organization, type UserWritable } from '#types'
-import { Router, type Request, type Response, type NextFunction } from 'express'
+import { Router, type RequestHandler } from 'express'
 import config, { superadmin } from '#config'
 import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -14,7 +14,7 @@ import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentity
 
 const router = Router()
 
-const rejectCoreIdUser = (req: Request, res: Response, next: NextFunction) => {
+const rejectCoreIdUser: RequestHandler = (req, res, next) => {
   const session = reqSession(req)
   if (session.user?.idp) return res.status(403).send('This route is not available for users with a core identity provider')
   next()

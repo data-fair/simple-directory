@@ -1,5 +1,5 @@
 import config from '#config'
-import { Router, type Request, type Response, type NextFunction } from 'express'
+import { Router, type RequestHandler } from 'express'
 import { resolve } from 'node:path'
 import { type Account, assertAccountRole, httpError, reqSession } from '@data-fair/lib-express'
 import gm from 'gm'
@@ -40,7 +40,7 @@ const makeAvatar = async (text: string, color: string) => {
   })
 }
 
-const readAvatar = async (req: Request, res: Response, next: NextFunction) => {
+const readAvatar: RequestHandler = async (req, res, next) => {
   if (!['user', 'organization'].includes(req.params.type)) {
     return res.status(400).send('Owner type must be "user" or "organization"')
   }
@@ -101,12 +101,12 @@ const upload = multer({
   limits: { fileSize: 200000, files: 1, fields: 0 }
 })
 
-const isAdmin = (req: Request, res: Response, next: NextFunction) => {
+const isAdmin: RequestHandler = (req, res, next) => {
   assertAccountRole(reqSession(req), req.params as unknown as Account, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
   return next()
 }
 
-const writeAvatar = async (req: Request, res: Response, next: NextFunction) => {
+const writeAvatar: RequestHandler = async (req, res, next) => {
   if (!req.file) throw httpError(400)
   await setAvatar({ owner: req.params as unknown as Account, buffer: req.file.buffer })
   res.status(201).send()

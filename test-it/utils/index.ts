@@ -21,6 +21,7 @@ export const clean = async () => {
   }
 }
 
+process.env.EVENTS_LOG_LEVEL = 'silent'
 process.env.SUPPRESS_NO_CONFIG_WARNING = '1'
 
 export const startApiServer = async () => {

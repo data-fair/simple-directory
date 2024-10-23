@@ -1,5 +1,5 @@
 import config from '#config'
-import { Router, type Request, type Response, type NextFunction } from 'express'
+import { Router, type RequestHandler } from 'express'
 import { reqUser, reqSessionAuthenticated, assertAccountRole, httpError, type Account } from '@data-fair/lib-express'
 import * as limitsSchema from '#types/limits/index.ts'
 import mongo from '#mongo'
@@ -7,13 +7,13 @@ import mongo from '#mongo'
 const router = Router()
 export default router
 
-const isSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
+const isSuperAdmin: RequestHandler = (req, res, next) => {
   if (reqUser(req)?.adminMode) return next()
   if (req.query.key && req.query.key === config.secretKeys.limits) return next()
   res.status(401).send()
 }
 
-const isAccountMember = (req: Request, res: Response, next: NextFunction) => {
+const isAccountMember: RequestHandler = (req, res, next) => {
   if (req.query.key && req.query.key === config.secretKeys.limits) return next()
   const session = reqSessionAuthenticated(req)
   assertAccountRole(session, req.params as unknown as Account, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
