@@ -29,7 +29,6 @@ app.set('json spaces', 2)
 
 app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))
-
 app.use(createSiteMiddleware('simple-directory'))
 app.use(session.middleware())
 
@@ -63,8 +62,8 @@ app.use(session.middleware())
 } */
 
 app.get('/api/api-docs.json', (req, res) => res.send(apiDocs))
-app.get('/api/admin', admin)
-app.get('/api/auth/anonymous-action', anonymousAction)
+app.use('/api/admin', admin)
+app.use('/api/auth/anonymous-action', anonymousAction)
 app.use('/api/auth', auth)
 app.use('/api/mails', mails)
 app.use('/api/users', users)
@@ -83,7 +82,7 @@ app.post('/api/session/keepalive', async (req, res, next) => {
 })
 
 app.use('/api/', (req, res) => {
-  return res.status(404).send('unknown api endpoint')
+  res.status(404).send('unknown api endpoint')
 })
 app.use(tokens)
 

@@ -13,7 +13,7 @@ import storages from '#storages'
 const colorCodes = Object.values(colors).filter(c => (c as any)['600']).map(c => (c as any)['600']) as string[]
 
 const router = Router()
-export default Router
+export default router
 
 const randomColor = () => {
   return colorCodes[Math.floor(Math.random() * colorCodes.length)]

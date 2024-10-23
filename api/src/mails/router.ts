@@ -11,7 +11,7 @@ import mailsTransport from './transport.ts'
 import type { FindMembersParams } from '../storages/interface.ts'
 
 const router = Router()
-export default Router
+export default router
 
 router.post('/', async (req, res) => {
   const key = req.query.key

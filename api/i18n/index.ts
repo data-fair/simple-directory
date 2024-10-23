@@ -35,7 +35,7 @@ export const locales = [
 // {fr: {msg1: 'libellé 1'}, en: {msg1: 'label 1'}}
 const _messages: any = {}
 for (const l of locales) {
-  _messages[l.code] = await import ('./' + l.code + '.js')
+  _messages[l.code] = (await import ('./' + l.code + '.js')).default
 }
 const flatMessages = flatten(_messages, flatOpts) as Record<string, string>
 

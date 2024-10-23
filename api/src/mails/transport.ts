@@ -12,7 +12,7 @@ const maildevTransport = {
 class MailsTransport {
   private transport: Transporter | undefined
   private sendMailAsync: ((opts: SendMailOptions) => Promise<unknown>) | undefined
-  private maildev: any
+  maildev: any
 
   get sendMail () {
     if (!this.sendMailAsync) throw new Error('mails transport was not initialized')
