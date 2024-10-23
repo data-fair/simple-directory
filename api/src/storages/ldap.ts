@@ -10,7 +10,7 @@ import Debug from 'debug'
 import { decipher } from '../utils/cipher.ts'
 import { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 import { UserRef } from '@data-fair/lib-express'
-import { TwoFA } from '../2fa/service.ts'
+import { TwoFA } from '#services'
 
 const debug = Debug('ldap')
 

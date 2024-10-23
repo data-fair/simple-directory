@@ -1,11 +1,16 @@
+import type { Request } from 'express'
 import type { OpenIDConnect } from '../../config/type/index.ts'
+import { reqSiteUrl } from '@data-fair/lib-express'
 import oauth2 from 'oauth2'
 import { nanoid } from 'nanoid'
 import config from '#config'
 import mongo from '#mongo'
-import { decode } from '../tokens/service.ts'
 import standardProviders from './standard-providers.ts'
-import { completeOidcProvider } from './oidc.ts'
+import { completeOidcProvider, getOidcProviderId } from './oidc.ts'
+import { reqSite, decodeToken } from '#services'
+import { type OpenIDConnect1 } from '../../config/type/index.ts'
+
+export { getOidcProviderId } from './oidc.ts'
 
 export type OAuthUserInfo = {
   data: any,
@@ -42,7 +47,31 @@ export type PreparedOAuthProvider = OAuthProvider & {
   refreshToken (tokenObj: any, onlyIfExpired: boolean): Promise<any>
 }
 
-export async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl): Promise<PreparedOAuthProvider> {
+export const getOAuthProviderById = async (req: Request, id: string): Promise<PreparedOAuthProvider | undefined> => {
+  const site = await reqSite(req)
+  if (!site) {
+    return oauthGlobalProviders().find(p => p.id === id)
+  } else {
+    const providerInfo = site.authProviders?.find(p => p.type === 'oidc' && getOidcProviderId(p.discovery) === id) as OpenIDConnect1
+    return await initOidcProvider(providerInfo, reqSiteUrl(req) + '/simple-directory')
+  }
+}
+
+export const getOAuthProviderByState = async (req: Request, state: string): Promise<PreparedOAuthProvider | undefined> => {
+  const site = await reqSite(req)
+  if (!site) {
+    return oauthGlobalProviders().find(p => p.state === state)
+  } else {
+    for (const providerInfo of site.authProviders ?? []) {
+      if (providerInfo.type === 'oidc') {
+        const p = await initOidcProvider(providerInfo, reqSiteUrl(req) + '/simple-directory')
+        if (p.state === state) return p
+      }
+    }
+  }
+}
+
+async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl): Promise<PreparedOAuthProvider> {
   const oauthClient = new oauth2.AuthorizationCode({
     client: p.client,
     auth: p.auth
@@ -98,7 +127,7 @@ export async function initOAuthProvider (p: OAuthProvider, publicUrl = config.pu
       throw new Error('Bad OAuth code')
     }
     const token = tokenWrap.token
-    const decodedRefreshToken = decode(token.refresh_token)
+    const decodedRefreshToken = decodeToken(token.refresh_token)
     const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'
     return { token, offlineRefreshToken }
   }
@@ -107,7 +136,7 @@ export async function initOAuthProvider (p: OAuthProvider, publicUrl = config.pu
     const token = oauthClient.createToken(tokenObj)
     if (onlyIfExpired && !token.expired()) return null
     const newToken = (await token.refresh({ scope: p.scope })).token
-    const decodedRefreshToken = decode(newToken.refresh_token)
+    const decodedRefreshToken = decodeToken(newToken.refresh_token)
     const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'
     return { newToken, offlineRefreshToken }
   }
@@ -119,6 +148,10 @@ export async function initOAuthProvider (p: OAuthProvider, publicUrl = config.pu
     getToken,
     refreshToken
   }
+}
+
+export async function initOidcProvider (providerInfo: OpenIDConnect, publicUrl = config.publicUrl) {
+  return await initOAuthProvider(await completeOidcProvider(providerInfo), publicUrl)
 }
 
 let initialized = false

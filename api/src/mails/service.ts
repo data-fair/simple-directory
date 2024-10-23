@@ -1,38 +1,18 @@
 import mjml2html from 'mjml'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
-import nodemailer, { type SendMailOptions, type Transporter } from 'nodemailer'
-import { promisify } from 'node:util'
-const path = require('path')
-const fs = require('fs')
+import { join } from 'path'
+import { readFileSync } from 'node:fs'
 import config from '#config'
-const flatten = require('flat')
-const EventEmitter = require('events')
+import { flatten } from 'flat'
+import EventEmitter from 'node:events'
+import mailsTransport from './transport.ts'
 
 export const events = new EventEmitter()
 
-const mjmlTemplate = fs.readFileSync(path.join(import.meta.dirname, 'mail.mjml'), 'utf8')
-const mjmlNoButtonTemplate = fs.readFileSync(path.join(import.meta.dirname, 'mail-nobutton.mjml'), 'utf8')
-
-const maildevTransport = {
-  port: config.maildev.smtp,
-  ignoreTLS: true,
-  host: '127.0.0.1'
-}
-
-let transport: Transporter | undefined
-let sendMailAsync: ((opts: SendMailOptions) => Promise<unknown>) | undefined
-export const start = async () => {
-  transport = nodemailer.createTransport(config.maildev.active ? maildevTransport : config.mails.transport)
-  sendMailAsync = promisify(transport.sendMail).bind(transport)
-}
-
-export const stop = () => {
-  if (transport) transport.close()
-}
+const mjmlTemplate = readFileSync(join(import.meta.dirname, 'mail.mjml'), 'utf8')
+const mjmlNoButtonTemplate = readFileSync(join(import.meta.dirname, 'mail-nobutton.mjml'), 'utf8')
 
 export const sendMail = async (key: string, messages: any, to: string, params: Record<string, string>) => {
-  if (!sendMailAsync) throw new Error('mail transport was not initialized')
-
   params = {
     ...params,
     ...flatten({ theme: config.theme }),
@@ -55,16 +35,11 @@ export const sendMail = async (key: string, messages: any, to: string, params: R
     throw new Error('Error while preparing mail body')
   }
 
-  await sendMailAsync({
+  await mailsTransport.sendMail({
     from: config.mails.from,
     to,
     subject: microTemplate(messages.mails[key].subject, params),
     text: microTemplate(messages.mails[key].text, params),
     html: mjmlRes.html
   })
-}
-
-export const sendMailRaw = async (opts: SendMailOptions) => {
-  if (!sendMailAsync) throw new Error('mail transport was not initialized')
-  await sendMailAsync(opts)
 }

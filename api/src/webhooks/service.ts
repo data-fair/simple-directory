@@ -7,15 +7,15 @@ import Debug from 'debug'
 
 const debug = Debug('webhooks')
 
-export async function postUserIdentity (user?: Pick<User, 'id' | 'name' | 'organizations'>) {
+export async function postUserIdentityWebhook (user?: Pick<User, 'id' | 'name' | 'organizations'>) {
   if (!user) return
-  await postIdentity({ type: 'user', id: user.id, name: user.name, organizations: user.organizations })
+  await postIdentityWebhook({ type: 'user', id: user.id, name: user.name, organizations: user.organizations })
 }
-export async function postOrganizationIdentity (org: Pick<Organization, 'id' | 'name' | 'departments'>) {
-  await postIdentity({ type: 'organization', id: org.id, name: org.name, departments: org.departments })
+export async function postOrganizationIdentityWebhook (org: Pick<Organization, 'id' | 'name' | 'departments'>) {
+  await postIdentityWebhook({ type: 'organization', id: org.id, name: org.name, departments: org.departments })
 }
 
-export const postIdentity = async (identity: PostIdentityReq['body'] & PostIdentityReq['params']) => {
+const postIdentityWebhook = async (identity: PostIdentityReq['body'] & PostIdentityReq['params']) => {
   for (const webhook of config.webhooks.identities) {
     const url = `${webhook.base}/${identity.type}/${identity.id}`
     debug(`Send identity name webhook to ${url} : `, identity)
@@ -27,7 +27,7 @@ export const postIdentity = async (identity: PostIdentityReq['body'] & PostIdent
   }
 }
 
-export const deleteIdentity = async (type: string, id: string) => {
+export const deleteIdentityWebhook = async (type: string, id: string) => {
   for (const webhook of config.webhooks.identities) {
     const url = `${webhook.base}/${type}/${id}`
     debug(`Send identity delete webhook to ${url}`)

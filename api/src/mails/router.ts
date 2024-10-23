@@ -7,7 +7,7 @@ import mongo from '#mongo'
 import { RateLimiterMongo } from 'rate-limiter-flexible'
 import emailValidator from 'email-validator'
 import { reqI18n } from '#i18n'
-import { sendMailRaw } from './service.ts'
+import mailsTransport from './transport.ts'
 import { FindMembersParams } from '../storages/interface.ts'
 
 const router = Router()
@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
     if (req.body.html) {
       mail.html = req.body.html
     }
-    results.push(await sendMailRaw(mail))
+    results.push(await mailsTransport.sendMail(mail))
   }
   res.send(results)
 })
@@ -106,6 +106,6 @@ router.post('/contact', async (req, res) => {
     text
   }
 
-  await sendMailRaw(mail)
+  await mailsTransport.sendMail(mail)
   res.send(req.body)
 })

@@ -14,15 +14,11 @@ import * as patchMemberReq from '#doc/organizations/patch-member-req/index.ts'
 import * as postPartnerReq from '#doc/organizations/post-partner-req/index.ts'
 import * as postPartnerAcceptReq from '#doc/organizations/post-partner-accept-req/index.ts'
 import { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
-import { setNbMembers } from '../limits/service.ts'
-import { sendMail } from '../mails/service.ts'
+import { setNbMembersLimit, sendMail, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation } from '#services'
 import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
-import { postOrganizationIdentity, postUserIdentity, deleteIdentity } from '../webhooks.ts'
 import _slug from 'slugify'
-import { keepalive, sign } from '../tokens/service.ts'
 import { cipher } from '../utils/cipher.ts'
-import { shortenPartnerInvitation, unshortenPartnerInvitation } from '../utils/partners.ts'
 
 const slug = _slug.default
 
@@ -127,7 +123,7 @@ router.post('', async (req, res, next) => {
   const createdOrga = await storage.createOrganization(orga, user)
   eventsLog.info('sd.org.create', `a user created an organization: ${orga.name} (${orga.id})`, logContext)
   if (!reqUser(req)?.adminMode || req.query.autoAdmin !== 'false') await storage.addMember(createdOrga, user, 'admin')
-  postOrganizationIdentity(orga)
+  postOrganizationIdentityWebhook(orga)
 
   // update session info
   await keepalive(req, res)
@@ -174,7 +170,7 @@ router.patch('/:organizationId', async (req, res, next) => {
   eventsLog.info('sd.org.patch', `a user patched the organization info ${Object.keys(patch).join(', ')} - ${patchedOrga.name} ${patchedOrga.id}`, logContext)
 
   await mongo.limits.updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
-  postOrganizationIdentity(patchedOrga)
+  postOrganizationIdentityWebhook(patchedOrga)
 
   // update session info
   await keepalive(req, res)
@@ -274,16 +270,16 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
 
   eventsLog.info('sd.org.member.del', `a user removed a member from an organization ${member.name} (${member.id}), ${req.params.organizationId}`, logContext)
   await storage.removeMember(req.params.organizationId, req.params.userId, dep)
-  await setNbMembers(req.params.organizationId)
+  await setNbMembersLimit(req.params.organizationId)
 
   const user = await storage.getUser(req.params.userId)
   if (!user) return res.status(404).send('user not found')
   if (config.onlyCreateInvited && !user.organizations.length) {
     eventsLog.info('sd.org.member.del-user', `a user was removed after being excluded from last organization ${user.name} (${user.id})`, logContext)
     await storage.deleteUser(req.params.userId)
-    deleteIdentity('user', user.id)
+    deleteIdentityWebhook('user', user.id)
   } else {
-    postUserIdentity(user)
+    postUserIdentityWebhook(user)
   }
 
   // update session info
@@ -319,7 +315,7 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
   if (!roles.includes(body.role)) return res.status(400).send(reqI18n(req).messages.errors.unknownRole.replace('{role}', body.role))
   await storage.patchMember(req.params.organizationId, req.params.userId, query.department, body)
   eventsLog.info('sd.org.member.patch', `a user changed the role of a member in an organization ${member.name} (${member.id}) ${body.role} ${body.department ?? ''}`, logContext)
-  postUserIdentity(await storage.getUser(req.params.userId))
+  postUserIdentityWebhook(await storage.getUser(req.params.userId))
 
   // update session info
   await keepalive(req, res)
@@ -338,7 +334,7 @@ router.delete('/:organizationId', async (req, res, next) => {
   if (count > 1) return res.status(400).send(reqI18n(req).messages.errors.nonEmptyOrganization)
   await storages.globalStorage.deleteOrganization(req.params.organizationId)
   eventsLog.info('sd.org.delete', `a user deleted an organization ${req.params.organizationId}`, logContext)
-  deleteIdentity('organization', req.params.organizationId)
+  deleteIdentityWebhook('organization', req.params.organizationId)
 
   // update session info
   await keepalive(req, res)
@@ -365,7 +361,7 @@ if (config.managePartners) {
 
     const partnerId = nanoid()
 
-    const token = await sign(shortenPartnerInvitation(partnerPost, orga, partnerId), config.jwtDurations.partnerInvitationToken)
+    const token = await signToken(shortenPartnerInvitation(partnerPost, orga, partnerId), config.jwtDurations.partnerInvitationToken)
 
     await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
     eventsLog.info('sd.org.partner.invite', `a user invited an organization to be a partner ${partnerPost.name} ${partnerPost.contactEmail} ${orga.name} ${orga.id}`, logContext)

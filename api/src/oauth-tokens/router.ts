@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { reqUser } from '@data-fair/lib-express'
-import { readOAuthTokens } from './service.ts'
+import { readOAuthTokens } from '#services'
 
 const router = Router()
 export default router

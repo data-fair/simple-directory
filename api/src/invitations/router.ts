@@ -8,16 +8,13 @@ import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 import { reqI18n } from '#i18n'
 import storages from '#storages'
-import { getLimits, setNbMembers } from '../limits/service.ts'
-import { reqSite, getSiteByHost } from '../sites/service.ts'
+import { getLimits, setNbMembersLimit, reqSite, getSiteByHost, shortenInvit, unshortenInvit, sendMail, decodeToken, signToken, postUserIdentityWebhook } from '#services'
 import { __all } from '#i18n'
 import * as postReq from '#doc/invitations/post-req/index.ts'
 import emailValidator from 'email-validator'
-import { shortenInvit, unshortenInvit } from './service.ts'
-import * as tokens from '../tokens/service.ts'
-import { sendMail } from '../mails/service.ts'
-const webhooks = require('../webhooks')
-const debug = require('debug')('invitations')
+import Debug from 'debug'
+
+const debug = Debug('invitations')
 
 const router = Router()
 export default router
@@ -75,7 +72,7 @@ router.post('', async (req, res, next) => {
     if (existingUser && existingUser.emailConfirmed) {
       debug('in alwaysAcceptInvitation and the user already exists, immediately add it as member', invitation.email)
       await storage.addMember(orga, existingUser, invitation.role, invitation.department)
-      await setNbMembers(orga.id)
+      await setNbMembersLimit(orga.id)
       pushEvent({
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
         topic: { key: 'simple-directory:invitation-sent' },
@@ -96,7 +93,7 @@ router.post('', async (req, res, next) => {
       const reboundRedirect = new URL(invitation.redirect || config.invitationRedirect || `${reqSiteUrl(req) + '/simple-directory'}/invitation`)
       const newUser = await storage.createUser(newUserDraft, user, new URL(reboundRedirect).host)
       await storage.addMember(orga, newUser, invitation.role, invitation.department)
-      await setNbMembers(orga.id)
+      await setNbMembersLimit(orga.id)
       const linkUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
       linkUrl.searchParams.set('step', 'createUser')
       linkUrl.searchParams.set('invit_token', token)
@@ -177,7 +174,7 @@ router.get('/_accept', async (req, res, next) => {
     // if the token was once valid, but deprecated we accept it partially
     // meaning that we will not perform writes based on it
     // but we accept to check the user's existence and create the best redirect for him
-    invit = unshortenInvit(tokens.decode(req.query.invit_token))
+    invit = unshortenInvit(decodeToken(req.query.invit_token))
     verified = false
   }
   debug('accept invitation', invit, verified)
@@ -206,19 +203,23 @@ router.get('/_accept', async (req, res, next) => {
   if (existingUser && existingUser.organizations && existingUser.organizations.find(o => o.id === invit.id && (o.department || null) === (invit.department || null))) {
     debug('invitation was already accepted, redirect', redirectUrl.href)
     // missing password, invitation must have been accepted without completing account creation
-    if (!await storage.getPassword(invit.email) && !config.passwordless) {
-      const payload = { id: existingUser.id, email: existingUser.email, action: 'changePassword' }
-      const token = await sign(payload, config.jwtDurations.initialToken)
-      const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
-      redirectUrl.searchParams.set('step', 'changePassword')
-      redirectUrl.searchParams.set('email', invit.email)
-      redirectUrl.searchParams.set('id_token_org', invit.id)
-      if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
-      redirectUrl.searchParams.set('action_token', token)
-      redirectUrl.searchParams.set('redirect', reboundRedirect)
-      debug('redirect to changePassword step', redirectUrl.href)
-      return res.redirect(redirectUrl.href)
+    if (!storage.getPassword) {
+      throw new Error('missing password verification implementation')
+    } else {
+      if (!await storage.getPassword(invit.email) && !config.passwordless) {
+        const payload = { id: existingUser.id, email: existingUser.email, action: 'changePassword' }
+        const token = await signToken(payload, config.jwtDurations.initialToken)
+        const reboundRedirect = redirectUrl.href
+        redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
+        redirectUrl.searchParams.set('step', 'changePassword')
+        redirectUrl.searchParams.set('email', invit.email)
+        redirectUrl.searchParams.set('id_token_org', invit.id)
+        if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
+        redirectUrl.searchParams.set('action_token', token)
+        redirectUrl.searchParams.set('redirect', reboundRedirect)
+        debug('redirect to changePassword step', redirectUrl.href)
+        return res.redirect(redirectUrl.href)
+      }
     }
     if (!loggedUser || loggedUser.email !== invit.email) {
       const reboundRedirect = redirectUrl.href
@@ -270,9 +271,9 @@ router.get('/_accept', async (req, res, next) => {
     recipient: { id: existingUser.id, name: existingUser.name }
   })
 
-  webhooks.postIdentity('user', await storage.getUser(existingUser.id))
+  postUserIdentityWebhook(await storage.getUser(existingUser.id))
 
-  await setNbMembers(orga.id)
+  await setNbMembersLimit(orga.id)
 
   res.redirect(redirectUrl.href)
 })

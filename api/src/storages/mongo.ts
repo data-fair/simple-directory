@@ -3,7 +3,7 @@ import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersPa
 import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
 import config from '#config'
-import { TwoFA } from '../2fa/service.ts'
+import { TwoFA } from '#services'
 import { httpError, type UserRef } from '@data-fair/lib-express'
 import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
 import mongo from '#mongo'

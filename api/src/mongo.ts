@@ -1,5 +1,5 @@
 import type { Site, Limits, OAuthToken, MemberOverwrite, OrganizationOverwrite } from '#types'
-import type { Avatar } from './avatars/service.ts'
+import type { Avatar } from '#services'
 import type { OrgInDb, UserInDb } from './storages/mongo.ts'
 
 import mongo from '@data-fair/lib-node/mongo.js'

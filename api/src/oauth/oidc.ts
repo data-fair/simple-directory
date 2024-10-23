@@ -8,7 +8,7 @@ import _slug from 'slugify'
 const slug = _slug.default
 const debug = Debug('oauth')
 
-export const getProviderId = (url: string) => {
+export const getOidcProviderId = (url: string) => {
   let host = url
   try {
     host = new URL(url).host
@@ -19,7 +19,7 @@ export const getProviderId = (url: string) => {
 }
 
 export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProvider> {
-  const id = getProviderId(p.discovery)
+  const id = getOidcProviderId(p.discovery)
   let discoveryContent = (await mongo.oidcDiscovery.findOne({ _id: id }))?.content
   if (discoveryContent) {
     debug(`Read pre-fetched OIDC discovery info from db for provider ${id}`, discoveryContent)

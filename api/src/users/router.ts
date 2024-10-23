@@ -10,19 +10,11 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import { FindUsersParams } from '../storages/interface.ts'
-import { unshortenInvit } from '../invitations/service.ts'
-import { reqSite } from '../sites/service.ts'
-import { validatePassword, hashPassword } from '../utils/passwords.ts'
-import { deleteIdentity } from '../webhooks.ts'
-import { sendMail } from '../mails/service.ts'
-import { getLimits, setNbMembers } from '../limits/service.ts'
-import { getPayload, getDefaultUserOrg, prepareCallbackUrl } from '../tokens/service.ts'
+import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMail, getLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken } from '#services'
 import * as postReq from '#doc/users/post-req/index.ts'
 import * as patchReq from '#doc/users/patch-req/index.ts'
 import * as postPasswordReq from '#doc/users/post-password-req/index.ts'
 import * as postHostReq from '#doc/users/post-host-req/index.ts'
-import { postUserIdentity } from '../webhooks.ts'
-import { keepalive, sign } from '../tokens/service.ts'
 
 const router = Router()
 
@@ -161,19 +153,19 @@ router.post('', async (req, res, next) => {
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: createdUser.name, email: createdUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
     })
-    await setNbMembers(orga.id)
+    await setNbMembersLimit(orga.id)
   }
 
   if (invit) {
     // no need to confirm email if the user already comes from an invitation link
     // we already created the user with emailConfirmed=true
-    const payload = getPayload(createdUser)
+    const payload = getTokenPayload(createdUser)
     const linkUrl = await prepareCallbackUrl(req, payload, req.query.redirect as string | undefined, getDefaultUserOrg(createdUser, invit && invit.id, invit && invit.department))
     return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication
     // the user will be validated and authenticated at the same time by the token_callback route
-    const payload = { ...getPayload(createdUser), emailConfirmed: true }
+    const payload = { ...getTokenPayload(createdUser), emailConfirmed: true }
     const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, query.org, query.dep))
     await sendMail('creation', reqI18n(req).messages, body.email, { link: linkUrl.href })
     // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
@@ -221,7 +213,7 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
   const patchedUser = await storages.globalStorage.patchUser(req.params.userId, patch, session.user)
 
   if (patchedUser.name !== session.user.name) {
-    postUserIdentity(patchedUser)
+    postUserIdentityWebhook(patchedUser)
   }
 
   eventsLog.info('sd.user.patch', `user was patched ${patchedUser.name} (${patchedUser.id})`, logContext)
@@ -275,7 +267,7 @@ router.delete('/:userId', async (req, res, next) => {
 
   eventsLog.info('sd.user.del', `user was deleted ${req.params.userId}`, logContext)
 
-  deleteIdentity('user', req.params.userId)
+  deleteIdentityWebhook('user', req.params.userId)
   res.status(204).send()
 })
 
@@ -326,7 +318,7 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
       email: decoded.email,
       action: 'changePassword'
     }
-    const token = await sign(payload, config.jwtDurations.initialToken)
+    const token = await signToken(payload, config.jwtDurations.initialToken)
     res.send(token)
   } else {
     res.status(204).send()

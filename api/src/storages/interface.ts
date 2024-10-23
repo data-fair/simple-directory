@@ -2,8 +2,7 @@ import type { User, UserWritable, Organization, Site, Member, Partner } from '#t
 import { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import type { UserRef } from '@data-fair/lib-express'
-import type { Password } from '../utils/passwords.ts'
-import type { TwoFA } from '../2fa/service.ts'
+import type { TwoFA, Password } from '#services'
 
 export type FindMembersParams = {
   q?: string,

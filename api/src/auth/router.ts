@@ -5,9 +5,8 @@ import { pushEvent } from '@data-fair/lib-node/events-queue.js'
 import bodyParser from 'body-parser'
 import { nanoid } from 'nanoid'
 import Cookies from 'cookies'
-import _slug from 'slugify'
 import Debug from 'debug'
-import { postUserIdentity } from '../webhooks.ts'
+import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByHost, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, unsetSessionCookies, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider } from '#services'
 import { SdStorage } from '../storages/interface.ts'
 import { User, UserWritable } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -16,24 +15,12 @@ import { reqI18n, __all } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
 import { checkPassword, type Password } from '../utils/passwords.ts'
-import { getPayload, prepareCallbackUrl, sign, decode, setCookieToken, getDefaultUserOrg, unsetCookies, keepalive } from '../tokens/service.ts'
 import * as postPasswordReq from '#doc/auth/post-password-req/index.ts'
 import * as postPasswordlessReq from '#doc/auth/post-passwordless-req/index.ts'
 import * as postTokenCallbackReq from '#doc/auth/post-token-callback-req/index.ts'
 import * as postExchangeReq from '#doc/auth/post-exchange-req/index.ts'
-import { reqSite, getSiteByHost } from '../sites/service.ts'
-import { check2FASession, is2FAValid, cookie2FAName } from '../2fa/service.ts'
-import { sendMail } from '../mails/service.ts'
-import { oauthGlobalProviders, initOAuthProvider, PreparedOAuthProvider } from '../oauth/service.ts'
-import { getProviderId, completeOidcProvider } from '../oauth/oidc.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
-import { logoutOAuthToken, readOAuthToken, writeOAuthToken } from '../oauth-tokens/service.ts'
-import { authCoreProviderMemberInfo, patchCoreOAuthUser } from './service.ts'
 import { publicProviders } from './providers.ts'
-import { type OpenIDConnect1 } from '../../config/type/index.ts'
-import { unshortenInvit } from '../invitations/service.ts'
-import { getLimits, setNbMembers } from '../limits/service.ts'
-import { getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider } from '../saml2/service.ts'
 
 const debug = Debug('auth')
 
@@ -49,7 +36,7 @@ async function confirmLog (storage: SdStorage, user: User) {
     await storage.updateLogged(user.id)
     if (user.emailConfirmed === false) {
       await storage.confirmEmail(user.id)
-      postUserIdentity(user)
+      postUserIdentityWebhook(user)
     }
   }
 }
@@ -117,7 +104,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   if (config.adminCredentials?.password && config.adminCredentials.email === body.email) {
     const validPassword = await checkPassword(body.password, config.adminCredentials.password as Password)
     if (validPassword) {
-      const payload = getPayload(superadmin)
+      const payload = getTokenPayload(superadmin)
       payload.adminMode = 1
       const callbackUrl = (await prepareCallbackUrl(req, payload, query.redirect)).href
       debug('Password based authentication of superadmin with password from config', callbackUrl)
@@ -147,11 +134,13 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       eventsLog.info('sd.auth.password.fail', `a user failed to authenticate with a wrong password email=${body.email}`, logContext)
       return returnError('badCredentials', 400)
     }
-  } else {
+  } else if (storage.checkPassword) {
     if (!await storage.checkPassword(user.id, body.password)) {
       eventsLog.info('sd.auth.password.fail', `a user failed to authenticate with a wrong password email=${body.email}`, logContext)
       return returnError('badCredentials', 400)
     }
+  } else {
+    throw new Error('missing password verification implementation')
   }
   if (org && body.membersOnly && !user.organizations.find(o => o.id === org.id)) {
     eventsLog.info('sd.auth.password.fail', 'a user failed to authenticate as they are not a member of targeted org', logContext)
@@ -164,7 +153,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       email: user.email,
       action: 'changeHost'
     }
-    const token = await sign(payload, config.jwtDurations.initialToken)
+    const token = await signToken(payload, config.jwtDurations.initialToken)
     const changeHostUrl = new URL((site.host.startsWith('localhost') ? 'http://' : 'https://') + site.host + '/simple-directory/login')
     changeHostUrl.searchParams.set('action_token', token)
     eventsLog.info('sd.auth.password.change-host', 'a user is suggested to switch to secondary host', logContext)
@@ -175,7 +164,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
-  const payload = getPayload(user)
+  const payload = getTokenPayload(user)
   if (body.adminMode) {
     if (payload.isAdmin) payload.adminMode = 1
     else {
@@ -206,8 +195,8 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       } else {
         // 2FA token sent alongside email/password
         const cookies = new Cookies(req, res)
-        const token = await sign({ user: user.id }, config.jwtDurations['2FAToken'])
-        const payload = decode(token)
+        const token = await signToken({ user: user.id }, config.jwtDurations['2FAToken'])
+        const payload = decodeToken(token)
         const cookieOpts: Cookies.SetOption = { sameSite: 'lax', httpOnly: true }
         if (payload?.exp) cookieOpts.expires = new Date(payload.exp * 1000)
         cookies.set(cookie2FAName(user.id), token, cookieOpts)
@@ -226,8 +215,8 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   eventsLog.info('sd.auth.password.ok', 'a user successfully authenticated using password', logContext)
   // this is used by data-fair app integrated login
   if (req.is('application/x-www-form-urlencoded')) {
-    const token = await sign(payload, config.jwtDurations.exchangedToken)
-    setCookieToken(req, res, token, getDefaultUserOrg(user, orgId, depId))
+    const token = await signToken(payload, config.jwtDurations.exchangedToken)
+    setSessionCookies(req, res, token, getDefaultUserOrg(user, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
     res.redirect(query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me')
   } else {
@@ -288,7 +277,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
-  const payload = getPayload(user)
+  const payload = getTokenPayload(user)
   if (req.body.rememberMe) payload.rememberMe = true
 
   // passwordless is not compatible with 2FA for now
@@ -316,7 +305,7 @@ router.post('/site_redirect', async (req, res, next) => {
   if (!req.body.redirect) return res.status(400).send()
   const site = await getSiteByHost(new URL(req.body.redirect).host)
   if (!site) return res.status(404).send('site not found')
-  const payload = getPayload(user)
+  const payload = getTokenPayload(user)
   const callbackUrl = (await prepareCallbackUrl(req, payload, req.body.redirect, getDefaultUserOrg(user, req.body.org, req.body.dep))).href
   debug(`Redirect auth of user ${user.name} to site ${site.host}`, callbackUrl)
 
@@ -360,13 +349,13 @@ router.get('/token_callback', async (req, res, next) => {
 
   const reboundRedirect = query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me'
 
-  const payload = getPayload(user)
+  const payload = getTokenPayload(user)
   if (decoded.rememberMe) payload.rememberMe = true
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = 1
-  const token = await sign(payload, config.jwtDurations.exchangedToken)
+  const token = await signToken(payload, config.jwtDurations.exchangedToken)
 
   await confirmLog(storage, user)
-  setCookieToken(req, res, token, getDefaultUserOrg(user, query.id_token_org, query.id_token_dep))
+  setSessionCookies(req, res, token, getDefaultUserOrg(user, query.id_token_org, query.id_token_dep))
 
   eventsLog.info('sd.auth.callback.ok', 'a session was initialized after successful auth', logContext)
 
@@ -415,7 +404,7 @@ router.post('/exchange', async (req, res, next) => {
     eventsLog.info('sd.auth.exchange.fail', 'a deleted user tried to prolongate a session', logContext)
     return res.status(401).send('User does not exist anymore')
   }
-  const payload = getPayload(user)
+  const payload = getTokenPayload(user)
   if (decoded.adminMode && req.query.noAdmin !== 'true') payload.adminMode = 1
   if (decoded.asAdmin) {
     payload.asAdmin = decoded.asAdmin
@@ -427,12 +416,12 @@ router.post('/exchange', async (req, res, next) => {
       if (user.emailConfirmed === false) {
         eventsLog.info('sd.auth.exchange.fail', 'a email was confirmed for the first time', logContext)
         await storage.confirmEmail(decoded.id)
-        postUserIdentity(user)
+        postUserIdentityWebhook(user)
       }
     }
   }
   if (decoded.rememberMe) payload.rememberMe = true
-  const token = await sign(payload, config.jwtDurations.exchangedToken)
+  const token = await signToken(payload, config.jwtDurations.exchangedToken)
 
   eventsLog.info('sd.auth.exchange.ok', 'a session token was successfully exchanged for a new one', logContext)
 
@@ -456,21 +445,21 @@ router.post('/keepalive', async (req, res, next) => {
     if (!site) {
       provider = oauthGlobalProviders().find(p => p.id === coreIdProvider.id)
     } else {
-      const providerInfo = site.authProviders?.find(p => p.type === 'oidc' && getProviderId(p.discovery) === coreIdProvider.id) as OpenIDConnect
-      provider = await initOAuthProvider(await completeOidcProvider(providerInfo), reqSiteUrl(req) + '/simple-directory')
+      const providerInfo = site.authProviders?.find(p => p.type === 'oidc' && getOidcProviderId(p.discovery) === coreIdProvider.id) as OpenIDConnect
+      provider = await initOidcProvider(providerInfo, reqSiteUrl(req) + '/simple-directory')
     }
     if (!provider) {
-      unsetCookies(req, res)
+      unsetSessionCookies(req, res)
       return res.status(401).send('Fournisseur d\'identité principal inconnu')
     }
     const oauthToken = (await readOAuthToken(user, provider))
 
     if (!oauthToken) {
-      unsetCookies(req, res)
+      unsetSessionCookies(req, res)
       return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
     }
     if (oauthToken.loggedOut) {
-      unsetCookies(req, res)
+      unsetSessionCookies(req, res)
       return res.status(401).send('Utilisateur déconnecté depuis le fournisseur d\'identité principal')
     }
     const tokenJson = oauthToken.token
@@ -486,7 +475,7 @@ router.post('/keepalive', async (req, res, next) => {
         eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }
     } catch (err: any) {
-      unsetCookies(req, res)
+      unsetSessionCookies(req, res)
       eventsLog.info('sd.auth.keepalive.oauth-refresh-ko', `a user failed to refresh their info from their core identity provider ${provider.id} (${err.message})`, { req })
       // TODO: can we be confident enough in this to actually delete the user ? or maybe flag it as disabled so that it is removed from listings ?
       return res.status(401).send('Échec de prolongation de la session avec le fournisseur d\'identité principal')
@@ -501,7 +490,7 @@ router.post('/keepalive', async (req, res, next) => {
 router.delete('/', async (req, res) => {
   const logContext: EventLogContext = { req }
 
-  unsetCookies(req, res)
+  unsetSessionCookies(req, res)
   eventsLog.info('sd.auth.session-delete', 'a session was deleted', logContext)
   res.status(204).send()
 })
@@ -543,7 +532,7 @@ router.post('/action', async (req, res, next) => {
     email: user.email,
     action
   }
-  const token = await sign(payload, config.jwtDurations.initialToken)
+  const token = await signToken(payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(req.body.target || reqSiteUrl(req) + '/simple-directory/login')
   linkUrl.searchParams.set('action_token', token)
 
@@ -569,13 +558,13 @@ router.post('/asadmin', async (req, res, next) => {
   const storage = storages.globalStorage
   const user = await storage.getUser(req.body.id)
   if (!user) return res.status(404).send('User does not exist')
-  const payload = getPayload(user)
+  const payload = getTokenPayload(user)
   payload.name += ' (administration)'
   payload.asAdmin = { id: loggedUser.id, name: loggedUser.name }
   delete payload.isAdmin
-  const token = await sign(payload, config.jwtDurations.exchangedToken)
+  const token = await signToken(payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
-  setCookieToken(req, res, token, getDefaultUserOrg(user))
+  setSessionCookies(req, res, token, getDefaultUserOrg(user))
 
   eventsLog.info('sd.auth.asadmin.ok', 'a session was created as a user from an admin session', logContext)
 
@@ -589,11 +578,11 @@ router.delete('/asadmin', async (req, res, next) => {
   const storage = storages.globalStorage
   const user = loggedUser.asAdmin.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.asAdmin.id)
   if (!user) return res.status(401).send('User does not exist anymore')
-  const payload = getPayload(user)
+  const payload = getTokenPayload(user)
   payload.adminMode = 1
-  const token = await sign(payload, config.jwtDurations.exchangedToken)
+  const token = await signToken(payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
-  setCookieToken(req, res, token, getDefaultUserOrg(user))
+  setSessionCookies(req, res, token, getDefaultUserOrg(user))
 
   eventsLog.info('sd.auth.asadmin.done', 'a session as a user from an admin session was terminated', logContext)
 
@@ -611,30 +600,6 @@ router.get('/providers', async (req, res) => {
 
 // OAUTH
 const debugOAuth = Debug('oauth')
-
-const getOAuthProviderById = async (req: Request, id: string): Promise<PreparedOAuthProvider | undefined> => {
-  const site = await reqSite(req)
-  if (!site) {
-    return oauthGlobalProviders().find(p => p.id === id)
-  } else {
-    const providerInfo = site.authProviders?.find(p => p.type === 'oidc' && getProviderId(p.discovery) === id) as OpenIDConnect1
-    return await initOAuthProvider(await completeOidcProvider(providerInfo), reqSiteUrl(req) + '/simple-directory')
-  }
-}
-
-const getOAuthProviderByState = async (req: Request, state: string): Promise<PreparedOAuthProvider | undefined> => {
-  const site = await reqSite(req)
-  if (!site) {
-    return oauthGlobalProviders().find(p => p.state === state)
-  } else {
-    for (const providerInfo of site.authProviders ?? []) {
-      if (providerInfo.type === 'oidc') {
-        const p = await initOAuthProvider(await completeOidcProvider(providerInfo), reqSiteUrl(req) + '/simple-directory')
-        if (p.state === state) return p
-      }
-    }
-  }
-}
 
 const oauthLogin = async (req: Request, res: Response, next: NextFunction) => {
   const logContext: EventLogContext = { req }
@@ -800,14 +765,14 @@ const oauthCallback = async (req: Request, res: Response, next: NextFunction) =>
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
     })
-    await setNbMembers(invitOrga.id)
+    await setNbMembersLimit(invitOrga.id)
   }
 
   if (provider.coreIdProvider) {
     await writeOAuthToken(user, provider, token, offlineRefreshToken)
   }
 
-  const payload = getPayload(user)
+  const payload = getTokenPayload(user)
   if (adminMode) {
     // TODO: also check that the user actually inputted the password on this redirect
     if (payload.isAdmin) payload.adminMode = 1
@@ -829,7 +794,7 @@ router.get('/oauth-callback', oauthCallback)
 
 const oauthLogoutCallback = async (req: Request, res: Response, next: NextFunction) => {
   if (!req.body.logout_token) return res.status(400).send('missing logout_token')
-  const decoded = decode(req.body.logout_token)
+  const decoded = decodeToken(req.body.logout_token)
   if (!decoded) return res.status(400).send('invalid logout_token')
   if (decoded.typ !== 'Logout') return res.status(400).send('invalid logout_token type')
   if (!decoded.sid) return res.status(400).send('missing sid in logout_token')
@@ -1010,10 +975,10 @@ router.post('/saml2-assert', async (req, res) => {
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
     })
-    await setNbMembers(invitOrga.id)
+    await setNbMembersLimit(invitOrga.id)
   }
 
-  const payload = getPayload(user)
+  const payload = getTokenPayload(user)
   if (adminMode) {
     // TODO: also check that the user actually inputted the password on this redirect
     if (payload.isAdmin) payload.adminMode = 1

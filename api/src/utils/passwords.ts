@@ -31,7 +31,7 @@ export const hashPassword = async (password: string): Promise<HashedPassword> =>
 }
 
 // Use the same salt and params as used to derive the original key
-export const checkPassword = async (password: string, storedPassword: Password) => {
+export const checkPassword = async (password: string, storedPassword: Password | undefined) => {
   if (!password || !storedPassword) return false
   // minimalist storage engines can store password in clear text
   if (isClearPassword(storedPassword)) {

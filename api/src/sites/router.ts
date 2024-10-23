@@ -7,8 +7,8 @@ import * as listReq from '#doc/sites/list-req/index.ts'
 import * as postReq from '#doc/sites/post-req/index.ts'
 import * as patchReq from '#doc/sites/patch-req/index.ts'
 import { findAllSites, findOwnerSites, patchSite, deleteSite } from './service.ts'
-import { reqSite } from './service.ts'
-import { getProviderId } from '../oauth/oidc.ts'
+import { reqSite } from '#services'
+import { getOidcProviderId } from '../oauth/oidc.ts'
 
 const router = Router()
 export default router
@@ -28,7 +28,7 @@ router.get('', async (req, res, next) => {
     result.logo = result.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
     if (result.authProviders) {
       for (const p of result.authProviders) {
-        if (p.type === 'oidc') p.id = getProviderId(p.discovery)
+        if (p.type === 'oidc') p.id = getOidcProviderId(p.discovery)
       }
     }
   }

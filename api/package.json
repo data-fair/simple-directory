@@ -8,6 +8,7 @@
   "imports": {
     "#config": "./src/config.ts",
     "#mongo": "./src/mongo.ts",
+    "#services": "./src/services.ts",
     "#doc/*": "./doc/*",
     "#types": "./types/index.ts",
     "#types/*": "./types/*",

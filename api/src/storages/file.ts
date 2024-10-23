@@ -9,7 +9,7 @@ import { Password } from '../utils/passwords.ts'
 import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 import { UserRef } from '@data-fair/lib-express'
-import { TwoFA } from '../2fa/service.ts'
+import { TwoFA } from '#services'
 
 type StoredOrganization = Omit<Organization, 'members'> & { members: { id: string, role: string, department?: string }[] }
 

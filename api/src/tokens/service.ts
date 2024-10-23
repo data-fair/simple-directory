@@ -8,9 +8,9 @@ import jwt, { type SignOptions, type JwtPayload } from 'jsonwebtoken'
 import Cookies from 'cookies'
 import storages from '#storages'
 import { getSignatureKeys } from './keys-manager.ts'
-import { reqSite } from '../sites/service.ts'
+import { reqSite } from '#services'
 
-export const sign = async (payload: any, expiresIn: string, notBefore?: string) => {
+export const signToken = async (payload: any, expiresIn: string, notBefore?: string) => {
   const signatureKeys = await getSignatureKeys()
   const webKey = signatureKeys.webKeys[0]
   const params: SignOptions = {
@@ -22,9 +22,9 @@ export const sign = async (payload: any, expiresIn: string, notBefore?: string) 
   return jwt.sign(payload, signatureKeys.privateKey, params)
 }
 
-export const decode = (token: string) => jwt.decode(token) as JwtPayload
+export const decodeToken = (token: string) => jwt.decode(token) as JwtPayload
 
-export const getPayload = (user: Omit<User, 'created' | 'updated'>) => {
+export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>) => {
   const payload: SessionState['user'] = {
     id: user.id,
     email: user.email,
@@ -65,7 +65,7 @@ export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: stri
   if (user.ignorePersonalAccount) return user.organizations[0]
 }
 
-export const unsetCookies = (req: Request, res: Response) => {
+export const unsetSessionCookies = (req: Request, res: Response) => {
   const cookies = new Cookies(req, res)
   // use '' instead of null because instant cookie expiration is not properly applied on all safari versions
   cookies.set('id_token', '')
@@ -77,9 +77,9 @@ export const unsetCookies = (req: Request, res: Response) => {
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
 // the header and payload are not httpOnly to be readable by client
 // all cookies use sameSite for CSRF prevention
-export const setCookieToken = (req: Request, res: Response, token: string, userOrg?: OrganizationMembership) => {
+export const setSessionCookies = (req: Request, res: Response, token: string, userOrg?: OrganizationMembership) => {
   const cookies = new Cookies(req, res)
-  const payload = decode(token)
+  const payload = decodeToken(token)
   const parts = token.split('.')
   const opts: Cookies.SetOption = { sameSite: 'lax' }
   if (payload.rememberMe && payload.exp) opts.expires = new Date(payload.exp * 1000)
@@ -102,7 +102,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
   if (session.organization) {
     org = await storages.globalStorage.getOrganization(session.organization.id)
     if (!org) {
-      unsetCookies(req, res)
+      unsetSessionCookies(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user tried to prolongate a session in invalid org', logContext)
       return res.status(401).send('Organisation inexistante')
     }
@@ -114,12 +114,12 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
   }
   const user = _user || await storage.getUser(session.user.id)
   if (!user) {
-    unsetCookies(req, res)
+    unsetSessionCookies(req, res)
     eventsLog.info('sd.auth.keepalive.fail', 'a delete user tried to prolongate a session', logContext)
     return res.status(401).send('Utilisateur inexistant')
   }
 
-  const payload = getPayload(user)
+  const payload = getTokenPayload(user)
   if (session.user.isAdmin && session.user.adminMode && req.query.noAdmin !== 'true') payload.adminMode = 1
   if (session.user.rememberMe) payload.rememberMe = true
   if (session.user.asAdmin) {
@@ -133,7 +133,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
       })
     }
   }
-  const token = await sign(payload, config.jwtDurations.exchangedToken)
+  const token = await signToken(payload, config.jwtDurations.exchangedToken)
   const cookies = new Cookies(req, res)
   const idTokenOrg = cookies.get('id_token_org')
   const idTokenDep = cookies.get('id_token_dep')
@@ -141,7 +141,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
   if (idTokenOrg) {
     userOrg = user.organizations.find(o => o.id === idTokenOrg && (o.department || null) === (idTokenDep ? decodeURIComponent(idTokenDep) : null))
   }
-  setCookieToken(req, res, token, userOrg)
+  setSessionCookies(req, res, token, userOrg)
 
   eventsLog.info('sd.auth.keepalive.ok', 'a session was successfully prolongated', logContext)
 }
@@ -151,7 +151,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
 export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:Pick<OrganizationMembership, 'id' | 'department'>, orgStorage?: boolean) => {
   redirect = redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me'
   const redirectUrl = new URL(redirect)
-  const token = await sign({ ...payload, temporary: true }, config.jwtDurations.initialToken)
+  const token = await signToken({ ...payload, temporary: true }, config.jwtDurations.initialToken)
   // TODO: properly manage site on subpath here
   const tokenCallback = redirectUrl.origin + '/simple-directory/api/auth/token_callback'
   const tokenCallbackUrl = new URL(tokenCallback)

@@ -16,6 +16,7 @@
     "publicUrl",
     "secret",
     "kid",
+    "contact",
     "mongo",
     "port",
     "observer",

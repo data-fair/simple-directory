@@ -18,17 +18,17 @@ export const getLimits = async (org: Organization) => {
   return limit
 }
 
-export const getNbMembers = async (orgId: string) => {
+const getNbMembers = async (orgId: string) => {
   return mongo.users.countDocuments({ 'organizations.id': orgId, plannedDeletion: { $exists: false } })
 }
 
-export const setNbMembers = async (orgId: string) => {
+export const setNbMembersLimit = async (orgId: string) => {
   const nbMembers = await getNbMembers(orgId)
   await mongo.limits
     .updateOne({ type: 'organization', id: orgId }, { $set: { 'store_nb_members.consumption': nbMembers } })
 }
 
-export const updateName = async (identity: Account) => {
+/* export const updateName = async (identity: Account) => {
   await mongo.limits
     .updateMany({ type: identity.type, id: identity.id }, { $set: { name: identity.name } })
-}
+} */

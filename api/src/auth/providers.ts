@@ -1,9 +1,6 @@
-import { oauthGlobalProviders } from '../oauth/service.ts'
-import { getProviderId } from '../oauth/oidc.ts'
-import { saml2GlobalProviders } from '../saml2/service.ts'
+import { oauthGlobalProviders, getOidcProviderId, saml2GlobalProviders, getSiteByHost } from '#services'
 import type { RedirectMode } from '../../config/type/index.ts'
 import { Site } from '#types'
-import { getSiteByHost } from '../sites/service.ts'
 import _slug from 'slugify'
 
 const slug = _slug.default
@@ -49,7 +46,7 @@ export const publicProviders = async (site?: Site) => {
       if (p.type === 'oidc') {
         providers.push({
           type: p.type,
-          id: getProviderId(p.discovery),
+          id: getOidcProviderId(p.discovery),
           title: p.title as string,
           color: p.color,
           img: p.img,

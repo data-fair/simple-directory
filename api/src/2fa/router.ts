@@ -3,13 +3,12 @@ import qrcode from 'qrcode'
 import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
 import { reqIp, reqSiteUrl, httpError } from '@data-fair/lib-express'
+import eventsLog from '@data-fair/lib-express/events-log.js'
 import emailValidator from 'email-validator'
 import storages from '#storages'
 import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.js'
-import { checkPassword, hashPassword } from '../utils/passwords.ts'
-import { reqSite } from '../sites/service.ts'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import { checkPassword, hashPassword, reqSite } from '#services'
 // const debug = require('debug')('2fa')
 
 const router = Router()
@@ -36,10 +35,12 @@ router.post('/', async (req, res, next) => {
     const storedPassword = await storage.getPassword(user.id)
     const validPassword = await checkPassword(req.body.password, storedPassword)
     if (!validPassword) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
-  } else {
+  } else if (storage.checkPassword) {
     if (!await storage.checkPassword(user.id, req.body.password)) {
       return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
     }
+  } else {
+    throw new Error('no password verification implemented')
   }
 
   const user2FA = await storage.get2FA(user.id)

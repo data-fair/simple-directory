@@ -1,17 +1,13 @@
 import { type User } from '#types'
 import config from '#config'
 import cron from 'node-cron'
-import { deleteOAuthToken, writeOAuthToken } from '../oauth-tokens/service.ts'
+import { deleteOAuthToken, writeOAuthToken, oauthGlobalProviders, findOfflineOAuthTokens, authCoreProviderMemberInfo, patchCoreOAuthUser, deleteIdentityWebhook } from '#services'
 import { internalError } from '@data-fair/lib-node/observer.js'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { defaultLocale, localizedDayjs, messages } from '#i18n'
-import { sendMail } from '../mails/service.ts'
+import { sendMail } from '#services'
 import * as locks from '@data-fair/lib-node/locks.js'
 import storages from '#storages'
-import { oauthGlobalProviders } from '../oauth/service.ts'
-import { findOfflineOAuthTokens } from '../oauth-tokens/service.ts'
-import { authCoreProviderMemberInfo, patchCoreOAuthUser } from '../auth/service.ts'
-import { deleteIdentity } from '../webhooks.ts'
 
 // this single small worker loop doesn't really justify running in separate processes
 // we simply run it as part of the api server
@@ -80,7 +76,7 @@ const task = async () => {
       console.log('execute planned deletion of user', user)
       await storages.globalStorage.deleteUser(user.id)
       eventsLog.warn('sd.cleanup-cron.delete', 'deleted user', { user })
-      deleteIdentity('user', user.id)
+      deleteIdentityWebhook('user', user.id)
     }
     await locks.release('user-deletion-task')
     console.info('user cleanup cron task done\n\n')
