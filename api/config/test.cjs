@@ -1,21 +1,18 @@
 module.exports = {
-  port: 5690,
-  publicUrl: 'http://127.0.0.1:5689/simple-directory',
-  secret: {
-    public: './test/resources/test.key.pub',
-    private: './test/resources/test.key'
+  mongo: {
+    url: 'mongodb://localhost:27017/data-fair-' + (process.env.NODE_ENV || 'test')
   },
+  port: 5690,
+  publicUrl: 'http://localhost:5689/simple-directory',
   admins: ['admin@test.com', 'alban.mouton@koumoul.com'],
   contact: 'contact@test.com',
   storage: {
     type: 'file',
     file: {
-      users: './test/resources/users.json',
-      organizations: './test/resources/organizations.json'
+      users: './dev/resources/users.json',
+      organizations: './dev/resources/organizations.json'
     },
-    mongo: {
-      url: 'mongodb://localhost:27017/data-fair-' + (process.env.NODE_ENV || 'test')
-    },
+    mongo: {},
     ldap: {
       url: 'ldap://localhost:389',
       cacheMS: 0,
@@ -51,5 +48,6 @@ module.exports = {
       }
     }]
   },
-  managePartners: true
+  managePartners: true,
+  cipherPassword: 'test'
 }

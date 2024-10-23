@@ -18,6 +18,7 @@ import avatars from './avatars/router.ts'
 import oauthTokens from './oauth-tokens/router.ts'
 import tokens from './tokens/router.ts'
 import sites from './sites/router.ts'
+import { keepalive } from '#services'
 
 const app = express()
 export default app
@@ -74,6 +75,12 @@ app.use('/api/limits', auth, limits)
 app.use('/api/2fa', twoFA)
 app.use('/api/oauth-tokens', oauthTokens)
 if (config.manageSites) app.use('/api/sites', sites)
+
+// maintain compatibility for installed clients that have an older version of sd-vue
+app.post('/api/session/keepalive', async (req, res, next) => {
+  await keepalive(req, res)
+  res.status(204).send()
+})
 
 app.use('/api/', (req, res) => {
   return res.status(404).send('unknown api endpoint')

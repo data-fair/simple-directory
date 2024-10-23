@@ -3,7 +3,7 @@ layout {
       split_direction "vertical"
       pane name="simple-directory" borderless=true {
         command "bash"
-        args "-ic" "nvm use && bash"
+        args "-ic" "nvm use > /dev/null 2>&1 && echo \"Service available on http://localhost:5689\" && bash"
       }
       pane name="deps" {
         command "bash"

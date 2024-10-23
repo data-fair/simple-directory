@@ -152,12 +152,12 @@ module.exports = {
     transport: {
       port: 1025,
       ignoreTLS: true,
-      host: '127.0.0.1'
+      host: 'localhost'
     },
     extraParams: {}
   },
   maildev: {
-    url: 'http://127.0.0.1:1080',
+    url: 'http://localhost:1080',
     active: false,
     smtp: 1025,
     web: 1080

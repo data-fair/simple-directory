@@ -41,16 +41,12 @@ module.exports = {
     transport: {},
     extraParams: {}
   },
-  secret: {
-    public: './test/resources/test.key.pub',
-    private: './test/resources/test.key'
-  },
   storage: {
     type: 'mongo',
     // type: 'ldap',
     file: {
-      users: './test/resources/users.json',
-      organizations: './test/resources/organizations.json'
+      users: './dev/resources/users.json',
+      organizations: './dev/resources/organizations.json'
     },
     ldap: {
       url: 'ldap://localhost:389',

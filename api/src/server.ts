@@ -26,11 +26,11 @@ server.headersTimeout = (60 * 1000) + 2000
 export const start = async () => {
   session.init('http://localhost:' + config.port)
   await mongo.init()
+  await locks.init(mongo.db)
   await Promise.all([
     oauth.init(),
     storages.init(),
     config.observer.active && startObserver(config.observer.port),
-    locks.init(mongo.db),
     usersWorker.start(),
     mailsTransport.start(),
     keysManager.start(),
@@ -54,5 +54,6 @@ export const stop = async () => {
     mailsTransport.stop(),
     keysManager.start()
   ])
+  await locks.stop()
   await mongo.client.close()
 }

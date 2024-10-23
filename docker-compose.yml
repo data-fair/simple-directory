@@ -24,7 +24,7 @@ services:
     volumes:
       - ./data/ldap:/var/lib/ldap
       - ./data/slapd.d:/etc/ldap/slapd.d
-      - ./test/resources:/test-resources
+      - ./dev/resources:/test-resources
     ports:
       - 389:389
       - 636:636

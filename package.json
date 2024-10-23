@@ -2,11 +2,10 @@
   "name": "simple-directory",
   "version": "7.12.2",
   "description": "Easy users and organizations management for modern Web-oriented architectures.",
+  "type": "module",
   "scripts": {
-    "test": "npm run test-file && npm run test-mongo && npm run test-ldap",
-    "test-file": "NODE_ENV=test EVENTS_LOG_LEVEL=warn STORAGE_TYPE=file mocha --exit --bail --timeout 20000 test/file/*.js",
-    "test-mongo": "NODE_ENV=test EVENTS_LOG_LEVEL=warn STORAGE_TYPE=mongo mocha --exit --bail --timeout 20000 test/mongo",
-    "test-ldap": "NODE_ENV=test EVENTS_LOG_LEVEL=warn STORAGE_TYPE=ldap mocha --exit --bail --timeout 20000 test/ldap",
+    "test": "NODE_ENV=test node --experimental-strip-types --test-force-exit --test-concurrency=1 --test test-it/*.ts",
+    "test-only": "NODE_ENV=test node --experimental-strip-types --test-force-exit --test-only --test-concurrency=1 --test test-it/*.ts",
     "test-deps": "docker compose --profile test up -d --wait",
     "report": "nyc report --reporter=html",
     "lint": "eslint . && npm -w ui run lint",
@@ -37,6 +36,7 @@
   "homepage": "https://github.com/koumoul-dev/simple-directory#readme",
   "devDependencies": {
     "@commitlint/config-conventional": "^19.2.2",
+    "@data-fair/lib-node": "^1.1.1",
     "@types/accept-language-parser": "^1.5.6",
     "@types/capitalize": "^2.0.2",
     "@types/config": "^3.3.3",

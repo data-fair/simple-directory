@@ -3,13 +3,13 @@ import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdSto
 import type { FileParams } from '../../config/type/index.ts'
 import config from '#config'
 import userName from '../utils/user-name.ts'
-import { Member, Organization, Partner, User, UserWritable } from '#types'
+import type { Member, Organization, Partner, User, UserWritable } from '#types'
 import { readFileSync } from 'node:fs'
-import { Password } from '../utils/passwords.ts'
-import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
-import { OrganizationPost } from '#doc/organizations/post-req/index.ts'
-import { UserRef } from '@data-fair/lib-express'
-import { TwoFA } from '#services'
+import type { Password } from '../utils/passwords.ts'
+import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
+import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
+import type { UserRef } from '@data-fair/lib-express'
+import type { TwoFA } from '#services'
 
 type StoredOrganization = Omit<Organization, 'members'> & { members: { id: string, role: string, department?: string }[] }
 
@@ -50,11 +50,11 @@ class FileStorage implements SdStorage {
 
   constructor (params: FileParams, org?: Organization) {
     if (org) throw new Error('file storage is not compatible with per-org storage')
-    this.users = JSON.parse(readFileSync(resolve(import.meta.dirname, '../..', params.users), 'utf-8'))
+    this.users = JSON.parse(readFileSync(resolve(import.meta.dirname, '../../..', params.users), 'utf-8'))
     this.users.forEach(user => {
       user.name = userName(user)
     })
-    this.organizations = JSON.parse(readFileSync(resolve(import.meta.dirname, '../..', params.organizations), 'utf-8'))
+    this.organizations = JSON.parse(readFileSync(resolve(import.meta.dirname, '../../..', params.organizations), 'utf-8'))
     this.organizations.forEach(orga => {
       orga.members = orga.members || []
       orga.departments = orga.departments || []
