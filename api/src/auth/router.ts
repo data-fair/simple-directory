@@ -15,10 +15,7 @@ import { reqI18n, __all } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
 import { checkPassword, type Password } from '../utils/passwords.ts'
-import * as postPasswordReq from '#doc/auth/post-password-req/index.ts'
-import * as postPasswordlessReq from '#doc/auth/post-passwordless-req/index.ts'
-import * as postTokenCallbackReq from '#doc/auth/post-token-callback-req/index.ts'
-import * as postExchangeReq from '#doc/auth/post-exchange-req/index.ts'
+import * as postExchangeReq from ''
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicProviders } from './providers.ts'
 
@@ -54,7 +51,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!req.body.password) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
 
-  const { body, query } = postPasswordReq.returnValid(req, { name: 'req' })
+  const { body, query } = (await import('#doc/auth/post-password-req/index.ts')).returnValid(req, { name: 'req' })
 
   const returnError = async (error: string, errorCode: number) => {
     // prevent attacker from analyzing response time
@@ -235,7 +232,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
 
-  const { body, query } = postPasswordlessReq.returnValid(req, { name: 'req' })
+  const { body, query } = (await import('#doc/auth/post-passwordless-req/index.ts')).returnValid(req, { name: 'req' })
 
   try {
     await limiter(req).consume(reqIp(req), 1)
@@ -316,7 +313,7 @@ router.post('/site_redirect', async (req, res, next) => {
 router.get('/token_callback', async (req, res, next) => {
   const logContext: EventLogContext = { req }
 
-  const { query } = postTokenCallbackReq.returnValid(req, { name: 'req' })
+  const { query } = (await import('#doc/auth/post-token-callback-req/index.ts')).returnValid(req, { name: 'req' })
 
   const redirectError = (error: string) => {
     eventsLog.info('sd.auth.callback.fail', `a token callback failed with error ${error}`, logContext)
@@ -381,7 +378,7 @@ router.get('/token_callback', async (req, res, next) => {
 // TODO: deprecate this whole route, replaced by simpler /keepalive
 router.post('/exchange', async (req, res, next) => {
   const logContext: EventLogContext = { req }
-  const { query } = postExchangeReq.returnValid(req, { name: 'req' })
+  const { query } = (await import('#doc/auth/post-exchange-req/index.ts')).returnValid(req, { name: 'req' })
 
   const idToken = ((req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop()) || query.id_token) as string | undefined
   if (!idToken) {

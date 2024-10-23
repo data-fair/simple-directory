@@ -8,11 +8,6 @@ import config from '#config'
 import { reqI18n } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
-import * as patchReq from '#doc/organizations/patch-req/index.ts'
-import * as postReq from '#doc/organizations/post-req/index.ts'
-import * as patchMemberReq from '#doc/organizations/patch-member-req/index.ts'
-import * as postPartnerReq from '#doc/organizations/post-partner-req/index.ts'
-import * as postPartnerAcceptReq from '#doc/organizations/post-partner-accept-req/index.ts'
 import { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
 import { setNbMembersLimit, sendMail, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation } from '#services'
 import { __all } from '#i18n'
@@ -116,7 +111,7 @@ router.post('', async (req, res, next) => {
     if (maxCreatedOrgs === undefined || maxCreatedOrgs === null) maxCreatedOrgs = config.quotas.defaultMaxCreatedOrgs
     if (maxCreatedOrgs !== -1 && createdOrgs >= maxCreatedOrgs) return res.status(429).send(reqI18n(req).messages.errors.maxCreatedOrgs)
   }
-  const { body: orga } = postReq.returnValid(req, { name: 'req' })
+  const { body: orga } = (await import('#doc/organizations/post-req/index.ts')).returnValid(req, { name: 'req' })
 
   orga.id = orga.id || nanoid()
   logContext.account = { type: 'organization', id: orga.id, name: orga.name }
@@ -142,7 +137,7 @@ router.patch('/:organizationId', async (req, res, next) => {
     return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
   }
 
-  const { body: patch } = patchReq.returnValid(req, { name: 'req' })
+  const { body: patch } = (await import('#doc/organizations/patch-req/index.ts')).returnValid(req, { name: 'req' })
   if (patch.orgStorage && !user.adminMode) throw httpError(403)
   if (patch.orgStorage?.config?.searchUserPassword && typeof patch.orgStorage.config.searchUserPassword === 'string') {
     patch.orgStorage.config.searchUserPassword = cipher(patch.orgStorage.config.searchUserPassword)
@@ -294,10 +289,10 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
 
   if (!reqUser(req)) return res.status(401).send()
 
-  const { query, body } = patchMemberReq.returnValid(req, { name: 'req' })
+  const { query, body } = (await import('#doc/organizations/patch-member-req/index.ts')).returnValid(req, { name: 'req' })
   const storage = storages.globalStorage
   const dep = query.department
-  const filter: FindMembersParams = { ids: [req.params.userId] }
+  const filter: FindMembersParams = { ids: [req.params.userId], skip: 0, size: 1 }
   if (typeof dep === 'string') filter.departments = [dep]
   const member = (await storage.findMembers(req.params.organizationId, filter)).results[0]
 
@@ -351,7 +346,7 @@ if (config.managePartners) {
     if (!reqUser(req)) return res.status(401).send()
     if (!isOrgAdmin(req)) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
 
-    const { body: partnerPost } = postPartnerReq.returnValid(req)
+    const { body: partnerPost } = (await import('#doc/organizations/post-partner-req/index.ts')).returnValid(req)
 
     const storage = storages.globalStorage
 
@@ -391,7 +386,7 @@ if (config.managePartners) {
     const user = reqUser(req)
 
     if (!user) return res.status(401).send()
-    const { body: partnerAccept } = postPartnerAcceptReq.returnValid(req)
+    const { body: partnerAccept } = (await import('#doc/organizations/post-partner-accept-req/index.ts')).returnValid(req)
 
     // user must be owner of the new partner
     const userOrga = user.organizations.find(o => o.id === partnerAccept.id && !o.department)

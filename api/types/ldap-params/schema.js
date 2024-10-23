@@ -8,7 +8,7 @@ export default {
   properties: {
     url: { type: 'string' },
     searchUserDN: { type: 'string' },
-    searchUserPassword: { type: 'string' },
+    searchUserPassword: { type: ['string', 'object'] },
     baseDN: { type: 'string' },
     readonly: { type: 'boolean' },
     overwrite: {

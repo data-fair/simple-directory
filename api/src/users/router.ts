@@ -11,10 +11,6 @@ import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import { FindUsersParams } from '../storages/interface.ts'
 import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMail, getLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken } from '#services'
-import * as postReq from '#doc/users/post-req/index.ts'
-import * as patchReq from '#doc/users/patch-req/index.ts'
-import * as postPasswordReq from '#doc/users/post-password-req/index.ts'
-import * as postHostReq from '#doc/users/post-host-req/index.ts'
 
 const router = Router()
 
@@ -61,7 +57,7 @@ router.post('', async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
 
-  const { body, query } = postReq.returnValid(req, { name: 'req' })
+  const { body, query } = (await import('#doc/users/post-req/index.ts')).returnValid(req, { name: 'req' })
 
   const storage = storages.globalStorage
 
@@ -197,7 +193,7 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
   const session = reqSessionAuthenticated(req)
   if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
 
-  const { body: patch } = patchReq.returnValid(req, { name: 'req' })
+  const { body: patch } = (await import('#doc/users/patch-req/index.ts')).returnValid(req, { name: 'req' })
 
   const adminKey = Object.keys(req.body).find(key => adminKeys.includes(key))
   if (adminKey && !session.user?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
@@ -274,7 +270,7 @@ router.delete('/:userId', async (req, res, next) => {
 // Change password of a user using an action token sent in a mail
 router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
   const logContext: EventLogContext = { req }
-  const { body, query } = postPasswordReq.returnValid(req, { name: 'req' })
+  const { body, query } = (await import('#doc/users/post-password-req/index.ts')).returnValid(req, { name: 'req' })
 
   let decoded
   try {
@@ -296,7 +292,7 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
 // Change host of a user using an action token sent in a mail
 router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
   const logContext: EventLogContext = { req }
-  const { body, query } = postHostReq.returnValid(req, { name: 'req' })
+  const { body, query } = (await import('#doc/users/post-host-req/index.ts')).returnValid(req, { name: 'req' })
 
   const storage = storages.globalStorage
   let decoded
@@ -311,18 +307,20 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
 
   eventsLog.info('sd.user.change-host', `user changed host ${req.params.userId}`, logContext)
 
-  const storedPassword = await storage.getPassword(decoded.id)
-  if (!storedPassword) {
-    const payload = {
-      id: decoded.id,
-      email: decoded.email,
-      action: 'changePassword'
+  if (storage.getPassword) {
+    const storedPassword = await storage.getPassword(decoded.id)
+    if (!storedPassword) {
+      const payload = {
+        id: decoded.id,
+        email: decoded.email,
+        action: 'changePassword'
+      }
+      const token = await signToken(payload, config.jwtDurations.initialToken)
+      res.send(token)
     }
-    const token = await signToken(payload, config.jwtDurations.initialToken)
-    res.send(token)
-  } else {
-    res.status(204).send()
   }
+
+  res.status(204).send()
 })
 
 export default router

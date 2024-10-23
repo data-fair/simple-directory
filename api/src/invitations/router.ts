@@ -10,7 +10,6 @@ import { reqI18n } from '#i18n'
 import storages from '#storages'
 import { getLimits, setNbMembersLimit, reqSite, getSiteByHost, shortenInvit, unshortenInvit, sendMail, decodeToken, signToken, postUserIdentityWebhook } from '#services'
 import { __all } from '#i18n'
-import * as postReq from '#doc/invitations/post-req/index.ts'
 import emailValidator from 'email-validator'
 import Debug from 'debug'
 
@@ -23,7 +22,7 @@ export default router
 router.post('', async (req, res, next) => {
   const user = reqUser(req)
 
-  const { query, body } = postReq.returnValid(req, { name: 'req' })
+  const { query, body } = (await import('#doc/invitations/post-req/index.ts')).returnValid(req, { name: 'req' })
 
   const logContext: EventLogContext = { req }
 
