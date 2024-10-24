@@ -134,7 +134,7 @@ router.post('', async (req, res, next) => {
     }
   }
 
-  const createdUser = await storage.createUser(newUser, undefined, new URL(link).host)
+  const createdUser = await storage.createUser(newUser)
   eventsLog.info('sd.user.create', 'user was created', logContext)
 
   if (invit && !config.alwaysAcceptInvitation && orga) {

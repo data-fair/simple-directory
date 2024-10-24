@@ -733,7 +733,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     debugOAuth('Create user authenticated through oauth', user)
     logContext.user = user
     eventsLog.info('sd.auth.oauth.create-user', `a user was created in oauth callback ${newUser.id}`, logContext)
-    user = await storage.createUser(newUser, undefined, new URL(redirect).host)
+    user = await storage.createUser(newUser)
 
     if (memberInfo.create && memberInfo.org) {
       logContext.account = { type: 'organization', ...memberInfo.org }
@@ -945,7 +945,7 @@ router.post('/saml2-assert', async (req, res) => {
     if (samlInfo.firstName) newUser.firstName = samlInfo.firstName
     if (samlInfo.lastName) newUser.lastName = samlInfo.lastName
     debugSAML('Create user', newUser)
-    user = await storage.createUser(newUser, undefined, new URL(redirect).host)
+    user = await storage.createUser(newUser)
     logContext.user = user
     eventsLog.info('sd.auth.saml.create-user', `a user was created in saml callback ${user.id}`, logContext)
   } else {

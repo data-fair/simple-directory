@@ -4,6 +4,7 @@ import OrganizationSchema from '#types/organization/schema.js'
 const body = jsonSchema(OrganizationSchema)
   .removeReadonlyProperties()
   .removeProperties(['created', 'updated', 'orgStorage'])
+  .removeFromRequired('id')
   .removeId()
   .appendTitle(' post')
   .schema

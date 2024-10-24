@@ -16,6 +16,9 @@ describe.only('ldap storage per organization in mongodb storage mode', () => {
 
   it.only('create a user and organization and configure orgStorage with ldap config', async () => {
     const { ax, user } = await createUser('test1@test.com')
-    console.log('USER', user)
+    assert.ok(user.id)
+    const org = (await ax.post('/api/organizations', { name: 'Org 1' })).data
+    console.log(org)
+    assert.ok(org.id)
   })
 })

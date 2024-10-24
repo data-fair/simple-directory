@@ -90,7 +90,7 @@ router.post('', async (req, res, next) => {
       if (invitation.department) newUserDraft.defaultDep = invitation.department
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUserDraft)
       const reboundRedirect = new URL(invitation.redirect || config.invitationRedirect || `${reqSiteUrl(req) + '/simple-directory'}/invitation`)
-      const newUser = await storage.createUser(newUserDraft, user, new URL(reboundRedirect).host)
+      const newUser = await storage.createUser(newUserDraft, user)
       await storage.addMember(orga, newUser, invitation.role, invitation.department)
       await setNbMembersLimit(orga.id)
       const linkUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
