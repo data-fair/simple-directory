@@ -2,7 +2,6 @@ import { strict as assert } from 'node:assert'
 import { it, describe, before, beforeEach, after } from 'node:test'
 import { clean, startApiServer, stopApiServer } from './utils/index.ts'
 
-process.env.PER_ORG_STORAGE_TYPES = '["ldap"]'
 process.env.NODE_CONFIG_DIR = 'api/config/'
 const config = (await import('../api/src/config.ts')).default
 const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
@@ -20,7 +19,6 @@ describe('ldap single org', () => {
 
     await storage._createUser({
       id: 'alban1',
-      name: 'Alban Mouton',
       firstName: 'Alban',
       lastName: 'Mouton',
       email: 'alban.mouton@koumoul.com',
@@ -44,7 +42,7 @@ describe('ldap single org', () => {
 
     const members = await storage.findMembers('test-single-org', { skip: 0, size: 10 })
     assert.equal(members.count, 1)
-    assert.equal(members.results[0].name, 'Alban Mouton')
+    assert.equal(members.results[0].name, 'alban')
     assert.equal(members.results[0].role, 'admin')
 
     const member2 = await storage.findMembers('test-single-org', { q: 'notauser', skip: 0, size: 10 })

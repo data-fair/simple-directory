@@ -50,6 +50,8 @@ module.exports = {
     },
     ldap: {
       url: 'ldap://localhost:389',
+      searchUserDN: 'cn=admin,dc=example,dc=org',
+      searchUserPassword: 'admin',
       members: {
         role: {
           attr: 'employeeType',

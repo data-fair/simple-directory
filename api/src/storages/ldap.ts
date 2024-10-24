@@ -11,6 +11,7 @@ import { decipher } from '../utils/cipher.ts'
 import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 import type { UserRef } from '@data-fair/lib-express'
 import type { TwoFA } from '#services'
+import userName from '../utils/user-name.ts'
 
 const debug = Debug('ldap')
 
@@ -60,7 +61,7 @@ function buildMappingFn (
     to (obj: Record<string, any>) {
       const entry: Record<string, any> = { objectClass: secondaryObjectClass ? [objectClass, secondaryObjectClass] : objectClass }
       Object.keys(mapping).forEach(key => {
-        if (obj[key] && (!multiValued.includes(key) || obj[key].length)) {
+        if (obj[key] && (!multiValued.includes(key) || obj[key].length) && !entry[mapping[key]]) {
           entry[mapping[key]] = obj[key] && obj[key].replace(prefixes[key] || '', '')
         } else if (required.includes(key)) {
           throw new Error(`${key} attribute is required`)
@@ -220,7 +221,7 @@ class LdapStorage implements SdStorage {
     }
   }
 
-  private userDN (user: User) {
+  private userDN (user: Pick<User, 'id' | 'email' | 'organizations'>) {
     const entry = this.userMapping.to(user)
     const dnKey = this.ldapParams.users.dnKey
     if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
@@ -317,7 +318,7 @@ class LdapStorage implements SdStorage {
   async checkPassword (id: string, password: string) {
     const user = await this._getUser({ id }, false)
     if (!user) return false
-    const dn = user.entry.objectName
+    const dn = user.entry.dn.toString()
     if (!dn) return false
 
     const client = ldap.createClient({ url: this.ldapParams.url, reconnect: false, timeout: 4000 })
@@ -528,8 +529,9 @@ class LdapStorage implements SdStorage {
   // WARNING: the following is used only in tests as ldap storage is always readonly
   // except for the overwritten properties stored in mongo
 
-  async _createUser (user: User) {
-    const entry = this.userMapping.to({ ...user, lastName: user.lastName || 'missing' })
+  async _createUser (user: Omit<UserWritable, 'password'> & { password?: string }) {
+    const entry = this.userMapping.to({ ...user, lastName: user.lastName || 'missing', name: userName(user) })
+    if (user.password) entry.userPassword = user.password
     const dn = this.userDN(user)
     if (user.organizations.length && this.ldapParams.members.role.attr) {
       const roleValues = this.ldapParams.members.role.values?.[user.organizations[0].role]

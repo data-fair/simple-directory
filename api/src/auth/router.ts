@@ -613,7 +613,7 @@ const oauthLogin: RequestHandler = async (req, res, next) => {
     req.query.invit_token || '',
     req.query.adminMode || '' // TODO: force re-submit password in this case ?
   ]
-  const authorizationUri = provider.authorizationUri(relayState, req.query.email as string, provider.coreIdProvider)
+  const authorizationUri = provider.authorizationUri(relayState, req.query.email as string, provider.coreIdProvider, req.query.adminMode === 'true')
   debugOAuth('login authorizationUri', authorizationUri)
   eventsLog.info('sd.auth.oauth.redirect', 'a user was redirected to a oauth provider', logContext)
   res.redirect(authorizationUri)

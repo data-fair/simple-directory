@@ -49,7 +49,6 @@ const readApiKey: RequestHandler = async (req, res, next) => {
       return res.status(401).send('bad api key')
     } else {
       if (req.method !== 'GET') return res.status(403).send('api key is only for read endpoints')
-      console.log('SET REQ USER')
       setReqUser(req, {
         isAdmin: 1,
         adminMode: 1,

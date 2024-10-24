@@ -56,7 +56,9 @@ class StorageManager {
   }
 
   async createOrgStorage (org: Organization): Promise<SdStorage | undefined> {
+    console.log('ORG STORAGE ?')
     if (!org.orgStorage?.active || !config.perOrgStorageTypes.includes(org.orgStorage.type)) return
+    console.log('YES')
     return this.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
   }
 }

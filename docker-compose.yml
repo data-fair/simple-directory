@@ -33,6 +33,8 @@ services:
       - dev
     image: osixia/phpldapadmin:0.9.0
     ports:
+      # open over HTTPS https://localhost:6443/
+      # log with cn=admin,dc=example,dc=org / admin
       - 6443:443
     environment:
       - PHPLDAPADMIN_LDAP_HOSTS=ldap

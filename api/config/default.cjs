@@ -59,7 +59,7 @@ module.exports = {
         dnKey: 'cn',
         mapping: {
           id: 'cn',
-          name: 'cn',
+          name: 'cn', // TODO: better to use userName ?
           email: 'mail',
           firstName: 'givenName',
           lastName: 'sn',

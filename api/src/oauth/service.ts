@@ -42,7 +42,7 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery'> & {
 
 export type PreparedOAuthProvider = OAuthProvider & {
   state: string
-  authorizationUri (relayState: any, email: string, offlineAccess?: boolean): string
+  authorizationUri (relayState: any, email: string, offlineAccess?: boolean, forceLogin?: boolean): string
   getToken (code: string, offlineAccess?: boolean): Promise<any>
   refreshToken (tokenObj: any, onlyIfExpired: boolean): Promise<any>
 }
@@ -88,7 +88,7 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
   const callbackUri = p.oidc ? `${publicUrl}/api/auth/oauth-callback` : `${publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
-  const authorizationUri = (relayState: any, email: string, offlineAccess = false) => {
+  const authorizationUri = (relayState: any, email: string, offlineAccess = false, forceLogin = false) => {
     let scope = p.scope
     if (offlineAccess) {
       scope += ' offline_access'
@@ -97,8 +97,10 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
       redirect_uri: callbackUri,
       scope,
       state: JSON.stringify(relayState),
-      display: 'page',
-      prompt: 'login' // WARN: if we change that to allow for authentication without prompting for password, we should still use this value in case of adminMode
+      display: 'page'
+    }
+    if (forceLogin) {
+      params.prompt = 'login'
     }
     if (email) {
       // send email in login_hint

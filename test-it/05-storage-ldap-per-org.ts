@@ -2,17 +2,14 @@ import { strict as assert } from 'node:assert'
 import { it, describe, before, beforeEach, after } from 'node:test'
 import { axiosAuth, clean, startApiServer, stopApiServer } from './utils/index.ts'
 
-process.env.PER_ORG_STORAGE_TYPES = '["ldap"]'
 process.env.NODE_CONFIG_DIR = 'api/config/'
 const config = (await import('../api/src/config.ts')).default
 const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
-ldapConfig.searchUserDN = 'cn=admin,dc=example,dc=org'
-ldapConfig.searchUserPassword = 'admin'
 ldapConfig.organizations.staticSingleOrg = { id: 'test-ldap', name: 'Test single org' }
 
 // see test/resources/organizations.json to see that the org "test-ldap" has a specific configuration
 
-describe('ldap storage per organization', () => {
+describe('ldap storage per organization in file storage mode', () => {
   before(startApiServer)
   beforeEach(async () => await clean({ ldapConfig }))
 
@@ -21,13 +18,8 @@ describe('ldap storage per organization', () => {
     const ldapStorage = await import('../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(ldapConfig)
 
-    const user = await storage.getUserByEmail('alban.mouton@koumoul.com')
-    if (user) await storage._deleteUser(user.id)
-    const user2 = await storage.getUserByEmail('alban.mouton@gmail.com')
-    if (user2) await storage._deleteUser(user2.id)
     await storage._createUser({
       id: 'alban',
-      name: 'Alban Mouton',
       firstName: 'Alban',
       lastName: 'Mouton',
       email: 'alban.mouton@koumoul.com',
@@ -35,7 +27,6 @@ describe('ldap storage per organization', () => {
     })
     await storage._createUser({
       id: 'alban2',
-      name: 'Alban',
       firstName: 'Alban',
       lastName: '',
       email: 'alban.mouton@gmail.com',
@@ -63,5 +54,7 @@ describe('ldap storage per organization', () => {
     assert.equal(res.data.results[0].email, 'alban.mouton@koumoul.com')
     assert.equal(res.data.results[0].orgStorage, true)
     assert.equal(res.data.results[0].id, 'ldap_test-ldap_Alban Mouton')
+
+    // TODO: add auth test with user password
   })
 })

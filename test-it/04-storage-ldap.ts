@@ -2,12 +2,9 @@ import { strict as assert } from 'node:assert'
 import { it, describe, before, beforeEach, after } from 'node:test'
 import { clean, startApiServer, stopApiServer } from './utils/index.ts'
 
-process.env.PER_ORG_STORAGE_TYPES = '["ldap"]'
 process.env.NODE_CONFIG_DIR = 'api/config/'
 const config = (await import('../api/src/config.ts')).default
 const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
-ldapConfig.members.onlyWithRole = true
-ldapConfig.members.role.values = { admin: ['cn=administrator,dc=test', 'cn=superadmin,dc=test'], user: ['cn=users,dc=test'] }
 ldapConfig.members.overwrite = [{ email: 'alban.mouton@koumoul.com', role: 'overwritten' }]
 ldapConfig.users.overwrite = [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }]
 ldapConfig.organizations.overwrite = [{ id: 'myorg', name: 'Org overwritten' }]
