@@ -283,7 +283,6 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
     if (offlineAccess) {
       scope += ' offline_access'
     }
-    // const prompt = forceLogin ? 'login' : (p.prompt ?? 'login')
     const params = {
       redirect_uri: callbackUri,
       scope,

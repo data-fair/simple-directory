@@ -189,7 +189,6 @@ module.exports = {
       },
       coreIdProvider: true,
       ignoreEmailVerified: true,
-      prompt: 'none',
       /* redirectMode: {
         type: 'always'
       }, */
