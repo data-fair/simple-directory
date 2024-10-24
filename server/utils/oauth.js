@@ -283,14 +283,14 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
     if (offlineAccess) {
       scope += ' offline_access'
     }
-    const prompt = forceLogin ? 'login' : (p.prompt ?? 'login')
+    // const prompt = forceLogin ? 'login' : (p.prompt ?? 'login')
     const params = {
       redirect_uri: callbackUri,
       scope,
       state: JSON.stringify(relayState),
-      display: 'page',
-      prompt
+      display: 'page'
     }
+    if (forceLogin) params.prompt = 'login'
     if (email) {
       // send email in login_hint
       // see https://openid.net/specs/openid-connect-basic-1_0.html
