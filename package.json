@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "NODE_ENV=test node --experimental-strip-types --test-force-exit --test-concurrency=1 --test test-it/*.ts",
-    "test-only": "NODE_ENV=test node --experimental-strip-types --test-force-exit --test-only --test-concurrency=1 --test test-it/*.ts",
+    "test-only": "NODE_ENV=test node --experimental-strip-types --test-force-exit --test-only --test-concurrency=1 --test",
     "test-deps": "docker compose --profile test up -d --wait",
     "report": "nyc report --reporter=html",
     "lint": "eslint . && npm -w ui run lint",
@@ -61,6 +61,7 @@
     "eslint-plugin-vuetify": "github:albanm/eslint-plugin-vuetify",
     "husky": "^9.1.6",
     "neostandard": "^0.11.5",
+    "oauth2-mock-server": "^7.1.2",
     "tough-cookie": "^5.0.0",
     "typescript": "^5.5.4"
   },

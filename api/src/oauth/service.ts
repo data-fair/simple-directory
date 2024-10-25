@@ -72,7 +72,6 @@ export const getOAuthProviderByState = async (req: Request, state: string): Prom
 }
 
 async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl): Promise<PreparedOAuthProvider> {
-  console.log(oauth2.AuthorizationCode)
   const oauthClient = new oauth2.AuthorizationCode({
     client: p.client,
     auth: p.auth

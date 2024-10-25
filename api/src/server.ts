@@ -8,6 +8,7 @@ import * as usersWorker from './users/worker.ts'
 import * as keysManager from './tokens/keys-manager.ts'
 import * as oauth from './oauth/service.ts'
 import * as metrics from './utils/metrics.ts'
+import * as saml2 from './saml2/service.ts'
 import mailsTransport from './mails/transport.ts'
 import storages from '#storages'
 import { createHttpTerminator } from 'http-terminator'
@@ -29,6 +30,7 @@ export const start = async () => {
   await locks.init(mongo.db)
   await Promise.all([
     oauth.init(),
+    saml2.init(),
     storages.init(),
     config.observer.active && startObserver(config.observer.port),
     usersWorker.start(),

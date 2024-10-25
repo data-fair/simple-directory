@@ -114,7 +114,7 @@ export const init = async () => {
 const createCert = async () => {
   const subject = `/C=FR/CN=${new URL(config.publicUrl).hostname}`
   const privateKey = (await execAsync('openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048')).stdout
-  const certPromise = execAsync(`openssl req -x509 -sha256 -nodes -days 1095 -subj "${subject}" -out`)
+  const certPromise = execAsync(`openssl req -x509 -sha256 -nodes -days 1095 -subj "${subject}"`)
   certPromise.child.stdin?.write(privateKey)
   certPromise.child.stdin?.end()
   const cert = (await certPromise).stdout
