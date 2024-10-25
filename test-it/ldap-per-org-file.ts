@@ -42,7 +42,7 @@ describe('ldap storage per organization in file storage mode', () => {
     assert.equal(res.status, 200)
     assert.ok(res.data.orgStorage)
     assert.ok(!res.data.orgStorage.config)
-    const adminAx = await axiosAuth({ email: 'admin1@test.com', adminMode: true })
+    const adminAx = await axiosAuth({ email: 'admin@test.com', adminMode: true })
     res = await adminAx.get('/api/organizations/test-ldap')
     assert.equal(res.status, 200)
     assert.ok(res.data.orgStorage)

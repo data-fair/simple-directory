@@ -73,10 +73,10 @@
   },
   {
     "id": "superadmin",
-    "email": "superadmin@test.com",
+    "email": "admin@test.com",
     "isAdmin": true,
     "password": {
-      "clear": "superpasswd"
+      "clear": "TestPasswd01"
     }
   }
 ]

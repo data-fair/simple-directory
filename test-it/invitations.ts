@@ -150,6 +150,7 @@ describe('invitations', () => {
     await createUser('test-invit8@test.com')
 
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
+    ax.setOrg(org.id)
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit8@test.com', role: 'user' })
 
     // the user is already added as a member
@@ -169,6 +170,7 @@ describe('invitations', () => {
     const anonymousAx = await axios()
 
     const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }] })).data
+    ax.setOrg(org.id)
     const mailPromise = waitForMail()
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep1', role: 'user' })
     const mail = await mailPromise
@@ -204,9 +206,9 @@ describe('invitations', () => {
     // log in a newly invited user
     const newAx = await axiosAuth({ email: 'test-invit10@test.com', password: 'Test1234' })
     const newUser = (await newAx.get('/api/auth/me')).data
-    assert.equal(newUser.organization.name, 'test')
-    assert.equal(newUser.organization.department, 'dep1')
-    assert.equal(newUser.organization.role, 'user')
+    assert.equal(newUser.organizations[0].name, 'test')
+    assert.equal(newUser.organizations[0].department, 'dep1')
+    assert.equal(newUser.organizations[0].role, 'user')
 
     // send a second invitation
     const mailPromise2 = waitForMail()
@@ -239,6 +241,7 @@ describe('invitations', () => {
     const anonymousAx = await axios()
 
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
+    ax.setOrg(org.id)
 
     await anonymousAx.post('/api/sites',
       { _id: 'test', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:5989', theme: { primaryColor: '#FF00FF' } },

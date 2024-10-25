@@ -18,7 +18,7 @@ describe('sites api', () => {
 
     const { ax } = await createUser('test-site@test.com')
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
-    const orgAx = await axiosAuth({ email: 'test-site@test.com:Test1234:org', org: org.id })
+    const orgAx = await axiosAuth({ email: 'test-site@test.com', org: org.id })
     const owner = { type: 'organization', id: org.id, name: org.name }
 
     await anonymousAx.post('/api/sites',

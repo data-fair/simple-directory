@@ -1,6 +1,6 @@
 import config from '#config'
 import { Router } from 'express'
-import { reqSiteUrl, reqIp, reqUser, session } from '@data-fair/lib-express'
+import { reqSiteUrl, reqIp, reqUser, session, httpError } from '@data-fair/lib-express'
 import { type SendMailOptions } from 'nodemailer'
 import storages from '#storages'
 import mongo from '#mongo'

@@ -12,8 +12,8 @@ export const axios = (opts = {}) => axiosBuilder({ ...axiosOpts, ...opts, maxRed
 
 export const axiosAuth = async (opts: string | Omit<AxiosAuthOptions, 'directoryUrl' | 'axiosOpts' | 'password'> & { password?: string }) => {
   opts = typeof opts === 'string' ? { email: opts } : opts
-  const password = opts.email === 'superadmin@test.com' ? 'superpasswd' : 'TestPasswd01'
-  return _axiosAuth({ ...opts, password, axiosOpts, directoryUrl })
+  const password = 'TestPasswd01'
+  return _axiosAuth({ password, ...opts, axiosOpts, directoryUrl })
 }
 
 export const clean = async (options?: { ldapConfig?: any }) => {

@@ -42,10 +42,10 @@ describe('organizations api', () => {
 
     const { ax } = await createUser('test-partners1@test.com')
     const org = (await ax.post('/api/organizations', { name: 'Org 1' })).data
-    const axOrg = await axiosAuth({ email: 'test-partners1@test.com', org: org.id })
+    ax.setOrg(org.id)
 
     const mailPromise = waitForMail()
-    await axOrg.post(`/api/organizations/${org.id}/partners`, { name: 'Org 2', contactEmail: 'test-partners2@test.com' })
+    await ax.post(`/api/organizations/${org.id}/partners`, { name: 'Org 2', contactEmail: 'test-partners2@test.com' })
     const mail = await mailPromise
     assert.ok(mail.link.startsWith(config.publicUrl + '/login?step=partnerInvitation&partner_invit_token='))
     const token = new URL(mail.link).searchParams.get('partner_invit_token')
@@ -55,7 +55,7 @@ describe('organizations api', () => {
     assert.equal(tokenPayload.n, 'Org 2')
     assert.equal(tokenPayload.e, 'test-partners2@test.com')
 
-    let orgInfo = (await axOrg.get('/api/organizations/' + org.id)).data
+    let orgInfo = (await ax.get('/api/organizations/' + org.id)).data
     assert.equal(orgInfo.partners.length, 1)
     assert.ok(orgInfo.partners[0].partnerId)
     assert.ok(!orgInfo.partners[0].id)
@@ -66,7 +66,7 @@ describe('organizations api', () => {
 
     await axOrg2.post(`/api/organizations/${org.id}/partners/_accept`, { id: org2.id, contactEmail: 'test-partners2@test.com', token })
 
-    orgInfo = (await axOrg.get('/api/organizations/' + org.id)).data
+    orgInfo = (await ax.get('/api/organizations/' + org.id)).data
     assert.equal(orgInfo.partners.length, 1)
     assert.equal(orgInfo.partners[0].id, org2.id)
     assert.ok(orgInfo.partners[0].partnerId)
@@ -85,6 +85,7 @@ describe('organizations api', () => {
     const { ax: axMember, user: memberUser } = await createUser('test-member1@test.com')
 
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
+    ax.setOrg(org.id)
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-member1@test.com', role: 'user' })
 
     const members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
@@ -111,6 +112,7 @@ describe('organizations api', () => {
     const { ax } = await createUser('test-owner2@test.com')
 
     const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }] })).data
+    ax.setOrg(org.id)
     await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'test-member2@test.com', role: 'user' })
 
     let members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
@@ -159,6 +161,7 @@ describe('organizations api', () => {
     const { ax } = await createUser('owner@test3.com')
 
     const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }] })).data
+    ax.setOrg(org.id)
     await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'user1dep1@test3.com', role: 'user' })
     await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'admin1dep1@test3.com', role: 'admin' })
     await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep2', email: 'user1dep2@test3.com', role: 'user' })

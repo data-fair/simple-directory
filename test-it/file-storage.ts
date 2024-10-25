@@ -4,7 +4,7 @@ import { axios, axiosAuth, clean, startApiServer, stopApiServer } from './utils/
 
 describe('file storage', () => {
   before(startApiServer)
-  beforeEach(clean)
+  beforeEach(async () => await clean())
   after(stopApiServer)
 
   it('Create session for known user', async () => {
@@ -129,7 +129,7 @@ describe('file storage', () => {
   })
 
   it('Get user list with all fields as admin', async () => {
-    const ax = await axiosAuth({ email: 'alban.mouton@koumoul.com', adminMode: true })
+    const ax = await axiosAuth({ email: 'admin@test.com', adminMode: true })
     const res = await ax.get('/api/users?allFields=true')
     assert.equal(res.status, 200)
     assert.equal(res.data.count, 12)
