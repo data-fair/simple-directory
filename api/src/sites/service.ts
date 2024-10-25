@@ -1,5 +1,5 @@
 import config from '#config'
-import { type Site } from '#types'
+import { type Site, type SitePublic } from '#types'
 import { type Request } from 'express'
 import { reqHost, httpError, type Account } from '@data-fair/lib-express'
 import mongo from '#mongo'
@@ -32,7 +32,7 @@ export async function findOwnerSites (owner: Account) {
     .toArray()
   return {
     count: sites.length,
-    results: sites
+    results: sites as SitePublic[]
   }
 }
 

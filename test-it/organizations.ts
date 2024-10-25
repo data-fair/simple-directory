@@ -33,7 +33,8 @@ describe('organizations api', () => {
     assert.equal(orgs.length, 1)
     assert.equal(orgs[0].name, 'test')
     assert.ok(!orgs[0].departments)
-    const detailedOrg = (await adminAx.get('/api/organizations/' + orgs[0].id)).data
+    ax.setOrg(orgs[0].id)
+    const detailedOrg = (await ax.get('/api/organizations/' + orgs[0].id)).data
     assert.equal(detailedOrg.departments.length, 1)
   })
 

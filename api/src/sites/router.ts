@@ -19,17 +19,25 @@ const checkSecret = async (req: Request) => {
 router.get('', async (req, res, next) => {
   const sessionState = reqSessionAuthenticated(req)
   const { query } = (await import('#doc/sites/list-req/index.ts')).returnValid(req, { name: 'req' })
-  if (query.showAll && !reqUser(req)?.adminMode) throw httpError(403, )
-  const response = query.showAll ? await findAllSites() : await findOwnerSites(sessionState.account)
-  for (const result of response.results) {
-    result.logo = result.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
-    if (result.authProviders) {
-      for (const p of result.authProviders) {
-        if (p.type === 'oidc') p.id = getOidcProviderId(p.discovery)
+  if (query.showAll && !reqUser(req)?.adminMode) throw httpError(403)
+  if (query.showAll) {
+    const response = await findAllSites()
+    for (const result of response.results) {
+      result.logo = result.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
+      if (result.authProviders) {
+        for (const p of result.authProviders) {
+          if (p.type === 'oidc') p.id = getOidcProviderId(p.discovery)
+        }
       }
     }
+    res.send(response)
+  } else {
+    const response = await findOwnerSites(sessionState.account)
+    for (const result of response.results) {
+      result.logo = result.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${sessionState.account.type}/${sessionState.account.id}/avatar.png`
+    }
+    res.send(response)
   }
-  res.send(response)
 })
 
 router.post('', async (req, res, next) => {
@@ -40,7 +48,7 @@ router.post('', async (req, res, next) => {
 })
 
 router.patch('/:id', async (req, res, next) => {
-  if (!reqUserAuthenticated(req)?.adminMode) throw httpError(403, )
+  if (!reqUserAuthenticated(req)?.adminMode) throw httpError(403)
   const { body: patch } = (await import('#doc/sites/patch-req/index.ts')).returnValid(req, { name: 'req' })
   const patchedSite = await patchSite({ _id: req.params.id, ...patch })
   res.send(patchedSite)
@@ -61,7 +69,7 @@ router.get('/_public', async (req, res, next) => {
     logo: site.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`,
     reducedPersonalInfoAtCreation: site.reducedPersonalInfoAtCreation,
     tosMessage: site.tosMessage,
-    authMode: site.authMode,
+    authMode: site.authMode ?? 'onlyBackOffice',
     authOnlyOtherSite: site.authOnlyOtherSite
   }
   res.send(sitePublic)
