@@ -1,23 +1,31 @@
-const config = require('config')
-const assert = require('assert').strict
-const testUtils = require('../utils')
+import { strict as assert } from 'node:assert'
+import { it, describe, before, beforeEach, after } from 'node:test'
+import { axios, axiosAuth, clean, startApiServer, stopApiServer, createUser } from './utils/index.ts'
+
+process.env.STORAGE_TYPE = 'mongo'
 
 describe('sites api', () => {
-  it('should create a site for a standalone portal', async () => {
-    const anonymousAx = await testUtils.axios()
-    await assert.rejects(anonymousAx.post('/api/sites', { host: '127.0.0.1:5989' }), (err) => err.status === 401)
-    await assert.rejects(anonymousAx.post('/api/sites', { host: '127.0.0.1:5989' }, { params: { key: config.secretKeys.sites } }), (err) => err.status === 400)
+  before(startApiServer)
+  beforeEach(async () => await clean())
+  after(stopApiServer)
 
-    const { ax } = await testUtils.createUser('test-site@test.com')
+  it('should create a site for a standalone portal', async () => {
+    const config = (await import('../api/src/config.ts')).default
+
+    const anonymousAx = await axios()
+    await assert.rejects(anonymousAx.post('/api/sites', { host: '127.0.0.1:5989' }), { status: 401 })
+    await assert.rejects(anonymousAx.post('/api/sites', { host: '127.0.0.1:5989' }, { params: { key: config.secretKeys.sites } }), { status: 400 })
+
+    const { ax } = await createUser('test-site@test.com')
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
-    const orgAx = await testUtils.axios('test-site@test.com:Test1234:org', org.id)
+    const orgAx = await axiosAuth({ email: 'test-site@test.com:Test1234:org', org: org.id })
     const owner = { type: 'organization', id: org.id, name: org.name }
 
     await anonymousAx.post('/api/sites',
       { _id: 'test', owner, host: '127.0.0.1:5989', theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
 
-    await assert.rejects(anonymousAx.get('/api/sites'), err => err.status === 401)
+    await assert.rejects(anonymousAx.get('/api/sites'), { status: 401 })
 
     // anonymous user can access the public info (host, theme and later auth providers) so that we can display custom login page
     const publicSite = (await anonymousAx.get('http://127.0.0.1:5989/simple-directory/api/sites/_public')).data

@@ -22,6 +22,7 @@ export default {
       type: 'object',
       additionalProperties: false,
       properties: {
+        invit_token: { type: 'string' },
         redirect: { type: 'string' },
         org: { type: 'string' },
         dep: { type: 'string' }

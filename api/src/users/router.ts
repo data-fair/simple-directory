@@ -1,7 +1,7 @@
 import { type Organization, type UserWritable } from '#types'
 import { Router, type RequestHandler } from 'express'
 import config, { superadmin } from '#config'
-import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession } from '@data-fair/lib-express'
+import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession, httpError } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
 import { pushEvent } from '@data-fair/lib-node/events-queue.js'
@@ -16,7 +16,7 @@ const router = Router()
 
 const rejectCoreIdUser: RequestHandler = (req, res, next) => {
   const session = reqSession(req)
-  if (session.user?.idp) return res.status(403).send('This route is not available for users with a core identity provider')
+  if (session.user?.idp) throw httpError(403, 'This route is not available for users with a core identity provider')
   next()
 }
 
@@ -34,7 +34,7 @@ router.get('', async (req, res, next) => {
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
   if (allFields) {
-    if (!session.user?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+    if (!session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   } else {
     params.select = ['id', 'name']
   }
@@ -65,9 +65,9 @@ router.post('', async (req, res, next) => {
   // if the invitation is not valid, better not to proceed with the user creation
   let invit
   let orga: Organization | undefined
-  if (typeof req.query.invit_token === 'string') {
+  if (query.invit_token) {
     try {
-      invit = unshortenInvit(await session.verifyToken(req.query.invit_token))
+      invit = unshortenInvit(await session.verifyToken(query.invit_token))
     } catch (err: any) {
       return res.status(400).send(err.name === 'TokenExpiredError' ? reqI18n(req).messages.errors.expiredInvitationToken : reqI18n(req).messages.errors.invalidInvitationToken)
     }
@@ -109,7 +109,7 @@ router.post('', async (req, res, next) => {
   const user = await storages.globalStorage.getUserByEmail(body.email, await reqSite(req))
 
   // email is already taken, send a conflict email
-  const link = (req.query.redirect as string) || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
+  const link = query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
   if (user && user.emailConfirmed !== false) {
     const linkUrl = new URL(link)
     await sendMail('conflict', reqI18n(req).messages, body.email, { host: linkUrl.host, origin: linkUrl.origin })
@@ -139,7 +139,7 @@ router.post('', async (req, res, next) => {
 
   if (invit && !config.alwaysAcceptInvitation && orga) {
     const limits = await getLimits(orga)
-    if (limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+    if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
       return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }
     eventsLog.info('sd.user.accept-invite', 'user accepted an invitation', logContext)
@@ -156,7 +156,7 @@ router.post('', async (req, res, next) => {
     // no need to confirm email if the user already comes from an invitation link
     // we already created the user with emailConfirmed=true
     const payload = getTokenPayload(createdUser)
-    const linkUrl = await prepareCallbackUrl(req, payload, req.query.redirect as string | undefined, getDefaultUserOrg(createdUser, invit && invit.id, invit && invit.department))
+    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, invit && invit.id, invit && invit.department))
     return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication
@@ -171,7 +171,7 @@ router.post('', async (req, res, next) => {
 
 router.get('/:userId', async (req, res, next) => {
   const session = reqSessionAuthenticated(req)
-  if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+  if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   if (session.user.id === '_superadmin') return res.send(superadmin)
   let storage = storages.globalStorage
   if (session.user.id === req.params.userId && session.user.os && session.organization) {
@@ -191,18 +191,18 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
   const logContext: EventLogContext = { req }
 
   const session = reqSessionAuthenticated(req)
-  if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+  if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
 
   const { body: patch } = (await import('#doc/users/patch-req/index.ts')).returnValid(req, { name: 'req' })
 
   const adminKey = Object.keys(req.body).find(key => adminKeys.includes(key))
-  if (adminKey && !session.user?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+  if (adminKey && !session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
 
   if (patch.plannedDeletion) {
     if (config.userSelfDelete) {
-      if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+      if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     } else {
-      if (!session.user?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+      if (!session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     }
   }
 
@@ -236,7 +236,7 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
 
-  if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+  if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   const patch = { plannedDeletion: null }
 
   await storages.globalStorage.patchUser(req.params.userId, patch, session.user)
@@ -254,9 +254,9 @@ router.delete('/:userId', async (req, res, next) => {
   const session = reqSessionAuthenticated(req)
 
   if (config.userSelfDelete) {
-    if (!session.user?.adminMode && session.user.id !== req.params.userId) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+    if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   } else {
-    if (!session.user?.adminMode) return res.status(403).send(reqI18n(req).messages.errors.permissionDenied)
+    if (!session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   }
 
   await storages.globalStorage.deleteUser(req.params.userId)

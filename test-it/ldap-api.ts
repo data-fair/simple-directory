@@ -22,7 +22,7 @@ describe('ldap storage API', () => {
       lastName: 'Mouton',
       email: 'alban.mouton@koumoul.com',
       organizations: [{ id: 'myorg', role: 'user', name: 'my org' }],
-      password: 'passwd'
+      password: 'TestPasswd01'
     })
   })
 

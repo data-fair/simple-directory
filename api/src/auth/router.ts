@@ -38,7 +38,7 @@ async function confirmLog (storage: SdStorage, user: User) {
 }
 
 const rejectCoreIdUser: RequestHandler = (req, res, next) => {
-  if (reqUser(req)?.idp) return res.status(403).send('This route is not available for users with a core identity provider')
+  if (reqUser(req)?.idp) throw httpError(403, 'This route is not available for users with a core identity provider')
   next()
 }
 
@@ -538,7 +538,7 @@ router.post('/action', async (req, res, next) => {
 
 router.delete('/adminmode', async (req, res, next) => {
   const user = reqUserAuthenticated(req)
-  if (!user.adminMode) return res.status(403).send('This route is only available in admin mode')
+  if (!user.adminMode) throw httpError(403, 'This route is only available in admin mode')
   req.query.noAdmin = 'true'
   await keepalive(req, res)
 
@@ -549,7 +549,7 @@ router.delete('/adminmode', async (req, res, next) => {
 router.post('/asadmin', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const loggedUser = reqUserAuthenticated(req)
-  if (!loggedUser.adminMode) return res.status(403).send('This functionality is for admins only')
+  if (!loggedUser.adminMode) throw httpError(403, 'This functionality is for admins only')
   const storage = storages.globalStorage
   const user = await storage.getUser(req.body.id)
   if (!user) return res.status(404).send('User does not exist')
@@ -569,7 +569,7 @@ router.post('/asadmin', async (req, res, next) => {
 router.delete('/asadmin', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const loggedUser = reqUserAuthenticated(req)
-  if (!loggedUser.asAdmin) return res.status(403).send('This functionality is for admins only')
+  if (!loggedUser.asAdmin) throw httpError(403, 'This functionality is for admins only')
   const storage = storages.globalStorage
   const user = loggedUser.asAdmin.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.asAdmin.id)
   if (!user) return res.status(401).send('User does not exist anymore')
@@ -749,7 +749,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
 
   if (invit && invitOrga && !config.alwaysAcceptInvitation) {
     const limits = await getLimits(invitOrga)
-    if (limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+    if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
       return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }
 
@@ -960,7 +960,7 @@ router.post('/saml2-assert', async (req, res) => {
 
   if (invit && invitOrga && !config.alwaysAcceptInvitation) {
     const limits = await getLimits(invitOrga)
-    if (limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+    if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
       return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }
     await storage.addMember(invitOrga, user, invit.role, invit.department)

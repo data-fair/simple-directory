@@ -49,7 +49,7 @@ router.post('', async (req, res, next) => {
   if (!orga) return res.status(404).send('unknown organization')
 
   const limits = await getLimits(orga)
-  if (limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+  if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
     eventsLog.info('sd.invite.limit', `limit error for /invitations route with org ${body.id}`, logContext)
     return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
   }
@@ -61,7 +61,7 @@ router.post('', async (req, res, next) => {
   }
   logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invitation.department, departmentName: dep?.name }
 
-  const token = await sign(shortenInvit(invitation), config.jwtDurations.invitationToken)
+  const token = await signToken(shortenInvit(invitation), config.jwtDurations.invitationToken)
 
   if (config.alwaysAcceptInvitation) {
     eventsLog.info('sd.invite.user-creation', `invitation sent in always accept mode immediately creates a user or adds it as member ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
@@ -238,7 +238,7 @@ router.get('/_accept', async (req, res, next) => {
   }
 
   const limits = await getLimits(orga)
-  if (limits.store_nb_members.limit >= 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+  if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
     errorUrl.searchParams.set('error', 'maxNbMembers')
     return res.redirect(errorUrl.href)
   }

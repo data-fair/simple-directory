@@ -52,7 +52,7 @@ describe('ldap storage per organization in mongodb storage mode', () => {
       lastName: 'Mouton',
       email: 'alban.mouton@koumoul.com',
       organizations: [{ id: org.id, role: 'user', name: 'Org 1' }],
-      password: 'passwd'
+      password: 'TestPasswd01'
     })
 
     const ax = await axiosAuth({ email: 'alban.mouton@koumoul.com', org: org.id, orgStorage: true })

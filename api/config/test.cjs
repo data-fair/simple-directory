@@ -4,7 +4,7 @@ module.exports = {
   },
   port: 5690,
   publicUrl: 'http://localhost:5689/simple-directory',
-  admins: ['admin@test.com', 'alban.mouton@koumoul.com'],
+  admins: ['admin@test.com'],
   contact: 'contact@test.com',
   storage: {
     type: 'file',

@@ -1,9 +1,16 @@
-const assert = require('assert').strict
-const testUtils = require('../utils')
+import { strict as assert } from 'node:assert'
+import { it, describe, before, beforeEach, after } from 'node:test'
+import { axios, clean, startApiServer, stopApiServer } from './utils/index.ts'
+
+process.env.STORAGE_TYPE = 'mongo'
 
 describe('OIDC', () => {
+  before(startApiServer)
+  beforeEach(async () => await clean())
+  after(stopApiServer)
+
   it('should implement a standard login workflow', async () => {
-    const anonymousAx = await testUtils.axios()
+    const anonymousAx = await axios()
     const login = await anonymousAx.get('/api/auth/oauth/localhost9009/login', { validateStatus: (status) => status === 302 })
     const redirectUrl = new URL(login.headers.location)
     // example url http://localhost:9009/auth?response_type=code&client_id=foo&redirect_uri=http%3A%2F%2F127.0.0.1%3A5689%2Fsimple-directory%2Fapi%2Fauth%2Foauth-callback&scope=openid%20email%20profile&state=%5B%22wBPeAAdRVJh243oPShZyS%22%2Cnull%2C%22http%3A%2F%2F127.0.0.1%3A5689%2Fsimple-directory%22%2C%22%22%2C%22%22%2C%22%22%5D&display=page&prompt=logi

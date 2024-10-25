@@ -2,25 +2,25 @@ import { strict as assert } from 'node:assert'
 import type { AxiosAuthOptions } from '@data-fair/lib-node/axios-auth.js'
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
-import mongo from '@data-fair/lib-node/mongo.js'
 import eventPromise from '@data-fair/lib-utils/event-promise.js'
 
 const directoryUrl = 'http://localhost:5689/simple-directory'
 
 const axiosOpts = { baseURL: 'http://localhost:5689/simple-directory' }
 
-export const axios = (opts = {}) => axiosBuilder({ ...axiosOpts, ...opts })
+export const axios = (opts = {}) => axiosBuilder({ ...axiosOpts, ...opts, maxRedirects: 0 })
 
-export const axiosAuth = (opts: string | Omit<AxiosAuthOptions, 'directoryUrl' | 'axiosOpts' | 'password'>) => {
+export const axiosAuth = async (opts: string | Omit<AxiosAuthOptions, 'directoryUrl' | 'axiosOpts' | 'password'> & { password?: string }) => {
   opts = typeof opts === 'string' ? { email: opts } : opts
-  const password = opts.email === 'superadmin@test.com' ? 'superpasswd' : 'passwd'
+  const password = opts.email === 'superadmin@test.com' ? 'superpasswd' : 'TestPasswd01'
   return _axiosAuth({ ...opts, password, axiosOpts, directoryUrl })
 }
 
 export const clean = async (options?: { ldapConfig?: any }) => {
-  for (const name of ['users', 'organizations']) {
-    await mongo.db.collection(name).deleteMany({})
-  }
+  const mongo = (await (import('../../api/src/mongo.ts'))).default
+  await mongo.organizations.deleteMany({ _id: { $ne: 'admins-org' } })
+  await mongo.users.deleteMany({ _id: { $ne: 'admin@test.com' } })
+
   if (options?.ldapConfig) {
     const ldapStorage = await import('../../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(options.ldapConfig)
@@ -56,8 +56,13 @@ export const createUser = async (email: string, adminMode = false, password = 'T
   const mail = await mailPromise
   // sent a mail with a token_callback url to validate user creation
   assert.ok(mail.link.includes('token_callback'))
-  await anonymAx({ url: mail.link, maxRedirects: 0 }).catch((err: any) => { if (err.status !== 302) throw err })
-  const ax = await _axiosAuth({ email, adminMode, password, axiosOpts, directoryUrl })
+  await anonymAx(mail.link).catch((err: any) => { if (err.status !== 302) throw err })
+  const ax = await axiosAuth({ email, adminMode, password })
   const user = (await ax.get('/api/auth/me')).data
   return { ax, user }
+}
+
+export const waitForMail = async () => {
+  const { events } = await import('../../api/src/mails/service.ts')
+  return eventPromise<any>(events, 'send')
 }

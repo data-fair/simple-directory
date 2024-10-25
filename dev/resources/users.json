@@ -4,7 +4,7 @@
     "lastName": "Meadus",
     "email": "dmeadus0@answers.com",
     "password": {
-      "clear": "passwd"
+      "clear": "TestPasswd01"
     }
   },
   {
@@ -68,7 +68,7 @@
     "email": "alban.mouton@koumoul.com",
     "isAdmin": true,
     "password": {
-      "clear": "passwd"
+      "clear": "TestPasswd01"
     }
   },
   {

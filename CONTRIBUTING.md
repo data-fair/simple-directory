@@ -90,5 +90,5 @@ Add a test user:
 
 ```
 apt-get install ldap-utils
-ldapadd -x -W -D "cn=admin,dc=example,dc=org" -f test/resources/ldap-user.ldif
+ldapadd -x -W -D "cn=admin,dc=example,dc=org" -f dev/resources/ldap-user.ldif
 ```

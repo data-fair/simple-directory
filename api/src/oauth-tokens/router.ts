@@ -7,6 +7,6 @@ export default router
 
 router.get('', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send()
-  if (!reqUser(req)?.adminMode) return res.status(403).send()
+  if (!reqUser(req)?.adminMode) throw httpError(403, )
   res.send(await readOAuthTokens())
 })

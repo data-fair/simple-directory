@@ -4,7 +4,7 @@ import apiDocs from '../contract/api-docs.ts'
 import express, { type RequestHandler } from 'express'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
-import { session, errorHandler, createSiteMiddleware, createSpaMiddleware, setReqUser } from '@data-fair/lib-express'
+import { session, errorHandler, createSiteMiddleware, createSpaMiddleware, setReqUser, reqSession, httpError } from '@data-fair/lib-express'
 import admin from './admin/router.ts'
 import anonymousAction from './anonymous-action/router.ts'
 import auth from './auth/router.ts'
@@ -18,7 +18,8 @@ import avatars from './avatars/router.ts'
 import oauthTokens from './oauth-tokens/router.ts'
 import tokens from './tokens/router.ts'
 import sites from './sites/router.ts'
-import { keepalive } from '#services'
+import storages from './storages/index.ts'
+import { keepalive, getTokenPayload } from '#services'
 
 const app = express()
 export default app
@@ -34,21 +35,23 @@ app.use(session.middleware())
 
 // minimalist api key management
 const readApiKey: RequestHandler = async (req, res, next) => {
-  /* if (reqUser(req) && !reqUser(req).orgStorage && reqUser(req).id !== '_superadmin') {
-    reqUser(req) = {
-      ...await storages.globalStorage.getUser({ id: reqUser(req).id }),
-      isAdmin: reqUser(req).isAdmin,
-      adminMode: reqUser(req)?.adminMode,
-      activeAccount: reqUser(req).activeAccount
+  /*
+  // always refresh session user with actual current data
+  const sessionState = reqSession(req)
+  if (sessionState.user && !sessionState.user.os && sessionState.user.id !== '_superadmin') {
+    const fullUser = await storages.globalStorage.getUser(sessionState.user.id)
+    if (fullUser) {
+      sessionState.user = getTokenPayload(fullUser)
     }
-  } */
+  }
+  */
 
   const apiKey = req.get('x-apiKey') || req.get('x-api-key') || req.query.apiKey
   if (apiKey) {
     if (apiKey !== config.secretKeys.readAll) {
       return res.status(401).send('bad api key')
     } else {
-      if (req.method !== 'GET') return res.status(403).send('api key is only for read endpoints')
+      if (req.method !== 'GET') throw httpError(403, 'api key is only for read endpoints')
       setReqUser(req, {
         isAdmin: 1,
         adminMode: 1,

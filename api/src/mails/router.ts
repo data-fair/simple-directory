@@ -16,7 +16,7 @@ export default router
 router.post('/', async (req, res) => {
   const key = req.query.key
   if (!config.secretKeys.sendMails || config.secretKeys.sendMails !== key) {
-    return res.status(403).send('Bad secret in "key" parameter')
+    throw httpError(403, 'Bad secret in "key" parameter')
   }
   const storage = storages.globalStorage
   const results = []
