@@ -1,3 +1,8 @@
+import jsonSchema from '@data-fair/lib-utils/json-schema.js'
+const ldapParamsSchema = import('../ldap-params/schema.js')
+
+const partialLdapParamsSchema = { ...ldapParamsSchema, required: ['url', 'baseDN'] }
+
 export default {
   $id: 'https://github.com/data-fair/simple-directory/organization',
   'x-exports': ['types'],
@@ -119,7 +124,7 @@ export default {
           enum: ['ldap']
         },
         readonly: { type: 'boolean' },
-        config: { $ref: 'https://github.com/data-fair/simple-directory/ldap-params' }
+        config: partialLdapParamsSchema
       }
     },
     partners: {

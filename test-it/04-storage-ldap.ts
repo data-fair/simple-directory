@@ -22,7 +22,6 @@ describe('storage ldap', () => {
     await storage._createOrganization({ id: 'myorg', name: 'My Org' })
     await storage._createUser({
       id: 'alban1',
-      name: 'Alban Mouton',
       firstName: 'Alban',
       lastName: 'Mouton',
       email: 'alban.mouton@koumoul.com',
@@ -30,7 +29,6 @@ describe('storage ldap', () => {
     })
     await storage._createUser({
       id: 'test1',
-      name: 'Test User',
       firstName: 'Test',
       lastName: 'User',
       email: 'test@test.com',
@@ -63,7 +61,7 @@ describe('storage ldap', () => {
 
     const members = await storage.findMembers('myorg', { skip: 0, size: 10 })
     assert.equal(members.count, 2)
-    assert.equal(members.results[0].name, 'Alban Mouton')
+    assert.equal(members.results[0].name, 'alban1')
     assert.equal(members.results[0].role, 'overwritten')
 
     const members2 = await storage.findMembers('myorg', { q: 'notauser', skip: 0, size: 10 })

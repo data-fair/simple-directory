@@ -53,7 +53,7 @@ describe('ldap storage per organization in file storage mode', () => {
     assert.equal(res.data.count, 1)
     assert.equal(res.data.results[0].email, 'alban.mouton@koumoul.com')
     assert.equal(res.data.results[0].orgStorage, true)
-    assert.equal(res.data.results[0].id, 'ldap_test-ldap_Alban Mouton')
+    assert.equal(res.data.results[0].id, 'ldap_test-ldap_alban')
 
     // TODO: add auth test with user password
   })

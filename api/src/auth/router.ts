@@ -333,7 +333,7 @@ router.get('/token_callback', async (req, res, next) => {
     if (!org) return redirectError('orgaUnknown')
   }
   let storage = storages.globalStorage
-  if (req.query.org_storage === 'true' && org) {
+  if (query.org_storage && org) {
     storage = await storages.createOrgStorage(org) ?? storage
   }
   const user = decoded.id === '_superadmin' ? superadmin : await storage.getUser(decoded.id)
@@ -377,9 +377,8 @@ router.get('/token_callback', async (req, res, next) => {
 // TODO: deprecate this whole route, replaced by simpler /keepalive
 router.post('/exchange', async (req, res, next) => {
   const logContext: EventLogContext = { req }
-  const { query } = (await import('#doc/auth/post-exchange-req/index.ts')).returnValid(req, { name: 'req' })
 
-  const idToken = ((req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop()) || query.id_token) as string | undefined
+  const idToken = ((req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop()) || req.query.id_token) as string | undefined
   if (!idToken) {
     return res.status(401).send('No id_token cookie provided')
   }

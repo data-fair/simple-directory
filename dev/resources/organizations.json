@@ -93,6 +93,7 @@
       "active": true,
       "config": {
         "url": "ldap://localhost:389",
+        "baseDN": "dc=example,dc=org",
         "searchUserDN": "cn=admin,dc=example,dc=org",
         "searchUserPassword": "admin",
         "users": {

@@ -89,7 +89,7 @@ function buildMappingFn (
   }
 }
 
-class LdapStorage implements SdStorage {
+export class LdapStorage implements SdStorage {
   readonly?: boolean | undefined
 
   private ldapParams: LdapParams

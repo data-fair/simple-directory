@@ -21,15 +21,8 @@ describe('ldap storage API', () => {
       firstName: 'Alban',
       lastName: 'Mouton',
       email: 'alban.mouton@koumoul.com',
-      organizations: [{ id: 'myorg', role: 'admin', name: 'my org' }],
+      organizations: [{ id: 'myorg', role: 'user', name: 'my org' }],
       password: 'passwd'
-    })
-    await storage._createUser({
-      id: 'alban2',
-      firstName: 'Alban',
-      lastName: '',
-      email: 'alban.mouton@gmail.com',
-      organizations: [{ id: 'myorg', role: 'user', name: 'my org' }]
     })
   })
 
@@ -49,6 +42,6 @@ describe('ldap storage API', () => {
     const res = await ax.get('/api/auth/me')
     assert.equal(res.status, 200)
     assert.equal(res.data.id, 'alban')
-    console.log('ME', res.data)
+    assert.equal(res.data.organizations?.[0].id, 'myorg')
   })
 })

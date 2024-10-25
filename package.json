@@ -36,7 +36,7 @@
   "homepage": "https://github.com/koumoul-dev/simple-directory#readme",
   "devDependencies": {
     "@commitlint/config-conventional": "^19.2.2",
-    "@data-fair/lib-node": "^1.1.1",
+    "@data-fair/lib-node": "^1.2.0",
     "@types/accept-language-parser": "^1.5.6",
     "@types/capitalize": "^2.0.2",
     "@types/config": "^3.3.3",
