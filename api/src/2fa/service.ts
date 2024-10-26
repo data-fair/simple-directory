@@ -17,7 +17,6 @@ export const check2FASession = async (req: Request, userId: string) => {
   if (!token) return false
   let decoded
   try {
-    // TODO: use jwks store same as session token verification
     decoded = await session.verifyToken(token)
   } catch (err) {
     console.error('invalid 2fa token', err)

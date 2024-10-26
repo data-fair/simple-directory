@@ -39,7 +39,7 @@ export const start = async () => {
   while (!stopped) {
     if (await locks.acquire('signature-keys-rotation')) {
       const signatureKeys = await getSignatureKeys()
-      if (dayjs().diff(dayjs(signatureKeys.lastUpdate), 'day') > 15) {
+      if (dayjs().diff(dayjs(signatureKeys.lastUpdate), 'day') > 20) {
         rotatePromise = rotateKeys()
         await rotatePromise
       }
@@ -72,7 +72,7 @@ const readSignatureKeys = async () => {
 const writeSignatureKeys = async (signatureKeys: SignatureKeys) => {
   const storedSignatureKeys = { ...signatureKeys } as any
   storedSignatureKeys.privateKey = cipher(signatureKeys.privateKey)
-  await mongo.secrets.insertOne({ _id: 'signature-keys', data: storedSignatureKeys })
+  await mongo.secrets.replaceOne({ _id: 'signature-keys' }, { data: storedSignatureKeys }, { upsert: true })
 }
 
 const readDeprecatedSignatureKeys = async () => {
