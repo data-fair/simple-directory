@@ -430,7 +430,7 @@ router.post('/exchange', async (req, res, next) => {
 router.post('/keepalive', async (req, res, next) => {
   const loggedUser = reqUserAuthenticated(req)
   const storage = storages.globalStorage
-  const user = loggedUser.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.id)
+  let user = loggedUser.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.id)
   if (!user) throw httpError(404)
 
   const coreIdProvider = user.coreIdProvider
@@ -461,11 +461,12 @@ router.post('/keepalive', async (req, res, next) => {
 
     try {
       const refreshedToken = await provider.refreshToken(tokenJson, true)
+
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
         const userInfo = await provider.userInfo(newToken.access_token)
         const memberInfo = await authCoreProviderMemberInfo(await reqSite(req), provider, user.email, userInfo)
-        await patchCoreOAuthUser(provider, user, userInfo, memberInfo)
+        user = await patchCoreOAuthUser(provider, user, userInfo, memberInfo)
         await writeOAuthToken(user, provider, newToken, offlineRefreshToken)
         eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }

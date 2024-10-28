@@ -20,6 +20,7 @@ export const clean = async (options?: { ldapConfig?: any }) => {
   const mongo = (await (import('../../api/src/mongo.ts'))).default
   await mongo.organizations.deleteMany({ _id: { $ne: 'admins-org' } })
   await mongo.users.deleteMany({ _id: { $ne: 'admin@test.com' } })
+  await mongo.oauthTokens.deleteMany()
 
   if (options?.ldapConfig) {
     const ldapStorage = await import('../../api/src/storages/ldap.ts')

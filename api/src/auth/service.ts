@@ -67,5 +67,5 @@ export const patchCoreOAuthUser = async (provider: OAuthProvider, user: User, oa
     if (oauthInfo.user.firstName && !user.firstName) patch.firstName = oauthInfo.user.firstName
     if (oauthInfo.user.lastName && !user.lastName) patch.lastName = oauthInfo.user.lastName
   }
-  await storages.globalStorage.patchUser(user.id, patch)
+  return await storages.globalStorage.patchUser(user.id, patch)
 }

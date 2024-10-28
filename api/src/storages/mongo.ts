@@ -109,6 +109,14 @@ class MongodbStorage implements SdStorage {
       { returnDocument: 'after' }
     )
     const user = cleanUser(mongoRes)
+    const name = userName(user)
+    if (name !== user.name) {
+      await mongo.users.findOneAndUpdate(
+        { _id: id },
+        { $set: { name } }
+      )
+      user.name = name
+    }
     return user
   }
 

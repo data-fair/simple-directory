@@ -119,17 +119,10 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     const tokenWrap = await oauthClient.getToken({
       code,
       redirect_uri: callbackUri,
-      scope,
-      client_id: p.client.id,
-      client_secret: p.client.secret,
-      grant_type: 'authorization_code'
+      scope
     })
-    if (tokenWrap.error) {
-      console.error('Bad OAuth code', tokenWrap)
-      throw new Error('Bad OAuth code')
-    }
     const token = tokenWrap.token
-    const decodedRefreshToken = decodeToken(token.refresh_token)
+    const decodedRefreshToken = decodeToken(token.refresh_token as string)
     const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'
     return { token, offlineRefreshToken }
   }
@@ -138,7 +131,7 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     const token = oauthClient.createToken(tokenObj)
     if (onlyIfExpired && !token.expired()) return null
     const newToken = (await token.refresh({ scope: p.scope })).token
-    const decodedRefreshToken = decodeToken(newToken.refresh_token)
+    const decodedRefreshToken = decodeToken(newToken.refresh_token as string)
     const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'
     return { newToken, offlineRefreshToken }
   }
