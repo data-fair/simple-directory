@@ -42,7 +42,7 @@
             variant="outlined"
           />
           <v-autocomplete
-            v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
+            v-if="$uiConfig.manageDepartments && orga.departments && orga.departments.length && !department"
             v-model="editMember.department"
             :items="orga.departments"
             :label="orga.departmentLabel || $t('common.department')"

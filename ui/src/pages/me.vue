@@ -29,7 +29,7 @@
       />
 
       <load-avatar
-        v-if="userDetails && env.avatars.users"
+        v-if="userDetails && $uiConfig.avatars.users"
         :owner="{...userDetails, type: 'user'}"
         :disabled="!userDetails || readonly"
       />
@@ -60,7 +60,7 @@
           />
         </v-col>
         <v-col
-          v-if="!env.noBirthday"
+          v-if="!$uiConfig.noBirthday"
           cols="6"
         >
           <v-menu
@@ -224,7 +224,7 @@
         />
       </template>
 
-      <template v-if="env.userSelfDelete && !readonly && userDetails">
+      <template v-if="$uiConfig.userSelfDelete && !readonly && userDetails">
         <h2 class="text-h5 mt-8 mb-4">
           {{ $t('pages.me.operations') }}
         </h2>
@@ -232,7 +232,7 @@
           v-if="!userDetails.plannedDeletion"
           :button-text="$t('pages.me.deleteMyself', {name: user.name})"
           :title="$t('pages.me.deleteMyself', {name: user.name})"
-          :alert="$t('pages.me.deleteMyselfAlert', {plannedDeletionDelay: env.plannedDeletionDelay})"
+          :alert="$t('pages.me.deleteMyselfAlert', {plannedDeletionDelay: $uiConfig.plannedDeletionDelay})"
           :check-text="$t('pages.me.deleteMyselfCheck', {name: user.name})"
           yes-color="warning"
           @confirm="deleteMyself"
@@ -269,23 +269,23 @@ export default {
     ...mapState(['userDetails', 'env', 'authProviders']),
     ...mapGetters(['contrastColor']),
     readonly () {
-      return this.env.readonly || this.user.os || this.user.idp
+      return this.$uiConfig.readonly || this.user.os || this.user.idp
     },
     maxCreatedOrgs () {
       if (!this.userDetails) return 0
-      return this.userDetails.maxCreatedOrgs !== undefined && this.userDetails.maxCreatedOrgs !== null ? this.userDetails.maxCreatedOrgs : this.env.defaultMaxCreatedOrgs
+      return this.userDetails.maxCreatedOrgs !== undefined && this.userDetails.maxCreatedOrgs !== null ? this.userDetails.maxCreatedOrgs : this.$uiConfig.defaultMaxCreatedOrgs
     },
     showMaxCreatedOrgs () {
       if (!this.userDetails) return false
-      if (this.env.defaultMaxCreatedOrgs === -1) return false
-      if (this.env.defaultMaxCreatedOrgs === 0 && !this.userDetails.maxCreatedOrgs) return false
+      if (this.$uiConfig.defaultMaxCreatedOrgs === -1) return false
+      if (this.$uiConfig.defaultMaxCreatedOrgs === 0 && !this.userDetails.maxCreatedOrgs) return false
       return this.maxCreatedOrgs === -1 ? 'illimité' : ('' + this.maxCreatedOrgs)
     },
     host () {
       return window.location.host
     },
     mainHost () {
-      return new URL(this.env.mainPublicUrl).host
+      return new URL(this.$uiConfig.mainPublicUrl).host
     },
     defaultOrgItems () {
       return (this.patch.ignorePersonalAccount ? [] : [{ id: '', name: this.$t('common.userAccount') }]).concat(this.userDetails.organizations)
@@ -293,7 +293,7 @@ export default {
     showIgnorePersonalAccount () {
       // invitation mode only (means user should always be in an orga)
       // ignorePersonalAccount should already be true in this case
-      if (this.env.onlyCreateInvited && this.userDetails.ignorePersonalAccount) return false
+      if (this.$uiConfig.onlyCreateInvited && this.userDetails.ignorePersonalAccount) return false
       // user only has a personal account
       // ignorePersonalAccount should already be false in this case
       if (this.user.organizations.length === 0 && !this.userDetails.ignorePersonalAccount) return false
@@ -368,7 +368,7 @@ export default {
     },
     async changePasswordAction () {
       try {
-        let target = this.env.publicUrl + '/login'
+        let target = this.$uiConfig.publicUrl + '/login'
         try {
           target += '?redirect=' + encodeURIComponent(window.parent.location.href)
         } catch (err) {
@@ -383,7 +383,7 @@ export default {
     async deleteMyself () {
       try {
         await this.$axios.$patch(`api/users/${this.user.id}`, {
-          plannedDeletion: moment().add(process.env.plannedDeletionDelay, 'days').format('YYYY-MM-DD')
+          plannedDeletion: moment().add(process.$uiConfig.plannedDeletionDelay, 'days').format('YYYY-MM-DD')
         })
         // await this.logout()
         // reloading top page, so that limits are re-fetched, etc.

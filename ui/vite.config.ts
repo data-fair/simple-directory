@@ -12,7 +12,7 @@ import { autoImports } from '@data-fair/lib-vuetify/vite.js'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/events',
+  base: '/simple-directory',
   optimizeDeps: { include: ['debug'] },
   resolve: {
     alias: {
@@ -49,14 +49,14 @@ export default defineConfig({
       async transformIndexHtml (html) {
         // in production this injection will be performed by an express middleware
         if (process.env.NODE_ENV !== 'development') return html
-        const { uiConfig } = await import('../api/src/config')
+        const { uiConfig } = await import('../api/src/ui-config.ts')
         return microTemplate(html, { SITE_PATH: '', UI_CONFIG: JSON.stringify(uiConfig) })
       }
     }
   ],
   experimental: {
     renderBuiltUrl (filename, { hostType }) {
-      if (hostType === 'html') return '{SITE_PATH}/events/' + filename
+      if (hostType === 'html') return '{SITE_PATH}/simple-directory/' + filename
       return { relative: true }
     }
   },

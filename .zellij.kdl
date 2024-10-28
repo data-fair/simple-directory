@@ -7,18 +7,18 @@ layout {
       }
       pane name="deps" {
         command "bash"
-        args "-ic" "dc --profile dev up"
+        args "-ic" "npm run dev-deps && watch -n 4 docker compose ps"
       }
     }
     pane {
       split_direction "vertical"
-      pane name="client" {
+      pane name="ui" {
         command "bash"
-        args "-ic" "nvm use && npm run dev-client"
+        args "-ic" "nvm use && npm -w ui run dev"
       }
-      pane name="server" {
+      pane name="api" {
         command "bash"
-        args "-ic" "nvm use && npm run dev-server"
+        args "-ic" "nvm use && npm -w api run dev"
       }
     }
     pane size=2 borderless=true {

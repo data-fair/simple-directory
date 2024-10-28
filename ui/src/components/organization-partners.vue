@@ -58,7 +58,7 @@
           <v-list-item-avatar>
             <v-img
               v-if="partner.id"
-              :src="`${env.publicUrl}/api/avatars/organization/${partner.id}/avatar.png`"
+              :src="`${$uiConfig.publicUrl}/api/avatars/organization/${partner.id}/avatar.png`"
             />
           </v-list-item-avatar>
 
@@ -135,7 +135,7 @@ export default {
   computed: {
     ...mapState(['userDetails', 'env']),
     writablePartners () {
-      return this.isAdminOrga && (!this.env.readonly || this.env.overwrite.includes('partners'))
+      return this.isAdminOrga && (!this.$uiConfig.readonly || this.$uiConfig.overwrite.includes('partners'))
     },
     partnerLabel () {
       return this.orga.partnerLabel || this.$t('common.partner')

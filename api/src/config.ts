@@ -1,7 +1,9 @@
-import type { User } from '#types'
+import { type User } from '#types'
 import type { ApiConfig } from '../config/type/index.ts'
 import { assertValid } from '../config/type/index.ts'
 import config from 'config'
+
+export type { ApiConfig } from '../config/type/index.ts'
 
 // manage retro-compatibility with older env vars
 const envAliases = [
@@ -19,10 +21,6 @@ const apiConfig = process.env.NODE_ENV === 'test' ? config.util.loadFileConfigs(
 assertValid(apiConfig, { lang: 'en', name: 'config', internal: true })
 
 export default apiConfig as ApiConfig
-
-export type UiConfig = {}
-
-export const uiConfig: UiConfig = {}
 
 export const superadmin: User = {
   created: { date: new Date().toISOString() },

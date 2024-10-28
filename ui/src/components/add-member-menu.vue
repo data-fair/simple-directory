@@ -65,7 +65,7 @@
             density="compact"
           />
           <v-autocomplete
-            v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
+            v-if="$uiConfig.manageDepartments && orga.departments && orga.departments.length && !department"
             v-model="invitation.department"
             :items="orga.departments"
             :label="orga.departmentLabel || $t('common.department')"
@@ -77,7 +77,7 @@
             density="compact"
           />
           <v-select
-            v-if="env.manageSites && redirects && redirects.filter(r => r.value !== defaultRedirect).length"
+            v-if="$uiConfig.manageSites && redirects && redirects.filter(r => r.value !== defaultRedirect).length"
             v-model="invitation.redirect"
             :disabled="mainHost !== host"
             label="Site de redirection"
@@ -149,7 +149,7 @@ export default {
         this.invitation = null
         return
       }
-      if (this.env.manageSites) await this.$store.dispatch('fetchSites')
+      if (this.$uiConfig.manageSites) await this.$store.dispatch('fetchSites')
       this.invitation = {
         id: this.orga.id,
         name: this.orga.name,
@@ -177,7 +177,7 @@ export default {
             this.menu = false
           }
           this.$emit('sent', this.invitation)
-          if (!this.env.alwaysAcceptInvitation) {
+          if (!this.$uiConfig.alwaysAcceptInvitation) {
             eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', { email: this.invitation.email }))
           }
         } catch (error) {

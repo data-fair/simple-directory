@@ -7,14 +7,14 @@
       <v-row align="center">
         <v-col class="text-center">
           <img
-            v-if="env.theme.logo"
-            :src="env.theme.logo"
+            v-if="$uiConfig.theme.logo"
+            :src="$uiConfig.theme.logo"
             class="logo"
           >
-          <logo
+          <!--<logo
             v-else
             class="logo"
-          />
+          />-->
 
           <h3 class="text-h2">
             {{ $t('root.title') }}
@@ -29,16 +29,8 @@
   </v-responsive>
 </template>
 
-<script>
-import logo from '../components/logo.vue'
-const { mapState } = require('vuex')
-
-export default {
-  components: { logo },
-  computed: {
-    ...mapState(['env'])
-  }
-}
+<script lang="ts" setup>
+const i18n = useI18n()
 </script>
 
 <style>

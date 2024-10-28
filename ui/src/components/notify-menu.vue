@@ -29,7 +29,7 @@ export default {
   props: ['topics', 'sender'],
   computed: {
     notifySubscribeUrl () {
-      return `${process.env.notifyUrl}/embed/subscribe?key=${encodeURIComponent(this.topics.map(t => t.key).join(','))}&title=${encodeURIComponent(this.topics.map(t => t.title).join(','))}&sender=${encodeURIComponent(this.sender)}&register=false`
+      return `${process.$uiConfig.notifyUrl}/embed/subscribe?key=${encodeURIComponent(this.topics.map(t => t.key).join(','))}&title=${encodeURIComponent(this.topics.map(t => t.title).join(','))}&sender=${encodeURIComponent(this.sender)}&register=false`
     }
   }
 }

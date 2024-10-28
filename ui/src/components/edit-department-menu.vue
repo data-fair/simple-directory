@@ -26,10 +26,10 @@
       <v-card-text>
         <p>{{ $t('common.id') }} = {{ department.id }}</p>
         <load-avatar
-          v-if="orga && env.avatars.orgs"
+          v-if="orga && $uiConfig.avatars.orgs"
           ref="loadAvatar"
           :owner="{type: 'organization', id: orga.id, department: department.id}"
-          :disabled="env.readonly"
+          :disabled="$uiConfig.readonly"
           :hide-validate="true"
         />
         <v-text-field

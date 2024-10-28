@@ -46,7 +46,7 @@
           disabled
         />
         <v-select
-          v-if="env.manageSites"
+          v-if="$uiConfig.manageSites"
           v-model="redirect"
           label="Site de redirection"
           :items="redirects"

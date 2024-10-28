@@ -122,7 +122,7 @@ export default {
     if (!this.user.adminMode) return this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
     this.fetchSites()
     this.headers = []
-    // if (this.env.avatars.orgs) this.headers.push({ text: '', sortable: false })
+    // if (this.$uiConfig.avatars.orgs) this.headers.push({ text: '', sortable: false })
     this.headers = this.headers.concat([
       { text: '', value: 'theme.primaryColor', sortable: false },
       { text: this.$t('common.host'), value: 'host' },

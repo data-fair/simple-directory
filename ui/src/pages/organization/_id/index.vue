@@ -24,15 +24,15 @@
       @submit="save"
     >
       <load-avatar
-        v-if="orga && env.avatars.orgs"
+        v-if="orga && $uiConfig.avatars.orgs"
         :owner="{...orga, type: 'organization'}"
-        :disabled="env.readonly"
+        :disabled="$uiConfig.readonly"
       />
       <v-text-field
         v-model="orga.name"
         :label="$t('common.name')"
         :rules="[v => !!v || '', v => v.length < 150 || $t('common.tooLong')]"
-        :disabled="!isAdminOrga || env.readonly"
+        :disabled="!isAdminOrga || $uiConfig.readonly"
         name="name"
         required
         variant="outlined"
@@ -42,17 +42,17 @@
       <v-textarea
         v-model="orga.description"
         :label="$t('common.description')"
-        :disabled="!isAdminOrga || env.readonly"
+        :disabled="!isAdminOrga || $uiConfig.readonly"
         name="description"
         hide-details
         variant="outlined"
         autocomplete="off"
       />
       <v-text-field
-        v-if="env.manageDepartments && env.manageDepartmentLabel"
+        v-if="$uiConfig.manageDepartments && $uiConfig.manageDepartmentLabel"
         v-model="orga.departmentLabel"
         :label="$t('pages.organization.departmentLabelTitle')"
-        :disabled="!isAdminOrga || env.readonly"
+        :disabled="!isAdminOrga || $uiConfig.readonly"
         name="departmentLabel"
         autocomplete="off"
       >
@@ -93,7 +93,7 @@
     </v-form>
 
     <organization-departments
-      v-if="env.manageDepartments"
+      v-if="$uiConfig.manageDepartments"
       :orga="orga"
       :is-admin-orga="isAdminOrga"
       @change="fetchOrganization"
@@ -103,11 +103,11 @@
       :is-admin-orga="isAdminOrga"
       :nb-members-limits="limits && limits.store_nb_members"
       :org-storage="'false'"
-      :readonly="env.readonly"
+      :readonly="$uiConfig.readonly"
     />
 
     <organization-storage
-      v-if="(user.adminMode && env.perOrgStorageTypes.length) || (orga.orgStorage && orga.orgStorage.active)"
+      v-if="(user.adminMode && $uiConfig.perOrgStorageTypes.length) || (orga.orgStorage && orga.orgStorage.active)"
       :orga="orga"
     />
 
@@ -121,7 +121,7 @@
     />
 
     <organization-partners
-      v-if="env.managePartners && mainHost === host"
+      v-if="$uiConfig.managePartners && mainHost === host"
       :orga="orga"
       :is-admin-orga="isAdminOrga"
       @change="fetchOrganization"
@@ -147,7 +147,7 @@ export default {
     isAdminOrga () {
       if (!this.user || !this.userDetails) return false
       if (this.user.adminMode) return true
-      if (this.env.depAdminIsOrgAdmin) {
+      if (this.$uiConfig.depAdminIsOrgAdmin) {
         return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin'))
       } else {
         return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin' && !o.department))
@@ -178,7 +178,7 @@ export default {
       this.orga = orga
     },
     async fetchLimits () {
-      if (!this.env.readonly) {
+      if (!this.$uiConfig.readonly) {
         this.limits = await this.$axios.$get(`api/limits/organization/${this.$route.params.id}`)
       }
     },
@@ -186,7 +186,7 @@ export default {
       if (e.preventDefault) e.preventDefault()
       if (!this.$refs.form.validate()) return
       const patch = { name: this.orga.name, description: this.orga.description, '2FA': this.orga['2FA'] }
-      if (this.env.manageDepartments) patch.departmentLabel = this.orga.departmentLabel
+      if (this.$uiConfig.manageDepartments) patch.departmentLabel = this.orga.departmentLabel
       this.patchOrganization({ id: this.orga.id, patch, msg: this.$t('common.modificationOk') })
     }
   }

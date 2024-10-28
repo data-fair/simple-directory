@@ -10,11 +10,11 @@
     </v-row>
 
     <v-row class="mb-3 mx-0">
-      <p v-if="env.defaultMaxCreatedOrgs === -1">
+      <p v-if="$uiConfig.defaultMaxCreatedOrgs === -1">
         {{ $t('pages.admin.users.noCreatedOrgsLimit') }}
       </p>
       <p v-else>
-        {{ $t('pages.admin.users.createdOrgsLimit', {defaultMaxCreatedOrgs: env.defaultMaxCreatedOrgs}) }}
+        {{ $t('pages.admin.users.createdOrgsLimit', {defaultMaxCreatedOrgs: $uiConfig.defaultMaxCreatedOrgs}) }}
       </p>
     </v-row>
 
@@ -44,16 +44,16 @@
     >
       <template #item="props">
         <tr>
-          <td v-if="env.avatars.users">
+          <td v-if="$uiConfig.avatars.users">
             <v-avatar :size="40">
-              <img :src="env.publicUrl + '/api/avatars/user/' + props.item.id + '/avatar.png'">
+              <img :src="$uiConfig.publicUrl + '/api/avatars/user/' + props.item.id + '/avatar.png'">
             </v-avatar>
           </td>
           <td>
             <span style="white-space: nowrap;">
               {{ props.item.email }}
               <v-btn
-                v-if="!env.readonly"
+                v-if="!$uiConfig.readonly"
                 icon
                 class="mx-0"
                 @click="showEditUserEmailDialog(props.item)"
@@ -93,10 +93,10 @@
               </span>
             </div>
           </td>
-          <td v-if="env.defaultMaxCreatedOrgs !== -1 && !env.readonly">
+          <td v-if="$uiConfig.defaultMaxCreatedOrgs !== -1 && !$uiConfig.readonly">
             <span>{{ props.item.maxCreatedOrgs }}</span>
             <v-btn
-              v-if="env.defaultMaxCreatedOrgs !== -1"
+              v-if="$uiConfig.defaultMaxCreatedOrgs !== -1"
               icon
               class="mx-0"
               @click="showEditMaxCreatedOrgsDialog(props.item)"
@@ -106,9 +106,9 @@
               </v-icon>
             </v-btn>
           </td>
-          <template v-if="!env.readonly">
+          <template v-if="!$uiConfig.readonly">
             <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
-            <td v-if="env.manageSites">
+            <td v-if="$uiConfig.manageSites">
               {{ props.item.host }}
             </td>
             <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
@@ -226,7 +226,7 @@
           {{ $t('common.editTitle', {name: currentUser.name}) }}
         </v-card-title>
         <v-card-text>
-          <p>{{ $t('pages.admin.users.explainLimit', {defaultMaxCreatedOrgs: env.defaultMaxCreatedOrgs}) }}</p>
+          <p>{{ $t('pages.admin.users.explainLimit', {defaultMaxCreatedOrgs: $uiConfig.defaultMaxCreatedOrgs}) }}</p>
           <p v-if="nbCreatedOrgs !== null">
             {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
           </p>
@@ -329,7 +329,7 @@ export default {
     if (!this.user.adminMode) return this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
     this.fetchUsers()
     this.headers = []
-    if (this.env.avatars.users) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
+    if (this.$uiConfig.avatars.users) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
     this.headers = this.headers.concat([
       { text: this.$t('common.email'), value: 'email' },
       { text: this.$t('common.name'), value: 'name' },
@@ -339,12 +339,12 @@ export default {
       { text: this.$t('common.2FA'), value: '2FA', sortable: false },
       { text: this.$t('common.organizations'), value: 'organizations', sortable: false }
     ])
-    if (this.env.defaultMaxCreatedOrgs !== -1 && !this.env.readonly) {
+    if (this.$uiConfig.defaultMaxCreatedOrgs !== -1 && !this.$uiConfig.readonly) {
       this.headers.push({ text: this.$t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs', sortable: false })
     }
-    if (!this.env.readonly) {
+    if (!this.$uiConfig.readonly) {
       this.headers.push({ text: this.$t('common.createdAt'), value: 'created.date' })
-      if (this.env.manageSites) {
+      if (this.$uiConfig.manageSites) {
         this.headers.push({ text: this.$t('common.host'), value: 'host' })
       }
       this.headers.push({ text: this.$t('common.updatedAt'), value: 'updated.date' })

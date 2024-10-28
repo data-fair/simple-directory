@@ -16,9 +16,9 @@
     </h2>
 
     <load-avatar
-      v-if="orga && env.avatars.orgs"
+      v-if="orga && $uiConfig.avatars.orgs"
       :owner="{type: 'organization', id: orga.id, department: department.id}"
-      :disabled="env.readonly"
+      :disabled="$uiConfig.readonly"
     />
 
     <organization-members
@@ -26,7 +26,7 @@
       :is-admin-orga="isAdminDepartment"
       :nb-members-limits="limits && limits.store_nb_members"
       :org-storage="'false'"
-      :readonly="env.readonly"
+      :readonly="$uiConfig.readonly"
       :admin-department="$route.params.departmentId"
     />
   </v-container>
@@ -69,7 +69,7 @@ export default {
   },
   methods: {
     async fetchLimits () {
-      if (!this.env.readonly) {
+      if (!this.$uiConfig.readonly) {
         this.limits = await this.$axios.$get(`api/limits/organization/${this.$route.params.id}`)
       }
     },

@@ -1,4 +1,4 @@
-import config from '#config'
+import config from '../src/config.ts'
 import { type Request } from 'express'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import { flatten, unflatten } from 'flat'
@@ -51,9 +51,9 @@ export const messages: any = unflatten(flatMessages, flatOpts)
 // A subset of messages for UI separated for performance.
 const flatPublicMessages = { ...flatMessages }
 for (const key of Object.keys(flatPublicMessages)) {
-  if (!['common', 'pages'].includes(key.split('_')[1])) delete flatPublicMessages[key]
+  if (!['root', 'common', 'pages'].includes(key.split('_')[1])) delete flatPublicMessages[key]
 }
-export const publicMessages = unflatten(flatPublicMessages, flatOpts)
+export const publicMessages = unflatten(flatPublicMessages, flatOpts) as any
 
 const reqI18nKey = Symbol('reqI18n')
 

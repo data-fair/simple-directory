@@ -15,12 +15,12 @@
           <span
             v-if="sameUser"
             class="subheading"
-            v-html="$t('pages.invitation.msgSameUser', {profileUrl: env.publicUrl + '/me'})"
+            v-html="$t('pages.invitation.msgSameUser', {profileUrl: $uiConfig.publicUrl + '/me'})"
           />
           <span
             v-else
             class="subheading"
-            v-html="$t('pages.invitation.msgDifferentUser', {loginUrl: env.publicUrl + '/login?email=' + encodeURIComponent($route.query.email)})"
+            v-html="$t('pages.invitation.msgDifferentUser', {loginUrl: $uiConfig.publicUrl + '/login?email=' + encodeURIComponent($route.query.email)})"
           />
         </v-col>
       </v-row>

@@ -26,13 +26,13 @@
         <template v-if="localePath('index') !== $route.path">
           <div class="logo-container">
             <a
-              v-if="env.homePage"
-              :href="env.homePage"
+              v-if="$uiConfig.homePage"
+              :href="$uiConfig.homePage"
               :title="$t('common.home')"
             >
               <img
-                v-if="env.theme.logo"
-                :src="env.theme.logo"
+                v-if="$uiConfig.theme.logo"
+                :src="$uiConfig.theme.logo"
               >
               <logo v-else />
             </a>
@@ -42,8 +42,8 @@
               :title="$t('common.home')"
             >
               <img
-                v-if="env.theme.logo"
-                :src="env.theme.logo"
+                v-if="$uiConfig.theme.logo"
+                :src="$uiConfig.theme.logo"
               >
               <logo v-else />
             </nuxt-link>
@@ -78,7 +78,7 @@
               {{ $t(`common.organizations`) }}
             </v-btn>
             <v-btn
-              v-if="env.manageSites"
+              v-if="$uiConfig.manageSites"
               :to="localePath('admin-sites')"
               color="admin"
               dark
@@ -96,7 +96,7 @@
             </v-btn>
           </template>
           <v-btn
-            v-if="env.anonymousContactForm"
+            v-if="$uiConfig.anonymousContactForm"
             :to="localePath('contact')"
             variant="flat"
           >
@@ -112,7 +112,7 @@
               <v-list-item-title>{{ $t('common.myAccount') }}</v-list-item-title>
             </v-list-item>
             <v-list-item
-              v-if="user.organization && user.organization.role === 'admin' && (env.depAdminIsOrgAdmin || !user.organization.department)"
+              v-if="user.organization && user.organization.role === 'admin' && ($uiConfig.depAdminIsOrgAdmin || !user.organization.department)"
               :to="'/organization/' + user.organization.id"
               :nuxt="true"
             >

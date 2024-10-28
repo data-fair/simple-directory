@@ -67,7 +67,7 @@
           <v-list-item-avatar>
             <v-img
               v-if="refreshingDepartment !== department.id"
-              :src="`${env.publicUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png?t=${timestamp}`"
+              :src="`${$uiConfig.publicUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png?t=${timestamp}`"
             />
           </v-list-item-avatar>
 
@@ -149,7 +149,7 @@ export default {
   computed: {
     ...mapState(['userDetails', 'env']),
     writableDepartments () {
-      return this.isAdminOrga && (!this.env.readonly || this.env.overwrite.includes('departments'))
+      return this.isAdminOrga && (!this.$uiConfig.readonly || this.$uiConfig.overwrite.includes('departments'))
     },
     departmentLabel () {
       return this.orga.departmentLabel || this.$t('common.department')

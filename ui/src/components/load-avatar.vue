@@ -103,7 +103,7 @@ export default {
   computed: {
     ...mapState(['env']),
     avatarUrl () {
-      let url = `${this.env.publicUrl}/api/avatars/${this.owner.type}/${this.owner.id}`
+      let url = `${this.$uiConfig.publicUrl}/api/avatars/${this.owner.type}/${this.owner.id}`
       if (this.owner.department) url += `/${this.owner.department}`
       url += '/avatar.png'
       return url

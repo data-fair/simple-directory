@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
-import config, { uiConfig } from '#config'
+import config from '#config'
+import uiConfig from './ui-config.ts'
 import apiDocs from '../contract/api-docs.ts'
 import express, { type RequestHandler } from 'express'
 import bodyParser from 'body-parser'

@@ -112,7 +112,7 @@
                 autocomplete="email"
               />
               <p
-                v-if="env.passwordless && !adminMode"
+                v-if="$uiConfig.passwordless && !adminMode"
                 class="mb-2 text-caption"
               >
                 {{ $t('pages.login.passwordlessMsg1') }} <a
@@ -180,7 +180,7 @@
                 hide-details
               />
               <v-row
-                v-if="!readonly && !env.onlyCreateInvited && !adminMode"
+                v-if="!readonly && !$uiConfig.onlyCreateInvited && !adminMode"
                 class="ma-0"
               >
                 <p class="my-1">
@@ -230,7 +230,7 @@
 
           <v-window-item value="tos">
             <v-card-text>
-              <p v-html="sitePublic?.tosMessage || $t('pages.login.tosMsg', {tosUrl: env.tosUrl})" />
+              <p v-html="sitePublic?.tosMessage || $t('pages.login.tosMsg', {tosUrl: $uiConfig.tosUrl})" />
               <v-checkbox
                 v-model="tosAccepted"
                 :label="$t('pages.login.tosConfirm')"
@@ -719,10 +719,10 @@
           </v-window-item>
         </v-window>
       </v-card>
-      <p v-if="env.maildev.active">
+      <p v-if="$uiConfig.maildev.active">
         <br>
         <a
-          :href="env.maildev.url"
+          :href="$uiConfig.maildev.url"
           text
         >{{ $t('pages.login.maildevLink') }}</a>
       </p>
@@ -801,7 +801,7 @@ export default {
       return this.$route.query.action_token
     },
     readonly () {
-      return this.env.readonly || this.$route.query.readonly === 'true'
+      return this.$uiConfig.readonly || this.$route.query.readonly === 'true'
     },
     redirectUrl () {
       return this.$route.query && this.$route.query.redirect
@@ -816,8 +816,8 @@ export default {
     },
     logoUrl () {
       if (this.$route.query.logo) return this.$route.query.logo
-      if (this.org) return `${this.env.publicUrl}/api/avatars/organization/${this.org}/avatar.png`
-      if (this.env.theme.logo) return this.env.theme.logo
+      if (this.org) return `${this.$uiConfig.publicUrl}/api/avatars/organization/${this.org}/avatar.png`
+      if (this.$uiConfig.theme.logo) return this.$uiConfig.theme.logo
       return null
     },
     redirectHost () {
@@ -871,7 +871,7 @@ export default {
     preLogin () {
       const authProvider = this.authProviders.find(p => p.redirectMode?.type === 'emailDomain' && p.redirectMode.emailDomain === this.email.trim().split('@')[1])
       if (authProvider) {
-        const url = new URL(`${this.env.publicUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
+        const url = new URL(`${this.$uiConfig.publicUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
         if (this.redirectUrl) url.searchParams.append('redirect', this.redirectUrl)
         if (this.email) url.searchParams.append('email', this.email)
         if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
@@ -881,7 +881,7 @@ export default {
       }
     },
     createUserStep () {
-      this.step = this.env.tosUrl ? 'tos' : 'createUser'
+      this.step = this.$uiConfig.tosUrl ? 'tos' : 'createUser'
     },
     async createUser () {
       if (!this.$refs.createUserForm.validate()) return

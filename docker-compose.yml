@@ -22,8 +22,8 @@ services:
       - test
     image: osixia/openldap:1.4.0
     volumes:
-      - ./data/ldap:/var/lib/ldap
-      - ./data/slapd.d:/etc/ldap/slapd.d
+      - ./dev/data/ldap:/var/lib/ldap
+      - ./dev/data/slapd.d:/etc/ldap/slapd.d
       - ./dev/resources:/test-resources
     ports:
       - 389:389
@@ -79,7 +79,7 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin
     network_mode: host
     volumes:
-      - ./data/keycloak:/opt/keycloak/data/
+      - ./dev/data/keycloak:/opt/keycloak/data/
     command: ["start-dev", "--http-port=8888"]
   
   #####

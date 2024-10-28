@@ -5,7 +5,7 @@
   >
     <v-btn
       v-if="sitePublic && sitePublic.authMode === 'ssoBackOffice'"
-      :color="env.theme.colors.primary"
+      :color="$uiConfig.theme.colors.primary"
       :href="mainSiteLoginUrl"
       dark
       size="small"
@@ -20,8 +20,8 @@
         style="left:-1px"
       >
         <img
-          v-if="env.theme.logo"
-          :src="env.theme.logo"
+          v-if="$uiConfig.theme.logo"
+          :src="$uiConfig.theme.logo"
         >
         <logo v-else />
       </v-avatar>
@@ -94,7 +94,7 @@ export default {
       if (authProvider.type === 'otherSite') {
         return this.siteLoginUrl(authProvider.host)
       }
-      let sdUrl = this.env.publicUrl
+      let sdUrl = this.$uiConfig.publicUrl
       if (authProvider.type === 'otherSiteProvider') {
         sdUrl = `${authProvider.host.startsWith('localhost:') ? 'http' : 'https'}://${authProvider.host}/simple-directory`
       }

@@ -35,15 +35,15 @@
     >
       <template #item="props">
         <tr>
-          <td v-if="env.avatars.orgs">
+          <td v-if="$uiConfig.avatars.orgs">
             <v-avatar :size="40">
-              <img :src="env.publicUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
+              <img :src="$uiConfig.publicUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
             </v-avatar>
           </td>
           <td>{{ props.item.name }}</td>
           <td>{{ props.item.id }}</td>
           <td>{{ props.item.description }}</td>
-          <template v-if="!env.readonly">
+          <template v-if="!$uiConfig.readonly">
             <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
             <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
             <td class="justify-center layout px-0">
@@ -198,13 +198,13 @@ export default {
     if (!this.user.adminMode) return this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
     this.fetchOrganizations()
     this.headers = []
-    if (this.env.avatars.orgs) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
+    if (this.$uiConfig.avatars.orgs) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
     this.headers = this.headers.concat([
       { text: this.$t('common.name'), value: 'name' },
       { text: this.$t('common.id'), value: 'id', sortable: false },
       { text: this.$t('common.description'), value: 'description', sortable: false }
     ])
-    if (!this.env.readonly) {
+    if (!this.$uiConfig.readonly) {
       this.headers = this.headers.concat([
         { text: this.$t('common.createdAt'), value: 'created.date' },
         { text: this.$t('common.updatedAt'), value: 'updated.date' }
@@ -225,7 +225,7 @@ export default {
       }
       this.loading = false
 
-      if (!this.env.readonly) {
+      if (!this.$uiConfig.readonly) {
         for (const org of this.organizations.results) {
           const limits = await this.$axios.$get(`api/limits/organization/${org.id}`)
           this.$set(org, 'limits', limits)

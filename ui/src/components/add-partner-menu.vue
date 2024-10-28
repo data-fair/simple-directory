@@ -21,7 +21,7 @@
       v-if="editPartner"
       data-iframe-height
       :width="500"
-      :loading="env.manageSites && !redirects"
+      :loading="$uiConfig.manageSites && !redirects"
     >
       <v-card-title class="text-h6">
         {{ $t('pages.organization.addPartner') }}
@@ -52,7 +52,7 @@
             autocomplete="off"
           />
           <v-select
-            v-if="env.manageSites && redirects && redirects.filter(r => r.value !== editPartner.redirect).length"
+            v-if="$uiConfig.manageSites && redirects && redirects.filter(r => r.value !== editPartner.redirect).length"
             v-model="editPartner.redirect"
             label="Site de redirection"
             :items="redirects"
@@ -73,7 +73,7 @@
         </v-btn>
         <v-btn
           color="primary"
-          :disabled="env.manageSites && !redirects"
+          :disabled="$uiConfig.manageSites && !redirects"
           @click="confirmCreate"
         >
           {{ $t('common.confirmOk') }}
@@ -97,7 +97,7 @@ export default {
   watch: {
     menu () {
       if (!this.menu) return
-      if (this.env.manageSites) this.$store.dispatch('fetchSites')
+      if (this.$uiConfig.manageSites) this.$store.dispatch('fetchSites')
       this.editPartner = { name: '', contactEmail: '', redirect: this.redirect }
       if (this.$refs.createForm) this.$refs.createForm.reset()
     },

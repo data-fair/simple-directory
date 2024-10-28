@@ -14,7 +14,7 @@
         </v-icon>
         {{ orgStorage === 'true' ? $t('common.orgStorageMembers') : $t('common.members') }} <span v-if="members">({{ $n(members.count) }})</span>
         <add-member-menu
-          v-if="!env.readonly"
+          v-if="!$uiConfig.readonly"
           :orga="orga"
           :is-admin-orga="isAdminOrga"
           :members="members"
@@ -68,7 +68,7 @@
       </v-col>
       <v-col :cols="filterMemberCols">
         <v-autocomplete
-          v-if="env.manageDepartments && orga.departments && orga.departments.length && !adminDepartment"
+          v-if="$uiConfig.manageDepartments && orga.departments && orga.departments.length && !adminDepartment"
           v-model="department"
           :items="[{id: '-', name: 'aucun'}].concat(orga.departments)"
           :label="orga.departmentLabel || $t('common.department')"
@@ -82,7 +82,7 @@
         />
       </v-col>
       <v-col
-        v-if="env.alwaysAcceptInvitation"
+        v-if="$uiConfig.alwaysAcceptInvitation"
         :cols="filterMemberCols"
       >
         <v-select
@@ -111,7 +111,7 @@
           <v-list-item-avatar>
             <v-img
               v-if="!members.results[i-1] || members.results[i-1].id !== member.id"
-              :src="`${env.publicUrl}/api/avatars/user/${member.id}/avatar.png`"
+              :src="`${$uiConfig.publicUrl}/api/avatars/user/${member.id}/avatar.png`"
             />
           </v-list-item-avatar>
 
@@ -146,7 +146,7 @@
             <span>{{ $t('common.role') }} = {{ member.role }}</span>
           </v-list-item-subtitle>
 
-          <v-list-item-action v-if="isAdminOrga && (!readonly || env.overwrite.includes('members'))">
+          <v-list-item-action v-if="isAdminOrga && (!readonly || $uiConfig.overwrite.includes('members'))">
             <edit-member-menu
               :orga="orga"
               :member="member"
@@ -247,7 +247,7 @@ export default {
       return !this.nbMembersLimits || (this.nbMembersLimits.limit > 0 && this.nbMembersLimits.consumption >= this.nbMembersLimits.limit)
     },
     notifyTopics () {
-      if (this.env.alwaysAcceptInvitation) {
+      if (this.$uiConfig.alwaysAcceptInvitation) {
         return [{ key: 'simple-directory:add-member', title: this.$t('notifications.addMemberTopic') }]
       } else {
         return [
@@ -257,10 +257,10 @@ export default {
       }
     },
     csvUrl () {
-      return this.env.publicUrl + `/api/organizations/${this.orga.id}/members?size=10000&format=csv`
+      return this.$uiConfig.publicUrl + `/api/organizations/${this.orga.id}/members?size=10000&format=csv`
     },
     filterMemberCols () {
-      return this.env.alwaysAcceptInvitation ? 6 : 4
+      return this.$uiConfig.alwaysAcceptInvitation ? 6 : 4
     }
   },
   async mounted () {
