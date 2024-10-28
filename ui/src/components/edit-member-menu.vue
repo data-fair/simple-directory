@@ -4,13 +4,13 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on, attrs}">
+    <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.editMember')"
-        text
+        variant="text"
         icon
-        v-bind="attrs"
-        v-on="on"
+
+        v-bind="props"
       >
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
@@ -27,9 +27,9 @@
         <v-alert
           v-if="member.readOnly"
           type="warning"
-          border="left"
-          outlined
-          dense
+          border="start"
+          variant="outlined"
+          density="compact"
         >
           {{ $t('pages.organization.memberReadOnly') }}
         </v-alert>
@@ -38,8 +38,8 @@
             v-model="editMember.role"
             :items="orga.roles"
             :label="$t('common.role')"
-            dense
-            outlined
+            density="compact"
+            variant="outlined"
           />
           <v-autocomplete
             v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
@@ -47,18 +47,18 @@
             :items="orga.departments"
             :label="orga.departmentLabel || $t('common.department')"
             item-value="id"
-            item-text="name"
+            item-title="name"
             name="department"
             clearable
-            outlined
-            dense
+            variant="outlined"
+            density="compact"
           />
         </template>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
         <v-btn
-          text
+          variant="text"
           @click="menu = false"
         >
           {{ $t('common.confirmCancel') }}

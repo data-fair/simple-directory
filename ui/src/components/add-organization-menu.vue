@@ -3,12 +3,12 @@
     v-model="menu"
     :close-on-content-click="false"
   >
-    <template #activator="{on}">
+    <template #activator="{props}">
       <v-btn
         :title="$t('common.createOrganization')"
         color="primary"
-        text
-        v-on="on"
+        variant="text"
+        v-bind="props"
       >
         {{ $t('common.createOrganization') }}
       </v-btn>
@@ -33,15 +33,15 @@
             :rules="[v => !!v || '', v => v.length < 150 || $t('common.tooLong')]"
             name="name"
             required
-            outlined
-            dense
+            variant="outlined"
+            density="compact"
             autocomplete="off"
           />
           <v-textarea
             v-model="editOrganization.description"
             :label="$t('common.description')"
             name="description"
-            outlined
+            variant="outlined"
             autocomplete="off"
           />
         </v-form>
@@ -49,7 +49,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          text
+          variant="text"
           @click="menu = false"
         >
           {{ $t('common.confirmCancel') }}

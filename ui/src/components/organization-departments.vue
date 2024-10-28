@@ -6,7 +6,7 @@
     <v-row class="mt-3 mx-0">
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
-          large
+          size="large"
           color="primary"
           style="top:-2px"
         >
@@ -38,7 +38,7 @@
           v-model="q"
           :label="$t('common.search')"
           name="search"
-          solo
+          variant="solo"
           append-icon="mdi-magnify"
           clearable
           @click:clear="$nextTick(() => $nextTick(() => filterDeps()))"
@@ -53,7 +53,7 @@
           :items="sortItems"
           name="sort"
           prepend-inner-icon="mdi-sort"
-          @change="filterDeps"
+          @update:model-value="filterDeps"
         />
       </v-col>
     </v-row>
@@ -70,9 +70,9 @@
               :src="`${env.publicUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png?t=${timestamp}`"
             />
           </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>{{ department.name }}</v-list-item-title>
-          </v-list-item-content>
+
+          <v-list-item-title>{{ department.name }}</v-list-item-title>
+
           <v-list-item-action v-if="writableDepartments">
             <edit-department-menu
               :orga="orga"

@@ -19,14 +19,13 @@
       hide-default-footer
       :items-per-page="10000"
     >
-      <tr
-        slot="item"
-        slot-scope="props"
-      >
-        <td>
-          {{ JSON.stringify(props.item) }}
-        </td>
-      </tr>
+      <template #item="props">
+        <tr>
+          <td>
+            {{ JSON.stringify(props.item) }}
+          </td>
+        </tr>
+      </template>
     </v-data-table>
   </v-container>
 </template>

@@ -4,14 +4,14 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on}">
+    <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.addDepartment', {departmentLabel: departmentLabel.toLowerCase()})"
         fab
-        small
+        size="small"
         color="primary"
         class="mx-2"
-        v-on="on"
+        v-bind="props"
       >
         <v-icon>mdi-plus</v-icon>
       </v-btn>
@@ -36,8 +36,8 @@
             :rules="[v => !!v || '']"
             name="name"
             required
-            dense
-            outlined
+            density="compact"
+            variant="outlined"
             autocomplete="off"
             @keyup.enter="confirmCreate"
           />
@@ -46,7 +46,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          text
+          variant="text"
           @click="menu = false"
         >
           {{ $t('common.confirmCancel') }}

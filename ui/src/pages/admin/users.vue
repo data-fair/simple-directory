@@ -23,7 +23,7 @@
         v-model="q"
         :label="$t('common.search')"
         name="search"
-        solo
+        variant="solo"
         style="max-width:300px;"
         append-icon="mdi-magnify"
         @click:append="fetchUsers"
@@ -33,90 +33,111 @@
 
     <v-data-table
       v-if="users"
+      v-model:options="pagination"
       :headers="headers"
       :items="users.results"
-      :options.sync="pagination"
       :server-items-length="pagination.totalItems"
       :loading="loading"
       class="elevation-1 users-table"
       item-key="id"
       :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
     >
-      <tr
-        slot="item"
-        slot-scope="props"
-      >
-        <td v-if="env.avatars.users">
-          <v-avatar :size="40">
-            <img :src="env.publicUrl + '/api/avatars/user/' + props.item.id + '/avatar.png'">
-          </v-avatar>
-        </td>
-        <td>
-          <span style="white-space: nowrap;">
-            {{ props.item.email }}
+      <template #item="props">
+        <tr>
+          <td v-if="env.avatars.users">
+            <v-avatar :size="40">
+              <img :src="env.publicUrl + '/api/avatars/user/' + props.item.id + '/avatar.png'">
+            </v-avatar>
+          </td>
+          <td>
+            <span style="white-space: nowrap;">
+              {{ props.item.email }}
+              <v-btn
+                v-if="!env.readonly"
+                icon
+                class="mx-0"
+                @click="showEditUserEmailDialog(props.item)"
+              >
+                <v-icon size="small">mdi-pencil</v-icon>
+              </v-btn>
+            </span>
+          </td>
+          <td>{{ props.item.name }}</td>
+          <td>{{ props.item.id }}</td>
+          <td>{{ props.item.firstName }}</td>
+          <td>{{ props.item.lastName }}</td>
+          <td>
+            <template v-if="props.item['2FA'] && props.item['2FA'].active">
+              oui
+              <v-btn
+                icon
+                class="mx-0"
+                @click="showDrop2FADialog(props.item)"
+              >
+                <v-icon size="small">
+                  mdi-delete
+                </v-icon>
+              </v-btn>
+            </template>
+            <span v-else>non</span>
+          </td>
+          <td>
+            <div
+              v-for="orga in props.item.organizations"
+              :key="orga.id"
+            >
+              <span style="white-space:nowrap">
+                <nuxt-link :to="localePath({name: 'organization-id', params: {id: orga.id}})">{{ orga.name }}</nuxt-link>
+                <template v-if="orga.department">{{ orga.departmentName || orga.department }}</template>
+                ({{ orga.role }})
+              </span>
+            </div>
+          </td>
+          <td v-if="env.defaultMaxCreatedOrgs !== -1 && !env.readonly">
+            <span>{{ props.item.maxCreatedOrgs }}</span>
             <v-btn
-              v-if="!env.readonly"
+              v-if="env.defaultMaxCreatedOrgs !== -1"
               icon
               class="mx-0"
-              @click="showEditUserEmailDialog(props.item)"
+              @click="showEditMaxCreatedOrgsDialog(props.item)"
             >
-              <v-icon small>mdi-pencil</v-icon>
-            </v-btn>
-          </span>
-        </td>
-        <td>{{ props.item.name }}</td>
-        <td>{{ props.item.id }}</td>
-        <td>{{ props.item.firstName }}</td>
-        <td>{{ props.item.lastName }}</td>
-        <td>
-          <template v-if="props.item['2FA'] && props.item['2FA'].active">
-            oui
-            <v-btn
-              icon
-              class="mx-0"
-              @click="showDrop2FADialog(props.item)"
-            >
-              <v-icon small>
-                mdi-delete
+              <v-icon size="small">
+                mdi-pencil
               </v-icon>
             </v-btn>
-          </template>
-          <span v-else>non</span>
-        </td>
-        <td>
-          <div
-            v-for="orga in props.item.organizations"
-            :key="orga.id"
-          >
-            <span style="white-space:nowrap">
-              <nuxt-link :to="localePath({name: 'organization-id', params: {id: orga.id}})">{{ orga.name }}</nuxt-link>
-              <template v-if="orga.department">{{ orga.departmentName || orga.department }}</template>
-              ({{ orga.role }})
-            </span>
-          </div>
-        </td>
-        <td v-if="env.defaultMaxCreatedOrgs !== -1 && !env.readonly">
-          <span>{{ props.item.maxCreatedOrgs }}</span>
-          <v-btn
-            v-if="env.defaultMaxCreatedOrgs !== -1"
-            icon
-            class="mx-0"
-            @click="showEditMaxCreatedOrgsDialog(props.item)"
-          >
-            <v-icon small>
-              mdi-pencil
-            </v-icon>
-          </v-btn>
-        </td>
-        <template v-if="!env.readonly">
-          <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
-          <td v-if="env.manageSites">
-            {{ props.item.host }}
           </td>
-          <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
-          <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
-          <td>{{ props.item.plannedDeletion && $d(new Date(props.item.plannedDeletion)) }}</td>
-          <td class="justify-center layout px-0">
+          <template v-if="!env.readonly">
+            <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
+            <td v-if="env.manageSites">
+              {{ props.item.host }}
+            </td>
+            <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
+            <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
+            <td>{{ props.item.plannedDeletion && $d(new Date(props.item.plannedDeletion)) }}</td>
+            <td class="justify-center layout px-0">
+              <v-btn
+                :title="$t('common.asAdmin')"
+                icon
+                class="mx-0"
+                @click="asAdmin(props.item)"
+              >
+                <v-icon color="warning">
+                  mdi-account-switch
+                </v-icon>
+              </v-btn>
+              <v-btn
+                :title="$t('common.delete')"
+                icon
+                class="mx-0"
+                @click="currentUser = props.item;deleteUserDialog = true"
+              >
+                <v-icon color="warning">
+                  mdi-delete
+                </v-icon>
+              </v-btn>
+            </td>
+          </template>
+          <template v-else>
             <v-btn
               :title="$t('common.asAdmin')"
               icon
@@ -127,31 +148,9 @@
                 mdi-account-switch
               </v-icon>
             </v-btn>
-            <v-btn
-              :title="$t('common.delete')"
-              icon
-              class="mx-0"
-              @click="currentUser = props.item;deleteUserDialog = true"
-            >
-              <v-icon color="warning">
-                mdi-delete
-              </v-icon>
-            </v-btn>
-          </td>
-        </template>
-        <template v-else>
-          <v-btn
-            :title="$t('common.asAdmin')"
-            icon
-            class="mx-0"
-            @click="asAdmin(props.item)"
-          >
-            <v-icon color="warning">
-              mdi-account-switch
-            </v-icon>
-          </v-btn>
-        </template>
-      </tr>
+          </template>
+        </tr>
+      </template>
     </v-data-table>
 
     <v-dialog
@@ -168,7 +167,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn
-            text
+            variant="text"
             @click="deleteUserDialog = false"
           >
             {{ $t('common.confirmCancel') }}
@@ -203,7 +202,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn
-            text
+            variant="text"
             @click="editUserEmailDialog = false"
           >
             {{ $t('common.confirmCancel') }}
@@ -242,7 +241,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn
-            text
+            variant="text"
             @click="editMaxCreatedOrgsDialog = false"
           >
             {{ $t('common.confirmCancel') }}
@@ -276,7 +275,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn
-            text
+            variant="text"
             @click="drop2FADialog = false"
           >
             {{ $t('common.confirmCancel') }}

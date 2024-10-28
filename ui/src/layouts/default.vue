@@ -49,7 +49,7 @@
             </nuxt-link>
           </div>
           <v-toolbar-title>
-            <h1 class="text-h5 hidden-xs-only">
+            <h1 class="text-h5 hidden-xs">
               {{ $t('root.title') }}
             </h1>
           </v-toolbar-title>
@@ -65,7 +65,7 @@
               :to="localePath('admin-users')"
               color="admin"
               dark
-              depressed
+              variant="flat"
             >
               {{ $t(`common.users`) }}
             </v-btn>
@@ -73,7 +73,7 @@
               :to="localePath('admin-organizations')"
               color="admin"
               dark
-              depressed
+              variant="flat"
             >
               {{ $t(`common.organizations`) }}
             </v-btn>
@@ -82,7 +82,7 @@
               :to="localePath('admin-sites')"
               color="admin"
               dark
-              depressed
+              variant="flat"
             >
               {{ $t(`common.sites`) }}
             </v-btn>
@@ -90,7 +90,7 @@
               :to="localePath('admin-oauth-tokens')"
               color="admin"
               dark
-              depressed
+              variant="flat"
             >
               {{ $t(`common.oauthTokens`) }}
             </v-btn>
@@ -98,7 +98,7 @@
           <v-btn
             v-if="env.anonymousContactForm"
             :to="localePath('contact')"
-            depressed
+            variant="flat"
           >
             Nous contacter
           </v-btn>
@@ -109,27 +109,21 @@
               :to="'/me'"
               :nuxt="true"
             >
-              <v-list-item-content>
-                <v-list-item-title>{{ $t('common.myAccount') }}</v-list-item-title>
-              </v-list-item-content>
+              <v-list-item-title>{{ $t('common.myAccount') }}</v-list-item-title>
             </v-list-item>
             <v-list-item
               v-if="user.organization && user.organization.role === 'admin' && (env.depAdminIsOrgAdmin || !user.organization.department)"
               :to="'/organization/' + user.organization.id"
               :nuxt="true"
             >
-              <v-list-item-content>
-                <v-list-item-title>Gestion de l'organisation</v-list-item-title>
-              </v-list-item-content>
+              <v-list-item-title>Gestion de l'organisation</v-list-item-title>
             </v-list-item>
             <v-list-item
               v-if="user.organization && user.organization.role === 'admin' && user.organization.department"
               :to="'/organization/' + user.organization.id + '/department/' + user.organization.department"
               :nuxt="true"
             >
-              <v-list-item-content>
-                <v-list-item-title>Gestion du département</v-list-item-title>
-              </v-list-item-content>
+              <v-list-item-title>Gestion du département</v-list-item-title>
             </v-list-item>
             <v-divider />
           </template>
@@ -149,7 +143,7 @@
         :color="notification.type"
         :timeout="notification.type === 'error' ? 30000 : 6000"
         class="notification"
-        bottom
+        location="bottom"
       >
         <p>{{ notification.msg }}</p>
         <p

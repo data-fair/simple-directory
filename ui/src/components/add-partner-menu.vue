@@ -4,14 +4,14 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on}">
+    <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.addPartner')"
         fab
-        small
+        size="small"
         color="primary"
         class="mx-2"
-        v-on="on"
+        v-bind="props"
       >
         <v-icon>mdi-plus</v-icon>
       </v-btn>
@@ -37,8 +37,8 @@
             :rules="[v => !!v || '']"
             name="name"
             required
-            dense
-            outlined
+            density="compact"
+            variant="outlined"
             autocomplete="off"
           />
           <v-text-field
@@ -47,8 +47,8 @@
             :rules="[v => !!v || '']"
             name="contactEmail"
             required
-            dense
-            outlined
+            density="compact"
+            variant="outlined"
             autocomplete="off"
           />
           <v-select
@@ -58,15 +58,15 @@
             :items="redirects"
             name="host"
             required
-            dense
-            outlined
+            density="compact"
+            variant="outlined"
           />
         </v-form>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
         <v-btn
-          text
+          variant="text"
           @click="menu = false"
         >
           {{ $t('common.confirmCancel') }}

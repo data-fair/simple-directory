@@ -3,14 +3,14 @@
     <v-alert
       :value="true"
       type="warning"
-      outlined
+      variant="outlined"
     >
       {{ $t('errors.plannedDeletion', {name: userDetails.name, plannedDeletion: $d(new Date(userDetails.plannedDeletion))}) }}
     </v-alert>
 
     <v-btn
       color="warning"
-      text
+      variant="text"
       @click="cancelDeletion"
     >
       {{ $t('pages.login.cancelDeletion') }}

@@ -4,13 +4,13 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on}">
+    <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.deleteMember')"
-        text
+        variant="text"
         icon
         color="warning"
-        v-on="on"
+        v-bind="props"
       >
         <v-icon>mdi-delete</v-icon>
       </v-btn>
@@ -26,9 +26,9 @@
         <v-alert
           v-if="member.readOnly"
           type="warning"
-          border="left"
-          outlined
-          dense
+          border="start"
+          variant="outlined"
+          density="compact"
         >
           {{ $t('pages.organization.memberReadOnly') }}
         </v-alert>
@@ -39,7 +39,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          text
+          variant="text"
           @click="menu = false"
         >
           {{ $t('common.confirmCancel') }}

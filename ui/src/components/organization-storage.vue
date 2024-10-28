@@ -1,6 +1,6 @@
 <template>
   <v-alert
-    border="left"
+    border="start"
     colored-border
     color="admin"
     class="my-4"

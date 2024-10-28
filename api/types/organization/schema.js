@@ -1,4 +1,3 @@
-import jsonSchema from '@data-fair/lib-utils/json-schema.js'
 const ldapParamsSchema = import('../ldap-params/schema.js')
 
 const partialLdapParamsSchema = { ...ldapParamsSchema, required: ['url', 'baseDN'] }

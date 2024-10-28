@@ -57,9 +57,9 @@
               <v-text-field
                 id="email"
                 v-model="email"
-                dense
+                density="compact"
                 rounded
-                outlined
+                variant="outlined"
                 :autofocus="true"
                 :label="$t('pages.login.emailLabel')"
                 :error-messages="emailErrors"
@@ -74,7 +74,7 @@
               <v-btn
                 :disabled="!email"
                 color="primary"
-                depressed
+                variant="flat"
                 @click="preLogin"
               >
                 {{ $t('common.next') }}
@@ -85,7 +85,7 @@
             <v-card-text>
               <p
                 v-if="adminMode"
-                class="warning--text"
+                class="text-warning"
               >
                 {{ $t('pages.login.adminMode') }}
               </p>
@@ -100,9 +100,9 @@
               <v-text-field
                 id="email"
                 v-model="email"
-                dense
+                density="compact"
                 rounded
-                outlined
+                variant="outlined"
                 :autofocus="!email"
                 :label="$t('pages.login.emailLabel')"
                 :error-messages="emailErrors"
@@ -126,9 +126,9 @@
               <v-text-field
                 id="password"
                 v-model="password"
-                dense
+                density="compact"
                 rounded
-                outlined
+                variant="outlined"
                 :autofocus="!!email"
                 :label="$t('common.password')"
                 :error-messages="passwordErrors"
@@ -146,26 +146,28 @@
                   :label="$t('pages.login.2FACode')"
                   :error-messages="twoFAErrors"
                   name="2fa"
-                  outlined
-                  dense
+                  variant="outlined"
+                  density="compact"
                   rounded
                   class="mt-4 hide-autofill"
                   hide-details="auto"
                   :autofocus="true"
                   @keyup.enter="passwordAuth"
                 >
-                  <v-tooltip
-                    slot="append-outer"
-                    right
-                    max-width="400"
-                  >
-                    <template #activator="{on}">
-                      <v-icon v-on="on">
-                        mdi-information
-                      </v-icon>
-                    </template>
-                    <div v-html="$t('pages.login.2FAInfo')" />
-                  </v-tooltip>
+                  <template #append-outer>
+                    <v-tooltip
+
+                      location="right"
+                      max-width="400"
+                    >
+                      <template #activator="{props}">
+                        <v-icon v-bind="props">
+                          mdi-information
+                        </v-icon>
+                      </template>
+                      <div v-html="$t('pages.login.2FAInfo')" />
+                    </v-tooltip>
+                  </template>
                 </v-text-field>
               </template>
               <v-checkbox
@@ -209,7 +211,7 @@
             <v-card-actions>
               <v-btn
                 v-if="separateEmailPasswordSteps"
-                text
+                variant="text"
                 @click="step='preLogin'"
               >
                 {{ $t('common.back') }}
@@ -218,7 +220,7 @@
               <v-btn
                 :disabled="!email || !password"
                 :color="adminMode ? 'warning' : 'primary'"
-                depressed
+                variant="flat"
                 @click="passwordAuth"
               >
                 {{ $t('common.login') }}
@@ -237,7 +239,7 @@
 
             <v-card-actions>
               <v-btn
-                text
+                variant="text"
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -246,7 +248,7 @@
               <v-btn
                 :disabled="!tosAccepted"
                 color="primary"
-                depressed
+                variant="flat"
                 @click="step='createUser'"
               >
                 {{ $t('common.next') }}
@@ -259,7 +261,7 @@
               <v-alert
                 v-if="invitPayload"
                 type="info"
-                outlined
+                variant="outlined"
                 class="mb-6"
               >
                 {{ $t('pages.login.createUserInvit', {name: invitPayload.n || invitPayload.name || invitPayload.id }) }}
@@ -278,8 +280,8 @@
                   :rules="[v => !!v || '']"
                   name="createuser-email"
                   required
-                  outlined
-                  dense
+                  variant="outlined"
+                  density="compact"
                   rounded
                   autocomplete="email"
                   :disabled="!!invitPayload"
@@ -290,8 +292,8 @@
                   v-model="newUser.firstName"
                   :label="$t('common.firstName')"
                   name="firstname"
-                  outlined
-                  dense
+                  variant="outlined"
+                  density="compact"
                   rounded
                   autocomplete="given-name"
                   @keyup.enter="createUser"
@@ -302,8 +304,8 @@
                   v-model="newUser.lastName"
                   :label="$t('common.lastName')"
                   name="lastname"
-                  outlined
-                  dense
+                  variant="outlined"
+                  density="compact"
                   rounded
                   autocomplete="family-name"
                   @keyup.enter="createUser"
@@ -318,12 +320,12 @@
                   name="newUserPassword"
                   :type="showNewUserPassword ? 'text' : 'password'"
                   autocomplete="new-password"
-                  outlined
-                  dense
+                  variant="outlined"
+                  density="compact"
                   rounded
                   @keyup.enter="createUser"
                 >
-                  <template slot="append">
+                  <template #append>
                     <v-icon
                       v-if="newUser.password"
                       @click="showNewUserPassword = !showNewUserPassword"
@@ -331,18 +333,20 @@
                       {{ showNewUserPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline' }}
                     </v-icon>
                   </template>
-                  <v-tooltip
-                    slot="append-outer"
-                    right
-                    max-width="400"
-                  >
-                    <template #activator="{on}">
-                      <v-icon v-on="on">
-                        mdi-information
-                      </v-icon>
-                    </template>
-                    <div v-html="$t('errors.malformedPassword')" />
-                  </v-tooltip>
+                  <template #append-outer>
+                    <v-tooltip
+
+                      location="right"
+                      max-width="400"
+                    >
+                      <template #activator="{props}">
+                        <v-icon v-bind="props">
+                          mdi-information
+                        </v-icon>
+                      </template>
+                      <div v-html="$t('errors.malformedPassword')" />
+                    </v-tooltip>
+                  </template>
                 </v-text-field>
 
                 <v-text-field
@@ -352,23 +356,25 @@
                   name="newUserPassword2"
                   :type="showNewUserPassword ? 'text' : 'password'"
                   autocomplete="new-password"
-                  outlined
-                  dense
+                  variant="outlined"
+                  density="compact"
                   rounded
                   @keyup.enter="createUser"
                 >
-                  <div slot="append-outer">
-                    <v-icon style="visibility:hidden">
-                      mdi-information
-                    </v-icon>
-                  </div>
+                  <template #append-outer>
+                    <div>
+                      <v-icon style="visibility:hidden">
+                        mdi-information
+                      </v-icon>
+                    </div>
+                  </template>
                 </v-text-field>
               </v-form>
             </v-card-text>
 
             <v-card-actions>
               <v-btn
-                text
+                variant="text"
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -376,7 +382,7 @@
               <v-spacer />
               <v-btn
                 color="primary"
-                depressed
+                variant="flat"
                 @click="createUser"
               >
                 {{ $t('pages.login.createUserConfirm') }}
@@ -393,7 +399,7 @@
             </v-card-text>
             <v-card-actions>
               <v-btn
-                text
+                variant="text"
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -410,7 +416,7 @@
             </v-card-text>
             <v-card-actions>
               <v-btn
-                text
+                variant="text"
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -427,7 +433,7 @@
             </v-card-text>
             <v-card-actions>
               <v-btn
-                text
+                variant="text"
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -457,22 +463,24 @@
                   name="newPassword"
                   type="password"
                   autocomplete="new-password"
-                  outlined
-                  dense
+                  variant="outlined"
+                  density="compact"
                   rounded
                 >
-                  <v-tooltip
-                    slot="append-outer"
-                    right
-                    max-width="400"
-                  >
-                    <template #activator="{on}">
-                      <v-icon v-on="on">
-                        mdi-information
-                      </v-icon>
-                    </template>
-                    <div v-html="$t('errors.malformedPassword')" />
-                  </v-tooltip>
+                  <template #append-outer>
+                    <v-tooltip
+
+                      location="right"
+                      max-width="400"
+                    >
+                      <template #activator="{props}">
+                        <v-icon v-bind="props">
+                          mdi-information
+                        </v-icon>
+                      </template>
+                      <div v-html="$t('errors.malformedPassword')" />
+                    </v-tooltip>
+                  </template>
                 </v-text-field>
                 <v-text-field
                   v-model="newPassword2"
@@ -481,16 +489,18 @@
                   name="newPassword2"
                   type="password"
                   autocomplete="new-password"
-                  outlined
-                  dense
+                  variant="outlined"
+                  density="compact"
                   rounded
                   @keyup.enter="changePassword"
                 >
-                  <div slot="append-outer">
-                    <v-icon style="visibility:hidden">
-                      mdi-information
-                    </v-icon>
-                  </div>
+                  <template #append-outer>
+                    <div>
+                      <v-icon style="visibility:hidden">
+                        mdi-information
+                      </v-icon>
+                    </div>
+                  </template>
                 </v-text-field>
               </v-form>
             </v-card-text>
@@ -499,7 +509,7 @@
               <v-btn
                 :disabled="!newPassword || newPassword !== newPassword2"
                 color="primary"
-                depressed
+                variant="flat"
                 @click="changePassword"
               >
                 {{ $t('common.validate') }}
@@ -512,7 +522,7 @@
               <v-alert
                 :value="true"
                 type="warning"
-                outlined
+                variant="outlined"
                 class="mb-3"
               >
                 {{ $t('errors.2FANotConfigured') }}
@@ -531,8 +541,8 @@
                 <v-text-field
                   v-model="configure2FACode"
                   :label="$t('pages.login.configure2FACode')"
-                  dense
-                  outlined
+                  density="compact"
+                  variant="outlined"
                   rounded
                   style="max-width: 210px;"
                   :autofocus="true"
@@ -543,7 +553,7 @@
 
             <v-card-actions>
               <v-btn
-                text
+                variant="text"
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -552,7 +562,7 @@
               <v-btn
                 :disabled="!configure2FACode"
                 color="primary"
-                depressed
+                variant="flat"
                 @click="validate2FA"
               >
                 {{ $t('common.validate') }}
@@ -565,7 +575,7 @@
               <v-alert
                 :value="true"
                 type="warning"
-                outlined
+                variant="outlined"
                 class="mb-3"
               >
                 {{ $t('pages.login.recovery2FAInfo') }}
@@ -588,7 +598,7 @@
 
             <v-card-actions>
               <v-btn
-                text
+                variant="text"
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -602,7 +612,7 @@
               <v-alert
                 :value="true"
                 type="info"
-                outlined
+                variant="outlined"
                 class="mb-3"
               >
                 {{ $t('pages.login.createUserOrganizationHelp') }}
@@ -619,8 +629,8 @@
                   :rules="[v => !!v || '']"
                   name="organizationName"
                   required
-                  outlined
-                  dense
+                  variant="outlined"
+                  density="compact"
                   rounded
                 />
               </template>
@@ -628,7 +638,7 @@
 
             <v-card-actions>
               <v-btn
-                text
+                variant="text"
                 @click="step='login'"
               >
                 {{ $t('common.back') }}
@@ -637,7 +647,7 @@
               <v-btn
                 v-if="createOrganization.active"
                 color="primary"
-                depressed
+                variant="flat"
                 @click="createOrga"
               >
                 {{ $t('common.validate') }}
@@ -645,7 +655,7 @@
               <v-btn
                 v-else
                 color="primary"
-                depressed
+                variant="flat"
                 :href="redirectUrl"
               >
                 {{ $t('common.continue') }}
@@ -662,7 +672,7 @@
               <v-spacer />
               <v-btn
                 color="primary"
-                depressed
+                variant="flat"
                 :href="redirectUrl"
               >
                 {{ $t('common.continue') }}
@@ -681,7 +691,7 @@
               <change-host
                 :user="actionPayload"
                 :action-token="actionToken"
-                @goTo="newStep => step = newStep"
+                @go-to="newStep => step = newStep"
               />
             </v-card-text>
           </v-window-item>
@@ -691,7 +701,7 @@
               <v-alert
                 :value="true"
                 type="error"
-                outlined
+                variant="outlined"
               >
                 {{ $te('errors.' + error) ? $t('errors.' + error) : error }}
               </v-alert>
@@ -699,7 +709,7 @@
 
             <v-card-actions>
               <v-btn
-                text
+                variant="text"
                 @click="clearError"
               >
                 {{ $t('common.back') }}

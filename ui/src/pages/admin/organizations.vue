@@ -14,7 +14,7 @@
         v-model="q"
         :label="$t('common.search')"
         name="search"
-        solo
+        variant="solo"
         style="max-width:300px;"
         append-icon="mdi-magnify"
         @click:append="fetchOrganizations"
@@ -24,82 +24,81 @@
 
     <v-data-table
       v-if="organizations"
+      v-model:options="pagination"
       :headers="headers"
       :items="organizations.results"
-      :options.sync="pagination"
       :server-items-length="pagination.totalItems"
       :loading="loading"
       class="elevation-1"
       item-key="id"
       :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
     >
-      <tr
-        slot="item"
-        slot-scope="props"
-      >
-        <td v-if="env.avatars.orgs">
-          <v-avatar :size="40">
-            <img :src="env.publicUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
-          </v-avatar>
-        </td>
-        <td>{{ props.item.name }}</td>
-        <td>{{ props.item.id }}</td>
-        <td>{{ props.item.description }}</td>
-        <template v-if="!env.readonly">
-          <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
-          <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
-          <td class="justify-center layout px-0">
-            <v-btn
-              :loading="!props.item.limits"
-              :color="!props.item.limits ? 'default' : (props.item.limits.store_nb_members.consumption >= props.item.limits.store_nb_members.limit ? 'warning' : 'primary')"
-              :dark="!!props.item.limits"
-              small
-              rounded
-              class="mt-2 text-lowercase"
-              @click="currentOrganization = props.item;currentLimits = JSON.parse(JSON.stringify(props.item.limits));limitOrganizationDialog = true"
-            >
-              <template v-if="props.item.limits">
-                <template v-if="!props.item.limits.store_nb_members || !props.item.limits.store_nb_members.consumption">
-                  {{ $t('common.missingInfo') }}
-                </template>
-                <template v-else-if="props.item.limits.store_nb_members.limit === 0">
-                  {{ props.item.limits.store_nb_members.consumption.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
-                </template>
-                <template v-else>
-                  {{ props.item.limits.store_nb_members.consumption.toLocaleString() }} / {{ props.item.limits.store_nb_members.limit.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
-                </template>
-              </template>
-            </v-btn>
-            <v-btn
-              :to="localePath({name: 'organization-id', params: {id: props.item.id}})"
-              icon
-              class="mx-0"
-            >
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
-            <v-btn
-              icon
-              class="mx-0"
-              @click="currentOrganization = props.item;deleteOrganizationDialog = true"
-            >
-              <v-icon color="warning">
-                mdi-delete
-              </v-icon>
-            </v-btn>
+      <template #item="props">
+        <tr>
+          <td v-if="env.avatars.orgs">
+            <v-avatar :size="40">
+              <img :src="env.publicUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
+            </v-avatar>
           </td>
-        </template>
-        <template v-else>
-          <td class="justify-center layout px-0">
-            <v-btn
-              :to="localePath({name: 'organization-id', params: {id: props.item.id}})"
-              icon
-              class="mx-0"
-            >
-              <v-icon>mdi-eye</v-icon>
-            </v-btn>
-          </td>
-        </template>
-      </tr>
+          <td>{{ props.item.name }}</td>
+          <td>{{ props.item.id }}</td>
+          <td>{{ props.item.description }}</td>
+          <template v-if="!env.readonly">
+            <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
+            <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
+            <td class="justify-center layout px-0">
+              <v-btn
+                :loading="!props.item.limits"
+                :color="!props.item.limits ? 'default' : (props.item.limits.store_nb_members.consumption >= props.item.limits.store_nb_members.limit ? 'warning' : 'primary')"
+                :dark="!!props.item.limits"
+                size="small"
+                rounded
+                class="mt-2 text-lowercase"
+                @click="currentOrganization = props.item;currentLimits = JSON.parse(JSON.stringify(props.item.limits));limitOrganizationDialog = true"
+              >
+                <template v-if="props.item.limits">
+                  <template v-if="!props.item.limits.store_nb_members || !props.item.limits.store_nb_members.consumption">
+                    {{ $t('common.missingInfo') }}
+                  </template>
+                  <template v-else-if="props.item.limits.store_nb_members.limit === 0">
+                    {{ props.item.limits.store_nb_members.consumption.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
+                  </template>
+                  <template v-else>
+                    {{ props.item.limits.store_nb_members.consumption.toLocaleString() }} / {{ props.item.limits.store_nb_members.limit.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
+                  </template>
+                </template>
+              </v-btn>
+              <v-btn
+                :to="localePath({name: 'organization-id', params: {id: props.item.id}})"
+                icon
+                class="mx-0"
+              >
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+              <v-btn
+                icon
+                class="mx-0"
+                @click="currentOrganization = props.item;deleteOrganizationDialog = true"
+              >
+                <v-icon color="warning">
+                  mdi-delete
+                </v-icon>
+              </v-btn>
+            </td>
+          </template>
+          <template v-else>
+            <td class="justify-center layout px-0">
+              <v-btn
+                :to="localePath({name: 'organization-id', params: {id: props.item.id}})"
+                icon
+                class="mx-0"
+              >
+                <v-icon>mdi-eye</v-icon>
+              </v-btn>
+            </td>
+          </template>
+        </tr>
+      </template>
     </v-data-table>
 
     <v-dialog
@@ -116,7 +115,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn
-            text
+            variant="text"
             @click="deleteOrganizationDialog = false"
           >
             {{ $t('common.confirmCancel') }}
@@ -149,7 +148,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn
-            text
+            variant="text"
             @click="limitOrganizationDialog = false"
           >
             {{ $t('common.confirmCancel') }}

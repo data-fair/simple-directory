@@ -4,14 +4,14 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on, attrs}">
+    <template #activator="{props}">
       <v-btn
         icon
         color="warning"
-        small
+        size="small"
         :title="$t('pages.organization.sendInvitationLink')"
-        v-bind="attrs"
-        v-on="on"
+
+        v-bind="props"
       >
         <v-icon>mdi-send</v-icon>
       </v-btn>
@@ -34,16 +34,16 @@
             :label="$t('pages.organization.inviteEmail')"
             name="email"
             disabled
-            outlined
-            dense
+            variant="outlined"
+            density="compact"
           />
           <v-select
             v-model="invitation.role"
             :items="orga.roles"
             :label="$t('common.role')"
             disabled
-            outlined
-            dense
+            variant="outlined"
+            density="compact"
           />
           <v-select
             v-if="invitation.department"
@@ -51,16 +51,16 @@
             :items="orga.departments"
             :label="orga.departmentLabel || $t('common.department')"
             item-value="id"
-            item-text="name"
+            item-title="name"
             disabled
-            outlined
-            dense
+            variant="outlined"
+            density="compact"
           />
         </template>
         <v-alert
           :value="!!link"
           type="warning"
-          outlined
+          variant="outlined"
         >
           <p>{{ $t('pages.organization.inviteLink') }}</p>
           <p style="word-break: break-all;">
@@ -72,7 +72,7 @@
         <v-spacer />
         <v-btn
           v-if="!link"
-          text
+          variant="text"
           @click="menu=false"
         >
           {{ $t('common.confirmCancel') }}

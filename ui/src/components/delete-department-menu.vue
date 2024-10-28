@@ -4,13 +4,13 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on}">
+    <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.deleteDepartment', {departmentLabel})"
-        text
+        variant="text"
         icon
         color="warning"
-        v-on="on"
+        v-bind="props"
       >
         <v-icon>mdi-delete</v-icon>
       </v-btn>
@@ -33,7 +33,7 @@
         <v-alert
           v-else-if="members.count"
           type="warning"
-          outlined
+          variant="outlined"
         >
           {{ $t('pages.organization.deleteDepartmentHasMembers', {count: members.count.toLocaleString()}) }}
         </v-alert>
@@ -44,7 +44,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          text
+          variant="text"
           @click="menu = false"
         >
           {{ $t('common.confirmCancel') }}

@@ -6,7 +6,7 @@
     <v-row class="mt-3 mx-0">
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
-          large
+          size="large"
           color="primary"
           style="top:-2px"
         >
@@ -45,7 +45,7 @@
           v-model="q"
           :label="$t('common.search')"
           name="search"
-          solo
+          variant="solo"
           append-icon="mdi-magnify"
           clearable
           hide-details="auto"
@@ -60,10 +60,10 @@
           :items="orga.roles"
           :label="$t('common.role')"
           name="role"
-          solo
+          variant="solo"
           clearable
           hide-details="auto"
-          @change="fetchMembers(1)"
+          @update:model-value="fetchMembers(1)"
         />
       </v-col>
       <v-col :cols="filterMemberCols">
@@ -73,12 +73,12 @@
           :items="[{id: '-', name: 'aucun'}].concat(orga.departments)"
           :label="orga.departmentLabel || $t('common.department')"
           item-value="id"
-          item-text="name"
+          item-title="name"
           clearable
           name="department"
-          solo
+          variant="solo"
           hide-details="auto"
-          @change="fetchMembers(1)"
+          @update:model-value="fetchMembers(1)"
         />
       </v-col>
       <v-col
@@ -90,11 +90,11 @@
           :items="[{id: 'true', name: $t('common.emailConfirmed')}, {id: 'false', name: $t('common.emailNotConfirmed')}]"
           :label="$t('common.creationStep')"
           item-value="id"
-          item-text="name"
+          item-title="name"
           clearable
           name="storage"
-          solo
-          @change="fetchMembers(1)"
+          variant="solo"
+          @update:model-value="fetchMembers(1)"
         />
       </v-col>
     </v-row>
@@ -114,38 +114,38 @@
               :src="`${env.publicUrl}/api/avatars/user/${member.id}/avatar.png`"
             />
           </v-list-item-avatar>
-          <v-list-item-content>
-            <template v-if="!members.results[i-1] || members.results[i-1].id !== member.id">
-              <v-list-item-title style="white-space:normal;">
-                {{ member.name }} ({{ member.email }})
-                <template v-if="member.emailConfirmed === false">
-                  <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
-                    <resend-invitation
-                      :member="member"
-                      :orga="orga"
-                      :department="adminDepartment"
-                    />
-                  </span>
-                </template>
-              </v-list-item-title>
-              <v-list-item-subtitle
-                v-if="member.host"
-                style="white-space:normal;"
-              >
-                {{ $t('common.host') }} = {{ member.host }}
-              </v-list-item-subtitle>
-              <v-list-item-subtitle
-                v-if="member.plannedDeletion"
-                style="white-space:normal;"
-              >
-                {{ $t('common.plannedDeletion') }} = {{ $d(new Date(member.plannedDeletion)) }}
-              </v-list-item-subtitle>
-            </template>
-            <v-list-item-subtitle style="white-space:normal;">
-              <span v-if="member.department">{{ orga.departmentLabel || $t('common.department') }} = {{ member.departmentName || member.department }}, </span>
-              <span>{{ $t('common.role') }} = {{ member.role }}</span>
+
+          <template v-if="!members.results[i-1] || members.results[i-1].id !== member.id">
+            <v-list-item-title style="white-space:normal;">
+              {{ member.name }} ({{ member.email }})
+              <template v-if="member.emailConfirmed === false">
+                <span class="text-warning">{{ $t('common.emailNotConfirmed') }}
+                  <resend-invitation
+                    :member="member"
+                    :orga="orga"
+                    :department="adminDepartment"
+                  />
+                </span>
+              </template>
+            </v-list-item-title>
+            <v-list-item-subtitle
+              v-if="member.host"
+              style="white-space:normal;"
+            >
+              {{ $t('common.host') }} = {{ member.host }}
             </v-list-item-subtitle>
-          </v-list-item-content>
+            <v-list-item-subtitle
+              v-if="member.plannedDeletion"
+              style="white-space:normal;"
+            >
+              {{ $t('common.plannedDeletion') }} = {{ $d(new Date(member.plannedDeletion)) }}
+            </v-list-item-subtitle>
+          </template>
+          <v-list-item-subtitle style="white-space:normal;">
+            <span v-if="member.department">{{ orga.departmentLabel || $t('common.department') }} = {{ member.departmentName || member.department }}, </span>
+            <span>{{ $t('common.role') }} = {{ member.role }}</span>
+          </v-list-item-subtitle>
+
           <v-list-item-action v-if="isAdminOrga && (!readonly || env.overwrite.includes('members'))">
             <edit-member-menu
               :orga="orga"
@@ -190,9 +190,9 @@
     >
       <v-spacer />
       <v-pagination
-        :value="membersPage"
+        :model-value="membersPage"
         :length="Math.ceil(members.count / membersPageSize)"
-        @input="fetchMembers"
+        @update:model-value="fetchMembers"
       />
     </v-row>
   </v-container>

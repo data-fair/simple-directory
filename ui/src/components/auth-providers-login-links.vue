@@ -8,10 +8,10 @@
       :color="env.theme.colors.primary"
       :href="mainSiteLoginUrl"
       dark
-      small
+      size="small"
       rounded
-      depressed
-      class="pl-0 pr-3 mr-2 mb-1 text-none white--text"
+      variant="flat"
+      class="pl-0 pr-3 mr-2 mb-1 text-none text-white"
     >
       <v-avatar
         size="28"
@@ -33,10 +33,10 @@
       :color="contrastColor(authProvider.color)"
       :href="loginURL(authProvider)"
       dark
-      small
+      size="small"
       rounded
-      depressed
-      class="pl-0 pr-3 mr-2 mb-1 text-none white--text"
+      variant="flat"
+      class="pl-0 pr-3 mr-2 mb-1 text-none text-white"
     >
       <v-avatar
         size="27"

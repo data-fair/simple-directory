@@ -1,7 +1,6 @@
 import type { Organization, Limits } from '#types'
 import config from '#config'
 import mongo from '#mongo'
-import { type Account } from '@data-fair/lib-express'
 
 export const getLimits = async (org: Organization) => {
   let limit: Limits | null = await mongo.limits.findOne({ type: 'organization', id: org.id }, { projection: { _id: 0 } })

@@ -6,7 +6,7 @@
   >
     <h2 class="text-h4 mb-4">
       <v-icon
-        large
+        size="large"
         color="primary"
         style="top:-2px"
       >
@@ -35,8 +35,8 @@
         :disabled="!isAdminOrga || env.readonly"
         name="name"
         required
-        outlined
-        dense
+        variant="outlined"
+        density="compact"
         autocomplete="off"
       />
       <v-textarea
@@ -45,7 +45,7 @@
         :disabled="!isAdminOrga || env.readonly"
         name="description"
         hide-details
-        outlined
+        variant="outlined"
         autocomplete="off"
       />
       <v-text-field
@@ -56,17 +56,19 @@
         name="departmentLabel"
         autocomplete="off"
       >
-        <v-tooltip
-          slot="append-outer"
-          left
-        >
-          <template #activator="{on}">
-            <v-icon v-on="on">
-              mdi-information
-            </v-icon>
-          </template>
-          <div v-html="$t('pages.organization.departmentLabelHelp')" />
-        </v-tooltip>
+        <template #append-outer>
+          <v-tooltip
+
+            location="left"
+          >
+            <template #activator="{props}">
+              <v-icon v-bind="props">
+                mdi-information
+              </v-icon>
+            </template>
+            <div v-html="$t('pages.organization.departmentLabelHelp')" />
+          </v-tooltip>
+        </template>
       </v-text-field>
       <v-select
         v-model="orga['2FA'].roles"

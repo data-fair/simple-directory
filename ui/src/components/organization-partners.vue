@@ -6,7 +6,7 @@
     <v-row class="mt-3 mx-0">
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
-          large
+          size="large"
           color="primary"
           style="top:-2px"
         >
@@ -38,7 +38,7 @@
           v-model="q"
           :label="$t('common.search')"
           name="search"
-          solo
+          variant="solo"
           append-icon="mdi-magnify"
           clearable
           @click:clear="$nextTick(() => $nextTick(() => filterPartners()))"
@@ -50,7 +50,7 @@
 
     <v-list
       v-if="orga.partners.length"
-      two-line
+      lines="two"
       class="elevation-1 mt-1"
     >
       <template v-for="(partner, i) in currentPage">
@@ -61,22 +61,22 @@
               :src="`${env.publicUrl}/api/avatars/organization/${partner.id}/avatar.png`"
             />
           </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title style="white-space:normal;">
-              {{ partner.name }} ({{ partner.contactEmail }})
-              <template v-if="!partner.id">
-                <span class="warning--text">{{ $t('common.emailNotConfirmed') }}
-                  <resend-partner-invitation
-                    :partner="partner"
-                    :orga="orga"
-                  />
-                </span>
-              </template>
-            </v-list-item-title>
-            <v-list-item-subtitle v-if="partner.createdAt">
-              {{ $t('common.createdAt') }} {{ $d(new Date(partner.createdAt)) }}
-            </v-list-item-subtitle>
-          </v-list-item-content>
+
+          <v-list-item-title style="white-space:normal;">
+            {{ partner.name }} ({{ partner.contactEmail }})
+            <template v-if="!partner.id">
+              <span class="text-warning">{{ $t('common.emailNotConfirmed') }}
+                <resend-partner-invitation
+                  :partner="partner"
+                  :orga="orga"
+                />
+              </span>
+            </template>
+          </v-list-item-title>
+          <v-list-item-subtitle v-if="partner.createdAt">
+            {{ $t('common.createdAt') }} {{ $d(new Date(partner.createdAt)) }}
+          </v-list-item-subtitle>
+
           <v-list-item-action
             v-if="writablePartners"
             class="ml-0"

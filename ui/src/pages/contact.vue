@@ -35,7 +35,7 @@
         :disabled="!!tokenError"
         label="Votre demande"
         name="text"
-        outlined
+        variant="outlined"
         required
       />
       <v-row>

@@ -4,12 +4,12 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on}">
+    <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.editDepartment', {departmentLabel})"
-        text
+        variant="text"
         icon
-        v-on="on"
+        v-bind="props"
       >
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
@@ -43,7 +43,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          text
+          variant="text"
           @click="menu = false"
         >
           {{ $t('common.confirmCancel') }}

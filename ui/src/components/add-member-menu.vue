@@ -5,14 +5,14 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on}">
+    <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.addMember')"
         fab
-        small
+        size="small"
         color="primary"
         class="mx-2"
-        v-on="on"
+        v-bind="props"
       >
         <v-icon>mdi-plus</v-icon>
       </v-btn>
@@ -51,8 +51,8 @@
             :rules="[v => !!v || '']"
             name="email"
             required
-            outlined
-            dense
+            variant="outlined"
+            density="compact"
             autocomplete="off"
           />
           <v-select
@@ -61,8 +61,8 @@
             :label="$t('common.role')"
             :rules="[v => !!v || '']"
             name="role"
-            outlined
-            dense
+            variant="outlined"
+            density="compact"
           />
           <v-autocomplete
             v-if="env.manageDepartments && orga.departments && orga.departments.length && !department"
@@ -70,11 +70,11 @@
             :items="orga.departments"
             :label="orga.departmentLabel || $t('common.department')"
             item-value="id"
-            item-text="name"
+            item-title="name"
             name="department"
             clearable
-            outlined
-            dense
+            variant="outlined"
+            density="compact"
           />
           <v-select
             v-if="env.manageSites && redirects && redirects.filter(r => r.value !== defaultRedirect).length"
@@ -84,14 +84,14 @@
             :items="redirects"
             name="host"
             required
-            dense
-            outlined
+            density="compact"
+            variant="outlined"
           />
         </v-form>
         <v-alert
           :value="!!link"
           type="warning"
-          outlined
+          variant="outlined"
         >
           <p>{{ $t('pages.organization.inviteLink') }}</p>
           <p style="word-break: break-all;">
@@ -103,7 +103,7 @@
         <v-spacer />
         <v-btn
           v-if="!link"
-          text
+          variant="text"
           @click="menu=false"
         >
           {{ $t('common.confirmCancel') }}

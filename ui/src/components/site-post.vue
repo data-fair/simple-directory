@@ -5,13 +5,13 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on}">
+    <template #activator="{props}">
       <v-btn
         :title="$t('pages.admin.sites.createSite')"
         fab
-        small
+        size="small"
         color="primary"
-        v-on="on"
+        v-bind="props"
       >
         <v-icon>mdi-plus</v-icon>
       </v-btn>
@@ -35,10 +35,10 @@
             :label="$t('common.owner')"
             :items="orgs"
             item-value="id"
-            item-text="name"
+            item-title="name"
             return-object
             :rules="[value => !!value]"
-            @change="org => {site.owner = {type: 'organization', ...org}}"
+            @update:model-value="org => {site.owner = {type: 'organization', ...org}}"
           />
           <v-jsf
             v-model="site"
@@ -50,7 +50,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          text
+          variant="text"
           @click="menu = false"
         >
           {{ $t('common.confirmCancel') }}

@@ -4,9 +4,9 @@
     :close-on-content-click="false"
     max-width="600"
     offset-y
-    top
+    location="top"
   >
-    <template #activator="{ on, attrs }">
+    <template #activator="{ props }">
       <!--<v-tooltip v-if="icon" top>
         <template v-slot:activator="{ on: onTooltip }">
           <v-btn
@@ -26,8 +26,8 @@
       >
         <v-btn
           :color="yesColor"
-          v-bind="attrs"
-          v-on="on"
+
+          v-bind="props"
         >
           {{ buttonText }}
         </v-btn>
@@ -42,7 +42,7 @@
           v-if="alert"
           :value="true"
           :type="yesColor"
-          outlined
+          variant="outlined"
         >
           {{ alert }}
         </v-alert>
@@ -57,7 +57,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          text
+          variant="text"
           @click="menu = false"
         >
           {{ $t('common.confirmCancel') }}

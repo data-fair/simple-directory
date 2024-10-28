@@ -28,8 +28,8 @@
         class="pt-2"
         accept="image/png, image/jpeg"
         :placeholder="$t('pages.avatar.load')"
-        outlined
-        dense
+        variant="outlined"
+        density="compact"
         prepend-icon=""
         @change="change"
       >
@@ -37,7 +37,7 @@
           <v-btn
             v-if="file && !hideValidate"
             fab
-            x-small
+            size="x-small"
             color="primary"
             :title="$t('common.validate')"
             style="position: relative; top: -4px;"

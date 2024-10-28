@@ -4,14 +4,14 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on, attrs}">
+    <template #activator="{props}">
       <v-btn
         icon
         color="warning"
-        small
+        size="small"
         :title="$t('pages.organization.sendInvitationLink')"
-        v-bind="attrs"
-        v-on="on"
+
+        v-bind="props"
       >
         <v-icon>mdi-send</v-icon>
       </v-btn>
@@ -31,8 +31,8 @@
           :rules="[v => !!v || '']"
           name="name"
           required
-          dense
-          outlined
+          density="compact"
+          variant="outlined"
           disabled
         />
         <v-text-field
@@ -41,8 +41,8 @@
           :rules="[v => !!v || '']"
           name="contactEmail"
           required
-          dense
-          outlined
+          density="compact"
+          variant="outlined"
           disabled
         />
         <v-select
@@ -53,14 +53,14 @@
           :loading="!redirects"
           name="host"
           required
-          dense
-          outlined
+          density="compact"
+          variant="outlined"
         />
       </v-card-text>
       <v-card-actions>
         <v-spacer />
         <v-btn
-          text
+          variant="text"
           @click="menu=false"
         >
           {{ $t('common.confirmCancel') }}

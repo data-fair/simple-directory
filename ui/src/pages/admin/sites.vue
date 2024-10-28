@@ -20,87 +20,86 @@
       hide-default-footer
       :items-per-page="10000"
     >
-      <tr
-        slot="item"
-        slot-scope="props"
-      >
-        <td v-if="props.item.logo">
-          <img
-            style="max-height: 100%"
-            :src="props.item.logo"
-          >
-        </td>
-        <td
-          v-else
-          :style="`min-width:50px;background-color:${props.item.theme.primaryColor}`"
-        />
-        <td>
-          <a
-            :href="`http://${props.item.host}`"
-            target="blank"
-          >{{ props.item.host }}</a>
-        </td>
-        <td>{{ props.item._id }}</td>
-        <td>{{ props.item.owner.name }}</td>
-        <td>{{ props.item.authMode }}</td>
-        <td>
-          <v-btn
-            v-for="authProvider of (props.item.authProviders || [])"
-            :key="authProvider.type + ':' + authProvider.id"
-            :color="contrastColor(authProvider.color)"
-            dark
-            small
-            rounded
-            depressed
-            class="pl-0 pr-3 mr-2 mb-1 text-none white--text"
-            style="cursor:default"
-          >
-            <v-avatar
-              size="27"
-              color="white"
-              class="elevation-4"
-              style="left:-1px; top: -1px;"
+      <template #item="props">
+        <tr>
+          <td v-if="props.item.logo">
+            <img
+              style="max-height: 100%"
+              :src="props.item.logo"
             >
-              <v-icon
-                v-if="authProvider.icon"
-                :color="contrastColor(authProvider.color)"
-              >
-                {{ authProvider.icon }}
-              </v-icon>
-              <img
-                v-else-if="authProvider.img"
-                :src="authProvider.img"
-                :alt="authProvider.title"
-              >
-            </v-avatar>
-            &nbsp;{{ authProvider.title }}
-          </v-btn>
-        </td>
-        <td>
-          <site-patch
-            :site="props.item"
-            :sites="sites.results"
-            @change="fetchSites"
+          </td>
+          <td
+            v-else
+            :style="`min-width:50px;background-color:${props.item.theme.primaryColor}`"
           />
-          <confirm-menu
-            yes-color="warning"
-            @confirm="deleteSite(props.item)"
-          >
-            <template #activator="{on, attrs}">
-              <v-btn
-                :title="$t('common.delete')"
-                v-bind="attrs"
-                text
-                icon
-                color="warning"
-                v-on="on"
+          <td>
+            <a
+              :href="`http://${props.item.host}`"
+              target="blank"
+            >{{ props.item.host }}</a>
+          </td>
+          <td>{{ props.item._id }}</td>
+          <td>{{ props.item.owner.name }}</td>
+          <td>{{ props.item.authMode }}</td>
+          <td>
+            <v-btn
+              v-for="authProvider of (props.item.authProviders || [])"
+              :key="authProvider.type + ':' + authProvider.id"
+              :color="contrastColor(authProvider.color)"
+              dark
+              size="small"
+              rounded
+              variant="flat"
+              class="pl-0 pr-3 mr-2 mb-1 text-none text-white"
+              style="cursor:default"
+            >
+              <v-avatar
+                size="27"
+                color="white"
+                class="elevation-4"
+                style="left:-1px; top: -1px;"
               >
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
-            </template>
-          </confirm-menu>
-        </td>
-      </tr>
+                <v-icon
+                  v-if="authProvider.icon"
+                  :color="contrastColor(authProvider.color)"
+                >
+                  {{ authProvider.icon }}
+                </v-icon>
+                <img
+                  v-else-if="authProvider.img"
+                  :src="authProvider.img"
+                  :alt="authProvider.title"
+                >
+              </v-avatar>
+              &nbsp;{{ authProvider.title }}
+            </v-btn>
+          </td>
+          <td>
+            <site-patch
+              :site="props.item"
+              :sites="sites.results"
+              @change="fetchSites"
+            />
+            <confirm-menu
+              yes-color="warning"
+              @confirm="deleteSite(props.item)"
+            >
+              <template #activator="{on, attrs}">
+                <v-btn
+                  :title="$t('common.delete')"
+                  v-bind="attrs"
+                  variant="text"
+                  icon
+                  color="warning"
+                  v-on="on"
+                >
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </template>
+            </confirm-menu>
+          </td>
+        </tr>
+      </template>
     </v-data-table>
   </v-container>
 </template>

@@ -6,7 +6,7 @@
   >
     <h2 class="text-h4 mb-4">
       <v-icon
-        large
+        size="large"
         color="primary"
         style="top:-2px"
       >

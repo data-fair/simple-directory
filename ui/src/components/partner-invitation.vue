@@ -7,8 +7,8 @@
     <v-alert
       color="info"
       :value="true"
-      outlined
-      dense
+      variant="outlined"
+      density="compact"
     >
       <p>
         L'organisation {{ payload.on }} souhaite ajouter {{ payload.n }} comme partenaire avec {{ payload.e }} comme adresse de contact.
@@ -27,7 +27,7 @@
         <v-btn
           v-t="'common.loginSignin'"
           :href="loginUrl(null, true, {email: payload.e})"
-          depressed
+          variant="flat"
           color="primary"
         />
       </p>
@@ -40,7 +40,7 @@
       <p>
         <v-btn
           v-t="'common.login'"
-          depressed
+          variant="flat"
           color="primary"
           :href="loginUrl(null, true, {email: payload.e})"
         />
@@ -51,7 +51,7 @@
       <p>
         <v-btn
           v-t="'common.signin'"
-          depressed
+          variant="flat"
           color="primary"
           :href="loginUrl(null, true, {email: payload.e, step: 'createUser'})"
         />
@@ -75,14 +75,14 @@
           :label="userOrg.name"
           hide-details
           :disabled="userOrg.role !== 'admin'"
-          @change="v => toggleSelectedUserOrg(userOrg, v)"
+          @update:model-value="v => toggleSelectedUserOrg(userOrg, v)"
         />
         <v-checkbox
           v-model="createNewOrg"
           color="primary"
           label="créer une nouvelle organisation"
           hide-details
-          @change="selectedUserOrg = null"
+          @update:model-value="selectedUserOrg = null"
         />
       </p>
       <p v-if="selectedUserOrg">
@@ -97,13 +97,13 @@
         <v-text-field
           v-model="createOrganizationName"
           class="create-org-name"
-          dense
-          outlined
+          density="compact"
+          variant="outlined"
           label="nom de la nouvelle organisation"
         >
           <template #append-outer>
             <v-btn
-              depressed
+              variant="flat"
               color="primary"
               @click="createOrga"
             >

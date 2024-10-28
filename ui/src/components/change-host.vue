@@ -2,7 +2,7 @@
   <div v-if="user">
     <v-alert
       color="warning"
-      outlined
+      variant="outlined"
     >
       Le compte {{ user.email }} n'existe pas sur {{ host }} mais il existe sur {{ mainHost }}.
     </v-alert>
@@ -27,7 +27,7 @@
       <v-spacer />
       <v-btn
         color="warning"
-        depressed
+        variant="flat"
         :disabled="!confirmMigration"
         @click="confirmChangeHost"
       >

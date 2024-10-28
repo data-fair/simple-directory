@@ -4,7 +4,7 @@ import apiDocs from '../contract/api-docs.ts'
 import express, { type RequestHandler } from 'express'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
-import { session, errorHandler, createSiteMiddleware, createSpaMiddleware, setReqUser, reqSession, httpError } from '@data-fair/lib-express'
+import { session, errorHandler, createSiteMiddleware, createSpaMiddleware, setReqUser, httpError } from '@data-fair/lib-express'
 import admin from './admin/router.ts'
 import anonymousAction from './anonymous-action/router.ts'
 import auth from './auth/router.ts'
@@ -34,17 +34,6 @@ app.use(session.middleware())
 
 // minimalist api key management
 const readApiKey: RequestHandler = async (req, res, next) => {
-  /*
-  // always refresh session user with actual current data
-  const sessionState = reqSession(req)
-  if (sessionState.user && !sessionState.user.os && sessionState.user.id !== '_superadmin') {
-    const fullUser = await storages.globalStorage.getUser(sessionState.user.id)
-    if (fullUser) {
-      sessionState.user = getTokenPayload(fullUser)
-    }
-  }
-  */
-
   const apiKey = req.get('x-apiKey') || req.get('x-api-key') || req.query.apiKey
   if (apiKey) {
     if (apiKey !== config.secretKeys.readAll) {
@@ -89,6 +78,6 @@ app.use('/api/', (req, res) => {
 })
 app.use(tokens)
 
-// app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig))
+app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig))
 
 app.use(errorHandler)

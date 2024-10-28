@@ -4,13 +4,13 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on}">
+    <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.deletePartner')"
-        text
+        variant="text"
         icon
         color="warning"
-        v-on="on"
+        v-bind="props"
       >
         <v-icon>mdi-delete</v-icon>
       </v-btn>
@@ -34,7 +34,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          text
+          variant="text"
           @click="menu = false"
         >
           {{ $t('common.confirmCancel') }}

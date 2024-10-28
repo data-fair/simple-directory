@@ -3,13 +3,13 @@
     :close-on-content-click="false"
     offset-y
   >
-    <template #activator="{on, attrs}">
+    <template #activator="{props}">
       <v-btn
         icon
-        v-bind="attrs"
+
         color="primary"
         class="mx-1"
-        v-on="on"
+        v-bind="props"
       >
         <v-icon>mdi-bell</v-icon>
       </v-btn>
