@@ -37,5 +37,6 @@ module.exports = {
   },
   manageSites: true,
   managePartners: true,
-  cipherPassword: 'test'
+  cipherPassword: 'test',
+  serveUi: false
 }

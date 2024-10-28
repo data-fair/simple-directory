@@ -121,7 +121,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
 
   const payload = getTokenPayload(user)
   if (session.user.isAdmin && session.user.adminMode && req.query.noAdmin !== 'true') payload.adminMode = 1
-  if (session.user.rememberMe) payload.rememberMe = true
+  if (session.user.rememberMe) payload.rememberMe = 1
   if (session.user.asAdmin) {
     payload.asAdmin = session.user.asAdmin
     payload.name = session.user.name

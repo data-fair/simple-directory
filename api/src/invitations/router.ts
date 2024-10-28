@@ -1,15 +1,14 @@
 import { type UserWritable, type Invitation } from '#types'
 import { Router } from 'express'
 import config from '#config'
-import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError } from '@data-fair/lib-express'
+import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError, reqUserAuthenticated } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
-import { pushEvent } from '@data-fair/lib-node/events-queue.js'
+import { pushEvent, pushNotification } from '@data-fair/lib-node/events-queue.js'
 import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
-import { reqI18n } from '#i18n'
+import { reqI18n, __all, __ } from '#i18n'
 import storages from '#storages'
 import { getLimits, setNbMembersLimit, reqSite, getSiteByHost, shortenInvit, unshortenInvit, sendMail, decodeToken, signToken, postUserIdentityWebhook } from '#services'
-import { __all } from '#i18n'
 import emailValidator from 'email-validator'
 import Debug from 'debug'
 
@@ -20,13 +19,12 @@ export default router
 
 // Invitation for a user to join an organization from an admin of this organization
 router.post('', async (req, res, next) => {
-  const user = reqUser(req)
+  const user = reqUserAuthenticated(req)
 
   const { query, body } = (await import('#doc/invitations/post-req/index.ts')).returnValid(req, { name: 'req' })
 
   const logContext: EventLogContext = { req }
 
-  if (!user) return res.status(401).send()
   if (!emailValidator.validate(body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   debug('new invitation', body)
   const storage = storages.globalStorage
@@ -103,21 +101,23 @@ router.post('', async (req, res, next) => {
         organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '')
       }
       // send the mail either if the user does not exist or it was created more that 24 hours ago
-      if (!query.skip_mail && (!existingUser || query.force_mail || dayjs().diff(dayjs(existingUser.created.date), 'day', true) < 1)) {
+      if (!query.skip_mail && (!existingUser || query.force_mail || (existingUser.created && dayjs().diff(dayjs(existingUser.created.date), 'day', true) > 1))) {
         await sendMail('invitation', reqI18n(req).messages, body.email, params)
         eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
       }
 
-      const notif = {
-        sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
+      const event = {
+        sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
         topic: { key: 'simple-directory:add-member' },
         title: __all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
       }
       // send notif to all admins subscribed to the topic
-      pushEvent(notif)
+      pushEvent(event)
       // send same notif to user himself
-      pushEvent({
-        ...notif,
+      pushNotification({
+        sender: event.sender,
+        topic: event.topic,
+        title: __(req, 'notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') }),
         recipient: { id: newUser.id, name: newUser.name }
       })
 
@@ -257,16 +257,18 @@ router.get('/_accept', async (req, res, next) => {
 
   eventsLog.info('sd.invite.accepted', `invitation accepted ${invit.email}, ${orga.id} ${orga.name} ${invit.department} ${invit.role}`, logContext)
 
-  const notif = {
-    sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },
+  const event = {
+    sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin', department: invit.department },
     topic: { key: 'simple-directory:invitation-accepted' },
     title: __all('notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
   }
   // send notif to all admins subscribed to the topic
-  pushEvent(notif)
+  pushEvent(event)
   // send same notif to user himself
-  pushEvent({
-    ...notif,
+  pushNotification({
+    sender: event.sender,
+    topic: event.topic,
+    title: __(req, 'notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') }),
     recipient: { id: existingUser.id, name: existingUser.name }
   })
 

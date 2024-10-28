@@ -114,9 +114,8 @@ router.post('', async (req, res, next) => {
   }
   const { body: orga } = (await import('#doc/organizations/post-req/index.ts')).returnValid(req, { name: 'req' })
 
-  orga.id = orga.id || nanoid()
-  logContext.account = { type: 'organization', id: orga.id, name: orga.name }
   const createdOrga = await storage.createOrganization(orga, user)
+  logContext.account = { type: 'organization', id: createdOrga.id, name: createdOrga.name }
   eventsLog.info('sd.org.create', `a user created an organization: ${orga.name} (${orga.id})`, logContext)
   if (!reqUser(req)?.adminMode || req.query.autoAdmin !== 'false') await storage.addMember(createdOrga, user, 'admin')
   postOrganizationIdentityWebhook(createdOrga)

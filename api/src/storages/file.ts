@@ -34,8 +34,8 @@ function getUserOrgas (organizations: StoredOrganization[], user: User) {
   return userOrgas
 }
 
-function sortCompare (sort) {
-  return function (a, b) {
+function sortCompare (sort: Record<string, 1 | -1>) {
+  return function (a: Record<string, any>, b: Record<string, any>) {
     for (const key of Object.keys(sort || {})) {
       if (a[key] > b[key]) return sort[key]
       if (a[key] < b[key]) return sort[key] * -1

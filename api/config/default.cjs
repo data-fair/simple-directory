@@ -273,5 +273,6 @@ module.exports = {
   depAdminIsOrgAdmin: false,
   manageSites: false,
   managePartners: false,
-  defaultOrg: undefined
+  defaultOrg: undefined,
+  serveUi: true
 }

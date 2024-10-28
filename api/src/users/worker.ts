@@ -26,7 +26,7 @@ const planDeletion = async (user: User) => {
       link,
       user: user.name,
       plannedDeletion: localizedDayjs(plannedDeletion).locale(defaultLocale).format('L'),
-      cause: messages[defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', localizedDayjs(user.logged || user.created.date).locale(defaultLocale).format('L'))
+      cause: messages[defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', localizedDayjs(user.logged || user.created?.date).locale(defaultLocale).format('L'))
     })
     eventsLog.warn('sd.cleanup-cron.inactive.email', `sent an email of planned deletion to inactive user ${user.email}`, { user })
   }
@@ -56,7 +56,7 @@ const task = async () => {
           const refreshedToken = await provider.refreshToken(token.token, false)
           const { newToken, offlineRefreshToken } = refreshedToken
           const userInfo = await provider.userInfo(newToken.access_token)
-          const memberInfo = await authCoreProviderMemberInfo(null, provider, user.email, userInfo)
+          const memberInfo = await authCoreProviderMemberInfo(undefined, provider, user.email, userInfo)
           await patchCoreOAuthUser(provider, user, userInfo, memberInfo)
           await writeOAuthToken(user, provider, newToken, offlineRefreshToken, token.loggedOut)
           eventsLog.info('sd.cleanup-cron.offline-token.refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { user })

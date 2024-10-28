@@ -78,6 +78,8 @@ app.use('/api/', (req, res) => {
 })
 app.use(tokens)
 
-app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig))
+if (config.serveUi) {
+  app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig))
+}
 
 app.use(errorHandler)

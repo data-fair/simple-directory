@@ -168,7 +168,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
       return returnError('adminModeOnly', 403)
     }
   } else if (body.rememberMe) {
-    payload.rememberMe = true
+    payload.rememberMe = 1
   }
   // 2FA management
   const user2FA = await storage.get2FA(user.id)
@@ -274,7 +274,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   }
 
   const payload = getTokenPayload(user)
-  if (req.body.rememberMe) payload.rememberMe = true
+  if (req.body.rememberMe) payload.rememberMe = 1
 
   // passwordless is not compatible with 2FA for now
   if (await storage.get2FA(user.id) || await storage.required2FA(user)) {
@@ -346,7 +346,7 @@ router.get('/token_callback', async (req, res, next) => {
   const reboundRedirect = query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me'
 
   const payload = getTokenPayload(user)
-  if (decoded.rememberMe) payload.rememberMe = true
+  if (decoded.rememberMe) payload.rememberMe = 1
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = 1
   const token = await signToken(payload, config.jwtDurations.exchangedToken)
 
@@ -415,7 +415,7 @@ router.post('/exchange', async (req, res, next) => {
       }
     }
   }
-  if (decoded.rememberMe) payload.rememberMe = true
+  if (decoded.rememberMe) payload.rememberMe = 1
   const token = await signToken(payload, config.jwtDurations.exchangedToken)
 
   eventsLog.info('sd.auth.exchange.ok', 'a session token was successfully exchanged for a new one', logContext)

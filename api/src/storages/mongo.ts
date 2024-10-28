@@ -9,6 +9,7 @@ import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
 import mongo from '#mongo'
 import type { Password } from '../utils/passwords.ts'
 import dayjs from 'dayjs'
+import { nanoid } from 'nanoid'
 import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 
 const collation = { locale: 'en', strength: 1 }
@@ -239,12 +240,13 @@ class MongodbStorage implements SdStorage {
   async createOrganization (orga: OrganizationPost, user: UserRef) {
     const date = new Date().toISOString()
     const newOrga = {
+      id: orga.id || nanoid(),
       created: { id: user.id, name: user.name, date },
       updated: { id: user.id, name: user.name, date },
-      ...cloneWithId(orga),
+      ...orga,
     }
 
-    await mongo.organizations.insertOne(newOrga)
+    await mongo.organizations.insertOne(cloneWithId(newOrga))
     return cleanOrganization(newOrga)
   }
 

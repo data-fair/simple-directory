@@ -542,6 +542,9 @@
     },
     "singleMembership": {
       "type": "boolean"
+    },
+    "serveUi": {
+      "type": "boolean"
     }
   },
   "$defs": {
