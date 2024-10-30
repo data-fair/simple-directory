@@ -143,7 +143,8 @@ module.exports = {
     cssText: ''
   },
   i18n: {
-    defaultLocale: 'fr'
+    defaultLocale: 'fr',
+    locales: ['fr', 'en', 'es', 'pt', 'it', 'de']
   },
   mails: {
     from: 'no-reply@test.com',

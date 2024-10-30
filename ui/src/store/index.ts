@@ -8,7 +8,6 @@ const reactiveSearchParams = useReactiveSearchParams()
 
 export const userDetailsFetch = useFetch<User>(() => `${$apiPath}/users/${user.value?.id}`, { watch: false })
 export const authProvidersFetch = useFetch<PublicAuthProvider[]>(`${$apiPath}/auth/providers`, { watch: false })
-export const sitePublicFetch = useFetch<SitePublic>(`${$apiPath}/sites/_public`, { watch: false })
 export const sitesFetch = useFetch<{ count: number, results: SitePublic[] }>(`${$apiPath}/sites`, { watch: false })
 
 export const patchOrganization = withUiNotif(async (id: string, patch: Partial<Organization>, msg: string) => {

@@ -1,7 +1,7 @@
 <template>
   <v-app
     :class="appClass"
-    :style="localePath('login') === $route.path && $vuetify.theme.light && 'background-color: rgb(245, 245, 245);'"
+    :style="isLoginPage && !$vuetify.theme.current.dark && 'background-color: rgb(245, 245, 245);'"
   >
     <template v-if="isLoginPage">
       <v-app-bar
@@ -10,7 +10,7 @@
         color="transparent"
       >
         <v-spacer />
-        <lang-switcher />
+        <lang-switcher :locales="$uiConfig.i18n.locales" />
       </v-app-bar>
     </template>
     <template v-else>
@@ -23,18 +23,19 @@
       </v-container>
       <ui-notif />
     </v-main>
-    <v-footer
+    <!--<v-footer
       v-if="!embed && !isLoginPage"
       class="pa-3"
     >
       <v-spacer />
       <div>Powered by <a href="https://data-fair.github.io/simple-directory/">Simple Directory</a></div>
-    </v-footer>
+    </v-footer>-->
   </v-app>
 </template>
 
 <script lang="ts" setup>
 import uiNotif from '@data-fair/lib-vuetify/ui-notif.vue'
+import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
 
 const { lang } = useSession()
 const route = useRoute()
@@ -45,14 +46,13 @@ useHead({
   // __dangerouslyDisableSanitizers: ['style']
 })
 
-const { mapState, mapGetters, mapActions } = require('vuex')
-const showNav = useBooleanSearchParam('showNav')
 const embed = useBooleanSearchParam('embed')
 const showToolbarParam = useBooleanSearchParam('showToolbar')
 
 const isLoginPage = computed(() => route.name === '/login')
 const showToolbar = computed(() => !embed.value || showToolbarParam.value)
 const appClass = computed(() => {
+  if (!route.name) return ''
   return 'page' + route.name.replace(/\//g, '')
 })
 

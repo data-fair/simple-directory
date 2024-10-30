@@ -109,7 +109,11 @@ module.exports = {
     cssText: 'THEME_CSS_TEXT'
   },
   i18n: {
-    defaultLocale: 'I18N_DEFAULT_LOCALE'
+    defaultLocale: 'I18N_DEFAULT_LOCALE',
+    locales: {
+      __name: 'I18N_LOCALES',
+      __format: 'json'
+    }
   },
   mails: {
     transport: jsonEnv('MAILS_TRANSPORT'),

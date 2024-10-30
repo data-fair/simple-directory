@@ -4,6 +4,7 @@ import Vue from '@vitejs/plugin-vue'
 import VueRouter from 'unplugin-vue-router/vite'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
 import { unheadVueComposablesImports } from '@unhead/vue'
 import Unfonts from 'unplugin-fonts/vite'
 import Vuetify from 'vite-plugin-vuetify'
@@ -41,10 +42,10 @@ export default defineConfig({
       ],
       dirs: [
         'src/utils',
-        'src/composables',
-        'src/components/**'
+        'src/composables'
       ]
     }),
+    Components(),
     {
       name: 'inject-site-context',
       async transformIndexHtml (html) {

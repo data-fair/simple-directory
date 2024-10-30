@@ -20,7 +20,7 @@ import 'iframe-resizer/js/iframeResizer.contentWindow.js'
 (async function () {
   const router = createRouter({ history: createWebHistory($sitePath + '/simple-directory/'), routes })
   const reactiveSearchParams = createReactiveSearchParams(router)
-  const session = await createSession({ directoryUrl: $sitePath + '/simple-directory' })
+  const session = await createSession({ directoryUrl: $sitePath + '/simple-directory', siteInfo: true })
   const localeDayjs = createLocaleDayjs(session.state.lang)
   const uiNotif = createUiNotif()
   const vuetify = createVuetify({

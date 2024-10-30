@@ -138,12 +138,19 @@
     "i18n": {
       "type": "object",
       "required": [
-        "defaultLocale"
+        "defaultLocale",
+        "locales"
       ],
       "properties": {
         "defaultLocale": {
           "type": "string",
           "default": "fr"
+        },
+        "locales": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

@@ -162,28 +162,14 @@ declare module 'vue' {
     readonly $sitePath: UnwrapRef<typeof import('~/context')['$sitePath']>
     readonly $uiConfig: UnwrapRef<typeof import('~/context')['$uiConfig']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
-    readonly addDepartmentMenu: UnwrapRef<typeof import('../src/components/add-department-menu.vue')['default']>
-    readonly addMemberMenu: UnwrapRef<typeof import('../src/components/add-member-menu.vue')['default']>
-    readonly addOrganizationMenu: UnwrapRef<typeof import('../src/components/add-organization-menu.vue')['default']>
-    readonly addPartnerMenu: UnwrapRef<typeof import('../src/components/add-partner-menu.vue')['default']>
-    readonly authProvidersLoginLinks: UnwrapRef<typeof import('../src/components/auth-providers-login-links.vue')['default']>
-    readonly cancelDeletion: UnwrapRef<typeof import('../src/components/cancel-deletion.vue')['default']>
-    readonly changeHost: UnwrapRef<typeof import('../src/components/change-host.vue')['default']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
-    readonly confirmMenu: UnwrapRef<typeof import('../src/components/confirm-menu.vue')['default']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
-    readonly deleteDepartmentMenu: UnwrapRef<typeof import('../src/components/delete-department-menu.vue')['default']>
-    readonly deleteMemberMenu: UnwrapRef<typeof import('../src/components/delete-member-menu.vue')['default']>
-    readonly deletePartnerMenu: UnwrapRef<typeof import('../src/components/delete-partner-menu.vue')['default']>
     readonly dfPersonalMenu: UnwrapRef<typeof import('@data-fair/lib-vuetify/personal-menu.vue')['default']>
     readonly dfTutorialAlert: UnwrapRef<typeof import('@data-fair/lib-vuetify/tutorial-alert.vue')['default']>
     readonly dfUserAvatar: UnwrapRef<typeof import('@data-fair/lib-vuetify/user-avatar.vue')['default']>
-    readonly editDepartmentMenu: UnwrapRef<typeof import('../src/components/edit-department-menu.vue')['default']>
-    readonly editDepartmentsMenu: UnwrapRef<typeof import('../src/components/edit-departments-menu.vue')['default']>
-    readonly editMemberMenu: UnwrapRef<typeof import('../src/components/edit-member-menu.vue')['default']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly getActiveHead: UnwrapRef<typeof import('@unhead/vue')['getActiveHead']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
@@ -195,7 +181,6 @@ declare module 'vue' {
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
-    readonly loadAvatar: UnwrapRef<typeof import('../src/components/load-avatar.vue')['default']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
     readonly mdiAlertCircle: UnwrapRef<typeof import('@mdi/js')['mdiAlertCircle']>
     readonly mdiBell: UnwrapRef<typeof import('@mdi/js')['mdiBell']>
@@ -211,7 +196,6 @@ declare module 'vue' {
     readonly mdiSend: UnwrapRef<typeof import('@mdi/js')['mdiSend']>
     readonly mdiWeb: UnwrapRef<typeof import('@mdi/js')['mdiWeb']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
-    readonly notifyMenu: UnwrapRef<typeof import('../src/components/notify-menu.vue')['default']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
     readonly onBeforeMount: UnwrapRef<typeof import('vue')['onBeforeMount']>
     readonly onBeforeRouteLeave: UnwrapRef<typeof import('vue-router')['onBeforeRouteLeave']>
@@ -228,23 +212,14 @@ declare module 'vue' {
     readonly onUnmounted: UnwrapRef<typeof import('vue')['onUnmounted']>
     readonly onUpdated: UnwrapRef<typeof import('vue')['onUpdated']>
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
-    readonly organizationDepartments: UnwrapRef<typeof import('../src/components/organization-departments.vue')['default']>
-    readonly organizationMembers: UnwrapRef<typeof import('../src/components/organization-members.vue')['default']>
-    readonly organizationPartners: UnwrapRef<typeof import('../src/components/organization-partners.vue')['default']>
-    readonly organizationStorage: UnwrapRef<typeof import('../src/components/organization-storage.vue')['default']>
-    readonly partnerInvitation: UnwrapRef<typeof import('../src/components/partner-invitation.vue')['default']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
-    readonly resendInvitation: UnwrapRef<typeof import('../src/components/resend-invitation.vue')['default']>
-    readonly resendPartnerInvitation: UnwrapRef<typeof import('../src/components/resend-partner-invitation.vue')['default']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
-    readonly sitePatch: UnwrapRef<typeof import('../src/components/site-patch.vue')['default']>
-    readonly sitePost: UnwrapRef<typeof import('../src/components/site-post.vue')['default']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
@@ -280,7 +255,6 @@ declare module 'vue' {
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>
     readonly useUiNotif: UnwrapRef<typeof import('@data-fair/lib-vue/ui-notif.js')['useUiNotif']>
     readonly useWS: UnwrapRef<typeof import('@data-fair/lib-vue/ws.js')['useWS']>
-    readonly vJsf: UnwrapRef<typeof import('../src/components/v-jsf.vue')['default']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
     readonly watchEffect: UnwrapRef<typeof import('vue')['watchEffect']>
     readonly watchPostEffect: UnwrapRef<typeof import('vue')['watchPostEffect']>

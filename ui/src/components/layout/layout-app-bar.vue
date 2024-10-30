@@ -4,7 +4,7 @@
     flat
     scroll-behavior="hide"
   >
-    <template v-if="'index' !== $route.path">
+    <template v-if="$route.name !== '/'">
       <div class="logo-container">
         <a
           v-if="$uiConfig.homePage"
@@ -105,10 +105,12 @@
         <v-divider />
       </template>
     </personal-menu>
-    <lang-switcher />
+    <lang-switcher :locales="$uiConfig.i18n.locales" />
   </v-app-bar>
 </template>
 
 <script lang="ts" setup>
 const { user, organization } = useSession()
+import PersonalMenu from '@data-fair/lib-vuetify/personal-menu.vue'
+import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
 </script>

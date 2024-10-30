@@ -21,21 +21,11 @@ const flatOpts = { delimiter: '_' }
 // cannot be changed at runtime for now, because it impacts the build
 export const defaultLocale = config.i18n.defaultLocale
 
-// this the full list of available langs, the proposed list is overwritten in config.i18n.locales
-export const locales = [
-  { code: 'fr' },
-  { code: 'en' },
-  { code: 'de' },
-  { code: 'it' },
-  { code: 'es' },
-  { code: 'pt' }
-]
-
 // Build a map of messages of this form
 // {fr: {msg1: 'libellé 1'}, en: {msg1: 'label 1'}}
 const _messages: any = {}
-for (const l of locales) {
-  _messages[l.code] = (await import ('./' + l.code + '.js')).default
+for (const l of config.i18n.locales) {
+  _messages[l] = (await import ('./' + l + '.js')).default
 }
 const flatMessages = flatten(_messages, flatOpts) as Record<string, string>
 
@@ -76,10 +66,10 @@ export const __ = (req: Request, key: string, params: Record<string, string> = {
 
 export const __all = (key: string, params: Record<string, string> = {}) => {
   const res: Record<string, string> = {}
-  for (const locale of locales) {
-    const value = flatMessages[locale.code + '_' + key]
+  for (const locale of config.i18n.locales) {
+    const value = flatMessages[locale + '_' + key]
     if (value) {
-      res[locale.code] = microTemplate(value, params)
+      res[locale] = microTemplate(value, params)
     }
   }
   return res
