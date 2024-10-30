@@ -111,7 +111,7 @@
           <v-list-item-avatar>
             <v-img
               v-if="!members.results[i-1] || members.results[i-1].id !== member.id"
-              :src="`${$uiConfig.publicUrl}/api/avatars/user/${member.id}/avatar.png`"
+              :src="`${$sdUrl}/api/avatars/user/${member.id}/avatar.png`"
             />
           </v-list-item-avatar>
 
@@ -257,7 +257,7 @@ export default {
       }
     },
     csvUrl () {
-      return this.$uiConfig.publicUrl + `/api/organizations/${this.orga.id}/members?size=10000&format=csv`
+      return this.$sdUrl + `/api/organizations/${this.orga.id}/members?size=10000&format=csv`
     },
     filterMemberCols () {
       return this.$uiConfig.alwaysAcceptInvitation ? 6 : 4

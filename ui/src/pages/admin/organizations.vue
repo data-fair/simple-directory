@@ -37,7 +37,7 @@
         <tr>
           <td v-if="$uiConfig.avatars.orgs">
             <v-avatar :size="40">
-              <img :src="$uiConfig.publicUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
+              <img :src="$sdUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
             </v-avatar>
           </td>
           <td>{{ props.item.name }}</td>

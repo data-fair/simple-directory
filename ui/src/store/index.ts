@@ -3,8 +3,10 @@ import { PostSiteReq } from '../../../api/doc/sites/post-req/index.ts'
 import { PatchSiteReq } from '../../../api/doc/sites/patch-req'
 
 const { sendUiNotif } = useUiNotif()
-const { user } = useSession()
+const { user, site } = useSession()
 const reactiveSearchParams = useReactiveSearchParams()
+
+export const sitePublic = computed(() => site.value as SitePublic | null)
 
 export const userDetailsFetch = useFetch<User>(() => `${$apiPath}/users/${user.value?.id}`, { watch: false })
 export const authProvidersFetch = useFetch<PublicAuthProvider[]>(`${$apiPath}/auth/providers`, { watch: false })
@@ -25,14 +27,14 @@ export const patchSite = withUiNotif(async (patch: PatchSiteReq['body']) => {
 })
 
 export const host = window.location.host
+export const mainPublicUrl = new URL($uiConfig.publicUrl)
+
 export const redirect = useStringSearchParam('redirect')
 export const mainRedirect = computed(() => {
   const mainRedirect = reactiveSearchParams.main_redirect || reactiveSearchParams.mainRedirect
-  if (!mainRedirect && redirect.value?.startsWith($uiConfig.publicUrl)) return redirect.value
+  if (!mainRedirect && redirect.value?.startsWith(mainPublicUrl.origin)) return redirect.value
   return mainRedirect
 })
-
-export const mainPublicUrl = new URL($uiConfig.publicUrl)
 
 export const redirects = computed(() => {
   if (!sitesFetch.data.value) return

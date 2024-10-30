@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <v-row
     v-show="!delayedRendering"
@@ -22,8 +23,8 @@
         </v-col>
       </v-row>
       <v-card
-        shaped
         class="pa-2"
+        border="lg"
       >
         <v-card-title primary-title>
           <h1 :class="{headline: true, 'mb-0': true, 'warning--text': adminMode}">
@@ -31,7 +32,7 @@
           </h1>
           <div
             v-if="!sitePublic"
-            :class="`v-card v-sheet theme--${$vuetify.theme.dark ? 'dark' : 'light'} login-logo-container`"
+            :class="`v-card v-sheet theme--${$vuetify.theme.current.dark ? 'dark' : 'light'} login-logo-container`"
           >
             <img
               v-if="logoUrl"
@@ -51,7 +52,7 @@
           >
             <v-card-text>
               <auth-providers-login-links
-                :redirect="redirectUrl"
+                :redirect="redirect"
                 :email="email"
               />
               <v-text-field
@@ -62,7 +63,7 @@
                 variant="outlined"
                 :autofocus="true"
                 :label="$t('pages.login.emailLabel')"
-                :error-messages="emailErrors"
+                :error-messages="emailError"
                 name="email"
                 class="mb-3 hide-autofill"
                 hide-details="auto"
@@ -91,7 +92,7 @@
               </p>
               <template v-if="!orgStorage && !separateEmailPasswordSteps">
                 <auth-providers-login-links
-                  :redirect="redirectUrl"
+                  :redirect="redirect"
                   :email="email"
                   :admin-mode="adminMode"
                 />
@@ -105,7 +106,7 @@
                 variant="outlined"
                 :autofocus="!email"
                 :label="$t('pages.login.emailLabel')"
-                :error-messages="emailErrors"
+                :error-messages="emailError"
                 name="email"
                 class="mb-3 hide-autofill"
                 hide-details="auto"
@@ -131,7 +132,7 @@
                 variant="outlined"
                 :autofocus="!!email"
                 :label="$t('common.password')"
-                :error-messages="passwordErrors"
+                :error-messages="passwordError"
                 name="password"
                 type="password"
                 autocomplete="current-password"
@@ -144,7 +145,7 @@
                   id="2fa"
                   v-model="twoFACode"
                   :label="$t('pages.login.2FACode')"
-                  :error-messages="twoFAErrors"
+                  :error-messages="twoFAError"
                   name="2fa"
                   variant="outlined"
                   density="compact"
@@ -154,7 +155,7 @@
                   :autofocus="true"
                   @keyup.enter="passwordAuth"
                 >
-                  <template #append-outer>
+                  <template #append>
                     <v-tooltip
 
                       location="right"
@@ -165,7 +166,7 @@
                           mdi-information
                         </v-icon>
                       </template>
-                      <div v-html="$t('pages.login.2FAInfo')" />
+                      <div>{{ $t('pages.login.2FAInfo') }}</div>
                     </v-tooltip>
                   </template>
                 </v-text-field>
@@ -174,8 +175,8 @@
                 v-if="!adminMode"
                 id="rememberMe"
                 v-model="rememberMe"
-                :class="passwordErrors.length ? 'mt-0' : 'mt-1'"
-                dense
+                :class="passwordError ? 'mt-0' : 'mt-1'"
+                density="compact"
                 :label="$t('pages.login.rememberMe')"
                 hide-details
               />
@@ -264,10 +265,10 @@
                 variant="outlined"
                 class="mb-6"
               >
-                {{ $t('pages.login.createUserInvit', {name: invitPayload.n || invitPayload.name || invitPayload.id }) }}
+                {{ $t('pages.login.createUserInvit', {name: invitPayload.n || invitPayload.id }) }}
               </v-alert>
               <auth-providers-login-links
-                :redirect="redirectUrl"
+                :redirect="redirect"
                 :email="email"
                 :invit-token="invitToken"
               />
@@ -315,7 +316,7 @@
                   id="password"
                   v-model="newUser.password"
                   :label="$t('common.password')"
-                  :error-messages="createUserErrors"
+                  :error-messages="createUserError"
                   :rules="[v => !!v || '']"
                   name="newUserPassword"
                   :type="showNewUserPassword ? 'text' : 'password'"
@@ -325,7 +326,7 @@
                   rounded
                   @keyup.enter="createUser"
                 >
-                  <template #append>
+                  <template #append-inner>
                     <v-icon
                       v-if="newUser.password"
                       @click="showNewUserPassword = !showNewUserPassword"
@@ -333,7 +334,7 @@
                       {{ showNewUserPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline' }}
                     </v-icon>
                   </template>
-                  <template #append-outer>
+                  <template #append>
                     <v-tooltip
 
                       location="right"
@@ -361,7 +362,7 @@
                   rounded
                   @keyup.enter="createUser"
                 >
-                  <template #append-outer>
+                  <template #append>
                     <div>
                       <v-icon style="visibility:hidden">
                         mdi-information
@@ -458,7 +459,7 @@
                   v-model="newPassword"
                   :autofocus="true"
                   :label="$t('pages.login.newPassword')"
-                  :error-messages="newPasswordErrors"
+                  :error-messages="newPasswordError"
                   :rules="[v => !!v || '']"
                   name="newPassword"
                   type="password"
@@ -467,7 +468,7 @@
                   density="compact"
                   rounded
                 >
-                  <template #append-outer>
+                  <template #append>
                     <v-tooltip
 
                       location="right"
@@ -494,7 +495,7 @@
                   rounded
                   @keyup.enter="changePassword"
                 >
-                  <template #append-outer>
+                  <template #append>
                     <div>
                       <v-icon style="visibility:hidden">
                         mdi-information
@@ -656,7 +657,7 @@
                 v-else
                 color="primary"
                 variant="flat"
-                :href="redirectUrl"
+                :href="redirect"
               >
                 {{ $t('common.continue') }}
               </v-btn>
@@ -673,7 +674,7 @@
               <v-btn
                 color="primary"
                 variant="flat"
-                :href="redirectUrl"
+                :href="redirect"
               >
                 {{ $t('common.continue') }}
               </v-btn>
@@ -730,331 +731,331 @@
   </v-row>
 </template>
 
-<script>
-
-import { mapState, mapActions, mapGetters } from 'vuex'
+<script lang="ts" setup>
+import { ActionPayload, ShortenedInvitation } from '#api/types'
 import { jwtDecode } from 'jwt-decode'
-import eventBus from '../event-bus'
+import { authProvidersFetch, sitePublic } from '~/store/index.js'
+import type { VForm } from 'vuetify/components'
+import type { PostUserReq } from '#api/doc/users/post-req/index.ts'
+import type { PatchUserReq } from '#api/doc/users/patch-req/index.ts'
+import type { PostOrganizationReq } from '#api/doc/organizations/post-req/index.ts'
+import type { PostPasswordlessAuthReq } from '#api/doc/auth/post-passwordless-req/index.ts'
+import type { PostPasswordAuthReq } from '#api/doc/auth/post-password-req/index.ts'
+import type { PostActionAuthReq } from '#api/doc/auth/post-action-req/index.ts'
 
-export default {
-  data () {
-    return {
-      dialog: true,
-      email: this.$route.query.email,
-      emailErrors: [],
-      step: null,
-      stepsTitles: {
-        preLogin: this.$t('pages.login.title'),
-        login: this.$t('pages.login.title'),
-        emailConfirmed: this.$t('common.checkInbox'),
-        createUser: this.$t('pages.login.createUserMsg2'),
-        createUserConfirmed: this.$t('pages.login.createUserConfirm'),
-        changePasswordSent: this.$t('pages.login.changePassword'),
-        error: this.$t('pages.login.error'),
-        configure2FA: this.$t('pages.login.configure2FA'),
-        recovery2FA: this.$t('pages.login.recovery2FA'),
-        createOrga: this.$t('common.createOrganization'),
-        plannedDeletion: this.$t('pages.login.plannedDeletion'),
-        partnerInvitation: this.$t('pages.login.partnerInvitation'),
-        changeHost: this.$t('pages.login.changeHost')
-      },
-      password: '',
-      passwordErrors: [],
-      invitToken: this.$route.query.invit_token,
-      adminMode: this.$route.query.adminMode === 'true',
-      org: this.$route.query.org,
-      dep: this.$route.query.dep,
-      orgStorage: this.$route.query.org_storage === 'true',
-      membersOnly: this.$route.query.members_only === 'true',
-      newPassword: null,
-      newPassword2: null,
-      newPasswordErrors: [],
-      tosAccepted: false,
-      newUser: {
-        firstName: null,
-        lastName: null,
-        password: null
-      },
-      createOrganization: {
-        active: false,
-        name: ''
-      },
-      createUserErrors: [],
-      newUserPassword2: null,
-      showNewUserPassword: false,
-      error: this.$route.query.error,
-      rememberMe: true,
-      qrcode: null,
-      configure2FACode: null,
-      twoFARequired: false,
-      twoFACode: null,
-      recovery: null,
-      twoFAErrors: [],
-      plannedDeletion: this.$route.query.planned_deletion
-    }
-  },
-  computed: {
-    ...mapState('session', ['user']),
-    ...mapState(['env', 'sitePublic', 'authProviders']),
-    ...mapGetters(['host', 'mainHost']),
-    actionToken () {
-      return this.$route.query.action_token
-    },
-    readonly () {
-      return this.$uiConfig.readonly || this.$route.query.readonly === 'true'
-    },
-    redirectUrl () {
-      return this.$route.query && this.$route.query.redirect
-    },
-    actionPayload () {
-      if (!this.actionToken) return
-      return jwtDecode(this.actionToken)
-    },
-    invitPayload () {
-      if (!this.invitToken) return
-      return jwtDecode(this.invitToken)
-    },
-    logoUrl () {
-      if (this.$route.query.logo) return this.$route.query.logo
-      if (this.org) return `${this.$uiConfig.publicUrl}/api/avatars/organization/${this.org}/avatar.png`
-      if (this.$uiConfig.theme.logo) return this.$uiConfig.theme.logo
-      return null
-    },
-    redirectHost () {
-      return this.redirectUrl && new URL(this.redirectUrl).host
-    },
-    separateEmailPasswordSteps () {
-      return this.authProviders?.find(p => p.redirectMode?.type === 'emailDomain')
-    },
-    delayedRendering () {
-      // step not yet affected, do not render anything
-      if (this.step === null) return true
-      // step is not login, render immediately
-      if (this.step !== 'login') return false
-      // we have to wait for auth providers
-      if (!this.authProviders) return true
-      // we have to wait for the redirection to be done by auth-providers-login-links.vue
-      if (this.authProviders.find(p => p.redirectMode?.type === 'always')) return true
-      return false
-    }
-  },
-  async created () {
-    await this.$store.dispatch('fetchAuthProviders')
+const reactiveSearchParams = useReactiveSearchParams()
+const { t } = useI18n()
+const { user, switchOrganization } = useSession()
+const { sendUiNotif } = useUiNotif()
 
-    this.step = this.$route.query.step || 'login'
+const error = useStringSearchParam('error')
+const plannedDeletion = reactiveSearchParams.planned_deletion
+const adminMode = useBooleanSearchParam('adminMode')
+let orgId = reactiveSearchParams.org as string | undefined
+let depId = reactiveSearchParams.dep as string | undefined
+const readonly = $uiConfig.readonly || useBooleanSearchParam('readonly').value
+const redirect = reactiveSearchParams.redirect
 
-    if (this.step === 'login' && this.separateEmailPasswordSteps) {
-      this.step = 'preLogin'
-    }
+const email = ref<string>(reactiveSearchParams.email ?? '')
+const emailError = ref<string | null>(null)
+const password = ref('')
+const passwordError = ref<string | null>(null)
+const orgStorage = useBooleanSearchParam('org_storage')
+const membersOnly = useBooleanSearchParam('members_only')
+const rememberMe = ref(true)
 
-    if (this.actionPayload && this.actionPayload.action === 'changePassword') {
-      this.step = 'changePassword'
-      this.email = this.actionPayload.email || this.invitPayload.e
-    } if (this.actionPayload && this.actionPayload.action === 'changeHost') {
-      this.step = 'changeHost'
-      this.email = this.actionPayload.email || this.invitPayload.e
-    } else if (this.invitPayload) {
-      this.createUserStep()
-      this.org = this.invitPayload.id
-      this.department = this.invitPayload.department
-      this.email = this.invitPayload.email || this.invitPayload.e
-    } else if (this.plannedDeletion) {
-      this.step = 'plannedDeletion'
-    }
+const newPassword = ref('')
+const newPassword2 = ref('')
+const newPasswordError = ref<string | null>(null)
 
-    if (this.error) {
-      this.step = 'error'
-    }
-  },
-  methods: {
-    ...mapActions('session', ['switchOrganization']),
-    preLogin () {
-      const authProvider = this.authProviders.find(p => p.redirectMode?.type === 'emailDomain' && p.redirectMode.emailDomain === this.email.trim().split('@')[1])
-      if (authProvider) {
-        const url = new URL(`${this.$uiConfig.publicUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
-        if (this.redirectUrl) url.searchParams.append('redirect', this.redirectUrl)
-        if (this.email) url.searchParams.append('email', this.email)
-        if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
-        window.location.href = url.href
-      } else {
-        this.step = 'login'
-      }
-    },
-    createUserStep () {
-      this.step = this.$uiConfig.tosUrl ? 'tos' : 'createUser'
-    },
-    async createUser () {
-      if (!this.$refs.createUserForm.validate()) return
-      try {
-        const body = {
-          email: this.email,
-          ...this.newUser
-        }
-        const link = await this.$axios.$post('api/users', body, {
-          params: {
-            redirect: this.redirectUrl,
-            org: this.org,
-            dep: this.dep,
-            invit_token: this.invitToken
-          }
-        })
-        this.createUserErrors = []
-        this.password = this.newUser.password
-        if (this.invitToken) window.location.href = link
-        else this.step = 'createUserConfirmed'
-      } catch (error) {
-        if (error.response.status >= 500) eventBus.$emit('notification', { error })
-        else this.createUserErrors = [error.response.data || error.message]
-      }
-    },
-    async createOrga () {
-      if (!this.createOrganization.name) return
-      try {
-        const body = { name: this.createOrganization.name }
-        const orga = await this.$axios.$post('api/organizations', body)
-        await this.$axios.$patch('api/users/' + this.user.id, {
-          ignorePersonalAccount: true,
-          defaultOrg: orga.id
-        })
-        this.switchOrganization(orga.id)
-        this.goToRedirect()
-      } catch (error) {
-        if (error.response.status >= 500) eventBus.$emit('notification', { error })
-        else this.createUserErrors = [error.response.data || error.message]
-      }
-    },
-    async passwordlessAuth () {
-      try {
-        await this.$axios.$post('api/auth/passwordless', {
-          email: this.email,
-          rememberMe: this.rememberMe,
-          org: this.org,
-          dep: this.dep,
-          membersOnly: this.membersOnly,
-          orgStorage: this.orgStorage
-        }, { params: { redirect: this.redirectUrl } })
-        this.emailErrors = []
-        this.step = 'emailConfirmed'
-      } catch (error) {
-        if (error.response.status >= 500) eventBus.$emit('notification', { error })
-        else this.emailErrors = [error.response.data || error.message]
-      }
-    },
-    async passwordAuth () {
-      this.emailErrors = []
-      try {
-        const link = await this.$axios.$post('api/auth/password', {
-          email: this.email,
-          password: this.password,
-          adminMode: this.adminMode,
-          rememberMe: this.rememberMe && !this.adminMode,
-          org: this.org,
-          dep: this.dep,
-          '2fa': this.twoFACode,
-          membersOnly: this.membersOnly,
-          orgStorage: this.orgStorage
-        }, { params: { redirect: this.redirectUrl } })
-        window.location.href = link
-      } catch (error) {
-        if (!error.response) return console.error(error)
-        if (error.response.status >= 500) eventBus.$emit('notification', { error })
-        else {
-          if (error.response.data === '2fa-missing') {
-            this.step = 'configure2FA'
-            this.passwordErrors = []
-            this.init2FA()
-          } else if (error.response.data === '2fa-required') {
-            this.passwordErrors = []
-            this.twoFARequired = true
-            this.twoFAErrors = []
-          } else if (error.response.data === '2fa-bad-token') {
-            this.passwordErrors = []
-            this.twoFAErrors = [this.$t('errors.bad2FAToken')]
-          } else {
-            this.passwordErrors = [error.response.data || error.message]
-            this.twoFAErrors = []
-          }
-        }
-      }
-    },
-    async changePasswordAction () {
-      try {
-        await this.$axios.$post('api/auth/action', {
-          email: this.email,
-          action: 'changePassword',
-          target: window.location.href
-        })
-        this.step = 'changePasswordSent'
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    async changePassword () {
-      if (!this.$refs.changePasswordForm.validate()) return
-      try {
-        await this.$axios.$post(`api/users/${this.actionPayload.id}/password`, {
-          password: this.newPassword
-        }, { params: { action_token: this.actionToken } })
-        this.password = this.newPassword
-        this.step = 'login'
-        this.$router.replace({ query: { ...this.$route.query, action_token: undefined } })
-      } catch (error) {
-        if (error.response.status >= 500) eventBus.$emit('notification', { error })
-        else this.newPasswordErrors = [error.response.data || error.message]
-      }
-    },
-    async clearError () {
-      this.step = 'login'
-      const url = new URL(window.location.href)
-      url.searchParams.delete('error')
-      window.location.href = url.href
-    },
-    async init2FA () {
-      try {
-        // initialize secret
-        const res = await this.$axios.$post('api/2fa', {
-          email: this.email,
-          password: this.password
-        })
-        this.qrcode = res.qrcode
-        this.configure2FACode = null
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    async validate2FA () {
-      try {
-        // validate secret with initial token
-        const res = await this.$axios.$post('api/2fa', {
-          email: this.email,
-          password: this.password,
-          token: this.configure2FACode
-        })
-        this.configure2FACode = null
-        this.recovery = res.recovery
-        this.step = 'recovery2FA'
-        this.twoFARequired = true
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    downloadRecovery () {
-      const element = document.createElement('a')
-      const contentHeader = this.$t('recovery2FAContent', { name: `${window.location.host}` })
-      const content = `${contentHeader}
+const newUser = ref({ firstName: '', lastName: '', password: '' })
+const newUserPassword2 = ref('')
+const showNewUserPassword = ref(false)
+const createUserError = ref<string | null>(null)
+const tosAccepted = ref(false)
+const createOrganization = ref({ active: false, name: '' })
 
-  ${this.recovery}`
-      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content))
-      element.setAttribute('download', window.location.host.replace(/\./g, '-') + '-2fa-recovery.txt')
-      element.style.display = 'none'
-      document.body.appendChild(element)
-      element.click()
-      document.body.removeChild(element)
-    },
-    goToRedirect () {
-      window.location.href = this.redirectUrl
+const qrcode = ref('')
+const configure2FACode = ref('')
+const twoFARequired = ref(false)
+const twoFACode = ref('')
+const recovery = ref('')
+const twoFAError = ref<string | null>(null)
+
+const invitToken = reactiveSearchParams.invit_token
+const invitPayload = invitToken ? jwtDecode(invitToken) as ShortenedInvitation : null
+
+const actionToken = useStringSearchParam('action_token')
+const actionPayload = actionToken ? jwtDecode(actionToken.value) as ActionPayload : null
+
+const logoUrl = computed(() => {
+  if (reactiveSearchParams.logo) return reactiveSearchParams.logo
+  if (sitePublic.value?.logo) return sitePublic.value?.logo
+  if (orgId) return `${$sdUrl}/api/avatars/organization/${orgId}/avatar.png`
+  if ($uiConfig.theme.logo) return $uiConfig.theme.logo
+  return null
+})
+
+const stepsTitles: Record<string, string> = {
+  preLogin: t('pages.login.title'),
+  login: t('pages.login.title'),
+  emailConfirmed: t('common.checkInbox'),
+  createUser: t('pages.login.createUserMsg2'),
+  createUserConfirmed: t('pages.login.createUserConfirm'),
+  changePasswordSent: t('pages.login.changePassword'),
+  error: t('pages.login.error'),
+  configure2FA: t('pages.login.configure2FA'),
+  recovery2FA: t('pages.login.recovery2FA'),
+  createOrga: t('common.createOrganization'),
+  plannedDeletion: t('pages.login.plannedDeletion'),
+  partnerInvitation: t('pages.login.partnerInvitation'),
+  changeHost: t('pages.login.changeHost')
+}
+const createUserStep = () => {
+  step.value = $uiConfig.tosUrl ? 'tos' : 'createUser'
+}
+const step = ref<string>(reactiveSearchParams.step ?? 'login')
+if (actionPayload && actionPayload.action === 'changePassword') {
+  step.value = 'changePassword'
+  email.value = actionPayload.email
+} if (actionPayload && actionPayload.action === 'changeHost') {
+  step.value = 'changeHost'
+  email.value = actionPayload.email
+} else if (invitPayload) {
+  createUserStep()
+  orgId = invitPayload.id
+  depId = invitPayload.d
+  email.value = invitPayload.e
+} else if (plannedDeletion) {
+  step.value = 'plannedDeletion'
+}
+if (error.value) {
+  step.value = 'error'
+}
+
+const separateEmailPasswordSteps = computed(() => {
+  return !!authProvidersFetch.data.value?.find(p => p.redirectMode?.type === 'emailDomain')
+})
+if (step.value === 'login') {
+  authProvidersFetch.refresh()
+  watch(separateEmailPasswordSteps, (value) => {
+    if (value) step.value = 'preLogin'
+  })
+}
+
+const delayedRendering = computed(() => {
+  // step is not login, render immediately
+  if (step.value !== 'login') return false
+  // we have to wait for auth providers
+  if (!authProvidersFetch.data.value) return true
+  // we have to wait for the redirection to be done by auth-providers-login-links.vue
+  if (authProvidersFetch.data.value.find(p => p.redirectMode?.type === 'always')) return true
+  return false
+})
+
+function preLogin () {
+  if (!authProvidersFetch.data.value) return
+  const authProvider = authProvidersFetch.data.value.find(p => p.redirectMode?.type === 'emailDomain' && p.redirectMode.emailDomain === email.value.trim().split('@')[1])
+  if (authProvider) {
+    const url = new URL(`${$sdUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
+    if (redirect) url.searchParams.append('redirect', redirect)
+    if (email.value) url.searchParams.append('email', email.value)
+    if (invitToken) url.searchParams.append('invit_token', invitToken)
+    window.location.href = url.href
+  } else {
+    step.value = 'login'
+  }
+}
+
+const createUserForm = ref<InstanceType<typeof VForm>>()
+async function createUser () {
+  if (!createUserForm.value?.validate()) return
+  try {
+    const body: PostUserReq['body'] = { email: email.value, ...newUser.value }
+    const link = await $fetch('api/users', {
+      method: 'POST',
+      body,
+      params: {
+        redirect,
+        org: orgId,
+        dep: depId,
+        invit_token: invitToken
+      }
+    })
+    createUserError.value = null
+    password.value = newUser.value.password
+    if (invitToken) window.location.href = link
+    else step.value = 'createUserConfirmed'
+  } catch (error: any) {
+    if (error.status && error.status < 500) {
+      createUserError.value = error.data ?? error.statusMessage ?? error.message as string
+    } else {
+      sendUiNotif(error)
     }
   }
+}
+
+async function createOrga () {
+  if (!createOrganization.value.name) return
+  if (!user.value) return
+  try {
+    const body: PostOrganizationReq['body'] = { name: createOrganization.value.name }
+    const orga = await $fetch('api/organizations', { method: 'POST', body })
+    const userPatch: PatchUserReq['body'] = { ignorePersonalAccount: true, defaultOrg: orga.id }
+    await $fetch('api/users/' + user.value.id, { method: 'PATCH', body: userPatch })
+    switchOrganization(orga.id)
+    goToRedirect()
+  } catch (error: any) {
+    if (error.status && error.status < 500) {
+      createUserError.value = error.data ?? error.statusMessage ?? error.message as string
+    } else {
+      sendUiNotif(error)
+    }
+  }
+}
+
+async function passwordlessAuth () {
+  emailError.value = null
+  try {
+    const body: PostPasswordlessAuthReq['body'] = {
+      email: email.value,
+      rememberMe: rememberMe.value,
+      org: orgId,
+      dep: depId,
+      membersOnly: membersOnly.value,
+      orgStorage: orgStorage.value
+    }
+    await $fetch('api/auth/passwordless', { method: 'POST', body, params: { redirect } })
+    step.value = 'emailConfirmed'
+  } catch (error: any) {
+    if (error.status && error.status < 500) {
+      emailError.value = error.data ?? error.statusMessage ?? error.message as string
+    } else {
+      sendUiNotif(error)
+    }
+  }
+}
+
+async function passwordAuth () {
+  emailError.value = null
+  try {
+    const body: PostPasswordAuthReq['body'] = {
+      email: email.value,
+      password: password.value,
+      adminMode: adminMode.value,
+      rememberMe: rememberMe.value && !adminMode.value,
+      org: orgId,
+      dep: depId,
+      '2fa': twoFACode.value,
+      membersOnly: membersOnly.value,
+      orgStorage: orgStorage.value
+    }
+    const link = await $fetch('api/auth/password', { method: 'POST', body, params: { redirect } })
+    window.location.href = link
+  } catch (error: any) {
+    if (error.status && error.status < 500) {
+      if (error.data === '2fa-missing') {
+        step.value = 'configure2FA'
+        passwordError.value = null
+        init2FA()
+      } else if (error.data === '2fa-required') {
+        passwordError.value = null
+        twoFARequired.value = true
+        twoFAError.value = null
+      } else if (error.data === '2fa-bad-token') {
+        passwordError.value = null
+        twoFAError.value = t('errors.bad2FAToken')
+      } else {
+        passwordError.value = error.data ?? error.statusMessage ?? error.message as string
+        twoFAError.value = null
+      }
+    } else {
+      sendUiNotif(error)
+    }
+  }
+}
+
+const changePasswordAction = withUiNotif(async () => {
+  const body: PostActionAuthReq['body'] = {
+    email: email.value,
+    action: 'changePassword',
+    redirect: window.location.href
+  }
+  await $fetch('api/auth/action', { method: 'POST', body })
+  step.value = 'changePasswordSent'
+})
+
+const changePasswordForm = ref<InstanceType<typeof VForm>>()
+async function changePassword () {
+  if (!actionPayload || !changePasswordForm.value?.validate()) return
+  try {
+    await $fetch(`api/users/${actionPayload.id}/password`, {
+      method: 'POST',
+      body: { password: newPassword.value },
+      params: { action_token: actionToken.value }
+    })
+    password.value = newPassword.value
+    step.value = 'login'
+    actionToken.value = ''
+  } catch (error: any) {
+    if (error.status && error.status < 500) {
+      newPasswordError.value = error.data ?? error.statusMessage ?? error.message as string
+    } else {
+      sendUiNotif(error)
+    }
+  }
+}
+
+const init2FA = withUiNotif(async () => {
+  // initialize secret
+  const res = await $fetch('api/2fa', {
+    method: 'POST',
+    body: {
+      email: email.value,
+      password: password.value
+    }
+  })
+  qrcode.value = res.qrcode
+  configure2FACode.value = ''
+})
+
+const validate2FA = withUiNotif(async () => {
+  // validate secret with initial token
+  const res = await $fetch('api/2fa', {
+    method: 'POST',
+    body: {
+      email: email.value,
+      password: password.value,
+      token: configure2FACode.value
+    }
+  })
+  configure2FACode.value = ''
+  recovery.value = res.recovery
+  step.value = 'recovery2FA'
+  twoFARequired.value = true
+})
+
+function downloadRecovery () {
+  const element = document.createElement('a')
+  const contentHeader = t('recovery2FAContent', { name: `${window.location.host}` })
+  const content = `${contentHeader}
+
+${recovery.value}`
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content))
+  element.setAttribute('download', window.location.host.replace(/\./g, '-') + '-2fa-recovery.txt')
+  element.style.display = 'none'
+  document.body.appendChild(element)
+  element.click()
+  document.body.removeChild(element)
+}
+
+function clearError () {
+  error.value = ''
+  window.location.reload()
+}
+
+function goToRedirect () {
+  window.location.href = redirect
 }
 </script>
 

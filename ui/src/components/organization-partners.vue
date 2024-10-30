@@ -58,7 +58,7 @@
           <v-list-item-avatar>
             <v-img
               v-if="partner.id"
-              :src="`${$uiConfig.publicUrl}/api/avatars/organization/${partner.id}/avatar.png`"
+              :src="`${$sdUrl}/api/avatars/organization/${partner.id}/avatar.png`"
             />
           </v-list-item-avatar>
 

@@ -67,7 +67,7 @@
           <v-list-item-avatar>
             <v-img
               v-if="refreshingDepartment !== department.id"
-              :src="`${$uiConfig.publicUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png?t=${timestamp}`"
+              :src="`${$sdUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png?t=${timestamp}`"
             />
           </v-list-item-avatar>
 

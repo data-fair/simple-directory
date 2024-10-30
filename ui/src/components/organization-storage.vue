@@ -70,7 +70,7 @@ export default {
       return JSON.stringify(this.orga.orgStorage) !== JSON.stringify(this.orgStorage)
     },
     loginOrg () {
-      return `${this.$uiConfig.publicUrl}/login?org=${encodeURIComponent(this.orga.id)}&org_storage=true&readonly=${this.orgStorage.readonly}`
+      return `${this.$sdUrl}/login?org=${encodeURIComponent(this.orga.id)}&org_storage=true&readonly=${this.orgStorage.readonly}`
     }
   },
   created () {

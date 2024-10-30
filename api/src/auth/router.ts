@@ -8,7 +8,7 @@ import Cookies from 'cookies'
 import Debug from 'debug'
 import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByHost, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, unsetSessionCookies, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
-import type { User, UserWritable } from '#types'
+import type { ActionPayload, User, UserWritable } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import emailValidator from 'email-validator'
 import { reqI18n, __all } from '#i18n'
@@ -144,7 +144,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   }
 
   if (userFromMainHost && site) {
-    const payload = {
+    const payload: ActionPayload = {
       id: user.id,
       email: user.email,
       action: 'changeHost'
@@ -497,7 +497,8 @@ router.post('/action', async (req, res, next) => {
 
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
-  if (!req.body.action) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
+
+  const { body } = (await import('#doc/auth/post-action-req/index.ts')).returnValid(req, { name: 'req' })
 
   try {
     await limiter(req).consume(reqIp(req), 1)
@@ -508,28 +509,28 @@ router.post('/action', async (req, res, next) => {
   }
 
   const storage = storages.globalStorage
-  let user = await storage.getUserByEmail(req.body.email, await reqSite(req))
+  let user = await storage.getUserByEmail(body.email, await reqSite(req))
   logContext.user = user
-  let action = req.body.action
+  let action = body.action as ActionPayload['action']
   if (!user && await reqSite(req)) {
-    user = await storage.getUserByEmail(req.body.email)
+    user = await storage.getUserByEmail(body.email)
     action = 'changeHost'
   }
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
-    const link = req.body.target || config.defaultLoginRedirect || (reqSiteUrl(req) + '/simple-directory/login')
+    const link = body.redirect
     const linkUrl = new URL(link)
-    await sendMail('noCreation', reqI18n(req).messages, req.body.email, { link, host: linkUrl.host, origin: linkUrl.origin })
-    eventsLog.info('sd.auth.action.fail', `an action ${action} failed because of missing user and a warning mail was sent ${req.body.email}`, logContext)
+    await sendMail('noCreation', reqI18n(req).messages, body.email, { link, host: linkUrl.host, origin: linkUrl.origin })
+    eventsLog.info('sd.auth.action.fail', `an action ${action} failed because of missing user and a warning mail was sent ${body.email}`, logContext)
     return res.status(204).send()
   }
-  const payload = {
+  const payload: ActionPayload = {
     id: user.id,
     email: user.email,
     action
   }
   const token = await signToken(payload, config.jwtDurations.initialToken)
-  const linkUrl = new URL(req.body.target || reqSiteUrl(req) + '/simple-directory/login')
+  const linkUrl = new URL(body.redirect)
   linkUrl.searchParams.set('action_token', token)
 
   await sendMail('action', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })

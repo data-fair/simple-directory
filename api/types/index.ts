@@ -1,6 +1,7 @@
 import { type User } from './user/index.ts'
 import { type OrganizationMembership } from '@data-fair/lib-common-types/session/index.js'
 import type { RedirectMode } from '../config/type/index.ts'
+import type { Invitation } from './invitation/index.ts'
 
 export type { User } from './user/index.ts'
 export type { Organization } from './organization/index.ts'
@@ -32,4 +33,20 @@ export type PublicAuthProvider = {
   icon?: string,
   redirectMode?: RedirectMode,
   host?: string
+}
+
+export type ShortenedInvitation = {
+  id: Invitation['id'],
+  n: Invitation['name'],
+  e: Invitation['email'],
+  r: Invitation['role'],
+  d: Invitation['department'],
+  dn: Invitation['departmentName'],
+  rd: Invitation['redirect'],
+}
+
+export type ActionPayload = {
+  id: string,
+  email: string,
+  action: 'changePassword' | 'changeHost'
 }

@@ -1,6 +1,6 @@
 <template>
   <v-row
-    v-if="authProviders"
+    v-if="authProvidersFetch.data.value"
     class="mb-6 mx-0"
   >
     <v-btn
@@ -25,13 +25,13 @@
         >
         <logo v-else />
       </v-avatar>
-      &nbsp;{{ mainHost }}
+      &nbsp;{{ mainPublicUrl.host }}
     </v-btn>
     <v-btn
-      v-for="authProvider of authProviders.filter(p => !p.redirectMode || p.redirectMode.type === 'button')"
+      v-for="authProvider of authProvidersFetch.data.value.filter(p => !p.redirectMode || p.redirectMode.type === 'button')"
       :key="authProvider.type + ':' + authProvider.id"
       :color="contrastColor(authProvider.color)"
-      :href="loginURL(authProvider)"
+      :href="providerLoginUrl(authProvider)"
       dark
       size="small"
       rounded
@@ -61,59 +61,49 @@
   </v-row>
 </template>
 
-<script>
-import { mapState, mapGetters } from 'vuex'
+<script lang="ts" setup>
+import { PublicAuthProvider } from '#api/types'
+import { authProvidersFetch, sitePublic, mainPublicUrl } from '~/store/index.js'
 
-export default {
-  props: ['redirect', 'email', 'invitToken', 'adminMode'],
-  computed: {
-    ...mapState(['env', 'authProviders', 'sitePublic']),
-    ...mapGetters(['mainHost']),
-    redirectParam () {
-      if (!this.redirect) return ''
-      return `?redirect=${encodeURIComponent(this.redirect)}`
-    },
-    ...mapGetters(['contrastColor', 'host', 'mainHost']),
-    mainSiteLoginUrl () {
-      return this.siteLoginUrl(this.mainHost)
-    }
-  },
-  watch: {
-    authProviders: {
-      handler () {
-        const alwaysRedirectProvider = this.authProviders?.find(p => p.redirectMode?.type === 'always')
-        if (alwaysRedirectProvider) {
-          window.location.href = this.loginURL(alwaysRedirectProvider)
-        }
-      },
-      immediate: true
-    }
-  },
-  methods: {
-    loginURL (authProvider) {
-      if (authProvider.type === 'otherSite') {
-        return this.siteLoginUrl(authProvider.host)
-      }
-      let sdUrl = this.$uiConfig.publicUrl
-      if (authProvider.type === 'otherSiteProvider') {
-        sdUrl = `${authProvider.host.startsWith('localhost:') ? 'http' : 'https'}://${authProvider.host}/simple-directory`
-      }
-      const url = new URL(`${sdUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
-      if (this.redirect) url.searchParams.append('redirect', this.redirect)
-      if (this.email) url.searchParams.append('email', this.email)
-      if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
-      if (this.adminMode) url.searchParams.append('adminMode', 'true')
-      return url.href
-    },
-    siteLoginUrl (host) {
-      const url = new URL(`${host.startsWith('localhost:') ? 'http' : 'https'}://${host}/simple-directory/login`)
-      if (this.redirect) url.searchParams.append('redirect', this.redirect)
-      if (this.email) url.searchParams.append('email', this.email)
-      if (this.invitToken) url.searchParams.append('invit_token', this.invitToken)
-      if (this.adminMode) url.searchParams.append('adminMode', 'true')
-      return url.href
-    }
+const { redirect, email, invitToken, adminMode } = defineProps({
+  redirect: { type: String, required: true },
+  email: { type: String, required: true },
+  invitToken: { type: String, required: true },
+  adminMode: { type: Boolean, required: true }
+})
+
+const mainSiteLoginUrl = siteLoginUrl(mainPublicUrl.host)
+
+watch(authProvidersFetch.data, (providers) => {
+  const alwaysRedirectProvider = providers?.find(p => p.redirectMode?.type === 'always')
+  if (alwaysRedirectProvider) {
+    window.location.href = providerLoginUrl(alwaysRedirectProvider)
   }
+}, { immediate: true })
+
+function providerLoginUrl (authProvider: PublicAuthProvider) {
+  if (authProvider.type === 'otherSite' && authProvider.host) {
+    return siteLoginUrl(authProvider.host)
+  }
+  let sdUrl = $sdUrl
+  if (authProvider.type === 'otherSiteProvider' && authProvider.host) {
+    sdUrl = `${authProvider.host.startsWith('localhost:') ? 'http' : 'https'}://${authProvider.host}/simple-directory`
+  }
+  const url = new URL(`${sdUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
+  if (redirect) url.searchParams.append('redirect', redirect)
+  if (email) url.searchParams.append('email', email)
+  if (invitToken) url.searchParams.append('invit_token', invitToken)
+  if (adminMode) url.searchParams.append('adminMode', 'true')
+  return url.href
+}
+
+function siteLoginUrl (host: string) {
+  const url = new URL(`${host.startsWith('localhost:') ? 'http' : 'https'}://${host}/simple-directory/login`)
+  if (redirect) url.searchParams.append('redirect', redirect)
+  if (email) url.searchParams.append('email', email)
+  if (invitToken) url.searchParams.append('invit_token', invitToken)
+  if (adminMode) url.searchParams.append('adminMode', 'true')
+  return url.href
 }
 </script>
 

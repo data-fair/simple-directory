@@ -36,7 +36,7 @@ export default defineConfig({
         ...(autoImports as any),
         unheadVueComposablesImports,
         {
-          '~/context': ['$uiConfig', '$sitePath', '$apiPath', '$fetch'],
+          '~/context': ['$uiConfig', '$sitePath', '$siteUrl', '$sdUrl', '$apiPath', '$fetch'],
           '@mdi/js': ['mdiBell', 'mdiRefresh', 'mdiSend', 'mdiDelete', 'mdiDevices', 'mdiEmail', 'mdiRss', 'mdiDotsVertical', 'mdiCheckCircle', 'mdiCancel', 'mdiAlertCircle', 'mdiCellphone', 'mdiWeb']
         }
       ],

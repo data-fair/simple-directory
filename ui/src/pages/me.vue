@@ -285,7 +285,7 @@ export default {
       return window.location.host
     },
     mainHost () {
-      return new URL(this.$uiConfig.mainPublicUrl).host
+      return new URL(this.$uiConfig.publicUrl).host
     },
     defaultOrgItems () {
       return (this.patch.ignorePersonalAccount ? [] : [{ id: '', name: this.$t('common.userAccount') }]).concat(this.userDetails.organizations)
@@ -368,7 +368,7 @@ export default {
     },
     async changePasswordAction () {
       try {
-        let target = this.$uiConfig.publicUrl + '/login'
+        let target = this.$sdUrl + '/login'
         try {
           target += '?redirect=' + encodeURIComponent(window.parent.location.href)
         } catch (err) {

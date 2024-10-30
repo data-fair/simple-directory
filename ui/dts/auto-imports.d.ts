@@ -8,7 +8,9 @@ export {}
 declare global {
   const $apiPath: typeof import('~/context')['$apiPath']
   const $fetch: typeof import('~/context')['$fetch']
+  const $sdUrl: typeof import('~/context')['$sdUrl']
   const $sitePath: typeof import('~/context')['$sitePath']
+  const $siteUrl: typeof import('~/context')['$siteUrl']
   const $uiConfig: typeof import('~/context')['$uiConfig']
   const EffectScope: typeof import('vue')['EffectScope']
   const addDepartmentMenu: typeof import('../src/components/add-department-menu.vue')['default']
@@ -159,7 +161,9 @@ declare module 'vue' {
   interface ComponentCustomProperties {
     readonly $apiPath: UnwrapRef<typeof import('~/context')['$apiPath']>
     readonly $fetch: UnwrapRef<typeof import('~/context')['$fetch']>
+    readonly $sdUrl: UnwrapRef<typeof import('~/context')['$sdUrl']>
     readonly $sitePath: UnwrapRef<typeof import('~/context')['$sitePath']>
+    readonly $siteUrl: UnwrapRef<typeof import('~/context')['$siteUrl']>
     readonly $uiConfig: UnwrapRef<typeof import('~/context')['$uiConfig']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>

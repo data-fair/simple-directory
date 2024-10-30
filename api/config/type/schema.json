@@ -552,6 +552,9 @@
     },
     "serveUi": {
       "type": "boolean"
+    },
+    "tosUrl": {
+      "type": "string"
     }
   },
   "$defs": {
