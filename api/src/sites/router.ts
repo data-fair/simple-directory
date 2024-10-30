@@ -62,7 +62,10 @@ router.delete('/:id', async (req, res, next) => {
 
 router.get('/_public', async (req, res, next) => {
   const site = await reqSite(req)
-  if (!site) return res.status(404).send()
+  if (!site) {
+    // TODO: return information for main site too ?
+    return res.status(204).send()
+  }
   const sitePublic: SitePublic = {
     host: site.host,
     theme: site.theme,

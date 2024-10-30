@@ -1,5 +1,6 @@
 import { type User } from './user/index.ts'
 import { type OrganizationMembership } from '@data-fair/lib-common-types/session/index.js'
+import type { RedirectMode } from '../config/type/index.ts'
 
 export type { User } from './user/index.ts'
 export type { Organization } from './organization/index.ts'
@@ -20,4 +21,15 @@ export type OAuthToken = {
   user: { id: string, name: string, email: string },
   offlineRefreshToken?: boolean,
   loggedOut?: Date
+}
+
+export type PublicAuthProvider = {
+  type: string,
+  id: string,
+  title?: string,
+  color?: string,
+  img?: string,
+  icon?: string,
+  redirectMode?: RedirectMode,
+  host?: string
 }

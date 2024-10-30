@@ -1,20 +1,8 @@
 import { oauthGlobalProviders, getOidcProviderId, saml2GlobalProviders, getSiteByHost } from '#services'
-import type { RedirectMode } from '../../config/type/index.ts'
-import type { Site } from '#types'
+import type { Site, PublicAuthProvider } from '#types'
 import _slug from 'slugify'
 
 const slug = _slug.default
-
-export type PublicAuthProvider = {
-  type: string,
-  id: string,
-  title?: string,
-  color?: string,
-  img?: string,
-  icon?: string,
-  redirectMode?: RedirectMode,
-  host?: string
-}
 
 export const publicProviders = async (site?: Site) => {
   const providers: PublicAuthProvider[] = []

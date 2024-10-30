@@ -119,7 +119,7 @@ export default {
     ...mapGetters(['contrastColor'])
   },
   async created () {
-    if (!this.user.adminMode) return this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
+    if (!this.user.adminMode) return uiNotif.sendUiNotif({error:this.$t('errors.permissionDenied') })
     this.fetchSites()
     this.headers = []
     // if (this.$uiConfig.avatars.orgs) this.headers.push({ text: '', sortable: false })

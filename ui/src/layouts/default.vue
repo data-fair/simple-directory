@@ -36,7 +36,7 @@
               >
               <logo v-else />
             </a>
-            <nuxt-link
+            <router-link
               v-else
               :to="localePath('index')"
               :title="$t('common.home')"
@@ -46,7 +46,7 @@
                 :src="$uiConfig.theme.logo"
               >
               <logo v-else />
-            </nuxt-link>
+            </router-link>
           </div>
           <v-toolbar-title>
             <h1 class="text-h5 hidden-xs">
@@ -107,21 +107,18 @@
           <template #actions-before="{}">
             <v-list-item
               :to="'/me'"
-              :nuxt="true"
             >
               <v-list-item-title>{{ $t('common.myAccount') }}</v-list-item-title>
             </v-list-item>
             <v-list-item
               v-if="user.organization && user.organization.role === 'admin' && ($uiConfig.depAdminIsOrgAdmin || !user.organization.department)"
               :to="'/organization/' + user.organization.id"
-              :nuxt="true"
             >
               <v-list-item-title>Gestion de l'organisation</v-list-item-title>
             </v-list-item>
             <v-list-item
               v-if="user.organization && user.organization.role === 'admin' && user.organization.department"
               :to="'/organization/' + user.organization.id + '/department/' + user.organization.department"
-              :nuxt="true"
             >
               <v-list-item-title>Gestion du département</v-list-item-title>
             </v-list-item>

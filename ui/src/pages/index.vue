@@ -11,10 +11,10 @@
             :src="$uiConfig.theme.logo"
             class="logo"
           >
-          <!--<logo
+          <logo
             v-else
             class="logo"
-          />-->
+          />
 
           <h3 class="text-h2">
             {{ $t('root.title') }}
@@ -30,7 +30,6 @@
 </template>
 
 <script lang="ts" setup>
-const i18n = useI18n()
 </script>
 
 <style>

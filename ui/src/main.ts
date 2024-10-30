@@ -10,6 +10,7 @@ import { createLocaleDayjs } from '@data-fair/lib-vue/locale-dayjs.js'
 import { createSession } from '@data-fair/lib-vue/session.js'
 import { createUiNotif } from '@data-fair/lib-vue/ui-notif.js'
 import { createI18n } from 'vue-i18n'
+import { createHead } from '@unhead/vue'
 import App from './App.vue'
 import '@koumoul/v-iframe/content-window'
 import 'iframe-resizer/js/iframeResizer.contentWindow.js'
@@ -26,7 +27,8 @@ import 'iframe-resizer/js/iframeResizer.contentWindow.js'
     ...defaultOptions(reactiveSearchParams.state, session.state.dark),
     icons: { defaultSet: 'mdi', aliases, sets: { mdi, } }
   })
-  const i18n = createI18n({ locale: session.state.lang, messages: $uiConfig.publicMessages });
+  const i18n = createI18n({ locale: session.state.lang, messages: $uiConfig.publicMessages })
+  const head = createHead();
 
   (window as any).vIframeOptions = { router }
 
@@ -38,5 +40,6 @@ import 'iframe-resizer/js/iframeResizer.contentWindow.js'
     .use(uiNotif)
     .use(vuetify)
     .use(i18n)
+    .use(head)
     .mount('#app')
 })()

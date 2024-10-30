@@ -5,6 +5,7 @@
   "type":"object",
   "additionalProperties":false,
   "required":[
+    "host",
     "theme",
     "logo",
     "authMode"

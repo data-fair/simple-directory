@@ -4,6 +4,7 @@ const isDark = (color) => tinycolor(color).getLuminance() < 0.4
 
 // calculate a variant of a color with guaranteed readability
 // default background is #FAFAFA the light grey background
+// TODO: deprecate this, instead we rely on warnings showed to admins when the colors they chose don't have a sufficient contrast
 const contrastColorCache = {}
 const contrastColor = (color1, color2 = '#FAFAFA', color3) => {
   if (!color1) return

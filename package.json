@@ -16,7 +16,7 @@
     "stop-dev-deps": "docker compose --profile dev stop",
     "dev-zellij": "zellij --layout .zellij.kdl",
     "build-types": "df-build-types ./",
-    "prepare": "husky || true && npm install --no-save maildev@2.1.0",
+    "prepare": "husky || true && npm install --no-save --no-fund --no-audit maildev@2.1.0",
     "check-types": "tsc && npm -w ui run check-types",
     "quality": "npm run test-deps && npm run lint && npm run build-types && npm run check-types && npm run test"
   },

@@ -87,7 +87,7 @@
               :key="orga.id"
             >
               <span style="white-space:nowrap">
-                <nuxt-link :to="localePath({name: 'organization-id', params: {id: orga.id}})">{{ orga.name }}</nuxt-link>
+                <router-link :to="localePath({name: 'organization-id', params: {id: orga.id}})">{{ orga.name }}</router-link>
                 <template v-if="orga.department">{{ orga.departmentName || orga.department }}</template>
                 ({{ orga.role }})
               </span>
@@ -326,7 +326,7 @@ export default {
     'pagination.sortDesc' () { this.fetchUsers() }
   },
   async created () {
-    if (!this.user.adminMode) return this.$nuxt.error({ message: this.$t('errors.permissionDenied') })
+    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: this.$t('errors.permissionDenied') })
     this.fetchUsers()
     this.headers = []
     if (this.$uiConfig.avatars.users) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
