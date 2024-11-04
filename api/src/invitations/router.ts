@@ -1,4 +1,4 @@
-import { type UserWritable, type Invitation } from '#types'
+import { type UserWritable, type Invitation, type ActionPayload, type ShortenedInvitation } from '#types'
 import { Router } from 'express'
 import config from '#config'
 import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError, reqUserAuthenticated } from '@data-fair/lib-express'
@@ -173,7 +173,7 @@ router.get('/_accept', async (req, res, next) => {
     // if the token was once valid, but deprecated we accept it partially
     // meaning that we will not perform writes based on it
     // but we accept to check the user's existence and create the best redirect for him
-    invit = unshortenInvit(decodeToken(req.query.invit_token))
+    invit = unshortenInvit(decodeToken(req.query.invit_token) as ShortenedInvitation)
     verified = false
   }
   debug('accept invitation', invit, verified)
@@ -206,7 +206,7 @@ router.get('/_accept', async (req, res, next) => {
       throw new Error('missing password verification implementation')
     } else {
       if (!await storage.getPassword(invit.email) && !config.passwordless) {
-        const payload = { id: existingUser.id, email: existingUser.email, action: 'changePassword' }
+        const payload: ActionPayload = { id: existingUser.id, email: existingUser.email, action: 'changePassword' }
         const token = await signToken(payload, config.jwtDurations.initialToken)
         const reboundRedirect = redirectUrl.href
         redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)

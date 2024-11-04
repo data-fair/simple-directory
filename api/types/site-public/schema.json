@@ -6,16 +6,18 @@
   "additionalProperties":false,
   "required":[
     "host",
-    "theme",
-    "logo",
+    "colors",
     "authMode"
   ],
   "properties":{
+    "main": {
+      "type": "boolean"
+    },
     "host": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/host"
     },
-    "theme": {
-      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/theme"
+    "colors": {
+      "$ref": "https://github.com/data-fair/simple-directory/api/config#/$defs/colors"
     },
     "logo": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/logo"

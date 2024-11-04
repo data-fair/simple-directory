@@ -86,8 +86,9 @@ module.exports = {
   theme: {
     logo: 'THEME_LOGO',
     favicon: 'THEME_FAVICON',
-    dark: 'THEME_DARK',
     colors: {
+      background: 'THEME_BACKGROUND',
+      surface: 'THEME_SURFACE',
       primary: 'THEME_PRIMARY',
       secondary: 'THEME_SECONDARY',
       accent: 'THEME_ACCENT',
@@ -95,18 +96,7 @@ module.exports = {
       info: 'THEME_INFO',
       success: 'THEME_SUCCESS',
       warning: 'THEME_WARNING'
-    },
-    darkColors: {
-      primary: 'THEME_DARK_PRIMARY',
-      secondary: 'THEME_DARK_SECONDARY',
-      accent: 'THEME_DARK_ACCENT',
-      error: 'THEME_DARK_ERROR',
-      info: 'THEME_DARK_INFO',
-      success: 'THEME_DARK_SUCCESS',
-      warning: 'THEME_DARK_WARNING'
-    },
-    cssUrl: 'THEME_CSS_URL',
-    cssText: 'THEME_CSS_TEXT'
+    }
   },
   i18n: {
     defaultLocale: 'I18N_DEFAULT_LOCALE',

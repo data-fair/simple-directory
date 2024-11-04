@@ -122,16 +122,14 @@
     },
     "theme": {
       "type": "object",
-      "required": [],
+      "required": ["colors"],
       "properties": {
         "logo": {
           "type": "string"
         },
-        "notificationIcon": {
-          "type": "string"
-        },
-        "notificationBadge": {
-          "type": "string"
+        "colors": {
+          "type": "object",
+          "$ref": "#/$defs/colors"
         }
       }
     },
@@ -670,6 +668,42 @@
           "type": "string"
         },
         "organizations": {
+          "type": "string"
+        }
+      }
+    },
+    "colors": {
+      "type": "object",
+      "required": ["background", "surface", "primary", "secondary", "accent", "error", "info", "success", "warning", "admin"],
+      "properties": {
+        "background": {
+          "type": "string"
+        },
+        "surface": {
+          "type": "string"
+        },
+        "primary": {
+          "type": "string"
+        },
+        "secondary": {
+          "type": "string"
+        },
+        "accent": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        },
+        "info": {
+          "type": "string"
+        },
+        "success": {
+          "type": "string"
+        },
+        "warning": {
+          "type": "string"
+        },
+        "admin": {
           "type": "string"
         }
       }

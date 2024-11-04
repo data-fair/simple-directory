@@ -1,7 +1,7 @@
 import { type SitePublic } from '#types'
 import { Router, type Request } from 'express'
 import config from '#config'
-import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated } from '@data-fair/lib-express'
+import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
 import { findAllSites, findOwnerSites, patchSite, deleteSite } from './service.ts'
 import { reqSite } from '#services'
@@ -63,17 +63,22 @@ router.delete('/:id', async (req, res, next) => {
 router.get('/_public', async (req, res, next) => {
   const site = await reqSite(req)
   if (!site) {
-    // TODO: return information for main site too ?
-    return res.status(204).send()
+    const sitePublic: SitePublic = {
+      main: true,
+      host: reqHost(req),
+      colors: config.theme.colors,
+      authMode: 'onlyLocal'
+    }
+    res.send(sitePublic)
+  } else {
+    const colors = { ...config.theme.colors }
+    if (site.theme?.primaryColor) colors.primary = site.theme?.primaryColor
+    const sitePublic: SitePublic = {
+      host: site.host,
+      logo: site.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`,
+      colors,
+      authMode: site.authMode ?? 'onlyBackOffice'
+    }
+    res.send(sitePublic)
   }
-  const sitePublic: SitePublic = {
-    host: site.host,
-    theme: site.theme,
-    logo: site.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`,
-    reducedPersonalInfoAtCreation: site.reducedPersonalInfoAtCreation,
-    tosMessage: site.tosMessage,
-    authMode: site.authMode ?? 'onlyBackOffice',
-    authOnlyOtherSite: site.authOnlyOtherSite
-  }
-  res.send(sitePublic)
 })

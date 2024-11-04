@@ -122,10 +122,10 @@ module.exports = {
   analytics: {}, // a "modules" definition for @koumoul/vue-multianalytics
   theme: {
     logo: undefined,
-    favicon: undefined,
-    dark: false,
     colors: {
       // standard vuetify colors
+      background: '#FFFFFF',
+      surface: '#FFFFFF',
       primary: '#1E88E5', // blue.darken1
       secondary: '#42A5F5', // blue.lighten1,
       accent: '#FF9800', // orange.base
@@ -134,13 +134,7 @@ module.exports = {
       success: '#4CAF50', // green.base
       warning: '#E91E63', // pink.base
       admin: '#E53935' // red.darken1
-    },
-    darkColors: {
-      primary: '#2196F3', // blue.base
-      success: '#00E676' // green.accent3
-    },
-    cssUrl: undefined,
-    cssText: ''
+    }
   },
   i18n: {
     defaultLocale: 'fr',

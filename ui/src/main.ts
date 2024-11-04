@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
 import { createVuetify } from 'vuetify'
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
-import { defaultOptions } from '@data-fair/lib-vuetify'
+import { vuetifySessionOptions } from '@data-fair/lib-vuetify'
 import '@data-fair/lib-vuetify/default.scss'
 import { createReactiveSearchParams } from '@data-fair/lib-vue/reactive-search-params.js'
 import { createLocaleDayjs } from '@data-fair/lib-vue/locale-dayjs.js'
@@ -24,7 +24,7 @@ import 'iframe-resizer/js/iframeResizer.contentWindow.js'
   const localeDayjs = createLocaleDayjs(session.state.lang)
   const uiNotif = createUiNotif()
   const vuetify = createVuetify({
-    ...defaultOptions(reactiveSearchParams.state, session.state.dark),
+    ...vuetifySessionOptions(session),
     icons: { defaultSet: 'mdi', aliases, sets: { mdi, } }
   })
   const i18n = createI18n({ locale: session.state.lang, messages: $uiConfig.publicMessages })

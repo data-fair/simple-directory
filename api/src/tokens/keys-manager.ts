@@ -39,7 +39,7 @@ export const start = async () => {
   while (!stopped) {
     if (await locks.acquire('signature-keys-rotation')) {
       const signatureKeys = await getSignatureKeys()
-      if (dayjs().diff(dayjs(signatureKeys.lastUpdate), 'day') > 20) {
+      if (dayjs().diff(dayjs(signatureKeys.lastUpdate), 'day') > 30) {
         rotatePromise = rotateKeys()
         await rotatePromise
       }
