@@ -21,17 +21,15 @@
 
 <script setup lang="ts">
 import 'iframe-resizer/js/iframeResizer'
+// @ts-ignore
 import VIframe from '@koumoul/v-iframe'
 
-export default {
-  components: { VIframe },
-  props: ['topics', 'sender'],
-  computed: {
-    notifySubscribeUrl () {
-      return `${process.$uiConfig.notifyUrl}/embed/subscribe?key=${encodeURIComponent(this.topics.map(t => t.key).join(','))}&title=${encodeURIComponent(this.topics.map(t => t.title).join(','))}&sender=${encodeURIComponent(this.sender)}&register=false`
-    }
-  }
-}
+const { topics, sender } = defineProps({
+  topics: { type: Array as () => { key: string, title: string }[], required: true },
+  sender: { type: String, required: true }
+})
+
+const notifySubscribeUrl = computed(() => `${$sitePath}/events/embed/subscribe?key=${encodeURIComponent(topics.map(t => t.key).join(','))}&title=${encodeURIComponent(topics.map(t => t.title).join(','))}&sender=${encodeURIComponent(sender)}&register=false`)
 </script>
 
 <style>

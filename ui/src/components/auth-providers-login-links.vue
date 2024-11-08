@@ -7,7 +7,6 @@
       v-if="sitePublic && sitePublic.authMode === 'ssoBackOffice'"
       :color="$uiConfig.theme.colors.primary"
       :href="mainSiteLoginUrl"
-      dark
       size="small"
       rounded
       variant="flat"

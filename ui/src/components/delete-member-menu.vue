@@ -2,7 +2,6 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    
   >
     <template #activator="{props}">
       <v-btn
@@ -57,10 +56,11 @@
 </template>
 
 <script setup lang="ts">
-export default {
-  props: ['member', 'orga'],
-  data: () => ({ menu: false })
-}
+const { member, orga } = defineProps({
+  member: { type: Object as () => Member, required: true },
+  orga: { type: Object as () => Organization, required: true }
+})
+const menu = ref(false)
 </script>
 
 <style lang="css" scoped>

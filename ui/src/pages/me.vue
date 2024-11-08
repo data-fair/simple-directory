@@ -287,7 +287,7 @@ export default {
       return new URL(this.$uiConfig.publicUrl).host
     },
     defaultOrgItems () {
-      return (this.patch.ignorePersonalAccount ? [] : [{ id: '', name: this.$t('common.userAccount') }]).concat(this.userDetails.organizations)
+      return (this.patch.ignorePersonalAccount ? [] : [{ id: '', name: t('common.userAccount') }]).concat(this.userDetails.organizations)
     },
     showIgnorePersonalAccount () {
       // invitation mode only (means user should always be in an orga)
@@ -359,7 +359,7 @@ export default {
       try {
         await this.$axios.$patch(`api/users/${this.user.id}`, this.patch)
         await this.$axios.$post('api/session/keepalive')
-        eventBus.$emit('notification', this.$t('common.modificationOk'))
+        eventBus.$emit('notification', t('common.modificationOk'))
         this.fetchUserDetails()
       } catch (error) {
         eventBus.$emit('notification', { error })
@@ -374,7 +374,7 @@ export default {
           // no problem, we simply are not in an iframe context
         }
         await this.$axios.$post('api/auth/action', { email: this.user.email, action: 'changePassword', target })
-        eventBus.$emit('notification', this.$t('pages.login.changePasswordSent', { email: this.user.email }))
+        eventBus.$emit('notification', t('pages.login.changePasswordSent', { email: this.user.email }))
       } catch (error) {
         eventBus.$emit('notification', { error })
       }

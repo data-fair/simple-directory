@@ -138,7 +138,7 @@ export default {
       return this.isAdminOrga && (!this.$uiConfig.readonly || this.$uiConfig.overwrite.includes('partners'))
     },
     partnerLabel () {
-      return this.orga.partnerLabel || this.$t('common.partner')
+      return this.orga.partnerLabel || t('common.partner')
     },
     filteredPartners () {
       if (!this.validQ) return this.orga.partners

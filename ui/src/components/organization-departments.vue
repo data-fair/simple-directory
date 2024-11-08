@@ -12,7 +12,7 @@
         >
           mdi-family-tree
         </v-icon>
-        {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments.length) }})</span>
+        {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments?.length ?? 0) }})</span>
         <add-department-menu
           v-if="writableDepartments"
           :orga="orga"
@@ -30,7 +30,7 @@
     </v-row>
 
     <v-row
-      v-if="orga.departments.length > pageSize"
+      v-if="(orga.departments?.length ?? 0) > pageSize"
       dense
     >
       <v-col cols="4">
@@ -59,17 +59,22 @@
     </v-row>
 
     <v-list
-      v-if="orga.departments.length"
+      v-if="orga.departments?.length"
       class="elevation-1 mt-1"
     >
-      <template v-for="(department, i) in currentPage">
-        <v-list-item :key="department.id">
-          <v-list-item-avatar>
-            <v-img
-              v-if="refreshingDepartment !== department.id"
-              :src="`${$sdUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png?t=${timestamp}`"
-            />
-          </v-list-item-avatar>
+      <template
+        v-for="(department, i) in currentPage"
+        :key="department.id"
+      >
+        <v-list-item>
+          <template #prepend>
+            <v-avatar>
+              <v-img
+                v-if="refreshingDepartment !== department.id"
+                :src="`${$sdUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png?t=${timestamp}`"
+              />
+            </v-avatar>
+          </template>
 
           <v-list-item-title>{{ department.name }}</v-list-item-title>
 
@@ -95,7 +100,6 @@
         </v-list-item>
         <v-divider
           v-if="i + 1 < currentPage.length"
-          :key="'div-' + i"
         />
       </template>
     </v-list>
@@ -114,89 +118,63 @@
 </template>
 
 <script setup lang="ts">
-import { mapState } from 'vuex'
-import AddDepartmentMenu from '~/components/add-department-menu.vue'
-import EditDepartmentMenu from '~/components/edit-department-menu.vue'
-import DeleteDepartmentMenu from '~/components/delete-department-menu.vue'
+const { isAdminOrga, orga } = defineProps({
+  isAdminOrga: { type: Boolean, default: null },
+  orga: { type: Object as () => Organization, default: null }
+})
+defineEmits(['change'])
 
-export default {
-  components: { AddDepartmentMenu, EditDepartmentMenu, DeleteDepartmentMenu },
-  props: {
-    isAdminOrga: {
-      type: Boolean,
-      default: null
-    },
-    orga: {
-      type: Object,
-      default: null
+const { t } = useI18n()
+
+const pageSize = 10
+const page = ref(1)
+const q = ref('')
+const validQ = ref('')
+const refreshingDepartment = ref<string | null>(null)
+const timestamp = ref(new Date().getTime())
+const sort = ref('creation')
+const sortItems = [
+  { text: t('pages.organization.depSortCreation'), value: 'creation' },
+  { text: t('pages.organization.depSortAlpha'), value: 'alpha' }
+]
+
+const writableDepartments = computed(() => isAdminOrga && !$uiConfig.readonly)
+const departmentLabel = computed(() => orga.departmentLabel || t('common.department'))
+const searchableDepartments = computed(() => {
+  const searchableDepartments = (orga.departments || [])
+    .map(department => ({ department, search: (department.id + ' ' + department.name).toLowerCase() }))
+  if (sort.value === 'creation') searchableDepartments.reverse()
+  if (sort.value === 'alpha') searchableDepartments.sort((d1, d2) => d1.department.name.localeCompare(d2.department.name))
+  return searchableDepartments
+})
+
+const filteredDeps = computed(() => {
+  if (!validQ.value) return searchableDepartments.value.map(d => d.department)
+  else {
+    const filteredDeps = []
+    const q = validQ.value.toLowerCase()
+    for (const dep of searchableDepartments.value) {
+      if (dep.search.includes(q)) filteredDeps.push(dep.department)
     }
-  },
-  data () {
-    return {
-      pageSize: 10,
-      page: 1,
-      q: '',
-      validQ: '',
-      refreshingDepartment: null,
-      timestamp: new Date().getTime(),
-      sort: 'creation',
-      sortItems: [
-        { text: this.$t('pages.organization.depSortCreation'), value: 'creation' },
-        { text: this.$t('pages.organization.depSortAlpha'), value: 'alpha' }
-      ]
-    }
-  },
-  computed: {
-    ...mapState(['userDetails', 'env']),
-    writableDepartments () {
-      return this.isAdminOrga && (!this.$uiConfig.readonly || this.$uiConfig.overwrite.includes('departments'))
-    },
-    departmentLabel () {
-      return this.orga.departmentLabel || this.$t('common.department')
-    },
-    searchableDepartments () {
-      const searchableDepartments = (this.orga.departments || [])
-        .map(department => ({ department, search: (department.id + ' ' + department.name).toLowerCase() }))
-      if (this.sort === 'creation') searchableDepartments.reverse()
-      if (this.sort === 'alpha') searchableDepartments.sort((d1, d2) => d1.department.name.localeCompare(d2.department.name))
-      return searchableDepartments
-    },
-    filteredDeps () {
-      if (!this.validQ) return this.searchableDepartments.map(d => d.department)
-      else {
-        const filteredDeps = []
-        const q = this.validQ.toLowerCase()
-        for (const dep of this.searchableDepartments) {
-          if (dep.search.includes(q)) filteredDeps.push(dep.department)
-        }
-        return filteredDeps
-      }
-    },
-    currentPage () {
-      return this.filteredDeps.slice((this.page - 1) * this.pageSize, this.page * this.pageSize)
-    }
-  },
-  watch: {
-    'orga.departments' () {
-      if (this.filteredDeps.length <= (this.page - 1) * this.pageSize) this.page -= 1
-    }
-  },
-  created () {
-    // eslint-disable-next-line vue/no-mutating-props
-    this.orga.departments = this.orga.departments || []
-  },
-  methods: {
-    filterDeps (page) {
-      this.page = 1
-      this.validQ = this.q
-    },
-    async refreshDepartment (department) {
-      this.refreshingDepartment = department.id
-      await this.$nextTick()
-      this.refreshingDepartment = null
-      this.timestamp = new Date().getTime()
-    }
+    return filteredDeps
   }
+})
+
+const currentPage = computed(() => filteredDeps.value?.slice((page.value - 1) * pageSize, page.value * pageSize))
+
+watch(() => orga.departments, () => {
+  if (filteredDeps.value.length <= (page.value - 1) * pageSize) page.value -= 1
+})
+
+const filterDeps = () => {
+  page.value = 1
+  validQ.value = q.value
+}
+const refreshDepartment = async (department: { id: string, name: string }) => {
+  refreshingDepartment.value = department.id
+  await nextTick()
+  refreshingDepartment.value = null
+  timestamp.value = new Date().getTime()
 }
 </script>
 

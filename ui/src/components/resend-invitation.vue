@@ -129,7 +129,7 @@ export default {
           this.menu = false
         }
         this.$emit('sent', this.invitation)
-        eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', { email: this.invitation.email }))
+        eventBus.$emit('notification', t('pages.organization.inviteSuccess', { email: this.invitation.email }))
       } catch (error) {
         eventBus.$emit('notification', { error })
       }

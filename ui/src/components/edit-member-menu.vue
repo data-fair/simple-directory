@@ -2,7 +2,6 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    
   >
     <template #activator="{props}">
       <v-btn
@@ -76,21 +75,20 @@
 </template>
 
 <script setup lang="ts">
-import { mapState } from 'vuex'
+const { orga, department, member } = defineProps({
+  orga: { type: Object as () => Organization, required: true },
+  department: { type: Object, required: true },
+  member: { type: Object as () => Member, required: true }
+})
+defineEmits({ save: (_editMember: Member) => true })
 
-export default {
-  props: ['orga', 'member', 'department'],
-  data: () => ({ menu: false, editMember: null }),
-  computed: {
-    ...mapState(['env'])
-  },
-  watch: {
-    menu () {
-      if (!this.menu) return
-      this.editMember = { ...this.member }
-    }
-  }
-}
+const menu = ref(false)
+const editMember = ref<any>()
+
+watch(menu, () => {
+  if (!menu.value) return
+  editMember.value = { ...member }
+})
 </script>
 
 <style lang="css" scoped>

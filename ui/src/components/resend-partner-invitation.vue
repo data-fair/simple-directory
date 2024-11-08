@@ -103,7 +103,7 @@ export default {
       try {
         this.menu = false
         await this.$axios.$post(`api/organizations/${this.orga.id}/partners`, { name: this.partner.name, contactEmail: this.partner.contactEmail, redirect: this.redirect })
-        eventBus.$emit('notification', this.$t('pages.organization.invitePartnerSuccess', { email: this.partner.contactEmail }))
+        eventBus.$emit('notification', t('pages.organization.invitePartnerSuccess', { email: this.partner.contactEmail }))
         this.$emit('change')
       } catch (error) {
         eventBus.$emit('notification', { error })

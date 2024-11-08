@@ -41,7 +41,8 @@
     "webhooks",
     "authRateLimit",
     "plannedDeletionDelay",
-    "cleanup"
+    "cleanup",
+    "avatars"
   ],
   "properties": {
     "info": {
@@ -556,6 +557,17 @@
     },
     "tosUrl": {
       "type": "string"
+    },
+    "avatars": {
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "boolean"
+        },
+        "orgs": {
+          "type": "boolean"
+        }
+      }
     }
   },
   "$defs": {

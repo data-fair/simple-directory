@@ -44,7 +44,7 @@ export default {
     ...mapState('session', ['user']),
   },
   async created () {
-    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: this.$t('errors.permissionDenied') })
+    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: t('errors.permissionDenied') })
     this.fetchOAuthTokens()
     this.headers = [
       { text: '', value: 'json', sortable: false }

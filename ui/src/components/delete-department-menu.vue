@@ -2,7 +2,6 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    
   >
     <template #activator="{props}">
       <v-btn
@@ -62,33 +61,45 @@
 </template>
 
 <script setup lang="ts">
-import { mapActions } from 'vuex'
 
-export default {
-  props: ['orga', 'department', 'departmentLabel'],
-  data: () => ({ menu: false, members: null }),
-  watch: {
-    async menu () {
-      this.members = null
-      if (!this.menu) return
-      this.members = await this.$axios.$get(`api/organizations/${this.orga.id}/members`, {
-        params: {
-          size: 0,
-          department: this.department.id
-        }
-      })
-    }
-  },
-  methods: {
-    ...mapActions(['patchOrganization']),
-    async confirmDelete () {
-      this.menu = false
-      const departments = this.orga.departments.filter(d => d.id !== this.department.id)
-      await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
-      this.$emit('change')
-    }
+const { orga, department, departmentLabel } = defineProps({
+  orga: { type: Object as () => Organization, required: true },
+  department: { type: Object as () => { id: string, name: string }, required: true },
+  departmentLabel: { type: String, required: true }
+})
+const emit = defineEmits(['change'])
+
+const { patchOrganization } = useStore()
+const { t } = useI18n()
+
+const menu = ref(false)
+const members = ref<any>()
+
+watch(menu, async () => {
+  if (!menu.value) {
+    members.value = null
+    return
   }
-}
+  fetchMembers()
+})
+
+const fetchMembers = withUiNotif(async () => {
+  members.value = await $fetch(`api/organizations/${orga.id}/members`, {
+    query: {
+      params: {
+        size: 0,
+        department: department.id
+      }
+    }
+  })
+})
+
+const confirmDelete = withUiNotif(async () => {
+  menu.value = false
+  const departments = (orga.departments ?? []).filter(d => d.id !== department.id)
+  await patchOrganization(orga.id, { departments }, t('common.modificationOk'))
+  emit('change')
+})
 </script>
 
 <style lang="css" scoped>

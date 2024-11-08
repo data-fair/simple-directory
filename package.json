@@ -56,6 +56,7 @@
     "@types/seedrandom": "^3.0.8",
     "@types/simple-oauth2": "^5.0.7",
     "@types/tinycolor2": "^1.4.6",
+    "@types/vue-cropperjs": "^4.1.6",
     "commitlint": "^19.2.2",
     "eslint": "^9.10.0",
     "eslint-plugin-vue": "^9.29.0",

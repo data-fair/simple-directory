@@ -68,31 +68,37 @@
 </template>
 
 <script setup lang="ts">
+import type { VForm } from 'vuetify/components'
 
-import { mapActions } from 'vuex'
+const { orga, departmentLabel, isAdminOrga } = defineProps({
+  orga: { type: Object as () => Organization, required: true },
+  departmentLabel: { type: String, required: true },
+  isAdminOrga: { type: Boolean, defaut: false }
+})
+const emit = defineEmits(['change'])
 
-export default {
-  props: ['orga', 'departmentLabel', 'isAdminOrga'],
-  data: () => ({ menu: false, editDepartment: null }),
-  watch: {
-    menu () {
-      if (!this.menu) return
-      this.editDepartment = { id: '', name: '' }
-      if (this.$refs.createForm) this.$refs.createForm.reset()
-    }
-  },
-  methods: {
-    ...mapActions(['patchOrganization']),
-    async confirmCreate () {
-      if (this.$refs.createForm.validate()) {
-        this.menu = false
-        const departments = this.orga.departments.concat([this.editDepartment])
-        await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
-        this.$emit('change')
-      }
-    }
+const { patchOrganization } = useStore()
+const { t } = useI18n()
+
+const createForm = ref<InstanceType<typeof VForm>>()
+const menu = ref(false)
+const newDepartment = { id: '', name: '' }
+const editDepartment = ref({ ...newDepartment })
+
+watch(menu, () => {
+  if (!menu.value) return
+  editDepartment.value = { ...newDepartment }
+  createForm.value?.reset()
+})
+
+const confirmCreate = withUiNotif(async () => {
+  if (await createForm.value?.validate()) {
+    menu.value = false
+    const departments = (orga.departments ?? []).concat([editDepartment.value])
+    await patchOrganization(orga.id, { departments }, t('common.modificationOk'))
+    emit('change')
   }
-}
+})
 </script>
 
 <style lang="css" scoped>

@@ -37,12 +37,12 @@ export default defineConfig({
         unheadVueComposablesImports,
         {
           from: '#api/types',
-          imports: ['Organization'],
+          imports: ['Organization', 'User', 'Member', 'Partner'],
           type: true,
         },
         {
           '~/context': ['$uiConfig', '$sitePath', '$siteUrl', '$sdUrl', '$apiPath', '$fetch'],
-          '@mdi/js': ['mdiBell', 'mdiRefresh', 'mdiSend', 'mdiDelete', 'mdiDevices', 'mdiEmail', 'mdiRss', 'mdiDotsVertical', 'mdiCheckCircle', 'mdiCancel', 'mdiAlertCircle', 'mdiCellphone', 'mdiWeb', 'mdiPlus', 'mdiCheck']
+          '@mdi/js': ['mdiBell', 'mdiRefresh', 'mdiSend', 'mdiDelete', 'mdiDevices', 'mdiEmail', 'mdiRss', 'mdiDotsVertical', 'mdiCheckCircle', 'mdiCancel', 'mdiAlertCircle', 'mdiCellphone', 'mdiWeb', 'mdiPlus', 'mdiCheck', 'mdiPencil']
         }
       ],
       dirs: [

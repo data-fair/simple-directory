@@ -160,7 +160,7 @@ export default {
         if (!this.userDetails) return
         // TODO: this is debatable, API allows to show all info on this page
         // but in term of functionality it doesn't make much sense
-        if (!this.isAdminOrga) uiNotif.sendUiNotif({ error: this.$t('errors.permissionDenied') })
+        if (!this.isAdminOrga) uiNotif.sendUiNotif({ error: t('errors.permissionDenied') })
       },
       immediate: true
     }
@@ -187,7 +187,7 @@ export default {
       if (!this.$refs.form.validate()) return
       const patch = { name: this.orga.name, description: this.orga.description, '2FA': this.orga['2FA'] }
       if (this.$uiConfig.manageDepartments) patch.departmentLabel = this.orga.departmentLabel
-      this.patchOrganization({ id: this.orga.id, patch, msg: this.$t('common.modificationOk') })
+      this.patchOrganization({ id: this.orga.id, patch, msg: t('common.modificationOk') })
     }
   }
 }

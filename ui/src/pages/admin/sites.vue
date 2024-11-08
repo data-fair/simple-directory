@@ -118,17 +118,17 @@ export default {
     ...mapState('session', ['user']),
   },
   async created () {
-    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: this.$t('errors.permissionDenied') })
+    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: t('errors.permissionDenied') })
     this.fetchSites()
     this.headers = []
     // if (this.$uiConfig.avatars.orgs) this.headers.push({ text: '', sortable: false })
     this.headers = this.headers.concat([
       { text: '', value: 'theme.primaryColor', sortable: false },
-      { text: this.$t('common.host'), value: 'host' },
-      { text: this.$t('common.id'), value: '_id', sortable: false },
-      { text: this.$t('common.organization'), value: 'owner', sortable: false },
-      { text: this.$t('common.authMode'), value: 'authMode', sortable: false },
-      { text: this.$t('common.authProviders'), value: 'authProviders', sortable: false },
+      { text: t('common.host'), value: 'host' },
+      { text: t('common.id'), value: '_id', sortable: false },
+      { text: t('common.organization'), value: 'owner', sortable: false },
+      { text: t('common.authMode'), value: 'authMode', sortable: false },
+      { text: t('common.authProviders'), value: 'authProviders', sortable: false },
       { test: '', sortable: false }
     ])
   },

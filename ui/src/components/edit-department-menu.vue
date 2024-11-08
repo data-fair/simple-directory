@@ -2,7 +2,6 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    
   >
     <template #activator="{props}">
       <v-btn
@@ -27,7 +26,7 @@
         <p>{{ $t('common.id') }} = {{ department.id }}</p>
         <load-avatar
           v-if="orga && $uiConfig.avatars.orgs"
-          ref="loadAvatar"
+          :ref="loadAvatar"
           :owner="{type: 'organization', id: orga.id, department: department.id}"
           :disabled="$uiConfig.readonly"
           :hide-validate="true"
@@ -60,31 +59,35 @@
 </template>
 
 <script setup lang="ts">
-import { mapActions, mapState } from 'vuex'
+type Department = { id: string, name: string }
 
-export default {
-  props: ['orga', 'department', 'departmentLabel'],
-  data: () => ({ menu: false, editDepartment: null }),
-  computed: {
-    ...mapState(['env'])
-  },
-  watch: {
-    menu () {
-      if (!this.menu) return
-      this.editDepartment = JSON.parse(JSON.stringify(this.department))
-    }
-  },
-  methods: {
-    ...mapActions(['patchOrganization']),
-    async confirmEdit (department) {
-      this.menu = false
-      const departments = this.orga.departments.map(d => d.id === this.department.id ? this.editDepartment : d)
-      await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
-      await this.$refs.loadAvatar.validate()
-      this.$emit('change')
-    }
-  }
-}
+const { orga, department, departmentLabel } = defineProps({
+  orga: { type: Object as () => Organization, required: true },
+  department: { type: Object as () => Department, required: true },
+  departmentLabel: { type: String, required: true }
+})
+const emit = defineEmits(['change'])
+
+const { patchOrganization } = useStore()
+const { t } = useI18n()
+
+const menu = ref(false)
+const editDepartment = ref<Department>()
+const loadAvatar = ref<any>()
+
+watch(menu, () => {
+  if (!menu.value) return
+  editDepartment.value = JSON.parse(JSON.stringify(department))
+})
+
+const confirmEdit = withUiNotif(async () => {
+  menu.value = false
+  const departments = (orga.departments ?? []).map(d => d.id === editDepartment.value?.id ? editDepartment.value : d)
+  await patchOrganization(orga.id, { departments }, t('common.modificationOk'))
+  await loadAvatar.value?.validate()
+  emit('change')
+})
+
 </script>
 
 <style lang="css" scoped>

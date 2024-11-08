@@ -15,7 +15,9 @@ export const uiConfig = {
   depAdminIsOrgAdmin: config.depAdminIsOrgAdmin,
   anonymousContactForm: config.anonymousContactForm,
   homePage: config.homePage,
-  alwaysAcceptInvitation: config.alwaysAcceptInvitation
+  alwaysAcceptInvitation: config.alwaysAcceptInvitation,
+  avatars: config.avatars,
+  manageDepartments: config.manageDepartments
 }
 export type UiConfig = typeof uiConfig
 export default uiConfig

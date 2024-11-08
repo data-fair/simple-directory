@@ -3,7 +3,7 @@
     v-model="menu"
     :close-on-content-click="false"
     max-width="600"
-    
+
     location="top"
   >
     <template #activator="{ props }">
@@ -21,12 +21,10 @@
       </v-tooltip>-->
       <slot
         name="activator"
-        :attrs="attrs"
-        :on="on"
+        :props="props"
       >
         <v-btn
           :color="yesColor"
-
           v-bind="props"
         >
           {{ buttonText }}
@@ -75,46 +73,22 @@
 </template>
 
 <script setup lang="ts">
-export default {
-  props: {
-    title: {
-      type: String,
-      default: ''
-    },
-    alert: {
-      type: String,
-      default: ''
-    },
-    buttonText: {
-      type: String,
-      default: ''
-    },
-    checkText: {
-      type: String,
-      default: ''
-    },
-    icon: {
-      type: String,
-      default: ''
-    },
-    tooltip: {
-      type: String,
-      default: ''
-    },
-    yesColor: {
-      type: String,
-      default: 'primary'
-    }
-  },
-  data () {
-    return { menu: false, checked: false }
-  },
-  watch: {
-    menu () {
-      this.checked = false
-    }
-  }
-}
+import type { VAlert } from 'vuetify/components'
+
+const { title, alert, buttonText, checkText, yesColor } = defineProps({
+  title: { type: String, default: '' },
+  alert: { type: String, default: '' },
+  buttonText: { type: String, default: '' },
+  checkText: { type: String, default: '' },
+  yesColor: { type: String as () => VAlert['type'], default: 'primary' }
+})
+
+const menu = ref(false)
+const checked = ref(false)
+
+watch(menu, () => {
+  checked.value = false
+})
 </script>
 
 <style lang="css" scoped>

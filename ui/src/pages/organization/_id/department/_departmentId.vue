@@ -58,7 +58,7 @@ export default {
         if (!this.userDetails) return
         // TODO: this is debatable, API allows to show all info on this page
         // but in term of functionality it doesn't make much sense
-        if (!this.isAdminDepartment) uiNotif.sendUiNotif({error:this.$t('errors.permissionDenied') })
+        if (!this.isAdminDepartment) uiNotif.sendUiNotif({error:t'errors.permissionDenied') })
       },
       immediate: true
     }

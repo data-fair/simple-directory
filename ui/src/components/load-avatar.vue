@@ -55,12 +55,12 @@
 </template>
 
 <script setup lang="ts">
-import { mapState } from 'vuex'
 import VueCropper from 'vue-cropperjs'
 import 'cropperjs/dist/cropper.css'
+import type { Account } from '@data-fair/lib-vue/session'
 
 // see https://stackoverflow.com/a/5100158
-function dataURItoBlob (dataURI) {
+function dataURItoBlob (dataURI: string) {
   // convert base64/URLEncoded data component to raw binary data held in a string
   let byteString
   if (dataURI.split(',')[0].indexOf('base64') >= 0) { byteString = atob(dataURI.split(',')[1]) } else { byteString = unescape(dataURI.split(',')[1]) }
@@ -77,61 +77,50 @@ function dataURItoBlob (dataURI) {
   return new Blob([ia], { type: mimeString })
 }
 
-export default {
-  components: {
-    VueCropper
-  },
-  props: {
-    owner: { type: Object, default: null },
-    disabled: { type: Boolean, default: false },
-    hideValidate: { type: Boolean, default: false }
-  },
-  data () {
-    return {
-      dialog: false,
-      loading: false,
-      file: null,
-      imgSrc: null,
-      cropperOptions: { aspectRatio: 1, autoCrop: true }
-    }
-  },
-  computed: {
-    ...mapState(['env']),
-    avatarUrl () {
-      let url = `${this.$sdUrl}/api/avatars/${this.owner.type}/${this.owner.id}`
-      if (this.owner.department) url += `/${this.owner.department}`
-      url += '/avatar.png'
-      return url
-    }
-  },
-  methods: {
-    change (event) {
-      if (!this.file) {
-        this.imgSrc = null
-        return
-      }
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        this.imgSrc = event.target.result
-        if (this.$refs.cropper) this.$refs.cropper.replace(this.imgSrc)
-      }
-      reader.readAsDataURL(this.file)
-    },
-    async validate () {
-      if (!this.file) return
-      this.loading = true
-      const croppedImg = dataURItoBlob(this.$refs.cropper.getCroppedCanvas({ width: 100, height: 100 }).toDataURL('image/png'))
-      const formData = new FormData()
-      formData.append('avatar', croppedImg)
-      await this.$axios.$post(this.avatarUrl, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-      this.loading = false
-      this.file = null
-    },
-    getTimestamp () {
-      return new Date().getTime()
-    }
+const { owner, disabled, hideValidate } = defineProps({
+  owner: { type: Object as () => Account, default: null },
+  disabled: { type: Boolean, default: false },
+  hideValidate: { type: Boolean, default: false }
+})
+
+const cropper = ref<any>()
+const loading = ref(false)
+const file = ref<File | null>(null)
+const imgSrc = ref('')
+const cropperOptions = { aspectRatio: 1, autoCrop: true }
+
+const avatarUrl = computed(() => {
+  let url = `${$sdUrl}/api/avatars/${owner.type}/${owner.id}`
+  if (owner.department) url += `/${owner.department}`
+  url += '/avatar.png'
+  return url
+})
+
+const change = (event: Event) => {
+  if (!file.value) {
+    imgSrc.value = ''
+    return
   }
+  const reader = new FileReader()
+  reader.onload = (event) => {
+    imgSrc.value = event.target?.result as string
+    cropper.value?.replace(imgSrc.value)
+  }
+  reader.readAsDataURL(file.value)
 }
+
+const validate = withUiNotif(async () => {
+  if (!file.value) return
+  loading.value = true
+  const croppedImg = dataURItoBlob(cropper.value?.getCroppedCanvas({ width: 100, height: 100 }).toDataURL('image/png'))
+  const formData = new FormData()
+  formData.append('avatar', croppedImg)
+  await $fetch(avatarUrl.value, { method: 'POST', body: formData, headers: { 'Content-Type': 'multipart/form-data' } })
+  loading.value = false
+  file.value = null
+})
+
+const getTimestamp = () => new Date().getTime()
 </script>
 
 <style lang="css">

@@ -195,19 +195,19 @@ export default {
     'pagination.sortDesc' () { this.fetchOrganizations() }
   },
   async created () {
-    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: this.$t('errors.permissionDenied') })
+    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: t('errors.permissionDenied') })
     this.fetchOrganizations()
     this.headers = []
-    if (this.$uiConfig.avatars.orgs) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
+    if (this.$uiConfig.avatars.orgs) this.headers.push({ text: t('common.avatar'), sortable: false })
     this.headers = this.headers.concat([
-      { text: this.$t('common.name'), value: 'name' },
-      { text: this.$t('common.id'), value: 'id', sortable: false },
-      { text: this.$t('common.description'), value: 'description', sortable: false }
+      { text: t('common.name'), value: 'name' },
+      { text: t('common.id'), value: 'id', sortable: false },
+      { text: t('common.description'), value: 'description', sortable: false }
     ])
     if (!this.$uiConfig.readonly) {
       this.headers = this.headers.concat([
-        { text: this.$t('common.createdAt'), value: 'created.date' },
-        { text: this.$t('common.updatedAt'), value: 'updated.date' }
+        { text: t('common.createdAt'), value: 'created.date' },
+        { text: t('common.updatedAt'), value: 'updated.date' }
       ])
     }
     this.headers.push({ text: '', value: 'actions', sortable: false })

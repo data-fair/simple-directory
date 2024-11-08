@@ -67,6 +67,7 @@ declare global {
   const mdiDotsVertical: typeof import('@mdi/js')['mdiDotsVertical']
   const mdiEmail: typeof import('@mdi/js')['mdiEmail']
   const mdiImageSizeSelectSmall: typeof import('@mdi/js')['mdiImageSizeSelectSmall']
+  const mdiPencil: typeof import('@mdi/js')['mdiPencil']
   const mdiPlus: typeof import('@mdi/js')['mdiPlus']
   const mdiRefresh: typeof import('@mdi/js')['mdiRefresh']
   const mdiRss: typeof import('@mdi/js')['mdiRss']
@@ -170,7 +171,7 @@ declare global {
   export type { Component, ComponentPublicInstance, ComputedRef, DirectiveBinding, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, MaybeRef, MaybeRefOrGetter, VNode, WritableComputedRef } from 'vue'
   import('vue')
   // @ts-ignore
-  export type { Organization } from '#api/types'
+  export type { Organization, User, Member, Partner } from '#api/types'
   import('#api/types')
 }
 // for vue template auto import
@@ -215,6 +216,7 @@ declare module 'vue' {
     readonly mdiDevices: UnwrapRef<typeof import('@mdi/js')['mdiDevices']>
     readonly mdiDotsVertical: UnwrapRef<typeof import('@mdi/js')['mdiDotsVertical']>
     readonly mdiEmail: UnwrapRef<typeof import('@mdi/js')['mdiEmail']>
+    readonly mdiPencil: UnwrapRef<typeof import('@mdi/js')['mdiPencil']>
     readonly mdiPlus: UnwrapRef<typeof import('@mdi/js')['mdiPlus']>
     readonly mdiRefresh: UnwrapRef<typeof import('@mdi/js')['mdiRefresh']>
     readonly mdiRss: UnwrapRef<typeof import('@mdi/js')['mdiRss']>

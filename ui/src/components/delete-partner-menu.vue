@@ -2,7 +2,6 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    
   >
     <template #activator="{props}">
       <v-btn
@@ -51,17 +50,19 @@
 </template>
 
 <script setup lang="ts">
-export default {
-  props: ['orga', 'partner'],
-  data: () => ({ menu: false, members: null }),
-  methods: {
-    async confirmDelete () {
-      this.menu = false
-      await this.$axios.$delete(`api/organizations/${this.orga.id}/partners/${this.partner.partnerId}`)
-      this.$emit('change')
-    }
-  }
-}
+const { orga, partner } = defineProps({
+  orga: { type: Object as () => Organization, required: true },
+  partner: { type: Object as () => Partner, required: true }
+})
+const emit = defineEmits(['change'])
+
+const menu = ref(false)
+
+const confirmDelete = withUiNotif(async () => {
+  menu.value = false
+  await $fetch(`api/organizations/${orga.id}/partners/${partner.partnerId}`, { method: 'DELETE' })
+  emit('change')
+})
 </script>
 
 <style lang="css" scoped>

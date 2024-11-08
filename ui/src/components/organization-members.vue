@@ -248,11 +248,11 @@ export default {
     },
     notifyTopics () {
       if (this.$uiConfig.alwaysAcceptInvitation) {
-        return [{ key: 'simple-directory:add-member', title: this.$t('notifications.addMemberTopic') }]
+        return [{ key: 'simple-directory:add-member', title: t('notifications.addMemberTopic') }]
       } else {
         return [
-          { key: 'simple-directory:invitation-sent', title: this.$t('notifications.sentInvitationTopic') },
-          { key: 'simple-directory:invitation-accepted', title: this.$t('notifications.acceptedInvitationTopic') }
+          { key: 'simple-directory:invitation-sent', title: t('notifications.sentInvitationTopic') },
+          { key: 'simple-directory:invitation-accepted', title: t('notifications.acceptedInvitationTopic') }
         ]
       }
     },
@@ -295,7 +295,7 @@ export default {
     async deleteMember (member) {
       try {
         await this.$axios.$delete(`api/organizations/${this.orga.id}/members/${member.id}`, { params: { department: member.department } })
-        eventBus.$emit('notification', this.$t('pages.organization.deleteMemberSuccess', { name: member.name }))
+        eventBus.$emit('notification', t('pages.organization.deleteMemberSuccess', { name: member.name }))
         this.fetchMembers(this.membersPage)
       } catch (error) {
         eventBus.$emit('notification', { error })

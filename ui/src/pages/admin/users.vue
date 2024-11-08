@@ -326,30 +326,30 @@ export default {
     'pagination.sortDesc' () { this.fetchUsers() }
   },
   async created () {
-    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: this.$t('errors.permissionDenied') })
+    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: t('errors.permissionDenied') })
     this.fetchUsers()
     this.headers = []
-    if (this.$uiConfig.avatars.users) this.headers.push({ text: this.$t('common.avatar'), sortable: false })
+    if (this.$uiConfig.avatars.users) this.headers.push({ text: t('common.avatar'), sortable: false })
     this.headers = this.headers.concat([
-      { text: this.$t('common.email'), value: 'email' },
-      { text: this.$t('common.name'), value: 'name' },
-      { text: this.$t('common.id'), value: 'id', sortable: false },
-      { text: this.$t('common.firstName'), value: 'firstName' },
-      { text: this.$t('common.lastName'), value: 'lastName' },
-      { text: this.$t('common.2FA'), value: '2FA', sortable: false },
-      { text: this.$t('common.organizations'), value: 'organizations', sortable: false }
+      { text: t('common.email'), value: 'email' },
+      { text: t('common.name'), value: 'name' },
+      { text: t('common.id'), value: 'id', sortable: false },
+      { text: t('common.firstName'), value: 'firstName' },
+      { text: t('common.lastName'), value: 'lastName' },
+      { text: t('common.2FA'), value: '2FA', sortable: false },
+      { text: t('common.organizations'), value: 'organizations', sortable: false }
     ])
     if (this.$uiConfig.defaultMaxCreatedOrgs !== -1 && !this.$uiConfig.readonly) {
-      this.headers.push({ text: this.$t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs', sortable: false })
+      this.headers.push({ text: t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs', sortable: false })
     }
     if (!this.$uiConfig.readonly) {
-      this.headers.push({ text: this.$t('common.createdAt'), value: 'created.date' })
+      this.headers.push({ text: t('common.createdAt'), value: 'created.date' })
       if (this.$uiConfig.manageSites) {
-        this.headers.push({ text: this.$t('common.host'), value: 'host' })
+        this.headers.push({ text: t('common.host'), value: 'host' })
       }
-      this.headers.push({ text: this.$t('common.updatedAt'), value: 'updated.date' })
-      this.headers.push({ text: this.$t('common.loggedAt'), value: 'logged' })
-      this.headers.push({ text: this.$t('common.plannedDeletion'), value: 'plannedDeletion' })
+      this.headers.push({ text: t('common.updatedAt'), value: 'updated.date' })
+      this.headers.push({ text: t('common.loggedAt'), value: 'logged' })
+      this.headers.push({ text: t('common.plannedDeletion'), value: 'plannedDeletion' })
     }
     this.headers.push({ text: '', value: 'actions', sortable: false })
   },
