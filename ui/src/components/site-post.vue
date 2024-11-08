@@ -3,18 +3,15 @@
     v-model="menu"
     fullscreen
     :close-on-content-click="false"
-    offset-y
   >
     <template #activator="{props}">
-      <v-btn
+      <v-fab
         :title="$t('pages.admin.sites.createSite')"
-        fab
         size="small"
         color="primary"
+        :icon="mdiPlus"
         v-bind="props"
-      >
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
+      />
     </template>
 
     <v-card
@@ -67,7 +64,7 @@
   </v-dialog>
 </template>
 
-<script>
+<script setup lang="ts">
 import resolvedSchema from '../../types/site-post/.type/resolved-schema.json'
 import { mapActions, mapState } from 'vuex'
 

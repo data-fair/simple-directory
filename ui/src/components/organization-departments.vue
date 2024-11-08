@@ -113,7 +113,7 @@
   </v-container>
 </template>
 
-<script>
+<script setup lang="ts">
 import { mapState } from 'vuex'
 import AddDepartmentMenu from '~/components/add-department-menu.vue'
 import EditDepartmentMenu from '~/components/edit-department-menu.vue'

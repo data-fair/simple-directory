@@ -165,7 +165,7 @@
   </v-container>
 </template>
 
-<script>
+<script setup lang="ts">
 import { mapState } from 'vuex'
 import eventBus from '../../event-bus'
 export default {

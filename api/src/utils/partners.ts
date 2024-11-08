@@ -1,6 +1,6 @@
-import { type Organization, type Partner } from '#types'
+import { type Organization, type Partner, type ShortenedPartnerInvitation } from '#types'
 
-export const shortenPartnerInvitation = (partner: Pick<Partner, 'name' | 'contactEmail'>, org: Organization, partnerId: string) => {
+export const shortenPartnerInvitation = (partner: Pick<Partner, 'name' | 'contactEmail'>, org: Organization, partnerId: string): ShortenedPartnerInvitation => {
   return {
     o: org.id,
     on: org.name,
@@ -10,7 +10,7 @@ export const shortenPartnerInvitation = (partner: Pick<Partner, 'name' | 'contac
   }
 }
 
-export const unshortenPartnerInvitation = (partnerPayload: ReturnType<typeof shortenPartnerInvitation>) => {
+export const unshortenPartnerInvitation = (partnerPayload: ShortenedPartnerInvitation) => {
   return {
     orgId: partnerPayload.o,
     partnerId: partnerPayload.p,

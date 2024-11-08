@@ -1,9 +1,7 @@
-import config, { type ApiConfig } from './config.ts'
+import config from './config.ts'
 import { publicMessages } from '../i18n/index.ts'
 
-export type UiConfig = { publicMessages: any, readonly: boolean } & Pick<ApiConfig, 'publicUrl' | 'theme' | 'manageSites' | 'i18n' | 'tosUrl' | 'passwordless' | 'onlyCreateInvited' | 'maildev'>
-
-export const uiConfig: UiConfig = {
+export const uiConfig = {
   publicMessages,
   readonly: config.storage.type !== 'mongo',
   publicUrl: config.publicUrl,
@@ -13,6 +11,11 @@ export const uiConfig: UiConfig = {
   tosUrl: config.tosUrl,
   passwordless: config.passwordless,
   onlyCreateInvited: config.onlyCreateInvited,
-  maildev: config.maildev
+  maildev: config.maildev,
+  depAdminIsOrgAdmin: config.depAdminIsOrgAdmin,
+  anonymousContactForm: config.anonymousContactForm,
+  homePage: config.homePage,
+  alwaysAcceptInvitation: config.alwaysAcceptInvitation
 }
+export type UiConfig = typeof uiConfig
 export default uiConfig

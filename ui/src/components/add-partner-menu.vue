@@ -2,19 +2,16 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    offset-y
   >
     <template #activator="{props}">
-      <v-btn
+      <v-fab
         :title="$t('pages.organization.addPartner')"
-        fab
         size="small"
         color="primary"
         class="mx-2"
+        :icon="mdiPlus"
         v-bind="props"
-      >
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
+      />
     </template>
 
     <v-card
@@ -83,47 +80,45 @@
   </v-menu>
 </template>
 
-<script>
-import { mapState, mapGetters } from 'vuex'
-import eventBus from '../event-bus'
+<script setup lang="ts">
+import type { VForm } from 'vuetify/components'
 
-export default {
-  props: ['orga'],
-  data: () => ({ menu: false, editPartner: null, redirect: null }),
-  computed: {
-    ...mapState(['env', 'sites']),
-    ...mapGetters(['redirects'])
-  },
-  watch: {
-    menu () {
-      if (!this.menu) return
-      if (this.$uiConfig.manageSites) this.$store.dispatch('fetchSites')
-      this.editPartner = { name: '', contactEmail: '', redirect: this.redirect }
-      if (this.$refs.createForm) this.$refs.createForm.reset()
-    },
-    redirects: {
-      immediate: true,
-      handler () {
-        this.redirect = this.$route.query.redirect || (this.redirects && this.redirects[0] && this.redirects[0].value) || ''
-        if (this.editPartner) this.editPartner.redirect = this.redirect
-      }
-    }
-  },
-  methods: {
-    async confirmCreate () {
-      if (this.$refs.createForm.validate()) {
-        try {
-          this.menu = false
-          await this.$axios.$post(`api/organizations/${this.orga.id}/partners`, this.editPartner)
-          eventBus.$emit('notification', this.$t('pages.organization.invitePartnerSuccess', { email: this.editPartner.contactEmail }))
-          this.$emit('change')
-        } catch (error) {
-          eventBus.$emit('notification', { error })
-        }
-      }
-    }
+const { redirects, sitesFetch } = useStore()
+const reactiveSearchParams = useReactiveSearchParams()
+const { sendUiNotif } = useUiNotif()
+const { t } = useI18n()
+
+const { orga } = defineProps({
+  orga: { type: Object as () => Organization, required: true }
+})
+const emit = defineEmits(['change'])
+
+const menu = ref(false)
+const redirect = ref('')
+const createForm = ref<InstanceType<typeof VForm>>()
+const newPartner = () => ({ name: '', contactEmail: '', redirect: redirect.value })
+const editPartner = ref(newPartner())
+
+watch(menu, () => {
+  if (!menu.value) return
+  if ($uiConfig.manageSites) sitesFetch.refresh()
+  editPartner.value = newPartner()
+  createForm.value?.reset()
+})
+
+watch(redirects, () => {
+  redirect.value = reactiveSearchParams.redirect || (redirects.value?.[0]?.value) || ''
+  editPartner.value.redirect = redirect.value
+}, { immediate: true })
+
+const confirmCreate = withUiNotif(async () => {
+  if (await createForm.value?.validate()) {
+    menu.value = false
+    await $fetch(`api/organizations/${orga.id}/partners`, { method: 'POST', body: editPartner })
+    sendUiNotif({ type: 'success', msg: t('pages.organization.invitePartnerSuccess', { email: editPartner.value.contactEmail }) })
+    emit('change')
   }
-}
+})
 </script>
 
 <style lang="css" scoped>

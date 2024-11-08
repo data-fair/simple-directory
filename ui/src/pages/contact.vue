@@ -52,7 +52,7 @@
   </v-container>
 </template>
 
-<script>
+<script setup lang="ts">
 import eventBus from '../event-bus'
 const newMessage = { from: '', subject: '', text: '' }
 export default {

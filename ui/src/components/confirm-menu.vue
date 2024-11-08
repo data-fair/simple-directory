@@ -3,7 +3,7 @@
     v-model="menu"
     :close-on-content-click="false"
     max-width="600"
-    offset-y
+    
     location="top"
   >
     <template #activator="{ props }">
@@ -74,7 +74,7 @@
   </v-menu>
 </template>
 
-<script>
+<script setup lang="ts">
 export default {
   props: {
     title: {

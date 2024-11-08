@@ -28,7 +28,7 @@
   </v-jumbotron>
 </template>
 
-<script>
+<script setup lang="ts">
 const { mapState } = require('vuex')
 
 export default {

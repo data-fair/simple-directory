@@ -1,6 +1,6 @@
 <template>
   <v-container
-    v-if="payload"
+    v-if="invit"
     fluid
     class="pa-0"
   >
@@ -11,22 +11,22 @@
       density="compact"
     >
       <p>
-        L'organisation {{ payload.on }} souhaite ajouter {{ payload.n }} comme partenaire avec {{ payload.e }} comme adresse de contact.
+        L'organisation {{ invit.on }} souhaite ajouter {{ invit.n }} comme partenaire avec {{ invit.e }} comme adresse de contact.
       </p>
 
       <p class="mb-0">
-        Le nom "{{ payload.n }}" est indicatif et ne correspond pas nécessairement au libellé exact de votre organisation.
+        Le nom "{{ invit.n }}" est indicatif et ne correspond pas nécessairement au libellé exact de votre organisation.
       </p>
     </v-alert>
 
-    <template v-if="user && user.email !== payload.e">
+    <template v-if="user && user.email !== invit.e">
       <p>
         Vous êtes connecté avec le compte utilisateur {{ user.name }} ({{ user.email }}). Vous pouvez vous connecter avec un autre compte ou créer un nouveau compte en cliquant sur le bouton ci-dessous.
       </p>
       <p>
         <v-btn
           v-t="'common.loginSignin'"
-          :href="loginUrl(null, true, {email: payload.e})"
+          :href="loginUrl(undefined, {email: invit.e})"
           variant="flat"
           color="primary"
         />
@@ -42,7 +42,7 @@
           v-t="'common.login'"
           variant="flat"
           color="primary"
-          :href="loginUrl(null, true, {email: payload.e})"
+          :href="loginUrl(undefined, {email: invit.e})"
         />
       </p>
       <p>
@@ -53,7 +53,7 @@
           v-t="'common.signin'"
           variant="flat"
           color="primary"
-          :href="loginUrl(null, true, {email: payload.e, step: 'createUser'})"
+          :href="loginUrl(undefined, {email: invit.e, step: 'createUser'})"
         />
       </p>
     </template>
@@ -75,7 +75,7 @@
           :label="userOrg.name"
           hide-details
           :disabled="userOrg.role !== 'admin'"
-          @update:model-value="v => toggleSelectedUserOrg(userOrg, v)"
+          @update:model-value="v => toggleSelectedUserOrg(userOrg, v as boolean)"
         />
         <v-checkbox
           v-model="createNewOrg"
@@ -101,7 +101,7 @@
           variant="outlined"
           label="nom de la nouvelle organisation"
         >
-          <template #append-outer>
+          <template #append>
             <v-btn
               variant="flat"
               color="primary"
@@ -116,82 +116,63 @@
   </v-container>
 </template>
 
-<script>
+<script setup lang="ts">
+import { type OrganizationMembership } from '@data-fair/lib-common-types/session/index.js'
+import { type Organization, type ShortenedPartnerInvitation } from '#api/types'
 import { jwtDecode } from 'jwt-decode'
-import { mapState, mapActions, mapGetters } from 'vuex'
-import eventBus from '../event-bus'
 
-export default {
-  data () {
-    return {
-      token: this.$route.query.partner_invit_token,
-      createOrganizationName: '',
-      selectedUserOrg: null,
-      createNewOrg: false
-    }
-  },
-  computed: {
-    ...mapState('session', ['user']),
-    ...mapGetters('session', ['loginUrl']),
-    ...mapGetters(['mainHost']),
-    payload () {
-      if (!this.token) return
-      return jwtDecode(this.token)
-    },
-    otherUserOrgs () {
-      if (!this.payload) return
-      return this.user.organizations.filter(o => this.payload.o !== o.id)
-    }
-  },
-  mounted () {
-    if (this.payload) {
-      this.createOrganizationName = this.payload.n
-      if (this.user && this.otherUserOrgs.length === 0) {
-        this.createNewOrg = true
-      }
-    }
-  },
-  methods: {
-    ...mapActions('session', ['login']),
-    async createOrga () {
-      if (!this.createOrganizationName) return
-      try {
-        const orga = await this.$axios.$post('api/organizations', { name: this.createOrganizationName })
-        // switch this orga to default user organization if it is their first org
-        if (!this.user.organizations.length) {
-          await this.$axios.$patch('api/users/' + this.user.id, { defaultOrg: orga.id, ignorePersonalAccount: true })
-        }
-        this.acceptPartnerInvitation(orga)
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    async acceptPartnerInvitation (org) {
-      try {
-        await this.$axios.$post(`/api/organizations/${this.payload.o}/partners/_accept`, { id: org.id, contactEmail: this.payload.e, token: this.token })
-        await this.goToRedirect(org.id)
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    toggleSelectedUserOrg (userOrg, toggle) {
-      if (toggle) this.selectedUserOrg = userOrg
-      else this.selectedUserOrg = null
-      this.createNewOrg = false
-    },
-    async goToRedirect (org) {
-      let redirect = this.$route.query.redirect
-      if (this.mainHost !== new URL(redirect).host) {
-        redirect = await this.$axios.$post('/api/auth/site_redirect', { redirect, org })
-      }
-      window.location.href = redirect
-    }
-  }
+const reactiveSearchParams = useReactiveSearchParams()
+const { user, loginUrl } = useSessionAuthenticated()
+const { mainPublicUrl } = useStore()
+
+const createOrganizationName = ref('')
+const selectedUserOrg = ref<OrganizationMembership | null>(null)
+const createNewOrg = ref(false)
+
+const token = reactiveSearchParams.partner_invit_token
+const invit = token ? jwtDecode(token) as ShortenedPartnerInvitation : undefined
+const otherUserOrgs = computed(() => {
+  if (!invit) return []
+  return user.value.organizations.filter(o => invit.o !== o.id)
+})
+if (invit) {
+  createOrganizationName.value = invit.n
+  if (otherUserOrgs.value.length === 0) createNewOrg.value = true
 }
+
+const createOrga = withUiNotif(async () => {
+  if (!createOrganizationName.value) return
+  const orga = await $fetch<Organization>('api/organizations', { method: 'POST', body: { name: createOrganizationName.value } })
+  if (!user.value.organizations.length) {
+    await $fetch('api/users/' + user.value.id, { body: { defaultOrg: orga.id, ignorePersonalAccount: true } })
+  }
+  acceptPartnerInvitation(orga)
+})
+
+const acceptPartnerInvitation = withUiNotif(async (org: Organization) => {
+  if (!invit) return
+  await $fetch(`/api/organizations/${invit.o}/partners/_accept`, { method: 'POST', body: { id: org.id, contactEmail: invit.e, token } })
+  goToRedirect(org.id)
+})
+
+const toggleSelectedUserOrg = (userOrg: OrganizationMembership, toggle: boolean) => {
+  if (toggle) selectedUserOrg.value = userOrg
+  else selectedUserOrg.value = null
+  createNewOrg.value = false
+}
+
+const goToRedirect = withUiNotif(async (org: string) => {
+  let redirect = reactiveSearchParams.redirect
+  if (mainPublicUrl.host !== new URL(redirect).host) {
+    redirect = await $fetch('/api/auth/site_redirect', { method: 'POST', body: { redirect, org } })
+  }
+  window.location.href = redirect
+})
+
 </script>
 
 <style lang="css">
-.create-org-name .v-input__append-outer{
+.create-org-name .v-input__append{
   margin-top: 2px !important;
 }
 </style>

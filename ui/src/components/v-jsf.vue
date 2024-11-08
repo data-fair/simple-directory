@@ -8,7 +8,7 @@
   />
 </template>
 
-<script>
+<script setup lang="ts">
 import VJsfOriginal from '@koumoul/vjsf/lib/VJsf.js'
 import '@koumoul/vjsf/lib/deps/third-party.js'
 import '@koumoul/vjsf/dist/main.css'

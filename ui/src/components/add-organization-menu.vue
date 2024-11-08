@@ -65,35 +65,32 @@
   </v-menu>
 </template>
 
-<script>
+<script setup lang="ts">
+import type { VForm } from 'vuetify/components'
 
-import { mapActions } from 'vuex'
+const { switchOrganization } = useSession()
 
-export default {
-  props: [],
-  data: () => ({ menu: false, editOrganization: null }),
-  watch: {
-    menu () {
-      if (!this.menu) return
-      this.editOrganization = { name: '', description: '' }
-      if (this.$refs.createForm) this.$refs.createForm.reset()
-    }
-  },
-  methods: {
-    ...mapActions(['fetchUserDetails']),
-    ...mapActions('session', ['switchOrganization', 'keepalive']),
-    async confirmCreate () {
-      if (this.$refs.createForm.validate()) {
-        this.menu = false
-        const res = await this.$axios.$post('api/organizations', this.editOrganization, { params: { autoAdmin: true } })
-        await this.keepalive()
-        this.switchOrganization(res.id)
-        // reloading top page, so that limits are re-fetched, etc.
-        window.top.location.reload()
-      }
-    }
+const menu = ref(false)
+const newOrganization = { name: '', description: '' }
+
+const createForm = ref<InstanceType<typeof VForm>>()
+const editOrganization = ref({ ...newOrganization })
+
+watch(menu, () => {
+  if (!menu.value) return
+  editOrganization.value = { ...newOrganization }
+  createForm.value?.reset()
+})
+
+const confirmCreate = withUiNotif(async () => {
+  if (await createForm.value?.validate()) {
+    menu.value = false
+    const res = await $fetch('api/organizations', { method: 'POST', body: editOrganization.value, params: { autoAdmin: true } })
+    switchOrganization(res.id)
+    // reloading top page, so that limits are re-fetched, etc.
+    window.top?.location.reload()
   }
-}
+})
 </script>
 
 <style lang="css" scoped>

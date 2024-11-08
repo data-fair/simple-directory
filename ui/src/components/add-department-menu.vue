@@ -2,19 +2,16 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    offset-y
   >
     <template #activator="{props}">
-      <v-btn
+      <v-fab
         :title="$t('pages.organization.addDepartment', {departmentLabel: departmentLabel.toLowerCase()})"
-        fab
         size="small"
         color="primary"
         class="mx-2"
+        :icon="mdiPlus"
         v-bind="props"
-      >
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
+      />
     </template>
 
     <v-card
@@ -62,32 +59,39 @@
   </v-menu>
 </template>
 
-<script>
+<script setup lang="ts">
+import type { VForm } from 'vuetify/components'
+import { Organization } from '#api/types'
 
-import { mapActions } from 'vuex'
+const i18n = useI18n()
+const { patchOrganization } = useStore()
 
-export default {
-  props: ['orga', 'departmentLabel'],
-  data: () => ({ menu: false, editDepartment: null }),
-  watch: {
-    menu () {
-      if (!this.menu) return
-      this.editDepartment = { id: '', name: '' }
-      if (this.$refs.createForm) this.$refs.createForm.reset()
-    }
-  },
-  methods: {
-    ...mapActions(['patchOrganization']),
-    async confirmCreate () {
-      if (this.$refs.createForm.validate()) {
-        this.menu = false
-        const departments = this.orga.departments.concat([this.editDepartment])
-        await this.patchOrganization({ id: this.orga.id, patch: { departments }, msg: this.$t('common.modificationOk') })
-        this.$emit('change')
-      }
-    }
+const { orga, departmentLabel } = defineProps({
+  orga: { type: Object as () => Organization, required: true },
+  departmentLabel: { type: String, required: true }
+})
+const emit = defineEmits(['change'])
+
+const menu = ref(false)
+const createForm = ref<InstanceType<typeof VForm>>()
+const emptyDepartment = { id: '', name: '' }
+const editDepartment = ref({ ...emptyDepartment })
+
+watch(menu, () => {
+  if (!menu.value) return
+  editDepartmentMenu.value = { ...emptyDepartment }
+  createForm.value?.reset()
+})
+
+const confirmCreate = async () => {
+  if (await createForm.value?.validate()) {
+    menu.value = false
+    const departments = (orga.departments ?? []).concat([editDepartment.value])
+    await patchOrganization(orga.id, { departments }, i18n.t('common.modificationOk'))
+    emit('change')
   }
 }
+
 </script>
 
 <style lang="css" scoped>

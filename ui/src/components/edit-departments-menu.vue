@@ -3,19 +3,16 @@
     v-if="isAdminOrga"
     v-model="menu"
     :close-on-content-click="false"
-    offset-y
   >
     <template #activator="{props}">
-      <v-btn
+      <v-fab
         :title="$t('pages.organization.addDepartment', {departmentLabel: departmentLabel.toLowerCase()})"
-        fab
         size="small"
         color="primary"
         class="mx-2"
+        :icon="mdiPencil"
         v-bind="props"
-      >
-        <v-icon>mdi-pencil</v-icon>
-      </v-btn>
+      />
     </template>
 
     <v-card
@@ -70,7 +67,7 @@
   </v-menu>
 </template>
 
-<script>
+<script setup lang="ts">
 
 import { mapActions } from 'vuex'
 

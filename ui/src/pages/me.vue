@@ -68,7 +68,7 @@
             :close-on-content-click="false"
             :nudge-right="40"
             transition="scale-transition"
-            offset-y
+            
             max-width="290px"
             min-width="290px"
           >
@@ -246,7 +246,7 @@
   </v-container>
 </template>
 
-<script>
+<script setup lang="ts">
 import { mapState, mapActions, mapGetters } from 'vuex'
 import eventBus from '../event-bus'
 import LoadAvatar from '../components/load-avatar.vue'

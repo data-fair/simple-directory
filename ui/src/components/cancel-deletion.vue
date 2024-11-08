@@ -1,11 +1,11 @@
 <template>
-  <div v-if="userDetails">
+  <div v-if="userDetailsFetch.data.value?.plannedDeletion">
     <v-alert
       :value="true"
       type="warning"
       variant="outlined"
     >
-      {{ $t('errors.plannedDeletion', {name: userDetails.name, plannedDeletion: $d(new Date(userDetails.plannedDeletion))}) }}
+      {{ $t('errors.plannedDeletion', {name: userDetailsFetch.data.value.name, plannedDeletion: $d(new Date(userDetailsFetch.data.value.plannedDeletion))}) }}
     </v-alert>
 
     <v-btn
@@ -18,19 +18,18 @@
   </div>
 </template>
 
-<script>
-import { mapState } from 'vuex'
-export default {
-  computed: {
-    ...mapState(['userDetails'])
-  },
-  methods: {
-    async cancelDeletion () {
-      await this.$axios.$delete('api/users/' + this.userDetails.id + '/plannedDeletion')
-      this.$emit('cancelled')
-    }
-  }
-}
+<script setup lang="ts">
+const emit = defineEmits(['cancelled'])
+
+const { userDetailsFetch } = useStore()
+
+if (!userDetailsFetch.initialized.value) userDetailsFetch.refresh()
+const cancelDeletion = withUiNotif(async () => {
+  if (!userDetailsFetch.data.value) return
+  await $fetch('api/users/' + userDetailsFetch.data.value.id + '/plannedDeletion')
+  emit('cancelled')
+})
+
 </script>
 
 <style>

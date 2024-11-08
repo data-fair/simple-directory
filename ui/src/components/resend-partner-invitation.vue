@@ -2,7 +2,7 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    offset-y
+    
   >
     <template #activator="{props}">
       <v-btn
@@ -76,7 +76,7 @@
   </v-menu>
 </template>
 
-<script>
+<script setup lang="ts">
 import { mapGetters, mapState } from 'vuex'
 import eventBus from '../event-bus'
 

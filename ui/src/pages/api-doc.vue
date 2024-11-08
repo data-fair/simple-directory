@@ -6,7 +6,7 @@
   />
 </template>
 
-<script>
+<script setup lang="ts">
 export default {
   props: ['url'],
   computed: {

@@ -50,3 +50,11 @@ export type ActionPayload = {
   email: string,
   action: 'changePassword' | 'changeHost'
 }
+
+export type ShortenedPartnerInvitation = {
+  o: string,
+  on: string,
+  p: string,
+  n: string,
+  e: string
+}

@@ -2,7 +2,7 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    offset-y
+    
   >
     <template #activator="{props}">
       <v-btn
@@ -50,7 +50,7 @@
   </v-menu>
 </template>
 
-<script>
+<script setup lang="ts">
 export default {
   props: ['orga', 'partner'],
   data: () => ({ menu: false, members: null }),

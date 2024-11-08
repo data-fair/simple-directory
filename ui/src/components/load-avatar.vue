@@ -24,7 +24,6 @@
       <v-file-input
         v-if="!disabled"
         v-model="file"
-        type="file"
         class="pt-2"
         accept="image/png, image/jpeg"
         :placeholder="$t('pages.avatar.load')"
@@ -33,20 +32,16 @@
         prepend-icon=""
         @change="change"
       >
-        <template #append-outer>
-          <v-btn
+        <template #append>
+          <v-fab
             v-if="file && !hideValidate"
-            fab
             size="x-small"
             color="primary"
             :title="$t('common.validate')"
             style="position: relative; top: -4px;"
+            :icon="mdiCheck"
             @click="validate"
-          >
-            <v-icon>
-              mdi-check
-            </v-icon>
-          </v-btn>
+          />
         </template>
       </v-file-input>
     </v-row>
@@ -59,7 +54,7 @@
   </v-input>
 </template>
 
-<script>
+<script setup lang="ts">
 import { mapState } from 'vuex'
 import VueCropper from 'vue-cropperjs'
 import 'cropperjs/dist/cropper.css'

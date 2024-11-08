@@ -63,7 +63,8 @@
 
 <script lang="ts" setup>
 import { PublicAuthProvider } from '#api/types'
-import { authProvidersFetch, sitePublic, mainPublicUrl } from '~/store/index.js'
+
+const { authProvidersFetch, sitePublic, mainPublicUrl } = useStore()
 
 const { redirect, email, invitToken, adminMode } = defineProps({
   redirect: { type: String, required: true },

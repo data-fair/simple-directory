@@ -53,6 +53,9 @@
     "publicUrl": {
       "type": "string"
     },
+    "homePage": {
+      "type": "string"
+    },
     "mongo": {
       "type": "object",
       "required": [

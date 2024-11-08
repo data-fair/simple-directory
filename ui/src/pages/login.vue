@@ -734,7 +734,6 @@
 <script lang="ts" setup>
 import { ActionPayload, ShortenedInvitation } from '#api/types'
 import { jwtDecode } from 'jwt-decode'
-import { authProvidersFetch, sitePublic } from '~/store/index.js'
 import type { VForm } from 'vuetify/components'
 import type { PostUserReq } from '#api/doc/users/post-req/index.ts'
 import type { PatchUserReq } from '#api/doc/users/patch-req/index.ts'
@@ -747,6 +746,7 @@ const reactiveSearchParams = useReactiveSearchParams()
 const { t } = useI18n()
 const { user, switchOrganization } = useSession()
 const { sendUiNotif } = useUiNotif()
+const { authProvidersFetch, sitePublic } = useStore()
 
 const error = useStringSearchParam('error')
 const plannedDeletion = reactiveSearchParams.planned_deletion
@@ -786,7 +786,7 @@ const invitToken = reactiveSearchParams.invit_token
 const invitPayload = invitToken ? jwtDecode(invitToken) as ShortenedInvitation : null
 
 const actionToken = useStringSearchParam('action_token')
-const actionPayload = actionToken ? jwtDecode(actionToken.value) as ActionPayload : null
+const actionPayload = actionToken.value ? jwtDecode(actionToken.value) as ActionPayload : null
 
 const logoUrl = computed(() => {
   if (reactiveSearchParams.logo) return reactiveSearchParams.logo

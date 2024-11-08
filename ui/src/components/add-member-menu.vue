@@ -3,19 +3,16 @@
     v-if="isAdminOrga && members && members.results"
     v-model="menu"
     :close-on-content-click="false"
-    offset-y
   >
     <template #activator="{props}">
-      <v-btn
+      <v-fab
         :title="$t('pages.organization.addMember')"
-        fab
         size="small"
         color="primary"
         class="mx-2"
+        :icon="mdiPlus"
         v-bind="props"
-      >
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
+      />
     </template>
     <v-card
       v-if="orga && menu"
@@ -120,73 +117,75 @@
   </v-menu>
 </template>
 
-<script>
-import { mapState, mapGetters } from 'vuex'
-import eventBus from '../event-bus'
+<script setup lang="ts">
+import type { VForm } from 'vuetify/components'
+import type { Organization, Member, Invitation } from '#api/types'
 
-export default {
-  props: ['orga', 'isAdminOrga', 'members', 'disableInvite', 'department'],
-  data: () => ({
-    menu: false,
-    invitation: null,
-    validInvitation: true,
-    link: null
-  }),
-  computed: {
-    ...mapState(['env']),
-    ...mapGetters(['redirects', 'host', 'mainHost']),
-    defaultRedirect () {
-      if (this.host === this.mainHost) {
-        return this.redirects && this.redirects[0]
-      } else {
-        return (this.redirects && this.redirects.find(r => r.value && new URL(r.value).host === this.host))
-      }
+const { host, mainPublicUrl, redirects, sitesFetch } = useStore()
+const { sendUiNotif } = useUiNotif()
+const i18n = useI18n()
+
+const { orga, department } = defineProps({
+  orga: { type: Object as () => Organization, required: true },
+  isAdminOrga: { type: Boolean, default: false },
+  members: { type: Array as () => (null | ({ results: Member[] })), default: null },
+  disableInvite: { type: Boolean, default: false },
+  department: { type: String, default: null }
+})
+const emit = defineEmits({
+  sent: (_invit: Invitation) => true
+})
+
+const defaultRedirect = computed(() => {
+  if (host === mainPublicUrl.host) {
+    return redirects.value?.[0]
+  } else {
+    return redirects.value?.find(r => r.value && new URL(r.value).host === host)
+  }
+})
+
+const inviteForm = ref<InstanceType<typeof VForm>>()
+const newInvitation = {
+  id: orga.id,
+  name: orga.name,
+  email: '',
+  role: null,
+  department,
+  redirect: defaultRedirect.value
+}
+const invitation = ref({ ...newInvitation })
+const validInvitation = ref(false)
+const link = ref('')
+
+const menu = ref(false)
+watch(menu, async () => {
+  if (!menu) return
+  invitation.value = { ...newInvitation }
+  link.value = ''
+  if ($uiConfig.manageSites) await sitesFetch.refresh()
+  inviteForm.value?.reset()
+})
+
+const confirmInvitation = withUiNotif(async () => {
+  if (link.value) {
+    menu.value = false
+    return
+  }
+  if (inviteForm.value?.validate()) {
+    const validInvitation = invitation.value as unknown as Invitation
+    const res = await $fetch('api/invitations/', { body: validInvitation, method: 'POST' })
+    if (res && res.link) {
+      link.value = res.link
+    } else {
+      menu.value = false
     }
-  },
-  watch: {
-    async menu () {
-      if (!this.menu) {
-        this.invitation = null
-        return
-      }
-      if (this.$uiConfig.manageSites) await this.$store.dispatch('fetchSites')
-      this.invitation = {
-        id: this.orga.id,
-        name: this.orga.name,
-        email: '',
-        role: null,
-        department: this.department,
-        redirect: this.defaultRedirect && this.defaultRedirect.value
-      }
-      this.link = null
-      if (this.$refs.inviteForm) this.$refs.inviteForm.reset()
-    }
-  },
-  methods: {
-    async confirmInvitation () {
-      if (this.link) {
-        this.menu = false
-        return
-      }
-      if (this.$refs.inviteForm.validate()) {
-        try {
-          const res = await this.$axios.$post('api/invitations/', this.invitation)
-          if (res && res.link) {
-            this.link = res.link
-          } else {
-            this.menu = false
-          }
-          this.$emit('sent', this.invitation)
-          if (!this.$uiConfig.alwaysAcceptInvitation) {
-            eventBus.$emit('notification', this.$t('pages.organization.inviteSuccess', { email: this.invitation.email }))
-          }
-        } catch (error) {
-          eventBus.$emit('notification', { error })
-        }
-      }
+    emit('sent', validInvitation)
+    if (!$uiConfig.alwaysAcceptInvitation) {
+      sendUiNotif({ type: 'success', msg: i18n.t('pages.organization.inviteSuccess', { email: validInvitation.email }) })
     }
   }
-}
+})
+
 </script>
 
 <style lang="css" scoped>

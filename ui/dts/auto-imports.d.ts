@@ -13,10 +13,12 @@ declare global {
   const $siteUrl: typeof import('~/context')['$siteUrl']
   const $uiConfig: typeof import('~/context')['$uiConfig']
   const EffectScope: typeof import('vue')['EffectScope']
+  const Organization: typeof import('#api/types')['Organization']
   const addDepartmentMenu: typeof import('../src/components/add-department-menu.vue')['default']
   const addMemberMenu: typeof import('../src/components/add-member-menu.vue')['default']
   const addOrganizationMenu: typeof import('../src/components/add-organization-menu.vue')['default']
   const addPartnerMenu: typeof import('../src/components/add-partner-menu.vue')['default']
+  const authProvidersFetch: typeof import('../src/composables/use-store')['authProvidersFetch']
   const authProvidersLoginLinks: typeof import('../src/components/auth-providers-login-links.vue')['default']
   const cancelDeletion: typeof import('../src/components/cancel-deletion.vue')['default']
   const changeHost: typeof import('../src/components/change-host.vue')['default']
@@ -41,6 +43,7 @@ declare global {
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
   const h: typeof import('vue')['h']
+  const host: typeof import('../src/composables/use-store')['host']
   const inject: typeof import('vue')['inject']
   const injectHead: typeof import('@unhead/vue')['injectHead']
   const isProxy: typeof import('vue')['isProxy']
@@ -48,12 +51,15 @@ declare global {
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
   const loadAvatar: typeof import('../src/components/load-avatar.vue')['default']
+  const mainPublicUrl: typeof import('../src/composables/use-store')['mainPublicUrl']
+  const mainRedirect: typeof import('../src/composables/use-store')['mainRedirect']
   const markRaw: typeof import('vue')['markRaw']
   const mdiAlertCircle: typeof import('@mdi/js')['mdiAlertCircle']
   const mdiBell: typeof import('@mdi/js')['mdiBell']
   const mdiCalendarRange: typeof import('@mdi/js')['mdiCalendarRange']
   const mdiCancel: typeof import('@mdi/js')['mdiCancel']
   const mdiCellphone: typeof import('@mdi/js')['mdiCellphone']
+  const mdiCheck: typeof import('@mdi/js')['mdiCheck']
   const mdiCheckCircle: typeof import('@mdi/js')['mdiCheckCircle']
   const mdiDatabase: typeof import('@mdi/js')['mdiDatabase']
   const mdiDelete: typeof import('@mdi/js')['mdiDelete']
@@ -61,6 +67,7 @@ declare global {
   const mdiDotsVertical: typeof import('@mdi/js')['mdiDotsVertical']
   const mdiEmail: typeof import('@mdi/js')['mdiEmail']
   const mdiImageSizeSelectSmall: typeof import('@mdi/js')['mdiImageSizeSelectSmall']
+  const mdiPlus: typeof import('@mdi/js')['mdiPlus']
   const mdiRefresh: typeof import('@mdi/js')['mdiRefresh']
   const mdiRss: typeof import('@mdi/js')['mdiRss']
   const mdiSend: typeof import('@mdi/js')['mdiSend']
@@ -89,9 +96,14 @@ declare global {
   const organizationStorage: typeof import('../src/components/organization-storage.vue')['default']
   const parseSender: typeof import('../src/utils/sender-utils')['parseSender']
   const partnerInvitation: typeof import('../src/components/partner-invitation.vue')['default']
+  const patchOrganization: typeof import('../src/composables/use-store')['patchOrganization']
+  const patchSite: typeof import('../src/composables/use-store')['patchSite']
+  const postSite: typeof import('../src/composables/use-store')['postSite']
   const provide: typeof import('vue')['provide']
   const reactive: typeof import('vue')['reactive']
   const readonly: typeof import('vue')['readonly']
+  const redirect: typeof import('../src/composables/use-store')['redirect']
+  const redirects: typeof import('../src/composables/use-store')['redirects']
   const ref: typeof import('vue')['ref']
   const resendInvitation: typeof import('../src/components/resend-invitation.vue')['default']
   const resendPartnerInvitation: typeof import('../src/components/resend-partner-invitation.vue')['default']
@@ -103,6 +115,8 @@ declare global {
   const shallowRef: typeof import('vue')['shallowRef']
   const sitePatch: typeof import('../src/components/site-patch.vue')['default']
   const sitePost: typeof import('../src/components/site-post.vue')['default']
+  const sitePublic: typeof import('../src/composables/use-store')['sitePublic']
+  const sitesFetch: typeof import('../src/composables/use-store')['sitesFetch']
   const subscribeWebhook: typeof import('../src/components/subscribe-webhook.vue')['default']
   const toRaw: typeof import('vue')['toRaw']
   const toRef: typeof import('vue')['toRef']
@@ -135,12 +149,14 @@ declare global {
   const useSession: typeof import('@data-fair/lib-vue/session.js')['useSession']
   const useSessionAuthenticated: typeof import('@data-fair/lib-vue/session.js')['useSessionAuthenticated']
   const useSlots: typeof import('vue')['useSlots']
+  const useStore: typeof import('../src/composables/use-store')['default']
   const useStringSearchParam: typeof import('@data-fair/lib-vue/reactive-search-params.js')['useStringSearchParam']
   const useStringsArraySearchParam: typeof import('@data-fair/lib-vue/reactive-search-params.js')['useStringsArraySearchParam']
   const useSubscriptions: typeof import('../src/composables/use-subscriptions')['default']
   const useTemplateRef: typeof import('vue')['useTemplateRef']
   const useUiNotif: typeof import('@data-fair/lib-vue/ui-notif.js')['useUiNotif']
   const useWS: typeof import('@data-fair/lib-vue/ws.js')['useWS']
+  const userDetailsFetch: typeof import('../src/composables/use-store')['userDetailsFetch']
   const vJsf: typeof import('../src/components/v-jsf.vue')['default']
   const watch: typeof import('vue')['watch']
   const watchEffect: typeof import('vue')['watchEffect']
@@ -153,6 +169,9 @@ declare global {
   // @ts-ignore
   export type { Component, ComponentPublicInstance, ComputedRef, DirectiveBinding, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, MaybeRef, MaybeRefOrGetter, VNode, WritableComputedRef } from 'vue'
   import('vue')
+  // @ts-ignore
+  export type { Organization } from '#api/types'
+  import('#api/types')
 }
 // for vue template auto import
 import { UnwrapRef } from 'vue'
@@ -190,11 +209,13 @@ declare module 'vue' {
     readonly mdiBell: UnwrapRef<typeof import('@mdi/js')['mdiBell']>
     readonly mdiCancel: UnwrapRef<typeof import('@mdi/js')['mdiCancel']>
     readonly mdiCellphone: UnwrapRef<typeof import('@mdi/js')['mdiCellphone']>
+    readonly mdiCheck: UnwrapRef<typeof import('@mdi/js')['mdiCheck']>
     readonly mdiCheckCircle: UnwrapRef<typeof import('@mdi/js')['mdiCheckCircle']>
     readonly mdiDelete: UnwrapRef<typeof import('@mdi/js')['mdiDelete']>
     readonly mdiDevices: UnwrapRef<typeof import('@mdi/js')['mdiDevices']>
     readonly mdiDotsVertical: UnwrapRef<typeof import('@mdi/js')['mdiDotsVertical']>
     readonly mdiEmail: UnwrapRef<typeof import('@mdi/js')['mdiEmail']>
+    readonly mdiPlus: UnwrapRef<typeof import('@mdi/js')['mdiPlus']>
     readonly mdiRefresh: UnwrapRef<typeof import('@mdi/js')['mdiRefresh']>
     readonly mdiRss: UnwrapRef<typeof import('@mdi/js')['mdiRss']>
     readonly mdiSend: UnwrapRef<typeof import('@mdi/js')['mdiSend']>
@@ -254,6 +275,7 @@ declare module 'vue' {
     readonly useSession: UnwrapRef<typeof import('@data-fair/lib-vue/session.js')['useSession']>
     readonly useSessionAuthenticated: UnwrapRef<typeof import('@data-fair/lib-vue/session.js')['useSessionAuthenticated']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
+    readonly useStore: UnwrapRef<typeof import('../src/composables/use-store')['default']>
     readonly useStringSearchParam: UnwrapRef<typeof import('@data-fair/lib-vue/reactive-search-params.js')['useStringSearchParam']>
     readonly useStringsArraySearchParam: UnwrapRef<typeof import('@data-fair/lib-vue/reactive-search-params.js')['useStringsArraySearchParam']>
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>

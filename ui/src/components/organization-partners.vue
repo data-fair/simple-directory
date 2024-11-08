@@ -109,7 +109,7 @@
   </v-container>
 </template>
 
-<script>
+<script setup lang="ts">
 import { mapState } from 'vuex'
 import AddPartnerMenu from '~/components/add-partner-menu.vue'
 import DeletePartnerMenu from '~/components/delete-partner-menu.vue'

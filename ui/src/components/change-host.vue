@@ -4,23 +4,23 @@
       color="warning"
       variant="outlined"
     >
-      Le compte {{ user.email }} n'existe pas sur {{ host }} mais il existe sur {{ mainHost }}.
+      Le compte {{ user.email }} n'existe pas sur {{ host }} mais il existe sur {{ mainPublicUrl.host }}.
     </v-alert>
-    <template v-if="sitePublic.authMode === 'ssoBackOffice'">
+    <template v-if="sitePublic?.authMode === 'ssoBackOffice'">
       <h3 class="subheader mb-2">
-        Solution : utiliser {{ mainHost }} pour se connecter
+        Solution : utiliser {{ mainPublicUrl.host }} pour se connecter
       </h3>
-      <p>La page de login propose un bouton pour se connecter depuis {{ mainHost }} que vous pouvez utiliser. Vous pouvez aussi utiliser <a :href="mainHostLogin">ce lien.</a>.</p>
+      <p>La page de login propose un bouton pour se connecter depuis {{ mainPublicUrl.host }} que vous pouvez utiliser. Vous pouvez aussi utiliser <a :href="mainHostLogin">ce lien.</a>.</p>
     </template>
     <h3 class="subheader mb-2">
       Solution : déplacer le compte vers {{ host }}
     </h3>
-    <p>Si vous choisissez cette solution vous perdrez la possibilité de vous connecter à {{ mainHost }}.</p>
+    <p>Si vous choisissez cette solution vous perdrez la possibilité de vous connecter à {{ mainPublicUrl.host }}.</p>
     <p>
       <v-checkbox
         v-model="confirmMigration"
         color="warning"
-        :label="`déplacer le compte vers ${ host } et perdre l'accès à ${ mainHost }`"
+        :label="`déplacer le compte vers ${ host } et perdre l'accès à ${ mainPublicUrl.host }`"
       />
     </p>
     <v-card-actions>
@@ -37,43 +37,44 @@
   </div>
 </template>
 
-<script>
-import { mapGetters, mapState } from 'vuex'
-
-export default {
-  props: ['user', 'actionToken'],
-  data () {
-    return {
-      confirmMigration: false
-    }
+<script setup lang="ts">
+const { user, actionToken } = defineProps({
+  user: {
+    type: Object as () => ({ id: string, email: string }),
+    required: true
   },
-  computed: {
-    ...mapState(['sitePublic']),
-    ...mapGetters(['host', 'mainHost']),
-    mainHostLogin () {
-      const url = new URL(`${this.mainHost.startsWith('localhost:') ? 'http' : 'https'}://${this.mainHost}/simple-directory/login`)
-      url.searchParams.append('redirect', `${this.host.startsWith('localhost:') ? 'http' : 'https'}://${this.host}`)
-      return url.href
-    }
-  },
-  methods: {
-    async confirmChangeHost () {
-      const changePasswordToken = await this.$axios.$post(
-        'api/users/' + this.user.id + '/host',
-        { host: this.host },
-        { params: { action_token: this.actionToken } }
-      )
-      console.log('changePasswordToken', changePasswordToken)
-      if (changePasswordToken) {
-        this.$emit('goTo', 'changePassword')
-        this.$router.replace({ query: { ...this.$route.query, action_token: changePasswordToken } })
-      } else {
-        this.$emit('goTo', 'login')
-        this.$router.replace({ query: { ...this.$route.query, action_token: undefined } })
-      }
-    }
+  actionToken: {
+    type: String,
+    required: true
   }
-}
+})
+const emit = defineEmits<{ goTo: [url: string] }>()
+const reactiveSearchParams = useReactiveSearchParams()
+
+const { sitePublic, host, mainPublicUrl } = useStore()
+
+const confirmMigration = ref(false)
+
+const mainHostLogin = computed(() => {
+  const url = new URL(`${mainPublicUrl.host.startsWith('localhost:') ? 'http' : 'https'}://${mainPublicUrl.host}/simple-directory/login`)
+  url.searchParams.append('redirect', `${host.startsWith('localhost:') ? 'http' : 'https'}://${host}`)
+  return url.href
+})
+
+const confirmChangeHost = withUiNotif(async () => {
+  const changeHostToken = await $fetch(
+    'api/users/' + user.id + '/host',
+    { method: 'POST', body: { host }, params: { action_token: actionToken } }
+  )
+  console.log('changePasswordToken', changeHostToken)
+  if (changeHostToken) {
+    emit('goTo', 'changePassword')
+    reactiveSearchParams.action_token = changeHostToken
+  } else {
+    emit('goTo', 'login')
+    delete reactiveSearchParams.action_token
+  }
+})
 </script>
 
 <style>

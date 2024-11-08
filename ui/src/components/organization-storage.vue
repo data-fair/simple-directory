@@ -40,7 +40,7 @@
   </v-alert>
 </template>
 
-<script>
+<script setup lang="ts">
 import { mapState } from 'vuex'
 export default {
   props: ['orga'],

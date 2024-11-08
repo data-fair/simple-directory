@@ -169,7 +169,7 @@
   </v-app>
 </template>
 
-<script>
+<script setup lang="ts">
 import eventBus from '../event-bus'
 import logo from '../components/logo.vue'
 import PersonalMenu from '@data-fair/sd-vue/src/vuetify/personal-menu.vue'

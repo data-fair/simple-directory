@@ -3,7 +3,7 @@
     v-model="menu"
     fullscreen
     :close-on-content-click="false"
-    offset-y
+    
   >
     <template #activator="{props}">
       <v-btn
@@ -56,7 +56,7 @@
   </v-dialog>
 </template>
 
-<script>
+<script setup lang="ts">
 import resolvedSchema from '../../types/site-patch/.type/resolved-schema.json'
 import { mapActions, mapState } from 'vuex'
 
