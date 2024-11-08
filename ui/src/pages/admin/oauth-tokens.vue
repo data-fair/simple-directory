@@ -42,7 +42,6 @@ export default {
   computed: {
     ...mapState(['env']),
     ...mapState('session', ['user']),
-    ...mapGetters(['contrastColor'])
   },
   async created () {
     if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: this.$t('errors.permissionDenied') })

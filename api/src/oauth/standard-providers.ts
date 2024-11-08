@@ -71,7 +71,7 @@ export const standardProviders: OAuthProvider[] = [{
   id: 'google',
   title: 'Google',
   icon: 'mdi-google',
-  color: '#0F9D58',
+  color: '#0F71F2',
   scope: 'profile email',
   auth: {
     tokenHost: 'https://www.googleapis.com',

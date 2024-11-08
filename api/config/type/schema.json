@@ -677,7 +677,7 @@
     },
     "colors": {
       "type": "object",
-      "required": ["background", "surface", "primary", "secondary", "accent", "error", "info", "success", "warning", "admin"],
+      "required": ["background", "surface", "primary","secondary", "accent", "error", "info", "success", "warning", "admin"],
       "properties": {
         "background": {
           "type": "string"

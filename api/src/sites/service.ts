@@ -51,3 +51,9 @@ export async function patchSite (patch: Partial<Site> & Pick<Site, '_id'>, creat
 export async function deleteSite (siteId: string) {
   await mongo.sites.deleteOne({ _id: siteId })
 }
+
+export function getSiteColors (site: Site) {
+  const colors = { ...config.theme.colors }
+  if (site.theme?.primaryColor) colors.primary = site.theme?.primaryColor
+  return colors
+}

@@ -14,6 +14,8 @@ import storages from '#storages'
 import { createHttpTerminator } from 'http-terminator'
 import app from './app.ts'
 import config from '#config'
+import { publicProviders } from './auth/providers.ts'
+import { getColorsWarnings } from './utils/color.ts'
 
 const server = createServer(app)
 const httpTerminator = createHttpTerminator({ server })
@@ -40,7 +42,11 @@ export const start = async () => {
   ])
   // await upgradeScripts(mongo.db, resolve(import.meta.dirname, '../..'))
 
-  // TODO: run users planned deletion worker
+  const colorWarnings = getColorsWarnings(config.theme.colors, await publicProviders())
+  if (colorWarnings.length) {
+    console.error('Configuration contains color warnings')
+    for (const cw of colorWarnings) console.error('  - ' + cw)
+  }
 
   server.listen(config.port)
   await new Promise(resolve => server.once('listening', resolve))

@@ -140,7 +140,7 @@ module.exports = {
     // this provider tries to use a cookie with samesite=none option and this is not permitted without https
     providers: [{
       title: 'Test OIDC IDP',
-      color: '#288E35',
+      color: '#D92929',
       img: 'https://cdn-icons-png.flaticon.com/512/25/25231.png',
       discovery: 'http://localhost:9009/.well-known/openid-configuration',
       client: {
@@ -174,7 +174,7 @@ module.exports = {
 
       */
       title: 'Test OIDC Keycloak',
-      color: '#62c4df',
+      color: '#D92929',
       img: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Keycloak_Logo.png',
       discovery: 'http://localhost:8888/realms/master/.well-known/openid-configuration',
       client: {

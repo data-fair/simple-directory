@@ -3,9 +3,10 @@ import { Router, type Request } from 'express'
 import config from '#config'
 import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
-import { findAllSites, findOwnerSites, patchSite, deleteSite } from './service.ts'
+import { findAllSites, findOwnerSites, patchSite, deleteSite, getSiteColors } from './service.ts'
 import { reqSite } from '#services'
 import { getOidcProviderId } from '../oauth/oidc.ts'
+import { getColorsWarnings } from '../utils/color.ts'
 
 const router = Router()
 export default router
@@ -71,14 +72,18 @@ router.get('/_public', async (req, res, next) => {
     }
     res.send(sitePublic)
   } else {
-    const colors = { ...config.theme.colors }
-    if (site.theme?.primaryColor) colors.primary = site.theme?.primaryColor
     const sitePublic: SitePublic = {
       host: site.host,
       logo: site.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`,
-      colors,
+      colors: getSiteColors(site),
       authMode: site.authMode ?? 'onlyBackOffice'
     }
     res.send(sitePublic)
   }
+})
+
+router.get('/:id/_theme_warnings', async (req, res, next) => {
+  const site = await reqSite(req)
+  const colors = site ? getSiteColors(site) : config.theme.colors
+  res.send(getColorsWarnings(colors, site?.authProviders as { title?: string, color?: string }[]))
 })

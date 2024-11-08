@@ -45,7 +45,7 @@
             <v-btn
               v-for="authProvider of (props.item.authProviders || [])"
               :key="authProvider.type + ':' + authProvider.id"
-              :color="contrastColor(authProvider.color)"
+              :color="authProvider.color"
               dark
               size="small"
               rounded
@@ -61,7 +61,7 @@
               >
                 <v-icon
                   v-if="authProvider.icon"
-                  :color="contrastColor(authProvider.color)"
+                  :color="authProvider.color"
                 >
                   {{ authProvider.icon }}
                 </v-icon>
@@ -116,10 +116,9 @@ export default {
   computed: {
     ...mapState(['env']),
     ...mapState('session', ['user']),
-    ...mapGetters(['contrastColor'])
   },
   async created () {
-    if (!this.user.adminMode) return uiNotif.sendUiNotif({error:this.$t('errors.permissionDenied') })
+    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: this.$t('errors.permissionDenied') })
     this.fetchSites()
     this.headers = []
     // if (this.$uiConfig.avatars.orgs) this.headers.push({ text: '', sortable: false })

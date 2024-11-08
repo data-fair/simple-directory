@@ -126,7 +126,8 @@ module.exports = {
       // standard vuetify colors
       background: '#FFFFFF',
       surface: '#FFFFFF',
-      primary: '#1E88E5', // blue.darken1
+      primary: '#1976D2', // blue.darken2
+      // primary: '#000000',
       secondary: '#42A5F5', // blue.lighten1,
       accent: '#FF9800', // orange.base
       error: 'FF5252', // red.accent2

@@ -1,39 +1,8 @@
-import tinycolor from 'tinycolor2'
-
-export const isDark = (color) => tinycolor(color).getLuminance() < 0.4
-
-// calculate a variant of a color with guaranteed readability
-// default background is #FAFAFA the light grey background
-// TODO: deprecate this, instead we rely on warnings showed to admins when the colors they chose don't have a sufficient contrast
-const contrastColorCache = {}
-export const contrastColor = (color1, color2 = '#FAFAFA', color3) => {
-  if (!color1) return
-  const cacheKey = JSON.stringify([color1, color2, color3])
-  if (contrastColorCache[cacheKey]) return contrastColorCache[cacheKey]
-  const c = tinycolor(color1)
-  const dark = isDark(color2)
-  while (!tinycolor.isReadable(c, color2, { level: 'AA', size: 'small' }) || !tinycolor.isReadable(c, color3 || color2, { level: 'AA', size: 'small' })) {
-    if (dark) {
-      c.brighten(1)
-    } else {
-      c.darken(1)
-    }
-  }
-  contrastColorCache[cacheKey] = c.toString()
-  return contrastColorCache[cacheKey]
-}
-
 export default () => ({
   state: {
     customPrimaryColor: null
   },
   getters: {
-    readablePrimaryColor (state, getters, rootState) {
-      return state.customPrimaryColor && contrastColor(state.customPrimaryColor)
-    },
-    darkReadablePrimary10 (state, getters, rootState) {
-      return getters.readablePrimaryColor && tinycolor(getters.readablePrimaryColor).darken(10).toHexString()
-    },
     style (state, getters, rootState) {
       if (!state.customPrimaryColor) return ''
       return `

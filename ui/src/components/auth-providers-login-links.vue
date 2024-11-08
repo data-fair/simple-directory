@@ -30,9 +30,8 @@
     <v-btn
       v-for="authProvider of authProvidersFetch.data.value.filter(p => !p.redirectMode || p.redirectMode.type === 'button')"
       :key="authProvider.type + ':' + authProvider.id"
-      :color="contrastColor(authProvider.color)"
+      :color="authProvider.color"
       :href="providerLoginUrl(authProvider)"
-      dark
       size="small"
       rounded
       variant="flat"
@@ -46,7 +45,7 @@
       >
         <v-icon
           v-if="authProvider.icon"
-          :color="contrastColor(authProvider.color)"
+          :color="authProvider.color"
         >
           {{ authProvider.icon }}
         </v-icon>

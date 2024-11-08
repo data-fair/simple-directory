@@ -68,7 +68,7 @@
             :close-on-content-click="false"
             :nudge-right="40"
             transition="scale-transition"
-            
+
             max-width="290px"
             min-width="290px"
           >
@@ -115,7 +115,7 @@
         <v-btn
           v-for="identity of userIdentities"
           :key="identity.type + identity.id"
-          :color="contrastColor(identity.color)"
+          :color="identity.color"
           :href="identity.user.url"
           target="_blank"
           dark
@@ -132,7 +132,7 @@
           >
             <v-icon
               v-if="identity.icon"
-              :color="contrastColor(identity.color)"
+              :color="identity.color"
             >
               {{ identity.icon }}
             </v-icon>
@@ -267,7 +267,6 @@ export default {
   computed: {
     ...mapState('session', ['user', 'initialized']),
     ...mapState(['userDetails', 'env', 'authProviders']),
-    ...mapGetters(['contrastColor']),
     readonly () {
       return this.$uiConfig.readonly || this.user.os || this.user.idp
     },
