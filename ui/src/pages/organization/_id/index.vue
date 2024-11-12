@@ -1,6 +1,6 @@
 <template lang="html">
   <v-container
-    v-if="orga && userDetails"
+    v-if="orga.data.value"
     data-iframe-height
     style="max-width:600px;"
   >
@@ -12,12 +12,15 @@
       >
         mdi-account-group
       </v-icon>
-      {{ $t('common.organization') + ' ' + orga.name }}
+      {{ $t('common.organization') + ' ' + orga.data.value.name }}
     </h2>
 
-    <v-subheader v-if="orga.created">
-      {{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}
-    </v-subheader>
+    <p
+      v-if="orga.data.value.created"
+      class="text-subtitle-2"
+    >
+      {{ $t('common.createdPhrase', {name: orga.data.value.created.name, date: $d(new Date(orga.data.value.created.date))}) }}
+    </p>
     <v-form
       ref="form"
       lazy-validation
@@ -29,10 +32,10 @@
         :disabled="$uiConfig.readonly"
       />
       <v-text-field
-        v-model="orga.name"
+        v-model="orga.data.value.name"
         :label="$t('common.name')"
         :rules="[v => !!v || '', v => v.length < 150 || $t('common.tooLong')]"
-        :disabled="!isAdminOrga || $uiConfig.readonly"
+        :disabled="orgRole !== 'admin' || $uiConfig.readonly"
         name="name"
         required
         variant="outlined"
@@ -40,9 +43,9 @@
         autocomplete="off"
       />
       <v-textarea
-        v-model="orga.description"
+        v-model="orga.data.value.description"
         :label="$t('common.description')"
-        :disabled="!isAdminOrga || $uiConfig.readonly"
+        :disabled="orgRole !== 'admin' || $uiConfig.readonly"
         name="description"
         hide-details
         variant="outlined"
@@ -50,9 +53,9 @@
       />
       <v-text-field
         v-if="$uiConfig.manageDepartments && $uiConfig.manageDepartmentLabel"
-        v-model="orga.departmentLabel"
+        v-model="orga.data.value.departmentLabel"
         :label="$t('pages.organization.departmentLabelTitle')"
-        :disabled="!isAdminOrga || $uiConfig.readonly"
+        :disabled="orgRole !== 'admin' || $uiConfig.readonly"
         name="departmentLabel"
         autocomplete="off"
       >
@@ -71,14 +74,15 @@
         </template>
       </v-text-field>
       <v-select
-        v-model="orga['2FA'].roles"
-        :items="orga.roles"
+        :model-value="orga.data.value['2FA']?.roles"
+        :items="orga.data.value.roles"
         :messages="[$t('pages.organization.2FARolesMsg')]"
         :rules="[v => !!v || '']"
         :placeholder="$t('pages.organization.2FARoles')"
         multiple
         name="2FARoles"
         style="max-width:600px"
+        @update:model-value="set2FARoles"
       />
 
       <v-row class="mx-0 mb-0 mt-4">
@@ -95,101 +99,68 @@
     <organization-departments
       v-if="$uiConfig.manageDepartments"
       :orga="orga"
-      :is-admin-orga="isAdminOrga"
-      @change="fetchOrganization"
+      :is-admin-orga="orgRole === 'admin'"
+      @change="orga.refresh()"
     />
     <organization-members
       :orga="orga"
-      :is-admin-orga="isAdminOrga"
-      :nb-members-limits="limits && limits.store_nb_members"
+      :is-admin-orga="orgRole === 'admin'"
+      :nb-members-limits="limits.data.value?.store_nb_members"
       :org-storage="'false'"
       :readonly="$uiConfig.readonly"
     />
 
     <organization-storage
-      v-if="(user.adminMode && $uiConfig.perOrgStorageTypes.length) || (orga.orgStorage && orga.orgStorage.active)"
+      v-if="(session.user.value?.adminMode && $uiConfig.perOrgStorageTypes.length) || orga.data.value.orgStorage?.active"
       :orga="orga"
     />
 
     <organization-members
-      v-if="orga.orgStorage && orga.orgStorage.active"
+      v-if="orga.data.value.orgStorage?.active"
       :orga="orga"
-      :is-admin-orga="isAdminOrga"
-      :nb-members-limits="limits && limits.store_nb_members"
+      :is-admin-orga="orgRole === 'admin'"
+      :nb-members-limits="limits.data.value?.store_nb_members"
       :org-storage="'true'"
-      :readonly="orga.orgStorage.readonly"
+      :readonly="orga.data.value.orgStorage.readonly"
     />
 
     <organization-partners
-      v-if="$uiConfig.managePartners && mainHost === host"
+      v-if="$uiConfig.managePartners && mainPublicUrl.host === host"
       :orga="orga"
-      :is-admin-orga="isAdminOrga"
-      @change="fetchOrganization"
+      :is-admin-orga="orgRole === 'admin'"
+      @change="orga.refresh()"
     />
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { mapActions, mapState, mapGetters } from 'vuex'
-import LoadAvatar from '~/components/load-avatar.vue'
+import type { VForm } from 'vuetify/components'
+import { getAccountRole } from '@data-fair/lib-common-types/session/index.js'
 
-export default {
-  components: { LoadAvatar },
-  data: () => ({
-    orga: null,
-    limits: null,
-    valid: true
-  }),
-  computed: {
-    ...mapState(['userDetails', 'env']),
-    ...mapState('session', ['user']),
-    ...mapGetters(['host', 'mainHost']),
-    isAdminOrga () {
-      if (!this.user || !this.userDetails) return false
-      if (this.user.adminMode) return true
-      if ($uiConfig.depAdminIsOrgAdmin) {
-        return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin'))
-      } else {
-        return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin' && !o.department))
-      }
-    }
-  },
-  watch: {
-    userDetails: {
-      handler () {
-        if (!this.userDetails) return
-        // TODO: this is debatable, API allows to show all info on this page
-        // but in term of functionality it doesn't make much sense
-        if (!this.isAdminOrga) uiNotif.sendUiNotif({ error: t('errors.permissionDenied') })
-      },
-      immediate: true
-    }
-  },
-  async mounted () {
-    this.fetchOrganization()
-    this.fetchLimits()
-  },
-  methods: {
-    ...mapActions(['patchOrganization']),
-    async fetchOrganization () {
-      const orga = await this.$axios.$get(`api/organizations/${this.$route.params.id}`)
-      orga['2FA'] = orga['2FA'] || {}
-      orga['2FA'].roles = orga['2FA'].roles || []
-      this.orga = orga
-    },
-    async fetchLimits () {
-      if (!$uiConfig.readonly) {
-        this.limits = await this.$axios.$get(`api/limits/organization/${this.$route.params.id}`)
-      }
-    },
-    async save (e) {
-      if (e.preventDefault) e.preventDefault()
-      if (!this.$refs.form.validate()) return
-      const patch = { name: this.orga.name, description: this.orga.description, '2FA': this.orga['2FA'] }
-      if ($uiConfig.manageDepartments) patch.departmentLabel = this.orga.departmentLabel
-      this.patchOrganization({ id: this.orga.id, patch, msg: t('common.modificationOk') })
-    }
-  }
+const session = useSession()
+const route = useRoute()
+const orgId = route.params.id
+
+const { patchOrganization, host, mainPublicUrl } = useStore()
+const { t } = useI18n()
+
+const orga = useFetch<Organization>(`organizations/${orgId}`)
+const limits = useFetch<Limits>(`limits/organization/${orgId}`)
+const orgRole = computed(() => getAccountRole(session.state, { type: 'organization', id: orgId }, { acceptDepAsRoot: $uiConfig.depAdminIsOrgAdmin }))
+
+const form = ref<InstanceType<typeof VForm>>()
+const save = async (e: Event) => {
+  if (e.preventDefault) e.preventDefault()
+  if (!(await form.value?.validate())) return
+  if (!orga.data.value) return
+  const patch: any = { name: orga.data.value.name, description: orga.data.value.description, '2FA': orga.data.value['2FA'] }
+  if ($uiConfig.manageDepartments) patch.departmentLabel = orga.data.value.departmentLabel
+  patchOrganization(orgId, patch, t('common.modificationOk'))
+}
+const set2FARoles = (roles: string[]) => {
+  if (!orga.data.value) return
+  orga.data.value['2FA'] = orga.data.value['2FA'] ?? {}
+  orga.data.value['2FA'].roles = roles
 }
 </script>
 

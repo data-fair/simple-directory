@@ -29,9 +29,9 @@
       />
 
       <load-avatar
-        v-if="userDetails && $uiConfig.avatars.users"
-        :owner="{...userDetails, type: 'user'}"
-        :disabled="!userDetails || readonly"
+        v-if="userDetailsFetch.data.value && $uiConfig.avatars.users"
+        :owner="{type: 'user', id: user.id, name: user.name}"
+        :disabled="readonly"
       />
 
       <v-row dense>
@@ -39,7 +39,7 @@
           <v-text-field
             v-model="patch.firstName"
             :label="$t('common.firstName')"
-            :disabled="!userDetails || readonly"
+            :disabled="!userDetailsFetch.data.value || readonly"
             name="firstName"
             :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
             variant="outlined"
@@ -51,7 +51,7 @@
           <v-text-field
             v-model="patch.lastName"
             :label="$t('common.lastName')"
-            :disabled="!userDetails || readonly"
+            :disabled="!userDetailsFetch.data.value || readonly"
             name="lastName"
             :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
             variant="outlined"
@@ -66,7 +66,6 @@
           <v-menu
             v-model="birthdayMenu"
             :close-on-content-click="false"
-            :nudge-right="40"
             transition="scale-transition"
 
             max-width="290px"
@@ -76,7 +75,7 @@
               <v-text-field
                 :model-value="patch.birthday && $d(new Date(patch.birthday))"
                 :label="$t('common.birthday')"
-                :disabled="!userDetails || readonly"
+                :disabled="!userDetailsFetch.data.value || readonly"
                 append-icon="mdi-calendar"
                 readonly
                 clearable
@@ -118,7 +117,6 @@
           :color="identity.color"
           :href="identity.user.url"
           target="_blank"
-          dark
           size="small"
           rounded
           variant="flat"
@@ -157,10 +155,10 @@
         {{ $t('common.myOrganizations') }}
       </h2>
 
-      <div v-if="userDetails">
-        <template v-if="userDetails.organizations.length">
+      <div v-if="userDetailsFetch.data.value">
+        <template v-if="userDetailsFetch.data.value.organizations.length">
           <template
-            v-for="orga in userDetails.organizations"
+            v-for="orga in userDetailsFetch.data.value.organizations"
           >
             <span
               v-if="orga.role"
@@ -182,7 +180,7 @@
         <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
       </div>
 
-      <add-organization-menu v-if="!readonly && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
+      <add-organization-menu v-if="!readonly && nbCreatedOrgs !== undefined && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
 
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
@@ -195,7 +193,7 @@
         {{ $t('common.settings') }}
       </h2>
 
-      <template v-if="userDetails && (showIgnorePersonalAccount || defaultOrgItems.length > 1)">
+      <template v-if="userDetailsFetch.data.value && (showIgnorePersonalAccount || defaultOrgItems.length > 1)">
         <h2 class="text-h5 mt-8 mb-4">
           {{ $t('pages.me.accountChanges') }}
         </h2>
@@ -205,7 +203,7 @@
           :label="$t('pages.me.ignorePersonalAccount')"
           :disabled="readonly"
           name="ignorePersonalAccount"
-          @update:model-value="save"
+          @update:model-value="() => save()"
         />
         <v-select
           v-if="defaultOrgItems.length > 1"
@@ -220,16 +218,16 @@
           variant="outlined"
           density="compact"
           return-object
-          @update:model-value="save"
+          @update:model-value="() => save()"
         />
       </template>
 
-      <template v-if="$uiConfig.userSelfDelete && !readonly && userDetails">
+      <template v-if="$uiConfig.userSelfDelete && !readonly && userDetailsFetch.data.value">
         <h2 class="text-h5 mt-8 mb-4">
           {{ $t('pages.me.operations') }}
         </h2>
         <confirm-menu
-          v-if="!userDetails.plannedDeletion"
+          v-if="!userDetailsFetch.data.value.plannedDeletion"
           :button-text="$t('pages.me.deleteMyself', {name: user.name})"
           :title="$t('pages.me.deleteMyself', {name: user.name})"
           :alert="$t('pages.me.deleteMyselfAlert', {plannedDeletionDelay: $uiConfig.plannedDeletionDelay})"
@@ -239,7 +237,7 @@
         />
         <cancel-deletion
           v-else
-          @cancelled="fetchUserDetails"
+          @cancelled="userDetailsFetch.refresh()"
         />
       </template>
     </v-form>
@@ -247,154 +245,118 @@
 </template>
 
 <script setup lang="ts">
-import { mapState, mapActions, mapGetters } from 'vuex'
-import eventBus from '../event-bus'
-import LoadAvatar from '../components/load-avatar.vue'
-import AddOrganizationMenu from '../components/add-organization-menu.vue'
-import ConfirmMenu from '../components/confirm-menu.vue'
-const moment = require('moment')
+import type { VForm } from 'vuetify/components'
 
-export default {
-  components: { LoadAvatar, AddOrganizationMenu, ConfirmMenu },
-  data: () => ({
-    patch: { firstName: null, lastName: null, birthday: null },
-    rejectDialog: false,
-    nbCreatedOrgs: null,
-    birthdayMenu: false,
-    maxBirthday: moment().subtract(13, 'years').toISOString(),
-    activeBirthDayPicker: null
-  }),
-  computed: {
-    ...mapState('session', ['user', 'initialized']),
-    ...mapState(['userDetails', 'env', 'authProviders']),
-    readonly () {
-      return $uiConfig.readonly || this.user.os || this.user.idp
-    },
-    maxCreatedOrgs () {
-      if (!this.userDetails) return 0
-      return this.userDetails.maxCreatedOrgs !== undefined && this.userDetails.maxCreatedOrgs !== null ? this.userDetails.maxCreatedOrgs : $uiConfig.defaultMaxCreatedOrgs
-    },
-    showMaxCreatedOrgs () {
-      if (!this.userDetails) return false
-      if ($uiConfig.defaultMaxCreatedOrgs === -1) return false
-      if ($uiConfig.defaultMaxCreatedOrgs === 0 && !this.userDetails.maxCreatedOrgs) return false
-      return this.maxCreatedOrgs === -1 ? 'illimité' : ('' + this.maxCreatedOrgs)
-    },
-    host () {
-      return window.location.host
-    },
-    mainHost () {
-      return new URL($uiConfig.publicUrl).host
-    },
-    defaultOrgItems () {
-      return (this.patch.ignorePersonalAccount ? [] : [{ id: '', name: t('common.userAccount') }]).concat(this.userDetails.organizations)
-    },
-    showIgnorePersonalAccount () {
-      // invitation mode only (means user should always be in an orga)
-      // ignorePersonalAccount should already be true in this case
-      if ($uiConfig.onlyCreateInvited && this.userDetails.ignorePersonalAccount) return false
-      // user only has a personal account
-      // ignorePersonalAccount should already be false in this case
-      if (this.user.organizations.length === 0 && !this.userDetails.ignorePersonalAccount) return false
-      return true
-    },
-    defaultOrg: {
-      get () {
-        return {
-          id: this.patch.defaultOrg,
-          department: this.patch.defaultDep
-        }
-      },
-      set (value) {
-        if (value) {
-          this.patch.defaultOrg = value.id
-          this.patch.defaultDep = value.department || ''
-        } else {
-          this.patch.defaultOrg = this.patch.defaultDep = ''
-        }
-      }
-    },
-    userIdentities () {
-      if (!this.authProviders || !this.userDetails) return []
-      return this.authProviders.map(p => ({
-        ...p,
-        user: this.userDetails[p.type] && this.userDetails[p.type][p.id]
-      })).filter(p => !!p.user).map(p => ({ ...p, name: p.user.login || p.user.name }))
+const router = useRouter()
+const { user, keepalive } = useSession()
+const { dayjs } = useLocaleDayjs()
+const { t } = useI18n()
+const { userDetailsFetch, authProvidersFetch } = useStore()
+
+if (!user.value) router.push('/login')
+
+userDetailsFetch.refresh()
+authProvidersFetch.refresh()
+const userOrgsFetch = useFetch<{ count: number }>('organizations', { query: { creator: user.value?.id, size: 0 } })
+
+const newPatch = () => ({
+  firstName: userDetailsFetch.data.value?.firstName,
+  lastName: userDetailsFetch.data.value?.lastName,
+  birthday: userDetailsFetch.data.value?.birthday,
+  ignorePersonalAccount: userDetailsFetch.data.value?.ignorePersonalAccount || false,
+  defaultOrg: userDetailsFetch.data.value?.defaultOrg || '',
+  defaultDep: userDetailsFetch.data.value?.defaultDep || ''
+})
+const patch = ref(newPatch())
+watch(userDetailsFetch.data, () => { patch.value = newPatch() })
+
+const birthdayMenu = ref(false)
+const maxBirthday = dayjs().subtract(13, 'years').toISOString()
+const activeBirthDayPicker = ref()
+
+const readonly = computed(() => $uiConfig.readonly || !!user.value?.os || !!user.value?.idp)
+const nbCreatedOrgs = computed(() => userOrgsFetch.data.value?.count)
+const maxCreatedOrgs = computed(() => {
+  if (!userDetailsFetch.data.value) return 0
+  return userDetailsFetch.data.value.maxCreatedOrgs !== undefined && userDetailsFetch.data.value.maxCreatedOrgs !== null ? userDetailsFetch.data.value.maxCreatedOrgs : $uiConfig.quotas.defaultMaxCreatedOrgs
+})
+const showMaxCreatedOrgs = computed(() => {
+  if (!userDetailsFetch.data.value) return false
+  if ($uiConfig.quotas.defaultMaxCreatedOrgs === -1) return false
+  if ($uiConfig.quotas.defaultMaxCreatedOrgs === 0 && !userDetailsFetch.data.value.maxCreatedOrgs) return false
+  return maxCreatedOrgs.value === -1 ? 'illimité' : ('' + maxCreatedOrgs.value)
+})
+
+const defaultOrgItems = computed<{ id: string, name?: string, department?: string, departmentName?: string }[]>(() => {
+  return (patch.value.ignorePersonalAccount ? [] : [{ id: '', name: t('common.userAccount') }]).concat(userDetailsFetch.data.value?.organizations ?? [])
+})
+const showIgnorePersonalAccount = computed(() => {
+// invitation mode only (means user should always be in an orga)
+  // ignorePersonalAccount should already be true in this case
+  if ($uiConfig.onlyCreateInvited && userDetailsFetch.data.value?.ignorePersonalAccount) return false
+  // user only has a personal account
+  // ignorePersonalAccount should already be false in this case
+  if (user.value?.organizations.length === 0 && !userDetailsFetch.data.value?.ignorePersonalAccount) return false
+  return true
+})
+
+const defaultOrg = computed<{ id: string, department?: string }>({
+  get () {
+    return {
+      id: patch.value.defaultOrg,
+      department: patch.value.defaultDep,
+      name: ''
     }
   },
-  watch: {
-    birthdayMenu (val) {
-      if (val) setTimeout(() => { this.activeBirthDayPicker = 'YEAR' })
-    },
-    userDetails () {
-      this.initPatch()
-    },
-    initialized: {
-      async handler () {
-        if (!this.initialized) return
-        if (!this.user) this.$router.push(this.localePath('login'))
-        if (this.userDetails) this.initPatch()
-        this.nbCreatedOrgs = (await this.$axios.$get('api/organizations', { params: { creator: this.user.id, size: 0 } })).count
-      },
-      immediate: true
-    }
-  },
-  created () {
-    this.$store.dispatch('fetchAuthProviders')
-  },
-  methods: {
-    ...mapActions(['fetchUserDetails']),
-    ...mapActions('session', ['logout']),
-    initPatch () {
-      this.patch.firstName = this.userDetails.firstName
-      this.patch.lastName = this.userDetails.lastName
-      this.patch.birthday = this.userDetails.birthday
-      this.patch.ignorePersonalAccount = this.userDetails.ignorePersonalAccount || false
-      this.patch.defaultOrg = this.userDetails.defaultOrg || ''
-      this.patch.defaultDep = this.userDetails.defaultDep || ''
-    },
-    async save (e) {
-      if (e && e.preventDefault) e.preventDefault()
-      if (!this.$refs.form.validate()) return
-      try {
-        await this.$axios.$patch(`api/users/${this.user.id}`, this.patch)
-        await this.$axios.$post('api/session/keepalive')
-        eventBus.$emit('notification', t('common.modificationOk'))
-        this.fetchUserDetails()
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    async changePasswordAction () {
-      try {
-        let target = this.$sdUrl + '/login'
-        try {
-          target += '?redirect=' + encodeURIComponent(window.parent.location.href)
-        } catch (err) {
-          // no problem, we simply are not in an iframe context
-        }
-        await this.$axios.$post('api/auth/action', { email: this.user.email, action: 'changePassword', target })
-        eventBus.$emit('notification', t('pages.login.changePasswordSent', { email: this.user.email }))
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    async deleteMyself () {
-      try {
-        await this.$axios.$patch(`api/users/${this.user.id}`, {
-          plannedDeletion: moment().add(process.$uiConfig.plannedDeletionDelay, 'days').format('YYYY-MM-DD')
-        })
-        // await this.logout()
-        // reloading top page, so that limits are re-fetched, etc.
-        // window.top.location.reload()
-
-        this.fetchUserDetails()
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
+  set (value) {
+    if (value) {
+      patch.value.defaultOrg = value.id
+      patch.value.defaultDep = value.department || ''
+    } else {
+      patch.value.defaultOrg = patch.value.defaultDep = ''
     }
   }
-}
+})
+
+const userIdentities = computed(() => {
+  if (!authProvidersFetch.data.value || !userDetailsFetch.data.value) return []
+  return authProvidersFetch.data.value.map(p => ({
+    ...p,
+    user: (userDetailsFetch.data.value as any)?.[p.type]?.[p.id]
+  })).filter(p => !!p.user).map(p => ({ ...p, name: p.user.login || p.user.name }))
+})
+
+watch(birthdayMenu, (val) => {
+  if (val) setTimeout(() => { activeBirthDayPicker.value = 'YEAR' })
+})
+
+const form = ref<InstanceType<typeof VForm>>()
+const save = withUiNotif(async (e?: Event) => {
+  if (e?.preventDefault) e.preventDefault()
+  if (!(await form.value?.validate())) return
+  if (!user.value) return
+  await $fetch(`users/${user.value.id}`, { method: 'PATCH', body: patch.value })
+  await keepalive()
+  await userDetailsFetch.refresh()
+}, undefined, t('common.modificationOk'))
+
+const changePasswordAction = withUiNotif(async () => {
+  if (!user.value) return
+  let target = $sdUrl + '/login'
+  try {
+    target += '?redirect=' + encodeURIComponent(window.parent.location.href)
+  } catch (err) {
+    // no problem, we simply are not in an iframe context
+  }
+  await $fetch('auth/action', { method: 'POST', body: { email: user.value.email, action: 'changePassword', target } })
+}, undefined, t('pages.login.changePasswordSent', { email: user.value?.email }))
+
+const deleteMyself = withUiNotif(async () => {
+  if (!user.value) return
+  $fetch(`users/${user.value.id}`, { method: 'PATCH', body: { plannedDeletion: dayjs().add($uiConfig.plannedDeletionDelay, 'days').format('YYYY-MM-DD') } })
+  await keepalive()
+  await userDetailsFetch.refresh()
+})
 </script>
 
 <style lang="css">

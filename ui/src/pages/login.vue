@@ -869,7 +869,7 @@ function preLogin () {
 
 const createUserForm = ref<InstanceType<typeof VForm>>()
 async function createUser () {
-  if (!createUserForm.value?.validate()) return
+  if (!(await createUserForm.value?.validate())) return
   try {
     const body: PostUserReq['body'] = { email: email.value, ...newUser.value }
     const link = await $fetch('api/users', {

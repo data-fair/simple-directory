@@ -14,7 +14,7 @@
       </v-app-bar>
     </template>
     <template v-else>
-      <layout-app-bar v-if="showToolbar" />
+      <layout-app-bar v-if="!inIframe" />
     </template>
 
     <v-main>
@@ -36,6 +36,7 @@
 <script lang="ts" setup>
 import uiNotif from '@data-fair/lib-vuetify/ui-notif.vue'
 import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
+import inIframe from '@data-fair/lib-utils/in-iframe.js'
 
 const { lang } = useSession()
 const route = useRoute()
@@ -46,11 +47,11 @@ useHead({
   // __dangerouslyDisableSanitizers: ['style']
 })
 
-const embed = useBooleanSearchParam('embed')
-const showToolbarParam = useBooleanSearchParam('showToolbar')
+// const embed = useBooleanSearchParam('embed')
+// const showToolbarParam = useBooleanSearchParam('showToolbar')
 
 const isLoginPage = computed(() => route.name === '/login')
-const showToolbar = computed(() => !embed.value || showToolbarParam.value)
+// const showToolbar = computed(() => !embed.value || showToolbarParam.value)
 const appClass = computed(() => {
   if (!route.name) return ''
   return 'page' + route.name.replace(/\//g, '')

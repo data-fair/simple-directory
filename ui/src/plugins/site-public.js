@@ -1,3 +1,5 @@
+// TODO: do this in login page directly
+
 export default async ({ app, route, $vuetify, store }) => {
   const sitePublic = await store.dispatch('fetchSitePublic')
   if (route.name === 'login' && sitePublic && sitePublic.authMode === 'onlyBackOffice') {

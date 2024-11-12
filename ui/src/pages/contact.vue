@@ -16,7 +16,7 @@
       <v-text-field
         v-model="message.from"
         :rules="[v => !!v || '']"
-        :disabled="!!tokenError"
+        :disabled="token.loading.value"
         label="Votre adresse email"
         name="email"
         required
@@ -24,7 +24,7 @@
       <v-text-field
         v-model="message.subject"
         :rules="[v => !!v || '']"
-        :disabled="!!tokenError"
+        :disabled="token.loading.value"
         label="Sujet"
         name="subject"
         required
@@ -32,7 +32,7 @@
       <v-textarea
         v-model="message.text"
         :rules="[v => !!v || '']"
-        :disabled="!!tokenError"
+        :disabled="token.loading.value"
         label="Votre demande"
         name="text"
         variant="outlined"
@@ -53,37 +53,22 @@
 </template>
 
 <script setup lang="ts">
-import eventBus from '../event-bus'
+import type { VForm } from 'vuetify/components'
 const newMessage = { from: '', subject: '', text: '' }
-export default {
-  data: () => ({
-    valid: true,
-    message: { ...newMessage },
-    token: null,
-    tokenError: null
-  }),
-  async mounted () {
-    try {
-      this.token = await this.$axios.$get('api/auth/anonymous-action')
-    } catch (error) {
-      this.tokenError = error
-      eventBus.$emit('notification', { error })
-    }
-  },
-  methods: {
-    async send () {
-      if (!this.$refs.form.validate()) return
-      try {
-        await this.$axios.$post('api/mails/contact', { ...this.message, token: this.token })
-        this.message = { ...newMessage }
-        this.$refs.form.resetValidation()
-        eventBus.$emit('notification', { type: 'success', msg: 'Votre demande a été envoyée' })
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    }
-  }
-}
+
+const message = ref({ ...newMessage })
+const valid = ref(false)
+
+const token = useFetch<string>($apiPath + 'auth/anonymous-action')
+
+const form = ref<InstanceType<typeof VForm>>()
+const send = withUiNotif(async () => {
+  if (!(await form.value?.validate())) return
+  if (!token.data) return
+  await $fetch('mails/contact', { method: 'POST', body: { ...message.value, token: token.data } })
+  message.value = { ...newMessage }
+  form.value?.resetValidation()
+}, undefined, 'Votre demande a été envoyée')
 </script>
 
 <style lang="css">

@@ -1,5 +1,5 @@
 import type { User, PublicAuthProvider, Organization, SitePublic } from '../../../api/types/index.ts'
-import { PostSiteReq } from '../../../api/doc/sites/post-req/index.ts'
+import { PostSiteReq } from '../../../api/doc/sites/post-req-body/index.ts'
 import { PatchSiteReq } from '../../../api/doc/sites/patch-req'
 
 function createStore () {

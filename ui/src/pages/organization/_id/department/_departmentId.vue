@@ -1,6 +1,6 @@
 <template lang="html">
   <v-container
-    v-if="orga && userDetails"
+    v-if="orga.data.value && department"
     data-iframe-height
     style="max-width:600px;"
   >
@@ -12,75 +12,42 @@
       >
         mdi-account-group
       </v-icon>
-      {{ orga.name }} - {{ department.name }} ({{ department.id }})
+      {{ orga.data.value.name }} - {{ department.name }} ({{ department.id }})
     </h2>
 
     <load-avatar
       v-if="orga && $uiConfig.avatars.orgs"
-      :owner="{type: 'organization', id: orga.id, department: department.id}"
+      :owner="{type: 'organization', id: orga.data.value.id, department: department.id}"
       :disabled="$uiConfig.readonly"
     />
 
     <organization-members
-      :orga="orga"
-      :is-admin-orga="isAdminDepartment"
-      :nb-members-limits="limits && limits.store_nb_members"
+      :orga="orga.data.value"
+      :is-admin-orga="departmentRole === 'admin'"
+      :nb-members-limits="limits.data.value?.store_nb_members"
       :org-storage="'false'"
       :readonly="$uiConfig.readonly"
-      :admin-department="$route.params.departmentId"
+      :admin-department="depId"
     />
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { mapState } from 'vuex'
+import { getAccountRole } from '@data-fair/lib-common-types/session/index.js'
 
-export default {
-  data: () => ({
-    orga: null
-  }),
-  computed: {
-    ...mapState(['userDetails', 'env']),
-    ...mapState('session', ['user']),
-    isAdminDepartment () {
-      if (!this.user || !this.userDetails) return false
-      if (this.user.adminMode) return true
-      return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin' && o.department === this.$route.params.departmentId))
-    },
-    department () {
-      if (!this.orga) return null
-      return this.orga.departments.find(d => d.id === this.$route.params.departmentId)
-    }
-  },
-  watch: {
-    userDetails: {
-      handler () {
-        if (!this.userDetails) return
-        // TODO: this is debatable, API allows to show all info on this page
-        // but in term of functionality it doesn't make much sense
-        if (!this.isAdminDepartment) uiNotif.sendUiNotif({error:t'errors.permissionDenied') })
-      },
-      immediate: true
-    }
-  },
-  async mounted () {
-    this.fetchLimits()
-    this.fetchOrganization()
-  },
-  methods: {
-    async fetchLimits () {
-      if (!$uiConfig.readonly) {
-        this.limits = await this.$axios.$get(`api/limits/organization/${this.$route.params.id}`)
-      }
-    },
-    async fetchOrganization () {
-      const orga = await this.$axios.$get(`api/organizations/${this.$route.params.id}`)
-      orga['2FA'] = orga['2FA'] || {}
-      orga['2FA'].roles = orga['2FA'].roles || []
-      this.orga = orga
-    }
-  }
-}
+const session = useSession()
+const route = useRoute()
+const orgId = route.params.id
+const depId = route.params.departmentId
+
+const orga = useFetch<Organization>(`organizations/${orgId}`)
+const limits = useFetch<Limits>(`limits/organization/${orgId}`)
+const department = computed(() => {
+  if (!orga.data.value) return
+  return orga.data.value.departments?.find(d => d.id === depId)
+})
+const departmentRole = computed(() => getAccountRole(session.state, { type: 'organization', id: orgId, department: depId }))
+
 </script>
 
 <style lang="css">

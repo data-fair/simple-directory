@@ -43,31 +43,22 @@
 </template>
 
 <script setup lang="ts">
-import { mapState, mapActions } from 'vuex'
-import eventBus from '../event-bus'
-export default {
-  data: () => ({
-    valid: true,
-    newOrga: { name: '', description: '' },
-    autoAdmin: true
-  }),
-  computed: {
-    ...mapState('session', ['user'])
-  },
-  methods: {
-    ...mapActions(['fetchUserDetails']),
-    async create () {
-      if (!this.$refs.form.validate()) return
-      try {
-        const res = await this.$axios.$post('api/organizations', this.newOrga, { params: { autoAdmin: this.autoAdmin } })
-        this.fetchUserDetails()
-        this.$router.push(this.localePath({ name: 'organization-id', params: { id: res.id } }))
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    }
-  }
-}
+import type { VForm } from 'vuetify/components'
+
+const { user, keepalive } = useSession()
+const router = useRouter()
+
+const newOrga = ref({ name: '', description: '' })
+
+const valid = ref(false)
+const autoAdmin = ref(true)
+
+const form = ref<InstanceType<typeof VForm>>()
+const create = withUiNotif(async () => {
+  const createdOrga = await $fetch<Organization>('organizations', { method: 'POST', body: newOrga.value, params: { autoAdmin: autoAdmin.value } })
+  await keepalive()
+  router.push(`/organizations/${createdOrga.id}`)
+})
 </script>
 
 <style lang="css">

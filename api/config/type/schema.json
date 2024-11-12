@@ -42,7 +42,8 @@
     "authRateLimit",
     "plannedDeletionDelay",
     "cleanup",
-    "avatars"
+    "avatars",
+    "noBirthday"
   ],
   "properties": {
     "info": {
@@ -568,6 +569,9 @@
           "type": "boolean"
         }
       }
+    },
+    "noBirthday": {
+      "type": "boolean"
     }
   },
   "$defs": {

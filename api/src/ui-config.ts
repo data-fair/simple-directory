@@ -18,7 +18,13 @@ export const uiConfig = {
   alwaysAcceptInvitation: config.alwaysAcceptInvitation,
   avatars: config.avatars,
   manageDepartments: config.manageDepartments,
-  quotas: config.quotas
+  manageDepartmentLabel: config.manageDepartmentLabel,
+  managePartners: config.managePartners,
+  quotas: config.quotas,
+  perOrgStorageTypes: config.perOrgStorageTypes,
+  plannedDeletionDelay: config.plannedDeletionDelay,
+  noBirthday: config.noBirthday,
+  userSelfDelete: config.userSelfDelete
 }
 export type UiConfig = typeof uiConfig
 export default uiConfig
