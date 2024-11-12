@@ -12,7 +12,7 @@
         >
           mdi-graph
         </v-icon>
-        {{ orga.partnerLabel || $t('common.partners') }} <span>({{ $n(orga.partners.length) }})</span>
+        {{ orga.partnerLabel || $t('common.partners') }} <span>({{ $n(orga.partners?.length ?? 0) }})</span>
         <add-partner-menu
           v-if="writablePartners"
           :orga="orga"
@@ -30,7 +30,7 @@
     </v-row>
 
     <v-row
-      v-if="orga.partners.length > pageSize"
+      v-if="(orga.partners?.length ?? 0) > pageSize"
       dense
     >
       <v-col cols="4">
@@ -49,18 +49,23 @@
     </v-row>
 
     <v-list
-      v-if="orga.partners.length"
+      v-if="orga.partners?.length"
       lines="two"
       class="elevation-1 mt-1"
     >
-      <template v-for="(partner, i) in currentPage">
-        <v-list-item :key="partner.partnerId">
-          <v-list-item-avatar>
-            <v-img
-              v-if="partner.id"
-              :src="`${$sdUrl}/api/avatars/organization/${partner.id}/avatar.png`"
-            />
-          </v-list-item-avatar>
+      <template
+        v-for="(partner, i) in currentPage"
+        :key="partner.partnerId"
+      >
+        <v-list-item>
+          <template #prepend>
+            <v-avatar>
+              <v-img
+                v-if="partner.id"
+                :src="`${$sdUrl}/api/avatars/organization/${partner.id}/avatar.png`"
+              />
+            </v-avatar>
+          </template>
 
           <v-list-item-title style="white-space:normal;">
             {{ partner.name }} ({{ partner.contactEmail }})
@@ -91,7 +96,6 @@
         </v-list-item>
         <v-divider
           v-if="currentPage && currentPage.length > i + 1"
-          :key="i"
         />
       </template>
     </v-list>
@@ -110,58 +114,37 @@
 </template>
 
 <script setup lang="ts">
-import { mapState } from 'vuex'
-import AddPartnerMenu from '~/components/add-partner-menu.vue'
-import DeletePartnerMenu from '~/components/delete-partner-menu.vue'
 
-export default {
-  components: { AddPartnerMenu, DeletePartnerMenu },
-  props: {
-    isAdminOrga: {
-      type: Boolean,
-      default: null
-    },
-    orga: {
-      type: Object,
-      default: null
-    }
+const { isAdminOrga, orga } = defineProps({
+  isAdminOrga: {
+    type: Boolean,
+    default: null
   },
-  data: () => ({
-    pageSize: 10,
-    page: 1,
-    q: '',
-    validQ: ''
-  }),
-  computed: {
-    ...mapState(['userDetails', 'env']),
-    writablePartners () {
-      return this.isAdminOrga && (!this.$uiConfig.readonly || this.$uiConfig.overwrite.includes('partners'))
-    },
-    partnerLabel () {
-      return this.orga.partnerLabel || t('common.partner')
-    },
-    filteredPartners () {
-      if (!this.validQ) return this.orga.partners
-      else return this.orga.partners.filter(d => (d.id && d.id.includes(this.validQ)) || (d.id && d.id.includes(this.validQ)))
-    },
-    currentPage () {
-      return this.filteredPartners.slice((this.page - 1) * this.pageSize, this.page * this.pageSize)
-    }
-  },
-  watch: {
-    orga: {
-      immediate: true,
-      handler () {
-        this.orga.partners = this.orga.partners || []
-      }
-    }
-  },
-  methods: {
-    filterPartners (page) {
-      this.page = 1
-      this.validQ = this.q
-    }
+  orga: {
+    type: Object as () => Organization,
+    default: null
   }
+})
+defineEmits(['change'])
+
+const { t } = useI18n()
+
+const pageSize = 10
+const page = ref(1)
+const q = ref('')
+const validQ = ref('')
+
+const writablePartners = computed(() => isAdminOrga && (!$uiConfig.readonly || $uiConfig.overwrite.includes('partners')))
+const partnerLabel = computed(() => orga.partnerLabel || t('common.partner'))
+const filteredPartners = computed(() => {
+  if (!validQ.value) return orga.partners ?? []
+  else return (orga.partners ?? []).filter(d => (d.id && d.id.includes(validQ.value)) || (d.id && d.id.includes(validQ.value)))
+})
+const currentPage = computed(() => filteredPartners.value.slice((page.value - 1) * pageSize, page.value * pageSize))
+
+const filterPartners = () => {
+  page.value = 1
+  validQ.value = q.value
 }
 </script>
 

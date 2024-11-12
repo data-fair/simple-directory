@@ -5,16 +5,16 @@
   >
     <v-row class="mt-3 mx-0">
       <h2 class="text-h6 mb-3">
-        {{ $t('common.users') }} <span v-if="users">({{ $n(users.count) }})</span>
+        {{ $t('common.users') }} <span v-if="users.data.value">({{ $n(users.data.value.count) }})</span>
       </h2>
     </v-row>
 
     <v-row class="mb-3 mx-0">
-      <p v-if="$uiConfig.defaultMaxCreatedOrgs === -1">
+      <p v-if="$uiConfig.quotas.defaultMaxCreatedOrgs === -1">
         {{ $t('pages.admin.users.noCreatedOrgsLimit') }}
       </p>
       <p v-else>
-        {{ $t('pages.admin.users.createdOrgsLimit', {defaultMaxCreatedOrgs: $uiConfig.defaultMaxCreatedOrgs}) }}
+        {{ $t('pages.admin.users.createdOrgsLimit', {defaultMaxCreatedOrgs: $uiConfig.quotas.defaultMaxCreatedOrgs}) }}
       </p>
     </v-row>
 
@@ -26,8 +26,8 @@
         variant="solo"
         style="max-width:300px;"
         append-icon="mdi-magnify"
-        @click:append="fetchUsers"
-        @keyup.enter="fetchUsers"
+        @click:append="validQ = q"
+        @keyup.enter="validQ = q"
       />
     </v-row>
 
@@ -35,9 +35,9 @@
       v-if="users"
       v-model:options="pagination"
       :headers="headers"
-      :items="users.results"
-      :server-items-length="pagination.totalItems"
-      :loading="loading"
+      :items="users.data.value?.results"
+      :items-length="pagination.totalItems"
+      :loading="users.loading.value"
       class="elevation-1 users-table"
       item-key="id"
       :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
@@ -87,16 +87,16 @@
               :key="orga.id"
             >
               <span style="white-space:nowrap">
-                <router-link :to="localePath({name: 'organization-id', params: {id: orga.id}})">{{ orga.name }}</router-link>
+                <router-link :to="`/organizations/${orga.id}`">{{ orga.name }}</router-link>
                 <template v-if="orga.department">{{ orga.departmentName || orga.department }}</template>
                 ({{ orga.role }})
               </span>
             </div>
           </td>
-          <td v-if="$uiConfig.defaultMaxCreatedOrgs !== -1 && !$uiConfig.readonly">
+          <td v-if="$uiConfig.quotas.defaultMaxCreatedOrgs !== -1 && !$uiConfig.readonly">
             <span>{{ props.item.maxCreatedOrgs }}</span>
             <v-btn
-              v-if="$uiConfig.defaultMaxCreatedOrgs !== -1"
+              v-if="$uiConfig.quotas.defaultMaxCreatedOrgs !== -1"
               icon
               class="mx-0"
               @click="showEditMaxCreatedOrgsDialog(props.item)"
@@ -209,7 +209,7 @@
           </v-btn>
           <v-btn
             color="warning"
-            @click="editUserEmailDialog = false;saveUserEmail(currentUser, email)"
+            @click="editUserEmailDialog = false;saveCurrentUserEmail()"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -226,13 +226,13 @@
           {{ $t('common.editTitle', {name: currentUser.name}) }}
         </v-card-title>
         <v-card-text>
-          <p>{{ $t('pages.admin.users.explainLimit', {defaultMaxCreatedOrgs: $uiConfig.defaultMaxCreatedOrgs}) }}</p>
+          <p>{{ $t('pages.admin.users.explainLimit', {defaultMaxCreatedOrgs: $uiConfig.quotas.defaultMaxCreatedOrgs}) }}</p>
           <p v-if="nbCreatedOrgs !== null">
             {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
           </p>
           <v-text-field
             id="maxCreatedOrgs"
-            v-model="newMaxCreatedOrgs"
+            v-model.number="newMaxCreatedOrgs"
             :label="$t('common.maxCreatedOrgs')"
             name="maxCreatedOrgs"
             type="number"
@@ -248,7 +248,7 @@
           </v-btn>
           <v-btn
             color="warning"
-            @click="editMaxCreatedOrgsDialog = false;saveMaxCreatedOrgs(currentUser, newMaxCreatedOrgs)"
+            @click="editMaxCreatedOrgsDialog = false;saveCurrentUserMaxCreatedOrgs()"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -282,7 +282,7 @@
           </v-btn>
           <v-btn
             color="warning"
-            @click="drop2FADialog = false;drop2FA(currentUser)"
+            @click="drop2FADialog = false;drop2FACurrentUser()"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -293,131 +293,89 @@
 </template>
 
 <script setup lang="ts">
-import { mapState, mapActions } from 'vuex'
-import eventBus from '../../event-bus'
-export default {
-  data: () => ({
-    users: null,
-    currentUser: null,
-    email: null,
-    deleteUserDialog: false,
-    editMaxCreatedOrgsDialog: false,
-    editUserEmailDialog: false,
-    drop2FADialog: false,
-    q: '',
-    pagination: { page: 1, itemsPerPage: 10, totalItems: 0, sortBy: ['email'], sortDesc: [false], multiSort: false, mustSort: true },
-    loading: false,
-    headers: null,
-    newMaxCreatedOrgs: null,
-    nbCreatedOrgs: null
-  }),
-  computed: {
-    sort () {
-      if (!this.pagination.sortBy.length) return ''
-      return (this.pagination.sortDesc[0] ? '-' : '') + this.pagination.sortBy[0]
-    },
-    ...mapState(['env']),
-    ...mapState('session', ['user'])
-  },
-  watch: {
-    'pagination.page' () { this.fetchUsers() },
-    'pagination.itemsPerPage' () { this.fetchUsers() },
-    'pagination.sortBy' () { this.fetchUsers() },
-    'pagination.sortDesc' () { this.fetchUsers() }
-  },
-  async created () {
-    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: t('errors.permissionDenied') })
-    this.fetchUsers()
-    this.headers = []
-    if (this.$uiConfig.avatars.users) this.headers.push({ text: t('common.avatar'), sortable: false })
-    this.headers = this.headers.concat([
-      { text: t('common.email'), value: 'email' },
-      { text: t('common.name'), value: 'name' },
-      { text: t('common.id'), value: 'id', sortable: false },
-      { text: t('common.firstName'), value: 'firstName' },
-      { text: t('common.lastName'), value: 'lastName' },
-      { text: t('common.2FA'), value: '2FA', sortable: false },
-      { text: t('common.organizations'), value: 'organizations', sortable: false }
-    ])
-    if (this.$uiConfig.defaultMaxCreatedOrgs !== -1 && !this.$uiConfig.readonly) {
-      this.headers.push({ text: t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs', sortable: false })
-    }
-    if (!this.$uiConfig.readonly) {
-      this.headers.push({ text: t('common.createdAt'), value: 'created.date' })
-      if (this.$uiConfig.manageSites) {
-        this.headers.push({ text: t('common.host'), value: 'host' })
-      }
-      this.headers.push({ text: t('common.updatedAt'), value: 'updated.date' })
-      this.headers.push({ text: t('common.loggedAt'), value: 'logged' })
-      this.headers.push({ text: t('common.plannedDeletion'), value: 'plannedDeletion' })
-    }
-    this.headers.push({ text: '', value: 'actions', sortable: false })
-  },
-  methods: {
-    ...mapActions('session', ['asAdmin']),
-    async fetchUsers () {
-      this.loading = true
-      try {
-        this.users = await this.$axios.$get('api/users',
-          { params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.itemsPerPage, sort: this.sort } })
-        this.pagination.totalItems = this.users.count
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-      this.loading = false
-    },
-    async deleteUser (user) {
-      try {
-        await this.$axios.$delete(`api/users/${user.id}`)
-        this.fetchUsers()
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    async showEditMaxCreatedOrgsDialog (user) {
-      this.currentUser = user
-      this.newMaxCreatedOrgs = user.maxCreatedOrgs
-      this.nbCreatedOrgs = null
-      this.editMaxCreatedOrgsDialog = true
-      this.nbCreatedOrgs = (await this.$axios.$get('api/organizations', { params: { creator: user.id, size: 0 } })).count
-    },
-    async saveMaxCreatedOrgs (user, newMaxCreatedOrgs) {
-      if (newMaxCreatedOrgs === '' || newMaxCreatedOrgs === undefined) newMaxCreatedOrgs = null
-      if (newMaxCreatedOrgs !== null) newMaxCreatedOrgs = Number(newMaxCreatedOrgs)
-      try {
-        await this.$axios.$patch(`api/users/${user.id}`, { maxCreatedOrgs: newMaxCreatedOrgs })
-        this.$set(user, 'maxCreatedOrgs', newMaxCreatedOrgs)
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    async showEditUserEmailDialog (user) {
-      this.currentUser = user
-      this.email = user.email
-      this.editUserEmailDialog = true
-    },
-    async saveUserEmail (user, email) {
-      try {
-        await this.$axios.$patch(`api/users/${user.id}`, { email })
-        this.$set(user, 'email', email)
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    showDrop2FADialog (user) {
-      this.currentUser = user
-      this.drop2FADialog = true
-    },
-    async drop2FA (user) {
-      try {
-        await this.$axios.$patch(`api/users/${user.id}`, { '2FA': { active: false } })
-        this.$set(user, '2FA', { active: false })
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    }
-  }
+import { withQuery } from 'ufo'
+
+const { t } = useI18n()
+const { asAdmin } = useSession()
+
+const q = ref('')
+const validQ = ref('')
+const pagination = reactive({ page: 1, itemsPerPage: 10, totalItems: 0, sortBy: ['email'], sortDesc: [false], multiSort: false, mustSort: true })
+const sort = computed(() => {
+  if (!pagination.sortBy.length) return ''
+  return (pagination.sortDesc[0] ? '-' : '') + pagination.sortBy[0]
+})
+const usersQuery = computed(() => ({ q: validQ.value, allFields: true, page: pagination.page, size: pagination.itemsPerPage, sort: sort.value }))
+const users = useFetch<{ count: number, results: User[] }>(() => withQuery($apiPath + 'api/users', usersQuery.value))
+
+const deleteUserDialog = ref(false)
+const deleteUser = withUiNotif(async (user: User) => {
+  await $fetch(`users/${user.id}`, { method: 'DELETE' })
+})
+
+const currentUser = ref<User>()
+const nbCreatedOrgs = ref<number>()
+const newMaxCreatedOrgs = ref<number>()
+const editMaxCreatedOrgsDialog = ref(false)
+const showEditMaxCreatedOrgsDialog = async (user: User) => {
+  currentUser.value = undefined
+  nbCreatedOrgs.value = undefined
+  nbCreatedOrgs.value = (await $fetch('organizations', { params: { creator: user.id, size: 0 } })).count
+  currentUser.value = user
+  newMaxCreatedOrgs.value = user.maxCreatedOrgs
+  editMaxCreatedOrgsDialog.value = true
 }
+const saveCurrentUserMaxCreatedOrgs = withUiNotif(async () => {
+  if (newMaxCreatedOrgs.value === undefined || currentUser.value === undefined) return
+  await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { maxCreatedOrgs: newMaxCreatedOrgs.value } })
+  currentUser.value.maxCreatedOrgs = newMaxCreatedOrgs.value
+})
+
+const email = ref<string>()
+const editUserEmailDialog = ref(false)
+const showEditUserEmailDialog = (user: User) => {
+  currentUser.value = user
+  email.value = user.email
+  editUserEmailDialog.value = true
+}
+const saveCurrentUserEmail = withUiNotif(async () => {
+  if (email.value === undefined || currentUser.value === undefined) return
+  await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { email: email.value } })
+  currentUser.value.email = email.value
+})
+
+const drop2FADialog = ref(false)
+const showDrop2FADialog = (user: User) => {
+  currentUser.value = user
+  drop2FADialog.value = true
+}
+const drop2FACurrentUser = withUiNotif(async () => {
+  if (currentUser.value === undefined) return
+  await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { '2FA': { active: false } } })
+})
+
+const headers: { title: string, value?: string, sortable?: boolean }[] = []
+if ($uiConfig.avatars.users) headers.push({ title: t('common.avatar'), sortable: false })
+headers.push({ title: t('common.email'), value: 'email' })
+headers.push({ title: t('common.name'), value: 'name' })
+headers.push({ title: t('common.id'), value: 'id', sortable: false })
+headers.push({ title: t('common.firstName'), value: 'firstName' })
+headers.push({ title: t('common.lastName'), value: 'lastName' })
+headers.push({ title: t('common.2FA'), value: '2FA', sortable: false })
+headers.push({ title: t('common.organizations'), value: 'organizations', sortable: false })
+if ($uiConfig.quotas.defaultMaxCreatedOrgs !== -1 && !$uiConfig.readonly) {
+  headers.push({ title: t('common.maxCreatedOrgs'), value: 'maxCreatedOrgs', sortable: false })
+}
+if (!$uiConfig.readonly) {
+  headers.push({ title: t('common.createdAt'), value: 'created.date' })
+  if ($uiConfig.manageSites) {
+    headers.push({ title: t('common.host'), value: 'host' })
+  }
+  headers.push({ title: t('common.updatedAt'), value: 'updated.date' })
+  headers.push({ title: t('common.loggedAt'), value: 'logged' })
+  headers.push({ title: t('common.plannedDeletion'), value: 'plannedDeletion' })
+}
+headers.push({ title: '', value: 'actions', sortable: false })
 </script>
 
 <style lang="css">

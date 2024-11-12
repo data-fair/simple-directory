@@ -2,7 +2,6 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    
   >
     <template #activator="{props}">
       <v-btn
@@ -90,52 +89,52 @@
 </template>
 
 <script setup lang="ts">
-import eventBus from '../event-bus'
+const { orga, member } = defineProps({
+  orga: { type: Object as () => Organization, required: true },
+  member: { type: Object as () => Member, required: true }
+})
+const emit = defineEmits({ sent: (_invit: Invitation) => true })
 
-export default {
-  props: {
-    orga: { type: Object, required: true },
-    member: { type: Object, required: true }
-  },
-  data () {
-    return { menu: false, link: null }
-  },
-  watch: {
-    menu (value) {
-      if (!value) return
-      const invitation = {
-        id: this.orga.id,
-        name: this.orga.name,
-        email: this.member.email,
-        role: this.member.role,
-        redirect: this.$route.query.redirect
-      }
-      if (this.member.department) invitation.department = this.member.department
-      this.invitation = invitation
-      this.link = null
-    }
-  },
-  methods: {
-    async confirmInvitation () {
-      if (this.link) {
-        this.menu = false
-        return
-      }
-      try {
-        const res = await this.$axios.$post('api/invitations', this.invitation, { params: { force_mail: true } })
-        if (res && res.link) {
-          this.link = res.link
-        } else {
-          this.menu = false
-        }
-        this.$emit('sent', this.invitation)
-        eventBus.$emit('notification', t('pages.organization.inviteSuccess', { email: this.invitation.email }))
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    }
+const { sendUiNotif } = useUiNotif()
+const { t } = useI18n()
+
+const menu = ref(false)
+const link = ref<string | null>(null)
+const newInvitation = () => {
+  const invit: Invitation = {
+    id: orga.id,
+    name: orga.name,
+    email: member.email,
+    role: member.role,
+    redirect: reactiveSearchParams.redirect
   }
+  if (member.department) invit.department = member.department
+  return invit
 }
+const invitation = ref(newInvitation())
+const reactiveSearchParams = useReactiveSearchParams()
+
+watch(menu, () => {
+  if (!menu.value) return
+  invitation.value = newInvitation()
+  link.value = null
+})
+
+const confirmInvitation = withUiNotif(async () => {
+  if (link.value) {
+    menu.value = false
+    return
+  }
+  if (!invitation.value) return
+  const res = await $fetch('api/invitations', { method: 'POST', body: invitation.value, params: { force_mail: true } })
+  if (res && res.link) {
+    link.value = res.link
+  } else {
+    menu.value = false
+  }
+  emit('sent', invitation.value)
+  sendUiNotif({ type: 'success', msg: t('pages.organization.inviteSuccess', { email: invitation.value.email }) })
+})
 </script>
 
 <style>

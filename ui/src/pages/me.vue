@@ -268,23 +268,23 @@ export default {
     ...mapState('session', ['user', 'initialized']),
     ...mapState(['userDetails', 'env', 'authProviders']),
     readonly () {
-      return this.$uiConfig.readonly || this.user.os || this.user.idp
+      return $uiConfig.readonly || this.user.os || this.user.idp
     },
     maxCreatedOrgs () {
       if (!this.userDetails) return 0
-      return this.userDetails.maxCreatedOrgs !== undefined && this.userDetails.maxCreatedOrgs !== null ? this.userDetails.maxCreatedOrgs : this.$uiConfig.defaultMaxCreatedOrgs
+      return this.userDetails.maxCreatedOrgs !== undefined && this.userDetails.maxCreatedOrgs !== null ? this.userDetails.maxCreatedOrgs : $uiConfig.defaultMaxCreatedOrgs
     },
     showMaxCreatedOrgs () {
       if (!this.userDetails) return false
-      if (this.$uiConfig.defaultMaxCreatedOrgs === -1) return false
-      if (this.$uiConfig.defaultMaxCreatedOrgs === 0 && !this.userDetails.maxCreatedOrgs) return false
+      if ($uiConfig.defaultMaxCreatedOrgs === -1) return false
+      if ($uiConfig.defaultMaxCreatedOrgs === 0 && !this.userDetails.maxCreatedOrgs) return false
       return this.maxCreatedOrgs === -1 ? 'illimité' : ('' + this.maxCreatedOrgs)
     },
     host () {
       return window.location.host
     },
     mainHost () {
-      return new URL(this.$uiConfig.publicUrl).host
+      return new URL($uiConfig.publicUrl).host
     },
     defaultOrgItems () {
       return (this.patch.ignorePersonalAccount ? [] : [{ id: '', name: t('common.userAccount') }]).concat(this.userDetails.organizations)
@@ -292,7 +292,7 @@ export default {
     showIgnorePersonalAccount () {
       // invitation mode only (means user should always be in an orga)
       // ignorePersonalAccount should already be true in this case
-      if (this.$uiConfig.onlyCreateInvited && this.userDetails.ignorePersonalAccount) return false
+      if ($uiConfig.onlyCreateInvited && this.userDetails.ignorePersonalAccount) return false
       // user only has a personal account
       // ignorePersonalAccount should already be false in this case
       if (this.user.organizations.length === 0 && !this.userDetails.ignorePersonalAccount) return false

@@ -5,7 +5,7 @@
   >
     <v-row class="mt-3 mx-0">
       <h2 class="text-h6 mb-3">
-        {{ $t('common.organizations') }} <span v-if="organizations">({{ $n(organizations.count) }})</span>
+        {{ $t('common.organizations') }} <span v-if="organizations.data.value">({{ $n(organizations.data.value.count) }})</span>
       </h2>
     </v-row>
 
@@ -17,18 +17,18 @@
         variant="solo"
         style="max-width:300px;"
         append-icon="mdi-magnify"
-        @click:append="fetchOrganizations"
-        @keyup.enter="fetchOrganizations"
+        @click:append="validQ = q"
+        @keyup.enter="validQ = q"
       />
     </v-row>
 
-    <v-data-table
-      v-if="organizations"
+    <v-data-table-server
+      v-if="organizations.data.value"
       v-model:options="pagination"
       :headers="headers"
-      :items="organizations.results"
-      :server-items-length="pagination.totalItems"
-      :loading="loading"
+      :items="organizations.data.value.results"
+      :items-length="pagination.totalItems"
+      :loading="organizations.loading.value"
       class="elevation-1"
       item-key="id"
       :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
@@ -48,28 +48,27 @@
             <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
             <td class="justify-center layout px-0">
               <v-btn
-                :loading="!props.item.limits"
-                :color="!props.item.limits ? 'default' : (props.item.limits.store_nb_members.consumption >= props.item.limits.store_nb_members.limit ? 'warning' : 'primary')"
-                :dark="!!props.item.limits"
+                :loading="!limits[props.item.id]"
+                :color="!limits[props.item.id] ? 'default' : (limits[props.item.id].store_nb_members.consumption >= limits[props.item.id].store_nb_members.limit ? 'warning' : 'primary')"
                 size="small"
                 rounded
                 class="mt-2 text-lowercase"
-                @click="currentOrganization = props.item;currentLimits = JSON.parse(JSON.stringify(props.item.limits));limitOrganizationDialog = true"
+                @click="currentOrganization = props.item;currentLimits = JSON.parse(JSON.stringify(limits[props.item.id]));limitOrganizationDialog = true"
               >
-                <template v-if="props.item.limits">
-                  <template v-if="!props.item.limits.store_nb_members || !props.item.limits.store_nb_members.consumption">
+                <template v-if="limits[props.item.id]">
+                  <template v-if="!limits[props.item.id].store_nb_members || !limits[props.item.id].store_nb_members.consumption">
                     {{ $t('common.missingInfo') }}
                   </template>
-                  <template v-else-if="props.item.limits.store_nb_members.limit === 0">
-                    {{ props.item.limits.store_nb_members.consumption.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
+                  <template v-else-if="limits[props.item.id].store_nb_members.limit === 0">
+                    {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
                   </template>
                   <template v-else>
-                    {{ props.item.limits.store_nb_members.consumption.toLocaleString() }} / {{ props.item.limits.store_nb_members.limit.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
+                    {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} / {{ limits[props.item.id].store_nb_members.limit.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
                   </template>
                 </template>
               </v-btn>
               <v-btn
-                :to="localePath({name: 'organization-id', params: {id: props.item.id}})"
+                :to="`/organizations/${props.item.id}`"
                 icon
                 class="mx-0"
               >
@@ -89,7 +88,7 @@
           <template v-else>
             <td class="justify-center layout px-0">
               <v-btn
-                :to="localePath({name: 'organization-id', params: {id: props.item.id}})"
+                :to="`/organizations/${props.item.id}`"
                 icon
                 class="mx-0"
               >
@@ -99,7 +98,7 @@
           </template>
         </tr>
       </template>
-    </v-data-table>
+    </v-data-table-server>
 
     <v-dialog
       v-model="deleteOrganizationDialog"
@@ -134,7 +133,7 @@
       v-model="limitOrganizationDialog"
       max-width="500px"
     >
-      <v-card v-if="currentOrganization">
+      <v-card v-if="currentOrganization && currentLimits">
         <v-card-title class="text-h6">
           {{ $t('pages.admin.organizations.limitOrganizationTitle', {name: currentOrganization.name}) }}
         </v-card-title>
@@ -166,88 +165,58 @@
 </template>
 
 <script setup lang="ts">
-import { mapState } from 'vuex'
-import eventBus from '../../event-bus'
-export default {
-  data: () => ({
-    organizations: null,
-    currentOrganization: null,
-    currentLimits: null,
-    deleteOrganizationDialog: false,
-    limitOrganizationDialog: false,
-    q: '',
-    pagination: { page: 1, itemsPerPage: 10, totalItems: 0, sortDesc: [false], sortBy: ['name'], multiSort: false, mustSort: true },
-    loading: false,
-    headers: null
-  }),
-  computed: {
-    sort () {
-      if (!this.pagination.sortBy.length) return ''
-      return (this.pagination.sortDesc[0] ? '-' : '') + this.pagination.sortBy[0]
-    },
-    ...mapState(['env']),
-    ...mapState('session', ['user'])
-  },
-  watch: {
-    'pagination.page' () { this.fetchOrganizations() },
-    'pagination.itemsPerPage' () { this.fetchOrganizations() },
-    'pagination.sortBy' () { this.fetchOrganizations() },
-    'pagination.sortDesc' () { this.fetchOrganizations() }
-  },
-  async created () {
-    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: t('errors.permissionDenied') })
-    this.fetchOrganizations()
-    this.headers = []
-    if (this.$uiConfig.avatars.orgs) this.headers.push({ text: t('common.avatar'), sortable: false })
-    this.headers = this.headers.concat([
-      { text: t('common.name'), value: 'name' },
-      { text: t('common.id'), value: 'id', sortable: false },
-      { text: t('common.description'), value: 'description', sortable: false }
-    ])
-    if (!this.$uiConfig.readonly) {
-      this.headers = this.headers.concat([
-        { text: t('common.createdAt'), value: 'created.date' },
-        { text: t('common.updatedAt'), value: 'updated.date' }
-      ])
-    }
-    this.headers.push({ text: '', value: 'actions', sortable: false })
-  },
-  methods: {
-    async fetchOrganizations () {
-      this.loading = true
-      try {
-        this.organizations = await this.$axios.$get('api/organizations', {
-          params: { q: this.q, allFields: true, page: this.pagination.page, size: this.pagination.itemsPerPage, sort: this.sort }
-        })
-        this.pagination.totalItems = this.organizations.count
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-      this.loading = false
+import { withQuery } from 'ufo'
 
-      if (!this.$uiConfig.readonly) {
-        for (const org of this.organizations.results) {
-          const limits = await this.$axios.$get(`api/limits/organization/${org.id}`)
-          this.$set(org, 'limits', limits)
-        }
-      }
-    },
-    async deleteOrganization (organization) {
-      try {
-        await this.$axios.$delete(`api/organizations/${organization.id}`)
-        this.fetchOrganizations()
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    async saveLimits (organization, limits) {
-      if (!limits.store_nb_members.limit) limits.store_nb_members.limit = 0
-      delete organization.limits
-      await this.$axios.$post(`api/limits/organization/${organization.id}`, limits)
-      this.$set(organization, 'limits', limits)
+const { t } = useI18n()
+
+const q = ref('')
+const validQ = ref('')
+const pagination = reactive({ page: 1, itemsPerPage: 10, totalItems: 0, sortDesc: [false], sortBy: ['name'], multiSort: false, mustSort: true })
+const sort = computed(() => {
+  if (!pagination.sortBy.length) return ''
+  return (pagination.sortDesc[0] ? '-' : '') + pagination.sortBy[0]
+})
+const organizationsQuery = computed(() => ({ q: validQ.value, allFields: true, page: pagination.page, size: pagination.itemsPerPage, sort: sort.value }))
+const organizations = useFetch<{ count: number, results: Organization[] }>(() => withQuery($apiPath + 'api/organizations', organizationsQuery.value))
+
+const deleteOrganizationDialog = ref(false)
+const currentOrganization = ref<Organization | null>(null)
+const limitOrganizationDialog = ref(false)
+const currentLimits = ref<Limits | null>(null)
+
+const deleteOrganization = withUiNotif(async (org) => {
+  await $fetch(`organizations/${org.id}`, { method: 'DELETE' })
+  organizations.refresh()
+})
+
+const limits = reactive<Record<string, Limits>>({})
+const fetchLimits = withUiNotif(async () => {
+  if (!organizations.data.value) return
+  for (const org of organizations.data.value.results) {
+    if (!limits[org.id]) {
+      limits[org.id] = await $fetch(`limits/organization/${org.id}`)
     }
   }
+})
+if (!$uiConfig.readonly) watch(organizations.data, fetchLimits)
+
+const saveLimits = withUiNotif(async (org: Organization, limits: Limits) => {
+  if (!limits.store_nb_members.limit) limits.store_nb_members.limit = 0
+  await $fetch(`api/limits/organization/${org.id}`, { body: limits, method: 'POST' })
+  delete limits[org.id]
+})
+
+const headers: { title: string, value?: string, sortable?: boolean }[] = []
+if ($uiConfig.avatars.orgs) headers.push({ title: t('common.avatar'), sortable: false })
+headers.push({ title: t('common.name'), value: 'name' })
+headers.push({ title: t('common.id'), value: 'id', sortable: false })
+headers.push({ title: t('common.description'), value: 'description', sortable: false })
+if (!$uiConfig.readonly) {
+  headers.push({ title: t('common.createdAt'), value: 'created.date' })
+  headers.push({ title: t('common.updatedAt'), value: 'updated.date' })
 }
+headers.push({ title: '', value: 'actions', sortable: false })
+
 </script>
 
 <style lang="css">

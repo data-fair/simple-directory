@@ -5,16 +5,16 @@
   >
     <v-row class="mt-3 mx-0">
       <h2 class="text-h6 mb-3">
-        {{ $t('common.sites') }} <span v-if="sites">({{ $n(sites.count) }})</span>
-        <site-post @created="fetchSites" />
+        {{ $t('common.sites') }} <span v-if="sites.data.value">({{ $n(sites.data.value.count) }})</span>
+        <site-post @created="sites.refresh()" />
       </h2>
     </v-row>
 
     <v-data-table
       v-if="sites"
       :headers="headers"
-      :items="sites.results"
-      :loading="loading"
+      :items="sites.data.value?.results"
+      :loading="sites.loading.value"
       class="elevation-1"
       item-key="id"
       hide-default-footer
@@ -45,8 +45,7 @@
             <v-btn
               v-for="authProvider of (props.item.authProviders || [])"
               :key="authProvider.type + ':' + authProvider.id"
-              :color="authProvider.color"
-              dark
+              :color="authProvider.color as string"
               size="small"
               rounded
               variant="flat"
@@ -61,14 +60,14 @@
               >
                 <v-icon
                   v-if="authProvider.icon"
-                  :color="authProvider.color"
+                  :color="authProvider.color as string"
                 >
                   {{ authProvider.icon }}
                 </v-icon>
                 <img
                   v-else-if="authProvider.img"
-                  :src="authProvider.img"
-                  :alt="authProvider.title"
+                  :src="authProvider.img as string"
+                  :alt="authProvider.title as string"
                 >
               </v-avatar>
               &nbsp;{{ authProvider.title }}
@@ -77,8 +76,8 @@
           <td>
             <site-patch
               :site="props.item"
-              :sites="sites.results"
-              @change="fetchSites"
+              :sites="sites.data.value?.results"
+              @change="sites.refresh()"
             />
             <confirm-menu
               yes-color="warning"
@@ -105,57 +104,25 @@
 </template>
 
 <script setup lang="ts">
-import { mapState, mapGetters, mapActions } from 'vuex'
-import eventBus from '../../event-bus'
-export default {
-  data: () => ({
-    sites: null,
-    loading: false,
-    headers: null
-  }),
-  computed: {
-    ...mapState(['env']),
-    ...mapState('session', ['user']),
-  },
-  async created () {
-    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: t('errors.permissionDenied') })
-    this.fetchSites()
-    this.headers = []
-    // if (this.$uiConfig.avatars.orgs) this.headers.push({ text: '', sortable: false })
-    this.headers = this.headers.concat([
-      { text: '', value: 'theme.primaryColor', sortable: false },
-      { text: t('common.host'), value: 'host' },
-      { text: t('common.id'), value: '_id', sortable: false },
-      { text: t('common.organization'), value: 'owner', sortable: false },
-      { text: t('common.authMode'), value: 'authMode', sortable: false },
-      { text: t('common.authProviders'), value: 'authProviders', sortable: false },
-      { test: '', sortable: false }
-    ])
-  },
-  methods: {
-    ...mapActions(['deleteSite']),
-    async fetchSites () {
-      this.loading = true
-      try {
-        this.sites = await this.$axios.$get('api/sites', {
-          params: { showAll: true }
-        })
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-      this.loading = false
-    },
-    async deleteSite (site) {
-      this.loading = true
-      try {
-        await this.$axios.$delete(`api/sites/${site._id}`)
-        this.fetchSites()
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    }
-  }
-}
+
+const { t } = useI18n()
+const sites = useFetch<{ count: number, results: Site[] }>('sites', { query: { showAll: true } })
+
+const deleteSite = withUiNotif(async (site: Site) => {
+  await $fetch(`sites/${site._id}`, { method: 'DELETE' })
+  sites.refresh()
+})
+
+const headers: { title: string, value?: string, sortable?: boolean }[] = [
+  { title: '', value: 'theme.primaryColor', sortable: false },
+  { title: t('common.host'), value: 'host' },
+  { title: t('common.id'), value: '_id', sortable: false },
+  { title: t('common.organization'), value: 'owner', sortable: false },
+  { title: t('common.authMode'), value: 'authMode', sortable: false },
+  { title: t('common.authProviders'), value: 'authProviders', sortable: false },
+  { title: '', sortable: false }
+]
+
 </script>
 
 <style lang="css">

@@ -69,7 +69,7 @@ export default {
   },
   methods: {
     async fetchLimits () {
-      if (!this.$uiConfig.readonly) {
+      if (!$uiConfig.readonly) {
         this.limits = await this.$axios.$get(`api/limits/organization/${this.$route.params.id}`)
       }
     },

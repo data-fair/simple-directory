@@ -37,7 +37,7 @@ export default defineConfig({
         unheadVueComposablesImports,
         {
           from: '#api/types',
-          imports: ['Organization', 'User', 'Member', 'Partner'],
+          imports: ['Organization', 'User', 'Member', 'Partner', 'Invitation', 'Site', 'Limits'],
           type: true,
         },
         {

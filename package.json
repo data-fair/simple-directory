@@ -15,7 +15,7 @@
     "dev-deps": "docker compose --profile dev up -d",
     "stop-dev-deps": "docker compose --profile dev stop",
     "dev-zellij": "zellij --layout .zellij.kdl",
-    "build-types": "df-build-types ./",
+    "build-types": "mkdir -p ui/src/components/vjsf && rm -f ui/src/components/vjsf/* && df-build-types . --vjsf-dir ui/src/components/vjsf",
     "prepare": "husky || true && npm install --no-save --no-fund --no-audit maildev@2.1.0",
     "check-types": "tsc && npm -w ui run check-types",
     "quality": "npm run test-deps && npm run lint && npm run build-types && npm run check-types && npm run test"
@@ -68,7 +68,8 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@data-fair/lib-types-builder": "^1.4.0"
+    "@data-fair/lib-types-builder": "^1.6.0",
+    "@koumoul/vjsf-compiler": "^0.2.2"
   },
   "relativeDependencies": {
     "@data-fair/lib-vuetify": "../lib/packages/vuetify"

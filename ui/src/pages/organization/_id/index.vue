@@ -147,7 +147,7 @@ export default {
     isAdminOrga () {
       if (!this.user || !this.userDetails) return false
       if (this.user.adminMode) return true
-      if (this.$uiConfig.depAdminIsOrgAdmin) {
+      if ($uiConfig.depAdminIsOrgAdmin) {
         return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin'))
       } else {
         return !!(this.userDetails.organizations && this.userDetails.organizations.find(o => o.id === this.$route.params.id && o.role === 'admin' && !o.department))
@@ -178,7 +178,7 @@ export default {
       this.orga = orga
     },
     async fetchLimits () {
-      if (!this.$uiConfig.readonly) {
+      if (!$uiConfig.readonly) {
         this.limits = await this.$axios.$get(`api/limits/organization/${this.$route.params.id}`)
       }
     },
@@ -186,7 +186,7 @@ export default {
       if (e.preventDefault) e.preventDefault()
       if (!this.$refs.form.validate()) return
       const patch = { name: this.orga.name, description: this.orga.description, '2FA': this.orga['2FA'] }
-      if (this.$uiConfig.manageDepartments) patch.departmentLabel = this.orga.departmentLabel
+      if ($uiConfig.manageDepartments) patch.departmentLabel = this.orga.departmentLabel
       this.patchOrganization({ id: this.orga.id, patch, msg: t('common.modificationOk') })
     }
   }

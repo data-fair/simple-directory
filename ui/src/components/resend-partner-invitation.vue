@@ -2,7 +2,6 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    
   >
     <template #activator="{props}">
       <v-btn
@@ -26,7 +25,7 @@
       </v-card-title>
       <v-card-text>
         <v-text-field
-          v-model="partner.name"
+          v-model="editPartner.name"
           :label="$t('common.orgName')"
           :rules="[v => !!v || '']"
           name="name"
@@ -36,7 +35,7 @@
           disabled
         />
         <v-text-field
-          v-model="partner.contactEmail"
+          v-model="editPartner.contactEmail"
           :label="$t('common.contactEmail')"
           :rules="[v => !!v || '']"
           name="contactEmail"
@@ -77,40 +76,26 @@
 </template>
 
 <script setup lang="ts">
-import { mapGetters, mapState } from 'vuex'
-import eventBus from '../event-bus'
+const { orga, partner } = defineProps({
+  orga: { type: Object as () => Organization, required: true },
+  partner: { type: Object as () => Partner, required: true }
+})
+const emit = defineEmits(['change'])
 
-export default {
-  props: {
-    orga: { type: Object, required: true },
-    partner: { type: Object, required: true }
-  },
-  data () {
-    return {
-      menu: false,
-      redirect: null
-    }
-  },
-  computed: {
-    ...mapGetters(['redirects']),
-    ...mapState(['env'])
-  },
-  mounted () {
-    this.redirect = this.$route.query.redirect || ''
-  },
-  methods: {
-    async confirmInvitation () {
-      try {
-        this.menu = false
-        await this.$axios.$post(`api/organizations/${this.orga.id}/partners`, { name: this.partner.name, contactEmail: this.partner.contactEmail, redirect: this.redirect })
-        eventBus.$emit('notification', t('pages.organization.invitePartnerSuccess', { email: this.partner.contactEmail }))
-        this.$emit('change')
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    }
-  }
-}
+const { redirects } = useStore()
+const redirect = useStringSearchParam('redirect')
+const { sendUiNotif } = useUiNotif()
+const { t } = useI18n()
+
+const menu = ref(false)
+const editPartner = ref({ ...partner })
+
+const confirmInvitation = withUiNotif(async () => {
+  menu.value = false
+  await $fetch(`api/organizations/${orga.id}/partners`, { method: 'POST', body: { name: editPartner.value.name, contactEmail: editPartner.value.contactEmail, redirect: redirect.value } })
+  sendUiNotif({ type: 'success', msg: t('pages.organization.invitePartnerSuccess', { email: partner.contactEmail }) })
+  emit('change')
+})
 </script>
 
 <style>

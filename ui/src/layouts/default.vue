@@ -15,149 +15,12 @@
         <lang-switcher />
       </v-app-bar>
     </template>
-    <template v-else>
-      <v-app-bar
-        v-if="showToolbar"
-        app
-        dense
-        flat
-        scroll-off-screen
-      >
-        <template v-if="localePath('index') !== $route.path">
-          <div class="logo-container">
-            <a
-              v-if="$uiConfig.homePage"
-              :href="$uiConfig.homePage"
-              :title="$t('common.home')"
-            >
-              <img
-                v-if="$uiConfig.theme.logo"
-                :src="$uiConfig.theme.logo"
-              >
-              <logo v-else />
-            </a>
-            <router-link
-              v-else
-              :to="localePath('index')"
-              :title="$t('common.home')"
-            >
-              <img
-                v-if="$uiConfig.theme.logo"
-                :src="$uiConfig.theme.logo"
-              >
-              <logo v-else />
-            </router-link>
-          </div>
-          <v-toolbar-title>
-            <h1 class="text-h5 hidden-xs">
-              {{ $t('root.title') }}
-            </h1>
-          </v-toolbar-title>
-        </template>
-
-        <v-spacer />
-        <v-toolbar-items>
-          <template
-            v-if="user && user.adminMode"
-            value="true"
-          >
-            <v-btn
-              :to="localePath('admin-users')"
-              color="admin"
-              dark
-              variant="flat"
-            >
-              {{ $t(`common.users`) }}
-            </v-btn>
-            <v-btn
-              :to="localePath('admin-organizations')"
-              color="admin"
-              dark
-              variant="flat"
-            >
-              {{ $t(`common.organizations`) }}
-            </v-btn>
-            <v-btn
-              v-if="$uiConfig.manageSites"
-              :to="localePath('admin-sites')"
-              color="admin"
-              dark
-              variant="flat"
-            >
-              {{ $t(`common.sites`) }}
-            </v-btn>
-            <v-btn
-              :to="localePath('admin-oauth-tokens')"
-              color="admin"
-              dark
-              variant="flat"
-            >
-              {{ $t(`common.oauthTokens`) }}
-            </v-btn>
-          </template>
-          <v-btn
-            v-if="$uiConfig.anonymousContactForm"
-            :to="localePath('contact')"
-            variant="flat"
-          >
-            Nous contacter
-          </v-btn>
-        </v-toolbar-items>
-        <personal-menu>
-          <template #actions-before="{}">
-            <v-list-item
-              :to="'/me'"
-            >
-              <v-list-item-title>{{ $t('common.myAccount') }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item
-              v-if="user.organization && user.organization.role === 'admin' && ($uiConfig.depAdminIsOrgAdmin || !user.organization.department)"
-              :to="'/organization/' + user.organization.id"
-            >
-              <v-list-item-title>Gestion de l'organisation</v-list-item-title>
-            </v-list-item>
-            <v-list-item
-              v-if="user.organization && user.organization.role === 'admin' && user.organization.department"
-              :to="'/organization/' + user.organization.id + '/department/' + user.organization.department"
-            >
-              <v-list-item-title>Gestion du département</v-list-item-title>
-            </v-list-item>
-            <v-divider />
-          </template>
-        </personal-menu>
-        <lang-switcher />
-      </v-app-bar>
-    </template>
+    <template v-else />
 
     <v-main>
       <v-container fluid>
         <nuxt />
       </v-container>
-      <v-snackbar
-        v-if="notification"
-        ref="notificationSnackbar"
-        v-model="showSnackbar"
-        :color="notification.type"
-        :timeout="notification.type === 'error' ? 30000 : 6000"
-        class="notification"
-        location="bottom"
-      >
-        <p>{{ notification.msg }}</p>
-        <p
-          v-if="notification.errorMsg"
-          class="ml-3"
-          v-html="notification.errorMsg"
-        />
-
-        <template #action="{ }">
-          <v-btn
-            icon
-            @click.native="showSnackbar = false"
-          >
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </template>
-      </v-snackbar>
     </v-main>
     <v-footer
       v-if="!embed && !isLoginPage"
@@ -233,7 +96,7 @@ export default {
     this.$store.dispatch('fetchUserDetails')
     eventBus.$on('notification', async notification => {
       this.showSnackbar = false
-      await this.$nextTick()
+      await nextTick()
       if (typeof notification === 'string') notification = { msg: notification }
       if (notification.error) {
         notification.type = 'error'

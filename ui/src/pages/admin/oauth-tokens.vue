@@ -5,15 +5,15 @@
   >
     <v-row class="mt-3 mx-0">
       <h2 class="text-h6 mb-3">
-        {{ $t('common.oauthTokens') }} <span v-if="oauthTokens">({{ $n(oauthTokens.count) }})</span>
+        {{ $t('common.oauthTokens') }} <span v-if="oauthTokens.data.value">({{ $n(oauthTokens.data.value?.count) }})</span>
       </h2>
     </v-row>
 
     <v-data-table
       v-if="oauthTokens"
       :headers="headers"
-      :items="oauthTokens.results"
-      :loading="loading"
+      :items="oauthTokens.data.value?.results"
+      :loading="oauthTokens.loading.value"
       class="elevation-1"
       item-key="id"
       hide-default-footer
@@ -31,37 +31,13 @@
 </template>
 
 <script setup lang="ts">
-import { mapState, mapGetters } from 'vuex'
-import eventBus from '../../event-bus'
-export default {
-  data: () => ({
-    oauthTokens: null,
-    loading: false,
-    headers: null
-  }),
-  computed: {
-    ...mapState(['env']),
-    ...mapState('session', ['user']),
-  },
-  async created () {
-    if (!this.user.adminMode) return uiNotif.sendUiNotif({ error: t('errors.permissionDenied') })
-    this.fetchOAuthTokens()
-    this.headers = [
-      { text: '', value: 'json', sortable: false }
-    ]
-  },
-  methods: {
-    async fetchOAuthTokens () {
-      this.loading = true
-      try {
-        this.oauthTokens = await this.$axios.$get('api/oauth-tokens')
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-      this.loading = false
-    }
-  }
-}
+
+const oauthTokens = useFetch<{ count: number, results: any[] }>($apiPath + 'api/oauth-tokens')
+
+const headers = [
+  { text: '', value: 'json', sortable: false }
+]
+
 </script>
 
 <style lang="css">

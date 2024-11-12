@@ -17,7 +17,8 @@ export const uiConfig = {
   homePage: config.homePage,
   alwaysAcceptInvitation: config.alwaysAcceptInvitation,
   avatars: config.avatars,
-  manageDepartments: config.manageDepartments
+  manageDepartments: config.manageDepartments,
+  quotas: config.quotas
 }
 export type UiConfig = typeof uiConfig
 export default uiConfig

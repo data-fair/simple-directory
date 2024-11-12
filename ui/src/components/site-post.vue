@@ -27,20 +27,17 @@
           v-model="valid"
           @submit.prevent
         >
-          {{ site }}
           <v-select
             :label="$t('common.owner')"
-            :items="orgs"
+            :items="orgs.data.value?.results"
             item-value="id"
             item-title="name"
             return-object
             :rules="[value => !!value]"
             @update:model-value="org => {site.owner = {type: 'organization', ...org}}"
           />
-          <v-jsf
+          <vjsf-site-post-body
             v-model="site"
-            :schema="schema"
-            :options="vjsfOptions"
           />
         </v-form>
       </v-card-text>
@@ -65,41 +62,23 @@
 </template>
 
 <script setup lang="ts">
-import resolvedSchema from '../../types/site-post/.type/resolved-schema.json'
-import { mapActions, mapState } from 'vuex'
 
-export default {
-  data: () => ({ menu: false, site: null, valid: false, orgs: null }),
-  computed: {
-    ...mapState(['env']),
-    schema () {
-      const schema = JSON.parse(JSON.stringify(resolvedSchema))
-      return schema
-    },
-    vjsfOptions () {
-      return {
-        evalMethod: 'newFunction'
-      }
-    }
-  },
-  watch: {
-    menu () {
-      if (this.menu) this.site = {}
-      else this.site = null
-    }
-  },
-  async mounted () {
-    this.orgs = (await this.$axios('api/organizations?size=10000')).data.results
-  },
-  methods: {
-    ...mapActions(['postSite']),
-    async confirmPost (department) {
-      this.menu = false
-      await this.postSite(this.site)
-      this.$emit('created')
-    }
-  }
+const emit = defineEmits(['created'])
+
+const menu = ref(false)
+const site = ref()
+const valid = ref(false)
+
+const { postSite } = useStore()
+
+const orgs = useFetch<{ results: Organization[] }>($apiPath + 'api/organizations?size=10000')
+
+const confirmPost = async () => {
+  menu.value = false
+  await postSite(site.value)
+  emit('created')
 }
+
 </script>
 
 <style lang="css" scoped>

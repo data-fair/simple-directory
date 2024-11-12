@@ -43,14 +43,14 @@ router.get('', async (req, res, next) => {
 
 router.post('', async (req, res, next) => {
   await checkSecret(req)
-  const { body: site } = (await import('#doc/sites/post-req/index.ts')).returnValid(req, { name: 'req' })
+  const site = (await import('#doc/sites/post-req-body/index.ts')).returnValid(req, { name: 'req' })
   const patchedSite = await patchSite({ ...site, _id: site._id ?? nanoid() }, true)
   res.send(patchedSite)
 })
 
 router.patch('/:id', async (req, res, next) => {
   if (!reqUserAuthenticated(req)?.adminMode) throw httpError(403)
-  const { body: patch } = (await import('#doc/sites/patch-req/index.ts')).returnValid(req, { name: 'req' })
+  const patch = (await import('#doc/sites/patch-req-body/index.ts')).returnValid(req.body, { name: 'req' })
   const patchedSite = await patchSite({ _id: req.params.id, ...patch })
   res.send(patchedSite)
 })

@@ -20,7 +20,7 @@
           :members="members"
           :disable-invite="disableInvite"
           :department="adminDepartment"
-          @sent="fetchMembers(membersPage)"
+          @sent="fetchMembers.refresh()"
         />
         <notify-menu
           v-if="isAdminOrga"
@@ -49,9 +49,9 @@
           append-icon="mdi-magnify"
           clearable
           hide-details="auto"
-          @click:clear="$nextTick(() => $nextTick(() => fetchMembers(1)))"
-          @click:append="fetchMembers(1)"
-          @keyup.enter="fetchMembers(1)"
+          @click:clear="$nextTick(() => $nextTick(() => refetchMembers()))"
+          @click:append="refetchMembers()"
+          @keyup.enter="refetchMembers()"
         />
       </v-col>
       <v-col :cols="filterMemberCols">
@@ -63,7 +63,7 @@
           variant="solo"
           clearable
           hide-details="auto"
-          @update:model-value="fetchMembers(1)"
+          @update:model-value="refetchMembers()"
         />
       </v-col>
       <v-col :cols="filterMemberCols">
@@ -78,7 +78,7 @@
           name="department"
           variant="solo"
           hide-details="auto"
-          @update:model-value="fetchMembers(1)"
+          @update:model-value="refetchMembers()"
         />
       </v-col>
       <v-col
@@ -94,7 +94,7 @@
           clearable
           name="storage"
           variant="solo"
-          @update:model-value="fetchMembers(1)"
+          @update:model-value="refetchMembers()"
         />
       </v-col>
     </v-row>
@@ -103,17 +103,22 @@
       v-if="members && members.count"
       class="elevation-1 mt-1"
     >
-      <template v-for="(member, i) in members.results">
+      <template
+        v-for="(member, i) in members.results"
+        :key="`${member.id}-${member.department}`"
+      >
         <v-list-item
-          :key="`${member.id}-${member.department}`"
+
           :class="{'secondary-member': members.results[i-1] && members.results[i-1].id === member.id}"
         >
-          <v-list-item-avatar>
-            <v-img
-              v-if="!members.results[i-1] || members.results[i-1].id !== member.id"
-              :src="`${$sdUrl}/api/avatars/user/${member.id}/avatar.png`"
-            />
-          </v-list-item-avatar>
+          <template #append>
+            <v-avatar>
+              <v-img
+                v-if="!members.results[i-1] || members.results[i-1].id !== member.id"
+                :src="`${$sdUrl}/api/avatars/user/${member.id}/avatar.png`"
+              />
+            </v-avatar>
+          </template>
 
           <template v-if="!members.results[i-1] || members.results[i-1].id !== member.id">
             <v-list-item-title style="white-space:normal;">
@@ -179,7 +184,6 @@
         </v-list-item>
         <v-divider
           v-if="members.results[i+1] && members.results[i+1].id !== member.id"
-          :key="i"
         />
       </template>
     </v-list>
@@ -192,134 +196,117 @@
       <v-pagination
         :model-value="membersPage"
         :length="Math.ceil(members.count / membersPageSize)"
-        @update:model-value="fetchMembers"
+        @update:model-value="page => {membersPage = page}"
       />
     </v-row>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { mapState, mapActions } from 'vuex'
-import eventBus from '../event-bus'
+import type { QueryObject } from 'ufo'
 
-export default {
-  props: {
-    isAdminOrga: {
-      type: Boolean,
-      default: null
-    },
-    orga: {
-      type: Object,
-      default: null
-    },
-    nbMembersLimits: {
-      type: Object,
-      default: null
-    },
-    orgStorage: {
-      type: String,
-      default: 'both'
-    },
-    readonly: {
-      type: Boolean,
-      default: false
-    },
-    adminDepartment: {
-      type: String,
-      required: false,
-      default: null
-    }
+const { isAdminOrga, orga, nbMembersLimits, orgStorage, readonly, adminDepartment } = defineProps({
+  isAdminOrga: {
+    type: Boolean,
+    default: null
   },
-  data: () => ({
-    members: null,
-    roles: null,
-    q: '',
-    role: null,
-    department: null,
-    membersPage: 1,
-    membersPageSize: 10,
-    emailConfirmedFilter: null
-  }),
-  computed: {
-    ...mapState(['userDetails', 'env']),
-    ...mapState('session', ['user']),
-    disableInvite () {
-      return !this.nbMembersLimits || (this.nbMembersLimits.limit > 0 && this.nbMembersLimits.consumption >= this.nbMembersLimits.limit)
-    },
-    notifyTopics () {
-      if (this.$uiConfig.alwaysAcceptInvitation) {
-        return [{ key: 'simple-directory:add-member', title: t('notifications.addMemberTopic') }]
-      } else {
-        return [
-          { key: 'simple-directory:invitation-sent', title: t('notifications.sentInvitationTopic') },
-          { key: 'simple-directory:invitation-accepted', title: t('notifications.acceptedInvitationTopic') }
-        ]
-      }
-    },
-    csvUrl () {
-      return this.$sdUrl + `/api/organizations/${this.orga.id}/members?size=10000&format=csv`
-    },
-    filterMemberCols () {
-      return this.$uiConfig.alwaysAcceptInvitation ? 6 : 4
-    }
+  orga: {
+    type: Object as () => Organization,
+    default: null
   },
-  async mounted () {
-    this.department = this.adminDepartment
-    this.fetchMembers(1)
+  nbMembersLimits: {
+    type: Object,
+    default: null
   },
-  methods: {
-    ...mapActions('session', ['asAdmin']),
-    async fetchMembers (page) {
-      this.membersPage = page
-      try {
-        const params = {
-          q: this.q,
-          page: this.membersPage,
-          size: this.membersPageSize,
-          department: this.department,
-          role: this.role,
-          org_storage: this.orgStorage,
-          sort: 'name'
-        }
-        if (this.emailConfirmedFilter !== null) {
-          params.email_confirmed = this.emailConfirmedFilter
-        }
-        this.members = await this.$axios.$get(`api/organizations/${this.orga.id}/members`, { params })
-        if (this.members.count && !this.members.results.length) {
-          this.fetchMembers(page - 1)
-        }
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    async deleteMember (member) {
-      try {
-        await this.$axios.$delete(`api/organizations/${this.orga.id}/members/${member.id}`, { params: { department: member.department } })
-        eventBus.$emit('notification', t('pages.organization.deleteMemberSuccess', { name: member.name }))
-        this.fetchMembers(this.membersPage)
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
-    },
-    async saveMember (member, oldMember) {
-      try {
-        const patch = { role: member.role }
-        if (member.department) {
-          const dep = this.orga.departments.find(d => d.id === member.department)
-          patch.department = dep.id
-          patch.departmentName = dep.name
-        }
-        await this.$axios.patch(`api/organizations/${this.orga.id}/members/${member.id}`,
-          patch,
-          { params: { department: oldMember.department } }
-        )
-        this.fetchMembers(this.membersPage)
-      } catch (error) {
-        eventBus.$emit('notification', { error })
-      }
+  orgStorage: {
+    type: String,
+    default: 'both'
+  },
+  readonly: {
+    type: Boolean,
+    default: false
+  },
+  adminDepartment: {
+    type: String,
+    default: null
+  }
+})
+
+const { t } = useI18n()
+const { sendUiNotif } = useUiNotif()
+const { user, asAdmin } = useSessionAuthenticated()
+
+const members = ref<any>()
+const q = ref('')
+const role = ref()
+const department = ref(adminDepartment)
+const membersPage = ref(1)
+const membersPageSize = 10
+const emailConfirmedFilter = ref<boolean | null>(null)
+
+const disableInvite = computed(() => !nbMembersLimits || (nbMembersLimits.limit > 0 && nbMembersLimits.consumption >= nbMembersLimits.limit))
+
+const notifyTopics = computed(() => {
+  if ($uiConfig.alwaysAcceptInvitation) {
+    return [{ key: 'simple-directory:add-member', title: t('notifications.addMemberTopic') }]
+  } else {
+    return [
+      { key: 'simple-directory:invitation-sent', title: t('notifications.sentInvitationTopic') },
+      { key: 'simple-directory:invitation-accepted', title: t('notifications.acceptedInvitationTopic') }
+    ]
+  }
+})
+
+const csvUrl = computed(() => $sdUrl + `/api/organizations/${orga.id}/members?size=10000&format=csv`)
+const filterMemberCols = $uiConfig.alwaysAcceptInvitation ? 6 : 4
+
+const membersParams = computed(() => {
+  const params: QueryObject = {
+    q: q.value,
+    page: membersPage.value,
+    size: membersPageSize,
+    department: department.value,
+    role: role.value,
+    org_storage: orgStorage,
+    sort: 'name'
+  }
+  if (emailConfirmedFilter.value !== null) {
+    params.email_confirmed = emailConfirmedFilter
+  }
+  return params
+})
+const fetchMembers = useFetch<{ count: number, results: any[] }>(() => `api/organizations/${orga.id}/members`, { query: membersParams })
+const refetchMembers = async () => {
+  membersPage.value = 1
+}
+
+const deleteMember = withUiNotif(async (member: Member) => {
+  await $fetch(`api/organizations/${orga.id}/members/${member.id}`, { method: 'DELETE', params: { department: member.department } })
+  sendUiNotif({ type: 'success', msg: t('pages.organization.deleteMemberSuccess', { name: member.name }) })
+  await fetchMembers.refresh()
+  if (fetchMembers.data.value?.count && !fetchMembers.data.value.results.length && membersPage.value > 1) {
+    membersPage.value -= 1
+    await fetchMembers.refresh()
+  }
+})
+
+const saveMember = withUiNotif(async (member: Member, oldMember: Member) => {
+  const patch: Partial<Member> = { role: member.role }
+  if (member.department) {
+    const dep = orga.departments?.find(d => d.id === member.department)
+    if (dep) {
+      patch.department = dep.id
+      patch.departmentName = dep.name
     }
   }
-}
+  await $fetch(`api/organizations/${orga.id}/members/${member.id}`, {
+    method: 'PATCH',
+    body: patch,
+    params: { department: oldMember.department }
+  })
+  fetchMembers.refresh()
+})
+
 </script>
 
 <style lang="css" scoped>

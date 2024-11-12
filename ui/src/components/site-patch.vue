@@ -3,7 +3,6 @@
     v-model="menu"
     fullscreen
     :close-on-content-click="false"
-    
   >
     <template #activator="{props}">
       <v-btn
@@ -29,9 +28,8 @@
           v-model="valid"
           @submit.prevent
         >
-          <v-jsf
+          <vjsf-site-patch-body
             v-model="patch"
-            :schema="schema"
             :options="vjsfOptions"
           />
         </v-form>
@@ -57,50 +55,47 @@
 </template>
 
 <script setup lang="ts">
-import resolvedSchema from '../../types/site-patch/.type/resolved-schema.json'
-import { mapActions, mapState } from 'vuex'
+const { site, sites } = defineProps({
+  site: { type: Object as () => Site, required: true },
+  sites: { type: Array as () => Site[], required: true }
+})
+const emit = defineEmits(['change'])
 
-export default {
-  props: ['site', 'sites'],
-  data: () => ({ menu: false, patch: null, valid: false, model: {} }),
-  computed: {
-    ...mapState(['env']),
-    schema () {
-      const schema = JSON.parse(JSON.stringify(resolvedSchema))
+const { patchSite } = useStore()
+
+const menu = ref(false)
+const patch = ref()
+const valid = ref(false)
+
+const vjsfOptions = computed(() => ({
+  context: {
+    otherSites: sites.filter(s => s._id !== site._id).map(site => site.host),
+    otherSitesProviders: sites.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {} as Record<string, string[]>)
+  },
+  evalMethod: 'newFunction'
+}))
+
+watch(menu, () => {
+  if (!menu.value) return
+  patch.value = JSON.parse(JSON.stringify(site))
+})
+
+const confirmEdit = async () => {
+  menu.value = false
+  await patchSite(patch.value)
+  emit('change')
+}
+
+/*
+const schema = JSON.parse(JSON.stringify(resolvedSchema))
       schema.properties.authProviders.items.oneOf[0].properties.discovery['x-slots'] = {
         before: `Donnez cette [URL de retour de connexion](https://${this.site.host}/simple-directory/api/auth/oauth-callback) au fournisseur d'identité et définissez les scopes "openid", "profile", "email".`
       }
-      /* uncomment if we activate saml support someday
+      uncomment if we activate saml support someday
       schema.properties.authProviders.items.oneOf[1].properties.metadata['x-slots'] = {
         before: `Remplissez le champ ci-dessous avec les métadonnées au format XML données par le fournisseurs d'identité. Et donnez ce [lien en retour](http://${this.site.host}/simple-directory/api/auth/saml2-metadata.xml).`
       } */
-      return schema
-    },
-    vjsfOptions () {
-      return {
-        context: {
-          otherSites: this.sites.filter(s => s._id !== this.site._id).map(site => site.host),
-          otherSitesProviders: this.sites.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {})
-        },
-        evalMethod: 'newFunction'
-      }
-    }
-  },
-  watch: {
-    menu () {
-      if (!this.menu) return
-      this.patch = JSON.parse(JSON.stringify(this.site))
-    }
-  },
-  methods: {
-    ...mapActions(['patchSite']),
-    async confirmEdit (department) {
-      this.menu = false
-      await this.patchSite(this.patch)
-      this.$emit('change')
-    }
-  }
-}
+
 </script>
 
 <style lang="css" scoped>

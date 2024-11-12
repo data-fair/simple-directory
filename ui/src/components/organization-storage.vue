@@ -1,7 +1,6 @@
 <template>
   <v-alert
     border="start"
-    colored-border
     color="admin"
     class="my-4"
     icon="mdi-shield-alert"
@@ -32,7 +31,6 @@
     <v-btn
       v-if="diff"
       color="admin"
-      dark
       @click="patch"
     >
       Entregistrer
@@ -41,84 +39,71 @@
 </template>
 
 <script setup lang="ts">
-import { mapState } from 'vuex'
-export default {
-  props: ['orga'],
-  data () {
-    return {
-      orgStorage: null,
-      configParsingError: null
-    }
-  },
-  computed: {
-    ...mapState(['env']),
-    ...mapState('session', ['user']),
-    ldapConfig: {
-      get () { return JSON.stringify(this.orgStorage.config, null, 2) },
-      set (val) {
-        try {
-          this.orgStorage.config = JSON.parse(val)
-          this.configParsingError = null
-        } catch (err) {
-          this.configParsingError = err.message
-        }
+const { orga } = defineProps({
+  orga: { type: Object as () => Organization, required: true }
+})
+const emit = defineEmits(['change'])
+
+const { user } = useSessionAuthenticated()
+
+const orgStorage = ref(orga.orgStorage ?? {
+  active: false,
+  type: 'ldap',
+  readonly: true,
+  config: {
+    url: 'ldap://ldap:389',
+    searchUserDN: 'cn=admin,dc=example,dc=org',
+    searchUserPassword: '',
+    baseDN: 'dc=example,dc=org',
+    users: {
+      objectClass: 'inetOrgPerson',
+      dnKey: 'cn',
+      mapping: {
+        id: 'cn',
+        name: 'cn',
+        email: 'mail',
+        firstName: 'givenName',
+        lastName: 'sn',
+        birthday: null,
+        avatarUrl: null
       }
     },
-    diff () {
-      if (!this.orga || !this.orga.orgStorage || !this.orgStorage) return false
-      if (!this.orga.orgStorage.active && !this.orgStorage.active) return false
-      return JSON.stringify(this.orga.orgStorage) !== JSON.stringify(this.orgStorage)
-    },
-    loginOrg () {
-      return `${this.$sdUrl}/login?org=${encodeURIComponent(this.orga.id)}&org_storage=true&readonly=${this.orgStorage.readonly}`
-    }
-  },
-  created () {
-    // eslint-disable-next-line vue/no-mutating-props
-    this.orga.orgStorage = this.orga.orgStorage || {
-      active: false,
-      type: 'ldap',
-      readonly: true,
-      config: {
-        url: 'ldap://ldap:389',
-        searchUserDN: 'cn=admin,dc=example,dc=org',
-        searchUserPassword: '',
-        baseDN: 'dc=example,dc=org',
-        users: {
-          objectClass: 'inetOrgPerson',
-          dnKey: 'cn',
-          mapping: {
-            id: 'cn',
-            name: 'cn',
-            email: 'mail',
-            firstName: 'givenName',
-            lastName: 'sn',
-            birthday: null,
-            avatarUrl: null
-          }
+    members: {
+      onlyWithRole: false,
+      role: {
+        attr: 'employeeType',
+        values: {
+          admin: ['admin'],
+          user: []
         },
-        members: {
-          onlyWithRole: false,
-          role: {
-            attr: 'employeeType',
-            values: {
-              admin: ['admin'],
-              user: []
-            },
-            default: 'user'
-          }
-        }
+        default: 'user'
       }
-    }
-    this.orgStorage = JSON.parse(JSON.stringify(this.orga.orgStorage))
-  },
-  methods: {
-    async patch () {
-      await this.$axios.$patch(`/api/organizations/${this.orga.id}`, { orgStorage: this.orgStorage })
-      // eslint-disable-next-line vue/no-mutating-props
-      this.orga.orgStorage = this.orgStorage
     }
   }
+})
+const configParsingError = ref('')
+
+const ldapConfig = computed({
+  get () { return JSON.stringify(orgStorage.value.config, null, 2) },
+  set (val) {
+    try {
+      orgStorage.value.config = JSON.parse(val)
+      configParsingError.value = ''
+    } catch (err: any) {
+      configParsingError.value = err.message
+    }
+  }
+})
+
+const diff = computed(() => {
+  if (!orga || !orga.orgStorage || !orgStorage.value) return false
+  if (!orga.orgStorage.active && !orgStorage.value.active) return false
+  return JSON.stringify(orga.orgStorage) !== JSON.stringify(orgStorage.value)
+})
+const loginOrg = computed(() => `${$sdUrl}/login?org=${encodeURIComponent(orga.id)}&org_storage=true&readonly=${orgStorage.value.readonly}`)
+const patch = async () => {
+  await $fetch(`/api/organizations/${orga.id}`, { method: 'PATCH', body: { orgStorage: orgStorage.value } })
+  emit('change')
 }
 </script>
 
