@@ -65,9 +65,7 @@
         "options"
       ],
       "properties": {
-        "url": {
-          "type": "string"
-        },
+        "url": { "type": "string" },
         "options": {
           "type": "object"
         }
@@ -80,12 +78,8 @@
         "private"
       ],
       "properties": {
-        "public": {
-          "type": "string"
-        },
-        "private": {
-          "type": "string"
-        }
+        "public": { "type": "string" },
+        "private": { "type": "string" }
       }
     },
     "kid": {
@@ -94,24 +88,12 @@
     "secretKeys": {
       "type": "object",
       "properties": {
-        "identities": {
-          "type": "string"
-        },
-        "events": {
-          "type": "string"
-        },
-        "sendMails": {
-          "type": "string"
-        },
-        "limits": {
-          "type": "string"
-        },
-        "readAll": {
-          "type": "string"
-        },
-        "sites": {
-          "type": "string"
-        }
+        "identities": { "type": "string" },
+        "events": { "type": "string" },
+        "sendMails": { "type": "string" },
+        "limits": { "type": "string" },
+        "readAll": { "type": "string" },
+        "sites": { "type": "string" }
       }
     },
     "observer": {
@@ -129,9 +111,7 @@
       "type": "object",
       "required": ["colors"],
       "properties": {
-        "logo": {
-          "type": "string"
-        },
+        "logo": { "type": "string" },
         "colors": {
           "type": "object",
           "$ref": "#/$defs/colors"
@@ -170,20 +150,14 @@
         "name"
       ],
       "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" }
       }
     },
     "adminCredentials": {
       "type": "object",
       "properties": {
-        "email": {
-          "type": "string"
-        },
+        "email": { "type": "string" },
         "password": {
           "type": "object"
         }
@@ -254,12 +228,8 @@
         "notBefore"
       ],
       "properties": {
-        "expiresIn": {
-          "type": "string"
-        },
-        "notBefore": {
-          "type": "string"
-        }
+        "expiresIn": { "type": "string" },
+        "notBefore": { "type": "string" }
       }
     },
     "quotas": {
@@ -296,21 +266,11 @@
         "2FAToken"
       ],
       "properties": {
-        "initialToken": {
-          "type": "string"
-        },
-        "exchangedToken": {
-          "type": "string"
-        },
-        "invitationToken": {
-          "type": "string"
-        },
-        "partnerInvitationToken": {
-          "type": "string"
-        },
-        "2FAToken": {
-          "type": "string"
-        }
+        "initialToken": { "type": "string" },
+        "exchangedToken": { "type": "string" },
+        "invitationToken": { "type": "string" },
+        "partnerInvitationToken": { "type": "string" },
+        "2FAToken": { "type": "string" }
       }
     },
     "passwordless": {
@@ -328,9 +288,7 @@
     "mails": {
       "type": "object",
       "properties": {
-        "from": {
-          "type": "string"
-        },
+        "from": { "type": "string" },
         "transport": {
           "type": "object"
         },
@@ -348,9 +306,7 @@
         "web"
       ],
       "properties": {
-        "url": {
-          "type": "string"
-        },
+        "url": { "type": "string" },
         "active": {
           "type": "boolean"
         },
@@ -515,9 +471,7 @@
         "deleteInactiveDelay"
       ],
       "properties": {
-        "cron": {
-          "type": "string"
-        },
+        "cron": { "type": "string" },
         "deleteInactive": {
           "type": "boolean"
         },
@@ -582,12 +536,8 @@
         "secret"
       ],
       "properties": {
-        "id": {
-          "type": "string"
-        },
-        "secret": {
-          "type": "string"
-        }
+        "id": { "type": "string" },
+        "secret": { "type": "string" }
       }
     },
     "oidcProvider": {
@@ -618,18 +568,10 @@
         "title"
       ],
       "properties": {
-        "metadata": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "color": {
-          "type": "string"
-        },
-        "img": {
-          "type": "string"
-        },
+        "metadata": { "type": "string" },
+        "title": { "type": "string" },
+        "color": { "type": "string" },
+        "img": { "type": "string" },
         "coreIdProvider": {
           "type": "boolean"
         },
@@ -683,48 +625,54 @@
         "organizations"
       ],
       "properties": {
-        "users": {
-          "type": "string"
-        },
-        "organizations": {
-          "type": "string"
-        }
+        "users": { "type": "string" },
+        "organizations": { "type": "string" }
       }
     },
     "colors": {
       "type": "object",
-      "required": ["background", "surface", "primary","secondary", "accent", "error", "info", "success", "warning", "admin"],
+      "additionalProperties": false,
+      "required": [
+        "background",
+        "on-background",
+        "surface",
+        "on-surface",
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "error",
+        "on-error",
+        "info",
+        "on-info",
+        "success",
+        "on-success",
+        "warning",
+        "on-warning",
+        "admin",
+        "on-admin"
+      ],
       "properties": {
-        "background": {
-          "type": "string"
-        },
-        "surface": {
-          "type": "string"
-        },
-        "primary": {
-          "type": "string"
-        },
-        "secondary": {
-          "type": "string"
-        },
-        "accent": {
-          "type": "string"
-        },
-        "error": {
-          "type": "string"
-        },
-        "info": {
-          "type": "string"
-        },
-        "success": {
-          "type": "string"
-        },
-        "warning": {
-          "type": "string"
-        },
-        "admin": {
-          "type": "string"
-        }
+        "background": { "type": "string" },
+        "on-background": { "type": "string" },
+        "surface": { "type": "string" },
+        "on-surface": { "type": "string" },
+        "primary": { "type": "string" },
+        "on-primary": { "type": "string" },
+        "text-primary": { "type": "string" },
+        "secondary": { "type": "string" },
+        "on-secondary": { "type": "string" },
+        "text-secondary": { "type": "string" },
+        "error": { "type": "string" },
+        "on-error": { "type": "string" },
+        "info": { "type": "string" },
+        "on-info": { "type": "string" },
+        "success": { "type": "string" },
+        "on-success": { "type": "string" },
+        "warning": { "type": "string" },
+        "on-warning": { "type": "string" },
+        "admin": { "type": "string" },
+        "on-admin": { "type": "string" }
       }
     }
   }

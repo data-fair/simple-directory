@@ -1,5 +1,6 @@
 import type { Colors } from '#types/site-public/index.ts'
 import tinycolor from 'tinycolor2'
+import { getMessage } from '#i18n'
 
 // export const isDark = (color) => tinycolor(color).getLuminance() < 0.4
 
@@ -29,25 +30,28 @@ export const readableColor = (color: string, colors: Colors) => {
   return contrastColorCache[cacheKey]
 } */
 
-function readableWarning (color: string, colorName: string, colors: Colors) {
-  if (!tinycolor.isReadable(color, colors.background, readableOptions)) {
-    return `la couleur ${colorName} (${color}) n'est pas suffisamment lisible par dessus la couleur d'arrière plan (${colors.background})`
-  }
-  if (!tinycolor.isReadable(color, colors.surface, readableOptions)) {
-    return `la couleur ${colorName} (${color}) n'est pas suffisamment lisible par dessus la couleur de surface (${colors.surface})`
-  }
-  if (!tinycolor.isReadable('#FFFFFF', color, readableOptions)) {
-    return `le blanc n'est pas suffisamment lisible par dessus la couleur ${colorName} (${color})`
+function readableWarning (locale: string, colorCode?: string, colorName?: string, bgColorCode?: string, bgColorName?: string) {
+  if (!colorCode || !bgColorCode) return
+  if (!tinycolor.isReadable(colorCode, bgColorCode, readableOptions)) {
+    return getMessage(locale, 'colors.readableWarning', { colorCode, colorName: getMessage(locale, `colors.${colorName}`), bgColorCode, bgColorName: getMessage(locale, `colors.${bgColorName}`) })
   }
 }
 
-export function getColorsWarnings (colors: Colors, authProviders?: { title?: string, color?: string }[]): string[] {
+export function getColorsWarnings (locale: string, colors: Colors, authProviders?: { title?: string, color?: string }[]): string[] {
   const warnings: (string | undefined)[] = []
-  warnings.push(readableWarning(colors.primary, 'primaire', colors))
+  for (const color of ['primary', 'secondary']) {
+    warnings.push(readableWarning(locale, colors[`${color}-text` as keyof Colors], color, colors.background, 'background'))
+    warnings.push(readableWarning(locale, colors[`${color}-text` as keyof Colors], color, colors.surface, 'surface'))
+  }
+  for (const color of ['background', 'surface', 'primary', 'secondary', 'error', 'warning', 'info', 'success', 'admin']) {
+    warnings.push(readableWarning(locale, colors[`on-${color}` as keyof Colors], 'text', colors[color as keyof Colors], color))
+  }
   if (authProviders) {
     for (const p of authProviders) {
       if (p.color && p.title) {
-        warnings.push(readableWarning(p.color, `du fournisseur d'identité ${p.title}`, colors))
+        if (!tinycolor.isReadable('#FFFFFF', p.color, readableOptions)) {
+          warnings.push(getMessage(locale, 'colors.readableWarning', { colorCode: '#FFFFFF', colorName: getMessage(locale, 'colors.white'), bgColorCode: p.color, bgColorName: getMessage(locale, 'colors.authProvider', { title: 'p.title' }) }))
+        }
       }
     }
   }

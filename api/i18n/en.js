@@ -346,5 +346,20 @@ Feel free to contact us at {contact}.
     sentInvitation: 'An email was sent to {email} with an invitation to join the organization {orgName}.',
     acceptedInvitationTopic: 'an invitation is accepted',
     acceptedInvitation: 'The user {name} ({email}) has joined the organization {orgName}.'
+  },
+  colors: {
+    readableWarning: 'the {colorName} color ({colorCode}) is not sufficiently readable over the {bgColorName} color ({bgColorCode})',
+    authProvider: 'auth provider {title}',
+    white: 'white',
+    text: 'text',
+    background: 'background',
+    surface: 'surface',
+    primary: 'primary',
+    secondary: 'secondary',
+    error: 'error',
+    warning: 'warning',
+    success: 'success',
+    info: 'info',
+    admin: 'admin'
   }
 }

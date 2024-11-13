@@ -423,5 +423,22 @@ N'hésitez pas à nous contacter à {contact}.
     acceptedPartnerInvitation: 'L\'organisation {partnerName} ({email}) a rejoint l\'organisation {orgName} en tant que partenaire.',
     addMemberTopic: 'un membre a été ajouté',
     addMember: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.'
+  },
+  colors: {
+    readableWarning: 'la couleur {colorName} ({colorCode}) n\'est pas suffisamment lisible par dessus la couleur {bgColorName} ({bgColorCode})',
+    authProvider: 'du fournisseur d\'identité {title}',
+    white: 'blanche',
+    text: 'de texte',
+    background: 'd\'arrière plan',
+    surface: 'de surface',
+    primary: 'primaire',
+    'primary-text': 'texte primaire',
+    secondary: 'secondaire',
+    'secondary-text': 'texte secondaire',
+    error: 'd\'erreur',
+    warning: 'd\'avertissement',
+    success: 'de succès',
+    info: 'd\'information',
+    admin: 'd\'administration'
   }
 }

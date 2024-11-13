@@ -5,6 +5,7 @@ import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthent
 import { nanoid } from 'nanoid'
 import { findAllSites, findOwnerSites, patchSite, deleteSite, getSiteColors } from './service.ts'
 import { reqSite } from '#services'
+import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
 import { getColorsWarnings } from '../utils/color.ts'
 
@@ -62,6 +63,8 @@ router.delete('/:id', async (req, res, next) => {
 })
 
 router.get('/_public', async (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=60')
+
   const site = await reqSite(req)
   if (!site) {
     const sitePublic: SitePublic = {
@@ -84,6 +87,7 @@ router.get('/_public', async (req, res, next) => {
 
 router.get('/:id/_theme_warnings', async (req, res, next) => {
   const site = await reqSite(req)
+  const { localeCode } = reqI18n(req)
   const colors = site ? getSiteColors(site) : config.theme.colors
-  res.send(getColorsWarnings(colors, site?.authProviders as { title?: string, color?: string }[]))
+  res.send(getColorsWarnings(localeCode, colors, site?.authProviders as { title?: string, color?: string }[]))
 })

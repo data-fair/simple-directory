@@ -123,18 +123,27 @@ module.exports = {
   theme: {
     logo: undefined,
     colors: {
-      // standard vuetify colors
+      // standard vuetify colors, see https://vuetifyjs.com/en/styles/colors/#material-colors
       background: '#FFFFFF',
+      'on-background': '#212121', // grey-darken-4
       surface: '#FFFFFF',
+      'on-surface': '#212121', // grey-darken-4
       primary: '#1976D2', // blue.darken2
-      // primary: '#000000',
-      secondary: '#42A5F5', // blue.lighten1,
-      accent: '#FF9800', // orange.base
-      error: 'FF5252', // red.accent2
-      info: '#2196F3', // blue.base
-      success: '#4CAF50', // green.base
-      warning: '#E91E63', // pink.base
-      admin: '#E53935' // red.darken1
+      'on-primary': '#FFFFFF', // white
+      'text-primary': undefined, // same as primary by default
+      secondary: '#DD2C00', // deep-orange-darken-4
+      'on-secondary': '#FFFFFF',
+      'text-secondary': undefined, // same as secondary by default
+      error: '#D50000', // red-accent-5
+      'on-error': '#FFFFFF',
+      info: '#2962FF', // blue-accent-4
+      'on-info': '#FFFFFF',
+      success: '#2E7D32', // green-darken-3
+      'on-success': '#FFFFFF',
+      warning: '#D81B60', // pink-darken-1
+      'on-warning': '#FFFFFF',
+      admin: '#9C27B0', // purple
+      'on-admin': '#FFFFFF',
     }
   },
   i18n: {
@@ -201,8 +210,8 @@ module.exports = {
   // Example of full oauth provider configuration
   // oauth: {providers: [{
   //   id: 'github',
-  //   icon: 'mdi-github',
   //   title: 'GitHub',
+  //   icon: 'mdi-github',
   //   color: '#4078c0',
   //   scope: 'user:email'
   //   client: {

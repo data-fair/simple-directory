@@ -54,6 +54,8 @@ export async function deleteSite (siteId: string) {
 
 export function getSiteColors (site: Site) {
   const colors = { ...config.theme.colors }
+  colors['primary-text'] = colors['primary-text'] ?? colors.primary
+  colors['secondary-text'] = colors['secondary-text'] ?? colors.secondary
   if (site.theme?.primaryColor) colors.primary = site.theme?.primaryColor
   return colors
 }

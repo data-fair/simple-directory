@@ -59,9 +59,14 @@ export const reqI18n = (req: Request) => {
   return reqAny[reqI18nKey] as ReturnType<typeof getReqI18n>
 }
 
+export const getMessage = (localeCode: string, key: string, params: Record<string, string> = {}) => {
+  const flatKey = key.replace(/\./g, '_')
+  return microTemplate(flatMessages[localeCode + '_' + flatKey] ?? flatMessages[defaultLocale + '_' + flatKey], params)
+}
+
 export const __ = (req: Request, key: string, params: Record<string, string> = {}) => {
   const myI18n = reqI18n(req)
-  return microTemplate(flatMessages[myI18n.localeCode + '_' + key] ?? flatMessages[defaultLocale + '_' + key], params)
+  return getMessage(myI18n.localeCode, key)
 }
 
 export const __all = (key: string, params: Record<string, string> = {}) => {

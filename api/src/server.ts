@@ -42,7 +42,7 @@ export const start = async () => {
   ])
   // await upgradeScripts(mongo.db, resolve(import.meta.dirname, '../..'))
 
-  const colorWarnings = getColorsWarnings(config.theme.colors, await publicProviders())
+  const colorWarnings = getColorsWarnings(config.i18n.defaultLocale, config.theme.colors, await publicProviders())
   if (colorWarnings.length) {
     console.error('Configuration contains color warnings')
     for (const cw of colorWarnings) console.error('  - ' + cw)
