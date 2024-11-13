@@ -61,6 +61,7 @@ declare global {
   const mdiCellphone: typeof import('@mdi/js')['mdiCellphone']
   const mdiCheck: typeof import('@mdi/js')['mdiCheck']
   const mdiCheckCircle: typeof import('@mdi/js')['mdiCheckCircle']
+  const mdiConnection: typeof import('@mdi/js')['mdiConnection']
   const mdiDatabase: typeof import('@mdi/js')['mdiDatabase']
   const mdiDelete: typeof import('@mdi/js')['mdiDelete']
   const mdiDevices: typeof import('@mdi/js')['mdiDevices']
@@ -212,6 +213,7 @@ declare module 'vue' {
     readonly mdiCellphone: UnwrapRef<typeof import('@mdi/js')['mdiCellphone']>
     readonly mdiCheck: UnwrapRef<typeof import('@mdi/js')['mdiCheck']>
     readonly mdiCheckCircle: UnwrapRef<typeof import('@mdi/js')['mdiCheckCircle']>
+    readonly mdiConnection: UnwrapRef<typeof import('@mdi/js')['mdiConnection']>
     readonly mdiDelete: UnwrapRef<typeof import('@mdi/js')['mdiDelete']>
     readonly mdiDevices: UnwrapRef<typeof import('@mdi/js')['mdiDevices']>
     readonly mdiDotsVertical: UnwrapRef<typeof import('@mdi/js')['mdiDotsVertical']>

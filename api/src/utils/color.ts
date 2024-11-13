@@ -50,7 +50,7 @@ export function getColorsWarnings (locale: string, colors: Colors, authProviders
     for (const p of authProviders) {
       if (p.color && p.title) {
         if (!tinycolor.isReadable('#FFFFFF', p.color, readableOptions)) {
-          warnings.push(getMessage(locale, 'colors.readableWarning', { colorCode: '#FFFFFF', colorName: getMessage(locale, 'colors.white'), bgColorCode: p.color, bgColorName: getMessage(locale, 'colors.authProvider', { title: 'p.title' }) }))
+          warnings.push(getMessage(locale, 'colors.readableWarning', { colorCode: '#FFFFFF', colorName: getMessage(locale, 'colors.white'), bgColorCode: p.color, bgColorName: getMessage(locale, 'colors.authProvider', { title: p.title }) }))
         }
       }
     }

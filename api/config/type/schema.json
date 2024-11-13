@@ -571,6 +571,7 @@
         "metadata": { "type": "string" },
         "title": { "type": "string" },
         "color": { "type": "string" },
+        "icon": { "type": "string" },
         "img": { "type": "string" },
         "coreIdProvider": {
           "type": "boolean"

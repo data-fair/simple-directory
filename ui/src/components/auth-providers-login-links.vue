@@ -37,22 +37,22 @@
       class="pl-0 pr-3 mr-2 mb-1 text-none text-white"
     >
       <v-avatar
-        size="27"
-        color="white"
+        size="29"
+        :style="`left:-1px;top:-1px;background-color: ${$vuetify.theme.current.colors.surface};`"
         class="elevation-4"
-        style="left:-1px; top: -1px;"
       >
-        <v-icon
-          v-if="authProvider.icon"
-          :color="authProvider.color"
-        >
-          {{ authProvider.icon }}
-        </v-icon>
-        <img
-          v-else-if="authProvider.img"
+        <v-img
+          v-if="authProvider.img"
           :src="authProvider.img"
           :alt="authProvider.title"
-        >
+        />
+        <v-icon
+          v-else
+          size="25"
+          :alt="authProvider.title"
+          :icon="authProvider.icon ?? mdiConnection"
+          :color="authProvider.color"
+        />
       </v-avatar>
       &nbsp;{{ authProvider.title }}
     </v-btn>

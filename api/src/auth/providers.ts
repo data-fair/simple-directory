@@ -12,6 +12,7 @@ export const publicProviders = async (site?: Site) => {
       id: p.id,
       title: p.title,
       color: p.color,
+      icon: p.icon,
       img: p.img,
       redirectMode: p.redirectMode
     })
