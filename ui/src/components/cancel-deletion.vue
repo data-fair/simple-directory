@@ -4,6 +4,7 @@
       :value="true"
       type="warning"
       variant="outlined"
+      class="mb-2"
     >
       {{ $t('errors.plannedDeletion', {name: userDetailsFetch.data.value.name, plannedDeletion: $d(new Date(userDetailsFetch.data.value.plannedDeletion))}) }}
     </v-alert>
@@ -26,7 +27,7 @@ const { userDetailsFetch } = useStore()
 if (!userDetailsFetch.initialized.value) userDetailsFetch.refresh()
 const cancelDeletion = withUiNotif(async () => {
   if (!userDetailsFetch.data.value) return
-  await $fetch('users/' + userDetailsFetch.data.value.id + '/plannedDeletion')
+  await $fetch('users/' + userDetailsFetch.data.value.id + '/plannedDeletion', { method: 'DELETE' })
   emit('cancelled')
 })
 

@@ -3,7 +3,7 @@
     border="start"
     color="admin"
     class="my-4"
-    icon="mdi-shield-alert"
+    :icon="mdiShieldAlert"
   >
     <v-switch
       v-model="orgStorage.active"

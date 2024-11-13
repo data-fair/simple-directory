@@ -9,8 +9,8 @@
       v-if="!disabled"
       style="position: absolute; right: 0;"
       @click="on.input(null)"
+      :icon="mdiClose"
     >
-      mdi-close
     </v-icon>-->
     <v-row class="mt-0 mx-0">
       <v-avatar

@@ -12,7 +12,7 @@
 
         v-bind="props"
       >
-        <v-icon>mdi-send</v-icon>
+        <v-icon :icon="mdiSend" />
       </v-btn>
     </template>
     <v-card

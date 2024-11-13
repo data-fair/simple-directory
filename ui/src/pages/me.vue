@@ -10,9 +10,8 @@
         size="large"
         color="primary"
         style="top:-2px"
-      >
-        mdi-account-circle
-      </v-icon>
+        :icon="mdiAccountCircle"
+      />
       {{ $t('common.myAccount') }}
     </h2>
     <v-form
@@ -76,7 +75,7 @@
                 :model-value="patch.birthday && $d(new Date(patch.birthday))"
                 :label="$t('common.birthday')"
                 :disabled="!userDetailsFetch.data.value || readonly"
-                append-icon="mdi-calendar"
+                :append-icon="mdiCalendar"
                 readonly
                 clearable
                 variant="outlined"
@@ -149,9 +148,8 @@
           size="large"
           color="primary"
           style="top:-2px"
-        >
-          mdi-account-group
-        </v-icon>
+          :icon="mdiAccountGroup"
+        />
         {{ $t('common.myOrganizations') }}
       </h2>
 
@@ -187,9 +185,8 @@
           size="large"
           color="primary"
           style="top:-2px"
-        >
-          mdi-cog
-        </v-icon>
+          :icon="mdiCog"
+        />
         {{ $t('common.settings') }}
       </h2>
 

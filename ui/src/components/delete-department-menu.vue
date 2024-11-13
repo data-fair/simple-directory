@@ -11,7 +11,7 @@
         color="warning"
         v-bind="props"
       >
-        <v-icon>mdi-delete</v-icon>
+        <v-icon :icon="mdiDelete" />
       </v-btn>
     </template>
 
@@ -84,7 +84,7 @@ watch(menu, async () => {
 })
 
 const fetchMembers = withUiNotif(async () => {
-  members.value = await $fetch(`api/organizations/${orga.id}/members`, {
+  members.value = await $fetch(`organizations/${orga.id}/members`, {
     query: {
       params: {
         size: 0,

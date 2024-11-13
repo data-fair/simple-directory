@@ -9,9 +9,8 @@
           size="large"
           color="primary"
           style="top:-2px"
-        >
-          mdi-graph
-        </v-icon>
+          :icon="mdiGraph"
+        />
         {{ orga.partnerLabel || $t('common.partners') }} <span>({{ $n(orga.partners?.length ?? 0) }})</span>
         <add-partner-menu
           v-if="writablePartners"
@@ -39,7 +38,7 @@
           :label="$t('common.search')"
           name="search"
           variant="solo"
-          append-icon="mdi-magnify"
+          :append-icon="mdiMagnify"
           clearable
           @click:clear="$nextTick(() => $nextTick(() => filterPartners()))"
           @click:append="filterPartners"

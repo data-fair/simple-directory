@@ -29,7 +29,7 @@
         rounded="xl"
         elevation="3"
       >
-        <v-card-title class="text-subtitle-2 primary-text">
+        <v-card-title class="text-subtitle-2">
           <h1 :class="{'mb-0': true, 'text-warning': adminMode}">
             {{ stepsTitles[step] || email }}
           </h1>
@@ -78,7 +78,7 @@
             <v-card-text>
               <p
                 v-if="adminMode"
-                class="text-warning"
+                class="text-warning mb-2"
               >
                 {{ $t('pages.login.adminMode') }}
               </p>
@@ -90,89 +90,93 @@
                 />
               </template>
 
-              <v-text-field
-                id="email"
-                v-model="email"
-                density="compact"
-                rounded
-                variant="outlined"
-                :autofocus="!email"
-                :label="$t('pages.login.emailLabel')"
-                :error-messages="emailError"
-                name="email"
-                class="mb-3 hide-autofill"
-                hide-details="auto"
-                autocomplete="email"
-              />
-              <p
-                v-if="$uiConfig.passwordless && !adminMode"
-                class="mb-2 text-caption"
-              >
-                {{ $t('pages.login.passwordlessMsg1') }} <a
-                  tabindex="0"
-                  role="button"
-                  @click="passwordlessAuth"
-                  @keyup.enter="passwordlessAuth"
-                >{{ $t('pages.login.passwordlessMsg2') }}</a>
-              </p>
-
-              <v-text-field
-                id="password"
-                v-model="password"
-                density="compact"
-                rounded
-                variant="outlined"
-                :autofocus="!!email"
-                :label="$t('common.password')"
-                :error-messages="passwordError"
-                name="password"
-                type="password"
-                autocomplete="current-password"
-                class="mt-4 hide-autofill"
-                hide-details="auto"
-                @keyup.enter="passwordAuth"
-              />
-              <template v-if="twoFARequired">
+              <v-form>
                 <v-text-field
-                  id="2fa"
-                  v-model="twoFACode"
-                  :label="$t('pages.login.2FACode')"
-                  :error-messages="twoFAError"
-                  name="2fa"
-                  variant="outlined"
+                  id="email"
+                  v-model="email"
                   density="compact"
                   rounded
+                  variant="outlined"
+                  :autofocus="!email"
+                  :label="$t('pages.login.emailLabel')"
+                  :error-messages="emailError"
+                  name="email"
+                  class="mb-3 hide-autofill"
+                  hide-details="auto"
+                  autocomplete="email"
+                />
+                <p
+                  v-if="$uiConfig.passwordless && !adminMode"
+                  class="mb-2 text-caption"
+                >
+                  {{ $t('pages.login.passwordlessMsg1') }} <a
+                    tabindex="0"
+                    role="button"
+                    @click="passwordlessAuth"
+                    @keyup.enter="passwordlessAuth"
+                  >{{ $t('pages.login.passwordlessMsg2') }}</a>
+                </p>
+
+                <v-text-field
+                  id="password"
+                  v-model="password"
+                  density="compact"
+                  rounded
+                  variant="outlined"
+                  :autofocus="!!email"
+                  :label="$t('common.password')"
+                  :error-messages="passwordError"
+                  name="password"
+                  type="password"
+                  autocomplete="current-password"
                   class="mt-4 hide-autofill"
                   hide-details="auto"
-                  :autofocus="true"
                   @keyup.enter="passwordAuth"
-                >
-                  <template #append>
-                    <v-tooltip
+                />
+                <template v-if="twoFARequired">
+                  <v-text-field
+                    id="2fa"
+                    v-model="twoFACode"
+                    :label="$t('pages.login.2FACode')"
+                    :error-messages="twoFAError"
+                    name="2fa"
+                    variant="outlined"
+                    density="compact"
+                    rounded
+                    class="mt-4 hide-autofill"
+                    hide-details="auto"
+                    :autofocus="true"
+                    @keyup.enter="passwordAuth"
+                  >
+                    <template #append>
+                      <v-tooltip
 
-                      location="right"
-                      max-width="400"
-                    >
-                      <template #activator="{props}">
-                        <v-icon v-bind="props">
-                          mdi-information
-                        </v-icon>
-                      </template>
-                      <div>{{ $t('pages.login.2FAInfo') }}</div>
-                    </v-tooltip>
-                  </template>
-                </v-text-field>
-              </template>
-              <v-checkbox
-                v-if="!adminMode"
-                id="rememberMe"
-                v-model="rememberMe"
-                :class="passwordError ? 'mt-0' : 'mt-1'"
-                density="compact"
-                :label="$t('pages.login.rememberMe')"
-                hide-details
-                color="primary"
-              />
+                        location="right"
+                        max-width="400"
+                      >
+                        <template #activator="{props}">
+                          <v-icon
+                            v-bind="props"
+                            color="info"
+                            :icon="mdiInformation"
+                          />
+                        </template>
+                        <div>{{ $t('pages.login.2FAInfo') }}</div>
+                      </v-tooltip>
+                    </template>
+                  </v-text-field>
+                </template>
+                <v-checkbox
+                  v-if="!adminMode"
+                  id="rememberMe"
+                  v-model="rememberMe"
+                  :class="passwordError ? 'mt-0' : 'mt-1'"
+                  density="compact"
+                  :label="$t('pages.login.rememberMe')"
+                  hide-details
+                  color="primary"
+                />
+              </v-form>
               <v-row
                 v-if="!readonly && !$uiConfig.onlyCreateInvited && !adminMode"
                 class="ma-0"
@@ -224,7 +228,10 @@
 
           <v-window-item value="tos">
             <v-card-text>
-              <p v-html="sitePublic?.tosMessage || $t('pages.login.tosMsg', {tosUrl: $uiConfig.tosUrl})" />
+              <p
+                class="mb-2"
+                v-html="sitePublic?.tosMessage || $t('pages.login.tosMsg', {tosUrl: $uiConfig.tosUrl})"
+              />
               <v-checkbox
                 v-model="tosAccepted"
                 :label="$t('pages.login.tosConfirm')"
@@ -322,10 +329,9 @@
                   <template #append-inner>
                     <v-icon
                       v-if="newUser.password"
+                      :icon="showNewUserPassword ? mdiEyeOffOutline : mdiEyeOutline"
                       @click="showNewUserPassword = !showNewUserPassword"
-                    >
-                      {{ showNewUserPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline' }}
-                    </v-icon>
+                    />
                   </template>
                   <template #append>
                     <v-tooltip
@@ -334,9 +340,11 @@
                       max-width="400"
                     >
                       <template #activator="{props}">
-                        <v-icon v-bind="props">
-                          mdi-information
-                        </v-icon>
+                        <v-icon
+                          v-bind="props"
+                          color="info"
+                          :icon="mdiInformation"
+                        />
                       </template>
                       <div v-html="$t('errors.malformedPassword')" />
                     </v-tooltip>
@@ -357,9 +365,11 @@
                 >
                   <template #append>
                     <div>
-                      <v-icon style="visibility:hidden">
-                        mdi-information
-                      </v-icon>
+                      <v-icon
+                        style="visibility:hidden"
+                        color="info"
+                        :icon="mdiInformation"
+                      />
                     </div>
                   </template>
                 </v-text-field>
@@ -386,8 +396,10 @@
 
           <v-window-item value="createUserConfirmed">
             <v-card-text>
-              <p>{{ $t('pages.login.createUserConfirmed', {email}) }}</p>
-              <p class="text-caption">
+              <p class="mb-2">
+                {{ $t('pages.login.createUserConfirmed', {email}) }}
+              </p>
+              <p class="mb-2 text-caption">
                 {{ $t('common.spamWarning', {email}) }}
               </p>
             </v-card-text>
@@ -403,8 +415,10 @@
 
           <v-window-item value="emailConfirmed">
             <v-card-text>
-              <p>{{ $t('pages.login.passwordlessConfirmed', {email}) }}</p>
-              <p class="text-caption">
+              <p class="mb-2">
+                {{ $t('pages.login.passwordlessConfirmed', {email}) }}
+              </p>
+              <p class="mb-2 text-caption">
                 {{ $t('common.spamWarning', {email}) }}
               </p>
             </v-card-text>
@@ -420,8 +434,10 @@
 
           <v-window-item value="changePasswordSent">
             <v-card-text>
-              <p>{{ $t('pages.login.changePasswordSent', {email}) }}</p>
-              <p class="text-caption">
+              <p class="mb-2">
+                {{ $t('pages.login.changePasswordSent', {email}) }}
+              </p>
+              <p class="mb-2 text-caption">
                 {{ $t('common.spamWarning', {email}) }}
               </p>
             </v-card-text>
@@ -438,7 +454,9 @@
           <v-window-item value="changePassword">
             <v-card-text>
               <v-form ref="changePasswordForm">
-                <p>{{ $t('pages.login.newPasswordMsg') }}</p>
+                <p class="mb-2">
+                  {{ $t('pages.login.newPasswordMsg') }}
+                </p>
                 <v-text-field
                   id="email"
                   v-model="email"
@@ -460,6 +478,7 @@
                   variant="outlined"
                   density="compact"
                   rounded
+                  class="mb-2"
                 >
                   <template #append>
                     <v-tooltip
@@ -468,9 +487,11 @@
                       max-width="400"
                     >
                       <template #activator="{props}">
-                        <v-icon v-bind="props">
-                          mdi-information
-                        </v-icon>
+                        <v-icon
+                          v-bind="props"
+                          color="info"
+                          :icon="mdiInformation"
+                        />
                       </template>
                       <div v-html="$t('errors.malformedPassword')" />
                     </v-tooltip>
@@ -490,9 +511,11 @@
                 >
                   <template #append>
                     <div>
-                      <v-icon style="visibility:hidden">
-                        mdi-information
-                      </v-icon>
+                      <v-icon
+                        style="visibility:hidden"
+                        color="info"
+                        :icon="mdiInformation"
+                      />
                     </div>
                   </template>
                 </v-text-field>
@@ -575,7 +598,7 @@
                 {{ $t('pages.login.recovery2FAInfo') }}
               </v-alert>
 
-              <p>
+              <p class="mb-2">
                 {{ $t('pages.login.recovery2FACode') }}
                 <br>
                 {{ recovery }}
@@ -585,7 +608,7 @@
                   class="mx-0"
                   @click="downloadRecovery"
                 >
-                  <v-icon>mdi-download</v-icon>
+                  <v-icon :icon="mdiDownload" />
                 </v-btn>
               </p>
             </v-card-text>
@@ -713,12 +736,11 @@
           </v-window-item>
         </v-window>
       </v-card>
-      <p v-if="$uiConfig.maildev.active">
-        <br>
-        <a
-          :href="$uiConfig.maildev.url"
-          text
-        >{{ $t('pages.login.maildevLink') }}</a>
+      <p
+        v-if="$uiConfig.maildev.active"
+        class="mt-2"
+      >
+        <a :href="$uiConfig.maildev.url">{{ $t('pages.login.maildevLink') }}</a>
       </p>
     </v-col>
   </v-row>
@@ -993,7 +1015,7 @@ const changePasswordForm = ref<InstanceType<typeof VForm>>()
 async function changePassword () {
   if (!actionPayload || !changePasswordForm.value?.validate()) return
   try {
-    await $fetch(`api/users/${actionPayload.id}/password`, {
+    await $fetch(`users/${actionPayload.id}/password`, {
       method: 'POST',
       body: { password: newPassword.value },
       params: { action_token: actionToken.value }

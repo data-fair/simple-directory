@@ -42,7 +42,41 @@ export default defineConfig({
         },
         {
           '~/context': ['$uiConfig', '$sitePath', '$siteUrl', '$sdUrl', '$apiPath', '$fetch'],
-          '@mdi/js': ['mdiBell', 'mdiRefresh', 'mdiSend', 'mdiDelete', 'mdiDevices', 'mdiEmail', 'mdiRss', 'mdiDotsVertical', 'mdiCheckCircle', 'mdiCancel', 'mdiAlertCircle', 'mdiCellphone', 'mdiWeb', 'mdiPlus', 'mdiCheck', 'mdiPencil', 'mdiConnection']
+          '@mdi/js': [
+            'mdiBell',
+            'mdiCog',
+            'mdiDownload',
+            'mdiRefresh',
+            'mdiSend',
+            'mdiDelete',
+            'mdiDevices',
+            'mdiEmail',
+            'mdiRss',
+            'mdiDotsVertical',
+            'mdiCheckCircle',
+            'mdiCancel',
+            'mdiAlertCircle',
+            'mdiCellphone',
+            'mdiWeb',
+            'mdiPlus',
+            'mdiCheck',
+            'mdiPencil',
+            'mdiConnection',
+            'mdiInformation',
+            'mdiFamilyTree',
+            'mdiMagnify',
+            'mdiSort',
+            'mdiAccount',
+            'mdiAccountSwitch',
+            'mdiFileTable',
+            'mdiGraph',
+            'mdiShieldAlert',
+            'mdiEye',
+            'mdiEyeOffOutline',
+            'mdiEyeOutline',
+            'mdiAccountCircle',
+            'mdiAccountGroup'
+          ]
         }
       ],
       dirs: [

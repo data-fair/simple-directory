@@ -41,7 +41,7 @@ export const messages: any = unflatten(flatMessages, flatOpts)
 // A subset of messages for UI separated for performance.
 const flatPublicMessages = { ...flatMessages }
 for (const key of Object.keys(flatPublicMessages)) {
-  if (!['root', 'common', 'pages'].includes(key.split('_')[1])) delete flatPublicMessages[key]
+  if (!['root', 'common', 'pages', 'errors'].includes(key.split('_')[1])) delete flatPublicMessages[key]
 }
 export const publicMessages = unflatten(flatPublicMessages, flatOpts) as any
 

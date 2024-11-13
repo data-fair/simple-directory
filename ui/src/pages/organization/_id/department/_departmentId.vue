@@ -9,9 +9,8 @@
         size="large"
         color="primary"
         style="top:-2px"
-      >
-        mdi-account-group
-      </v-icon>
+        :icon="mdiAccountGroup"
+      />
       {{ orga.data.value.name }} - {{ department.name }} ({{ department.id }})
     </h2>
 

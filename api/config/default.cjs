@@ -125,9 +125,9 @@ module.exports = {
     colors: {
       // standard vuetify colors, see https://vuetifyjs.com/en/styles/colors/#material-colors
       background: '#FFFFFF',
-      'on-background': '#212121', // grey-darken-4
+      'on-background': '#424242', // grey-darken-3
       surface: '#FFFFFF',
-      'on-surface': '#212121', // grey-darken-4
+      'on-surface': '#424242', // grey-darken-3
       primary: '#1976D2', // blue.darken2
       'on-primary': '#FFFFFF', // white
       'text-primary': undefined, // same as primary by default

@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <template lang="html">
   <v-container
     v-if="orga.data.value"
@@ -9,9 +10,8 @@
         size="large"
         color="primary"
         style="top:-2px"
-      >
-        mdi-account-group
-      </v-icon>
+        :icon="mdiAccountGroup"
+      />
       {{ $t('common.organization') + ' ' + orga.data.value.name }}
     </h2>
 
@@ -65,9 +65,11 @@
             location="left"
           >
             <template #activator="{props}">
-              <v-icon v-bind="props">
-                mdi-information
-              </v-icon>
+              <v-icon
+                v-bind="props"
+                color="info"
+                :icon="mdiInformation"
+              />
             </template>
             <div v-html="$t('pages.organization.departmentLabelHelp')" />
           </v-tooltip>

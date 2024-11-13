@@ -11,7 +11,7 @@
         icon
         v-bind="props"
       >
-        <v-icon>mdi-pencil</v-icon>
+        <v-icon :icon="mdiPencil" />
       </v-btn>
     </template>
 

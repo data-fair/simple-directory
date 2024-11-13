@@ -11,7 +11,7 @@
         color="warning"
         v-bind="props"
       >
-        <v-icon>mdi-delete</v-icon>
+        <v-icon :icon="mdiDelete" />
       </v-btn>
     </template>
     <v-card

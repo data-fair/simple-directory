@@ -12,7 +12,7 @@
 
         v-bind="props"
       >
-        <v-icon>mdi-send</v-icon>
+        <v-icon :icon="mdiSend" />
       </v-btn>
     </template>
     <v-card
@@ -92,7 +92,7 @@ const editPartner = ref({ ...partner })
 
 const confirmInvitation = withUiNotif(async () => {
   menu.value = false
-  await $fetch(`api/organizations/${orga.id}/partners`, { method: 'POST', body: { name: editPartner.value.name, contactEmail: editPartner.value.contactEmail, redirect: redirect.value } })
+  await $fetch(`organizations/${orga.id}/partners`, { method: 'POST', body: { name: editPartner.value.name, contactEmail: editPartner.value.contactEmail, redirect: redirect.value } })
   sendUiNotif({ type: 'success', msg: t('pages.organization.invitePartnerSuccess', { email: partner.contactEmail }) })
   emit('change')
 })

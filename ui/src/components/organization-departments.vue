@@ -9,9 +9,8 @@
           size="large"
           color="primary"
           style="top:-2px"
-        >
-          mdi-family-tree
-        </v-icon>
+          :icon="mdiFamilyTree"
+        />
         {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments?.length ?? 0) }})</span>
         <add-department-menu
           v-if="writableDepartments"
@@ -39,7 +38,7 @@
           :label="$t('common.search')"
           name="search"
           variant="solo"
-          append-icon="mdi-magnify"
+          :append-icon="mdiMagnify"
           clearable
           @click:clear="$nextTick(() => $nextTick(() => filterDeps()))"
           @click:append="filterDeps"
@@ -52,7 +51,7 @@
           v-model="sort"
           :items="sortItems"
           name="sort"
-          prepend-inner-icon="mdi-sort"
+          :prepend-inner-icon="mdiSort"
           @update:model-value="filterDeps"
         />
       </v-col>

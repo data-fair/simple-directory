@@ -54,6 +54,10 @@ declare global {
   const mainPublicUrl: typeof import('../src/composables/use-store')['mainPublicUrl']
   const mainRedirect: typeof import('../src/composables/use-store')['mainRedirect']
   const markRaw: typeof import('vue')['markRaw']
+  const mdiAccount: typeof import('@mdi/js')['mdiAccount']
+  const mdiAccountCircle: typeof import('@mdi/js')['mdiAccountCircle']
+  const mdiAccountGroup: typeof import('@mdi/js')['mdiAccountGroup']
+  const mdiAccountSwitch: typeof import('@mdi/js')['mdiAccountSwitch']
   const mdiAlertCircle: typeof import('@mdi/js')['mdiAlertCircle']
   const mdiBell: typeof import('@mdi/js')['mdiBell']
   const mdiCalendarRange: typeof import('@mdi/js')['mdiCalendarRange']
@@ -61,18 +65,30 @@ declare global {
   const mdiCellphone: typeof import('@mdi/js')['mdiCellphone']
   const mdiCheck: typeof import('@mdi/js')['mdiCheck']
   const mdiCheckCircle: typeof import('@mdi/js')['mdiCheckCircle']
+  const mdiCog: typeof import('@mdi/js')['mdiCog']
   const mdiConnection: typeof import('@mdi/js')['mdiConnection']
   const mdiDatabase: typeof import('@mdi/js')['mdiDatabase']
   const mdiDelete: typeof import('@mdi/js')['mdiDelete']
   const mdiDevices: typeof import('@mdi/js')['mdiDevices']
   const mdiDotsVertical: typeof import('@mdi/js')['mdiDotsVertical']
+  const mdiDownload: typeof import('@mdi/js')['mdiDownload']
   const mdiEmail: typeof import('@mdi/js')['mdiEmail']
+  const mdiEye: typeof import('@mdi/js')['mdiEye']
+  const mdiEyeOffOutline: typeof import('@mdi/js')['mdiEyeOffOutline']
+  const mdiEyeOutline: typeof import('@mdi/js')['mdiEyeOutline']
+  const mdiFamilyTree: typeof import('@mdi/js')['mdiFamilyTree']
+  const mdiFileTable: typeof import('@mdi/js')['mdiFileTable']
+  const mdiGraph: typeof import('@mdi/js')['mdiGraph']
   const mdiImageSizeSelectSmall: typeof import('@mdi/js')['mdiImageSizeSelectSmall']
+  const mdiInformation: typeof import('@mdi/js')['mdiInformation']
+  const mdiMagnify: typeof import('@mdi/js')['mdiMagnify']
   const mdiPencil: typeof import('@mdi/js')['mdiPencil']
   const mdiPlus: typeof import('@mdi/js')['mdiPlus']
   const mdiRefresh: typeof import('@mdi/js')['mdiRefresh']
   const mdiRss: typeof import('@mdi/js')['mdiRss']
   const mdiSend: typeof import('@mdi/js')['mdiSend']
+  const mdiShieldAlert: typeof import('@mdi/js')['mdiShieldAlert']
+  const mdiSort: typeof import('@mdi/js')['mdiSort']
   const mdiWeb: typeof import('@mdi/js')['mdiWeb']
   const nextTick: typeof import('vue')['nextTick']
   const notifyMenu: typeof import('../src/components/notify-menu.vue')['default']
@@ -207,22 +223,38 @@ declare module 'vue' {
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
+    readonly mdiAccount: UnwrapRef<typeof import('@mdi/js')['mdiAccount']>
+    readonly mdiAccountCircle: UnwrapRef<typeof import('@mdi/js')['mdiAccountCircle']>
+    readonly mdiAccountGroup: UnwrapRef<typeof import('@mdi/js')['mdiAccountGroup']>
+    readonly mdiAccountSwitch: UnwrapRef<typeof import('@mdi/js')['mdiAccountSwitch']>
     readonly mdiAlertCircle: UnwrapRef<typeof import('@mdi/js')['mdiAlertCircle']>
     readonly mdiBell: UnwrapRef<typeof import('@mdi/js')['mdiBell']>
     readonly mdiCancel: UnwrapRef<typeof import('@mdi/js')['mdiCancel']>
     readonly mdiCellphone: UnwrapRef<typeof import('@mdi/js')['mdiCellphone']>
     readonly mdiCheck: UnwrapRef<typeof import('@mdi/js')['mdiCheck']>
     readonly mdiCheckCircle: UnwrapRef<typeof import('@mdi/js')['mdiCheckCircle']>
+    readonly mdiCog: UnwrapRef<typeof import('@mdi/js')['mdiCog']>
     readonly mdiConnection: UnwrapRef<typeof import('@mdi/js')['mdiConnection']>
     readonly mdiDelete: UnwrapRef<typeof import('@mdi/js')['mdiDelete']>
     readonly mdiDevices: UnwrapRef<typeof import('@mdi/js')['mdiDevices']>
     readonly mdiDotsVertical: UnwrapRef<typeof import('@mdi/js')['mdiDotsVertical']>
+    readonly mdiDownload: UnwrapRef<typeof import('@mdi/js')['mdiDownload']>
     readonly mdiEmail: UnwrapRef<typeof import('@mdi/js')['mdiEmail']>
+    readonly mdiEye: UnwrapRef<typeof import('@mdi/js')['mdiEye']>
+    readonly mdiEyeOffOutline: UnwrapRef<typeof import('@mdi/js')['mdiEyeOffOutline']>
+    readonly mdiEyeOutline: UnwrapRef<typeof import('@mdi/js')['mdiEyeOutline']>
+    readonly mdiFamilyTree: UnwrapRef<typeof import('@mdi/js')['mdiFamilyTree']>
+    readonly mdiFileTable: UnwrapRef<typeof import('@mdi/js')['mdiFileTable']>
+    readonly mdiGraph: UnwrapRef<typeof import('@mdi/js')['mdiGraph']>
+    readonly mdiInformation: UnwrapRef<typeof import('@mdi/js')['mdiInformation']>
+    readonly mdiMagnify: UnwrapRef<typeof import('@mdi/js')['mdiMagnify']>
     readonly mdiPencil: UnwrapRef<typeof import('@mdi/js')['mdiPencil']>
     readonly mdiPlus: UnwrapRef<typeof import('@mdi/js')['mdiPlus']>
     readonly mdiRefresh: UnwrapRef<typeof import('@mdi/js')['mdiRefresh']>
     readonly mdiRss: UnwrapRef<typeof import('@mdi/js')['mdiRss']>
     readonly mdiSend: UnwrapRef<typeof import('@mdi/js')['mdiSend']>
+    readonly mdiShieldAlert: UnwrapRef<typeof import('@mdi/js')['mdiShieldAlert']>
+    readonly mdiSort: UnwrapRef<typeof import('@mdi/js')['mdiSort']>
     readonly mdiWeb: UnwrapRef<typeof import('@mdi/js')['mdiWeb']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>

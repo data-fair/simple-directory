@@ -16,7 +16,7 @@
         name="search"
         variant="solo"
         style="max-width:300px;"
-        append-icon="mdi-magnify"
+        :append-icon="mdiMagnify"
         @click:append="validQ = q"
         @keyup.enter="validQ = q"
       />
@@ -72,16 +72,17 @@
                 icon
                 class="mx-0"
               >
-                <v-icon>mdi-pencil</v-icon>
+                <v-icon :icon="mdiPencil" />
               </v-btn>
               <v-btn
                 icon
                 class="mx-0"
                 @click="currentOrganization = props.item;deleteOrganizationDialog = true"
               >
-                <v-icon color="warning">
-                  mdi-delete
-                </v-icon>
+                <v-icon
+                  color="warning"
+                  :icon="mdiDelete"
+                />
               </v-btn>
             </td>
           </template>
@@ -92,7 +93,7 @@
                 icon
                 class="mx-0"
               >
-                <v-icon>mdi-eye</v-icon>
+                <v-icon :icon="mdiEye" />
               </v-btn>
             </td>
           </template>
@@ -202,7 +203,7 @@ if (!$uiConfig.readonly) watch(organizations.data, fetchLimits)
 
 const saveLimits = withUiNotif(async (org: Organization, limits: Limits) => {
   if (!limits.store_nb_members.limit) limits.store_nb_members.limit = 0
-  await $fetch(`api/limits/organization/${org.id}`, { body: limits, method: 'POST' })
+  await $fetch(`limits/organization/${org.id}`, { body: limits, method: 'POST' })
   delete limits[org.id]
 })
 

@@ -92,7 +92,7 @@
                   color="warning"
                   v-on="on"
                 >
-                  <v-icon>mdi-delete</v-icon>
+                  <v-icon :icon="mdiDelete" />
                 </v-btn>
               </template>
             </confirm-menu>

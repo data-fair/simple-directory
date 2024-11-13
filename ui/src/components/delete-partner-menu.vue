@@ -11,7 +11,7 @@
         color="warning"
         v-bind="props"
       >
-        <v-icon>mdi-delete</v-icon>
+        <v-icon :icon="mdiDelete" />
       </v-btn>
     </template>
 
@@ -60,7 +60,7 @@ const menu = ref(false)
 
 const confirmDelete = withUiNotif(async () => {
   menu.value = false
-  await $fetch(`api/organizations/${orga.id}/partners/${partner.partnerId}`, { method: 'DELETE' })
+  await $fetch(`organizations/${orga.id}/partners/${partner.partnerId}`, { method: 'DELETE' })
   emit('change')
 })
 </script>

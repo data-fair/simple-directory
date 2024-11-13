@@ -9,9 +9,8 @@
           size="large"
           color="primary"
           style="top:-2px"
-        >
-          mdi-account
-        </v-icon>
+          :icon="mdiAccount"
+        />
         {{ orgStorage === 'true' ? $t('common.orgStorageMembers') : $t('common.members') }} <span v-if="members">({{ $n(members.count) }})</span>
         <add-member-menu
           v-if="!$uiConfig.readonly"
@@ -34,7 +33,7 @@
           :href="csvUrl"
           :title="$t('common.downloadCsv')"
         >
-          <v-icon>mdi-file-table</v-icon>
+          <v-icon :icon="mdiFileTable" />
         </v-btn>
       </h2>
     </v-row>
@@ -46,7 +45,7 @@
           :label="$t('common.search')"
           name="search"
           variant="solo"
-          append-icon="mdi-magnify"
+          :append-icon="mdiMagnify"
           clearable
           hide-details="auto"
           @click:clear="$nextTick(() => $nextTick(() => refetchMembers()))"
@@ -166,9 +165,10 @@
               :disabled="!member.emailConfirmed"
               @click="asAdmin(member)"
             >
-              <v-icon color="warning">
-                mdi-account-switch
-              </v-icon>
+              <v-icon
+                color="warning"
+                :icon="mdiAccountSwitch"
+              />
             </v-btn>
           </v-list-item-action>
           <v-list-item-action
@@ -281,7 +281,7 @@ const refetchMembers = async () => {
 }
 
 const deleteMember = withUiNotif(async (member: Member) => {
-  await $fetch(`api/organizations/${orga.id}/members/${member.id}`, { method: 'DELETE', params: { department: member.department } })
+  await $fetch(`organizations/${orga.id}/members/${member.id}`, { method: 'DELETE', params: { department: member.department } })
   sendUiNotif({ type: 'success', msg: t('pages.organization.deleteMemberSuccess', { name: member.name }) })
   await fetchMembers.refresh()
   if (fetchMembers.data.value?.count && !fetchMembers.data.value.results.length && membersPage.value > 1) {
@@ -299,7 +299,7 @@ const saveMember = withUiNotif(async (member: Member, oldMember: Member) => {
       patch.departmentName = dep.name
     }
   }
-  await $fetch(`api/organizations/${orga.id}/members/${member.id}`, {
+  await $fetch(`organizations/${orga.id}/members/${member.id}`, {
     method: 'PATCH',
     body: patch,
     params: { department: oldMember.department }

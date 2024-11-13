@@ -10,7 +10,7 @@
         class="mx-1"
         v-bind="props"
       >
-        <v-icon>mdi-bell</v-icon>
+        <v-icon :icon="mdiBell" />
       </v-btn>
     </template>
     <v-card width="500">

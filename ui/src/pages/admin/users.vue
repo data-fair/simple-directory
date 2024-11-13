@@ -25,7 +25,7 @@
         name="search"
         variant="solo"
         style="max-width:300px;"
-        append-icon="mdi-magnify"
+        :append-icon="mdiMagnify"
         @click:append="validQ = q"
         @keyup.enter="validQ = q"
       />
@@ -58,7 +58,10 @@
                 class="mx-0"
                 @click="showEditUserEmailDialog(props.item)"
               >
-                <v-icon size="small">mdi-pencil</v-icon>
+                <v-icon
+                  size="small"
+                  :icon="mdiPencil"
+                />
               </v-btn>
             </span>
           </td>
@@ -74,9 +77,10 @@
                 class="mx-0"
                 @click="showDrop2FADialog(props.item)"
               >
-                <v-icon size="small">
-                  mdi-delete
-                </v-icon>
+                <v-icon
+                  size="small"
+                  :icon="mdiDelete"
+                />
               </v-btn>
             </template>
             <span v-else>non</span>
@@ -101,9 +105,10 @@
               class="mx-0"
               @click="showEditMaxCreatedOrgsDialog(props.item)"
             >
-              <v-icon size="small">
-                mdi-pencil
-              </v-icon>
+              <v-icon
+                size="small"
+                :icon="mdiPencil"
+              />
             </v-btn>
           </td>
           <template v-if="!$uiConfig.readonly">
@@ -121,9 +126,10 @@
                 class="mx-0"
                 @click="asAdmin(props.item)"
               >
-                <v-icon color="warning">
-                  mdi-account-switch
-                </v-icon>
+                <v-icon
+                  color="warning"
+                  :icon="mdiAccountSwitch"
+                />
               </v-btn>
               <v-btn
                 :title="$t('common.delete')"
@@ -131,9 +137,10 @@
                 class="mx-0"
                 @click="currentUser = props.item;deleteUserDialog = true"
               >
-                <v-icon color="warning">
-                  mdi-delete
-                </v-icon>
+                <v-icon
+                  color="warning"
+                  :icon="mdiDelete"
+                />
               </v-btn>
             </td>
           </template>
@@ -144,9 +151,10 @@
               class="mx-0"
               @click="asAdmin(props.item)"
             >
-              <v-icon color="warning">
-                mdi-account-switch
-              </v-icon>
+              <v-icon
+                color="warning"
+                :icon="mdiAccountSwitch"
+              />
             </v-btn>
           </template>
         </tr>
