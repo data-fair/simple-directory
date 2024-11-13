@@ -25,7 +25,7 @@ const getInitials = (name: string) => {
 
 // inspired by https://github.com/thatisuday/npm-no-avatar/blob/master/lib/make.js
 // const font = path.resolve('./node_modules/no-avatar/lib/font.ttf')
-const font = resolve('./server/resources/nunito-ttf/Nunito-ExtraBold.ttf')
+const font = resolve(import.meta.dirname, '../../resources/nunito-ttf/Nunito-ExtraBold.ttf')
 const makeAvatar = async (text: string, color: string) => {
   return new Promise<BinaryData>((resolve, reject) => {
     gm(100, 100, color)
