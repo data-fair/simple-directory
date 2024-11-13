@@ -144,7 +144,7 @@ const createOrga = withUiNotif(async () => {
   if (!createOrganizationName.value) return
   const orga = await $fetch<Organization>('api/organizations', { method: 'POST', body: { name: createOrganizationName.value } })
   if (!user.value.organizations.length) {
-    await $fetch('api/users/' + user.value.id, { body: { defaultOrg: orga.id, ignorePersonalAccount: true } })
+    await $fetch('users/' + user.value.id, { body: { defaultOrg: orga.id, ignorePersonalAccount: true } })
   }
   acceptPartnerInvitation(orga)
 })

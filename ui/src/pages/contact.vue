@@ -54,6 +54,7 @@
 
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
+
 const newMessage = { from: '', subject: '', text: '' }
 
 const message = ref({ ...newMessage })

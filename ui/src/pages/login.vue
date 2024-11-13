@@ -11,36 +11,28 @@
       style="max-width: 500px;"
     >
       <v-row class="justify-center">
-        <v-col
-          cols="auto"
-          class=""
-        >
+        <v-col cols="auto">
           <img
-            v-if="sitePublic"
-            :src="sitePublic.logo"
+            v-if="logoUrl"
+            :src="logoUrl"
             @alt="$t('pages.login.siteLogo')"
           >
+          <logo
+            v-else
+            style="height:100px"
+          />
         </v-col>
       </v-row>
       <v-card
         class="pa-2"
-        border="lg"
+        border="sm"
+        rounded="xl"
+        elevation="3"
       >
-        <v-card-title primary-title>
-          <h1 :class="{headline: true, 'mb-0': true, 'warning--text': adminMode}">
+        <v-card-title class="text-subtitle-2 primary-text">
+          <h1 :class="{'mb-0': true, 'text-warning': adminMode}">
             {{ stepsTitles[step] || email }}
           </h1>
-          <div
-            v-if="!sitePublic"
-            :class="`v-card v-sheet theme--${$vuetify.theme.current.dark ? 'dark' : 'light'} login-logo-container`"
-          >
-            <img
-              v-if="logoUrl"
-              :src="logoUrl"
-              @alt="$t('pages.login.siteLogo')"
-            >
-            <logo v-else />
-          </div>
         </v-card-title>
         <v-window
           v-if="step !== null"
@@ -179,6 +171,7 @@
                 density="compact"
                 :label="$t('pages.login.rememberMe')"
                 hide-details
+                color="primary"
               />
               <v-row
                 v-if="!readonly && !$uiConfig.onlyCreateInvited && !adminMode"
@@ -843,6 +836,17 @@ if (step.value === 'login') {
   })
 }
 
+if (sitePublic.value?.authMode === 'onlyBackOffice') {
+  const mainLoginUrl = new URL(window.location.href)
+  mainLoginUrl.host = mainPublicUrl.host
+  window.location.replace(mainLoginUrl.href)
+}
+if (sitePublic.value?.authMode === 'onlyOtherSite' && sitePublic.value?.authOnlyOtherSite) {
+  const otherSiteLoginUrl = new URL(window.location.href)
+  otherSiteLoginUrl.host = sitePublic.value?.authOnlyOtherSite
+  window.location.replace(otherSiteLoginUrl.href)
+}
+
 const delayedRendering = computed(() => {
   // step is not login, render immediately
   if (step.value !== 'login') return false
@@ -872,7 +876,7 @@ async function createUser () {
   if (!(await createUserForm.value?.validate())) return
   try {
     const body: PostUserReq['body'] = { email: email.value, ...newUser.value }
-    const link = await $fetch('api/users', {
+    const link = await $fetch('users', {
       method: 'POST',
       body,
       params: {
@@ -900,9 +904,9 @@ async function createOrga () {
   if (!user.value) return
   try {
     const body: PostOrganizationReq['body'] = { name: createOrganization.value.name }
-    const orga = await $fetch('api/organizations', { method: 'POST', body })
+    const orga = await $fetch('organizations', { method: 'POST', body })
     const userPatch: PatchUserReq['body'] = { ignorePersonalAccount: true, defaultOrg: orga.id }
-    await $fetch('api/users/' + user.value.id, { method: 'PATCH', body: userPatch })
+    await $fetch('users/' + user.value.id, { method: 'PATCH', body: userPatch })
     switchOrganization(orga.id)
     goToRedirect()
   } catch (error: any) {
@@ -925,7 +929,7 @@ async function passwordlessAuth () {
       membersOnly: membersOnly.value,
       orgStorage: orgStorage.value
     }
-    await $fetch('api/auth/passwordless', { method: 'POST', body, params: { redirect } })
+    await $fetch('auth/passwordless', { method: 'POST', body, params: { redirect } })
     step.value = 'emailConfirmed'
   } catch (error: any) {
     if (error.status && error.status < 500) {
@@ -950,7 +954,7 @@ async function passwordAuth () {
       membersOnly: membersOnly.value,
       orgStorage: orgStorage.value
     }
-    const link = await $fetch('api/auth/password', { method: 'POST', body, params: { redirect } })
+    const link = await $fetch('auth/password', { method: 'POST', body, params: { redirect } })
     window.location.href = link
   } catch (error: any) {
     if (error.status && error.status < 500) {
@@ -981,7 +985,7 @@ const changePasswordAction = withUiNotif(async () => {
     action: 'changePassword',
     redirect: window.location.href
   }
-  await $fetch('api/auth/action', { method: 'POST', body })
+  await $fetch('auth/action', { method: 'POST', body })
   step.value = 'changePasswordSent'
 })
 
@@ -1008,7 +1012,7 @@ async function changePassword () {
 
 const init2FA = withUiNotif(async () => {
   // initialize secret
-  const res = await $fetch('api/2fa', {
+  const res = await $fetch('2fa', {
     method: 'POST',
     body: {
       email: email.value,
@@ -1021,7 +1025,7 @@ const init2FA = withUiNotif(async () => {
 
 const validate2FA = withUiNotif(async () => {
   // validate secret with initial token
-  const res = await $fetch('api/2fa', {
+  const res = await $fetch('2fa', {
     method: 'POST',
     body: {
       email: email.value,
@@ -1060,20 +1064,6 @@ function goToRedirect () {
 </script>
 
 <style>
-
-.v-application.page-login .login-logo-container {
-  position: absolute;
-  right: -20px;
-  top: -20px;
-  width: 80px;
-  height: 80px;
-  border-radius: 40px;
-  padding: 8px;
-  overflow: hidden;
-}
-.v-application.page-login .login-logo-container img, .v-application.page-login .login-logo-container svg {
-  width: 100%;
-}
 
 /* https://stackoverflow.com/a/37432260 */
 .hide-autofill.theme--dark input:-webkit-autofill,

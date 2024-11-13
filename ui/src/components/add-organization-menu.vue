@@ -85,7 +85,7 @@ watch(menu, () => {
 const confirmCreate = withUiNotif(async () => {
   if (await createForm.value?.validate()) {
     menu.value = false
-    const res = await $fetch('api/organizations', { method: 'POST', body: editOrganization.value, params: { autoAdmin: true } })
+    const res = await $fetch('organizations', { method: 'POST', body: editOrganization.value, params: { autoAdmin: true } })
     switchOrganization(res.id)
     // reloading top page, so that limits are re-fetched, etc.
     window.top?.location.reload()

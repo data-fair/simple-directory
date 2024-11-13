@@ -126,7 +126,7 @@ const confirmInvitation = withUiNotif(async () => {
     return
   }
   if (!invitation.value) return
-  const res = await $fetch('api/invitations', { method: 'POST', body: invitation.value, params: { force_mail: true } })
+  const res = await $fetch('invitations', { method: 'POST', body: invitation.value, params: { force_mail: true } })
   if (res && res.link) {
     link.value = res.link
   } else {

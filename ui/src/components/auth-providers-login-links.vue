@@ -67,8 +67,8 @@ const { authProvidersFetch, sitePublic, mainPublicUrl } = useStore()
 const { redirect, email, invitToken, adminMode } = defineProps({
   redirect: { type: String, required: true },
   email: { type: String, required: true },
-  invitToken: { type: String, required: true },
-  adminMode: { type: Boolean, required: true }
+  invitToken: { type: String, default: null },
+  adminMode: { type: Boolean, default: false }
 })
 
 const mainSiteLoginUrl = siteLoginUrl(mainPublicUrl.host)

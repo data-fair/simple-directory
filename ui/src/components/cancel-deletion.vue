@@ -26,7 +26,7 @@ const { userDetailsFetch } = useStore()
 if (!userDetailsFetch.initialized.value) userDetailsFetch.refresh()
 const cancelDeletion = withUiNotif(async () => {
   if (!userDetailsFetch.data.value) return
-  await $fetch('api/users/' + userDetailsFetch.data.value.id + '/plannedDeletion')
+  await $fetch('users/' + userDetailsFetch.data.value.id + '/plannedDeletion')
   emit('cancelled')
 })
 
