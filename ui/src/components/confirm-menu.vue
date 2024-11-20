@@ -82,6 +82,7 @@ const { title, alert, buttonText, checkText, yesColor } = defineProps({
   checkText: { type: String, default: '' },
   yesColor: { type: String as () => VAlert['type'], default: 'primary' }
 })
+defineEmits(['confirm'])
 
 const menu = ref(false)
 const checked = ref(false)

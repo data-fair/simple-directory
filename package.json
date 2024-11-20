@@ -60,7 +60,7 @@
     "commitlint": "^19.2.2",
     "eslint": "^9.10.0",
     "eslint-plugin-vue": "^9.29.0",
-    "eslint-plugin-vuetify": "github:albanm/eslint-plugin-vuetify",
+    "eslint-plugin-vuetify": "^2.5.1",
     "husky": "^9.1.6",
     "neostandard": "^0.11.5",
     "oauth2-mock-server": "^7.1.2",

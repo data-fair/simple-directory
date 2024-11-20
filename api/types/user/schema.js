@@ -93,35 +93,7 @@ export default {
     },
     organizations: {
       type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: [
-          'id',
-          'name',
-          'role'
-        ],
-        properties: {
-          id: {
-            type: 'string'
-          },
-          name: {
-            type: 'string'
-          },
-          role: {
-            type: 'string'
-          },
-          department: {
-            type: 'string'
-          },
-          departmentName: {
-            type: 'string'
-          },
-          readOnly: {
-            type: 'boolean'
-          }
-        }
-      }
+      items: { $ref: '#/$defs/fullOrganizationMembership' }
     },
     coreIdProvider: {
       type: 'object',
@@ -157,5 +129,42 @@ export default {
       type: 'string',
       format: 'date-time'
     }
+  },
+  $defs: {
+    fullOrganizationMembership: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'id',
+        'name',
+        'role'
+      ],
+      properties: {
+        id: {
+          type: 'string'
+        },
+        name: {
+          type: 'string'
+        },
+        role: {
+          type: 'string'
+        },
+        department: {
+          type: 'string'
+        },
+        departmentName: {
+          type: 'string'
+        },
+        readOnly: {
+          type: 'boolean'
+        },
+        createdAt: {
+          type: 'string',
+          format: 'date-time'
+        }
+      }
+
+    }
   }
+
 }

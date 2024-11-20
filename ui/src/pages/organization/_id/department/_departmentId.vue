@@ -39,8 +39,8 @@ const route = useRoute()
 const orgId = route.params.id
 const depId = route.params.departmentId
 
-const orga = useFetch<Organization>(`organizations/${orgId}`)
-const limits = useFetch<Limits>(`limits/organization/${orgId}`)
+const orga = useFetch < Organization >(`organizations/${orgId}`)
+const limits = useFetch < Limits >(`limits/organization/${orgId}`)
 const department = computed(() => {
   if (!orga.data.value) return
   return orga.data.value.departments?.find(d => d.id === depId)

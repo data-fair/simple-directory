@@ -23,7 +23,6 @@
     </p>
     <v-form
       ref="form"
-      lazy-validation
       @submit="save"
     >
       <load-avatar
@@ -140,8 +139,8 @@ import type { VForm } from 'vuetify/components'
 import { getAccountRole } from '@data-fair/lib-common-types/session/index.js'
 
 const session = useSession()
-const route = useRoute()
-const orgId = route.params.id
+const reactiveSearchParams = useReactiveSearchParams()
+const orgId = reactiveSearchParams.id
 
 const { patchOrganization, host, mainPublicUrl } = useStore()
 const { t } = useI18n()

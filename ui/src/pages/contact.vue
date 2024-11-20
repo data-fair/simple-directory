@@ -10,7 +10,6 @@
     <v-form
       ref="form"
       v-model="valid"
-      lazy-validation
       @submit.prevent
     >
       <v-text-field

@@ -60,6 +60,7 @@ const { member, orga } = defineProps({
   member: { type: Object as () => Member, required: true },
   orga: { type: Object as () => Organization, required: true }
 })
+defineEmits({ delete: (_member: Member) => true })
 const menu = ref(false)
 </script>
 

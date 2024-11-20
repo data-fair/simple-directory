@@ -224,15 +224,15 @@ class MongodbStorage implements SdStorage {
           id: user._id,
           name: user.name,
           email: user.email,
+          emailConfirmed: user.emailConfirmed,
+          host: user.host,
+          plannedDeletion: user.plannedDeletion,
           role: userOrga.role,
           department: userOrga.department,
           departmentName: userOrga.departmentName,
-          emailConfirmed: user.emailConfirmed
+          createdAt: userOrga.createdAt,
+          readOnly: userOrga.readOnly
         }
-        if (user.host) member.host = user.host
-        if (user.plannedDeletion) member.plannedDeletion = user.plannedDeletion
-        // if (userOrga.createdAt) member.createdAt = userOrga.createdAt
-        // if (userOrga.readOnly) member.readOnly = userOrga.readOnly
         results.push(member)
       }
     }
