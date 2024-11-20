@@ -895,7 +895,8 @@ function preLogin () {
 
 const createUserForm = ref<InstanceType<typeof VForm>>()
 async function createUser () {
-  if (!(await createUserForm.value?.validate())) return
+  await createUserForm.value?.validate()
+  if (!createUserForm.value?.isValid) return
   try {
     const body: PostUserReq['body'] = { email: email.value, ...newUser.value }
     const link = await $fetch('users', {
@@ -1013,7 +1014,9 @@ const changePasswordAction = withUiNotif(async () => {
 
 const changePasswordForm = ref<InstanceType<typeof VForm>>()
 async function changePassword () {
-  if (!actionPayload || !changePasswordForm.value?.validate()) return
+  if (!actionPayload) return
+  await changePasswordForm.value?.validate()
+  if (!changePasswordForm.value?.isValid) return
   try {
     await $fetch(`users/${actionPayload.id}/password`, {
       method: 'POST',

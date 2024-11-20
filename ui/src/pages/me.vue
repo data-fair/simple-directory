@@ -330,7 +330,8 @@ watch(birthdayMenu, (val) => {
 const form = ref<InstanceType<typeof VForm>>()
 const save = withUiNotif(async (e?: Event) => {
   if (e?.preventDefault) e.preventDefault()
-  if (!(await form.value?.validate())) return
+  await form.value?.validate()
+  if (!form.value?.isValid) return
   if (!user.value) return
   await $fetch(`users/${user.value.id}`, { method: 'PATCH', body: patch.value })
   await keepalive()

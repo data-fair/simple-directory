@@ -84,7 +84,8 @@ watch(menu, () => {
 })
 
 const confirmCreate = async () => {
-  if (await createForm.value?.validate()) {
+  await createForm.value?.validate()
+  if (createForm.value?.isValid) {
     menu.value = false
     const departments = (orga.departments ?? []).concat([editDepartment.value])
     await patchOrganization(orga.id, { departments }, i18n.t('common.modificationOk'))

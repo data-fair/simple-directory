@@ -171,7 +171,8 @@ const confirmInvitation = withUiNotif(async () => {
     menu.value = false
     return
   }
-  if (await inviteForm.value?.validate()) {
+  await inviteForm.value?.validate()
+  if (inviteForm.value?.isValid) {
     const validInvitation = invitation.value as unknown as Invitation
     const res = await $fetch('invitations/', { body: validInvitation, method: 'POST' })
     if (res && res.link) {

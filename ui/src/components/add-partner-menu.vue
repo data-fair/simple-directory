@@ -112,7 +112,8 @@ watch(redirects, () => {
 }, { immediate: true })
 
 const confirmCreate = withUiNotif(async () => {
-  if (await createForm.value?.validate()) {
+  await createForm.value?.validate()
+  if (createForm.value?.isValid) {
     menu.value = false
     await $fetch(`organizations/${orga.id}/partners`, { method: 'POST', body: editPartner })
     sendUiNotif({ type: 'success', msg: t('pages.organization.invitePartnerSuccess', { email: editPartner.value.contactEmail }) })

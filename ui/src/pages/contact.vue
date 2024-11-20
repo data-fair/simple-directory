@@ -64,11 +64,13 @@ const token = useFetch<string>($apiPath + 'auth/anonymous-action')
 
 const form = ref<InstanceType<typeof VForm>>()
 const send = withUiNotif(async () => {
-  if (!(await form.value?.validate())) return
-  if (!token.data) return
-  await $fetch('mails/contact', { method: 'POST', body: { ...message.value, token: token.data } })
-  message.value = { ...newMessage }
-  form.value?.resetValidation()
+  await form.value?.validate()
+  if (form.value?.isValid) {
+    if (!token.data) return
+    await $fetch('mails/contact', { method: 'POST', body: { ...message.value, token: token.data } })
+    message.value = { ...newMessage }
+    form.value?.resetValidation()
+  }
 }, undefined, 'Votre demande a été envoyée')
 </script>
 

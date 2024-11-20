@@ -153,7 +153,8 @@ const orgRole = computed(() => getAccountRole(session.state, { type: 'organizati
 const form = ref<InstanceType<typeof VForm>>()
 const save = async (e: Event) => {
   if (e.preventDefault) e.preventDefault()
-  if (!(await form.value?.validate())) return
+  await form.value?.validate()
+  if (!form.value?.isValid) return
   if (!orga.data.value) return
   const patch: any = { name: orga.data.value.name, description: orga.data.value.description, '2FA': orga.data.value['2FA'] }
   if ($uiConfig.manageDepartments) patch.departmentLabel = orga.data.value.departmentLabel
