@@ -1,7 +1,6 @@
 const express = require('express')
 const config = require('config')
 const createError = require('http-errors')
-const { nanoid } = require('nanoid')
 const asyncWrap = require('../utils/async-wrap')
 const oauth = require('../utils/oauth')
 
@@ -44,7 +43,7 @@ router.post('', asyncWrap(async (req, res, next) => {
   await checkSecret(req)
   // @ts-ignore
   sitePostSchema.assertValid(req.body)
-  req.body._id = req.body._id ?? nanoid()
+  req.body._id = req.body._id ?? (await import('nanoid')).nanoid()
   await req.app.get('storage').patchSite(req.body, true)
   res.type('json').send(sitePostSchema.stringify(req.body))
 }))

@@ -1,13 +1,13 @@
-const { nanoid } = require('nanoid')
 const config = require('config')
 const debug = require('debug')('locks')
 
-const pid = nanoid()
+let pid
 
 debug('locks with pid', pid)
 
 let interval
 exports.init = async db => {
+  pid = (await import('nanoid')).nanoid()
   const locks = db.collection('locks')
   await locks.createIndex({ pid: 1 })
   try {

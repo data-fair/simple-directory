@@ -2,7 +2,6 @@ const express = require('express')
 const shortid = require('shortid')
 const config = require('config')
 const csvStringify = require('util').promisify(require('csv-stringify').stringify)
-const { nanoid } = require('nanoid')
 const slug = require('slugify')
 const asyncWrap = require('../utils/async-wrap')
 const findUtils = require('../utils/find')
@@ -379,7 +378,7 @@ if (config.managePartners) {
     if (!orga) return res.status(404).send()
     logContext.account = { type: 'organization', id: orga.id, name: orga.name }
 
-    const partnerId = nanoid()
+    const partnerId = (await import('nanoid')).nanoid()
 
     const token = tokens.sign(req.app.get('keys'), partnersUtils.shortenPartnerInvitation(partnerPost, orga, partnerId), config.jwtDurations.partnerInvitationToken)
 

@@ -2,7 +2,6 @@ const oauth2 = require('simple-oauth2')
 const path = require('path')
 const fs = require('fs-extra')
 const config = require('config')
-const { nanoid } = require('nanoid')
 const axios = require('axios')
 const slug = require('slugify')
 const tokens = require('./tokens')
@@ -270,7 +269,7 @@ exports.initProvider = async (p, publicUrl = config.publicUrl) => {
   if (await fs.pathExists(statePath)) {
     p.state = await fs.readFile(statePath, 'utf8')
   } else {
-    p.state = nanoid()
+    p.state = (await import('nanoid')).nanoid()
     await fs.writeFile(statePath, p.state)
   }
 
