@@ -14,7 +14,7 @@
     </v-icon>-->
     <v-row class="mt-0 mx-0">
       <v-avatar
-        class="mt-1 mr-1"
+        class="mt-2 mr-1"
       >
         <v-img
           v-if="owner && !loading"
@@ -26,19 +26,19 @@
         v-model="file"
         class="pt-2"
         accept="image/png, image/jpeg"
-        :placeholder="$t('pages.avatar.load')"
+        :label="$t('pages.avatar.load')"
         variant="outlined"
         density="compact"
         prepend-icon=""
         @change="change"
       >
         <template #append>
-          <v-fab
+          <v-btn
             v-if="file && !hideValidate"
-            size="x-small"
+            size="small"
             color="primary"
             :title="$t('common.validate')"
-            style="position: relative; top: -4px;"
+            style="position: relative;"
             :icon="mdiCheck"
             @click="validate"
           />
@@ -115,7 +115,7 @@ const validate = withUiNotif(async () => {
   const croppedImg = dataURItoBlob(cropper.value?.getCroppedCanvas({ width: 100, height: 100 }).toDataURL('image/png'))
   const formData = new FormData()
   formData.append('avatar', croppedImg)
-  await $fetch(avatarUrl.value, { method: 'POST', body: formData, headers: { 'Content-Type': 'multipart/form-data' } })
+  await $fetch(avatarUrl.value, { method: 'POST', body: formData })
   loading.value = false
   file.value = null
 })
@@ -124,7 +124,7 @@ const getTimestamp = () => new Date().getTime()
 </script>
 
 <style lang="css">
-.vjsf-crop-img>.v-input__control>.v-input__slot {
+.vjsf-crop-img>.v-input__control {
   display: block;
 }
 </style>

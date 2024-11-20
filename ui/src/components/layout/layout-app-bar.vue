@@ -19,7 +19,7 @@
         </a>
         <router-link
           v-else
-          :to="'index'"
+          to="/"
           :title="$t('common.home')"
         >
           <img
@@ -42,7 +42,7 @@
         v-if="user && user.adminMode"
       >
         <v-btn
-          :to="'admin-users'"
+          to="/admin/users"
           color="admin"
           theme="dark"
           variant="flat"
@@ -50,7 +50,7 @@
           {{ $t(`common.users`) }}
         </v-btn>
         <v-btn
-          :to="'admin-organizations'"
+          to="/admin/organizations"
           color="admin"
           theme="dark"
           variant="flat"
@@ -59,7 +59,7 @@
         </v-btn>
         <v-btn
           v-if="$uiConfig.manageSites"
-          :to="'admin-sites'"
+          to="/admin/sites"
           color="admin"
           theme="dark"
           variant="flat"
@@ -67,7 +67,7 @@
           {{ $t(`common.sites`) }}
         </v-btn>
         <v-btn
-          :to="'admin-oauth-tokens'"
+          to="/admin/oauth-tokens"
           color="admin"
           theme="dark"
           variant="flat"
@@ -77,7 +77,7 @@
       </template>
       <v-btn
         v-if="$uiConfig.anonymousContactForm"
-        :to="'contact'"
+        to="/contact"
         variant="flat"
       >
         Nous contacter
@@ -86,7 +86,7 @@
     <personal-menu>
       <template #actions-before="{}">
         <v-list-item
-          :to="'/me'"
+          to="/me"
         >
           <v-list-item-title>{{ $t('common.myAccount') }}</v-list-item-title>
         </v-list-item>

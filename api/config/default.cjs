@@ -134,7 +134,7 @@ module.exports = {
       secondary: '#DD2C00', // deep-orange-darken-4
       'on-secondary': '#FFFFFF',
       'text-secondary': undefined, // same as secondary by default
-      error: '#D50000', // red-accent-5
+      error: '#D50000', // red-accent-4
       'on-error': '#FFFFFF',
       info: '#2962FF', // blue-accent-4
       'on-info': '#FFFFFF',
@@ -142,7 +142,7 @@ module.exports = {
       'on-success': '#FFFFFF',
       warning: '#D81B60', // pink-darken-1
       'on-warning': '#FFFFFF',
-      admin: '#9C27B0', // purple
+      admin: '#4A148C', // purple
       'on-admin': '#FFFFFF',
     }
   },

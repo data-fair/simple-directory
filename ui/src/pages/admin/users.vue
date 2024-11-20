@@ -54,15 +54,9 @@
               {{ props.item.email }}
               <v-btn
                 v-if="!$uiConfig.readonly"
-                icon
-                class="mx-0"
+                :icon="mdiPencil"
                 @click="showEditUserEmailDialog(props.item)"
-              >
-                <v-icon
-                  size="small"
-                  :icon="mdiPencil"
-                />
-              </v-btn>
+              />
             </span>
           </td>
           <td>{{ props.item.name }}</td>
@@ -314,7 +308,7 @@ const sort = computed(() => {
   return (pagination.sortDesc[0] ? '-' : '') + pagination.sortBy[0]
 })
 const usersQuery = computed(() => ({ q: validQ.value, allFields: true, page: pagination.page, size: pagination.itemsPerPage, sort: sort.value }))
-const users = useFetch<{ count: number, results: User[] }>(() => withQuery($apiPath + 'api/users', usersQuery.value))
+const users = useFetch<{ count: number, results: User[] }>(() => withQuery($apiPath + '/users', usersQuery.value))
 
 const deleteUserDialog = ref(false)
 const deleteUser = withUiNotif(async (user: User) => {

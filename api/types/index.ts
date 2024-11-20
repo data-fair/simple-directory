@@ -13,7 +13,7 @@ export type { LdapParams, MemberOverwrite, OrganizationOverwrite } from './ldap-
 
 export type UserWritable = Omit<User, 'created' | 'updated' | 'name'>
 
-export type Member = Pick<User, 'email' | 'emailConfirmed' | 'host' | 'plannedDeletion'> & Pick<FullOrganizationMembership, 'createdAt'>
+export type Member = Pick<User, 'id' | 'name' | 'email' | 'emailConfirmed' | 'host' | 'plannedDeletion'> & Pick<FullOrganizationMembership, 'createdAt'>
 
 export type OAuthToken = {
   token: any,
