@@ -15,8 +15,9 @@
         :label="$t('common.search')"
         name="search"
         variant="solo"
+        density="comfortable"
         style="max-width:300px;"
-        :append-icon="mdiMagnify"
+        :append-inner-icon="mdiMagnify"
         @click:append="validQ = q"
         @keyup.enter="validQ = q"
       />
@@ -29,14 +30,18 @@
       :items="organizations.data.value.results"
       :items-length="pagination.totalItems"
       :loading="organizations.loading.value"
-      class="elevation-1"
+      class="border-sm"
+      density="compact"
       item-key="id"
       :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
     >
       <template #item="props">
         <tr>
           <td v-if="$uiConfig.avatars.orgs">
-            <v-avatar :size="40">
+            <v-avatar
+              :size="36"
+              class="ml-2"
+            >
               <img :src="$sdUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
             </v-avatar>
           </td>
@@ -46,44 +51,44 @@
           <template v-if="!$uiConfig.readonly">
             <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
             <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
-            <td class="justify-center layout px-0">
-              <v-btn
-                :loading="!limits[props.item.id]"
-                :color="!limits[props.item.id] ? 'default' : (limits[props.item.id].store_nb_members.consumption >= limits[props.item.id].store_nb_members.limit ? 'warning' : 'primary')"
-                size="small"
-                rounded
-                class="mt-2 text-lowercase"
-                @click="currentOrganization = props.item;currentLimits = JSON.parse(JSON.stringify(limits[props.item.id]));limitOrganizationDialog = true"
-              >
-                <template v-if="limits[props.item.id]">
-                  <template v-if="!limits[props.item.id].store_nb_members || !limits[props.item.id].store_nb_members.consumption">
-                    {{ $t('common.missingInfo') }}
+            <td>
+              <div class="d-flex">
+                <v-btn
+                  :loading="!limits[props.item.id]"
+                  :color="!limits[props.item.id] ? 'default' : (limits[props.item.id].store_nb_members.consumption >= limits[props.item.id].store_nb_members.limit ? 'warning' : 'primary')"
+                  size="small"
+                  rounded
+                  class="mt-3 text-lowercase"
+                  @click="currentOrganization = props.item;currentLimits = JSON.parse(JSON.stringify(limits[props.item.id]));limitOrganizationDialog = true"
+                >
+                  <template v-if="limits[props.item.id]">
+                    <template v-if="!limits[props.item.id].store_nb_members || !limits[props.item.id].store_nb_members.consumption">
+                      {{ $t('common.missingInfo') }}
+                    </template>
+                    <template v-else-if="limits[props.item.id].store_nb_members.limit === 0">
+                      {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
+                    </template>
+                    <template v-else>
+                      {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} / {{ limits[props.item.id].store_nb_members.limit.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
+                    </template>
                   </template>
-                  <template v-else-if="limits[props.item.id].store_nb_members.limit === 0">
-                    {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
-                  </template>
-                  <template v-else>
-                    {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} / {{ limits[props.item.id].store_nb_members.limit.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
-                  </template>
-                </template>
-              </v-btn>
-              <v-btn
-                :to="`/organizations/${props.item.id}`"
-                icon
-                class="mx-0"
-              >
-                <v-icon :icon="mdiPencil" />
-              </v-btn>
-              <v-btn
-                icon
-                class="mx-0"
-                @click="currentOrganization = props.item;deleteOrganizationDialog = true"
-              >
-                <v-icon
+                </v-btn>
+                <v-btn
+                  :title="$t('common.editTitle', {name: props.item.name})"
+                  :to="`/organizations/${props.item.id}`"
+                  :icon="mdiPencil"
+                  variant="text"
+                />
+                <v-btn
+                  :title="$t('common.delete')"
                   color="warning"
                   :icon="mdiDelete"
-                />
-              </v-btn>
+                  variant="text"
+                  @click="currentOrganization = props.item;deleteOrganizationDialog = true"
+                >
+                  <v-icon />
+                </v-btn>
+              </div>
             </td>
           </template>
           <template v-else>
@@ -106,7 +111,7 @@
       max-width="500px"
     >
       <v-card v-if="currentOrganization">
-        <v-card-title class="text-h6">
+        <v-card-title>
           {{ $t('common.confirmDeleteTitle', {name: currentOrganization.name}) }}
         </v-card-title>
         <v-card-text>
@@ -135,7 +140,7 @@
       max-width="500px"
     >
       <v-card v-if="currentOrganization && currentLimits">
-        <v-card-title class="text-h6">
+        <v-card-title>
           {{ $t('pages.admin.organizations.limitOrganizationTitle', {name: currentOrganization.name}) }}
         </v-card-title>
         <v-card-text v-if="currentLimits">
@@ -178,7 +183,7 @@ const sort = computed(() => {
   return (pagination.sortDesc[0] ? '-' : '') + pagination.sortBy[0]
 })
 const organizationsQuery = computed(() => ({ q: validQ.value, allFields: true, page: pagination.page, size: pagination.itemsPerPage, sort: sort.value }))
-const organizations = useFetch<{ count: number, results: Organization[] }>(() => withQuery($apiPath + 'api/organizations', organizationsQuery.value))
+const organizations = useFetch<{ count: number, results: Organization[] }>(() => withQuery($apiPath + '/organizations', organizationsQuery.value))
 
 const deleteOrganizationDialog = ref(false)
 const currentOrganization = ref<Organization | null>(null)
@@ -208,7 +213,7 @@ const saveLimits = withUiNotif(async (org: Organization, limits: Limits) => {
 })
 
 const headers: { title: string, value?: string, sortable?: boolean }[] = []
-if ($uiConfig.avatars.orgs) headers.push({ title: t('common.avatar'), sortable: false })
+if ($uiConfig.avatars.orgs) headers.push({ title: '', sortable: false })
 headers.push({ title: t('common.name'), value: 'name' })
 headers.push({ title: t('common.id'), value: 'id', sortable: false })
 headers.push({ title: t('common.description'), value: 'description', sortable: false })

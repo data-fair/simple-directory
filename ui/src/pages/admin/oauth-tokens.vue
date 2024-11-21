@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 
-const oauthTokens = useFetch<{ count: number, results: any[] }>($apiPath + 'api/oauth-tokens')
+const oauthTokens = useFetch<{ count: number, results: any[] }>($apiPath + '/oauth-tokens')
 
 const headers = [
   { text: '', value: 'json', sortable: false }

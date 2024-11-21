@@ -5,7 +5,7 @@
   >
     <template v-if="isLoginPage">
       <v-app-bar
-        dense
+        density="comfortable"
         flat
         color="transparent"
       >

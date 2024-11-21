@@ -2,7 +2,9 @@ import config from '#config'
 import { Router, type RequestHandler } from 'express'
 import { reqUser, reqSessionAuthenticated, assertAccountRole, httpError, type Account } from '@data-fair/lib-express'
 import * as limitsSchema from '#types/limits/index.ts'
+import { getLimits } from '#services'
 import mongo from '#mongo'
+import storages from '#storages'
 
 const router = Router()
 export default router
@@ -31,10 +33,10 @@ router.post('/:type/:id', isSuperAdmin, async (req, res, next) => {
 })
 
 // A user can get limits information for himself only
-router.get('/:type/:id', isAccountMember, async (req, res, next) => {
-  const limits = await mongo.limits.findOne({ type: req.params.type, id: req.params.id }, { projection: { _id: 0 } })
-  if (!limits) return httpError(404)
-  res.send(limits)
+router.get('/organization/:id', isAccountMember, async (req, res, next) => {
+  const org = await storages.globalStorage.getOrganization(req.params.id)
+  if (!org) throw httpError(404)
+  res.send(await getLimits(org))
 })
 
 router.get('/', isSuperAdmin, async (req, res, next) => {

@@ -1,7 +1,7 @@
 import { createServer } from 'node:http'
 import { session } from '@data-fair/lib-express/index.js'
 import { startObserver, stopObserver } from '@data-fair/lib-node/observer.js'
-import * as locks from '@data-fair/lib-node/locks.js'
+import locks from '@data-fair/lib-node/locks.js'
 // import upgradeScripts from '@data-fair/lib-node/upgrade-scripts.js'
 import mongo from '#mongo'
 import * as usersWorker from './users/worker.ts'
@@ -29,7 +29,7 @@ server.headersTimeout = (60 * 1000) + 2000
 export const start = async () => {
   session.init('http://localhost:' + config.port)
   await mongo.init()
-  await locks.init(mongo.db)
+  await locks.start(mongo.db)
   await Promise.all([
     oauth.init(),
     saml2.init(),

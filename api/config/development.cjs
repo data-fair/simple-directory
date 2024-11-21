@@ -34,13 +34,6 @@ module.exports = {
   maildev: {
     active: true
   },
-  mails: {
-    from: 'no-reply@test.com',
-    // transport is a full configuration object for createTransport of nodemailer
-    // cf https://nodemailer.com/smtp/
-    transport: {},
-    extraParams: {}
-  },
   storage: {
     type: 'mongo',
     // type: 'ldap',

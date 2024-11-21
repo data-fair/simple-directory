@@ -45,7 +45,8 @@
           :label="$t('common.search')"
           name="search"
           variant="solo"
-          :append-icon="mdiMagnify"
+          density="comfortable"
+          :append-inner-icon="mdiMagnify"
           clearable
           hide-details="auto"
           @click:clear="$nextTick(() => $nextTick(() => refetchMembers()))"
@@ -76,6 +77,7 @@
           clearable
           name="department"
           variant="solo"
+          density="comfortable"
           hide-details="auto"
           @update:model-value="refetchMembers()"
         />
@@ -93,6 +95,7 @@
           clearable
           name="storage"
           variant="solo"
+          density="comfortable"
           @update:model-value="refetchMembers()"
         />
       </v-col>

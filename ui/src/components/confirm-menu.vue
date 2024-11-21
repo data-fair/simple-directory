@@ -32,7 +32,7 @@
       </slot>
     </template>
     <v-card data-iframe-height>
-      <v-card-title class="text-h6">
+      <v-card-title>
         {{ title || $t('common.confirmTitle') }}
       </v-card-title>
       <v-card-text>

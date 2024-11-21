@@ -20,7 +20,7 @@
       data-iframe-height
       width="500"
     >
-      <v-card-title class="text-h6">
+      <v-card-title>
         {{ $t('common.editTitle', {name: site.host}) }}
       </v-card-title>
       <v-card-text v-if="menu">

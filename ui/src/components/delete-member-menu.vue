@@ -18,7 +18,7 @@
       data-iframe-height
       width="500"
     >
-      <v-card-title class="text-h6">
+      <v-card-title>
         {{ $t('pages.organization.confirmDeleteMemberTitle', {name: member.name}) }}
       </v-card-title>
       <v-card-text>

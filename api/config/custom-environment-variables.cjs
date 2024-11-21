@@ -112,9 +112,7 @@ module.exports = {
   },
   maildev: {
     url: 'MAILDEV_URL',
-    active: 'MAILDEV_ACTIVE',
-    smtp: 'MAILDEV_SMTP',
-    web: 'MAILDEV_WEB'
+    active: 'MAILDEV_ACTIVE'
   },
   quotas: {
     defaultMaxCreatedOrgs: 'DEFAULT_MAX_CREATED_ORGS',

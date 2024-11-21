@@ -8,7 +8,7 @@ import memoize from 'memoizee'
 import JSONWebKey from 'json-web-key'
 import { randomUUID } from 'node:crypto'
 import dayjs from 'dayjs'
-import * as locks from '@data-fair/lib-node/locks.js'
+import locks from '@data-fair/lib-node/locks.js'
 import { cipher, decipher } from '../utils/cipher.ts'
 
 type WebKey = { alg: 'RS256', kid: string, use: 'sig' }

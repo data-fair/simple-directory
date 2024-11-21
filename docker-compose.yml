@@ -13,6 +13,22 @@ services:
       - ./dev/resources/nginx.conf:/etc/nginx/nginx.conf:ro
 
   #####
+  # mail server mock
+  #####
+
+  maildev:
+    profiles:
+      - dev
+      - test
+    image: maildev/maildev:2.1.0
+    ports:
+      - 1080:1080
+      - 1025:1025
+    # https://github.com/maildev/maildev/issues/484
+    healthcheck:
+      test: 'wget -O - http://127.0.0.1:$${MAILDEV_WEB_PORT}$${MAILDEV_BASE_PATHNAME}/healthz || exit 1'
+
+  #####
   # auth providers
   #####
 

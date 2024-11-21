@@ -19,7 +19,7 @@
       data-iframe-height
       width="500"
     >
-      <v-card-title class="text-h6">
+      <v-card-title>
         {{ $t('pages.admin.sites.createSite') }}
       </v-card-title>
       <v-card-text v-if="menu">
@@ -71,7 +71,7 @@ const valid = ref(false)
 
 const { postSite } = useStore()
 
-const orgs = useFetch<{ results: Organization[] }>($apiPath + 'api/organizations?size=10000')
+const orgs = useFetch<{ results: Organization[] }>($apiPath + '/organizations?size=10000')
 
 const confirmPost = async () => {
   menu.value = false

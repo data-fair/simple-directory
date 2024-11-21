@@ -301,20 +301,14 @@
       "type": "object",
       "required": [
         "url",
-        "active",
-        "smtp",
-        "web"
+        "active"
       ],
       "properties": {
-        "url": { "type": "string" },
+        "url": {
+          "type": "string"
+        },
         "active": {
           "type": "boolean"
-        },
-        "smtp": {
-          "type": "number"
-        },
-        "web": {
-          "type": "number"
         }
       }
     },

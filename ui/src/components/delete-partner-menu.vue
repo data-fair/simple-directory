@@ -19,7 +19,7 @@
       data-iframe-height
       width="500"
     >
-      <v-card-title class="text-h6">
+      <v-card-title>
         {{ $t('common.confirmDeleteTitle', {name: partner.name}) }}
       </v-card-title>
       <v-card-text>

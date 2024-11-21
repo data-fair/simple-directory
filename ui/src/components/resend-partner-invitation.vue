@@ -20,7 +20,7 @@
       data-iframe-height
       width="500px"
     >
-      <v-card-title class="text-h6">
+      <v-card-title>
         {{ $t('pages.organization.sendInvitationLink') }}
       </v-card-title>
       <v-card-text>

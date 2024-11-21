@@ -53,7 +53,7 @@ export default {
     sites: 'Sites',
     updatedAt: 'Mis à jour le',
     maxCreatedOrgs: 'Nombre maximal d\'organisations à créer',
-    nbCreatedOrgs: 'Nombre d\'organisations créées :',
+    maxCreatedOrgsShort: 'Nb orga max',
     back: 'Retour',
     next: 'Suivant',
     password: 'Mot de passe',
@@ -89,6 +89,7 @@ export default {
     creationStep: 'Étape de création',
     oauthTokens: 'Jetons OAUTH',
     plannedDeletion: 'Suppression programmée',
+    plannedDeletionShort: 'Suppr prog',
     owner: 'Propriéraire'
   },
   doc: {

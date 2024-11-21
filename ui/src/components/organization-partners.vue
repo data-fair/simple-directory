@@ -38,7 +38,8 @@
           :label="$t('common.search')"
           name="search"
           variant="solo"
-          :append-icon="mdiMagnify"
+          density="comfortable"
+          :append-inner-icon="mdiMagnify"
           clearable
           @click:clear="$nextTick(() => $nextTick(() => filterPartners()))"
           @click:append="filterPartners"

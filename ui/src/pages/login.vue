@@ -30,7 +30,7 @@
         elevation="3"
       >
         <v-card-title class="text-subtitle-2">
-          <h1 :class="{'mb-0': true, 'text-warning': adminMode}">
+          <h1 :class="{'mb-0': true, 'text-admin': adminMode}">
             {{ stepsTitles[step] || email }}
           </h1>
         </v-card-title>
@@ -217,7 +217,7 @@
               <v-spacer />
               <v-btn
                 :disabled="!email || !password"
-                :color="adminMode ? 'warning' : 'primary'"
+                :color="adminMode ? 'admin' : 'primary'"
                 variant="flat"
                 @click="passwordAuth"
               >

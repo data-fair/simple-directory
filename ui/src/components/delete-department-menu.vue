@@ -19,7 +19,7 @@
       data-iframe-height
       width="500"
     >
-      <v-card-title class="text-h6">
+      <v-card-title>
         {{ $t('pages.organization.confirmDeleteDepartmentTitle', {name: department.name, departmentLabel}) }}
       </v-card-title>
       <v-card-text>

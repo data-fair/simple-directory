@@ -1,6 +1,6 @@
 <template>
   <v-app-bar
-    dense
+    density="comfortable"
     flat
     scroll-behavior="hide"
   >

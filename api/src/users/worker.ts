@@ -6,7 +6,7 @@ import { internalError } from '@data-fair/lib-node/observer.js'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { defaultLocale, localizedDayjs, messages } from '#i18n'
 import { sendMail } from '#services'
-import * as locks from '@data-fair/lib-node/locks.js'
+import locks from '@data-fair/lib-node/locks.js'
 import storages from '#storages'
 
 // this single small worker loop doesn't really justify running in separate processes

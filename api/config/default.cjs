@@ -142,7 +142,7 @@ module.exports = {
       'on-success': '#FFFFFF',
       warning: '#D81B60', // pink-darken-1
       'on-warning': '#FFFFFF',
-      admin: '#4A148C', // purple
+      admin: '#B71C1C', // red-darken-4
       'on-admin': '#FFFFFF',
     }
   },
@@ -163,9 +163,7 @@ module.exports = {
   },
   maildev: {
     url: 'http://localhost:1080',
-    active: false,
-    smtp: 1025,
-    web: 1080
+    active: false
   },
   quotas: {
     defaultMaxCreatedOrgs: -1,

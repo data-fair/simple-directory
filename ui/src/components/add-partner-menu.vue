@@ -20,7 +20,7 @@
       :width="500"
       :loading="$uiConfig.manageSites && !redirects"
     >
-      <v-card-title class="text-h6">
+      <v-card-title>
         {{ $t('pages.organization.addPartner') }}
       </v-card-title>
       <v-card-text>
