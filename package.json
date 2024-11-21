@@ -136,7 +136,6 @@
     "jsonwebtoken": "^9.0.0",
     "jwks-rsa": "^3.0.1",
     "ldapjs": "^2.2.3",
-    "maildev": "^2.1.0",
     "material-colors": "^1.2.6",
     "memoizee": "^0.4.15",
     "mjml": "^4.8.1",
