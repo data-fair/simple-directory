@@ -1,6 +1,5 @@
 const assert = require('assert').strict
 const config = require('config')
-const util = require('util')
 const testUtils = require('../utils')
 
 describe('organizations members api', () => {
@@ -99,7 +98,7 @@ describe('organizations members api', () => {
       )
       assert.equal(res.status, 200)
       await new Promise(resolve => setTimeout(resolve, 50))
-      return (await util.promisify(global.app.get('maildev').getAllEmail)())
+      return (await testUtils.getAllEmails())
         .filter(m => m.subject === subject)
     }
 

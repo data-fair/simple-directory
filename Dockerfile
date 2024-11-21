@@ -17,7 +17,7 @@ ADD package.json .
 ADD package-lock.json .
 ADD patches patches
 # use clean-modules on the same line as npm ci to be lighter in the cache
-RUN npm ci && npm install --no-save maildev && \
+RUN npm ci && \
     ./node_modules/.bin/clean-modules --yes --exclude mocha/lib/test.js --exclude "**/*.mustache"
 
 # Adding UI files
@@ -49,9 +49,6 @@ RUN npm run test
 
 # Cleanup /webapp/node_modules so it can be copied by next stage
 RUN npm prune --production
-# maildev installed separately to avoid flagging vulnerability https://github.com/advisories/GHSA-vc6q-ccj9-9r89
-# not too bug a deal, as it is used only in pre-production
-RUN npm install maildev --no-save
 RUN rm -rf node_modules/.cache
 
 ##################################

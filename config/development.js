@@ -31,11 +31,7 @@ module.exports = {
     active: true
   },
   mails: {
-    from: 'no-reply@test.com',
-    // transport is a full configuration object for createTransport of nodemailer
-    // cf https://nodemailer.com/smtp/
-    transport: {},
-    extraParams: {}
+    from: 'no-reply@test.com'
   },
   secret: {
     public: './test/resources/test.key.pub',

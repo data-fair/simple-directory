@@ -1,5 +1,10 @@
 const debug = require('debug')('test')
 const app = require('../../server/app')
+const testUtils = require('../utils')
+
+before('delete emails', async () => {
+  await testUtils.deleteAllEmails()
+})
 
 before('start app', async function () {
   debug('run app')

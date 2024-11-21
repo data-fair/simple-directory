@@ -12,7 +12,6 @@ Switch to the appropriate nodejs version:
 Install dependencies:
 
     npm install
-    npm install --no-save maildev
 
 If you use [zellij](https://zellij.dev/) you can replace all the following steps with `npm run dev-zellij`, otherwise follow the next instructions.
 

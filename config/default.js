@@ -159,9 +159,7 @@ module.exports = {
   },
   maildev: {
     url: 'http://127.0.0.1:1080',
-    active: false,
-    smtp: 1025,
-    web: 1080
+    active: false
   },
   quotas: {
     defaultMaxCreatedOrgs: -1,

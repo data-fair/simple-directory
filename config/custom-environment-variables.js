@@ -185,9 +185,7 @@ module.exports = {
     active: {
       __name: 'MAILDEV_ACTIVE',
       __format: 'json'
-    },
-    smtp: 'MAILDEV_SMTP',
-    web: 'MAILDEV_WEB'
+    }
   },
   quotas: {
     defaultMaxCreatedOrgs: {

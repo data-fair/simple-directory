@@ -3,7 +3,6 @@ const express = require('express')
 const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser')
 const http = require('http')
-const util = require('util')
 const eventToPromise = require('event-to-promise')
 const cors = require('cors')
 const { createHttpTerminator } = require('http-terminator')
@@ -250,16 +249,6 @@ exports.run = async () => {
     })
   }
 
-  // Run a handy development mail server
-  if (config.maildev.active) {
-    const MailDev = require('maildev')
-    const maildev = new MailDev(config.maildev)
-    maildev.listenAsync = util.promisify(maildev.listen)
-    maildev.closeAsync = util.promisify(maildev.close)
-    await maildev.listenAsync()
-    app.set('maildev', maildev)
-  }
-
   if (!config.noUI) {
     app.use(session.auth)
     debug('prepare nuxt')
@@ -287,9 +276,6 @@ exports.stop = async () => {
   await httpTerminator.terminate()
 
   app.get('mailTransport').close()
-  if (config.maildev.active) {
-    await app.get('maildev').closeAsync()
-  }
 
   if (config.observer.active) {
     const { stopObserver } = await import('@data-fair/lib/node/observer.js')

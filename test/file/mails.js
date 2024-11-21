@@ -1,5 +1,4 @@
 const assert = require('assert').strict
-const util = require('util')
 const testUtils = require('../utils')
 
 describe('mails', () => {
@@ -17,7 +16,7 @@ describe('mails', () => {
     }, { params: { key: 'testkey' } })
     assert.equal(res.status, 200)
     await new Promise(resolve => setTimeout(resolve, 50))
-    const emails = await util.promisify(global.app.get('maildev').getAllEmail)()
+    const emails = await testUtils.getAllEmails()
     const email = emails.find(m => m.subject === 'test')
     assert.ok(email)
     assert.equal(email.envelope.to[0].address, 'dmeadus0@answers.com')
@@ -32,7 +31,7 @@ describe('mails', () => {
     }, { params: { key: 'testkey' } })
     assert.equal(res.status, 200)
     await new Promise(resolve => setTimeout(resolve, 50))
-    const emails = await util.promisify(global.app.get('maildev').getAllEmail)()
+    const emails = await testUtils.getAllEmails()
     const email = emails.find(m => m.subject === 'test2')
     assert.ok(email)
     assert.equal(email.envelope.to.length, 3)
@@ -47,7 +46,7 @@ describe('mails', () => {
     }, { params: { key: 'testkey' } })
     assert.equal(res.status, 200)
     await new Promise(resolve => setTimeout(resolve, 50))
-    const emails = await util.promisify(global.app.get('maildev').getAllEmail)()
+    const emails = await testUtils.getAllEmails()
     const email = emails.find(m => m.subject === 'test3')
     assert.ok(email)
     assert.equal(email.envelope.to.length, 2)

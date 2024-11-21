@@ -33,3 +33,16 @@ exports.createUser = async (email, adminMode = false, password = 'Test1234') => 
   const user = (await ax.get('/api/auth/me')).data
   return { ax, user }
 }
+
+exports.getAllEmails = async () => {
+  const ax = await exports.axios()
+  return (await ax.get('http://localhost:1080/email')).data
+}
+
+exports.deleteAllEmails = async () => {
+  const ax = await exports.axios()
+  const emails = (await ax.get('http://localhost:1080/email')).data
+  for (const email of emails) {
+    await ax.delete('http://localhost:1080/email/' + email.id)
+  }
+}

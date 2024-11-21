@@ -18,6 +18,17 @@ services:
       - 27017:27017
     volumes:
       - mongo-data4:/data/db
+
+  maildev:
+    profiles:
+      - dev
+      - test
+    image: maildev/maildev:2.1.0
+    ports:
+      - 1080:1080
+      - 1025:1025
+
+  # LDAP mock
   ldap:
     profiles:
       - dev
