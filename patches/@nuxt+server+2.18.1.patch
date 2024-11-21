@@ -1,0 +1,13 @@
+diff --git a/node_modules/@nuxt/server/dist/server.js b/node_modules/@nuxt/server/dist/server.js
+index 21bfc34..777eb07 100644
+--- a/node_modules/@nuxt/server/dist/server.js
++++ b/node_modules/@nuxt/server/dist/server.js
+@@ -23,7 +23,7 @@ const Youch = require('@nuxtjs/youch');
+ const http = require('http');
+ const https = require('https');
+ const enableDestroy = require('server-destroy');
+-const ip = require('ip');
++const ip = require('neoip');
+ const pify = require('pify');
+ const onHeaders = require('on-headers');
+ 

@@ -8,7 +8,7 @@ services:
     network_mode: host
     volumes:
       - ./test/resources/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      
+
   mongo:
     profiles:
       - dev
@@ -64,7 +64,7 @@ services:
       - SIMPLESAMLPHP_SP_ENTITY_ID=http://localhost:5689/simple-directory/api/auth/saml2-metadata.xml
       - SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE=http://localhost:5689/simple-directory/api/auth/saml2-assert
       - SIMPLESAMLPHP_SP_SINGLE_LOGOUT_SERVICE=http://localhost:5689/simple-directory/api/auth/saml2-logout
-  
+
   # WARNING: does not work on a recent chrome, this provider tries to use a cookie with samesite=none option and this is not permitted without https
   # list of users : harley@qlik.example
   # harley@qlik.example Password1!
@@ -73,6 +73,7 @@ services:
       - dev
       - test
     image: qlik/simple-oidc-provider:0.2.5
+    platform: linux/amd64
     network_mode: host
     environment:
       - REDIRECTS=http://localhost:5689/simple-directory/api/auth/oauth-callback
@@ -92,7 +93,7 @@ services:
     volumes:
       - ./data/keycloak:/opt/keycloak/data/
     command: ["start-dev", "--http-port=8888"]
-  
+
   notify:
     profiles:
       - dev
