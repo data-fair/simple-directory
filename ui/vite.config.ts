@@ -6,7 +6,7 @@ import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { unheadVueComposablesImports } from '@unhead/vue'
-import Unfonts from 'unplugin-fonts/vite'
+import webfontDownload from 'vite-plugin-webfont-dl'
 import Vuetify from 'vite-plugin-vuetify'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import { autoImports } from '@data-fair/lib-vuetify/vite.js'
@@ -21,6 +21,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    webfontDownload(),
     VueRouter({
       dts: './dts/typed-router.d.ts',
       exclude: process.env.NODE_ENV === 'development' ? [] : ['src/pages/dev.vue']
@@ -28,7 +29,7 @@ export default defineConfig({
     Vue(),
     VueI18nPlugin(),
     Vuetify(),
-    Unfonts({ google: { families: [{ name: 'Nunito', styles: 'ital,wght@0,200..1000;1,200..1000' }] } }),
+    // Unfonts({ google: { families: [{ name: 'Nunito', styles: 'ital,wght@0,200..1000;1,200..1000' }] } }),
     AutoImport({
       dts: './dts/auto-imports.d.ts',
       vueTemplate: true,
