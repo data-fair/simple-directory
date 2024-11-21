@@ -448,7 +448,7 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   const user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
 
-  if (user.coreIdProvider && user.coreIdProvider.type === 'oauth') {
+  if (user?.coreIdProvider?.type === 'oauth') {
     let provider
     if (!req.site) {
       provider = oauth.providers.find(p => p.id === user.coreIdProvider.id)
