@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 import { reqI18n, __all, __ } from '#i18n'
 import storages from '#storages'
-import { getLimits, setNbMembersLimit, reqSite, getSiteByHost, shortenInvit, unshortenInvit, sendMail, decodeToken, signToken, postUserIdentityWebhook } from '#services'
+import { getLimits, setNbMembersLimit, reqSite, getSiteByUrl, shortenInvit, unshortenInvit, sendMail, decodeToken, signToken, postUserIdentityWebhook } from '#services'
 import emailValidator from 'email-validator'
 import Debug from 'debug'
 
@@ -35,11 +35,11 @@ router.post('', async (req, res, next) => {
   let invitPublicBaseUrl = reqSiteUrl(req) + '/simple-directory'
   if (invitation.redirect) {
     const host = new URL(invitation.redirect).host
-    invitSite = (await getSiteByHost(host)) ?? undefined
+    invitSite = (await getSiteByUrl(invitation.redirect)) ?? undefined
     if (invitSite) {
       const url = new URL(config.publicUrl)
       url.host = host
-      invitPublicBaseUrl = url.href
+      invitPublicBaseUrl = url.protocol + '//' + invitSite.host + (invitSite.path ?? '') + '/simple-directory'
     }
   }
 

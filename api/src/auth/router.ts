@@ -6,7 +6,7 @@ import bodyParser from 'body-parser'
 import { nanoid } from 'nanoid'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByHost, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession } from '#services'
+import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User, UserWritable } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -301,7 +301,7 @@ router.post('/site_redirect', async (req, res, next) => {
   const user = await storage.getUserByEmail(loggedUser.email)
   if (!user) return res.status(404).send('user not found')
   if (!req.body.redirect) return res.status(400).send()
-  const site = await getSiteByHost(new URL(req.body.redirect).host)
+  const site = await getSiteByUrl(req.body.redirect)
   if (!site) return res.status(404).send('site not found')
   const payload = getTokenPayload(user)
   const callbackUrl = (await prepareCallbackUrl(req, payload, req.body.redirect, getDefaultUserOrg(user, req.body.org, req.body.dep))).href

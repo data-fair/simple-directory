@@ -1,24 +1,24 @@
 import config from '#config'
 import { type Site, type SitePublic } from '#types'
 import { type Request } from 'express'
-import { reqHost, httpError, type Account } from '@data-fair/lib-express'
+import { reqSiteUrl, httpError, type Account } from '@data-fair/lib-express'
 import mongo from '#mongo'
 import memoize from 'memoizee'
 
-export const getSiteByHost = memoize(async (host: string) => {
-  return await mongo.sites.findOne({ host })
+export const getSiteByUrl = memoize(async (url: string) => {
+  const urlObj = new URL(url)
+  const sites = await mongo.sites.find({ host: urlObj.host }).toArray()
+  return sites.find(s => urlObj.pathname.startsWith(s.path ?? ''))
 }, {
   promise: true,
   maxAge: 2000 // 2s
 })
 
-const publicUrl = new URL(config.publicUrl)
-
 export const reqSite = async (req: Request): Promise<Site | undefined> => {
-  const host = reqHost(req)
-  if (host && ![publicUrl.host, `simple-directory:${config.port}`].includes(host) && !(process.env.NODE_ENV === 'production' && host === `localhost:${config.port}`)) {
-    if (!config.manageSites) throw httpError(400, `multi-sites not supported by this install of simple-directory, host=${host}, declared host=${publicUrl.host}`)
-    const site = await getSiteByHost(host)
+  const siteUrl = reqSiteUrl(req)
+  if (siteUrl && !config.publicUrl.startsWith(siteUrl) && siteUrl !== `http://simple-directory:${config.port}` && !(process.env.NODE_ENV === 'production' && siteUrl === `http://localhost:${config.port}`)) {
+    if (!config.manageSites) throw httpError(400, `multi-sites not supported by this install of simple-directory, url=${siteUrl}, declared url=${config.publicUrl}`)
+    const site = await getSiteByUrl(siteUrl)
     if (!site) throw httpError(404, 'unknown site')
     return site
   }
@@ -54,8 +54,8 @@ export async function deleteSite (siteId: string) {
 
 export function getSiteColors (site: Site) {
   const colors = { ...config.theme.colors }
-  colors['primary-text'] = colors['primary-text'] ?? colors.primary
-  colors['secondary-text'] = colors['secondary-text'] ?? colors.secondary
+  colors['text-primary'] = colors['text-primary'] ?? colors.primary
+  colors['text-secondary'] = colors['text-secondary'] ?? colors.secondary
   if (site.theme?.primaryColor) colors.primary = site.theme?.primaryColor
   return colors
 }

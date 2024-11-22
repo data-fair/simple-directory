@@ -100,7 +100,7 @@ export class SdMongo {
       },
       sites: {
         'sites-host': [
-          { host: 1 },
+          { host: 1, path: 1 },
           { unique: true }
         ],
         'sites-owner': { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }

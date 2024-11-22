@@ -25,6 +25,10 @@ export default {
       type: 'string',
       title: 'Nom de domaine'
     },
+    path: {
+      type: 'string',
+      title: 'Préfixe de chemin'
+    },
     theme: {
       type: 'object',
       additionalProperties: false,
