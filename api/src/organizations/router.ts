@@ -123,7 +123,7 @@ router.post('', async (req, res, next) => {
   // update session info
   await keepalive(req, res)
 
-  res.status(201).send(orga)
+  res.status(201).send(createdOrga)
 })
 
 // Update some parts of an organization as admin of it

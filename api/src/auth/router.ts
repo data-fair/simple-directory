@@ -6,7 +6,7 @@ import bodyParser from 'body-parser'
 import { nanoid } from 'nanoid'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByHost, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, unsetSessionCookies, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession } from '#services'
+import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByHost, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User, UserWritable } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -212,7 +212,8 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   // this is used by data-fair app integrated login
   if (req.is('application/x-www-form-urlencoded')) {
     const serverSession = initServerSession(req)
-    storage.addUserSession(user.id, serverSession)
+    await storage.addUserSession(user.id, serverSession)
+    await confirmLog(storage, user, serverSession)
     await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
     res.redirect(query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me')
@@ -351,7 +352,7 @@ router.get('/token_callback', async (req, res, next) => {
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = 1
 
   const serverSession = initServerSession(req)
-  storage.addUserSession(user.id, serverSession)
+  await storage.addUserSession(user.id, serverSession)
 
   await confirmLog(storage, user, serverSession)
   await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, query.id_token_org, query.id_token_dep))
@@ -436,9 +437,6 @@ router.post('/keepalive', async (req, res, next) => {
   let user = loggedUser.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.id)
   if (!user) throw httpError(404)
 
-  debug(`Exchange session token for user ${loggedUser.name}`)
-  await keepalive(req, res, user)
-
   const coreIdProvider = user.coreIdProvider
   if (coreIdProvider && coreIdProvider.type === 'oauth') {
     let provider
@@ -450,17 +448,17 @@ router.post('/keepalive', async (req, res, next) => {
       provider = await initOidcProvider(providerInfo, reqSiteUrl(req) + '/simple-directory')
     }
     if (!provider) {
-      unsetSessionCookies(req, res)
+      await logout(req, res)
       return res.status(401).send('Fournisseur d\'identité principal inconnu')
     }
     const oauthToken = (await readOAuthToken(user, provider))
 
     if (!oauthToken) {
-      unsetSessionCookies(req, res)
+      await logout(req, res)
       return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
     }
     if (oauthToken.loggedOut) {
-      unsetSessionCookies(req, res)
+      await logout(req, res)
       return res.status(401).send('Utilisateur déconnecté depuis le fournisseur d\'identité principal')
     }
     const tokenJson = oauthToken.token
@@ -477,19 +475,22 @@ router.post('/keepalive', async (req, res, next) => {
         eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }
     } catch (err: any) {
-      unsetSessionCookies(req, res)
+      await logout(req, res)
       eventsLog.info('sd.auth.keepalive.oauth-refresh-ko', `a user failed to refresh their info from their core identity provider ${provider.id} (${err.message})`, { req })
       // TODO: can we be confident enough in this to actually delete the user ? or maybe flag it as disabled so that it is removed from listings ?
       return res.status(401).send('Échec de prolongation de la session avec le fournisseur d\'identité principal')
     }
   }
+
+  debug(`Exchange session token for user ${loggedUser.name}`)
+  await keepalive(req, res, user)
+
   res.status(204).send()
 })
 
 router.delete('/', async (req, res) => {
   const logContext: EventLogContext = { req }
-
-  unsetSessionCookies(req, res)
+  await logout(req, res)
   eventsLog.info('sd.auth.session-delete', 'a session was deleted', logContext)
   res.status(204).send()
 })

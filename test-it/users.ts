@@ -37,11 +37,12 @@ describe('users api', () => {
   })
 
   it('should send an email to confirm new password', async () => {
+    const config = (await import('../api/src/config.ts')).default
     const ax = await axios()
     const { user } = await createUser('user2@test.com')
 
     const mailPromise = waitForMail()
-    await ax.post('/api/auth/action', { email: 'user2@test.com', action: 'changePassword' })
+    await ax.post('/api/auth/action', { email: 'user2@test.com', action: 'changePassword', redirect: config.publicUrl + '/login' })
     const mail = await mailPromise
     assert.ok(mail.link.includes('action_token'))
     const actionToken = (new URL(mail.link)).searchParams.get('action_token')
@@ -66,7 +67,7 @@ describe('users api', () => {
       { params: { key: config.secretKeys.sites } })
     const mailPromise = waitForMail()
 
-    await anonymousAx.post('http://127.0.0.1:5989/simple-directory/api/auth/action', { email: 'user3@test.com', action: 'changePassword' })
+    await anonymousAx.post('http://127.0.0.1:5989/simple-directory/api/auth/action', { email: 'user3@test.com', action: 'changePassword', redirect: config.publicUrl + '/login' })
     const mail = await mailPromise
     assert.ok(mail.link.includes('action_token'))
     const actionToken = (new URL(mail.link)).searchParams.get('action_token')

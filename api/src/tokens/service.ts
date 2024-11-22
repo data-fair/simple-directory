@@ -1,6 +1,7 @@
-import type { User } from '#types'
+import type { SessionInfoPayload, User } from '#types'
 import type { Request, Response } from 'express'
-import { reqSession, httpError, reqSiteUrl, session, reqSitePath, type OrganizationMembership, type SessionState, type User as SessionUser, reqSessionAuthenticated } from '@data-fair/lib-express'
+import type { OrganizationMembership, SessionState, User as SessionUser } from '@data-fair/lib-express'
+import { reqSession, reqSiteUrl, session, reqSitePath, reqSessionAuthenticated } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { internalError } from '@data-fair/lib-node/observer.js'
 import config, { jwtDurations } from '#config'
@@ -66,7 +67,7 @@ export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: stri
   if (user.ignorePersonalAccount) return user.organizations[0]
 }
 
-export const unsetSessionCookies = (req: Request, res: Response) => {
+export const logout = async (req: Request, res: Response) => {
   const cookies = new Cookies(req, res)
   const sitePath = reqSitePath(req)
   const opts = { path: sitePath, expires: new Date(0) }
@@ -76,6 +77,18 @@ export const unsetSessionCookies = (req: Request, res: Response) => {
   cookies.set('id_token_org', '', opts)
   cookies.set('id_token_dep', '', opts)
   cookies.set('id_token_ex', '', { ...opts, path: sitePath + '/simple-directory/', httpOnly: true })
+
+  const exchangeToken = cookies.get('id_token_ex')
+  const sessionState = reqSession(req)
+  if (sessionState.user && exchangeToken) {
+    let storage = storages.globalStorage
+    if (sessionState.user.os && sessionState.organization) {
+      const org = await storages.globalStorage.getOrganization(sessionState.organization.id)
+      if (org) storage = await storages.createOrgStorage(org) ?? storage
+    }
+    const serverSessionInfo = decodeToken(exchangeToken) as SessionInfoPayload | undefined
+    if (serverSessionInfo?.session) await storage.deleteUserSession(sessionState.user.id, serverSessionInfo.session)
+  }
 }
 
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
@@ -103,7 +116,8 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
     const exchangeCookieOpts = { ...opts, path: sitePath + '/simple-directory/', httpOnly: true }
     // const exchangeCookieOpts = { ...opts, httpOnly: true }
     const exchangeExp = Math.floor(date / 1000) + jwtDurations.exchangeToken
-    const exchangeToken = await signToken({ user: payload.id, session: serverSessionId, adminMode: payload.adminMode }, exchangeExp)
+    const sessionInfo: SessionInfoPayload = { user: payload.id, session: serverSessionId, adminMode: payload.adminMode }
+    const exchangeToken = await signToken(sessionInfo, exchangeExp)
     if (payload.rememberMe) exchangeCookieOpts.expires = new Date(exchangeExp * 1000)
     cookies.set('id_token_ex', exchangeToken, exchangeCookieOpts)
   }
@@ -118,7 +132,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
   if (sessionState.organization) {
     org = await storages.globalStorage.getOrganization(sessionState.organization.id)
     if (!org) {
-      unsetSessionCookies(req, res)
+      await logout(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user tried to prolongate a session in invalid org', logContext)
       return res.status(401).send('Organisation inexistante')
     }
@@ -130,7 +144,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
   }
   const user = _user || await storage.getUser(sessionState.user.id)
   if (!user) {
-    unsetSessionCookies(req, res)
+    await logout(req, res)
     eventsLog.info('sd.auth.keepalive.fail', 'a deleted user tried to prolongate a session', logContext)
     return res.status(401).send('Utilisateur inexistant')
   }
@@ -140,26 +154,26 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
   const idTokenDep = cookies.get('id_token_dep')
 
   const exchangeToken = cookies.get('id_token_ex')
-  const serverSessionInfo = exchangeToken && ((await session.verifyToken(exchangeToken)) as { user: string, id: string, adminMode: 1 | undefined })
+  const serverSessionInfo = exchangeToken && ((await session.verifyToken(exchangeToken)) as SessionInfoPayload | undefined)
   if (!serverSessionInfo) {
-    unsetSessionCookies(req, res)
+    await logout(req, res)
     eventsLog.info('sd.auth.keepalive.fail', 'a user without an echange token tried to prolongate a session', logContext)
     return res.status(401).send('Informations de session manquantes')
   }
-  if (serverSessionInfo.adminMode) {
+  if (!serverSessionInfo.adminMode) {
     if (serverSessionInfo.user !== user.id) {
-      unsetSessionCookies(req, res)
+      await logout(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user with another user\'s exchange token tried to prolongate a session', logContext)
       return res.status(401).send('Informations de session manquantes')
     }
-    const serverSession = user.sessions?.find(s => s.id === serverSessionInfo.id)
+    const serverSession = user.sessions?.find(s => s.id === serverSessionInfo.session)
     if (!serverSession) {
-      unsetSessionCookies(req, res)
+      await logout(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user with a deleted session reference tried to prolongate a session', logContext)
       return res.status(401).send('Session interrompue')
     }
   }
-  const serverSessionId = serverSessionInfo.id
+  const serverSessionId = serverSessionInfo.session
 
   const payload = getTokenPayload(user)
   if (sessionState.user.isAdmin && sessionState.user.adminMode && req.query.noAdmin !== 'true') payload.adminMode = 1

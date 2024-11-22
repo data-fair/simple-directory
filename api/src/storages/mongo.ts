@@ -29,8 +29,10 @@ function cleanUser (resource: any): User {
 }
 
 function cleanOrganization (resource: any): Organization {
-  resource.id = resource._id
-  delete resource._id
+  if (resource._id) {
+    resource.id = resource._id
+    delete resource._id
+  }
   return resource
 }
 
@@ -124,8 +126,8 @@ class MongodbStorage implements SdStorage {
     const logged = new Date().toISOString()
     mongo.users.updateOne(
       { _id: id },
-      { $set: { logged, 'sessions.$[serverSessionId].lastKeepalive': logged } },
-      { arrayFilters: [{ serverSessionId }] })
+      { $set: { logged, 'sessions.$[currentSession].lastKeepalive': logged } },
+      { arrayFilters: [{ 'currentSession.id': serverSessionId }] })
   }
 
   async confirmEmail (id: string) {

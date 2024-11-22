@@ -101,11 +101,11 @@ class FileStorage implements SdStorage {
   }
 
   async addUserSession (userId: string, serverSession: ServerSession): Promise<void> {
-    await mongo.ldapUserSessions.updateOne({ _id: userId }, { $push: { sessions: serverSession } }, { upsert: true })
+    await mongo.fileUserSessions.updateOne({ _id: userId }, { $push: { sessions: serverSession } }, { upsert: true })
   }
 
   async deleteUserSession (userId: string, serverSessionId: string): Promise<void> {
-    await mongo.ldapUserSessions.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
+    await mongo.fileUserSessions.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
   }
 
   async findUsers (params: FindUsersParams) {

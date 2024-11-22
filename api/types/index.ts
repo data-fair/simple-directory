@@ -57,3 +57,9 @@ export type ShortenedPartnerInvitation = {
   n: string,
   e: string
 }
+
+export type SessionInfoPayload = {
+  session: string
+  user: string
+  adminMode?: 1
+}

@@ -1,12 +1,12 @@
 import { strict as assert } from 'node:assert'
 import { it, describe, before, beforeEach, after } from 'node:test'
-import { clean, startApiServer, stopApiServer, createUser, axiosAuth, waitForMail } from './utils/index.ts'
-import { promisify } from 'node:util'
+import { clean, startApiServer, stopApiServer, createUser, axiosAuth, waitForMail, deleteAllEmails, getAllEmails } from './utils/index.ts'
 import jwt, { type JwtPayload } from 'jsonwebtoken'
 
 process.env.STORAGE_TYPE = 'mongo'
 
 describe('organizations api', () => {
+  before(deleteAllEmails)
   before(startApiServer)
   beforeEach(async () => await clean())
   after(stopApiServer)
@@ -179,9 +179,7 @@ describe('organizations api', () => {
       )
       assert.equal(res.status, 200)
       await new Promise(resolve => setTimeout(resolve, 50))
-      const mailsTransport = (await import('../api/src/mails/transport.ts')).default
-      return (await promisify(mailsTransport.maildev.getAllEmail)())
-        .filter(m => m.subject === subject)
+      return (await getAllEmails()).filter(m => m.subject === subject)
     }
 
     let emails = await sendEmails(

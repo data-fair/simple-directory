@@ -56,7 +56,7 @@ describe('global OIDC configuration', () => {
     assert.equal(callbackRedirect.pathname, '/simple-directory/api/auth/token_callback')
     // finally the token_callback url will set cookies and redirect to our final destination
     const tokenCallback = await anonymousAx(callbackRedirect.href, { validateStatus: (status) => status === 302 })
-    assert.equal(tokenCallback.headers['set-cookie']?.length, 2)
+    assert.equal(tokenCallback.headers['set-cookie']?.length, 3)
     const cookieJar = new CookieJar()
     for (const cookie of tokenCallback.headers['set-cookie']) {
       cookieJar.setCookie(cookie, callbackRedirect.origin)

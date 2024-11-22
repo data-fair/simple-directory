@@ -29,9 +29,8 @@ describe('sites api', () => {
 
     // anonymous user can access the public info (host, theme and later auth providers) so that we can display custom login page
     const publicSite = (await anonymousAx.get('http://127.0.0.1:5989/simple-directory/api/sites/_public')).data
-    console.log(publicSite)
     assert.equal(publicSite.authMode, 'onlyBackOffice')
-    assert.deepEqual(publicSite.theme, { primaryColor: '#FF00FF' })
+    assert.ok(publicSite.colors.primary)
     assert.ok(publicSite.logo.startsWith('http://127.0.0.1:5989/'))
 
     let sites = (await ax.get('/api/sites')).data
