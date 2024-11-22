@@ -128,6 +128,10 @@ export default {
     logged: {
       type: 'string',
       format: 'date-time'
+    },
+    sessions: {
+      type: 'array',
+      items: { $ref: '#/$defs/serverSession' }
     }
   },
   $defs: {
@@ -163,8 +167,27 @@ export default {
           format: 'date-time'
         }
       }
-
+    },
+    serverSession: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['deviceName', 'id', 'createdAt'],
+      properties: {
+        deviceName: {
+          type: 'string'
+        },
+        id: {
+          type: 'string'
+        },
+        createdAt: {
+          type: 'string',
+          format: 'date-time'
+        },
+        lastKeepalive: {
+          type: 'string',
+          format: 'date-time'
+        }
+      }
     }
   }
-
 }

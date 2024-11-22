@@ -2,7 +2,7 @@ import { type User, type FullOrganizationMembership } from './user/index.ts'
 import type { RedirectMode } from '../config/type/index.ts'
 import type { Invitation } from './invitation/index.ts'
 
-export type { User, FullOrganizationMembership } from './user/index.ts'
+export type { User, FullOrganizationMembership, ServerSession } from './user/index.ts'
 export type { Organization } from './organization/index.ts'
 export type { Site } from './site/index.ts'
 export type { SitePublic } from './site-public/index.ts'
@@ -11,9 +11,9 @@ export type { Invitation } from './invitation/index.ts'
 export type { Partner } from './partner/index.ts'
 export type { LdapParams, MemberOverwrite, OrganizationOverwrite } from './ldap-params/index.ts'
 
-export type UserWritable = Omit<User, 'created' | 'updated' | 'name'>
+export type UserWritable = Omit<User, 'created' | 'updated' | 'name' | 'sessions'>
 
-export type Member = Pick<User, 'id' | 'name' | 'email' | 'emailConfirmed' | 'host' | 'plannedDeletion'> & Pick<FullOrganizationMembership, 'createdAt'>
+export type Member = Pick<User, 'id' | 'name' | 'email' | 'emailConfirmed' | 'host' | 'plannedDeletion'> & Pick<FullOrganizationMembership, 'createdAt' | 'role' | 'department' | 'departmentName' | 'readOnly'>
 
 export type OAuthToken = {
   token: any,

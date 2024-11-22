@@ -27,16 +27,16 @@ describe('file storage', () => {
 
   it('Refresh token', async () => {
     const ax = await axiosAuth('dmeadus0@answers.com')
-    let res = await ax.post('/api/auth/keepalive')
+    const res = await ax.post('/api/auth/keepalive')
     assert.equal(res.status, 204)
     assert.ok(res.headers['set-cookie']?.[0].startsWith('id_token='))
     assert.ok(res.headers['set-cookie']?.[1].startsWith('id_token_sign='))
 
     // same thing using retrocompatibility route
-    res = await ax.post('/api/session/keepalive')
+    /* res = await ax.post('/api/session/keepalive')
     assert.equal(res.status, 204)
     assert.ok(res.headers['set-cookie']?.[0].startsWith('id_token='))
-    assert.ok(res.headers['set-cookie']?.[1].startsWith('id_token_sign='))
+    assert.ok(res.headers['set-cookie']?.[1].startsWith('id_token_sign=')) */
   })
 
   it('Get organization list when not authenticated', async () => {

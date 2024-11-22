@@ -1,6 +1,6 @@
 import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
 import config from '#config'
-import type { LdapParams } from '#types'
+import type { LdapParams, ServerSession } from '#types'
 import type { Organization, Partner, User, UserWritable } from '#types'
 import mongo from '#mongo'
 import memoize from 'memoizee'
@@ -303,6 +303,9 @@ export class LdapStorage implements SdStorage {
       const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email?.toLowerCase() === user.email?.toLowerCase())
       if (overwrite) Object.assign(user, overwrite)
       if (this.org) user.orgStorage = true
+      if (onlyItem) {
+        user.sessions = (await mongo.ldapUserSessions.findOne({ _id: user.id }))?.sessions
+      }
       return { ...res.fullResults[0], user }
     })
   }
@@ -333,6 +336,14 @@ export class LdapStorage implements SdStorage {
     } finally {
       client.unbind()
     }
+  }
+
+  async addUserSession (userId: string, serverSession: ServerSession): Promise<void> {
+    await mongo.ldapUserSessions.updateOne({ _id: userId }, { $push: { sessions: serverSession } }, { upsert: true })
+  }
+
+  async deleteUserSession (userId: string, serverSessionId: string): Promise<void> {
+    await mongo.ldapUserSessions.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
   }
 
   // ids, q, sort, select, skip, size

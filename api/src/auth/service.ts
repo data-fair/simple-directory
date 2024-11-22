@@ -1,7 +1,10 @@
+import useragent from 'useragent'
 import config from '#config'
-import type { Site, User, Organization } from '#types'
+import type { Request } from 'express'
+import type { Site, User, Organization, ServerSession } from '#types'
 import { type OAuthProvider } from '../oauth/service.ts'
 import storages from '#storages'
+import { nanoid } from 'nanoid'
 
 type OAuthMemberInfo = { create: boolean, org?: Organization, readOnly: boolean, role: string }
 
@@ -68,4 +71,14 @@ export const patchCoreOAuthUser = async (provider: OAuthProvider, user: User, oa
     if (oauthInfo.user.lastName && !user.lastName) patch.lastName = oauthInfo.user.lastName
   }
   return await storages.globalStorage.patchUser(user.id, patch)
+}
+
+export const initServerSession = (req: Request): ServerSession => {
+  const agentHeader = req.get('user-agent')
+  const deviceName = agentHeader ? useragent.parse(agentHeader).toString() : 'appareil inconnu'
+  return {
+    id: nanoid(),
+    createdAt: new Date().toISOString(),
+    deviceName
+  }
 }

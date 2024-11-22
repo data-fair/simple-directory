@@ -68,12 +68,6 @@ app.use('/api/2fa', twoFA)
 app.use('/api/oauth-tokens', oauthTokens)
 if (config.manageSites) app.use('/api/sites', sites)
 
-// maintain compatibility for installed clients that have an older version of sd-vue
-app.post('/api/session/keepalive', async (req, res, next) => {
-  await keepalive(req, res)
-  res.status(204).send()
-})
-
 app.use('/api/', (req, res) => {
   res.status(404).send('unknown api endpoint')
 })

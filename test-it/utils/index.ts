@@ -67,3 +67,16 @@ export const waitForMail = async () => {
   const { events } = await import('../../api/src/mails/service.ts')
   return eventPromise<any>(events, 'send')
 }
+
+export const getAllEmails = async () => {
+  const ax = await axios()
+  return (await ax.get('http://localhost:1080/email')).data
+}
+
+export const deleteAllEmails = async () => {
+  const ax = await axios()
+  const emails = (await ax.get('http://localhost:1080/email')).data
+  for (const email of emails) {
+    await ax.delete('http://localhost:1080/email/' + email.id)
+  }
+}

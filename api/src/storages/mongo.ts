@@ -1,4 +1,4 @@
-import type { UserWritable, User, Organization, Member, Partner, Site } from '#types'
+import type { UserWritable, User, Organization, Member, Partner, Site, ServerSession } from '#types'
 import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersParams } from './interface.ts'
 import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
@@ -120,8 +120,12 @@ class MongodbStorage implements SdStorage {
     return user
   }
 
-  async updateLogged (id: string) {
-    mongo.users.updateOne({ _id: id }, { $set: { logged: new Date().toISOString() } })
+  async updateLogged (id: string, serverSessionId: string) {
+    const logged = new Date().toISOString()
+    mongo.users.updateOne(
+      { _id: id },
+      { $set: { logged, 'sessions.$[serverSessionId].lastKeepalive': logged } },
+      { arrayFilters: [{ serverSessionId }] })
   }
 
   async confirmEmail (id: string) {
@@ -131,6 +135,14 @@ class MongodbStorage implements SdStorage {
   async deleteUser (userId: string) {
     await mongo.users.deleteOne({ _id: userId })
     await mongo.oauthTokens.deleteMany({ 'user.id': userId })
+  }
+
+  async addUserSession (userId: string, serverSession: ServerSession) {
+    await mongo.users.updateOne({ _id: userId }, { $push: { sessions: serverSession } })
+  }
+
+  async deleteUserSession (userId: string, serverSessionId: string) {
+    await mongo.users.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
   }
 
   async findUsers (params: FindUsersParams) {

@@ -6,9 +6,9 @@ import bodyParser from 'body-parser'
 import { nanoid } from 'nanoid'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByHost, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, unsetSessionCookies, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider } from '#services'
+import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByHost, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, unsetSessionCookies, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
-import type { ActionPayload, User, UserWritable } from '#types'
+import type { ActionPayload, ServerSession, User, UserWritable } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import emailValidator from 'email-validator'
 import { reqI18n, __all } from '#i18n'
@@ -27,9 +27,9 @@ export default router
 // html forms
 router.use(bodyParser.urlencoded({ limit: '100kb' }))
 
-async function confirmLog (storage: SdStorage, user: User) {
+async function confirmLog (storage: SdStorage, user: User, serverSession: ServerSession) {
   if (!storage.readonly) {
-    await storage.updateLogged(user.id)
+    await storage.updateLogged(user.id, serverSession.id)
     if (user.emailConfirmed === false) {
       await storage.confirmEmail(user.id)
       postUserIdentityWebhook(user)
@@ -211,8 +211,9 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   eventsLog.info('sd.auth.password.ok', 'a user successfully authenticated using password', logContext)
   // this is used by data-fair app integrated login
   if (req.is('application/x-www-form-urlencoded')) {
-    const token = await signToken(payload, config.jwtDurations.exchangedToken)
-    setSessionCookies(req, res, token, getDefaultUserOrg(user, orgId, depId))
+    const serverSession = initServerSession(req)
+    storage.addUserSession(user.id, serverSession)
+    await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
     res.redirect(query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me')
   } else {
@@ -348,10 +349,12 @@ router.get('/token_callback', async (req, res, next) => {
   const payload = getTokenPayload(user)
   if (decoded.rememberMe) payload.rememberMe = 1
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = 1
-  const token = await signToken(payload, config.jwtDurations.exchangedToken)
 
-  await confirmLog(storage, user)
-  setSessionCookies(req, res, token, getDefaultUserOrg(user, query.id_token_org, query.id_token_dep))
+  const serverSession = initServerSession(req)
+  storage.addUserSession(user.id, serverSession)
+
+  await confirmLog(storage, user, serverSession)
+  await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, query.id_token_org, query.id_token_dep))
 
   eventsLog.info('sd.auth.callback.ok', 'a session was initialized after successful auth', logContext)
 
@@ -375,7 +378,7 @@ router.get('/token_callback', async (req, res, next) => {
 
 // Used to extend an older but still valid token from a user
 // TODO: deprecate this whole route, replaced by simpler /keepalive
-router.post('/exchange', async (req, res, next) => {
+/* router.post('/exchange', async (req, res, next) => {
   const logContext: EventLogContext = { req }
 
   const idToken = ((req.cookies && req.cookies.id_token) || (req.headers && req.headers.authorization && req.headers.authorization.split(' ').pop()) || req.query.id_token) as string | undefined
@@ -425,13 +428,16 @@ router.post('/exchange', async (req, res, next) => {
   // TODO: sending token in response is deprecated and will be removed ?
   res.set('Deprecation', 'true')
   res.send(token)
-})
+}) */
 
 router.post('/keepalive', async (req, res, next) => {
   const loggedUser = reqUserAuthenticated(req)
   const storage = storages.globalStorage
   let user = loggedUser.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.id)
   if (!user) throw httpError(404)
+
+  debug(`Exchange session token for user ${loggedUser.name}`)
+  await keepalive(req, res, user)
 
   const coreIdProvider = user.coreIdProvider
   if (coreIdProvider && coreIdProvider.type === 'oauth') {
@@ -477,9 +483,6 @@ router.post('/keepalive', async (req, res, next) => {
       return res.status(401).send('Échec de prolongation de la session avec le fournisseur d\'identité principal')
     }
   }
-
-  debug(`Exchange session token for user ${loggedUser.name}`)
-  await keepalive(req, res, user)
   res.status(204).send()
 })
 
@@ -559,9 +562,8 @@ router.post('/asadmin', async (req, res, next) => {
   payload.name += ' (administration)'
   payload.asAdmin = { id: loggedUser.id, name: loggedUser.name }
   delete payload.isAdmin
-  const token = await signToken(payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an admin session`)
-  setSessionCookies(req, res, token, getDefaultUserOrg(user))
+  await setSessionCookies(req, res, payload, null, getDefaultUserOrg(user))
 
   eventsLog.info('sd.auth.asadmin.ok', 'a session was created as a user from an admin session', logContext)
 
@@ -577,9 +579,8 @@ router.delete('/asadmin', async (req, res, next) => {
   if (!user) return res.status(401).send('User does not exist anymore')
   const payload = getTokenPayload(user)
   payload.adminMode = 1
-  const token = await signToken(payload, config.jwtDurations.exchangedToken)
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
-  setSessionCookies(req, res, token, getDefaultUserOrg(user))
+  await setSessionCookies(req, res, payload, null, getDefaultUserOrg(user))
 
   eventsLog.info('sd.auth.asadmin.done', 'a session as a user from an admin session was terminated', logContext)
 

@@ -2,6 +2,7 @@ import { type User } from '#types'
 import type { ApiConfig } from '../config/type/index.ts'
 import { assertValid } from '../config/type/index.ts'
 import config from 'config'
+import ms from 'ms'
 
 export type { ApiConfig } from '../config/type/index.ts'
 
@@ -29,4 +30,9 @@ export const superadmin: User = {
   name: 'Super Admin',
   email: apiConfig.adminCredentials?.email ?? '',
   organizations: []
+}
+
+export const jwtDurations = {
+  idToken: ms(apiConfig.jwtDurations.idToken) / 1000,
+  exchangeToken: ms(apiConfig.jwtDurations.exchangeToken) / 1000
 }

@@ -260,14 +260,16 @@
       "type": "object",
       "required": [
         "initialToken",
-        "exchangedToken",
+        "idToken",
+        "exchangeToken",
         "invitationToken",
         "partnerInvitationToken",
         "2FAToken"
       ],
       "properties": {
         "initialToken": { "type": "string" },
-        "exchangedToken": { "type": "string" },
+        "idToken": { "type": "string" },
+        "exchangeToken": { "type": "string" },
         "invitationToken": { "type": "string" },
         "partnerInvitationToken": { "type": "string" },
         "2FAToken": { "type": "string" }

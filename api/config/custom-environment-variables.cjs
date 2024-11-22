@@ -13,7 +13,8 @@ module.exports = {
   kid: 'JWT_KID',
   jwtDurations: {
     initialToken: 'JWT_DURATION_INITIAL',
-    exchangedToken: 'JWT_DURATION_EXCHANGED',
+    idToken: 'JWT_DURATION_ID',
+    exchangeToken: 'JWT_DURATION_EXCHANGE',
     invitationToken: 'JWT_DURATION_INVIT',
     partnerInvitationToken: 'JWT_DURATION_PARTNER_INVIT',
     '2FAToken': 'JWT_DURATION_2FA'

@@ -3,13 +3,14 @@ import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdSto
 import type { FileParams } from '../../config/type/index.ts'
 import config from '#config'
 import userName from '../utils/user-name.ts'
-import type { Member, Organization, Partner, User, UserWritable } from '#types'
+import type { Member, Organization, Partner, User, UserWritable, ServerSession } from '#types'
 import { readFileSync } from 'node:fs'
 import type { Password } from '../utils/passwords.ts'
 import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 import type { UserRef } from '@data-fair/lib-express'
 import type { TwoFA } from '#services'
+import mongo from '#mongo'
 
 type StoredOrganization = Omit<Organization, 'members'> & { members: { id: string, role: string, department?: string }[] }
 
@@ -45,7 +46,7 @@ function sortCompare (sort: Record<string, 1 | -1>) {
 }
 
 class FileStorage implements SdStorage {
-  private users: User[]
+  private users: Omit<User, 'sessions'>[]
   private organizations: StoredOrganization[]
 
   constructor (params: FileParams, org?: Organization) {
@@ -79,15 +80,17 @@ class FileStorage implements SdStorage {
 
   async getUser (id: string) {
     // Find user by strict equality of properties passed in filter
-    const user = this.users.find(u => u.id === id)
+    const user = this.users.find(u => u.id === id) as User | undefined
     if (!user) return
+    user.sessions = (await mongo.fileUserSessions.findOne({ _id: user.id }))?.sessions
     return this.cleanUser(user)
   }
 
   async getUserByEmail (email: string) {
     // Case insensitive comparison
-    const user = this.users.find(u => u.email.toLowerCase() === email.toLowerCase())
+    const user = this.users.find(u => u.email.toLowerCase() === email.toLowerCase()) as User | undefined
     if (!user) return
+    user.sessions = (await mongo.fileUserSessions.findOne({ _id: user.id }))?.sessions
     return this.cleanUser(user)
   }
 
@@ -95,6 +98,14 @@ class FileStorage implements SdStorage {
     // Case insensitive comparison
     const user = this.users.find(u => u.id === userId)
     return user?.password as Password
+  }
+
+  async addUserSession (userId: string, serverSession: ServerSession): Promise<void> {
+    await mongo.ldapUserSessions.updateOne({ _id: userId }, { $push: { sessions: serverSession } }, { upsert: true })
+  }
+
+  async deleteUserSession (userId: string, serverSessionId: string): Promise<void> {
+    await mongo.ldapUserSessions.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
   }
 
   async findUsers (params: FindUsersParams) {
@@ -122,7 +133,7 @@ class FileStorage implements SdStorage {
     let members: Member[] = (orga.members ?? []).map(m => {
       const user = this.users.find(u => u.id === m.id)
       if (!user) throw Error('unknown user as member ' + m.id)
-      return { ...m, name: user.name, email: user.email }
+      return { ...m, name: user.name, email: user.email, host: user.host, emailConfirmed: user.emailConfirmed, plannedDeletion: user.plannedDeletion }
     })
     if (params.q) {
       const lq = params.q.toLowerCase()

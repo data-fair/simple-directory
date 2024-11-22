@@ -12,7 +12,8 @@ module.exports = {
   },
   jwtDurations: {
     initialToken: '15m',
-    exchangedToken: '30d',
+    exchangeToken: '30d',
+    idToken: '15m',
     invitationToken: '10d',
     partnerInvitationToken: '10d',
     '2FAToken': '30d'

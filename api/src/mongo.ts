@@ -1,4 +1,4 @@
-import type { Site, Limits, OAuthToken, MemberOverwrite, OrganizationOverwrite } from '#types'
+import type { Site, Limits, OAuthToken, MemberOverwrite, OrganizationOverwrite, ServerSession } from '#types'
 import type { Avatar } from '#services'
 import type { OrgInDb, UserInDb } from './storages/mongo.ts'
 
@@ -54,6 +54,14 @@ export class SdMongo {
 
   get ldapOrganizationsOverwrite () {
     return mongo.db.collection<OrganizationOverwrite>('ldap-organizations-overwrite')
+  }
+
+  get ldapUserSessions () {
+    return mongo.db.collection<{ _id: string, sessions: ServerSession[] }>('ldap-user-sessions')
+  }
+
+  get fileUserSessions () {
+    return mongo.db.collection<{ _id: string, sessions: ServerSession[] }>('file-user-sessions')
   }
 
   init = async () => {

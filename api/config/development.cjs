@@ -25,7 +25,8 @@ module.exports = {
   anonymousContactForm: true,
   jwtDurations: {
     initialToken: '5m',
-    // exchangedToken: '5m',
+    // idToken: '5m',
+    // exchangeToken: '5m',
     invitationToken: '5m'
   },
   i18n: {
