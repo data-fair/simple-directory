@@ -323,4 +323,15 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
   res.status(204).send()
 })
 
+router.delete('/:userId/sessions/:sessionId', async (req, res, next) => {
+  const logContext: EventLogContext = { req }
+  const session = reqSessionAuthenticated(req)
+
+  if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  await storages.globalStorage.deleteUserSession(session.user.id, req.params.sessionId)
+  eventsLog.info('sd.user.cancelDeleteSession', 'user cancelled a session', logContext)
+  await keepalive(req, res)
+  res.status(204).send()
+})
+
 export default router

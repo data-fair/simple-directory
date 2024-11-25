@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
 import type { FileParams } from '../../config/type/index.ts'
-import config from '#config'
+import config, { jwtDurations } from '#config'
 import userName from '../utils/user-name.ts'
 import type { Member, Organization, Partner, User, UserWritable, ServerSession } from '#types'
 import { readFileSync } from 'node:fs'
@@ -106,6 +106,14 @@ class FileStorage implements SdStorage {
 
   async deleteUserSession (userId: string, serverSessionId: string): Promise<void> {
     await mongo.fileUserSessions.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
+  }
+
+  async deleteOldSessions () {
+    const date = new Date(Date.now() - (jwtDurations.exchangeToken * 1000)).toISOString()
+    await mongo.fileUserSessions.updateMany(
+      { 'sessions.lastKeepalive': { $lt: date } },
+      { $pull: { sessions: { lastKeepalive: { $lt: date } } } }
+    )
   }
 
   async findUsers (params: FindUsersParams) {

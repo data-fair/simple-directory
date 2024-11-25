@@ -83,6 +83,10 @@ export class SdMongo {
         'organizations.id_1': [
           { 'organizations.id': 1 },
           { sparse: true }
+        ],
+        sessionsLastKeepalive: [
+          { 'sessions.lastKeepalive': 1 },
+          { sparse: true }
         ]
       },
       avatars: {

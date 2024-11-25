@@ -1,7 +1,7 @@
 import type { SessionInfoPayload, User } from '#types'
 import type { Request, Response } from 'express'
 import type { OrganizationMembership, SessionState, User as SessionUser } from '@data-fair/lib-express'
-import { reqSession, reqSiteUrl, session, reqSitePath, reqSessionAuthenticated } from '@data-fair/lib-express'
+import { reqSession, reqSiteUrl, session, reqSitePath, reqSessionAuthenticated, httpError } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { internalError } from '@data-fair/lib-node/observer.js'
 import config, { jwtDurations } from '#config'
@@ -70,7 +70,7 @@ export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: stri
 export const logout = async (req: Request, res: Response) => {
   const cookies = new Cookies(req, res)
   const sitePath = reqSitePath(req)
-  const opts = { path: sitePath, expires: new Date(0) }
+  const opts = { path: sitePath + '/', expires: new Date(0) }
   // use '' instead of null because instant cookie expiration is not properly applied on all safari versions
   cookies.set('id_token', '', opts)
   cookies.set('id_token_sign', '', { ...opts, httpOnly: true })
@@ -134,7 +134,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
     if (!org) {
       await logout(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user tried to prolongate a session in invalid org', logContext)
-      return res.status(401).send('Organisation inexistante')
+      throw httpError(401, 'Organisation inexistante')
     }
     logContext.account = { type: 'organization', id: org.id, name: org.name, department: sessionState.organization.department, departmentName: sessionState.organization.departmentName }
   }
@@ -146,7 +146,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
   if (!user) {
     await logout(req, res)
     eventsLog.info('sd.auth.keepalive.fail', 'a deleted user tried to prolongate a session', logContext)
-    return res.status(401).send('Utilisateur inexistant')
+    throw httpError(401, 'Utilisateur inexistant')
   }
 
   const cookies = new Cookies(req, res)
@@ -158,19 +158,19 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
   if (!serverSessionInfo) {
     await logout(req, res)
     eventsLog.info('sd.auth.keepalive.fail', 'a user without an echange token tried to prolongate a session', logContext)
-    return res.status(401).send('Informations de session manquantes')
+    throw httpError(401, 'Informations de session manquantes')
   }
   if (!serverSessionInfo.adminMode) {
     if (serverSessionInfo.user !== user.id) {
       await logout(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user with another user\'s exchange token tried to prolongate a session', logContext)
-      return res.status(401).send('Informations de session manquantes')
+      throw httpError(401, 'Informations de session manquantes')
     }
     const serverSession = user.sessions?.find(s => s.id === serverSessionInfo.session)
     if (!serverSession) {
       await logout(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user with a deleted session reference tried to prolongate a session', logContext)
-      return res.status(401).send('Session interrompue')
+      throw httpError(401, 'Session interrompue')
     }
   }
   const serverSessionId = serverSessionInfo.session

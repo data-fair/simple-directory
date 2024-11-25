@@ -83,6 +83,7 @@ declare global {
   const mdiImageSizeSelectSmall: typeof import('@mdi/js')['mdiImageSizeSelectSmall']
   const mdiInformation: typeof import('@mdi/js')['mdiInformation']
   const mdiMagnify: typeof import('@mdi/js')['mdiMagnify']
+  const mdiMonitorCellphoneStar: typeof import('@mdi/js')['mdiMonitorCellphoneStar']
   const mdiPencil: typeof import('@mdi/js')['mdiPencil']
   const mdiPlus: typeof import('@mdi/js')['mdiPlus']
   const mdiRefresh: typeof import('@mdi/js')['mdiRefresh']
@@ -250,6 +251,7 @@ declare module 'vue' {
     readonly mdiGraph: UnwrapRef<typeof import('@mdi/js')['mdiGraph']>
     readonly mdiInformation: UnwrapRef<typeof import('@mdi/js')['mdiInformation']>
     readonly mdiMagnify: UnwrapRef<typeof import('@mdi/js')['mdiMagnify']>
+    readonly mdiMonitorCellphoneStar: UnwrapRef<typeof import('@mdi/js')['mdiMonitorCellphoneStar']>
     readonly mdiPencil: UnwrapRef<typeof import('@mdi/js')['mdiPencil']>
     readonly mdiPlus: UnwrapRef<typeof import('@mdi/js')['mdiPlus']>
     readonly mdiRefresh: UnwrapRef<typeof import('@mdi/js')['mdiRefresh']>

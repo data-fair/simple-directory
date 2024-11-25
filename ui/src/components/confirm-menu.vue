@@ -3,8 +3,7 @@
     v-model="menu"
     :close-on-content-click="false"
     max-width="600"
-
-    location="top"
+    :location="location"
   >
     <template #activator="{ props }">
       <!--<v-tooltip v-if="icon" top>
@@ -62,6 +61,7 @@
         </v-btn>
         <v-btn
           :color="yesColor"
+          variant="flat"
           :disabled="!!checkText && !checked"
           @click="$emit('confirm'); menu= false"
         >
@@ -73,14 +73,15 @@
 </template>
 
 <script setup lang="ts">
-import type { VAlert } from 'vuetify/components'
+import type { VAlert, VMenu } from 'vuetify/components'
 
 const { title, alert, buttonText, checkText, yesColor } = defineProps({
   title: { type: String, default: '' },
   alert: { type: String, default: '' },
   buttonText: { type: String, default: '' },
   checkText: { type: String, default: '' },
-  yesColor: { type: String as () => VAlert['type'], default: 'primary' }
+  yesColor: { type: String as () => VAlert['type'], default: 'primary' },
+  location: { type: String as () => VMenu['location'], default: 'top' },
 })
 defineEmits(['confirm'])
 

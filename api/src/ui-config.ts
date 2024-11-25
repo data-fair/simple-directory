@@ -1,8 +1,9 @@
-import config from './config.ts'
+import config, { jwtDurations } from './config.ts'
 import { publicMessages } from '../i18n/index.ts'
 
 export const uiConfig = {
   publicMessages,
+  jwtDurations,
   readonly: config.storage.type !== 'mongo',
   publicUrl: config.publicUrl,
   theme: config.theme,
@@ -20,6 +21,7 @@ export const uiConfig = {
   manageDepartments: config.manageDepartments,
   manageDepartmentLabel: config.manageDepartmentLabel,
   managePartners: config.managePartners,
+  manageSessions: config.manageSessions,
   quotas: config.quotas,
   perOrgStorageTypes: config.perOrgStorageTypes,
   plannedDeletionDelay: config.plannedDeletionDelay,

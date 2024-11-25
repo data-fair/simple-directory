@@ -214,6 +214,9 @@
     "manageDepartmentLabel": {
       "type": "boolean"
     },
+    "manageSessions": {
+      "type": "boolean"
+    },
     "contact": {
       "type": "string",
       "format": "email"

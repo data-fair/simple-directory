@@ -83,14 +83,13 @@
               yes-color="warning"
               @confirm="deleteSite(props.item)"
             >
-              <template #activator="{on, attrs}">
+              <template #activator="{props}">
                 <v-btn
                   :title="$t('common.delete')"
-                  v-bind="attrs"
+                  v-bind="props"
                   variant="text"
                   icon
                   color="warning"
-                  v-on="on"
                 >
                   <v-icon :icon="mdiDelete" />
                 </v-btn>

@@ -3,11 +3,11 @@ layout {
       split_direction "vertical"
       pane name="simple-directory" borderless=true {
         command "bash"
-        args "-ic" "nvm use > /dev/null 2>&1 && echo \"Service available on http://localhost:5689\" && bash"
+        args "-ic" "nvm use > /dev/null 2>&1 && bash"
       }
       pane name="deps" {
         command "bash"
-        args "-ic" "npm run dev-deps && watch -n 4 docker compose ps"
+        args "-ic" "npm run dev-deps && watch -n 4 \"docker compose ps --all --format 'table {{.Name}}\t{{.Status}}'\""
       }
     }
     pane {
@@ -21,7 +21,8 @@ layout {
         args "-ic" "nvm use && npm -w api run dev"
       }
     }
-    pane size=2 borderless=true {
-        plugin location="zellij:status-bar"
+    pane size=1 borderless=true {
+        command "bash"
+        args "-ic" "echo -n -e \"Dev server available at \\e[1;96mhttp://localhost:5689\\033[0m\""
     }
 }

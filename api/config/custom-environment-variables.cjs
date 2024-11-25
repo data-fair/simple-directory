@@ -192,5 +192,6 @@ module.exports = {
   depAdminIsOrgAdmin: 'DEP_ADMIN_IS_ORG_ADMIN',
   manageSites: 'MANAGE_SITES',
   managePartners: 'MANAGE_PARTNERS',
+  manageSessions: 'MANAGE_SITES',
   defaultOrg: 'DEFAULT_ORG'
 }

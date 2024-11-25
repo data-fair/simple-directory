@@ -43,6 +43,8 @@ const task = async () => {
       }
     }
 
+    await storages.globalStorage.deleteOldSessions()
+
     for (const token of await findOfflineOAuthTokens()) {
       // TODO manage offline tokens from site level providers
       const provider = oauthGlobalProviders().find(p => p.id === token.provider.id)

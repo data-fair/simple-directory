@@ -56,6 +56,7 @@ export interface SdStorage {
   findUsersToDelete (): Promise<User[]>
   addUserSession (userId: string, serverSession: ServerSession): Promise<void>
   deleteUserSession (userId: string, serverSessionId: string): Promise<void>
+  deleteOldSessions (): Promise<void>
 
   getOrganization(ordId: string): Promise<Organization | undefined>
   createOrganization(org: OrganizationPost, user: UserRef): Promise<Organization>

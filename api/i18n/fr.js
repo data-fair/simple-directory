@@ -265,7 +265,12 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       deleteMyselfCheck: 'cochez cette case et cliquez sur OK pour confirmer la suppression de l\'utilisateur {name} et toutes ses données.',
       accountChanges: 'Gestion des changements de compte',
       defaultOrg: 'Activer ce compte par défaut à chaque connexion',
-      ignorePersonalAccount: 'Cochez cette case si vous ne souhaitez jamais utiliser la plateforme en dehors d\'une organisation'
+      ignorePersonalAccount: 'Cochez cette case si vous ne souhaitez jamais utiliser la plateforme en dehors d\'une organisation',
+      sessions: 'Vos sessions',
+      deleteSession: 'Supprimer la session sur {deviceName} ?',
+      deleteSessionWarning: 'La suppression de session peut mettre un délai maximal de {duration} à être entièrement appliquée.',
+      settings: 'Vos paramètres',
+      nbCreatedOrgs: 'Nombre d\'organisations créées :'
     }
   },
   errors: {

@@ -8,6 +8,7 @@
         :title="$t('common.createOrganization')"
         color="primary"
         variant="text"
+        class="mt-3"
         v-bind="props"
       >
         {{ $t('common.createOrganization') }}
@@ -56,6 +57,7 @@
         </v-btn>
         <v-btn
           color="primary"
+          variant="flat"
           @click="confirmCreate"
         >
           {{ $t('common.confirmOk') }}

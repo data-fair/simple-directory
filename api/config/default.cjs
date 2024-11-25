@@ -277,6 +277,7 @@ module.exports = {
   depAdminIsOrgAdmin: false,
   manageSites: false,
   managePartners: false,
+  manageSessions: true,
   defaultOrg: undefined,
   serveUi: true
 }

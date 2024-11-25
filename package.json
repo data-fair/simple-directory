@@ -16,7 +16,7 @@
     "stop-dev-deps": "docker compose --profile dev stop",
     "dev-zellij": "zellij --layout .zellij.kdl",
     "build-types": "mkdir -p ui/src/components/vjsf && rm -f ui/src/components/vjsf/* && df-build-types . --vjsf-dir ui/src/components/vjsf",
-    "prepare": "husky || true && npm install --no-save --no-fund --no-audit maildev@2.1.0",
+    "prepare": "husky || true",
     "check-types": "tsc && npm -w ui run check-types",
     "quality": "npm run test-deps && npm run lint && npm run build-types && npm run check-types && npm run test"
   },
@@ -37,7 +37,7 @@
   "devDependencies": {
     "@commitlint/config-conventional": "^19.2.2",
     "@data-fair/lib-express": "^1.10.0",
-    "@data-fair/lib-node": "^2.0.3",
+    "@data-fair/lib-node": "^2.1.0",
     "@reporters/bail": "^1.2.1",
     "@types/accept-language-parser": "^1.5.6",
     "@types/capitalize": "^2.0.2",
@@ -47,7 +47,6 @@
     "@types/debug": "^4.1.12",
     "@types/gm": "^1.25.4",
     "@types/ldapjs": "^3.0.6",
-    "@types/maildev": "^0.0.7",
     "@types/material-colors": "^1.2.3",
     "@types/memoizee": "^0.4.11",
     "@types/mjml": "^4.7.4",

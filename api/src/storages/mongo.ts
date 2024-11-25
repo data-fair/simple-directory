@@ -2,7 +2,7 @@ import type { UserWritable, User, Organization, Member, Partner, Site, ServerSes
 import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersParams } from './interface.ts'
 import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
-import config from '#config'
+import config, { jwtDurations } from '#config'
 import type { TwoFA } from '#services'
 import { httpError, type UserRef } from '@data-fair/lib-express'
 import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
@@ -145,6 +145,14 @@ class MongodbStorage implements SdStorage {
 
   async deleteUserSession (userId: string, serverSessionId: string) {
     await mongo.users.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
+  }
+
+  async deleteOldSessions () {
+    const date = new Date(Date.now() - (jwtDurations.exchangeToken * 1000)).toISOString()
+    await mongo.users.updateMany(
+      { 'sessions.lastKeepalive': { $lt: date } },
+      { $pull: { sessions: { lastKeepalive: { $lt: date } } } }
+    )
   }
 
   async findUsers (params: FindUsersParams) {

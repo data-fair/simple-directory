@@ -163,6 +163,7 @@
               :key="'org-' + orga.id + '-' + orga.department"
             >
               {{ orga.name }} <span v-if="orga.department">- {{ orga.departmentName || orga.department }}</span> ({{ orga.role }})
+              <br>
             </span>
           </template>
         </template>
@@ -173,12 +174,55 @@
       <br>
       <div v-if="showMaxCreatedOrgs">
         <p v-if="nbCreatedOrgs !== null">
-          {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
+          {{ $t('pages.me.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
         </p>
         <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
       </div>
 
-      <add-organization-menu v-if="!readonly && nbCreatedOrgs !== undefined && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)" />
+      <add-organization-menu
+        v-if="!readonly && nbCreatedOrgs !== undefined && (maxCreatedOrgs === -1 || maxCreatedOrgs > nbCreatedOrgs)"
+      />
+
+      <h2 class="text-h4 mt-10 mb-4">
+        <v-icon
+          size="large"
+          color="primary"
+          style="top:-2px"
+          :icon="mdiMonitorCellphoneStar"
+        />
+        {{ $t('pages.me.sessions') }}
+      </h2>
+
+      <v-list>
+        <v-list-item
+          v-for="session of userDetailsFetch.data.value?.sessions ?? []"
+          :key="session.id"
+        >
+          <v-list-item-title>{{ session.deviceName }}</v-list-item-title>
+          <v-list-item-subtitle>{{ dayjs(session.createdAt).format('LLL') }}{{ session.lastKeepalive ? ' - ' + dayjs(session.lastKeepalive).format('LLL') : '' }}</v-list-item-subtitle>
+          <template #append>
+            <confirm-menu
+              yes-color="warning"
+              :title="$t('pages.me.deleteSession', session)"
+              :alert="$t('pages.me.deleteSessionWarning', {duration: duration($uiConfig.jwtDurations.idToken * 1000).humanize()})"
+              location="top end"
+              @confirm="deleteSession(session.id)"
+            >
+              <template #activator="{props}">
+                <v-btn
+                  :title="$t('common.delete')"
+                  v-bind="props"
+                  variant="text"
+                  icon
+                  color="warning"
+                >
+                  <v-icon :icon="mdiDelete" />
+                </v-btn>
+              </template>
+            </confirm-menu>
+          </template>
+        </v-list-item>
+      </v-list>
 
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
@@ -187,7 +231,7 @@
           style="top:-2px"
           :icon="mdiCog"
         />
-        {{ $t('common.settings') }}
+        {{ $t('pages.me.settings') }}
       </h2>
 
       <template v-if="userDetailsFetch.data.value && (showIgnorePersonalAccount || defaultOrgItems.length > 1)">
@@ -242,19 +286,19 @@
 </template>
 
 <script setup lang="ts">
+import { FetchError } from 'ofetch'
 import type { VForm } from 'vuetify/components'
 
-const router = useRouter()
 const { user, keepalive } = useSession()
-const { dayjs } = useLocaleDayjs()
+const { dayjs, duration } = useLocaleDayjs()
 const { t } = useI18n()
 const { userDetailsFetch, authProvidersFetch } = useStore()
 
-if (!user.value) router.push('/login')
+if (!user.value) throw new Error('auth required')
 
 userDetailsFetch.refresh()
 authProvidersFetch.refresh()
-const userOrgsFetch = useFetch<{ count: number }>('organizations', { query: { creator: user.value?.id, size: 0 } })
+const userOrgsFetch = useFetch<{ count: number }>($sitePath + 'api/organizations', { query: { creator: user.value?.id, size: 0 } })
 
 const newPatch = () => ({
   firstName: userDetailsFetch.data.value?.firstName,
@@ -354,6 +398,20 @@ const deleteMyself = withUiNotif(async () => {
   $fetch(`users/${user.value.id}`, { method: 'PATCH', body: { plannedDeletion: dayjs().add($uiConfig.plannedDeletionDelay, 'days').format('YYYY-MM-DD') } })
   await keepalive()
   await userDetailsFetch.refresh()
+})
+
+const deleteSession = withUiNotif(async (sessionId: string) => {
+  if (!user.value) return
+  try {
+    $fetch(`users/${user.value.id}/sessions/${sessionId}`, { method: 'DELETE' })
+  } catch (err) {
+    if (err instanceof FetchError && err.statusCode === 401) {
+      // a 401 is expected if we deleted the current session
+    } else {
+      throw err
+    }
+  }
+  window.location.reload()
 })
 </script>
 
