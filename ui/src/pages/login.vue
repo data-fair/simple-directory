@@ -473,16 +473,22 @@
                   :error-messages="newPasswordError"
                   :rules="[v => !!v || '']"
                   name="newPassword"
-                  type="password"
+                  :type="showNewPassword ? 'text' : 'password'"
                   autocomplete="new-password"
                   variant="outlined"
                   density="compact"
                   rounded
                   class="mb-2"
                 >
+                  <template #append-inner>
+                    <v-icon
+                      v-if="newPassword"
+                      :icon="showNewPassword ? mdiEyeOffOutline : mdiEyeOutline"
+                      @click="showNewPassword = !showNewPassword"
+                    />
+                  </template>
                   <template #append>
                     <v-tooltip
-
                       location="right"
                       max-width="400"
                     >
@@ -500,9 +506,9 @@
                 <v-text-field
                   v-model="newPassword2"
                   :label="$t('pages.login.newPassword2')"
-                  :rules="[v => !!v || '', v => newPassword === v || $t('errors.differentPasswords')]"
+                  :error-messages="newPassword2Error"
                   name="newPassword2"
-                  type="password"
+                  :type="showNewPassword ? 'text' : 'password'"
                   autocomplete="new-password"
                   variant="outlined"
                   density="compact"
@@ -708,7 +714,7 @@
               <change-host
                 :user="actionPayload"
                 :action-token="actionToken"
-                @go-to="newStep => step = newStep"
+                @go-to="(newStep: string) => step = newStep"
               />
             </v-card-text>
           </v-window-item>
@@ -779,9 +785,14 @@ const orgStorage = useBooleanSearchParam('org_storage')
 const membersOnly = useBooleanSearchParam('members_only')
 const rememberMe = ref(true)
 
+const showNewPassword = ref(false)
 const newPassword = ref('')
 const newPassword2 = ref('')
 const newPasswordError = ref<string | null>(null)
+const newPassword2Error = computed(() => {
+  if (!newPassword2.value) return ''
+  if (newPassword.value !== newPassword2.value) return t('errors.differentPasswords')
+})
 
 const newUser = ref({ firstName: '', lastName: '', password: '' })
 const newUserPassword2 = ref('')
@@ -848,15 +859,17 @@ if (error.value) {
   step.value = 'error'
 }
 
+watch(step, () => {
+  if (step.value === 'login' && !authProvidersFetch.data.value) {
+    authProvidersFetch.refresh()
+  }
+}, { immediate: true })
 const separateEmailPasswordSteps = computed(() => {
   return !!authProvidersFetch.data.value?.find(p => p.redirectMode?.type === 'emailDomain')
 })
-if (step.value === 'login') {
-  authProvidersFetch.refresh()
-  watch(separateEmailPasswordSteps, (value) => {
-    if (value) step.value = 'preLogin'
-  })
-}
+watch(separateEmailPasswordSteps, (value) => {
+  if (value) step.value = 'preLogin'
+})
 
 if (sitePublic.value?.authMode === 'onlyBackOffice') {
   const mainLoginUrl = new URL(window.location.href)
@@ -1006,7 +1019,7 @@ const changePasswordAction = withUiNotif(async () => {
   const body: PostActionAuthReq['body'] = {
     email: email.value,
     action: 'changePassword',
-    redirect: window.location.href
+    target: window.location.href
   }
   await $fetch('auth/action', { method: 'POST', body })
   step.value = 'changePasswordSent'
@@ -1017,6 +1030,7 @@ async function changePassword () {
   if (!actionPayload) return
   await changePasswordForm.value?.validate()
   if (!changePasswordForm.value?.isValid) return
+  newPasswordError.value = ''
   try {
     await $fetch(`users/${actionPayload.id}/password`, {
       method: 'POST',

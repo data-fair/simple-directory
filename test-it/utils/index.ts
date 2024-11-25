@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert'
-import type { AxiosAuthOptions } from '@data-fair/lib-node/axios-auth.js'
+import type { AxiosAuthInstance, AxiosAuthOptions } from '@data-fair/lib-node/axios-auth.js'
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
 import eventPromise from '@data-fair/lib-utils/event-promise.js'
@@ -21,6 +21,8 @@ export const clean = async (options?: { ldapConfig?: any }) => {
   await mongo.organizations.deleteMany({ _id: { $ne: 'admins-org' } })
   await mongo.users.deleteMany({ _id: { $ne: 'admin@test.com' } })
   await mongo.oauthTokens.deleteMany()
+  await mongo.ldapUserSessions.deleteMany()
+  await mongo.fileUserSessions.deleteMany()
 
   if (options?.ldapConfig) {
     const ldapStorage = await import('../../api/src/storages/ldap.ts')
@@ -78,5 +80,17 @@ export const deleteAllEmails = async () => {
   const emails = (await ax.get('http://localhost:1080/email')).data
   for (const email of emails) {
     await ax.delete('http://localhost:1080/email/' + email.id)
+  }
+}
+
+export const passwordLogin = async (ax: AxiosAuthInstance, email: string, password: string) => {
+  const callbackUrl = (await ax.post('/api/auth/password', { email, password })).data
+  try {
+    await ax.get(callbackUrl, { maxRedirects: 0 })
+  } catch (err: any) {
+    if (err.status !== 302) throw err
+    const redirectUrl = new URL(err.headers.location)
+    const redirectError = redirectUrl.searchParams.get('error')
+    if (redirectError) throw new Error(redirectError)
   }
 }

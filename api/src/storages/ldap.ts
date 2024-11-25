@@ -346,14 +346,6 @@ export class LdapStorage implements SdStorage {
     await mongo.ldapUserSessions.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
   }
 
-  async deleteOldSessions () {
-    const date = new Date(Date.now() - (jwtDurations.exchangeToken * 1000)).toISOString()
-    await mongo.ldapUserSessions.updateMany(
-      { 'sessions.lastKeepalive': { $lt: date } },
-      { $pull: { sessions: { lastKeepalive: { $lt: date } } } }
-    )
-  }
-
   // ids, q, sort, select, skip, size
   async findUsers (params: FindUsersParams) {
     debug('find users', params)

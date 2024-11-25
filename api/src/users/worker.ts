@@ -1,5 +1,5 @@
 import { type User } from '#types'
-import config from '#config'
+import config, { jwtDurations } from '#config'
 import cron from 'node-cron'
 import { deleteOAuthToken, writeOAuthToken, oauthGlobalProviders, findOfflineOAuthTokens, authCoreProviderMemberInfo, patchCoreOAuthUser, deleteIdentityWebhook } from '#services'
 import { internalError } from '@data-fair/lib-node/observer.js'
@@ -8,6 +8,7 @@ import { defaultLocale, localizedDayjs, messages } from '#i18n'
 import { sendMail } from '#services'
 import locks from '@data-fair/lib-node/locks.js'
 import storages from '#storages'
+import mongo from '#mongo'
 
 // this single small worker loop doesn't really justify running in separate processes
 // we simply run it as part of the api server
@@ -43,7 +44,12 @@ const task = async () => {
       }
     }
 
-    await storages.globalStorage.deleteOldSessions()
+    const oldSessionsDate = new Date(Date.now() - (jwtDurations.exchangeToken * 1000)).toISOString()
+    const oldSessionsFilter = { 'sessions.lastKeepalive': { $lt: oldSessionsDate } }
+    const oldSessionsOperator = { $pull: { sessions: { lastKeepalive: { $lt: oldSessionsDate } } } }
+    await mongo.users.updateMany(oldSessionsFilter, oldSessionsOperator)
+    await mongo.ldapUserSessions.updateMany(oldSessionsFilter, oldSessionsOperator)
+    await mongo.fileUserSessions.updateMany(oldSessionsFilter, oldSessionsOperator)
 
     for (const token of await findOfflineOAuthTokens()) {
       // TODO manage offline tokens from site level providers

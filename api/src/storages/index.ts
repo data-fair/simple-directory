@@ -3,6 +3,7 @@ import config from '#config'
 import type { SdStorage, SdStorageFactory } from './interface.ts'
 import { nanoid } from 'nanoid'
 import defaultConfig from '../../config/default.cjs'
+import type { SessionState } from '@data-fair/lib-express'
 
 class StorageManager {
   private _globalStorage?: SdStorage
@@ -58,6 +59,15 @@ class StorageManager {
   async createOrgStorage (org: Organization): Promise<SdStorage | undefined> {
     if (!org.orgStorage?.active || !config.perOrgStorageTypes.includes(org.orgStorage.type)) return
     return this.createStorage(org.orgStorage.type, { ...defaultConfig.storage[org.orgStorage.type], ...org.orgStorage.config }, org)
+  }
+
+  async getSessionStorage (sessionState: SessionState) {
+    let storage = this.globalStorage
+    if (sessionState.user?.os && sessionState.organization) {
+      const org = await this.globalStorage.getOrganization(sessionState.organization.id)
+      if (org) storage = await this.createOrgStorage(org) ?? storage
+    }
+    return storage
   }
 }
 

@@ -108,14 +108,6 @@ class FileStorage implements SdStorage {
     await mongo.fileUserSessions.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
   }
 
-  async deleteOldSessions () {
-    const date = new Date(Date.now() - (jwtDurations.exchangeToken * 1000)).toISOString()
-    await mongo.fileUserSessions.updateMany(
-      { 'sessions.lastKeepalive': { $lt: date } },
-      { $pull: { sessions: { lastKeepalive: { $lt: date } } } }
-    )
-  }
-
   async findUsers (params: FindUsersParams) {
     let filteredUsers = this.users.map(user => this.cleanUser(user))
     const ids = params.ids

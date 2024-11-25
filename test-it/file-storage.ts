@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { it, describe, before, beforeEach, after } from 'node:test'
-import { axios, axiosAuth, clean, startApiServer, stopApiServer } from './utils/index.ts'
+import { axios, axiosAuth, clean, startApiServer, stopApiServer, passwordLogin } from './utils/index.ts'
 
 describe('file storage', () => {
   before(startApiServer)
@@ -151,5 +151,38 @@ describe('file storage', () => {
     const res = await ax.get('/api/users/dmeadus0')
     assert.equal(res.status, 200)
     assert.equal(res.data.email, 'dmeadus0@answers.com')
+  })
+
+  it('Manage a user sessions', async () => {
+    const ax = await axiosAuth('dmeadus0@answers.com')
+    let user = (await ax.get('/api/users/dmeadus0')).data
+    assert.equal(user.email, 'dmeadus0@answers.com')
+    assert.equal(user.sessions.length, 1)
+    const session1 = user.sessions[0]
+
+    // another connection with same user should create a second session
+    await axiosAuth('dmeadus0@answers.com')
+    user = (await ax.get('/api/users/dmeadus0')).data
+    assert.equal(user.sessions.length, 2)
+    const sessionAlt = user.sessions[1]
+    assert.ok(session1.id === user.sessions[0].id)
+    assert.ok(session1.id !== sessionAlt.id)
+
+    // reconnecting should automatically close previous sessions
+    await passwordLogin(ax, 'dmeadus0@answers.com', 'TestPasswd01')
+    user = (await ax.get('/api/users/dmeadus0')).data
+    assert.equal(user.sessions.length, 2)
+    const session2 = user.sessions[1]
+    assert.ok(session1.id !== session2.id)
+    assert.ok(sessionAlt.id !== session2.id)
+    assert.ok(sessionAlt.id === user.sessions[0].id)
+
+    // deleting session should make it unusable
+    const adminAx = await axiosAuth({ email: 'admin@test.com', adminMode: true })
+    await adminAx.delete('/api/users/dmeadus0/sessions/' + session2.id)
+    user = (await ax.get('/api/users/dmeadus0')).data
+    assert.equal(user.sessions.length, 1)
+    await assert.rejects(ax.post('/api/auth/keepalive'), { status: 401 })
+    await assert.rejects(ax.get('/api/users/dmeadus0'), { status: 401 })
   })
 })

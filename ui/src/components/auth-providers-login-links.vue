@@ -65,7 +65,7 @@ import { PublicAuthProvider } from '#api/types'
 const { authProvidersFetch, sitePublic, mainPublicUrl } = useStore()
 
 const { redirect, email, invitToken, adminMode } = defineProps({
-  redirect: { type: String, required: true },
+  redirect: { type: String, default: null },
   email: { type: String, required: true },
   invitToken: { type: String, default: null },
   adminMode: { type: Boolean, default: false }

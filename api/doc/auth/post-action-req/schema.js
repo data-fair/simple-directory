@@ -8,14 +8,14 @@ export default {
     body: {
       type: 'object',
       additionalProperties: false,
-      required: ['email', 'action', 'redirect'],
+      required: ['email', 'action'],
       properties: {
         email: { type: 'string' },
         action: {
           type: 'string',
           enum: ['changePassword']
         },
-        redirect: { type: 'string' }
+        target: { type: 'string' }
       }
     }
   }

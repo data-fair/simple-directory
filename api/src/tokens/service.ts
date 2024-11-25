@@ -81,11 +81,7 @@ export const logout = async (req: Request, res: Response) => {
   const exchangeToken = cookies.get('id_token_ex')
   const sessionState = reqSession(req)
   if (sessionState.user && exchangeToken) {
-    let storage = storages.globalStorage
-    if (sessionState.user.os && sessionState.organization) {
-      const org = await storages.globalStorage.getOrganization(sessionState.organization.id)
-      if (org) storage = await storages.createOrgStorage(org) ?? storage
-    }
+    const storage = await storages.getSessionStorage(sessionState)
     const serverSessionInfo = decodeToken(exchangeToken) as SessionInfoPayload | undefined
     if (serverSessionInfo?.session) await storage.deleteUserSession(sessionState.user.id, serverSessionInfo.session)
   }
@@ -112,8 +108,19 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
     cookies.set('id_token_org', userOrg.id, { ...opts, httpOnly: false })
     if (userOrg.department) cookies.set('id_token_dep', userOrg.department, { ...opts, httpOnly: false })
   }
+
+  const existingExchangeToken = cookies.get('id_token_ex')
+  const existingServerSessionInfo = existingExchangeToken && ((await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined)
+  if (existingServerSessionInfo && existingServerSessionInfo.session) {
+    const sessionState = reqSession(req)
+    if (sessionState.user) {
+      const storage = await storages.getSessionStorage(sessionState)
+      await storage.deleteUserSession(sessionState.user.id, existingServerSessionInfo.session)
+    }
+  }
+
+  const exchangeCookieOpts = { ...opts, path: sitePath + '/simple-directory/', httpOnly: true }
   if (serverSessionId !== null) {
-    const exchangeCookieOpts = { ...opts, path: sitePath + '/simple-directory/', httpOnly: true }
     // const exchangeCookieOpts = { ...opts, httpOnly: true }
     const exchangeExp = Math.floor(date / 1000) + jwtDurations.exchangeToken
     const sessionInfo: SessionInfoPayload = { user: payload.id, session: serverSessionId, adminMode: payload.adminMode }
@@ -138,10 +145,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
     }
     logContext.account = { type: 'organization', id: org.id, name: org.name, department: sessionState.organization.department, departmentName: sessionState.organization.departmentName }
   }
-  let storage = storages.globalStorage
-  if (sessionState.user.os && org) {
-    storage = await storages.createOrgStorage(org) ?? storage
-  }
+  const storage = await storages.getSessionStorage(sessionState)
   const user = _user || await storage.getUser(sessionState.user.id)
   if (!user) {
     await logout(req, res)

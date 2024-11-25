@@ -318,7 +318,7 @@ router.get('/token_callback', async (req, res, next) => {
 
   const redirectError = (error: string) => {
     eventsLog.info('sd.auth.callback.fail', `a token callback failed with error ${error}`, logContext)
-    res.redirect(`${reqSiteUrl(req) + '/simple-directory'}/login?error=${encodeURIComponent(error)}`)
+    res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=${encodeURIComponent(error)}`)
   }
 
   if (!query.id_token) return redirectError('missingToken')
@@ -520,11 +520,11 @@ router.post('/action', async (req, res, next) => {
     user = await storage.getUserByEmail(body.email)
     action = 'changeHost'
   }
+  const target = body.target || `${reqSiteUrl(req)}/simple-directory/login`
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
-    const link = body.redirect
-    const linkUrl = new URL(link)
-    await sendMail('noCreation', reqI18n(req).messages, body.email, { link, host: linkUrl.host, origin: linkUrl.origin })
+    const linkUrl = new URL(target)
+    await sendMail('noCreation', reqI18n(req).messages, body.email, { link: target, host: linkUrl.host, origin: linkUrl.origin })
     eventsLog.info('sd.auth.action.fail', `an action ${action} failed because of missing user and a warning mail was sent ${body.email}`, logContext)
     return res.status(204).send()
   }
@@ -534,7 +534,7 @@ router.post('/action', async (req, res, next) => {
     action
   }
   const token = await signToken(payload, config.jwtDurations.initialToken)
-  const linkUrl = new URL(body.redirect)
+  const linkUrl = new URL(target)
   linkUrl.searchParams.set('action_token', token)
 
   await sendMail('action', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })

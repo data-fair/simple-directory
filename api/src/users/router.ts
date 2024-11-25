@@ -174,10 +174,8 @@ router.get('/:userId', async (req, res, next) => {
   if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   if (session.user.id === '_superadmin') return res.send(superadmin)
   let storage = storages.globalStorage
-  if (session.user.id === req.params.userId && session.user.os && session.organization) {
-    const org = await storages.globalStorage.getOrganization(session.organization.id)
-    if (!org) return res.status(401).send('Organization does not exist anymore')
-    storage = await storages.createOrgStorage(org) ?? storage
+  if (session.user.id === req.params.userId) {
+    storage = await storages.getSessionStorage(session)
   }
   const user = await storage.getUser(req.params.userId)
   if (!user) return res.status(404).send()
@@ -328,7 +326,7 @@ router.delete('/:userId/sessions/:sessionId', async (req, res, next) => {
   const session = reqSessionAuthenticated(req)
 
   if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
-  await storages.globalStorage.deleteUserSession(session.user.id, req.params.sessionId)
+  await storages.globalStorage.deleteUserSession(req.params.userId, req.params.sessionId)
   eventsLog.info('sd.user.cancelDeleteSession', 'user cancelled a session', logContext)
   await keepalive(req, res)
   res.status(204).send()
