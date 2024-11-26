@@ -1,5 +1,5 @@
 ##########################
-FROM node:22.9.0-alpine3.19 AS base
+FROM node:22.11.0-alpine3.20 AS base
 
 WORKDIR /app
 ENV NODE_ENV=production
