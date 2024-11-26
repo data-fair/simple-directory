@@ -18,6 +18,7 @@ declare global {
   const addMemberMenu: typeof import('../src/components/add-member-menu.vue')['default']
   const addOrganizationMenu: typeof import('../src/components/add-organization-menu.vue')['default']
   const addPartnerMenu: typeof import('../src/components/add-partner-menu.vue')['default']
+  const asyncAction: typeof import('@data-fair/lib-vue/async-action.js')['asyncAction']
   const authProvidersFetch: typeof import('../src/composables/use-store')['authProvidersFetch']
   const authProvidersLoginLinks: typeof import('../src/components/auth-providers-login-links.vue')['default']
   const cancelDeletion: typeof import('../src/components/cancel-deletion.vue')['default']
@@ -205,6 +206,7 @@ declare module 'vue' {
     readonly $siteUrl: UnwrapRef<typeof import('~/context')['$siteUrl']>
     readonly $uiConfig: UnwrapRef<typeof import('~/context')['$uiConfig']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly asyncAction: UnwrapRef<typeof import('@data-fair/lib-vue/async-action.js')['asyncAction']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>

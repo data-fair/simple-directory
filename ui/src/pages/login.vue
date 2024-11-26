@@ -50,7 +50,7 @@
               <v-text-field
                 id="email"
                 v-model="email"
-                density="compact"
+                density="comfortable"
                 rounded
                 variant="outlined"
                 :autofocus="true"
@@ -91,10 +91,15 @@
               </template>
 
               <v-form>
+                <ui-notif-alert
+                  :notif="passwordAuth.notif.value ?? changePasswordAction.notif.value ?? passwordlessAuth.notif.value"
+                  :alert-props="{variant: 'text', class: 'pt-0'}"
+                />
+
                 <v-text-field
                   id="email"
                   v-model="email"
-                  density="compact"
+                  density="comfortable"
                   rounded
                   variant="outlined"
                   :autofocus="!email"
@@ -112,26 +117,25 @@
                   {{ $t('pages.login.passwordlessMsg1') }} <a
                     tabindex="0"
                     role="button"
-                    @click="passwordlessAuth"
-                    @keyup.enter="passwordlessAuth"
+                    @click="passwordlessAuth.execute()"
+                    @keyup.enter="passwordlessAuth.execute()"
                   >{{ $t('pages.login.passwordlessMsg2') }}</a>
                 </p>
 
                 <v-text-field
                   id="password"
                   v-model="password"
-                  density="compact"
+                  density="comfortable"
                   rounded
                   variant="outlined"
                   :autofocus="!!email"
                   :label="$t('common.password')"
-                  :error-messages="passwordError"
                   name="password"
                   type="password"
                   autocomplete="current-password"
                   class="mt-4 hide-autofill"
                   hide-details="auto"
-                  @keyup.enter="passwordAuth"
+                  @keyup.enter="passwordAuth.execute()"
                 />
                 <template v-if="twoFARequired">
                   <v-text-field
@@ -146,7 +150,7 @@
                     class="mt-4 hide-autofill"
                     hide-details="auto"
                     :autofocus="true"
-                    @keyup.enter="passwordAuth"
+                    @keyup.enter="passwordAuth.execute()"
                   >
                     <template #append>
                       <v-tooltip
@@ -170,8 +174,7 @@
                   v-if="!adminMode"
                   id="rememberMe"
                   v-model="rememberMe"
-                  :class="passwordError ? 'mt-0' : 'mt-1'"
-                  density="compact"
+                  density="comfortable"
                   :label="$t('pages.login.rememberMe')"
                   hide-details
                   color="primary"
@@ -199,8 +202,8 @@
                     :title="$t('pages.login.changePasswordTooltip')"
                     tabindex="0"
                     role="button"
-                    @click="changePasswordAction"
-                    @keyup.enter="passwordAuth"
+                    @click="changePasswordAction.execute()"
+                    @keyup.enter="passwordAuth.execute()"
                   >{{ $t('pages.login.changePassword') }}</a>
                 </p>
               </v-row>
@@ -216,10 +219,10 @@
               </v-btn>
               <v-spacer />
               <v-btn
-                :disabled="!email || !password"
+                :disabled="!email || !password || passwordAuth.loading.value"
                 :color="adminMode ? 'admin' : 'primary'"
                 variant="flat"
-                @click="passwordAuth"
+                @click="passwordAuth.execute()"
               >
                 {{ $t('common.login') }}
               </v-btn>
@@ -229,12 +232,14 @@
           <v-window-item value="tos">
             <v-card-text>
               <p
-                class="mb-2"
+                class="mb-3"
                 v-html="sitePublic?.tosMessage || $t('pages.login.tosMsg', {tosUrl: $uiConfig.tosUrl})"
               />
               <v-checkbox
                 v-model="tosAccepted"
                 :label="$t('pages.login.tosConfirm')"
+                color="primary"
+                hide-details
               />
             </v-card-text>
 
@@ -273,6 +278,10 @@
                 :invit-token="invitToken"
               />
               <v-form ref="createUserForm">
+                <ui-notif-alert
+                  :notif="createUser.notif.value"
+                  :alert-props="{variant:'text'}"
+                />
                 <v-text-field
                   id="createuser-email"
                   v-model="email"
@@ -297,7 +306,7 @@
                   density="compact"
                   rounded
                   autocomplete="given-name"
-                  @keyup.enter="createUser"
+                  @keyup.enter="createUser.execute()"
                 />
 
                 <v-text-field
@@ -309,14 +318,13 @@
                   density="compact"
                   rounded
                   autocomplete="family-name"
-                  @keyup.enter="createUser"
+                  @keyup.enter="createUser.execute()"
                 />
 
                 <v-text-field
                   id="password"
                   v-model="newUser.password"
                   :label="$t('common.password')"
-                  :error-messages="createUserError"
                   :rules="[v => !!v || '']"
                   name="newUserPassword"
                   :type="showNewUserPassword ? 'text' : 'password'"
@@ -324,7 +332,7 @@
                   variant="outlined"
                   density="compact"
                   rounded
-                  @keyup.enter="createUser"
+                  @keyup.enter="createUser.execute()"
                 >
                   <template #append-inner>
                     <v-icon
@@ -354,14 +362,15 @@
                 <v-text-field
                   v-model="newUserPassword2"
                   :label="$t('pages.login.newPassword2')"
-                  :rules="[v => !!v || '', v => newUser.password === v || $t('errors.differentPasswords')]"
+                  :rules="[v => !!v || '']"
+                  :error-messages="newUserPassword2Errors"
                   name="newUserPassword2"
                   :type="showNewUserPassword ? 'text' : 'password'"
                   autocomplete="new-password"
                   variant="outlined"
                   density="compact"
                   rounded
-                  @keyup.enter="createUser"
+                  @keyup.enter="createUser.execute()"
                 >
                   <template #append>
                     <div>
@@ -387,7 +396,8 @@
               <v-btn
                 color="primary"
                 variant="flat"
-                @click="createUser"
+                :disabled="createUser.loading.value"
+                @click="createUser.execute()"
               >
                 {{ $t('pages.login.createUserConfirm') }}
               </v-btn>
@@ -454,9 +464,10 @@
           <v-window-item value="changePassword">
             <v-card-text>
               <v-form ref="changePasswordForm">
-                <p class="mb-2">
+                <p class="mb-6">
                   {{ $t('pages.login.newPasswordMsg') }}
                 </p>
+
                 <v-text-field
                   id="email"
                   v-model="email"
@@ -470,7 +481,6 @@
                   v-model="newPassword"
                   :autofocus="true"
                   :label="$t('pages.login.newPassword')"
-                  :error-messages="newPasswordError"
                   :rules="[v => !!v || '']"
                   name="newPassword"
                   :type="showNewPassword ? 'text' : 'password'"
@@ -513,7 +523,7 @@
                   variant="outlined"
                   density="compact"
                   rounded
-                  @keyup.enter="changePassword"
+                  @keyup.enter="changePassword.execute()"
                 >
                   <template #append>
                     <div>
@@ -525,6 +535,11 @@
                     </div>
                   </template>
                 </v-text-field>
+
+                <ui-notif-alert
+                  :notif="changePassword.notif.value ?? changePassword.notif.value"
+                  :alert-props="{variant: 'text'}"
+                />
               </v-form>
             </v-card-text>
             <v-card-actions>
@@ -533,7 +548,7 @@
                 :disabled="!newPassword || newPassword !== newPassword2"
                 color="primary"
                 variant="flat"
-                @click="changePassword"
+                @click="changePassword.execute()"
               >
                 {{ $t('common.validate') }}
               </v-btn>
@@ -641,6 +656,11 @@
                 {{ $t('pages.login.createUserOrganizationHelp') }}
               </v-alert>
 
+              <ui-notif-alert
+                :notif="createOrga.notif.value"
+                :alert-props="{variant:'text'}"
+              />
+
               <v-switch
                 v-model="createOrganization.active"
                 :label="$t('pages.login.createUserOrganization')"
@@ -671,7 +691,7 @@
                 v-if="createOrganization.active"
                 color="primary"
                 variant="flat"
-                @click="createOrga"
+                @click="createOrga.execute()"
               >
                 {{ $t('common.validate') }}
               </v-btn>
@@ -762,11 +782,11 @@ import type { PostOrganizationReq } from '#api/doc/organizations/post-req/index.
 import type { PostPasswordlessAuthReq } from '#api/doc/auth/post-passwordless-req/index.ts'
 import type { PostPasswordAuthReq } from '#api/doc/auth/post-password-req/index.ts'
 import type { PostActionAuthReq } from '#api/doc/auth/post-action-req/index.ts'
+import UiNotifAlert from '@data-fair/lib-vuetify/ui-notif-alert.vue'
 
 const reactiveSearchParams = useReactiveSearchParams()
 const { t } = useI18n()
 const { user, switchOrganization } = useSession()
-const { sendUiNotif } = useUiNotif()
 const { authProvidersFetch, sitePublic } = useStore()
 
 const error = useStringSearchParam('error')
@@ -780,7 +800,7 @@ const redirect = reactiveSearchParams.redirect
 const email = ref<string>(reactiveSearchParams.email ?? '')
 const emailError = ref<string | null>(null)
 const password = ref('')
-const passwordError = ref<string | null>(null)
+
 const orgStorage = useBooleanSearchParam('org_storage')
 const membersOnly = useBooleanSearchParam('members_only')
 const rememberMe = ref(true)
@@ -788,7 +808,6 @@ const rememberMe = ref(true)
 const showNewPassword = ref(false)
 const newPassword = ref('')
 const newPassword2 = ref('')
-const newPasswordError = ref<string | null>(null)
 const newPassword2Error = computed(() => {
   if (!newPassword2.value) return ''
   if (newPassword.value !== newPassword2.value) return t('errors.differentPasswords')
@@ -796,8 +815,12 @@ const newPassword2Error = computed(() => {
 
 const newUser = ref({ firstName: '', lastName: '', password: '' })
 const newUserPassword2 = ref('')
+const newUserPassword2Errors = computed(() => {
+  if (!newUserPassword2.value) return ''
+  if (newUser.value.password !== newUserPassword2.value) return t('errors.differentPasswords')
+})
+
 const showNewUserPassword = ref(false)
-const createUserError = ref<string | null>(null)
 const tosAccepted = ref(false)
 const createOrganization = ref({ active: false, name: '' })
 
@@ -907,77 +930,51 @@ function preLogin () {
 }
 
 const createUserForm = ref<InstanceType<typeof VForm>>()
-async function createUser () {
+const createUser = asyncAction(async () => {
   await createUserForm.value?.validate()
   if (!createUserForm.value?.isValid) return
-  try {
-    const body: PostUserReq['body'] = { email: email.value, ...newUser.value }
-    const link = await $fetch('users', {
-      method: 'POST',
-      body,
-      params: {
-        redirect,
-        org: orgId,
-        dep: depId,
-        invit_token: invitToken
-      }
-    })
-    createUserError.value = null
-    password.value = newUser.value.password
-    if (invitToken) window.location.href = link
-    else step.value = 'createUserConfirmed'
-  } catch (error: any) {
-    if (error.status && error.status < 500) {
-      createUserError.value = error.data ?? error.statusMessage ?? error.message as string
-    } else {
-      sendUiNotif(error)
-    }
-  }
-}
-
-async function createOrga () {
-  if (!createOrganization.value.name) return
-  if (!user.value) return
-  try {
-    const body: PostOrganizationReq['body'] = { name: createOrganization.value.name }
-    const orga = await $fetch('organizations', { method: 'POST', body })
-    const userPatch: PatchUserReq['body'] = { ignorePersonalAccount: true, defaultOrg: orga.id }
-    await $fetch('users/' + user.value.id, { method: 'PATCH', body: userPatch })
-    switchOrganization(orga.id)
-    goToRedirect()
-  } catch (error: any) {
-    if (error.status && error.status < 500) {
-      createUserError.value = error.data ?? error.statusMessage ?? error.message as string
-    } else {
-      sendUiNotif(error)
-    }
-  }
-}
-
-async function passwordlessAuth () {
-  emailError.value = null
-  try {
-    const body: PostPasswordlessAuthReq['body'] = {
-      email: email.value,
-      rememberMe: rememberMe.value,
+  const body: PostUserReq['body'] = { email: email.value, ...newUser.value }
+  const link = await $fetch('users', {
+    method: 'POST',
+    body,
+    params: {
+      redirect,
       org: orgId,
       dep: depId,
-      membersOnly: membersOnly.value,
-      orgStorage: orgStorage.value
+      invit_token: invitToken
     }
-    await $fetch('auth/passwordless', { method: 'POST', body, params: { redirect } })
-    step.value = 'emailConfirmed'
-  } catch (error: any) {
-    if (error.status && error.status < 500) {
-      emailError.value = error.data ?? error.statusMessage ?? error.message as string
-    } else {
-      sendUiNotif(error)
-    }
-  }
-}
+  })
+  password.value = newUser.value.password
+  if (invitToken) window.location.href = link
+  else step.value = 'createUserConfirmed'
+}, { catch: 'all' })
 
-async function passwordAuth () {
+const createOrga = asyncAction(async () => {
+  if (!createOrganization.value.name) return
+  if (!user.value) return
+  const body: PostOrganizationReq['body'] = { name: createOrganization.value.name }
+  const orga = await $fetch('organizations', { method: 'POST', body })
+  const userPatch: PatchUserReq['body'] = { ignorePersonalAccount: true, defaultOrg: orga.id }
+  await $fetch('users/' + user.value.id, { method: 'PATCH', body: userPatch })
+  switchOrganization(orga.id)
+  goToRedirect()
+}, { catch: 'all' })
+
+const passwordlessAuth = asyncAction(async () => {
   emailError.value = null
+  const body: PostPasswordlessAuthReq['body'] = {
+    email: email.value,
+    rememberMe: rememberMe.value,
+    org: orgId,
+    dep: depId,
+    membersOnly: membersOnly.value,
+    orgStorage: orgStorage.value
+  }
+  await $fetch('auth/passwordless', { method: 'POST', body, params: { redirect } })
+  step.value = 'emailConfirmed'
+}, { catch: 'all' })
+
+const passwordAuth = asyncAction(async () => {
   try {
     const body: PostPasswordAuthReq['body'] = {
       email: email.value,
@@ -996,26 +993,24 @@ async function passwordAuth () {
     if (error.status && error.status < 500) {
       if (error.data === '2fa-missing') {
         step.value = 'configure2FA'
-        passwordError.value = null
         init2FA()
       } else if (error.data === '2fa-required') {
-        passwordError.value = null
         twoFARequired.value = true
         twoFAError.value = null
       } else if (error.data === '2fa-bad-token') {
-        passwordError.value = null
         twoFAError.value = t('errors.bad2FAToken')
       } else {
-        passwordError.value = error.data ?? error.statusMessage ?? error.message as string
         twoFAError.value = null
+        throw error
       }
     } else {
-      sendUiNotif(error)
+      throw error
     }
   }
-}
+}, { catch: 'all' })
+watch(() => email.value + password.value, () => { passwordAuth.notif.value = undefined })
 
-const changePasswordAction = withUiNotif(async () => {
+const changePasswordAction = asyncAction(async () => {
   const body: PostActionAuthReq['body'] = {
     email: email.value,
     action: 'changePassword',
@@ -1023,31 +1018,24 @@ const changePasswordAction = withUiNotif(async () => {
   }
   await $fetch('auth/action', { method: 'POST', body })
   step.value = 'changePasswordSent'
-})
+}, { catch: 'all' })
+watch(email, () => { changePasswordAction.notif.value = undefined })
 
 const changePasswordForm = ref<InstanceType<typeof VForm>>()
-async function changePassword () {
+const changePassword = asyncAction(async () => {
   if (!actionPayload) return
   await changePasswordForm.value?.validate()
   if (!changePasswordForm.value?.isValid) return
-  newPasswordError.value = ''
-  try {
-    await $fetch(`users/${actionPayload.id}/password`, {
-      method: 'POST',
-      body: { password: newPassword.value },
-      params: { action_token: actionToken.value }
-    })
-    password.value = newPassword.value
-    step.value = 'login'
-    actionToken.value = ''
-  } catch (error: any) {
-    if (error.status && error.status < 500) {
-      newPasswordError.value = error.data ?? error.statusMessage ?? error.message as string
-    } else {
-      sendUiNotif(error)
-    }
-  }
-}
+  await $fetch(`users/${actionPayload.id}/password`, {
+    method: 'POST',
+    body: { password: newPassword.value },
+    params: { action_token: actionToken.value }
+  })
+  password.value = newPassword.value
+  step.value = 'login'
+  actionToken.value = ''
+}, { catch: 'all' })
+watch(newPassword, () => { changePassword.notif.value = undefined })
 
 const init2FA = withUiNotif(async () => {
   // initialize secret
