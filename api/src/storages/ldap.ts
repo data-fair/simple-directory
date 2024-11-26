@@ -1,5 +1,5 @@
 import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
-import config, { jwtDurations } from '#config'
+import config from '#config'
 import type { LdapParams, ServerSession } from '#types'
 import type { Organization, Partner, User, UserWritable } from '#types'
 import mongo from '#mongo'

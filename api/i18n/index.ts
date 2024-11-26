@@ -66,7 +66,7 @@ export const getMessage = (localeCode: string, key: string, params: Record<strin
 
 export const __ = (req: Request, key: string, params: Record<string, string> = {}) => {
   const myI18n = reqI18n(req)
-  return getMessage(myI18n.localeCode, key)
+  return getMessage(myI18n.localeCode, key, params)
 }
 
 export const __all = (key: string, params: Record<string, string> = {}) => {

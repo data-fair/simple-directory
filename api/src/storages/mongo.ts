@@ -2,7 +2,7 @@ import type { UserWritable, User, Organization, Member, Partner, Site, ServerSes
 import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersParams } from './interface.ts'
 import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
-import config, { jwtDurations } from '#config'
+import config from '#config'
 import type { TwoFA } from '#services'
 import { httpError, type UserRef } from '@data-fair/lib-express'
 import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'

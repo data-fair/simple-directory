@@ -19,7 +19,6 @@ import avatars from './avatars/router.ts'
 import oauthTokens from './oauth-tokens/router.ts'
 import tokens from './tokens/router.ts'
 import sites from './sites/router.ts'
-import { keepalive } from '#services'
 
 const app = express()
 export default app

@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
 import type { FileParams } from '../../config/type/index.ts'
-import config, { jwtDurations } from '#config'
+import config from '#config'
 import userName from '../utils/user-name.ts'
 import type { Member, Organization, Partner, User, UserWritable, ServerSession } from '#types'
 import { readFileSync } from 'node:fs'
