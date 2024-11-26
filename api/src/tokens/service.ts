@@ -111,7 +111,7 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
 
   const existingExchangeToken = cookies.get('id_token_ex')
   const existingServerSessionInfo = existingExchangeToken && ((await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined)
-  if (existingServerSessionInfo && existingServerSessionInfo.session) {
+  if (existingServerSessionInfo && existingServerSessionInfo.session !== serverSessionId) {
     const sessionState = reqSession(req)
     if (sessionState.user) {
       const storage = await storages.getSessionStorage(sessionState)
