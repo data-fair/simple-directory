@@ -12,8 +12,8 @@
     "lint-fix": "eslint --fix ."
   },
   "dependencies": {
-    "@data-fair/lib-vue": "^1.13.4",
-    "@data-fair/lib-vuetify": "^1.6.3",
+    "@data-fair/lib-vue": "^1.13.6",
+    "@data-fair/lib-vuetify": "^1.6.4",
     "@intlify/unplugin-vue-i18n": "^5.2.0",
     "@koumoul/v-iframe": "^2.4.4",
     "@koumoul/vjsf": "^3.3.3",

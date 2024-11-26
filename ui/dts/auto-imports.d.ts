@@ -146,6 +146,7 @@ declare global {
   const triggerRef: typeof import('vue')['triggerRef']
   const unref: typeof import('vue')['unref']
   const urlBase64ToUint8Array: typeof import('../src/utils/registrations')['urlBase64ToUint8Array']
+  const useAsyncAction: typeof import('@data-fair/lib-vue/async-action.js')['useAsyncAction']
   const useAttrs: typeof import('vue')['useAttrs']
   const useBooleanSearchParam: typeof import('@data-fair/lib-vue/reactive-search-params.js')['useBooleanSearchParam']
   const useConceptFilters: typeof import('@data-fair/lib-vue/concept-filters.js')['useConceptFilters']
@@ -206,7 +207,6 @@ declare module 'vue' {
     readonly $siteUrl: UnwrapRef<typeof import('~/context')['$siteUrl']>
     readonly $uiConfig: UnwrapRef<typeof import('~/context')['$uiConfig']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
-    readonly asyncAction: UnwrapRef<typeof import('@data-fair/lib-vue/async-action.js')['asyncAction']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
@@ -293,6 +293,7 @@ declare module 'vue' {
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
+    readonly useAsyncAction: UnwrapRef<typeof import('@data-fair/lib-vue/async-action.js')['useAsyncAction']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
     readonly useBooleanSearchParam: UnwrapRef<typeof import('@data-fair/lib-vue/reactive-search-params.js')['useBooleanSearchParam']>
     readonly useConceptFilters: UnwrapRef<typeof import('@data-fair/lib-vue/concept-filters.js')['useConceptFilters']>

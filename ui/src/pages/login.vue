@@ -930,7 +930,7 @@ function preLogin () {
 }
 
 const createUserForm = ref<InstanceType<typeof VForm>>()
-const createUser = asyncAction(async () => {
+const createUser = useAsyncAction(async () => {
   await createUserForm.value?.validate()
   if (!createUserForm.value?.isValid) return
   const body: PostUserReq['body'] = { email: email.value, ...newUser.value }
@@ -949,7 +949,7 @@ const createUser = asyncAction(async () => {
   else step.value = 'createUserConfirmed'
 }, { catch: 'all' })
 
-const createOrga = asyncAction(async () => {
+const createOrga = useAsyncAction(async () => {
   if (!createOrganization.value.name) return
   if (!user.value) return
   const body: PostOrganizationReq['body'] = { name: createOrganization.value.name }
@@ -960,7 +960,7 @@ const createOrga = asyncAction(async () => {
   goToRedirect()
 }, { catch: 'all' })
 
-const passwordlessAuth = asyncAction(async () => {
+const passwordlessAuth = useAsyncAction(async () => {
   emailError.value = null
   const body: PostPasswordlessAuthReq['body'] = {
     email: email.value,
@@ -974,7 +974,7 @@ const passwordlessAuth = asyncAction(async () => {
   step.value = 'emailConfirmed'
 }, { catch: 'all' })
 
-const passwordAuth = asyncAction(async () => {
+const passwordAuth = useAsyncAction(async () => {
   try {
     const body: PostPasswordAuthReq['body'] = {
       email: email.value,
@@ -1010,7 +1010,7 @@ const passwordAuth = asyncAction(async () => {
 }, { catch: 'all' })
 watch(() => email.value + password.value, () => { passwordAuth.notif.value = undefined })
 
-const changePasswordAction = asyncAction(async () => {
+const changePasswordAction = useAsyncAction(async () => {
   const body: PostActionAuthReq['body'] = {
     email: email.value,
     action: 'changePassword',
@@ -1022,7 +1022,7 @@ const changePasswordAction = asyncAction(async () => {
 watch(email, () => { changePasswordAction.notif.value = undefined })
 
 const changePasswordForm = ref<InstanceType<typeof VForm>>()
-const changePassword = asyncAction(async () => {
+const changePassword = useAsyncAction(async () => {
   if (!actionPayload) return
   await changePasswordForm.value?.validate()
   if (!changePasswordForm.value?.isValid) return
