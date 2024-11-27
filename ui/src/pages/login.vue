@@ -78,7 +78,7 @@
             <v-card-text>
               <p
                 v-if="adminMode"
-                class="text-warning mb-2"
+                class="text-warning mb-6"
               >
                 {{ $t('pages.login.adminMode') }}
               </p>

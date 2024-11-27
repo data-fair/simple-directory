@@ -61,6 +61,7 @@
           :label="$t('common.role')"
           name="role"
           variant="solo"
+          density="comfortable"
           clearable
           hide-details="auto"
           @update:model-value="refetchMembers()"
@@ -153,12 +154,12 @@
             <span>{{ $t('common.role') }} = {{ member.role }}</span>
           </v-list-item-subtitle>
 
-          <v-list-item-action v-if="isAdminOrga && (!readonly || $uiConfig.overwrite.includes('members'))">
+          <v-list-item-action v-if="isAdminOrga && (!readonly || $uiConfig.orgStorageOverwrite?.includes('members'))">
             <edit-member-menu
               :orga="orga"
               :member="member"
               :department="adminDepartment"
-              @save="newMember => saveMember(newMember, member)"
+              @save="(newMember: Member) => saveMember(newMember, member)"
             />
           </v-list-item-action>
           <v-list-item-action v-if="user.adminMode && !member.orgStorage">
@@ -239,7 +240,6 @@ const { t } = useI18n()
 const { sendUiNotif } = useUiNotif()
 const { user, asAdmin } = useSessionAuthenticated()
 
-const members = ref<any>()
 const q = ref('')
 const role = ref()
 const department = ref(adminDepartment)
@@ -279,6 +279,7 @@ const membersParams = computed(() => {
   return params
 })
 const fetchMembers = useFetch<{ count: number, results: any[] }>(() => `api/organizations/${orga.id}/members`, { query: membersParams })
+const members = computed(() => fetchMembers.data.value)
 const refetchMembers = async () => {
   membersPage.value = 1
 }

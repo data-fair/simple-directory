@@ -26,8 +26,8 @@
       @submit="save"
     >
       <load-avatar
-        v-if="orga && $uiConfig.avatars.orgs"
-        :owner="{...orga, type: 'organization'}"
+        v-if="orga.data.value && $uiConfig.avatars.orgs"
+        :owner="{...orga.data.value, type: 'organization'}"
         :disabled="$uiConfig.readonly"
       />
       <v-text-field
@@ -46,8 +46,8 @@
         :label="$t('common.description')"
         :disabled="orgRole !== 'admin' || $uiConfig.readonly"
         name="description"
-        hide-details
         variant="outlined"
+        density="compact"
         autocomplete="off"
       />
       <v-text-field
@@ -56,6 +56,7 @@
         :label="$t('pages.organization.departmentLabelTitle')"
         :disabled="orgRole !== 'admin' || $uiConfig.readonly"
         name="departmentLabel"
+        density="compact"
         autocomplete="off"
       >
         <template #append>
@@ -82,6 +83,7 @@
         :placeholder="$t('pages.organization.2FARoles')"
         multiple
         name="2FARoles"
+        density="compact"
         style="max-width:600px"
         @update:model-value="set2FARoles"
       />
@@ -139,15 +141,14 @@ import type { VForm } from 'vuetify/components'
 import { getAccountRole } from '@data-fair/lib-common-types/session/index.js'
 
 const session = useSession()
-const reactiveSearchParams = useReactiveSearchParams()
-const orgId = reactiveSearchParams.id
+const orgId = useRoute<'/organization/[id]/'>().params.id
 
 const { patchOrganization, host, mainPublicUrl } = useStore()
 const { t } = useI18n()
 
-const orga = useFetch<Organization>(`organizations/${orgId}`)
-const limits = useFetch<Limits>(`limits/organization/${orgId}`)
+const orga = useFetch<Organization>($apiPath + `/organizations/${orgId}`)
 const orgRole = computed(() => getAccountRole(session.state, { type: 'organization', id: orgId }, { acceptDepAsRoot: $uiConfig.depAdminIsOrgAdmin }))
+const limits = useFetch<Limits>($apiPath + `/limits/organization/${orgId}`, { watch: orgRole.value === 'admin' })
 
 const form = ref<InstanceType<typeof VForm>>()
 const save = async (e: Event) => {

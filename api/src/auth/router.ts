@@ -545,8 +545,7 @@ router.post('/action', async (req, res, next) => {
 router.delete('/adminmode', async (req, res, next) => {
   const user = reqUserAuthenticated(req)
   if (!user.adminMode) throw httpError(403, 'This route is only available in admin mode')
-  req.query.noAdmin = 'true'
-  await keepalive(req, res)
+  await keepalive(req, res, undefined, true)
 
   res.status(204).send()
 })

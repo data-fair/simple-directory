@@ -130,7 +130,7 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
   }
 }
 
-export const keepalive = async (req: Request, res: Response, _user?: User) => {
+export const keepalive = async (req: Request, res: Response, _user?: User, removeAdminMode?: boolean) => {
   const sessionState = reqSessionAuthenticated(req)
   const logContext: EventLogContext = { req, account: (await reqSite(req))?.owner }
 
@@ -180,7 +180,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User) => {
   const serverSessionId = serverSessionInfo.session
 
   const payload = getTokenPayload(user)
-  if (sessionState.user.isAdmin && sessionState.user.adminMode && req.query.noAdmin !== 'true') payload.adminMode = 1
+  if (sessionState.user.isAdmin && sessionState.user.adminMode && !removeAdminMode) payload.adminMode = 1
   if (sessionState.user.rememberMe) payload.rememberMe = 1
   if (sessionState.user.asAdmin) {
     payload.asAdmin = sessionState.user.asAdmin
