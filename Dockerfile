@@ -3,6 +3,8 @@
 
 FROM node:22.11.0-alpine3.20 AS nativedeps
 
+RUN npm install -g npm@10.9.1
+RUN npm -version
 RUN apk add --no-cache openssl graphicsmagick
 
 ######################################
