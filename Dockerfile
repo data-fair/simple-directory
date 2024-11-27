@@ -1,7 +1,7 @@
 ############################################################################################################
 # Stage: prepare a base image with all native utils pre-installed, used both by builder and definitive image
 
-FROM node:22.10.0-alpine3.20 AS nativedeps
+FROM node:22.11.0-alpine3.20 AS nativedeps
 
 RUN apk add --no-cache openssl graphicsmagick
 
