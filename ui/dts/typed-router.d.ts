@@ -28,7 +28,7 @@ declare module 'vue-router/auto-routes' {
     '/invitation': RouteRecordInfo<'/invitation', '/invitation', Record<never, never>, Record<never, never>>,
     '/login': RouteRecordInfo<'/login', '/login', Record<never, never>, Record<never, never>>,
     '/me': RouteRecordInfo<'/me', '/me', Record<never, never>, Record<never, never>>,
-    '/organization/_id/': RouteRecordInfo<'/organization/_id/', '/organization/_id', Record<never, never>, Record<never, never>>,
-    '/organization/_id/department/_departmentId': RouteRecordInfo<'/organization/_id/department/_departmentId', '/organization/_id/department/_departmentId', Record<never, never>, Record<never, never>>,
+    '/organization/[id]/': RouteRecordInfo<'/organization/[id]/', '/organization/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
+    '/organization/[id]/department/[departmentId]': RouteRecordInfo<'/organization/[id]/department/[departmentId]', '/organization/:id/department/:departmentId', { id: ParamValue<true>, departmentId: ParamValue<true> }, { id: ParamValue<false>, departmentId: ParamValue<false> }>,
   }
 }

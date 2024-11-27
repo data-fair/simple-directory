@@ -74,6 +74,6 @@
     "@koumoul/vjsf-compiler": "^0.2.2"
   },
   "relativeDependencies": {
-    "@data-fair/lib-vuetify": "../lib/packages/vuetify"
+    "@data-fair/lib-vue": "../lib/packages/vue"
   }
 }
