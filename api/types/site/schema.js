@@ -1,7 +1,11 @@
+/* eslint-disable no-template-curly-in-string */
 export default {
   type: 'object',
   $id: 'https://github.com/data-fair/simple-directory/site',
   title: 'Site',
+  layout: {
+    title: ''
+  },
   'x-exports': [
     'types',
     'resolvedSchema'
@@ -16,10 +20,26 @@ export default {
   additionalProperties: false,
   properties: {
     _id: {
-      type: 'string'
+      type: 'string',
+      layout: 'none'
     },
     owner: {
-      $ref: 'https://github.com/data-fair/lib/session-state#/$defs/account'
+      $ref: 'https://github.com/data-fair/lib/session-state#/$defs/account',
+      layout: {
+        label: 'Propriétaire',
+        getItems: {
+          url: '${context.sdUrl}/api/accounts?type=organization&q={q}',
+          itemsResults: 'data.results',
+          itemKey: {
+            type: 'js-tpl',
+            expr: '${item.type}:${item.id}'
+          },
+          itemTitle: {
+            type: 'js-tpl',
+            expr: '${item.name} (${item.id})'
+          }
+        }
+      }
     },
     host: {
       type: 'string',

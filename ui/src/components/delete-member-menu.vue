@@ -45,6 +45,7 @@
         </v-btn>
         <v-btn
           color="warning"
+          variant="flat"
           :disabled="member.readOnly"
           @click="menu = false;$emit('delete', member)"
         >

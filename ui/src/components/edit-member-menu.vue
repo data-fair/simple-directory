@@ -63,6 +63,7 @@
           {{ $t('common.confirmCancel') }}
         </v-btn>
         <v-btn
+          variant="flat"
           color="warning"
           :disabled="member.readOnly"
           @click="menu = false;$emit('save', editMember)"

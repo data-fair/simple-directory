@@ -1,5 +1,5 @@
 import type { UserWritable, User, Organization, Member, Partner, Site, ServerSession } from '#types'
-import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersParams } from './interface.ts'
+import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersParams, FindAccountsParams } from './interface.ts'
 import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
 import config from '#config'
@@ -159,15 +159,16 @@ class MongodbStorage implements SdStorage {
       ]
     }
 
-    const countPromise = mongo.users.countDocuments(filter)
-    const users = await mongo.users
-      .find(filter)
-      .project(prepareSelect(params.select))
-      .sort(params.sort)
-      .skip(params.skip)
-      .limit(params.size)
-      .toArray()
-    const count = await countPromise
+    const [count, users] = await Promise.all([
+      mongo.users.countDocuments(filter),
+      mongo.users
+        .find(filter)
+        .project(prepareSelect(params.select))
+        .sort(params.sort)
+        .skip(params.skip)
+        .limit(params.size)
+        .toArray()
+    ])
     return { count, results: users.map(cleanUser) }
   }
 
@@ -217,16 +218,17 @@ class MongodbStorage implements SdStorage {
     if ('emailConfirmed' in params) {
       filter.emailConfirmed = params.emailConfirmed
     }
-    const countPromise = mongo.users.countDocuments(filter)
-    const users = params.size === 0
-      ? []
-      : (await mongo.users
-          .find(filter)
-          .sort(params.sort)
-          .skip(params.skip || 0)
-          .limit(params.size || 12)
-          .toArray())
-    const count = await countPromise
+    const [count, users] = await Promise.all([
+      mongo.users.countDocuments(filter),
+      params.size === 0
+        ? []
+        : (await mongo.users
+            .find(filter)
+            .sort(params.sort)
+            .skip(params.skip || 0)
+            .limit(params.size || 12)
+            .toArray())
+    ])
     const results = []
     for (const user of users) {
       for (const userOrga of user.organizations) {
@@ -317,15 +319,16 @@ class MongodbStorage implements SdStorage {
       filter['created.id'] = params.creator
     }
 
-    const countPromise = mongo.organizations.countDocuments(filter)
-    const organizations = await mongo.organizations
-      .find(filter)
-      .sort(params.sort)
-      .project(prepareSelect(params.select))
-      .skip(params.skip)
-      .limit(params.size)
-      .toArray()
-    const count = await countPromise
+    const [count, organizations] = await Promise.all([
+      mongo.organizations.countDocuments(filter),
+      await mongo.organizations
+        .find(filter)
+        .sort(params.sort)
+        .project(prepareSelect(params.select))
+        .skip(params.skip)
+        .limit(params.size)
+        .toArray()
+    ])
     return { count, results: organizations.map(cleanOrganization) }
   }
 

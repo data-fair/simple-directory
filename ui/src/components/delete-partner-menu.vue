@@ -40,6 +40,7 @@
         </v-btn>
         <v-btn
           color="warning"
+          variant="flat"
           @click="confirmDelete"
         >
           {{ $t('common.confirmOk') }}

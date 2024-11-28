@@ -9,7 +9,6 @@ const schema = jsonSchema(SiteSchema)
   .schema
 
 schema.$id = 'https://github.com/data-fair/simple-directory/sites/patch-req-body'
-schema['x-exports'] = ['validate', 'types', 'vjsf']
-schema['x-vjsf'] = { compName: 'site-patch-body' }
+schema['x-exports'] = ['validate', 'types', 'resolvedSchema']
 
 export default schema

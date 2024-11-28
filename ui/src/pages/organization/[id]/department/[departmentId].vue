@@ -35,17 +35,17 @@
 import { getAccountRole } from '@data-fair/lib-common-types/session/index.js'
 
 const session = useSession()
-const route = useRoute()
+const route = useRoute<'/organization/[id]/department/[departmentId]'>()
 const orgId = route.params.id
 const depId = route.params.departmentId
 
-const orga = useFetch < Organization >(`organizations/${orgId}`)
-const limits = useFetch < Limits >(`limits/organization/${orgId}`)
+const orga = useFetch < Organization >(`${$apiPath}/organizations/${orgId}`)
+const departmentRole = computed(() => getAccountRole(session.state, { type: 'organization', id: orgId, department: depId }))
+const limits = useFetch < Limits >(`${$apiPath}/limits/organization/${orgId}`, { watch: departmentRole.value === 'admin' })
 const department = computed(() => {
   if (!orga.data.value) return
   return orga.data.value.departments?.find(d => d.id === depId)
 })
-const departmentRole = computed(() => getAccountRole(session.state, { type: 'organization', id: orgId, department: depId }))
 
 </script>
 

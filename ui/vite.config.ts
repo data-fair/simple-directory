@@ -10,11 +10,13 @@ import webfontDownload from 'vite-plugin-webfont-dl'
 import Vuetify from 'vite-plugin-vuetify'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import { autoImports } from '@data-fair/lib-vuetify/vite.js'
+import { commonjsDeps } from '@koumoul/vjsf/utils/build.js'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: '/simple-directory',
-  optimizeDeps: { include: ['debug'] },
+  optimizeDeps: { include: commonjsDeps },
+
   resolve: {
     alias: {
       '~': path.resolve(__dirname, 'src/')

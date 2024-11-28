@@ -105,7 +105,7 @@
 <script setup lang="ts">
 
 const { t } = useI18n()
-const sites = useFetch<{ count: number, results: Site[] }>('sites', { query: { showAll: true } })
+const sites = useFetch<{ count: number, results: Site[] }>($apiPath + '/sites', { query: { showAll: true } })
 
 const deleteSite = withUiNotif(async (site: Site) => {
   await $fetch(`sites/${site._id}`, { method: 'DELETE' })

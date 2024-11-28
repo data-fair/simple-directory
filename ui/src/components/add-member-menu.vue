@@ -5,7 +5,7 @@
     :close-on-content-click="false"
   >
     <template #activator="{props}">
-      <v-fab
+      <v-btn
         :title="$t('pages.organization.addMember')"
         size="small"
         color="primary"
@@ -128,7 +128,7 @@ const i18n = useI18n()
 const { orga, department } = defineProps({
   orga: { type: Object as () => Organization, required: true },
   isAdminOrga: { type: Boolean, default: false },
-  members: { type: Array as () => (null | ({ results: Member[] })), default: null },
+  members: { type: Object as () => (null | ({ results: Member[] })), default: null },
   disableInvite: { type: Boolean, default: false },
   department: { type: String, default: null }
 })

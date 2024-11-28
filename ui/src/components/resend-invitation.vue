@@ -79,6 +79,7 @@
         <v-btn
           :disabled="!invitation.email || !invitation.role"
           color="warning"
+          variant="flat"
           @click="confirmInvitation()"
         >
           {{ $t('common.confirmOk') }}

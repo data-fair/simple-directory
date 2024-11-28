@@ -298,7 +298,7 @@ if (!user.value) throw new Error('auth required')
 
 userDetailsFetch.refresh()
 authProvidersFetch.refresh()
-const userOrgsFetch = useFetch<{ count: number }>($sitePath + 'api/organizations', { query: { creator: user.value?.id, size: 0 } })
+const userOrgsFetch = useFetch<{ count: number }>($apiPath + '/organizations', { query: { creator: user.value?.id, size: 0 } })
 
 const newPatch = () => ({
   firstName: userDetailsFetch.data.value?.firstName,

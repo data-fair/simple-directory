@@ -19,6 +19,7 @@ import avatars from './avatars/router.ts'
 import oauthTokens from './oauth-tokens/router.ts'
 import tokens from './tokens/router.ts'
 import sites from './sites/router.ts'
+import accounts from './accounts/router.ts'
 
 const app = express()
 export default app
@@ -65,6 +66,7 @@ app.use('/api/avatars', avatars)
 app.use('/api/limits', auth, limits)
 app.use('/api/2fa', twoFA)
 app.use('/api/oauth-tokens', oauthTokens)
+app.use('/api/accounts', accounts)
 if (config.manageSites) app.use('/api/sites', sites)
 
 app.use('/api/', (req, res) => {

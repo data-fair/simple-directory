@@ -28,9 +28,10 @@
           v-model="valid"
           @submit.prevent
         >
-          <vjsf-site-patch-body
+          <vjsf
             v-model="patch"
             :options="vjsfOptions"
+            :schema="resolvedSchema"
           />
         </v-form>
       </v-card-text>
@@ -55,6 +56,9 @@
 </template>
 
 <script setup lang="ts">
+import Vjsf from '@koumoul/vjsf'
+import { resolvedSchema } from '../../../api/doc/sites/patch-req-body/index.ts'
+
 const { site, sites } = defineProps({
   site: { type: Object as () => Site, required: true },
   sites: { type: Array as () => Site[], required: true }

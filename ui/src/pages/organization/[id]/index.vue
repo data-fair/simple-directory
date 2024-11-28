@@ -106,7 +106,7 @@
       @change="orga.refresh()"
     />
     <organization-members
-      :orga="orga"
+      :orga="orga.data.value"
       :is-admin-orga="orgRole === 'admin'"
       :nb-members-limits="limits.data.value?.store_nb_members"
       :org-storage="'false'"
@@ -120,7 +120,7 @@
 
     <organization-members
       v-if="orga.data.value.orgStorage?.active"
-      :orga="orga"
+      :orga="orga.data.value"
       :is-admin-orga="orgRole === 'admin'"
       :nb-members-limits="limits.data.value?.store_nb_members"
       :org-storage="'true'"

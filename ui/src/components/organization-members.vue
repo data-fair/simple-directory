@@ -29,7 +29,8 @@
         <v-btn
           icon
           color="primary"
-          class="mx-1"
+          class="mx-2"
+          size="small"
           :href="csvUrl"
           :title="$t('common.downloadCsv')"
         >
@@ -114,7 +115,7 @@
 
           :class="{'secondary-member': members.results[i-1] && members.results[i-1].id === member.id}"
         >
-          <template #append>
+          <template #prepend>
             <v-avatar>
               <v-img
                 v-if="!members.results[i-1] || members.results[i-1].id !== member.id"
@@ -154,37 +155,40 @@
             <span>{{ $t('common.role') }} = {{ member.role }}</span>
           </v-list-item-subtitle>
 
-          <v-list-item-action v-if="isAdminOrga && (!readonly || $uiConfig.orgStorageOverwrite?.includes('members'))">
-            <edit-member-menu
-              :orga="orga"
-              :member="member"
-              :department="adminDepartment"
-              @save="(newMember: Member) => saveMember(newMember, member)"
-            />
-          </v-list-item-action>
-          <v-list-item-action v-if="user.adminMode && !member.orgStorage">
-            <v-btn
-              :title="$t('common.asAdmin')"
-              icon
-              :disabled="!member.emailConfirmed"
-              @click="asAdmin(member)"
-            >
-              <v-icon
-                color="warning"
-                :icon="mdiAccountSwitch"
+          <template #append>
+            <v-list-item-action v-if="isAdminOrga && (!readonly || $uiConfig.orgStorageOverwrite?.includes('members'))">
+              <edit-member-menu
+                :orga="orga"
+                :member="member"
+                :department="adminDepartment"
+                @save="(newMember: Member) => saveMember.execute(newMember, member)"
               />
-            </v-btn>
-          </v-list-item-action>
-          <v-list-item-action
-            v-if="isAdminOrga && !readonly"
-            class="ml-0"
-          >
-            <delete-member-menu
-              :member="member"
-              :orga="orga"
-              @delete="deleteMember"
-            />
-          </v-list-item-action>
+            </v-list-item-action>
+            <v-list-item-action v-if="user.adminMode && !member.orgStorage">
+              <v-btn
+                :title="$t('common.asAdmin')"
+                icon
+                :disabled="!member.emailConfirmed"
+                @click="asAdmin(member)"
+              >
+                <v-icon
+                  color="warning"
+                  :icon="mdiAccountSwitch"
+                />
+              </v-btn>
+            </v-list-item-action>
+            <v-list-item-action
+              v-if="isAdminOrga && !readonly"
+              class="ml-0"
+            >
+              <delete-member-menu
+                :member="member"
+                :orga="orga"
+                :disabled="deleteMember.loading.value"
+                @delete="deleteMember.execute(member)"
+              />
+            </v-list-item-action>
+          </template>
         </v-list-item>
         <v-divider
           v-if="members.results[i+1] && members.results[i+1].id !== member.id"
@@ -216,7 +220,7 @@ const { isAdminOrga, orga, nbMembersLimits, orgStorage, readonly, adminDepartmen
   },
   orga: {
     type: Object as () => Organization,
-    default: null
+    required: true
   },
   nbMembersLimits: {
     type: Object,
@@ -265,26 +269,27 @@ const filterMemberCols = $uiConfig.alwaysAcceptInvitation ? 6 : 4
 
 const membersParams = computed(() => {
   const params: QueryObject = {
-    q: q.value,
     page: membersPage.value,
     size: membersPageSize,
-    department: department.value,
     role: role.value,
     org_storage: orgStorage,
     sort: 'name'
   }
+  if (department.value) params.department = department.value
+  if (q.value) params.q = q.value
   if (emailConfirmedFilter.value !== null) {
     params.email_confirmed = emailConfirmedFilter
   }
   return params
 })
-const fetchMembers = useFetch<{ count: number, results: any[] }>(() => `api/organizations/${orga.id}/members`, { query: membersParams })
+
+const fetchMembers = useFetch<{ count: number, results: any[] }>(() => `${$apiPath}/organizations/${orga.id}/members`, { query: membersParams })
 const members = computed(() => fetchMembers.data.value)
 const refetchMembers = async () => {
   membersPage.value = 1
 }
 
-const deleteMember = withUiNotif(async (member: Member) => {
+const deleteMember = useAsyncAction(async (member: Member) => {
   await $fetch(`organizations/${orga.id}/members/${member.id}`, { method: 'DELETE', params: { department: member.department } })
   sendUiNotif({ type: 'success', msg: t('pages.organization.deleteMemberSuccess', { name: member.name }) })
   await fetchMembers.refresh()
@@ -294,7 +299,7 @@ const deleteMember = withUiNotif(async (member: Member) => {
   }
 })
 
-const saveMember = withUiNotif(async (member: Member, oldMember: Member) => {
+const saveMember = useAsyncAction(async (member: Member, oldMember: Member) => {
   const patch: Partial<Member> = { role: member.role }
   if (member.department) {
     const dep = orga.departments?.find(d => d.id === member.department)

@@ -1,7 +1,7 @@
 import type { User, UserWritable, Organization, Site, Member, Partner, ServerSession } from '#types'
 import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
-import type { UserRef } from '@data-fair/lib-express'
+import type { Account, UserRef } from '@data-fair/lib-express'
 import type { TwoFA, Password } from '#services'
 
 export type FindMembersParams = {

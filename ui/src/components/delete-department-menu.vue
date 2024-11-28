@@ -51,6 +51,7 @@
         <v-btn
           :disabled="!members || !!members.count"
           color="warning"
+          variant="flat"
           @click="confirmDelete"
         >
           {{ $t('common.confirmOk') }}

@@ -59,7 +59,7 @@ const newMessage = { from: '', subject: '', text: '' }
 const message = ref({ ...newMessage })
 const valid = ref(false)
 
-const token = useFetch<string>($apiPath + 'auth/anonymous-action')
+const token = useFetch<string>($apiPath + '/auth/anonymous-action')
 
 const form = ref<InstanceType<typeof VForm>>()
 const send = withUiNotif(async () => {

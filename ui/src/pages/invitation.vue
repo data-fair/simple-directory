@@ -20,7 +20,7 @@
         <span
           v-else
           class="subheading"
-          v-html="$t('pages.invitation.msgDifferentUser', {loginUrl: $sdUrl + '/login?email=' + encodeURIComponent($route.query.email)})"
+          v-html="$t('pages.invitation.msgDifferentUser', {loginUrl: $sdUrl + '/login?email=' + encodeURIComponent(email)})"
         />
       </v-col>
     </v-row>
@@ -28,8 +28,8 @@
 </template>
 
 <script setup lang="ts">
-const route = useRoute()
+const email = useStringSearchParam('email')
 const { user, keepalive } = useSession()
-const sameUser = user.value && user.value.email === route.query.email
+const sameUser = user.value && user.value.email === email.value
 if (sameUser) await keepalive
 </script>

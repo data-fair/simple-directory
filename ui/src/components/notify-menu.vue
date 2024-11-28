@@ -1,13 +1,14 @@
 <template>
   <v-menu
     :close-on-content-click="false"
+    location="top"
   >
     <template #activator="{props}">
       <v-btn
-        icon
-
+        :icon="mdiBell"
+        size="small"
         color="primary"
-        class="mx-1"
+        class="mx-2"
         v-bind="props"
       >
         <v-icon :icon="mdiBell" />
@@ -29,7 +30,7 @@ const { topics, sender } = defineProps({
   sender: { type: String, required: true }
 })
 
-const notifySubscribeUrl = computed(() => `${$sitePath}/events/embed/subscribe?key=${encodeURIComponent(topics.map(t => t.key).join(','))}&title=${encodeURIComponent(topics.map(t => t.title).join(','))}&sender=${encodeURIComponent(sender)}&register=false`)
+const notifySubscribeUrl = computed(() => `${$sitePath}/notify/embed/subscribe?key=${encodeURIComponent(topics.map(t => t.key).join(','))}&title=${encodeURIComponent(topics.map(t => t.title).join(','))}&sender=${encodeURIComponent(sender)}&register=false`)
 </script>
 
 <style>

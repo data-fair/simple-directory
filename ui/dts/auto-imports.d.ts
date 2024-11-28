@@ -87,6 +87,7 @@ declare global {
   const mdiMonitorCellphoneStar: typeof import('@mdi/js')['mdiMonitorCellphoneStar']
   const mdiPencil: typeof import('@mdi/js')['mdiPencil']
   const mdiPlus: typeof import('@mdi/js')['mdiPlus']
+  const mdiPlusThick: typeof import('@mdi/js')['mdiPlusThick']
   const mdiRefresh: typeof import('@mdi/js')['mdiRefresh']
   const mdiRss: typeof import('@mdi/js')['mdiRss']
   const mdiSend: typeof import('@mdi/js')['mdiSend']

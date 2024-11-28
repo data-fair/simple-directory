@@ -66,6 +66,7 @@
         </v-btn>
         <v-btn
           color="warning"
+          variant="flat"
           @click="confirmInvitation()"
         >
           {{ $t('common.confirmOk') }}
