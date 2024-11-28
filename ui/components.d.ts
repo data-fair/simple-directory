@@ -18,6 +18,7 @@ declare module 'vue' {
     DeleteDepartmentMenu: typeof import('./src/components/delete-department-menu.vue')['default']
     DeleteMemberMenu: typeof import('./src/components/delete-member-menu.vue')['default']
     DeletePartnerMenu: typeof import('./src/components/delete-partner-menu.vue')['default']
+    DialogTest: typeof import('./src/components/dialog-test.vue')['default']
     EditDepartmentMenu: typeof import('./src/components/edit-department-menu.vue')['default']
     EditDepartmentsMenu: typeof import('./src/components/edit-departments-menu.vue')['default']
     EditMemberMenu: typeof import('./src/components/edit-member-menu.vue')['default']
@@ -36,7 +37,10 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     SitePatch: typeof import('./src/components/site-patch.vue')['default']
     SitePost: typeof import('./src/components/site-post.vue')['default']
+    VjsfPatchReqBody: typeof import('./src/components/vjsf/vjsf-patch-req-body.vue')['default']
+    VjsfPostReqBody: typeof import('./src/components/vjsf/vjsf-post-req-body.vue')['default']
     VjsfSitePatchBody: typeof import('./src/components/vjsf/vjsf-site-patch-body.vue')['default']
+    VjsfSitePost: typeof import('./src/components/vjsf/vjsf-site-post.vue')['default']
     VjsfSitePostBody: typeof import('./src/components/vjsf/vjsf-site-post-body.vue')['default']
   }
 }

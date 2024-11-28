@@ -70,7 +70,8 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@data-fair/lib-types-builder": "^1.6.0"
+    "@data-fair/lib-types-builder": "^1.6.0",
+    "@koumoul/vjsf-compiler": "^0.2.2"
   },
   "relativeDependencies": {
     "@data-fair/lib-vuetify": "../lib/packages/vuetify"

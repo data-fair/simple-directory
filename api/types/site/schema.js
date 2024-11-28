@@ -58,7 +58,8 @@ export default {
       properties: {
         primaryColor: {
           type: 'string',
-          'x-display': 'color-picker'
+          title: 'Primary color',
+          layout: 'color-picker'
         }
       }
     },

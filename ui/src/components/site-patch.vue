@@ -45,7 +45,9 @@
         </v-btn>
         <v-btn
           color="primary"
-          :disabled="!valid"
+          variant="flat"
+          :disabled="patchSite.loading.value"
+          :loading="patchSite.loading.value"
           @click="confirmEdit"
         >
           {{ $t('common.confirmOk') }}
@@ -56,8 +58,9 @@
 </template>
 
 <script setup lang="ts">
+import type { VForm } from 'vuetify/components'
 import Vjsf from '@koumoul/vjsf'
-import { resolvedSchema } from '../../../api/doc/sites/patch-req-body/index.ts'
+import resolvedSchema from '../../../api/doc/sites/patch-req-body/.type/resolved-schema.json'
 
 const { site, sites } = defineProps({
   site: { type: Object as () => Site, required: true },
@@ -71,12 +74,13 @@ const menu = ref(false)
 const patch = ref()
 const valid = ref(false)
 
+const form = ref<InstanceType<typeof VForm>>()
+
 const vjsfOptions = computed(() => ({
   context: {
     otherSites: sites.filter(s => s._id !== site._id).map(site => site.host),
     otherSitesProviders: sites.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {} as Record<string, string[]>)
-  },
-  evalMethod: 'newFunction'
+  }
 }))
 
 watch(menu, () => {
@@ -85,8 +89,10 @@ watch(menu, () => {
 })
 
 const confirmEdit = async () => {
+  await form.value?.validate()
+  if (!valid.value) return
   menu.value = false
-  await patchSite(patch.value)
+  await patchSite.execute(site._id, patch.value)
   emit('change')
 }
 

@@ -18,20 +18,19 @@
     <v-card
       v-if="site"
       data-iframe-height
-      width="500"
     >
       <v-card-title>
         {{ $t('pages.admin.sites.createSite') }}
       </v-card-title>
       <v-card-text v-if="menu">
         <v-form
+          ref="form"
           v-model="valid"
-          @submit.prevent
         >
           <vjsf
             v-model="site"
             :schema="resolvedSchema"
-            :options="{density: 'comfortable', context: {sdUrl: $sdUrl}}"
+            :options="vjsfOptions"
           />
         </v-form>
       </v-card-text>
@@ -45,7 +44,9 @@
         </v-btn>
         <v-btn
           color="primary"
-          :disabled="!valid"
+          variant="flat"
+          :disabled="postSite.loading.value"
+          :loading="postSite.loading.value"
           @click="confirmPost"
         >
           {{ $t('common.confirmOk') }}
@@ -57,20 +58,24 @@
 
 <script setup lang="ts">
 import Vjsf from '@koumoul/vjsf'
-import { resolvedSchema } from '../../../api/doc/sites/post-req-body/index.ts'
-
+import resolvedSchema from '../../../api/doc/sites/post-req-body/.type/resolved-schema.json'
+import type { VForm } from 'vuetify/components'
 const emit = defineEmits(['created'])
 
 const menu = ref(false)
 const site = ref<any>({})
-const org = ref<any>(null)
 const valid = ref(false)
+
+const form = ref<InstanceType<typeof VForm>>()
+const vjsfOptions = { density: 'comfortable', context: { sdUrl: $sdUrl } }
 
 const { postSite } = useStore()
 
 const confirmPost = async () => {
+  await form.value?.validate()
+  if (!valid.value) return
+  await postSite.execute(site.value)
   menu.value = false
-  await postSite({ ...site.value, owner: { type: 'organization', ...org.value } })
   emit('created')
 }
 

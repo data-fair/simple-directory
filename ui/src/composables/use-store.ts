@@ -1,6 +1,6 @@
 import type { User, PublicAuthProvider, Organization, SitePublic } from '../../../api/types/index.ts'
-import { PostSiteReq } from '../../../api/doc/sites/post-req-body/index.ts'
-import { PatchSiteReq } from '../../../api/doc/sites/patch-req'
+import { SitePost } from '../../../api/doc/sites/post-req-body/index.ts'
+import { SitePatch } from '../../../api/doc/sites/patch-req-body/index.ts'
 
 function createStore () {
   const { sendUiNotif } = useUiNotif()
@@ -13,18 +13,18 @@ function createStore () {
   const authProvidersFetch = useFetch<PublicAuthProvider[]>(`${$apiPath}/auth/providers`, { watch: false })
   const sitesFetch = useFetch<{ count: number, results: SitePublic[] }>(`${$apiPath}/sites`, { watch: false })
 
-  const patchOrganization = withUiNotif(async (id: string, patch: Partial<Organization>, msg: string) => {
+  const patchOrganization = useAsyncAction(async (id: string, patch: Partial<Organization>, msg: string) => {
     await $fetch(`organizations/${id}`, { method: 'PATCH', body: patch })
     await userDetailsFetch.refresh()
     sendUiNotif(msg)
   })
 
-  const postSite = withUiNotif(async (site: PostSiteReq['body']) => {
+  const postSite = useAsyncAction(async (site: SitePost) => {
     await $fetch('sites', { method: 'POST', body: site })
   })
 
-  const patchSite = withUiNotif(async (patch: PatchSiteReq['body']) => {
-    await $fetch('sites', { method: 'PATCH', body: patch })
+  const patchSite = useAsyncAction(async (id: string, patch: SitePatch) => {
+    await $fetch(`sites/${id}`, { method: 'PATCH', body: patch })
   })
 
   const host = window.location.host

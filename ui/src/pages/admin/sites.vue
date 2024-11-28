@@ -3,7 +3,7 @@
     fluid
     data-iframe-height
   >
-    <v-row class="mt-3 mx-0">
+    <v-row class="my-3 mx-0">
       <h2 class="text-h6 mb-3">
         {{ $t('common.sites') }} <span v-if="sites.data.value">({{ $n(sites.data.value.count) }})</span>
         <site-post @created="sites.refresh()" />
@@ -15,8 +15,9 @@
       :headers="headers"
       :items="sites.data.value?.results"
       :loading="sites.loading.value"
-      class="elevation-1"
       item-key="id"
+      class="border-sm"
+      density="compact"
       hide-default-footer
       :items-per-page="10000"
     >
