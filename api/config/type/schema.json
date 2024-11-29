@@ -191,6 +191,14 @@
           "properties": {
             "readonly": {
               "type": "boolean"
+            },
+            "url": {
+              "type": "string",
+              "deprecated": true
+            },
+            "options": {
+              "type": "object",
+              "deprecated": true
             }
           }
         },

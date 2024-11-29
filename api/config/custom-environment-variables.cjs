@@ -46,7 +46,9 @@ module.exports = {
       organizations: 'STORAGE_FILE_ORGS'
     },
     mongo: {
-      readonly: 'STORAGE_MONGO_READONLY'
+      readonly: 'STORAGE_MONGO_READONLY',
+      url: 'STORAGE_MONGO_URL',
+      options: jsonEnv('STORAGE_MONGO_CLIENT_OPTIONS')
     },
     ldap: {
       url: 'STORAGE_LDAP_URL',

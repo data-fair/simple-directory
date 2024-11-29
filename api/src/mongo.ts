@@ -65,7 +65,10 @@ export class SdMongo {
   }
 
   init = async () => {
-    await mongo.connect(config.mongo.url, config.mongo.options)
+    // manage retro-compatibility with STORAGE_MONGO_URL and STORAGE_MONGO_CLIENT_OPTIONS
+    const url = config.storage.mongo.url ?? config.mongo.url
+    const options = config.storage.mongo.options ?? config.mongo.options
+    await mongo.connect(url, options)
     await mongo.configure({
       users: {
         email_1: [
