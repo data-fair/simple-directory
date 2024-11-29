@@ -16,7 +16,13 @@ import { commonjsDeps } from '@koumoul/vjsf/utils/build.js'
 export default defineConfig({
   base: '/simple-directory',
   optimizeDeps: { include: commonjsDeps },
-
+  build: {
+    rollupOptions: {
+      output: {
+        experimentalMinChunkSize: 2000
+      }
+    }
+  },
   resolve: {
     alias: {
       '~': path.resolve(__dirname, 'src/')

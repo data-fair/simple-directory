@@ -1,5 +1,5 @@
 import config, { jwtDurations } from './config.ts'
-import { publicMessages } from '../i18n/index.ts'
+import { publicMessages } from '../i18n/messages.ts'
 
 export const uiConfig = {
   publicMessages,

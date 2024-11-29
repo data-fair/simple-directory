@@ -1,6 +1,8 @@
 ##########################
 FROM node:22.11.0-alpine3.20 AS base
 
+RUN npm install -g npm@10.9.1
+
 WORKDIR /app
 ENV NODE_ENV=production
 
@@ -45,7 +47,10 @@ FROM installer AS ui
 RUN npm i --no-save @rollup/rollup-linux-x64-musl
 COPY --from=types /app/api/config api/config
 COPY --from=types /app/api/types api/types
+COPY --from=types /app/api/doc api/doc
+ADD /api/i18n api/i18n
 ADD /api/src/config.ts api/src/config.ts
+ADD /api/src/ui-config.ts api/src/ui-config.ts
 ADD /ui ui
 RUN npm -w ui run build
 
