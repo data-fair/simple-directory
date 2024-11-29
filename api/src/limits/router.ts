@@ -1,6 +1,6 @@
 import config from '#config'
 import { Router, type RequestHandler } from 'express'
-import { reqUser, reqSessionAuthenticated, assertAccountRole, httpError, type Account } from '@data-fair/lib-express'
+import { reqUser, reqSessionAuthenticated, assertAccountRole, httpError } from '@data-fair/lib-express'
 import * as limitsSchema from '#types/limits/index.ts'
 import { getLimits } from '#services'
 import mongo from '#mongo'

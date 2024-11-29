@@ -1,5 +1,5 @@
 import type { UserWritable, User, Organization, Member, Partner, Site, ServerSession } from '#types'
-import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersParams, FindAccountsParams } from './interface.ts'
+import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersParams } from './interface.ts'
 import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
 import config from '#config'

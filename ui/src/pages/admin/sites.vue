@@ -76,18 +76,19 @@
           </td>
           <td>
             <site-patch
+              v-if="sites.data.value"
               :site="props.item"
-              :sites="sites.data.value?.results"
+              :sites="sites.data.value.results"
               @change="sites.refresh()"
             />
             <confirm-menu
               yes-color="warning"
               @confirm="deleteSite(props.item)"
             >
-              <template #activator="{props}">
+              <template #activator="{props: activatorProps}">
                 <v-btn
                   :title="$t('common.delete')"
-                  v-bind="props"
+                  v-bind="activatorProps"
                   variant="text"
                   icon
                   color="warning"
