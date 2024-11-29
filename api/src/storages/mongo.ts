@@ -75,14 +75,15 @@ class MongodbStorage implements SdStorage {
     if (user?.password) return user.password as Password
   }
 
-  async createUser (user: UserWritable, byUser: { id: string, name: string }) {
+  async createUser (user: UserWritable, byUser: { id: string, name: string }, host?: string) {
     const name = userName(user)
     byUser = byUser || { ...user, name }
     const date = new Date().toISOString()
     const fullUser: UserInDb = {
       ...cloneWithId(user),
       organizations: user.organizations ?? [],
-      created: { id: byUser.id, name: byUser.name, date },
+      // TODO: replace host by siteUrl ?
+      created: { id: byUser.id, name: byUser.name, date, host },
       updated: { id: byUser.id, name: byUser.name, date },
       name
     }

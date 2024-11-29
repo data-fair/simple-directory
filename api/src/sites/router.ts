@@ -45,6 +45,8 @@ router.get('', async (req, res, next) => {
 router.post('', async (req, res, next) => {
   await checkSecret(req)
   const site = (await import('#doc/sites/post-req-body/index.ts')).returnValid(req.body, { name: 'req.body' })
+  if (site.path?.endsWith('/')) site.path = site.path.slice(0, -1)
+  if (site.path === '') delete site.path
   const patchedSite = await patchSite({ ...site, _id: site._id ?? nanoid() }, true)
   res.send(patchedSite)
 })

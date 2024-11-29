@@ -3,7 +3,7 @@ import SiteSchema from '#types/site/schema.js'
 
 const schema = jsonSchema(SiteSchema)
   .removeReadonlyProperties()
-  .pickProperties(['_id', 'owner', 'host', 'theme', 'logo'])
+  .pickProperties(['_id', 'owner', 'host', 'path', 'theme', 'logo'])
   .removeFromRequired(['_id'])
   .appendTitle(' post')
   .schema

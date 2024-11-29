@@ -13,7 +13,18 @@ export default {
     'organizations'
   ],
   properties: {
-    created: { $ref: 'https://github.com/data-fair/simple-directory/partial#/$defs/modifier' },
+    created: {
+      allOf: [
+        { $ref: 'https://github.com/data-fair/simple-directory/partial#/$defs/modifier' },
+        {
+          properties: {
+            host: {
+              type: 'string'
+            }
+          }
+        }
+      ]
+    },
     updated: { $ref: 'https://github.com/data-fair/simple-directory/partial#/$defs/modifier' },
     id: {
       description: 'The unique id of the user',
