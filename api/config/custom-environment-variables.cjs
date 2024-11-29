@@ -183,7 +183,7 @@ module.exports = {
   cleanup: {
     cron: 'CLEANUP_CRON',
     deleteInactive: 'CLEANUP_DELETE_INACTIVE',
-    deleteInactiveDelay: 'CLEANUP_DELETE_INACTIVE_DELAY'
+    deleteInactiveDelay: jsonEnv('CLEANUP_DELETE_INACTIVE_DELAY')
   },
   alwaysAcceptInvitation: 'ALWAYS_ACCEPT_INVITATION',
   observer: {
