@@ -1,13 +1,16 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { type SitePublic } from '#types'
 import { Router, type Request } from 'express'
 import config from '#config'
-import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost } from '@data-fair/lib-express'
+import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost, reqSitePath } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
 import { findAllSites, findOwnerSites, patchSite, deleteSite, getSiteColors } from './service.ts'
 import { reqSite } from '#services'
 import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
 import { getColorsWarnings } from '../utils/color.ts'
+import microTemplate from '@data-fair/lib-utils/micro-template.js'
 
 const router = Router()
 export default router
@@ -64,6 +67,8 @@ router.delete('/:id', async (req, res, next) => {
   res.status(204).send()
 })
 
+const webfontsCssRaw = readFileSync(resolve(import.meta.dirname, '../../resources/webfonts.css'), 'utf8')
+const webfontsCache: Record<string, string> = {}
 router.get('/_public', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
 
@@ -73,7 +78,7 @@ router.get('/_public', async (req, res, next) => {
       main: true,
       host: reqHost(req),
       colors: config.theme.colors,
-      authMode: 'onlyLocal'
+      authMode: 'onlyLocal',
     }
     res.send(sitePublic)
   } else {
@@ -85,6 +90,15 @@ router.get('/_public', async (req, res, next) => {
     }
     res.send(sitePublic)
   }
+})
+
+router.get('/_webfonts.css', async (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=60')
+
+  const sitePath = reqSitePath(req)
+  webfontsCache[sitePath] = webfontsCache[sitePath] ?? microTemplate(webfontsCssRaw, { SITE_PATH: sitePath })
+  res.contentType('css')
+  res.send(webfontsCache[sitePath])
 })
 
 router.get('/:id/_theme_warnings', async (req, res, next) => {
