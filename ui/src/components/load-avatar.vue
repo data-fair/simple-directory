@@ -57,7 +57,7 @@
 <script setup lang="ts">
 import VueCropper from 'vue-cropperjs'
 import 'cropperjs/dist/cropper.css'
-import type { Account } from '@data-fair/lib-vue/session'
+import type { AccountKeys } from '@data-fair/lib-vue/session'
 
 // see https://stackoverflow.com/a/5100158
 function dataURItoBlob (dataURI: string) {
@@ -78,7 +78,7 @@ function dataURItoBlob (dataURI: string) {
 }
 
 const { owner, disabled, hideValidate } = defineProps({
-  owner: { type: Object as () => Account, default: null },
+  owner: { type: Object as () => AccountKeys, default: null },
   disabled: { type: Boolean, default: false },
   hideValidate: { type: Boolean, default: false }
 })
@@ -96,7 +96,7 @@ const avatarUrl = computed(() => {
   return url
 })
 
-const change = (event: Event) => {
+const change = () => {
   if (!file.value) {
     imgSrc.value = ''
     return
@@ -119,6 +119,8 @@ const validate = withUiNotif(async () => {
   loading.value = false
   file.value = null
 })
+
+defineExpose({ validate })
 
 const getTimestamp = () => new Date().getTime()
 </script>

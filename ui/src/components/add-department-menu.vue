@@ -50,6 +50,8 @@
         </v-btn>
         <v-btn
           color="primary"
+          variant="flat"
+          :disabled="patchOrganization.loading.value"
           @click="confirmCreate"
         >
           {{ $t('common.confirmOk') }}
@@ -85,12 +87,11 @@ watch(menu, () => {
 
 const confirmCreate = async () => {
   await createForm.value?.validate()
-  if (createForm.value?.isValid) {
-    menu.value = false
-    const departments = (orga.departments ?? []).concat([editDepartment.value])
-    await patchOrganization(orga.id, { departments }, i18n.t('common.modificationOk'))
-    emit('change')
-  }
+  if (!createForm.value?.isValid) return
+  menu.value = false
+  const departments = (orga.departments ?? []).concat([editDepartment.value])
+  await patchOrganization.execute(orga.id, { departments }, i18n.t('common.modificationOk'))
+  emit('change')
 }
 
 </script>

@@ -78,7 +78,7 @@
 <script setup lang="ts">
 const { orga, department, member } = defineProps({
   orga: { type: Object as () => Organization, required: true },
-  department: { type: Object, required: true },
+  department: { type: String, default: null },
   member: { type: Object as () => Member, required: true }
 })
 defineEmits({ save: (_editMember: Member) => true })

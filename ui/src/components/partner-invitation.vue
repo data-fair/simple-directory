@@ -117,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { type OrganizationMembership } from '@data-fair/lib-common-types/session/index.js'
+import { type OrganizationMembership } from '@data-fair/lib-vue/session'
 import { type Organization, type ShortenedPartnerInvitation } from '#api/types'
 import { jwtDecode } from 'jwt-decode'
 

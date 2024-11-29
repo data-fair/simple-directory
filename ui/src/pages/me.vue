@@ -29,7 +29,7 @@
 
       <load-avatar
         v-if="userDetailsFetch.data.value && $uiConfig.avatars.users"
-        :owner="{type: 'user', id: user.id, name: user.name}"
+        :owner="{type: 'user', id: user.id}"
         :disabled="readonly"
       />
 

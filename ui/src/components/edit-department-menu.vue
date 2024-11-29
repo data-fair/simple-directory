@@ -26,7 +26,7 @@
         <p>{{ $t('common.id') }} = {{ department.id }}</p>
         <load-avatar
           v-if="orga && $uiConfig.avatars.orgs"
-          :ref="loadAvatar"
+          ref="loadAvatar"
           :owner="{type: 'organization', id: orga.id, department: department.id}"
           :disabled="$uiConfig.readonly"
           :hide-validate="true"
@@ -74,7 +74,7 @@ const { t } = useI18n()
 
 const menu = ref(false)
 const editDepartment = ref<Department>()
-const loadAvatar = ref<any>()
+const loadAvatar = ref<typeof import('./load-avatar.vue')['default']>()
 
 watch(menu, () => {
   if (!menu.value) return
@@ -84,7 +84,7 @@ watch(menu, () => {
 const confirmEdit = withUiNotif(async () => {
   menu.value = false
   const departments = (orga.departments ?? []).map(d => d.id === editDepartment.value?.id ? editDepartment.value : d)
-  await patchOrganization(orga.id, { departments }, t('common.modificationOk'))
+  await patchOrganization.execute(orga.id, { departments }, t('common.modificationOk'))
   await loadAvatar.value?.validate()
   emit('change')
 })

@@ -52,7 +52,7 @@ module.exports = {
       baseDN: 'dc=example,dc=org',
       readonly: true,
       // support storing overwritten properties in mongodb
-      overwrite: ['members', 'departments'],
+      overwrite: ['members', 'departments', 'partners'],
       cacheMS: 1000 * 60 * 5, // 5 minutes
       // map entities in ldap to SD users
       users: {

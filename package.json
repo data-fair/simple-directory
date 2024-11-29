@@ -67,7 +67,7 @@
     "neostandard": "^0.11.5",
     "oauth2-mock-server": "^7.1.2",
     "tough-cookie": "^5.0.0",
-    "typescript": "^5.5.4"
+    "typescript": "~5.6.3"
   },
   "dependencies": {
     "@data-fair/lib-types-builder": "^1.6.0",

@@ -11,18 +11,16 @@
           style="top:-2px"
           :icon="mdiGraph"
         />
-        {{ orga.partnerLabel || $t('common.partners') }} <span>({{ $n(orga.partners?.length ?? 0) }})</span>
+        {{ $t('common.partners') }} <span>({{ $n(orga.partners?.length ?? 0) }})</span>
         <add-partner-menu
           v-if="writablePartners"
           :orga="orga"
-          :partner-label="partnerLabel"
           @change="$emit('change')"
         />
         <!--<edit-partners-menu
           v-if="writablePartners"
           :orga="orga"
           :is-admin-orga="isAdminOrga"
-          :partner-label="partnerLabel"
           @change="$emit('change')"
         />-->
       </h2>
@@ -89,7 +87,6 @@
             <delete-partner-menu
               :orga="orga"
               :partner="partner"
-              :partner-label="partnerLabel"
               @change="$emit('change')"
             />
           </v-list-item-action>
@@ -127,15 +124,12 @@ const { isAdminOrga, orga } = defineProps({
 })
 defineEmits(['change'])
 
-const { t } = useI18n()
-
 const pageSize = 10
 const page = ref(1)
 const q = ref('')
 const validQ = ref('')
 
-const writablePartners = computed(() => isAdminOrga && (!$uiConfig.readonly || $uiConfig.overwrite.includes('partners')))
-const partnerLabel = computed(() => orga.partnerLabel || t('common.partner'))
+const writablePartners = computed(() => isAdminOrga && (!$uiConfig.readonly || $uiConfig.orgStorageOverwrite?.includes('partners')))
 const filteredPartners = computed(() => {
   if (!validQ.value) return orga.partners ?? []
   else return (orga.partners ?? []).filter(d => (d.id && d.id.includes(validQ.value)) || (d.id && d.id.includes(validQ.value)))

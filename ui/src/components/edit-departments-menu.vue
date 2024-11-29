@@ -59,6 +59,7 @@
         <v-btn
           color="primary"
           variant="flat"
+          :disabled="patchOrganization.loading.value"
           @click="confirmCreate"
         >
           {{ $t('common.confirmOk') }}
@@ -97,7 +98,7 @@ const confirmCreate = withUiNotif(async () => {
   if (createForm.value?.isValid) {
     menu.value = false
     const departments = (orga.departments ?? []).concat([editDepartment.value])
-    await patchOrganization(orga.id, { departments }, t('common.modificationOk'))
+    await patchOrganization.execute(orga.id, { departments }, t('common.modificationOk'))
     emit('change')
   }
 })

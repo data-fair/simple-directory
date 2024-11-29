@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-v-html -->
 <template lang="html">
   <v-container
-    v-if="orga.data.value"
+    v-if="orga"
     data-iframe-height
     style="max-width:600px;"
   >
@@ -12,26 +12,25 @@
         style="top:-2px"
         :icon="mdiAccountGroup"
       />
-      {{ $t('common.organization') + ' ' + orga.data.value.name }}
+      {{ $t('common.organization') + ' ' + orga.name }}
     </h2>
 
     <p
-      v-if="orga.data.value.created"
+      v-if="orga.created"
       class="text-subtitle-2"
     >
-      {{ $t('common.createdPhrase', {name: orga.data.value.created.name, date: $d(new Date(orga.data.value.created.date))}) }}
+      {{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}
     </p>
     <v-form
       ref="form"
-      @submit="save"
     >
       <load-avatar
-        v-if="orga.data.value && $uiConfig.avatars.orgs"
-        :owner="{...orga.data.value, type: 'organization'}"
+        v-if="$uiConfig.avatars.orgs"
+        :owner="{...orga, type: 'organization'}"
         :disabled="$uiConfig.readonly"
       />
       <v-text-field
-        v-model="orga.data.value.name"
+        v-model="orga.name"
         :label="$t('common.name')"
         :rules="[v => !!v || '', v => v.length < 150 || $t('common.tooLong')]"
         :disabled="orgRole !== 'admin' || $uiConfig.readonly"
@@ -42,7 +41,7 @@
         autocomplete="off"
       />
       <v-textarea
-        v-model="orga.data.value.description"
+        v-model="orga.description"
         :label="$t('common.description')"
         :disabled="orgRole !== 'admin' || $uiConfig.readonly"
         name="description"
@@ -52,7 +51,7 @@
       />
       <v-text-field
         v-if="$uiConfig.manageDepartments && $uiConfig.manageDepartmentLabel"
-        v-model="orga.data.value.departmentLabel"
+        v-model="orga.departmentLabel"
         :label="$t('pages.organization.departmentLabelTitle')"
         :disabled="orgRole !== 'admin' || $uiConfig.readonly"
         name="departmentLabel"
@@ -76,8 +75,8 @@
         </template>
       </v-text-field>
       <v-select
-        :model-value="orga.data.value['2FA']?.roles"
-        :items="orga.data.value.roles"
+        :model-value="orga['2FA']?.roles"
+        :items="orga.roles"
         :messages="[$t('pages.organization.2FARolesMsg')]"
         :rules="[v => !!v || '']"
         :placeholder="$t('pages.organization.2FARoles')"
@@ -92,6 +91,8 @@
         <v-spacer />
         <v-btn
           color="primary"
+          variant="flat"
+          :disabled="patchOrganization.loading.value"
           @click="save"
         >
           {{ $t('common.save') }}
@@ -103,10 +104,10 @@
       v-if="$uiConfig.manageDepartments"
       :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
-      @change="orga.refresh()"
+      @change="fetchOrga.refresh()"
     />
     <organization-members
-      :orga="orga.data.value"
+      :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
       :nb-members-limits="limits.data.value?.store_nb_members"
       :org-storage="'false'"
@@ -114,31 +115,31 @@
     />
 
     <organization-storage
-      v-if="(session.user.value?.adminMode && $uiConfig.perOrgStorageTypes.length) || orga.data.value.orgStorage?.active"
+      v-if="(session.user.value?.adminMode && $uiConfig.perOrgStorageTypes.length) || orga.orgStorage?.active"
       :orga="orga"
     />
 
     <organization-members
-      v-if="orga.data.value.orgStorage?.active"
-      :orga="orga.data.value"
+      v-if="orga.orgStorage?.active"
+      :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
       :nb-members-limits="limits.data.value?.store_nb_members"
       :org-storage="'true'"
-      :readonly="orga.data.value.orgStorage.readonly"
+      :readonly="orga.orgStorage.readonly"
     />
 
     <organization-partners
       v-if="$uiConfig.managePartners && mainPublicUrl.host === host"
       :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
-      @change="orga.refresh()"
+      @change="fetchOrga.refresh()"
     />
   </v-container>
 </template>
 
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
-import { getAccountRole } from '@data-fair/lib-common-types/session/index.js'
+import { getAccountRole } from '@data-fair/lib-vue/session'
 
 const session = useSession()
 const orgId = useRoute<'/organization/[id]/'>().params.id
@@ -146,24 +147,25 @@ const orgId = useRoute<'/organization/[id]/'>().params.id
 const { patchOrganization, host, mainPublicUrl } = useStore()
 const { t } = useI18n()
 
-const orga = useFetch<Organization>($apiPath + `/organizations/${orgId}`)
+const fetchOrga = useFetch<Organization>($apiPath + `/organizations/${orgId}`)
+const orga = ref<Organization | null>(null)
+watch(fetchOrga.data, (freshOrga) => { orga.value = freshOrga })
 const orgRole = computed(() => getAccountRole(session.state, { type: 'organization', id: orgId }, { acceptDepAsRoot: $uiConfig.depAdminIsOrgAdmin }))
 const limits = useFetch<Limits>($apiPath + `/limits/organization/${orgId}`, { watch: orgRole.value === 'admin' })
 
 const form = ref<InstanceType<typeof VForm>>()
-const save = async (e: Event) => {
-  if (e.preventDefault) e.preventDefault()
+const save = async () => {
   await form.value?.validate()
   if (!form.value?.isValid) return
-  if (!orga.data.value) return
-  const patch: any = { name: orga.data.value.name, description: orga.data.value.description, '2FA': orga.data.value['2FA'] }
-  if ($uiConfig.manageDepartments) patch.departmentLabel = orga.data.value.departmentLabel
-  patchOrganization(orgId, patch, t('common.modificationOk'))
+  if (!orga.value) return
+  const patch: any = { name: orga.value.name, description: orga.value.description, '2FA': orga.value['2FA'] }
+  if ($uiConfig.manageDepartments) patch.departmentLabel = orga.value.departmentLabel
+  patchOrganization.execute(orgId, patch, t('common.modificationOk'))
 }
 const set2FARoles = (roles: string[]) => {
-  if (!orga.data.value) return
-  orga.data.value['2FA'] = orga.data.value['2FA'] ?? {}
-  orga.data.value['2FA'].roles = roles
+  if (!fetchOrga.data.value) return
+  fetchOrga.data.value['2FA'] = fetchOrga.data.value['2FA'] ?? {}
+  fetchOrga.data.value['2FA'].roles = roles
 }
 </script>
 

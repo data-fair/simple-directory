@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { getAccountRole } from '@data-fair/lib-common-types/session/index.js'
+import { getAccountRole } from '@data-fair/lib-vue/session'
 
 const session = useSession()
 const route = useRoute<'/organization/[id]/department/[departmentId]'>()

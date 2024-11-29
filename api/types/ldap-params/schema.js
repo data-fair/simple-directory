@@ -15,7 +15,7 @@ export default {
       type: 'array',
       items: {
         type: 'string',
-        enum: ['members', 'departments', 'organizations']
+        enum: ['members', 'departments', 'organizations', 'partners']
       }
     },
     cacheMS: {

@@ -732,6 +732,7 @@
           <v-window-item value="changeHost">
             <v-card-text>
               <change-host
+                v-if="actionPayload"
                 :user="actionPayload"
                 :action-token="actionToken"
                 @go-to="(newStep: string) => step = newStep"

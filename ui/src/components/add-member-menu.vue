@@ -74,9 +74,9 @@
             density="compact"
           />
           <v-select
-            v-if="$uiConfig.manageSites && redirects && redirects.filter(r => r.value !== defaultRedirect).length"
+            v-if="$uiConfig.manageSites && redirects && redirects.filter(r => r.value !== defaultRedirect?.value).length"
             v-model="invitation.redirect"
-            :disabled="mainHost !== host"
+            :disabled="mainPublicUrl.host !== host"
             label="Site de redirection"
             :items="redirects"
             name="host"

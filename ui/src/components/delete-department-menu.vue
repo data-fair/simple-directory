@@ -49,7 +49,7 @@
           {{ $t('common.confirmCancel') }}
         </v-btn>
         <v-btn
-          :disabled="!members || !!members.count"
+          :disabled="!members || !!members.count || patchOrganization.loading.value"
           color="warning"
           variant="flat"
           @click="confirmDelete"
@@ -98,7 +98,7 @@ const fetchMembers = withUiNotif(async () => {
 const confirmDelete = withUiNotif(async () => {
   menu.value = false
   const departments = (orga.departments ?? []).filter(d => d.id !== department.id)
-  await patchOrganization(orga.id, { departments }, t('common.modificationOk'))
+  await patchOrganization.execute(orga.id, { departments }, t('common.modificationOk'))
   emit('change')
 })
 </script>
