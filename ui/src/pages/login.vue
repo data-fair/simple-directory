@@ -15,6 +15,7 @@
           <img
             v-if="logoUrl"
             :src="logoUrl"
+            style="max-width:250px;max-height:120px;"
             @alt="$t('pages.login.siteLogo')"
           >
           <logo
