@@ -29,7 +29,10 @@
         rounded="xl"
         elevation="3"
       >
-        <v-card-title class="text-subtitle-2">
+        <v-card-title
+          class="text-subtitle-2"
+          style="white-space: normal;"
+        >
           <h1 :class="{'mb-0': true, 'text-admin': adminMode}">
             {{ stepsTitles[step] || email }}
           </h1>
@@ -625,12 +628,12 @@
                 {{ recovery }}
                 <v-btn
                   :title="$t('pages.login.recovery2FADownload')"
-                  icon
+                  variant="text"
                   class="mx-0"
+                  color="warning"
+                  :icon="mdiDownload"
                   @click="downloadRecovery"
-                >
-                  <v-icon :icon="mdiDownload" />
-                </v-btn>
+                />
               </p>
             </v-card-text>
 
