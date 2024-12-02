@@ -37,8 +37,8 @@ function isOrgAdmin (req: Request) {
 }
 
 // Either a super admin, or a member of the current organization
-function isMember (req: Request) {
-  return !!getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: true })
+function isMember (req: Request, allAccounts?: boolean) {
+  return !!getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: true, allAccounts })
 }
 
 // Get the list of organizations
@@ -76,7 +76,7 @@ router.get('', async (req, res, next) => {
 router.get('/:organizationId', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send()
   // Only allowed for the organizations that the user belongs to
-  if (!isMember(req)) {
+  if (!isMember(req, true)) {
     throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   }
   const orga = await storages.globalStorage.getOrganization(req.params.organizationId)

@@ -53,7 +53,10 @@
     "id": "dhannan8",
     "firstName": "Danielle",
     "lastName": "Hannan",
-    "email": "dhannan8@4shared.com"
+    "email": "dhannan8@4shared.com",
+    "password": {
+      "clear": "TestPasswd01"
+    }
   },
   {
     "id": "icarlens9",

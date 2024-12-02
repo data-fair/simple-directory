@@ -30,6 +30,18 @@ describe('file storage', () => {
     assert.equal(res.data.count, 7)
   })
 
+  it('Get organization info as a department member', async () => {
+    const ax = await axiosAuth({ email: 'dhannan8@4shared.com' })
+    const res = await ax.get('/api/organizations/3sSi7xDIK')
+    assert.equal(res.status, 200)
+  })
+
+  it('Get organization info as a member', async () => {
+    const ax = await axiosAuth({ email: 'dmeadus0@answers.com' })
+    const res = await ax.get('/api/organizations/3sSi7xDIK')
+    assert.equal(res.status, 200)
+  })
+
   it('Get organization roles', async () => {
     const ax = await axiosAuth({ email: 'dmeadus0@answers.com', org: '3sSi7xDIK' })
     const res = await ax.get('/api/organizations/3sSi7xDIK/roles')

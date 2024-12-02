@@ -41,6 +41,14 @@
     }, {
       "id": "dmeadus0",
       "role": "user"
+    }, {
+      "id": "dhannan8",
+      "role": "admin",
+      "department": "dep1"
+    }],
+    "departments": [{
+      "id": "dep1",
+      "name": "Dep 1"
     }]
   },
   {
