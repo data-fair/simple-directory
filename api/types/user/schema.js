@@ -20,6 +20,9 @@ export default {
           properties: {
             host: {
               type: 'string'
+            },
+            path: {
+              type: 'string'
             }
           }
         }
@@ -40,6 +43,10 @@ export default {
     host: {
       description: 'Site where the user created his account (leave empty if it is the main public site)',
       type: 'string'
+    },
+    path: {
+      type: 'string',
+      title: 'Path prefix of the site where the user was created'
     },
     firstName: {
       description: 'First name of the user',

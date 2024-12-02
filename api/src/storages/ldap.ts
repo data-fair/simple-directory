@@ -1,6 +1,6 @@
 import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
 import config from '#config'
-import type { LdapParams, ServerSession } from '#types'
+import type { LdapParams, ServerSession, Site } from '#types'
 import type { Organization, Partner, User, UserWritable } from '#types'
 import mongo from '#mongo'
 import memoize from 'memoizee'
@@ -597,7 +597,7 @@ export class LdapStorage implements SdStorage {
     })
   }
 
-  createUser (user: UserWritable, byUser?: { id: string; name: string }, host?: string): Promise<User> {
+  createUser (user: UserWritable, byUser?: { id: string; name: string }, site?: Site): Promise<User> {
     throw new Error('Method not implemented.')
   }
 

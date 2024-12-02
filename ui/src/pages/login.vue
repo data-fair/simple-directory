@@ -802,6 +802,12 @@ let depId = reactiveSearchParams.dep as string | undefined
 const readonly = $uiConfig.readonly || useBooleanSearchParam('readonly').value
 const redirect = reactiveSearchParams.redirect
 
+if (redirect && !redirect.startsWith($siteUrl)) {
+  // we must be in "otherSite" auth mode
+  $fetch<string>('/api/auth/site_redirect', { method: 'POST', body: { redirect } })
+    .then((res) => { window.location.href = res })
+}
+
 const email = ref<string>(reactiveSearchParams.email ?? '')
 const emailError = ref<string | null>(null)
 const password = ref('')

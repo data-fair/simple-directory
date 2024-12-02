@@ -63,6 +63,7 @@ class MongodbStorage implements SdStorage {
     const filter: any = { email }
     if (site) {
       filter.host = site.host
+      filter.path = site.path
     } else {
       filter.host = { $exists: false }
     }
@@ -76,7 +77,7 @@ class MongodbStorage implements SdStorage {
     if (user?.password) return user.password as Password
   }
 
-  async createUser (user: UserWritable, byUser: { id: string, name: string }, host?: string) {
+  async createUser (user: UserWritable, byUser: { id: string, name: string }, site?: Site) {
     const name = userName(user)
     byUser = byUser || { ...user, name }
     const date = new Date().toISOString()
@@ -84,7 +85,7 @@ class MongodbStorage implements SdStorage {
       ...cloneWithId(user),
       organizations: user.organizations ?? [],
       // TODO: replace host by siteUrl ?
-      created: { id: byUser.id, name: byUser.name, date, host },
+      created: { id: byUser.id, name: byUser.name, date, host: site?.host, path: site?.path },
       updated: { id: byUser.id, name: byUser.name, date },
       name
     }

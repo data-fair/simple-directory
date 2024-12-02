@@ -9,7 +9,7 @@ import jwt, { type SignOptions, type JwtPayload } from 'jsonwebtoken'
 import Cookies from 'cookies'
 import storages from '#storages'
 import { getSignatureKeys } from './keys-manager.ts'
-import { reqSite } from '#services'
+import { getRedirectSite, reqSite } from '#services'
 
 export const signToken = async (payload: any, exp: string | number, notBefore?: string) => {
   const signatureKeys = await getSignatureKeys()
@@ -207,9 +207,10 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
 export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:Pick<OrganizationMembership, 'id' | 'department'>, orgStorage?: boolean) => {
   redirect = redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me'
   const redirectUrl = new URL(redirect)
+  const redirectSite = await getRedirectSite(req, redirect)
   const token = await signToken({ ...payload, temporary: true }, config.jwtDurations.initialToken)
-  // TODO: properly manage site on subpath here
-  const tokenCallback = redirectUrl.origin + '/simple-directory/api/auth/token_callback'
+  const redirectBase = redirectSite ? (redirectUrl.protocol + redirectSite.host + (redirectSite.path ?? '') + '/simple-directory') : config.publicUrl
+  const tokenCallback = redirectBase + '/api/auth/token_callback'
   const tokenCallbackUrl = new URL(tokenCallback)
   tokenCallbackUrl.searchParams.set('id_token', token)
   if (redirect) tokenCallbackUrl.searchParams.set('redirect', redirect)

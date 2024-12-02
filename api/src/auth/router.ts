@@ -6,7 +6,7 @@ import bodyParser from 'body-parser'
 import { nanoid } from 'nanoid'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession } from '#services'
+import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession, getRedirectSite } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User, UserWritable } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -735,7 +735,8 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     debugOAuth('Create user authenticated through oauth', user)
     logContext.user = user
     eventsLog.info('sd.auth.oauth.create-user', `a user was created in oauth callback ${newUser.id}`, logContext)
-    user = await storage.createUser(newUser, undefined, new URL(redirect).host)
+    const redirectSite = await getRedirectSite(req, redirect)
+    user = await storage.createUser(newUser, undefined, redirectSite)
 
     if (memberInfo.create && memberInfo.org) {
       logContext.account = { type: 'organization', ...memberInfo.org }
@@ -947,7 +948,8 @@ router.post('/saml2-assert', async (req, res) => {
     if (samlInfo.firstName) newUser.firstName = samlInfo.firstName
     if (samlInfo.lastName) newUser.lastName = samlInfo.lastName
     debugSAML('Create user', newUser)
-    user = await storage.createUser(newUser, undefined, new URL(redirect).host)
+    const redirectSite = await getRedirectSite(req, redirect)
+    user = await storage.createUser(newUser, undefined, redirectSite)
     logContext.user = user
     eventsLog.info('sd.auth.saml.create-user', `a user was created in saml callback ${user.id}`, logContext)
   } else {

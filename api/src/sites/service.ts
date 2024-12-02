@@ -14,6 +14,25 @@ export const getSiteByUrl = memoize(async (url: string) => {
   maxAge: 2000 // 2s
 })
 
+export const getRedirectSite = async (req: Request, redirect: string) => {
+  const currentSiteUrl = reqSiteUrl(req)
+  const currentSite = await reqSite(req)
+  if (redirect.startsWith(currentSiteUrl)) return currentSite
+  const redirectSite = await getSiteByUrl(redirect)
+  if (!redirectSite) throw httpError(400, `impossible to redirect to ${redirect} from ${currentSiteUrl}`)
+  if (!currentSite && ['onlyBackOffice', 'ssoBackOffice', undefined].includes(redirectSite.authMode)) {
+    // redirect from back-office is accepted for this site
+  }
+  if (
+    currentSite &&
+    currentSite.owner.type === redirectSite.owner.type && currentSite.owner.id === redirectSite.owner.id &&
+    redirectSite.authMode === 'onlyOtherSite' && redirectSite.authOnlyOtherSite === currentSite.host + (currentSite.path ?? '')
+  ) {
+    // redirect from this site is accepted
+  }
+  throw httpError(400, `impossible to redirect to ${redirect} from ${currentSiteUrl}`)
+}
+
 export const reqSite = async (req: Request): Promise<Site | undefined> => {
   const siteUrl = reqSiteUrl(req)
   if (siteUrl && !config.publicUrl.startsWith(siteUrl) && siteUrl !== `http://simple-directory:${config.port}` && !(process.env.NODE_ENV === 'production' && siteUrl === `http://localhost:${config.port}`)) {

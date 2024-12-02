@@ -10,7 +10,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
-import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMail, getLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken } from '#services'
+import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMail, getLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite } from '#services'
 
 const router = Router()
 
@@ -134,7 +134,8 @@ router.post('', async (req, res, next) => {
     }
   }
 
-  const createdUser = await storage.createUser(newUser, undefined, new URL(link).host)
+  const linkSite = await getRedirectSite(req, link)
+  const createdUser = await storage.createUser(newUser, undefined, linkSite)
   eventsLog.info('sd.user.create', 'user was created', logContext)
 
   if (invit && !config.alwaysAcceptInvitation && orga) {

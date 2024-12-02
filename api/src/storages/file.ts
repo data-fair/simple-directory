@@ -3,7 +3,7 @@ import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdSto
 import type { FileParams } from '../../config/type/index.ts'
 import config from '#config'
 import userName from '../utils/user-name.ts'
-import type { Member, Organization, Partner, User, UserWritable, ServerSession } from '#types'
+import type { Member, Organization, Partner, User, UserWritable, ServerSession, Site } from '#types'
 import { readFileSync } from 'node:fs'
 import type { Password } from '../utils/passwords.ts'
 import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
@@ -206,7 +206,7 @@ class FileStorage implements SdStorage {
     return undefined
   }
 
-  createUser (user: UserWritable, byUser?: { id: string; name: string }, host?: string): Promise<User> {
+  createUser (user: UserWritable, byUser?: { id: string; name: string }, site?: Site): Promise<User> {
     throw new Error('Method not implemented.')
   }
 
