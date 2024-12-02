@@ -25,6 +25,7 @@ function cleanUser (resource: any): User {
     delete resource['2FA'].secret
     delete resource['2FA'].recovery
   }
+  resource.isAdmin = config.admins.includes(resource.email)
   return resource
 }
 

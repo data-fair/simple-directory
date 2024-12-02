@@ -179,7 +179,6 @@ router.get('/:userId', async (req, res, next) => {
   }
   const user = await storage.getUser(req.params.userId)
   if (!user) return res.status(404).send()
-  user.isAdmin = config.admins.includes(user.email)
   res.json(user)
 })
 

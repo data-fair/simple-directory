@@ -57,7 +57,8 @@ export default {
     },
     isAdmin: {
       description: 'Is this user a global admin (independant of organizations)',
-      type: 'boolean'
+      type: 'boolean',
+      readOnly: true
     },
     maxCreatedOrgs: {
       description: 'The maximum number of organizations this user can create. -1 means indeterminate number. Fallback to a global default value if not defined.',
