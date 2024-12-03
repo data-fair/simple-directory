@@ -915,7 +915,7 @@ if (sitePublic.value?.authMode === 'onlyOtherSite' && sitePublic.value?.authOnly
 if (user.value && redirect && !redirect.startsWith($siteUrl)) {
   redirectToOtherSite = true
   // we must be in "otherSite" auth mode
-  $fetch<string>('/api/auth/site_redirect', { method: 'POST', body: { redirect } })
+  $fetch<string>('auth/site_redirect', { method: 'POST', body: { redirect } })
     .then((res) => window.location.replace(res))
 }
 
