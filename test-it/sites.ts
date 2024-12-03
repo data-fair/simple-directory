@@ -28,15 +28,36 @@ describe('sites api', () => {
     await assert.rejects(anonymousAx.get('/api/sites'), { status: 401 })
 
     // anonymous user can access the public info (host, theme and later auth providers) so that we can display custom login page
-    const publicSite = (await anonymousAx.get('http://127.0.0.1:5989/simple-directory/api/sites/_public')).data
+    const siteDirectoryUrl = 'http://127.0.0.1:5989/simple-directory'
+    const publicSite = (await anonymousAx.get(`${siteDirectoryUrl}/api/sites/_public`)).data
     assert.equal(publicSite.authMode, 'onlyBackOffice')
     assert.ok(publicSite.colors.primary)
     assert.ok(publicSite.logo.startsWith('http://127.0.0.1:5989/'))
+    const webfonts = (await anonymousAx.get<string>(`${siteDirectoryUrl}/api/sites/_webfonts.css`)).data
+    assert.ok(webfonts.startsWith('@font-face'))
 
     let sites = (await ax.get('/api/sites')).data
     assert.equal(sites.count, 0)
 
     sites = (await orgAx.get('/api/sites')).data
     assert.equal(sites.count, 1)
+
+    // a user created directly on the second site
+    const { ax: siteAx1 } = await createUser('test-site2@test.com', false, 'TestPasswd01', siteDirectoryUrl)
+    await siteAx1.get('/api/auth/me')
+
+    // the first user can connect on secondary site from the main one
+    const siteRedirect = (await ax.post<string>('/api/auth/site_redirect', { redirect: siteDirectoryUrl })).data
+    assert.ok(siteRedirect.startsWith(`${siteDirectoryUrl}/api/auth/token_callback`))
+    const siteAx2 = await axios()
+    try {
+      await siteAx2.get(siteRedirect)
+    } catch (err) {
+      if (err.status !== 302) throw err
+      const redirectUrl = new URL(err.headers.location)
+      const redirectError = redirectUrl.searchParams.get('error')
+      if (redirectError) throw new Error(redirectError)
+      assert.equal(err.headers['set-cookie']?.length, 3)
+    }
   })
 })

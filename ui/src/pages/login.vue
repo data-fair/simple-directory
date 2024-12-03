@@ -802,12 +802,6 @@ let depId = reactiveSearchParams.dep as string | undefined
 const readonly = $uiConfig.readonly || useBooleanSearchParam('readonly').value
 const redirect = reactiveSearchParams.redirect
 
-if (redirect && !redirect.startsWith($siteUrl)) {
-  // we must be in "otherSite" auth mode
-  $fetch<string>('/api/auth/site_redirect', { method: 'POST', body: { redirect } })
-    .then((res) => { window.location.href = res })
-}
-
 const email = ref<string>(reactiveSearchParams.email ?? '')
 const emailError = ref<string | null>(null)
 const password = ref('')
@@ -905,18 +899,28 @@ watch(separateEmailPasswordSteps, (value) => {
   if (value) step.value = 'preLogin'
 })
 
+let redirectToOtherSite = false
 if (sitePublic.value?.authMode === 'onlyBackOffice') {
+  redirectToOtherSite = true
   const mainLoginUrl = new URL(window.location.href)
   mainLoginUrl.host = mainPublicUrl.host
   window.location.replace(mainLoginUrl.href)
 }
 if (sitePublic.value?.authMode === 'onlyOtherSite' && sitePublic.value?.authOnlyOtherSite) {
+  redirectToOtherSite = true
   const otherSiteLoginUrl = new URL(window.location.href)
   otherSiteLoginUrl.host = sitePublic.value?.authOnlyOtherSite
   window.location.replace(otherSiteLoginUrl.href)
 }
+if (user.value && redirect && !redirect.startsWith($siteUrl)) {
+  redirectToOtherSite = true
+  // we must be in "otherSite" auth mode
+  $fetch<string>('/api/auth/site_redirect', { method: 'POST', body: { redirect } })
+    .then((res) => window.location.replace(res))
+}
 
 const delayedRendering = computed(() => {
+  if (redirectToOtherSite) return true
   // step is not login, render immediately
   if (step.value !== 'login') return false
   // we have to wait for auth providers

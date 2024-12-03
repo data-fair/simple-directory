@@ -6,14 +6,14 @@ import eventPromise from '@data-fair/lib-utils/event-promise.js'
 
 const directoryUrl = 'http://localhost:5689/simple-directory'
 
-const axiosOpts = { baseURL: 'http://localhost:5689/simple-directory' }
+const axiosOpts = { baseURL: directoryUrl }
 
 export const axios = (opts = {}) => axiosBuilder({ ...axiosOpts, ...opts, maxRedirects: 0 })
 
-export const axiosAuth = async (opts: string | Omit<AxiosAuthOptions, 'directoryUrl' | 'axiosOpts' | 'password'> & { password?: string }) => {
+export const axiosAuth = async (opts: string | Omit<AxiosAuthOptions, 'password'> & { password?: string }) => {
   opts = typeof opts === 'string' ? { email: opts } : opts
   const password = 'TestPasswd01'
-  return _axiosAuth({ password, ...opts, axiosOpts, directoryUrl })
+  return _axiosAuth({ password, directoryUrl, ...opts, axiosOpts: { ...axiosOpts, ...opts.axiosOpts } })
 }
 
 export const clean = async (options?: { ldapConfig?: any }) => {
@@ -51,16 +51,17 @@ export const stopApiServer = async () => {
   await apiServer.stop()
 }
 
-export const createUser = async (email: string, adminMode = false, password = 'TestPasswd01') => {
+export const createUser = async (email: string, adminMode = false, password = 'TestPasswd01', _directoryUrl?: string) => {
   const { events } = await import('../../api/src/mails/service.ts')
-  const anonymAx = await axios()
+  const axiosOpts = { baseURL: _directoryUrl ?? directoryUrl }
+  const anonymAx = await axios(axiosOpts)
   const mailPromise = eventPromise<any>(events, 'send')
   await anonymAx.post('/api/users', { email, password })
   const mail = await mailPromise
   // sent a mail with a token_callback url to validate user creation
   assert.ok(mail.link.includes('token_callback'))
   await anonymAx(mail.link).catch((err: any) => { if (err.status !== 302) throw err })
-  const ax = await axiosAuth({ email, adminMode, password })
+  const ax = await axiosAuth({ email, adminMode, password, axiosOpts, directoryUrl: _directoryUrl ?? directoryUrl })
   const user = (await ax.get('/api/auth/me')).data
   return { ax, user }
 }

@@ -22,6 +22,7 @@ export const getRedirectSite = async (req: Request, redirect: string) => {
   if (!redirectSite) throw httpError(400, `impossible to redirect to ${redirect} from ${currentSiteUrl}`)
   if (!currentSite && ['onlyBackOffice', 'ssoBackOffice', undefined].includes(redirectSite.authMode)) {
     // redirect from back-office is accepted for this site
+    return redirectSite
   }
   if (
     currentSite &&
@@ -29,6 +30,7 @@ export const getRedirectSite = async (req: Request, redirect: string) => {
     redirectSite.authMode === 'onlyOtherSite' && redirectSite.authOnlyOtherSite === currentSite.host + (currentSite.path ?? '')
   ) {
     // redirect from this site is accepted
+    return redirectSite
   }
   throw httpError(400, `impossible to redirect to ${redirect} from ${currentSiteUrl}`)
 }

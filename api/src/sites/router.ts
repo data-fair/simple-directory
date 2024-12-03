@@ -94,7 +94,6 @@ router.get('/_public', async (req, res, next) => {
 
 router.get('/_webfonts.css', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
-
   const sitePath = reqSitePath(req)
   webfontsCache[sitePath] = webfontsCache[sitePath] ?? microTemplate(webfontsCssRaw, { SITE_PATH: sitePath })
   res.contentType('css')
