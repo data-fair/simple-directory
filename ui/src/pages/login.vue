@@ -792,7 +792,7 @@ import UiNotifAlert from '@data-fair/lib-vuetify/ui-notif-alert.vue'
 const reactiveSearchParams = useReactiveSearchParams()
 const { t } = useI18n()
 const { user, switchOrganization } = useSession()
-const { authProvidersFetch, sitePublic } = useStore()
+const { authProvidersFetch, sitePublic, mainPublicUrl } = useStore()
 
 const error = useStringSearchParam('error')
 const plannedDeletion = reactiveSearchParams.planned_deletion
