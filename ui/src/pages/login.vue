@@ -1,5 +1,14 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
+  <v-app-bar
+    v-show="!delayedRendering"
+    density="comfortable"
+    flat
+    color="transparent"
+  >
+    <v-spacer />
+    <lang-switcher :locales="$uiConfig.i18n.locales" />
+  </v-app-bar>
   <v-row
     v-show="!delayedRendering"
     justify="space-around"
@@ -28,7 +37,7 @@
         class="pa-2"
         border="sm"
         rounded="xl"
-        elevation="3"
+        elevation="16"
       >
         <v-card-title
           class="text-subtitle-2"
@@ -788,6 +797,7 @@ import type { PostPasswordlessAuthReq } from '#api/doc/auth/post-passwordless-re
 import type { PostPasswordAuthReq } from '#api/doc/auth/post-password-req/index.ts'
 import type { PostActionAuthReq } from '#api/doc/auth/post-action-req/index.ts'
 import UiNotifAlert from '@data-fair/lib-vuetify/ui-notif-alert.vue'
+import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
 
 const reactiveSearchParams = useReactiveSearchParams()
 const { t } = useI18n()

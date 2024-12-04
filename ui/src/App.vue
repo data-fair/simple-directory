@@ -1,19 +1,8 @@
 <template>
   <v-app
     :class="appClass"
-    :style="isLoginPage && !$vuetify.theme.current.dark && 'background-color: rgb(245, 245, 245);'"
   >
-    <template v-if="isLoginPage">
-      <v-app-bar
-        density="comfortable"
-        flat
-        color="transparent"
-      >
-        <v-spacer />
-        <lang-switcher :locales="$uiConfig.i18n.locales" />
-      </v-app-bar>
-    </template>
-    <template v-else>
+    <template v-if="!isLoginPage">
       <layout-app-bar v-if="!inIframe" />
     </template>
 
@@ -35,7 +24,6 @@
 
 <script lang="ts" setup>
 import uiNotif from '@data-fair/lib-vuetify/ui-notif.vue'
-import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
 import inIframe from '@data-fair/lib-utils/in-iframe.js'
 import { vuetifySessionStyle } from '@data-fair/lib-vuetify'
 
@@ -53,6 +41,7 @@ useHead({
 // const showToolbarParam = useBooleanSearchParam('showToolbar')
 
 const isLoginPage = computed(() => route.name === '/login')
+
 // const showToolbar = computed(() => !embed.value || showToolbarParam.value)
 const appClass = computed(() => {
   if (!route.name) return ''
