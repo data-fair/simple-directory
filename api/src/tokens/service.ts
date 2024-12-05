@@ -70,9 +70,9 @@ export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: stri
 const secure = config.publicUrl.startsWith('https://')
 
 export const logout = async (req: Request, res: Response) => {
-  const cookies = new Cookies(req, res)
+  const cookies = new Cookies(req, res, { secure })
   const sitePath = reqSitePath(req)
-  const opts: Cookies.SetOption = { path: sitePath + '/', expires: new Date(0), secure }
+  const opts: Cookies.SetOption = { path: sitePath + '/', expires: new Date(0) }
   // use '' instead of null because instant cookie expiration is not properly applied on all safari versions
   cookies.set('id_token', '', opts)
   cookies.set('id_token_sign', '', { ...opts, httpOnly: true })
@@ -93,7 +93,7 @@ export const logout = async (req: Request, res: Response) => {
 // the header and payload are not httpOnly to be readable by client
 // all cookies use sameSite for CSRF prevention
 export const setSessionCookies = async (req: Request, res: Response, payload: SessionUser, serverSessionId: string | null, userOrg?: OrganizationMembership) => {
-  const cookies = new Cookies(req, res)
+  const cookies = new Cookies(req, res, { secure })
   // cf https://www.npmjs.com/package/jsonwebtoken#token-expiration-exp-claim
   const date = Date.now()
   const exp = Math.floor(date / 1000) + jwtDurations.idToken
@@ -101,7 +101,7 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
   const token = await signToken(payload, exp)
   const parts = token.split('.')
   const sitePath = reqSitePath(req)
-  const opts: Cookies.SetOption = { sameSite: 'lax', path: sitePath + '/', secure }
+  const opts: Cookies.SetOption = { sameSite: 'lax', path: sitePath + '/' }
   if (payload.rememberMe) opts.expires = new Date(exchangeExp * 1000)
   cookies.set('id_token', parts[0] + '.' + parts[1], { ...opts, httpOnly: false })
   cookies.set('id_token_sign', parts[2], { ...opts, expires: new Date(exp * 1000), httpOnly: true })
@@ -154,7 +154,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     throw httpError(401, 'Utilisateur inexistant')
   }
 
-  const cookies = new Cookies(req, res)
+  const cookies = new Cookies(req, res, { secure })
   const idTokenOrg = cookies.get('id_token_org')
   const idTokenDep = cookies.get('id_token_dep')
 
