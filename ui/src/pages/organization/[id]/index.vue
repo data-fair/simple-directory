@@ -3,7 +3,7 @@
   <v-container
     v-if="orga"
     data-iframe-height
-    style="max-width:600px;"
+    style="max-width:650px;"
   >
     <h2 class="text-h4 mb-4">
       <v-icon
@@ -83,7 +83,7 @@
         multiple
         name="2FARoles"
         density="compact"
-        style="max-width:600px"
+        style="max-width:650px"
         @update:model-value="set2FARoles"
       />
 

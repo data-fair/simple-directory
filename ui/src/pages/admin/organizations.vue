@@ -94,7 +94,7 @@
           <template v-else>
             <td class="justify-center layout px-0">
               <v-btn
-                :to="`/organizations/${props.item.id}`"
+                :to="`/organization/${props.item.id}`"
                 icon
                 class="mx-0"
               >

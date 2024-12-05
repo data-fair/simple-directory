@@ -2,7 +2,7 @@
   <v-container
     v-if="orga.data.value && department"
     data-iframe-height
-    style="max-width:600px;"
+    style="max-width:650px;"
   >
     <h2 class="text-h4 mb-4">
       <v-icon
