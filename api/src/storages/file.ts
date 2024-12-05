@@ -4,7 +4,7 @@ import type { FileParams } from '../../config/type/index.ts'
 import config from '#config'
 import userName from '../utils/user-name.ts'
 import type { Member, Organization, Partner, User, UserWritable, ServerSession, Site } from '#types'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import type { Password } from '../utils/passwords.ts'
 import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
@@ -51,15 +51,30 @@ class FileStorage implements SdStorage {
 
   constructor (params: FileParams, org?: Organization) {
     if (org) throw new Error('file storage is not compatible with per-org storage')
-    this.users = JSON.parse(readFileSync(resolve(import.meta.dirname, '../../..', params.users), 'utf-8'))
-    this.users.forEach(user => {
+    const newUsersPath = resolve(import.meta.dirname, '../../..', params.users)
+    const oldUsersPath = '/webapp/data/users.json'
+    if (existsSync(oldUsersPath)) {
+      console.error(`WARNING: found a users file at deprecated path ${oldUsersPath}, please use new path ${newUsersPath}`)
+      this.users = JSON.parse(readFileSync(oldUsersPath, 'utf-8'))
+    } else {
+      this.users = JSON.parse(readFileSync(newUsersPath, 'utf-8'))
+    }
+    for (const user of this.users) {
       user.name = userName(user)
-    })
-    this.organizations = JSON.parse(readFileSync(resolve(import.meta.dirname, '../../..', params.organizations), 'utf-8'))
-    this.organizations.forEach(orga => {
+    }
+
+    const newOrgsPath = resolve(import.meta.dirname, '../../..', params.organizations)
+    const oldOrgsPath = '/webapp/data/organizations.json'
+    if (existsSync(oldOrgsPath)) {
+      console.error(`WARNING: found a organizations file at deprecated path ${oldOrgsPath}, please use new path ${newOrgsPath}`)
+      this.organizations = JSON.parse(readFileSync(oldOrgsPath, 'utf-8'))
+    } else {
+      this.organizations = JSON.parse(readFileSync(newOrgsPath, 'utf-8'))
+    }
+    for (const orga of this.organizations) {
       orga.members = orga.members || []
       orga.departments = orga.departments || []
-    })
+    }
   }
 
   readonly = true

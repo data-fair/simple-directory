@@ -7,8 +7,8 @@ module.exports = {
   publicUrl: 'http://localhost:8080',
   kid: 'sd',
   secret: { // DEPRECATED parameters, kept to transition to mongodb storage
-    public: './security/simple-directory.key.pub',
-    private: './security/simple-directory.key'
+    public: '/webapp/security/simple-directory.key.pub',
+    private: '/webapp/security/simple-directory.key'
   },
   jwtDurations: {
     initialToken: '15m',

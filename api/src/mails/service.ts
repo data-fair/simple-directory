@@ -1,7 +1,7 @@
 import mjml2html from 'mjml'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import { join } from 'path'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import config from '#config'
 import { flatten } from 'flat'
 import EventEmitter from 'node:events'
@@ -9,8 +9,21 @@ import mailsTransport from './transport.ts'
 
 export const events = new EventEmitter()
 
-const mjmlTemplate = readFileSync(join(import.meta.dirname, 'mail.mjml'), 'utf8')
-const mjmlNoButtonTemplate = readFileSync(join(import.meta.dirname, 'mail-nobutton.mjml'), 'utf8')
+const newTplPath = join(import.meta.dirname, 'mail.mjml')
+let mjmlTemplate = readFileSync(newTplPath, 'utf8')
+const oldTplPath = '/webapp/server/mails/mail.mjml'
+if (existsSync(oldTplPath)) {
+  console.error(`WARNING: found a mail template at deprecated path ${oldTplPath}, please use new path ${newTplPath}`)
+  mjmlTemplate = readFileSync(oldTplPath, 'utf8')
+}
+
+const newNoButtonTplPath = join(import.meta.dirname, 'mail-nobutton.mjml')
+let mjmlNoButtonTemplate = readFileSync(newNoButtonTplPath, 'utf8')
+const oldNoButtonTplPath = '/webapp/server/mails/mail-nobutton.mjml'
+if (existsSync(oldNoButtonTplPath)) {
+  console.error(`WARNING: found a mail template at deprecated path ${oldNoButtonTplPath}, please use new path ${newNoButtonTplPath}`)
+  mjmlNoButtonTemplate = readFileSync(oldNoButtonTplPath, 'utf8')
+}
 
 export const sendMail = async (key: string, messages: any, to: string, params: Record<string, string>) => {
   params = {
