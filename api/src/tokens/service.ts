@@ -67,10 +67,12 @@ export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: stri
   if (user.ignorePersonalAccount) return user.organizations[0]
 }
 
+const secure = config.publicUrl.startsWith('https://')
+
 export const logout = async (req: Request, res: Response) => {
   const cookies = new Cookies(req, res)
   const sitePath = reqSitePath(req)
-  const opts = { path: sitePath + '/', expires: new Date(0) }
+  const opts: Cookies.SetOption = { path: sitePath + '/', expires: new Date(0), secure }
   // use '' instead of null because instant cookie expiration is not properly applied on all safari versions
   cookies.set('id_token', '', opts)
   cookies.set('id_token_sign', '', { ...opts, httpOnly: true })
@@ -99,10 +101,10 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
   const token = await signToken(payload, exp)
   const parts = token.split('.')
   const sitePath = reqSitePath(req)
-  const opts: Cookies.SetOption = { sameSite: 'lax', path: sitePath + '/' }
+  const opts: Cookies.SetOption = { sameSite: 'lax', path: sitePath + '/', secure }
   if (payload.rememberMe) opts.expires = new Date(exchangeExp * 1000)
   cookies.set('id_token', parts[0] + '.' + parts[1], { ...opts, httpOnly: false })
-  cookies.set('id_token_sign', parts[2], { ...opts, httpOnly: true })
+  cookies.set('id_token_sign', parts[2], { ...opts, expires: new Date(exp * 1000), httpOnly: true })
   // set the same params to id_token_org cookie so that it doesn't expire before the rest
   if (userOrg) {
     cookies.set('id_token_org', userOrg.id, { ...opts, httpOnly: false })
@@ -125,7 +127,6 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
     const exchangeExp = Math.floor(date / 1000) + jwtDurations.exchangeToken
     const sessionInfo: SessionInfoPayload = { user: payload.id, session: serverSessionId, adminMode: payload.adminMode }
     const exchangeToken = await signToken(sessionInfo, exchangeExp)
-    if (payload.rememberMe) exchangeCookieOpts.expires = new Date(exchangeExp * 1000)
     cookies.set('id_token_ex', exchangeToken, exchangeCookieOpts)
   }
 }
