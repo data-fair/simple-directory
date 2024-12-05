@@ -75,7 +75,7 @@
                 </v-btn>
                 <v-btn
                   :title="$t('common.editTitle', {name: props.item.name})"
-                  :to="`/organizations/${props.item.id}`"
+                  :to="`/organization/${props.item.id}`"
                   :icon="mdiPencil"
                   variant="text"
                 />
