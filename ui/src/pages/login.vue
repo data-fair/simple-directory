@@ -104,11 +104,6 @@
               </template>
 
               <v-form>
-                <ui-notif-alert
-                  :notif="passwordAuth.notif.value ?? changePasswordAction.notif.value ?? passwordlessAuth.notif.value"
-                  :alert-props="{variant: 'text', class: 'pt-0'}"
-                />
-
                 <v-text-field
                   id="email"
                   v-model="email"
@@ -183,6 +178,10 @@
                     </template>
                   </v-text-field>
                 </template>
+                <ui-notif-alert
+                  :notif="passwordAuth.notif.value ?? passwordlessAuth.notif.value"
+                  :alert-props="{variant: 'text', class: 'pb-0'}"
+                />
                 <v-checkbox
                   v-if="!adminMode"
                   id="rememberMe"
@@ -220,6 +219,10 @@
                   >{{ $t('pages.login.changePassword') }}</a>
                 </p>
               </v-row>
+              <ui-notif-alert
+                :notif="changePasswordAction.notif.value"
+                :alert-props="{variant: 'text', class: 'pt-0'}"
+              />
             </v-card-text>
 
             <v-card-actions>
@@ -550,7 +553,7 @@
                 </v-text-field>
 
                 <ui-notif-alert
-                  :notif="changePassword.notif.value ?? changePassword.notif.value"
+                  :notif="changePassword.notif.value"
                   :alert-props="{variant: 'text'}"
                 />
               </v-form>
