@@ -167,15 +167,12 @@
             <v-list-item-action v-if="user.adminMode && !member.orgStorage">
               <v-btn
                 :title="$t('common.asAdmin')"
-                icon
+                :icon="mdiAccountSwitch"
+                color="warning"
+                variant="text"
                 :disabled="!member.emailConfirmed"
                 @click="asAdmin(member)"
-              >
-                <v-icon
-                  color="warning"
-                  :icon="mdiAccountSwitch"
-                />
-              </v-btn>
+              />
             </v-list-item-action>
             <v-list-item-action
               v-if="isAdminOrga && !readonly"

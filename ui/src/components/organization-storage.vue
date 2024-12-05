@@ -3,6 +3,7 @@
     border="start"
     color="admin"
     class="my-4"
+    variant="outlined"
     :icon="mdiShieldAlert"
   >
     <v-switch
@@ -26,15 +27,20 @@
       v-if="orgStorage.active && user.adminMode"
       v-model="ldapConfig"
       label="Configuration LDAP"
+      rows="20"
       :error-messages="configParsingError"
     />
-    <v-btn
-      v-if="diff"
-      color="admin"
-      @click="patch"
-    >
-      Entregistrer
-    </v-btn>
+    <v-row class="ma-0">
+      <v-spacer />
+      <v-btn
+        v-if="orgStorage.active"
+        color="admin"
+        :disabled="patch.loading.value || !diff"
+        @click="patch.execute()"
+      >
+        Enregistrer
+      </v-btn>
+    </v-row>
   </v-alert>
 </template>
 
@@ -46,41 +52,43 @@ const emit = defineEmits(['change'])
 
 const { user } = useSessionAuthenticated()
 
-const orgStorage = ref(orga.orgStorage ?? {
-  active: false,
-  type: 'ldap',
-  readonly: true,
-  config: {
-    url: 'ldap://ldap:389',
-    searchUserDN: 'cn=admin,dc=example,dc=org',
-    searchUserPassword: '',
-    baseDN: 'dc=example,dc=org',
-    users: {
-      objectClass: 'inetOrgPerson',
-      dnKey: 'cn',
-      mapping: {
-        id: 'cn',
-        name: 'cn',
-        email: 'mail',
-        firstName: 'givenName',
-        lastName: 'sn',
-        birthday: null,
-        avatarUrl: null
-      }
-    },
-    members: {
-      onlyWithRole: false,
-      role: {
-        attr: 'employeeType',
-        values: {
-          admin: ['admin'],
-          user: []
+const orgStorage = ref(orga.orgStorage
+  ? { ...orga.orgStorage }
+  : {
+      active: false,
+      type: 'ldap',
+      readonly: true,
+      config: {
+        url: 'ldap://ldap:389',
+        searchUserDN: 'cn=admin,dc=example,dc=org',
+        searchUserPassword: '',
+        baseDN: 'dc=example,dc=org',
+        users: {
+          objectClass: 'inetOrgPerson',
+          dnKey: 'cn',
+          mapping: {
+            id: 'cn',
+            name: 'cn',
+            email: 'mail',
+            firstName: 'givenName',
+            lastName: 'sn',
+            birthday: null,
+            avatarUrl: null
+          }
         },
-        default: 'user'
+        members: {
+          onlyWithRole: false,
+          role: {
+            attr: 'employeeType',
+            values: {
+              admin: ['admin'],
+              user: []
+            },
+            default: 'user'
+          }
+        }
       }
-    }
-  }
-})
+    })
 const configParsingError = ref('')
 
 const ldapConfig = computed({
@@ -95,16 +103,12 @@ const ldapConfig = computed({
   }
 })
 
-const diff = computed(() => {
-  if (!orga || !orga.orgStorage || !orgStorage.value) return false
-  if (!orga.orgStorage.active && !orgStorage.value.active) return false
-  return JSON.stringify(orga.orgStorage) !== JSON.stringify(orgStorage.value)
-})
+const diff = computed(() => JSON.stringify(orga.orgStorage) !== JSON.stringify(orgStorage.value))
 const loginOrg = computed(() => `${$sdUrl}/login?org=${encodeURIComponent(orga.id)}&org_storage=true&readonly=${orgStorage.value.readonly}`)
-const patch = async () => {
-  await $fetch(`/api/organizations/${orga.id}`, { method: 'PATCH', body: { orgStorage: orgStorage.value } })
+const patch = useAsyncAction(async () => {
+  await $fetch(`organizations/${orga.id}`, { method: 'PATCH', body: { orgStorage: orgStorage.value } })
   emit('change')
-}
+})
 </script>
 
 <style>
