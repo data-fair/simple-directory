@@ -67,7 +67,7 @@ app.use('/api/limits', auth, limits)
 app.use('/api/2fa', twoFA)
 app.use('/api/oauth-tokens', oauthTokens)
 app.use('/api/accounts', accounts)
-if (config.manageSites) app.use('/api/sites', sites)
+app.use('/api/sites', sites)
 
 app.use('/api/', (req, res) => {
   res.status(404).send('unknown api endpoint')
