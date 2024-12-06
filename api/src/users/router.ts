@@ -10,7 +10,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
-import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMail, getLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite } from '#services'
+import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMail, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite } from '#services'
 
 const router = Router()
 
@@ -139,7 +139,7 @@ router.post('', async (req, res, next) => {
   eventsLog.info('sd.user.create', 'user was created', logContext)
 
   if (invit && !config.alwaysAcceptInvitation && orga) {
-    const limits = await getLimits(orga)
+    const limits = await getOrgLimits(orga)
     if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
       return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }

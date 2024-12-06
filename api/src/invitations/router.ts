@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 import { reqI18n, __all, __ } from '#i18n'
 import storages from '#storages'
-import { getLimits, setNbMembersLimit, reqSite, getSiteByUrl, shortenInvit, unshortenInvit, sendMail, decodeToken, signToken, postUserIdentityWebhook } from '#services'
+import { getOrgLimits, setNbMembersLimit, reqSite, getSiteByUrl, shortenInvit, unshortenInvit, sendMail, decodeToken, signToken, postUserIdentityWebhook } from '#services'
 import emailValidator from 'email-validator'
 import Debug from 'debug'
 
@@ -46,7 +46,7 @@ router.post('', async (req, res, next) => {
   const orga = await storage.getOrganization(invitation.id)
   if (!orga) return res.status(404).send('unknown organization')
 
-  const limits = await getLimits(orga)
+  const limits = await getOrgLimits(orga)
   if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
     eventsLog.info('sd.invite.limit', `limit error for /invitations route with org ${body.id}`, logContext)
     return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
@@ -237,7 +237,7 @@ router.get('/_accept', async (req, res, next) => {
     return res.redirect(errorUrl.href)
   }
 
-  const limits = await getLimits(orga)
+  const limits = await getOrgLimits(orga)
   if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
     errorUrl.searchParams.set('error', 'maxNbMembers')
     return res.redirect(errorUrl.href)

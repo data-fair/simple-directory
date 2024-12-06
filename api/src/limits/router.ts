@@ -2,7 +2,7 @@ import config from '#config'
 import { Router, type RequestHandler } from 'express'
 import { reqUser, reqSessionAuthenticated, assertAccountRole, httpError } from '@data-fair/lib-express'
 import * as limitsSchema from '#types/limits/index.ts'
-import { getLimits } from '#services'
+import { getOrgLimits } from '#services'
 import mongo from '#mongo'
 import storages from '#storages'
 
@@ -13,6 +13,13 @@ const isSuperAdmin: RequestHandler = (req, res, next) => {
   if (reqUser(req)?.adminMode) return next()
   if (req.query.key && req.query.key === config.secretKeys.limits) return next()
   res.status(401).send()
+}
+
+const isUser: RequestHandler = (req, res, next) => {
+  if (req.query.key && req.query.key === config.secretKeys.limits) return next()
+  const session = reqSessionAuthenticated(req)
+  assertAccountRole(session, { type: 'user', id: req.params.id }, 'admin')
+  next()
 }
 
 const isAccountMember: RequestHandler = (req, res, next) => {
@@ -32,11 +39,22 @@ router.post('/:type/:id', isSuperAdmin, async (req, res, next) => {
   res.send(limits)
 })
 
-// A user can get limits information for himself only
+// A user can get limits information for his org
 router.get('/organization/:id', isAccountMember, async (req, res, next) => {
   const org = await storages.globalStorage.getOrganization(req.params.id)
   if (!org) throw httpError(404)
-  res.send(await getLimits(org))
+  res.send(await getOrgLimits(org))
+})
+router.get('/user/:id', isUser, async (req, res, next) => {
+  const user = await storages.globalStorage.getUser(req.params.id)
+  if (!user) throw httpError(404)
+  res.send({
+    type: 'user',
+    id: user.id,
+    name: user.name,
+    lastUpdate: new Date().toISOString(),
+    store_nb_members: { limit: 1, consumption: 1 }
+  })
 })
 
 router.get('/', isSuperAdmin, async (req, res, next) => {

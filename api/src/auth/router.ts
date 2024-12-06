@@ -6,7 +6,7 @@ import bodyParser from 'body-parser'
 import { nanoid } from 'nanoid'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession, getRedirectSite } from '#services'
+import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getOrgLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession, getRedirectSite } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User, UserWritable } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -752,7 +752,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   }
 
   if (invit && invitOrga && !config.alwaysAcceptInvitation) {
-    const limits = await getLimits(invitOrga)
+    const limits = await getOrgLimits(invitOrga)
     if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
       return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }
@@ -964,7 +964,7 @@ router.post('/saml2-assert', async (req, res) => {
   }
 
   if (invit && invitOrga && !config.alwaysAcceptInvitation) {
-    const limits = await getLimits(invitOrga)
+    const limits = await getOrgLimits(invitOrga)
     if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
       return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }

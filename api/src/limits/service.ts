@@ -2,7 +2,7 @@ import type { Organization, Limits } from '#types'
 import config from '#config'
 import mongo from '#mongo'
 
-export const getLimits = async (org: Organization) => {
+export const getOrgLimits = async (org: Organization) => {
   let limit: Limits | null = await mongo.limits.findOne({ type: 'organization', id: org.id }, { projection: { _id: 0 } })
   if (!limit || !limit.store_nb_members) {
     limit = {
