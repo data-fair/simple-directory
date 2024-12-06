@@ -19,11 +19,8 @@ module.exports = {
     partnerInvitationToken: 'JWT_DURATION_PARTNER_INVIT',
     '2FAToken': 'JWT_DURATION_2FA'
   },
-  admins: {
-    __name: 'ADMINS',
-    __format: 'json'
-  },
-  adminsOrg: 'ADMINS_ORG',
+  admins: jsonEnv('ADMINS'),
+  adminsOrg: jsonEnv('ADMINS_ORG'),
   admins2FA: 'ADMINS_2FA',
   adminCredentials: jsonEnv('ADMIN_CREDENTIALS'),
   roles: {
@@ -91,22 +88,28 @@ module.exports = {
     favicon: 'THEME_FAVICON',
     colors: {
       background: 'THEME_BACKGROUND',
+      'on-background': 'THEME_ON_BACKGROUND',
       surface: 'THEME_SURFACE',
+      'on-surface': 'THEME_ON_SURFACE',
       primary: 'THEME_PRIMARY',
+      'on-primary': 'THEME_ON_PRIMARY',
       secondary: 'THEME_SECONDARY',
+      'on-secondary': 'THEME_ON_SECONDARY',
       accent: 'THEME_ACCENT',
+      'on-accent': 'THEME_ON_ACCENT',
       error: 'THEME_ERROR',
+      'on-error': 'THEME_ON_ERROR',
       info: 'THEME_INFO',
+      'on-info': 'THEME_ON_INFO',
       success: 'THEME_SUCCESS',
-      warning: 'THEME_WARNING'
+      'on-success': 'THEME_ON_SUCCESS',
+      warning: 'THEME_WARNING',
+      'on-warning': 'THEME_ON_WARNING',
     }
   },
   i18n: {
     defaultLocale: 'I18N_DEFAULT_LOCALE',
-    locales: {
-      __name: 'I18N_LOCALES',
-      __format: 'json'
-    }
+    locales: jsonEnv('I18N_LOCALES')
   },
   mails: {
     transport: jsonEnv('MAILS_TRANSPORT'),

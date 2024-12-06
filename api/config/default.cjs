@@ -132,9 +132,10 @@ module.exports = {
       primary: '#1976D2', // blue.darken2
       'on-primary': '#FFFFFF', // white
       'text-primary': undefined, // same as primary by default
-      secondary: '#DD2C00', // deep-orange-darken-4
-      'on-secondary': '#FFFFFF',
-      'text-secondary': undefined, // same as secondary by default
+      secondary: '#90CAF9', // blue-lighten-3
+      'on-secondary': '#000000',
+      accent: '#DD2C00', // deep-orange-darken-4
+      'on-accent': '#FFFFFF',
       error: '#D50000', // red-accent-4
       'on-error': '#FFFFFF',
       info: '#2962FF', // blue-accent-4

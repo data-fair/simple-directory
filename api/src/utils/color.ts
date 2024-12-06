@@ -39,11 +39,11 @@ function readableWarning (locale: string, colorCode?: string, colorName?: string
 
 export function getColorsWarnings (locale: string, colors: Colors, authProviders?: { title?: string, color?: string }[]): string[] {
   const warnings: (string | undefined)[] = []
-  for (const color of ['primary', 'secondary']) {
+  for (const color of ['primary']) {
     warnings.push(readableWarning(locale, colors[`${color}-text` as keyof Colors], color, colors.background, 'background'))
     warnings.push(readableWarning(locale, colors[`${color}-text` as keyof Colors], color, colors.surface, 'surface'))
   }
-  for (const color of ['background', 'surface', 'primary', 'secondary', 'error', 'warning', 'info', 'success', 'admin']) {
+  for (const color of ['background', 'surface', 'primary', 'secondary', 'accent', 'error', 'warning', 'info', 'success', 'admin']) {
     warnings.push(readableWarning(locale, colors[`on-${color}` as keyof Colors], 'text', colors[color as keyof Colors], color))
   }
   if (authProviders) {
