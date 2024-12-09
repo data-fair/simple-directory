@@ -41,9 +41,8 @@
             <v-avatar
               :size="36"
               class="ml-2"
-            >
-              <img :src="$sdUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'">
-            </v-avatar>
+              :image="$sdUrl + '/api/avatars/organization/' + props.item.id + '/avatar.png'"
+            />
           </td>
           <td>{{ props.item.name }}</td>
           <td>{{ props.item.id }}</td>

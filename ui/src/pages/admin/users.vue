@@ -50,9 +50,8 @@
             <v-avatar
               :size="36"
               class="ml-2"
-            >
-              <img :src="$sdUrl + '/api/avatars/user/' + props.item.id + '/avatar.png'">
-            </v-avatar>
+              :image="$sdUrl + '/api/avatars/user/' + props.item.id + '/avatar.png'"
+            />
           </td><td class="text-no-wrap">
             {{ props.item.email }}
             <v-btn

@@ -54,22 +54,22 @@
               style="cursor:default"
             >
               <v-avatar
-                size="27"
-                color="white"
+                size="28"
+                :style="`left:-1px;top:-1px;background-color: ${$vuetify.theme.current.colors.surface};`"
                 class="elevation-4"
-                style="left:-1px; top: -1px;"
               >
                 <v-icon
                   v-if="authProvider.icon"
+                  size="25"
                   :color="authProvider.color as string"
                 >
                   {{ authProvider.icon }}
                 </v-icon>
-                <img
+                <v-img
                   v-else-if="authProvider.img"
                   :src="authProvider.img as string"
                   :alt="authProvider.title as string"
-                >
+                />
               </v-avatar>
               &nbsp;{{ authProvider.title }}
             </v-btn>

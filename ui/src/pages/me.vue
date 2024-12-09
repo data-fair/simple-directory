@@ -123,21 +123,21 @@
         >
           <v-avatar
             size="28"
-            color="white"
+            :style="`left:-1px;top:-1px;background-color: ${$vuetify.theme.current.colors.surface};`"
             class="elevation-4"
-            style="left:-1px; top: -1px;"
           >
             <v-icon
               v-if="identity.icon"
+              size="25"
               :color="identity.color"
             >
               {{ identity.icon }}
             </v-icon>
-            <img
+            <v-img
               v-else-if="identity.img"
               :src="identity.img"
               :alt="identity.title"
-            >
+            />
           </v-avatar>
           &nbsp;&nbsp;{{ identity.title }}{{ identity.name ? ' - ' + identity.name : '' }}
         </v-btn>

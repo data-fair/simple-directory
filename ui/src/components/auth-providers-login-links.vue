@@ -13,15 +13,14 @@
       class="pl-0 pr-3 mr-2 mb-1 text-none text-white"
     >
       <v-avatar
-        size="28"
-        color="white"
-        class="elevation-1"
-        style="left:-1px"
+        size="29"
+        :style="`left:-1px;top:-1px;background-color: ${$vuetify.theme.current.colors.surface};`"
+        class="elevation-4"
       >
-        <img
+        <v-img
           v-if="$uiConfig.theme.logo"
           :src="$uiConfig.theme.logo"
-        >
+        />
         <logo v-else />
       </v-avatar>
       &nbsp;{{ mainPublicUrl.host }}
