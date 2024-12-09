@@ -6,7 +6,7 @@
     <v-row class="mt-3 mx-0">
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
-          size="large"
+          size="small"
           color="primary"
           style="top:-2px"
           :icon="mdiFamilyTree"

@@ -145,9 +145,10 @@
 
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
-          size="large"
+          size="small"
           color="primary"
           style="top:-2px"
+          class="mb-1"
           :icon="mdiAccountGroup"
         />
         {{ $t('common.myOrganizations') }}
@@ -185,7 +186,7 @@
 
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
-          size="large"
+          size="small"
           color="primary"
           style="top:-2px"
           :icon="mdiMonitorCellphoneStar"
@@ -226,7 +227,7 @@
 
       <h2 class="text-h4 mt-10 mb-4">
         <v-icon
-          size="large"
+          size="small"
           color="primary"
           style="top:-2px"
           :icon="mdiCog"

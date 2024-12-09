@@ -11,6 +11,7 @@
         color="primary"
         style="top:-2px"
         :icon="mdiAccountGroup"
+        class="mb-2"
       />
       {{ $t('common.organization') + ' ' + orga.name }}
     </h2>
@@ -91,7 +92,7 @@
         <v-spacer />
         <v-btn
           color="primary"
-          variant="flat"
+          variant="elevated"
           :disabled="patchOrganization.loading.value"
           @click="save"
         >

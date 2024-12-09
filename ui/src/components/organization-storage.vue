@@ -33,7 +33,7 @@
     <v-row class="ma-0">
       <v-spacer />
       <v-btn
-        v-if="orgStorage.active"
+        v-if="user.adminMode"
         color="admin"
         :disabled="patch.loading.value || !diff"
         @click="patch.execute()"
