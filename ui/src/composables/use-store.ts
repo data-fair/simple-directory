@@ -34,7 +34,7 @@ function createStore () {
   const mainRedirect = computed(() => {
     const mainRedirect = reactiveSearchParams.main_redirect || reactiveSearchParams.mainRedirect
     if (!mainRedirect && redirect.value?.startsWith(mainPublicUrl.origin)) return redirect.value
-    return mainRedirect
+    return mainRedirect ?? mainPublicUrl.href
   })
 
   const redirects = computed(() => {

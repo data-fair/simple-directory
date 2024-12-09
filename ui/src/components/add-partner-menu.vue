@@ -70,6 +70,7 @@
         </v-btn>
         <v-btn
           color="primary"
+          variant="flat"
           :disabled="$uiConfig.manageSites && !redirects"
           @click="confirmCreate"
         >
@@ -115,7 +116,7 @@ const confirmCreate = withUiNotif(async () => {
   await createForm.value?.validate()
   if (createForm.value?.isValid) {
     menu.value = false
-    await $fetch(`organizations/${orga.id}/partners`, { method: 'POST', body: editPartner })
+    await $fetch(`organizations/${orga.id}/partners`, { method: 'POST', body: editPartner.value })
     sendUiNotif({ type: 'success', msg: t('pages.organization.invitePartnerSuccess', { email: editPartner.value.contactEmail }) })
     emit('change')
   }

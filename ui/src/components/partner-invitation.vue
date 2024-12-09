@@ -34,7 +34,7 @@
     </template>
 
     <template v-if="!user">
-      <p>
+      <p class="my-4">
         Vous avez déjà un compte ? Vous pouvez vous connecter et vous serez redirigé vers cette page par la suite.
       </p>
       <p>
@@ -45,7 +45,7 @@
           :href="loginUrl(undefined, {email: invit.e})"
         />
       </p>
-      <p>
+      <p class="my-4">
         Vous n'avez pas encore de compte ? Vous pouvez en créer un et vous serez redirigé vers cette page par la suite.
       </p>
       <p>
@@ -59,7 +59,7 @@
     </template>
 
     <template v-if="user">
-      <p v-if="otherUserOrgs.length === 0">
+      <p v-if="otherUserOrgs?.length === 0">
         Vous n'appartenez à aucune organisation. Vous pouvez créer une nouvelle organisation et accepter l'invitation en son nom.
       </p>
       <p v-else>
@@ -122,7 +122,7 @@ import { type Organization, type ShortenedPartnerInvitation } from '#api/types'
 import { jwtDecode } from 'jwt-decode'
 
 const reactiveSearchParams = useReactiveSearchParams()
-const { user, loginUrl } = useSessionAuthenticated()
+const { user, loginUrl } = useSession()
 const { mainPublicUrl } = useStore()
 
 const createOrganizationName = ref('')
@@ -133,18 +133,18 @@ const token = reactiveSearchParams.partner_invit_token
 const invit = token ? jwtDecode(token) as ShortenedPartnerInvitation : undefined
 const otherUserOrgs = computed(() => {
   if (!invit) return []
-  return user.value.organizations.filter(o => invit.o !== o.id)
+  return user.value?.organizations.filter(o => invit.o !== o.id)
 })
 if (invit) {
   createOrganizationName.value = invit.n
-  if (otherUserOrgs.value.length === 0) createNewOrg.value = true
+  if (otherUserOrgs.value?.length === 0) createNewOrg.value = true
 }
 
 const createOrga = withUiNotif(async () => {
   if (!createOrganizationName.value) return
   const orga = await $fetch<Organization>('api/organizations', { method: 'POST', body: { name: createOrganizationName.value } })
-  if (!user.value.organizations.length) {
-    await $fetch('users/' + user.value.id, { body: { defaultOrg: orga.id, ignorePersonalAccount: true } })
+  if (!user.value?.organizations.length) {
+    await $fetch('users/' + user.value?.id, { body: { defaultOrg: orga.id, ignorePersonalAccount: true } })
   }
   acceptPartnerInvitation(orga)
 })
