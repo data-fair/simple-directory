@@ -54,6 +54,7 @@ export default {
     updatedAt: 'Mis à jour le',
     maxCreatedOrgs: 'Nombre maximal d\'organisations à créer',
     maxCreatedOrgsShort: 'Nb orga max',
+    nbCreatedOrgs: 'Nombre d\'organisations créées :',
     back: 'Retour',
     next: 'Suivant',
     password: 'Mot de passe',
@@ -269,8 +270,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       sessions: 'Vos sessions',
       deleteSession: 'Supprimer la session sur {deviceName} ?',
       deleteSessionWarning: 'La suppression de session peut mettre un délai maximal de {duration} à être entièrement appliquée.',
-      settings: 'Vos paramètres',
-      nbCreatedOrgs: 'Nombre d\'organisations créées :'
+      settings: 'Vos paramètres'
     }
   },
   errors: {

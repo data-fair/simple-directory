@@ -175,7 +175,7 @@
       <br>
       <div v-if="showMaxCreatedOrgs">
         <p v-if="nbCreatedOrgs !== null">
-          {{ $t('pages.me.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
+          {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
         </p>
         <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
       </div>
