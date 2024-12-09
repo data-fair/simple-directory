@@ -5,6 +5,7 @@ import { OAuth2Server } from 'oauth2-mock-server'
 import { CookieJar } from 'tough-cookie'
 
 process.env.STORAGE_TYPE = 'mongo'
+process.env.OAUTH_PROVIDERS = '["github"]'
 process.env.OIDC_PROVIDERS = JSON.stringify([{
   title: 'Test provider',
   discovery: 'http://localhost:8998/.well-known/openid-configuration',
