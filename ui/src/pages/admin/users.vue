@@ -93,7 +93,7 @@
               :key="orga.id"
             >
               <span style="white-space:nowrap">
-                <router-link :to="`/organizations/${orga.id}`">{{ orga.name }}</router-link>
+                <router-link :to="`/organization/${orga.id}`">{{ orga.name }}</router-link>
                 <template v-if="orga.department">{{ orga.departmentName || orga.department }}</template>
                 ({{ orga.role }})
               </span>
