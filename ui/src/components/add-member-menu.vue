@@ -86,7 +86,7 @@
           />
         </v-form>
         <v-alert
-          :value="!!link"
+          v-if="!!link"
           type="warning"
           variant="outlined"
         >
@@ -107,7 +107,8 @@
         </v-btn>
         <v-btn
           :disabled="disableInvite || !invitation || !invitation.email || !invitation.role"
-          color="warning"
+          color="primary"
+          variant="flat"
           @click="confirmInvitation()"
         >
           {{ $t('common.confirmOk') }}

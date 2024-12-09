@@ -52,7 +52,7 @@
           :disabled="!members || !!members.count || patchOrganization.loading.value"
           color="warning"
           variant="flat"
-          @click="confirmDelete"
+          @click="confirmDelete.execute()"
         >
           {{ $t('common.confirmOk') }}
         </v-btn>
@@ -74,28 +74,25 @@ const { patchOrganization } = useStore()
 const { t } = useI18n()
 
 const menu = ref(false)
-const members = ref<any>()
 
 watch(menu, async () => {
   if (!menu.value) {
-    members.value = null
+    fetchMembers.data.value = null
     return
   }
-  fetchMembers()
+  fetchMembers.refresh()
 })
 
-const fetchMembers = withUiNotif(async () => {
-  members.value = await $fetch(`organizations/${orga.id}/members`, {
-    query: {
-      params: {
-        size: 0,
-        department: department.id
-      }
-    }
-  })
-})
+const fetchMembers = useFetch<{ count: number, results: any[] }>(
+  () => `${$apiPath}/organizations/${orga.id}/members`,
+  {
+    query: computed(() => ({ size: 0, department: department.id })),
+    watch: false,
+  }
+)
+const members = computed(() => fetchMembers.data.value)
 
-const confirmDelete = withUiNotif(async () => {
+const confirmDelete = useAsyncAction(async () => {
   menu.value = false
   const departments = (orga.departments ?? []).filter(d => d.id !== department.id)
   await patchOrganization.execute(orga.id, { departments }, t('common.modificationOk'))

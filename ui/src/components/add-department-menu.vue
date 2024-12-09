@@ -81,7 +81,7 @@ const editDepartment = ref({ ...emptyDepartment })
 
 watch(menu, () => {
   if (!menu.value) return
-  editDepartmentMenu.value = { ...emptyDepartment }
+  editDepartment.value = { ...emptyDepartment }
   createForm.value?.reset()
 })
 

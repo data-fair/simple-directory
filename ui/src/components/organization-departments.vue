@@ -78,25 +78,27 @@
 
           <v-list-item-title>{{ department.name }}</v-list-item-title>
 
-          <v-list-item-action v-if="writableDepartments">
-            <edit-department-menu
-              :orga="orga"
-              :department="department"
-              :department-label="departmentLabel"
-              @change="$emit('change');refreshDepartment(department)"
-            />
-          </v-list-item-action>
-          <v-list-item-action
-            v-if="writableDepartments"
-            class="ml-0"
-          >
-            <delete-department-menu
-              :orga="orga"
-              :department="department"
-              :department-label="departmentLabel"
-              @change="$emit('change')"
-            />
-          </v-list-item-action>
+          <template #append>
+            <v-list-item-action v-if="writableDepartments">
+              <edit-department-menu
+                :orga="orga"
+                :department="department"
+                :department-label="departmentLabel"
+                @change="$emit('change');refreshDepartment(department)"
+              />
+            </v-list-item-action>
+            <v-list-item-action
+              v-if="writableDepartments"
+              class="ml-0"
+            >
+              <delete-department-menu
+                :orga="orga"
+                :department="department"
+                :department-label="departmentLabel"
+                @change="$emit('change')"
+              />
+            </v-list-item-action>
+          </template>
         </v-list-item>
         <v-divider
           v-if="i + 1 < currentPage.length"
