@@ -10,7 +10,12 @@
       <h3 class="subheader mb-2">
         Solution : utiliser {{ mainPublicUrl.host }} pour se connecter
       </h3>
-      <p>La page de login propose un bouton pour se connecter depuis {{ mainPublicUrl.host }} que vous pouvez utiliser. Vous pouvez aussi utiliser <a :href="mainHostLogin">ce lien.</a>.</p>
+      <p>
+        La page de login propose un bouton pour se connecter depuis {{ mainPublicUrl.host }} que vous pouvez utiliser. Vous pouvez aussi utiliser <a
+          class="text-primary"
+          :href="mainHostLogin"
+        >ce lien.</a>.
+      </p>
     </template>
     <h3 class="subheader mb-2">
       Solution : déplacer le compte vers {{ host }}

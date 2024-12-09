@@ -125,6 +125,7 @@
                   {{ $t('pages.login.passwordlessMsg1') }} <a
                     tabindex="0"
                     role="button"
+                    class="text-primary"
                     @click="passwordlessAuth.execute()"
                     @keyup.enter="passwordlessAuth.execute()"
                   >{{ $t('pages.login.passwordlessMsg2') }}</a>
@@ -783,7 +784,10 @@
         v-if="$uiConfig.maildev.active"
         class="mt-2"
       >
-        <a :href="$uiConfig.maildev.url">{{ $t('pages.login.maildevLink') }}</a>
+        <a
+          class="text-primary"
+          :href="$uiConfig.maildev.url"
+        >{{ $t('pages.login.maildevLink') }}</a>
       </p>
     </v-col>
   </v-row>
