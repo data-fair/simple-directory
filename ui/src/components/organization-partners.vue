@@ -80,16 +80,18 @@
             {{ $t('common.createdAt') }} {{ $d(new Date(partner.createdAt)) }}
           </v-list-item-subtitle>
 
-          <v-list-item-action
-            v-if="writablePartners"
-            class="ml-0"
-          >
-            <delete-partner-menu
-              :orga="orga"
-              :partner="partner"
-              @change="$emit('change')"
-            />
-          </v-list-item-action>
+          <template #append>
+            <v-list-item-action
+              v-if="writablePartners"
+              class="ml-0"
+            >
+              <delete-partner-menu
+                :orga="orga"
+                :partner="partner"
+                @change="$emit('change')"
+              />
+            </v-list-item-action>
+          </template>
         </v-list-item>
         <v-divider
           v-if="currentPage && currentPage.length > i + 1"

@@ -39,10 +39,10 @@ function createStore () {
 
   const redirects = computed(() => {
     if (!sitesFetch.data.value) return
-    const redirects: { text: string, value: string }[] = [{ text: mainPublicUrl.host, value: mainRedirect.value }]
-      .concat(sitesFetch.data.value.results.map(site => ({ text: site.host, value: 'https://' + site.host + '/me/account' })))
+    const redirects: { title: string, value: string }[] = [{ title: mainPublicUrl.host, value: mainRedirect.value }]
+      .concat(sitesFetch.data.value.results.map(site => ({ title: site.host, value: 'https://' + site.host + '/me/account' })))
     if (mainPublicUrl.host !== host && !sitesFetch.data.value.results.find(site => site.host === host)) {
-      redirects.push({ text: host, value: 'https://' + host + '/me/account' })
+      redirects.push({ title: host, value: 'https://' + host + '/me/account' })
     }
     return redirects
   })

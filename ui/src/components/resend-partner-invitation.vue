@@ -5,15 +5,13 @@
   >
     <template #activator="{props}">
       <v-btn
-        icon
+        :icon="mdiSend"
         color="warning"
+        variant="text"
         size="small"
         :title="$t('pages.organization.sendInvitationLink')"
-
         v-bind="props"
-      >
-        <v-icon :icon="mdiSend" />
-      </v-btn>
+      />
     </template>
     <v-card
       v-if="menu"
@@ -83,13 +81,15 @@ const { orga, partner } = defineProps({
 })
 const emit = defineEmits(['change'])
 
-const { redirects } = useStore()
+const { sitesFetch, redirects } = useStore()
 const redirect = useStringSearchParam('redirect')
 const { sendUiNotif } = useUiNotif()
 const { t } = useI18n()
 
 const menu = ref(false)
 const editPartner = ref({ ...partner })
+
+sitesFetch.refresh()
 
 const confirmInvitation = withUiNotif(async () => {
   menu.value = false

@@ -52,6 +52,7 @@
           v-model="sort"
           :items="sortItems"
           name="sort"
+          density="comfortable"
           :prepend-inner-icon="mdiSort"
           @update:model-value="filterDeps"
         />
@@ -136,8 +137,8 @@ const refreshingDepartment = ref<string | null>(null)
 const timestamp = ref(new Date().getTime())
 const sort = ref('creation')
 const sortItems = [
-  { text: t('pages.organization.depSortCreation'), value: 'creation' },
-  { text: t('pages.organization.depSortAlpha'), value: 'alpha' }
+  { title: t('pages.organization.depSortCreation'), value: 'creation' },
+  { title: t('pages.organization.depSortAlpha'), value: 'alpha' }
 ]
 
 const writableDepartments = computed(() => isAdminOrga && !$uiConfig.readonly)
