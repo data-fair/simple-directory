@@ -1,5 +1,6 @@
 import type { Organization, UserWritable } from '#types'
 import config from '#config'
+import mongo from '#mongo'
 import type { SdStorage, SdStorageFactory } from './interface.ts'
 import { nanoid } from 'nanoid'
 import defaultConfig from '../../config/default.cjs'
@@ -68,6 +69,12 @@ class StorageManager {
       if (org) storage = await this.createOrgStorage(org) ?? storage
     }
     return storage
+  }
+
+  async deleteSessionById (sessionId: string) {
+    await mongo.users.updateOne({ 'sessions.id': sessionId }, { $pull: { sessions: { id: sessionId } } })
+    await mongo.ldapUserSessions.updateOne({ 'sessions.id': sessionId }, { $pull: { sessions: { id: sessionId } } })
+    await mongo.fileUserSessions.updateOne({ 'sessions.id': sessionId }, { $pull: { sessions: { id: sessionId } } })
   }
 }
 

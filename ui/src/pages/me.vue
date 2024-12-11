@@ -196,7 +196,7 @@
 
       <v-list>
         <v-list-item
-          v-for="session of userDetailsFetch.data.value?.sessions ?? []"
+          v-for="session of userDetailsFetch.data.value?.sessions?.reverse() ?? []"
           :key="session.id"
         >
           <v-list-item-title>{{ session.deviceName }}</v-list-item-title>

@@ -114,14 +114,11 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
   const existingExchangeToken = cookies.get('id_token_ex')
   const existingServerSessionInfo = existingExchangeToken && ((await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined)
   if (existingServerSessionInfo && existingServerSessionInfo.session !== serverSessionId) {
-    const sessionState = reqSession(req)
-    if (sessionState.user) {
-      const storage = await storages.getSessionStorage(sessionState)
-      await storage.deleteUserSession(sessionState.user.id, existingServerSessionInfo.session)
-    }
+    // case of a session where id_token was cleared but id_token_ex persisted, this server sessions is deprecated and can be cleared
+    await storages.deleteSessionById(existingServerSessionInfo.session)
   }
 
-  const exchangeCookieOpts = { ...opts, path: sitePath + '/simple-directory/', httpOnly: true }
+  const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
   if (serverSessionId !== null) {
     // const exchangeCookieOpts = { ...opts, httpOnly: true }
     const exchangeExp = Math.floor(date / 1000) + jwtDurations.exchangeToken
