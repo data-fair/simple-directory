@@ -254,12 +254,9 @@
           :disabled="readonly"
           name="defaultOrg"
           :items="defaultOrgItems"
-          :item-value="(org) => org.id + ( org.department ? '-' + org.department : '')"
-          :item-title="(org) => `${org.name}` + (org.department ? ` - ${org.departmentName || org.department}` : '')"
           clearable
           variant="outlined"
           density="compact"
-          return-object
           @update:model-value="() => save()"
         />
       </template>
@@ -329,8 +326,12 @@ const showMaxCreatedOrgs = computed(() => {
   return maxCreatedOrgs.value === -1 ? 'illimité' : ('' + maxCreatedOrgs.value)
 })
 
-const defaultOrgItems = computed<{ id: string, name?: string, department?: string, departmentName?: string }[]>(() => {
-  return (patch.value.ignorePersonalAccount ? [] : [{ id: '', name: t('common.userAccount') }]).concat(userDetailsFetch.data.value?.organizations ?? [])
+const defaultOrgItems = computed<{ value: string, title: string }[]>(() => {
+  return (patch.value.ignorePersonalAccount ? [] : [{ value: '', title: t('common.userAccount') }])
+    .concat((userDetailsFetch.data.value?.organizations ?? []).map(o => ({
+      value: o.id + (o.department ? (':' + o.department) : ''),
+      title: o.name + (o.department ? (':' + (o.departmentName ?? o.department)) : '')
+    })))
 })
 const showIgnorePersonalAccount = computed(() => {
 // invitation mode only (means user should always be in an orga)
@@ -342,18 +343,15 @@ const showIgnorePersonalAccount = computed(() => {
   return true
 })
 
-const defaultOrg = computed<{ id: string, department?: string }>({
+const defaultOrg = computed<string>({
   get () {
-    return {
-      id: patch.value.defaultOrg,
-      department: patch.value.defaultDep,
-      name: ''
-    }
+    return patch.value.defaultOrg + (patch.value.defaultDep ? (':' + patch.value.defaultDep) : '')
   },
   set (value) {
     if (value) {
-      patch.value.defaultOrg = value.id
-      patch.value.defaultDep = value.department || ''
+      const [org, dep] = value.split(':')
+      patch.value.defaultOrg = org
+      patch.value.defaultDep = dep || ''
     } else {
       patch.value.defaultOrg = patch.value.defaultDep = ''
     }
