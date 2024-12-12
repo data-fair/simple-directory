@@ -4,6 +4,7 @@ import UserSchema from '#types/user/schema.js'
 const body = jsonSchema(UserSchema)
   .removeReadonlyProperties()
   .pickProperties(['firstName', 'lastName', 'birthday', 'ignorePersonalAccount', 'defaultOrg', 'defaultDep', 'plannedDeletion'])
+  .makeNullable(['birthday'])
   .removeId()
   .appendTitle(' patch')
   .schema

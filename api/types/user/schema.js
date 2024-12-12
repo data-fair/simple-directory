@@ -74,7 +74,7 @@ export default {
     birthday: {
       description: 'Birth date of the user',
       type: 'string',
-      format: 'date-time'
+      format: 'date'
     },
     avatarUrl: {
       description: "URL of this user's avatar",

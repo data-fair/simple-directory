@@ -66,7 +66,6 @@
             v-model="birthdayMenu"
             :close-on-content-click="false"
             transition="scale-transition"
-
             max-width="290px"
             min-width="290px"
           >
@@ -86,11 +85,11 @@
               />
             </template>
             <v-date-picker
-              v-model="patch.birthday"
               v-model:active-picker="activeBirthDayPicker"
+              :model-value="patch.birthday ? new Date(patch.birthday) : undefined"
               :max="maxBirthday"
               no-title
-              @change="birthdayMenu = false; save()"
+              @update:model-value="setBirthDay"
             />
           </v-menu>
         </v-col>
@@ -312,6 +311,11 @@ watch(userDetailsFetch.data, () => { patch.value = newPatch() })
 const birthdayMenu = ref(false)
 const maxBirthday = dayjs().subtract(13, 'years').toISOString()
 const activeBirthDayPicker = ref()
+const setBirthDay = (birthday: Date) => {
+  patch.value.birthday = birthday.toISOString().slice(0, 10)
+  birthdayMenu.value = false
+  save()
+}
 
 const readonly = computed(() => $uiConfig.readonly || !!user.value?.os || !!user.value?.idp)
 const nbCreatedOrgs = computed(() => userOrgsFetch.data.value?.count)
