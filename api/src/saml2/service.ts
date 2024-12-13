@@ -1,6 +1,7 @@
 // useful tutorial
 // https://medium.com/disney-streaming/setup-a-single-sign-on-saml-test-environment-with-docker-and-nodejs-c53fc1a984c9
 
+import { readFile, access, constants } from 'node:fs/promises'
 import type { Saml2 } from '../../config/type/index.ts'
 import config from '#config'
 import _slug from 'slugify'
@@ -32,13 +33,34 @@ export const getSamlProviderId = (url: string) => {
   return slug(new URL(url).host, { lower: true, strict: true })
 }
 
-const readCertificates = async () => {
+const readDeprecatedCertificates = async (): Promise<undefined | Certificates> => {
+  try {
+    await access('/webapp/security/saml2/signing.key', constants.R_OK)
+    await access('/webapp/security/saml2/signing.crt', constants.R_OK)
+    await access('/webapp/security/saml2/encrypt.key', constants.R_OK)
+    await access('/webapp/security/saml2/encrypt.crt', constants.R_OK)
+  } catch (err) {
+    return undefined
+  }
+  return {
+    signing: {
+      privateKey: await readFile('/webapp/security/saml2/signing.key', 'utf8'),
+      cert: await readFile('/webapp/security/saml2/signing.crt', 'utf8')
+    },
+    encrypt: {
+      privateKey: await readFile('/webapp/security/saml2/encrypt.key', 'utf8'),
+      cert: await readFile('/webapp/security/saml2/encrypt.crt', 'utf8')
+    }
+  }
+}
+
+const readCertificates = async (): Promise<undefined | Certificates> => {
   const secret = await mongo.secrets.findOne({ _id: 'saml-certificates' })
   if (secret) {
     const certificates = secret.data
     certificates.signing.privateKey = decipher(certificates.signing.privateKey)
     certificates.encrypt.privateKey = decipher(certificates.encrypt.privateKey)
-    return certificates as Certificates
+    return certificates
   }
 }
 
@@ -61,25 +83,10 @@ export const saml2GlobalProviders = () => {
 }
 
 export const init = async () => {
-  // prepare certificates and their private keys
-  /* TODO: read in olf directory for retro-compatibility ?
-  await fs.ensureDir(config.saml2.certsDirectory)
-  for (const name of ['signing', 'encrypt']) {
-    const privateKeyPath = config.saml2.certsDirectory + '/' + name + '.key'
-    try {
-      await fs.access(privateKeyPath, fs.constants.F_OK)
-    } catch (err) {
-      const subject = `/C=FR/CN=${new URL(config.publicUrl).hostname}`
-      const opensslCmd = `openssl req -x509 -sha256 -nodes -days 1095 -newkey rsa:2048 -subj "${subject}" -keyout ${privateKeyPath} -out ${config.saml2.certsDirectory + '/' + name + '.crt'}`
-      debug('generate certificate with command: ' + opensslCmd)
-      await execAsync(opensslCmd)
-    }
-  }
-    */
-
   let certificates = await readCertificates()
   if (!certificates) {
-    certificates = { signing: await createCert(), encrypt: await createCert() }
+    certificates = await readDeprecatedCertificates()
+    if (!certificates) certificates = { signing: await createCert(), encrypt: await createCert() }
     await writeCertificates(certificates)
   }
 
