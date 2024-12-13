@@ -690,8 +690,11 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   let user = await storage.getUserByEmail(userInfo.user.email, site)
   logContext.user = user
 
-  if (!user && !invit && config.onlyCreateInvited) {
+  if (!user && !invit && config.onlyCreateInvited && !provider.coreIdProvider) {
     return returnError('onlyCreateInvited', 400)
+  }
+  if (!user && storage.readonly) {
+    return returnError('userUnknown', 403)
   }
 
   // Re-create a user that was never validated.. first clean temporary user
@@ -710,10 +713,6 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
 
   if (!user) {
-    if ((!invit && config.onlyCreateInvited) || storage.readonly) {
-      return returnError('userUnknown', 403)
-    }
-
     const newUser: UserWritable = {
       ...userInfo.user,
       id: nanoid(),
@@ -911,8 +910,11 @@ router.post('/saml2-assert', async (req, res) => {
   // check for user with same email
   let user = await storage.getUserByEmail(email, site)
 
-  if (!user && !invit && config.onlyCreateInvited) {
+  if (!user && !invit && config.onlyCreateInvited && !provider.coreIdProvider) {
     return returnError('onlyCreateInvited', 400)
+  }
+  if (!user && storage.readonly) {
+    return returnError('userUnknown', 403)
   }
 
   // Re-create a user that was never validated.. first clean temporary user
@@ -927,9 +929,6 @@ router.post('/saml2-assert', async (req, res) => {
   }
 
   if (!user) {
-    if ((!invit && config.onlyCreateInvited) || storage.readonly) {
-      return returnError('userUnknown', 403)
-    }
     const newUser: UserWritable = {
       email,
       id: nanoid(),
