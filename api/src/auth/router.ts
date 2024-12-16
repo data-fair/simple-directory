@@ -438,7 +438,7 @@ router.post('/keepalive', async (req, res, next) => {
   if (!user) throw httpError(404)
 
   const coreIdProvider = user.coreIdProvider
-  if (coreIdProvider && coreIdProvider.type === 'oauth') {
+  if (coreIdProvider?.type === 'oauth' || coreIdProvider?.type === 'oidc') {
     let provider
     const site = await reqSite(req)
     if (!site) {
