@@ -328,6 +328,7 @@ const users = useFetch<{ count: number, results: User[] }>($apiPath + '/users', 
 const deleteUserDialog = ref(false)
 const deleteUser = withUiNotif(async (user: User) => {
   await $fetch(`users/${user.id}`, { method: 'DELETE' })
+  users.refresh()
 })
 
 const currentUser = ref<User>()
