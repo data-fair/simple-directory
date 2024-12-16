@@ -24,16 +24,19 @@
     </v-row>
 
     <v-data-table-server
-      v-if="organizations.data.value"
-      v-model:options="pagination"
+      v-model:page="page"
+      v-model:items-per-page="itemsPerPage"
+      v-model:sort-by="sortBy"
       :headers="headers"
-      :items="organizations.data.value.results"
-      :items-length="pagination.totalItems"
+      :items="organizations.data.value?.results"
+      :items-length="organizations.data.value?.count || 0"
       :loading="organizations.loading.value"
       class="border-sm"
       density="compact"
       item-key="id"
-      :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
+      :items-per-page-options="[10, 25, 100]"
+      :multi-sort="false"
+      :must-sort="true"
     >
       <template #item="props">
         <tr>
@@ -170,19 +173,19 @@
 </template>
 
 <script setup lang="ts">
-import { withQuery } from 'ufo'
-
 const { t } = useI18n()
 
 const q = ref('')
 const validQ = ref('')
-const pagination = reactive({ page: 1, itemsPerPage: 10, totalItems: 0, sortDesc: [false], sortBy: ['name'], multiSort: false, mustSort: true })
+const itemsPerPage = ref(10)
+const page = ref(1)
+const sortBy = ref<{ key: string, order: 'asc' | 'desc' }[]>([{ key: 'name', order: 'asc' }])
 const sort = computed(() => {
-  if (!pagination.sortBy.length) return ''
-  return (pagination.sortDesc[0] ? '-' : '') + pagination.sortBy[0]
+  if (!sortBy.value.length) return ''
+  return (sortBy.value[0].order === 'desc' ? '-' : '') + sortBy.value[0].key
 })
-const organizationsQuery = computed(() => ({ q: validQ.value, allFields: true, page: pagination.page, size: pagination.itemsPerPage, sort: sort.value }))
-const organizations = useFetch<{ count: number, results: Organization[] }>(() => withQuery($apiPath + '/organizations', organizationsQuery.value))
+const organizationsQuery = computed(() => ({ q: validQ.value, allFields: true, page: page.value, size: itemsPerPage.value, sort: sort.value }))
+const organizations = useFetch<{ count: number, results: Organization[] }>($apiPath + '/organizations', { query: organizationsQuery })
 
 const deleteOrganizationDialog = ref(false)
 const currentOrganization = ref<Organization | null>(null)
@@ -213,12 +216,12 @@ const saveLimits = withUiNotif(async (org: Organization, limits: Limits) => {
 
 const headers: { title: string, value?: string, sortable?: boolean }[] = []
 if ($uiConfig.avatars.orgs) headers.push({ title: '', sortable: false })
-headers.push({ title: t('common.name'), value: 'name' })
+headers.push({ title: t('common.name'), value: 'name', sortable: true })
 headers.push({ title: t('common.id'), value: 'id', sortable: false })
 headers.push({ title: t('common.description'), value: 'description', sortable: false })
 if (!$uiConfig.readonly) {
-  headers.push({ title: t('common.createdAt'), value: 'created.date' })
-  headers.push({ title: t('common.updatedAt'), value: 'updated.date' })
+  headers.push({ title: t('common.createdAt'), value: 'created.date', sortable: true })
+  headers.push({ title: t('common.updatedAt'), value: 'updated.date', sortable: true })
 }
 headers.push({ title: '', value: 'actions', sortable: false })
 

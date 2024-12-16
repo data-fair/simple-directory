@@ -32,17 +32,20 @@
       />
     </v-row>
 
-    <v-data-table
-      v-if="users"
-      v-model:options="pagination"
+    <v-data-table-server
+      v-model:page="page"
+      v-model:items-per-page="itemsPerPage"
+      v-model:sort-by="sortBy"
       :headers="headers"
       :items="users.data.value?.results"
-      :items-length="pagination.totalItems"
+      :items-length="users.data.value?.count || 0"
       :loading="users.loading.value"
       class="users-table border-sm"
       density="compact"
       item-key="id"
-      :footer-props="{itemsPerPageOptions: [10, 25, 100], itemsPerPageText: ''}"
+      :items-per-page-options="[10, 25, 100]"
+      :multi-sort="false"
+      :must-sort="true"
     >
       <template #item="props">
         <tr>
@@ -155,7 +158,7 @@
           </template>
         </tr>
       </template>
-    </v-data-table>
+    </v-data-table-server>
 
     <v-dialog
       v-model="deleteUserDialog"
@@ -307,20 +310,20 @@
 </template>
 
 <script setup lang="ts">
-import { withQuery } from 'ufo'
-
 const { t } = useI18n()
 const { asAdmin } = useSession()
 
 const q = ref('')
 const validQ = ref('')
-const pagination = reactive({ page: 1, itemsPerPage: 10, totalItems: 0, sortBy: ['email'], sortDesc: [false], multiSort: false, mustSort: true })
+const itemsPerPage = ref(10)
+const page = ref(1)
+const sortBy = ref<{ key: string, order: 'asc' | 'desc' }[]>([{ key: 'email', order: 'asc' }])
 const sort = computed(() => {
-  if (!pagination.sortBy.length) return ''
-  return (pagination.sortDesc[0] ? '-' : '') + pagination.sortBy[0]
+  if (!sortBy.value.length) return ''
+  return (sortBy.value[0].order === 'desc' ? '-' : '') + sortBy.value[0].key
 })
-const usersQuery = computed(() => ({ q: validQ.value, allFields: true, page: pagination.page, size: pagination.itemsPerPage, sort: sort.value }))
-const users = useFetch<{ count: number, results: User[] }>(() => withQuery($apiPath + '/users', usersQuery.value))
+const usersQuery = computed(() => ({ q: validQ.value, allFields: true, page: page.value, size: itemsPerPage.value, sort: sort.value }))
+const users = useFetch<{ count: number, results: User[] }>($apiPath + '/users', { query: usersQuery })
 
 const deleteUserDialog = ref(false)
 const deleteUser = withUiNotif(async (user: User) => {
@@ -370,8 +373,8 @@ const drop2FACurrentUser = withUiNotif(async () => {
 
 const headers: { title: string, value?: string, sortable?: boolean }[] = []
 if ($uiConfig.avatars.users) headers.push({ title: '', sortable: false })
-headers.push({ title: t('common.email'), value: 'email' })
-headers.push({ title: t('common.name'), value: 'name' })
+headers.push({ title: t('common.email'), value: 'email', sortable: true })
+headers.push({ title: t('common.name'), value: 'name', sortable: true })
 headers.push({ title: t('common.id'), value: 'id', sortable: false })
 // headers.push({ title: t('common.firstName'), value: 'firstName' })
 // headers.push({ title: t('common.lastName'), value: 'lastName' })
@@ -381,13 +384,13 @@ if ($uiConfig.quotas.defaultMaxCreatedOrgs !== -1 && !$uiConfig.readonly) {
   headers.push({ title: t('common.maxCreatedOrgsShort'), value: 'maxCreatedOrgs', sortable: false })
 }
 if (!$uiConfig.readonly) {
-  headers.push({ title: t('common.createdAt'), value: 'created.date' })
+  headers.push({ title: t('common.createdAt'), value: 'created.date', sortable: true })
   if ($uiConfig.manageSites) {
-    headers.push({ title: t('common.host'), value: 'host' })
+    headers.push({ title: t('common.host'), value: 'host', sortable: true })
   }
-  headers.push({ title: t('common.updatedAt'), value: 'updated.date' })
-  headers.push({ title: t('common.loggedAt'), value: 'logged' })
-  headers.push({ title: t('common.plannedDeletionShort'), value: 'plannedDeletion' })
+  headers.push({ title: t('common.updatedAt'), value: 'updated.date', sortable: true })
+  headers.push({ title: t('common.loggedAt'), value: 'logged', sortable: true })
+  headers.push({ title: t('common.plannedDeletionShort'), value: 'plannedDeletion', sortable: true })
 }
 headers.push({ title: '', value: 'actions', sortable: false })
 </script>
