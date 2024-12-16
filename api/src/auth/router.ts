@@ -743,7 +743,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
       await storage.addMember(memberInfo.org, user, memberInfo.role, null, memberInfo.readOnly)
     }
   } else {
-    if (user.coreIdProvider && (user.coreIdProvider.type !== 'oauth' || user.coreIdProvider.id !== provider.id)) {
+    if (user.coreIdProvider && (user.coreIdProvider.type !== (provider.type || 'oauth') || user.coreIdProvider.id !== provider.id)) {
       return res.status(400).send('Utilisateur déjà lié à un autre fournisseur d\'identité principale')
     }
     debugOAuth('Existing user authenticated through oauth', user, userInfo)
