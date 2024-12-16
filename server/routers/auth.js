@@ -448,7 +448,7 @@ router.post('/keepalive', asyncWrap(async (req, res, next) => {
   const storage = req.app.get('storage')
   const user = req.user.id === '_superadmin' ? req.user : await storage.getUser({ id: req.user.id })
 
-  if (user?.coreIdProvider?.type === 'oauth') {
+  if (user?.coreIdProvider?.type === 'oauth' || user?.coreIdProvider?.type === 'oidc') {
     let provider
     if (!req.site) {
       provider = oauth.providers.find(p => p.id === user.coreIdProvider.id)
@@ -889,7 +889,7 @@ const oauthCallback = asyncWrap(async (req, res, next) => {
       await storage.addMember(memberInfo.org, user, memberInfo.role, null, memberInfo.readOnly)
     }
   } else {
-    if (user.coreIdProvider && (user.coreIdProvider.type !== 'oauth' || user.coreIdProvider.id !== provider.id)) {
+    if (user.coreIdProvider && (user.coreIdProvider.type !== (provider.type || 'oauth') || user.coreIdProvider.id !== provider.id)) {
       return res.status(400).send('Utilisateur déjà lié à un autre fournisseur d\'identité principale')
     }
     debugOAuth('Existing user authenticated through oauth', user, userInfo)
