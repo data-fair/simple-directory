@@ -288,12 +288,16 @@
 import { FetchError } from 'ofetch'
 import type { VForm } from 'vuetify/components'
 
+console.log('setup 1')
+
 const { user, keepalive } = useSession()
 const { dayjs, duration } = useLocaleDayjs()
 const { t } = useI18n()
 const { userDetailsFetch, authProvidersFetch } = useStore()
 
 if (!user.value) throw new Error('auth required')
+
+console.log('setup 2')
 
 userDetailsFetch.refresh()
 authProvidersFetch.refresh()
@@ -308,7 +312,11 @@ const newPatch = () => ({
   defaultDep: userDetailsFetch.data.value?.defaultDep || ''
 })
 const patch = ref(newPatch())
-watch(userDetailsFetch.data, () => { patch.value = newPatch() })
+console.log('setup 3')
+watch(userDetailsFetch.data, () => {
+  console.log('computed userDetailsFetch')
+  patch.value = newPatch()
+})
 
 const birthdayMenu = ref(false)
 const maxBirthday = dayjs().subtract(13, 'years').toISOString()
@@ -320,20 +328,27 @@ const setBirthDay = (birthday: Date) => {
   save()
 }
 
+console.log('setup 4')
+
 const readonly = computed(() => $uiConfig.readonly || !!user.value?.os || !!user.value?.idp)
 const nbCreatedOrgs = computed(() => userOrgsFetch.data.value?.count)
 const maxCreatedOrgs = computed(() => {
+  console.log('computed maxCreatedOrgs')
   if (!userDetailsFetch.data.value) return 0
   return userDetailsFetch.data.value.maxCreatedOrgs !== undefined && userDetailsFetch.data.value.maxCreatedOrgs !== null ? userDetailsFetch.data.value.maxCreatedOrgs : $uiConfig.quotas.defaultMaxCreatedOrgs
 })
 const showMaxCreatedOrgs = computed(() => {
+  console.log('computed showMaxCreatedOrgs')
   if (!userDetailsFetch.data.value) return false
   if ($uiConfig.quotas.defaultMaxCreatedOrgs === -1) return false
   if ($uiConfig.quotas.defaultMaxCreatedOrgs === 0 && !userDetailsFetch.data.value.maxCreatedOrgs) return false
   return maxCreatedOrgs.value === -1 ? 'illimité' : ('' + maxCreatedOrgs.value)
 })
 
+console.log('setup 5')
+
 const defaultOrgItems = computed<{ value: string, title: string }[]>(() => {
+  console.log('computed defaultOrgItems')
   return (patch.value.ignorePersonalAccount ? [] : [{ value: '', title: t('common.userAccount') }])
     .concat((userDetailsFetch.data.value?.organizations ?? []).map(o => ({
       value: o.id + (o.department ? (':' + o.department) : ''),
@@ -341,7 +356,8 @@ const defaultOrgItems = computed<{ value: string, title: string }[]>(() => {
     })))
 })
 const showIgnorePersonalAccount = computed(() => {
-// invitation mode only (means user should always be in an orga)
+  console.log('computed showIgnorePersonalAccount')
+  // invitation mode only (means user should always be in an orga)
   // ignorePersonalAccount should already be true in this case
   if ($uiConfig.onlyCreateInvited && userDetailsFetch.data.value?.ignorePersonalAccount) return false
   // user only has a personal account
@@ -350,8 +366,11 @@ const showIgnorePersonalAccount = computed(() => {
   return true
 })
 
+console.log('setup 6')
+
 const defaultOrg = computed<string>({
   get () {
+    console.log('computed defaultOrg')
     return patch.value.defaultOrg + (patch.value.defaultDep ? (':' + patch.value.defaultDep) : '')
   },
   set (value) {
@@ -367,6 +386,7 @@ const defaultOrg = computed<string>({
 })
 
 const userIdentities = computed(() => {
+  console.log('computed userIdentities')
   if (!authProvidersFetch.data.value || !userDetailsFetch.data.value) return []
   return authProvidersFetch.data.value.map(p => ({
     ...p,
@@ -374,7 +394,10 @@ const userIdentities = computed(() => {
   })).filter(p => !!p.user).map(p => ({ ...p, name: p.user.login || p.user.name }))
 })
 
+console.log('setup 7')
+
 watch(birthdayMenu, (val) => {
+  console.log('watch birthdayMenu')
   if (val) setTimeout(() => { activeBirthDayPicker.value = 'YEAR' })
 })
 
