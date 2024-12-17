@@ -182,7 +182,6 @@ module.exports = {
   },
   perOrgStorageTypes: jsonEnv('PER_ORG_STORAGE_TYPES'),
   cipherPassword: 'CIPHER_PASSWORD',
-  notifyUrl: 'NOTIFY_URL',
   privateNotifyUrl: 'PRIVATE_NOTIFY_URL',
   plannedDeletionDelay: 'PLANNED_DELETION_DELAY',
   cleanup: {

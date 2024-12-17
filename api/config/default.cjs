@@ -262,7 +262,6 @@ module.exports = {
   // allow configuring external storages per organization
   perOrgStorageTypes: [],
   cipherPassword: undefined,
-  notifyUrl: undefined,
   privateNotifyUrl: undefined,
   plannedDeletionDelay: 14,
   cleanup: {

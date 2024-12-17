@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-deprecated-slot-attribute -->
 <template>
   <v-menu
     :close-on-content-click="false"
@@ -15,22 +16,27 @@
       </v-btn>
     </template>
     <v-card width="500">
-      <v-iframe :src="notifySubscribeUrl" />
+      <d-frame
+        :src="notifySubscribeUrl"
+        resize
+      >
+        <div slot="loader">
+          <v-skeleton-loader type="paragraph" />
+        </div>
+      </d-frame>
     </v-card>
   </v-menu>
 </template>
 
 <script setup lang="ts">
-import 'iframe-resizer/js/iframeResizer'
-// @ts-ignore
-import VIframe from '@koumoul/v-iframe'
+import '@data-fair/frame/lib/d-frame.js'
 
 const { topics, sender } = defineProps({
   topics: { type: Array as () => { key: string, title: string }[], required: true },
   sender: { type: String, required: true }
 })
 
-const notifySubscribeUrl = computed(() => `${$sitePath}/notify/embed/subscribe?key=${encodeURIComponent(topics.map(t => t.key).join(','))}&title=${encodeURIComponent(topics.map(t => t.title).join(','))}&sender=${encodeURIComponent(sender)}&register=false`)
+const notifySubscribeUrl = computed(() => `${$sitePath}/events/embed/subscribe?key=${encodeURIComponent(topics.map(t => t.key).join(','))}&title=${encodeURIComponent(topics.map(t => t.title).join(','))}&sender=${encodeURIComponent(sender)}&register=false`)
 </script>
 
 <style>

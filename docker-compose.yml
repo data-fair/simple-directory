@@ -102,19 +102,20 @@ services:
   # related services from the data-fair stack
   #####
 
-  notify:
+  events:
     profiles:
       - dev
-    image: ghcr.io/data-fair/notify:master
+    image: ghcr.io/data-fair/events:main
     network_mode: host
     environment:
       - PORT=8088
       - PUBLIC_URL=http://localhost:5689/notify
       - WS_PUBLIC_URL=ws://localhost:5689/notify
-      - DIRECTORY_URL=http://localhost:5689/simple-directory
-      - SECRET_NOTIFICATIONS=secret-notifications
+      - PRIVATE_DIRECTORY_URL=http://localhost:5689/simple-directory
+      - SECRET_EVENTS=secret-events
+      - SECRET_IDENTITIES=secret-identities
       - SECRET_SENDMAILS=secret-sendmails
-      - PROMETHEUS_ACTIVE=false
+      - OBSERVER_ACTIVE=false
 
   #####
   # db
