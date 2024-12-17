@@ -312,6 +312,7 @@ const birthdayMenu = ref(false)
 const maxBirthday = dayjs().subtract(13, 'years').toISOString()
 const activeBirthDayPicker = ref()
 const setBirthDay = (birthday: Date) => {
+  console.log('setBirthDay')
   patch.value.birthday = birthday.toISOString().slice(0, 10)
   birthdayMenu.value = false
   save()
@@ -352,6 +353,7 @@ const defaultOrg = computed<string>({
     return patch.value.defaultOrg + (patch.value.defaultDep ? (':' + patch.value.defaultDep) : '')
   },
   set (value) {
+    console.log('setDefaultOrg')
     if (value) {
       const [org, dep] = value.split(':')
       patch.value.defaultOrg = org
