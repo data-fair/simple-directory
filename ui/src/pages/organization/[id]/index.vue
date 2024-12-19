@@ -79,7 +79,6 @@
         :model-value="orga['2FA']?.roles"
         :items="orga.roles"
         :messages="[$t('pages.organization.2FARolesMsg')]"
-        :rules="[v => !!v || '']"
         :placeholder="$t('pages.organization.2FARoles')"
         multiple
         name="2FARoles"
