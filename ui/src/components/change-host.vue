@@ -67,11 +67,7 @@ const mainHostLogin = computed(() => {
 })
 
 const confirmChangeHost = withUiNotif(async () => {
-  const changeHostToken = await $fetch(
-    'api/users/' + user.id + '/host',
-    { method: 'POST', body: { host }, params: { action_token: actionToken } }
-  )
-  console.log('changePasswordToken', changeHostToken)
+  const changeHostToken = await $fetch(`users/${user.id}/host`, { method: 'POST', body: { host }, params: { action_token: actionToken } })
   if (changeHostToken) {
     emit('goTo', 'changePassword')
     reactiveSearchParams.action_token = changeHostToken
