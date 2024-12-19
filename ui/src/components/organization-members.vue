@@ -300,10 +300,7 @@ const saveMember = useAsyncAction(async (member: Member, oldMember: Member) => {
   const patch: Partial<Member> = { role: member.role }
   if (member.department) {
     const dep = orga.departments?.find(d => d.id === member.department)
-    if (dep) {
-      patch.department = dep.id
-      patch.departmentName = dep.name
-    }
+    if (dep) patch.department = dep.id
   }
   await $fetch(`organizations/${orga.id}/members/${member.id}`, {
     method: 'PATCH',
