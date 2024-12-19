@@ -34,6 +34,7 @@ router.post('/:type/:id', isSuperAdmin, async (req, res, next) => {
   req.body.type = req.params.type
   req.body.id = req.params.id
   const limits = limitsSchema.returnValid(req.body)
+  // TODO: only accept limits not consumption
   await mongo.limits
     .replaceOne({ type: req.params.type, id: req.params.id }, limits, { upsert: true })
   res.send(limits)

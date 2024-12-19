@@ -8,7 +8,7 @@ export default {
     body: {
       type: 'object',
       additionalProperties: false,
-      required: ['email', 'password'],
+      required: ['email'],
       properties: {
         email: { type: 'string' },
         org: { type: 'string' },
