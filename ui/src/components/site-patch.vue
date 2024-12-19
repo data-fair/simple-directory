@@ -77,6 +77,7 @@ const valid = ref(false)
 const form = ref<InstanceType<typeof VForm>>()
 
 const vjsfOptions = computed(() => ({
+  density: 'comfortable',
   context: {
     otherSites: sites.filter(s => s._id !== site._id).map(site => site.host),
     otherSitesProviders: sites.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {} as Record<string, string[]>)
@@ -85,7 +86,9 @@ const vjsfOptions = computed(() => ({
 
 watch(menu, () => {
   if (!menu.value) return
-  patch.value = JSON.parse(JSON.stringify(site))
+  const siteClone = JSON.parse(JSON.stringify(site))
+  delete siteClone._id
+  patch.value = siteClone
 })
 
 const confirmEdit = async () => {

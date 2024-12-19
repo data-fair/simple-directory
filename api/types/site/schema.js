@@ -91,10 +91,12 @@ export default {
       ]
     },
     authOnlyOtherSite: {
-      'x-if': "parent.value.authMode === 'onlyOtherSite'",
+      layout: {
+        if: 'parent.data.authMode === "onlyOtherSite"',
+        getItems: 'context.otherSites'
+      },
       type: 'string',
-      title: "Autre site pour l'authentification",
-      'x-fromData': 'context.otherSites'
+      title: "Autre site pour l'authentification"
     },
     reducedPersonalInfoAtCreation: {
       type: 'boolean',
@@ -103,12 +105,14 @@ export default {
     },
     tosMessage: {
       type: 'string',
-      'x-display': 'textarea',
+      layout: 'textarea',
       title: "Message des conditions d'utilisation",
       description: "Vous pouvez remplacer le message des conditions d'utilisation par défaut."
     },
     authProviders: {
-      'x-if': "parent.value.authMode !== 'onlyOtherSite' && parent.value.authMode !== 'onlyBackOffice'",
+      layout: {
+        if: "parent.data.authMode !== 'onlyOtherSite' && parent.data.authMode !== 'onlyBackOffice'"
+      },
       type: 'array',
       title: "Fournisseurs d'identité (SSO)",
       items: {
@@ -128,6 +132,9 @@ export default {
             title: 'Nom'
           }
         },
+        oneOfLayout: {
+          label: 'Type de fournisseur',
+        },
         oneOf: [
           {
             $ref: '#/$defs/oidcProvider'
@@ -141,13 +148,14 @@ export default {
             properties: {
               type: {
                 type: 'string',
-                title: 'Type de fournisseur',
                 const: 'otherSite'
               },
               site: {
                 type: 'string',
                 title: 'Site',
-                'x-fromData': 'context.otherSites'
+                layout: {
+                  getItems: 'context.otherSites'
+                }
               }
             }
           },
@@ -160,19 +168,22 @@ export default {
             properties: {
               type: {
                 type: 'string',
-                title: 'Type de fournisseur',
                 const: 'otherSiteProvider'
               },
               site: {
                 type: 'string',
                 title: 'Site',
-                'x-fromData': 'context.otherSites'
+                layout: {
+                  getItems: 'context.otherSites'
+                }
               },
               provider: {
                 type: 'string',
                 title: 'Fournisseur',
-                'x-if': 'parent.value.site',
-                'x-fromData': 'context.otherSitesProviders[parent.value.site]'
+                layout: {
+                  if: 'parent.data.site',
+                  getItems: 'context.otherSitesProviders[parent.data.site]'
+                }
               }
             }
           }
@@ -189,19 +200,18 @@ export default {
         'client'
       ],
       properties: {
+        type: {
+          type: 'string',
+          const: 'oidc'
+        },
         color: {
           type: 'string',
           title: 'Couleur',
-          'x-display': 'color-picker'
+          layout: 'color-picker'
         },
         img: {
           type: 'string',
           title: 'URL du logo (petite taille)'
-        },
-        type: {
-          type: 'string',
-          title: 'Type de fournisseur',
-          const: 'oidc'
         },
         discovery: {
           type: 'string',

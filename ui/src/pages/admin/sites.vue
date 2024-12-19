@@ -35,7 +35,7 @@
           />
           <td>
             <a
-              :href="`http://${props.item.host}`"
+              :href="`http://${props.item.host}${props.item.path ?? ''}`"
               target="blank"
             >{{ props.item.host }}</a>
           </td>

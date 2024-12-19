@@ -919,11 +919,10 @@ watch(separateEmailPasswordSteps, (value) => {
 let redirectToOtherSite = false
 if (sitePublic.value?.authMode === 'onlyBackOffice') {
   redirectToOtherSite = true
-  const mainLoginUrl = new URL(window.location.href)
-  mainLoginUrl.host = mainPublicUrl.host
-  window.location.replace(mainLoginUrl.href)
+  window.location.replace(window.location.href.replace($sdUrl, mainPublicUrl.href))
 }
 if (sitePublic.value?.authMode === 'onlyOtherSite' && sitePublic.value?.authOnlyOtherSite) {
+  // WARNING: this auth mode is not yet compatible with sites that have a path prefix
   redirectToOtherSite = true
   const otherSiteLoginUrl = new URL(window.location.href)
   otherSiteLoginUrl.host = sitePublic.value?.authOnlyOtherSite
