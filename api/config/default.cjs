@@ -125,26 +125,74 @@ module.exports = {
     logo: undefined,
     colors: {
       // standard vuetify colors, see https://vuetifyjs.com/en/styles/colors/#material-colors
-      background: '#FFFFFF',
+      background: '#FAFAFA', // grey-lighten-5
       'on-background': '#424242', // grey-darken-3
       surface: '#FFFFFF',
       'on-surface': '#424242', // grey-darken-3
       primary: '#1976D2', // blue.darken2
       'on-primary': '#FFFFFF', // white
       'text-primary': undefined, // same as primary by default
-      secondary: '#90CAF9', // blue-lighten-3
+      secondary: '#BBDEFB', // blue-lighten-4
       'on-secondary': '#000000',
-      accent: '#DD2C00', // deep-orange-darken-4
+      accent: '#2962FF', // blue-accent-4
       'on-accent': '#FFFFFF',
       error: '#D50000', // red-accent-4
       'on-error': '#FFFFFF',
-      info: '#2962FF', // blue-accent-4
+      info: '#546E7A', // blue-grey-darken-1
       'on-info': '#FFFFFF',
       success: '#2E7D32', // green-darken-3
       'on-success': '#FFFFFF',
       warning: '#D81B60', // pink-darken-1
       'on-warning': '#FFFFFF',
       admin: '#B71C1C', // red-darken-4
+      'on-admin': '#FFFFFF',
+    },
+    dark: true,
+    darkColors: {
+      background: '#121212',
+      'on-background': '#FFFFFF', // white
+      surface: '#212121',
+      'on-surface': '#FFFFFF', // white
+      primary: '#1976D2', // blue.darken2
+      'on-primary': '#FFFFFF', // white
+      'text-primary': undefined, // same as primary by default
+      secondary: '#BBDEFB', // blue-lighten-4
+      'on-secondary': '#000000',
+      accent: '#2962FF', // blue-darken-4
+      'on-accent': '#FFFFFF',
+      error: '#D50000', // red-accent-4
+      'on-error': '#FFFFFF',
+      info: '#546E7A', // blue-grey-darken-1
+      'on-info': '#FFFFFF',
+      success: '#2E7D32', // green-darken-3
+      'on-success': '#FFFFFF',
+      warning: '#D81B60', // pink-darken-1
+      'on-warning': '#FFFFFF',
+      admin: '#B71C1C', // red-darken-4
+      'on-admin': '#FFFFFF',
+    },
+    hc: true,
+    hcColors: {
+      background: '#FFFFFF',
+      'on-background': '#000000',
+      surface: '#FFFFFF',
+      'on-surface': '#000000',
+      primary: '#0D47A1', // blue.darken4
+      'on-primary': '#FFFFFF', // white
+      'text-primary': undefined, // same as primary by default
+      secondary: '#BBDEFB', // blue-lighten-4
+      'on-secondary': '#000000',
+      accent: '#1A237E', // indigo-darken-4
+      'on-accent': '#FFFFFF',
+      error: '#800000',
+      'on-error': '#FFFFFF',
+      info: '#37474F',
+      'on-info': '#FFFFFF',
+      success: '#1B5E20', // green-darken-4
+      'on-success': '#FFFFFF',
+      warning: '#880E4F', // pink-darken-4
+      'on-warning': '#FFFFFF',
+      admin: '#801414',
       'on-admin': '#FFFFFF',
     }
   },

@@ -49,7 +49,7 @@
     <v-list
       v-if="orga.partners?.length"
       lines="two"
-      class="elevation-1 mt-1"
+      class="py-0 mt-1 border-sm"
     >
       <template
         v-for="(partner, i) in currentPage"

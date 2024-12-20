@@ -95,7 +95,8 @@ export default defineConfig({
             'mdiShieldAlert',
             'mdiSort',
             'mdiWeb',
-            'mdiMonitorCellphoneStar'
+            'mdiMonitorCellphoneStar',
+            'mdiThemeLightDark'
           ]
         }
       ],

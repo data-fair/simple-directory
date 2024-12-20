@@ -348,7 +348,12 @@ Feel free to contact us at {contact}.
     acceptedInvitation: 'The user {name} ({email}) has joined the organization {orgName}.'
   },
   colors: {
-    readableWarning: 'the {colorName} color ({colorCode}) is not sufficiently readable over the {bgColorName} color ({bgColorCode})',
+    theme: {
+      default: 'default',
+      dark: 'dark',
+      hc: 'high contrast'
+    },
+    readableWarning: 'the {colorName} color ({colorCode}) of {themeName} theme is not sufficiently readable over the {bgColorName} color ({bgColorCode})',
     authProvider: 'auth provider {title}',
     white: 'white',
     text: 'text',

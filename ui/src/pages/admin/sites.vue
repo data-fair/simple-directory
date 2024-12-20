@@ -23,20 +23,21 @@
     >
       <template #item="props">
         <tr>
-          <td v-if="props.item.logo">
+          <td v-if="props.item.theme.logo">
             <img
               style="max-height: 100%"
-              :src="props.item.logo"
+              :src="props.item.theme.logo"
             >
           </td>
           <td
             v-else
-            :style="`min-width:50px;background-color:${props.item.theme.primaryColor}`"
+            :style="`min-width:50px;background-color:${props.item.theme.colors.primary}`"
           />
           <td>
             <a
               :href="`http://${props.item.host}${props.item.path ?? ''}`"
               target="blank"
+              class="text-primary"
             >{{ props.item.host }}</a>
           </td>
           <td>{{ props.item._id }}</td>

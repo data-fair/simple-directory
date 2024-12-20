@@ -3,7 +3,7 @@ import SiteSchema from '#types/site/schema.js'
 
 const schema = jsonSchema(SiteSchema)
   .removeReadonlyProperties()
-  .pickProperties(['theme', 'logo', 'reducedPersonalInfoAtCreation', 'tosMessage', 'authMode', 'authOnlyOtherSite', 'authProviders'])
+  .pickProperties(['theme', 'reducedPersonalInfoAtCreation', 'tosMessage', 'authMode', 'authOnlyOtherSite', 'authProviders'])
   .appendTitle(' patch')
   .schema
 

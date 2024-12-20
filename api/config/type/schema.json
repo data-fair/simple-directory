@@ -107,17 +107,7 @@
         }
       }
     },
-    "theme": {
-      "type": "object",
-      "required": ["colors"],
-      "properties": {
-        "logo": { "type": "string" },
-        "colors": {
-          "type": "object",
-          "$ref": "#/$defs/colors"
-        }
-      }
-    },
+    "theme": { "$ref": "#/$defs/theme" },
     "i18n": {
       "type": "object",
       "required": [
@@ -637,6 +627,37 @@
         "organizations": { "type": "string" }
       }
     },
+    "theme": {
+      "type": "object",
+      "required": ["colors"],
+      "layout": [
+        "logo",
+        {
+          "comp": "tabs",
+          "children": [{
+            "title": "Thème par défaut",
+            "children": ["colors"]
+          }, {
+            "title": "Thème sombre",
+            "children": ["dark", "darkColors"]
+          }, {
+            "title": "Thème à fort contraste",
+            "children": ["hc", "hcColors"]
+          }]
+        }
+      ],
+      "properties": {
+        "logo": {
+          "title": "URL d'un logo",
+          "type": "string"
+        },
+        "colors": { "$ref": "#/$defs/colors" },
+        "dark": { "type": "boolean", "title": "proposer ce thème aux utilisateurs" },
+        "darkColors": { "$ref": "#/$defs/colors" },
+        "hc": { "type": "boolean", "title": "proposer ce thème aux utilisateurs" },
+        "hcColors": { "$ref": "#/$defs/colors" }
+      }
+    },
     "colors": {
       "type": "object",
       "additionalProperties": false,
@@ -663,27 +684,161 @@
         "on-admin"
       ],
       "properties": {
-        "background": { "type": "string" },
-        "on-background": { "type": "string" },
-        "surface": { "type": "string" },
-        "on-surface": { "type": "string" },
-        "primary": { "type": "string" },
-        "on-primary": { "type": "string" },
-        "text-primary": { "type": "string" },
-        "secondary": { "type": "string" },
-        "on-secondary": { "type": "string" },
-        "accent": { "type": "string" },
-        "on-accent": { "type": "string" },
-        "error": { "type": "string" },
-        "on-error": { "type": "string" },
-        "info": { "type": "string" },
-        "on-info": { "type": "string" },
-        "success": { "type": "string" },
-        "on-success": { "type": "string" },
-        "warning": { "type": "string" },
-        "on-warning": { "type": "string" },
-        "admin": { "type": "string" },
-        "on-admin": { "type": "string" }
+        "background": {
+          "type": "string",
+          "title": "Couleur de fond",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "on-background": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur de fond",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "surface": {
+          "type": "string",
+          "title": "Couleur des surfaces (vignettes, listes, etc)",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "on-surface": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur des surfaces",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "primary": {
+          "type": "string",
+          "title": "Couleur principale",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "on-primary": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur principale",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "text-primary": {
+          "type": "string",
+          "title": "Couleur de texte principal sur couleur de fond",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4,
+            "hint": "laissez vide pour utiliser la couleur principale"
+          }
+        },
+        "secondary": {
+          "type": "string",
+          "title": "Couleur secondaire",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "on-secondary": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur secondaire",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "accent": {
+          "type": "string",
+          "title": "Couleur accentuée",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "on-accent": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur accentuée",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "info": {
+          "type": "string",
+          "title": "Couleur info",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "on-info": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur info",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "success": {
+          "type": "string",
+          "title": "Couleur succès",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "on-success": {
+          "type": "string",
+          "title": "Couleur succès",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "error": {
+          "type": "string",
+          "title": "Couleur erreur",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "on-error": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur erreur",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "warning": {
+          "type": "string",
+          "title": "Couleur avertissement",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "on-warning": {
+          "type": "string",
+          "title": "Couleur de texte sur avertissement",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "admin": { "type": "string", "layout": "none" },
+        "on-admin": { "type": "string", "layout": "none" }
       }
     }
   }

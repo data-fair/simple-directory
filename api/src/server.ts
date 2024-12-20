@@ -1,8 +1,9 @@
+import { resolve } from 'node:path'
 import { createServer } from 'node:http'
 import { session } from '@data-fair/lib-express/index.js'
 import { startObserver, stopObserver } from '@data-fair/lib-node/observer.js'
 import locks from '@data-fair/lib-node/locks.js'
-// import upgradeScripts from '@data-fair/lib-node/upgrade-scripts.js'
+import upgradeScripts from '@data-fair/lib-node/upgrade-scripts.js'
 import mongo from '#mongo'
 import * as usersWorker from './users/worker.ts'
 import * as keysManager from './tokens/keys-manager.ts'
@@ -15,7 +16,7 @@ import { createHttpTerminator } from 'http-terminator'
 import app from './app.ts'
 import config from '#config'
 import { publicProviders } from './auth/providers.ts'
-import { getColorsWarnings } from './utils/color.ts'
+import { getSiteColorsWarnings } from './utils/color.ts'
 
 const server = createServer(app)
 const httpTerminator = createHttpTerminator({ server })
@@ -43,9 +44,9 @@ export const start = async () => {
     keysManager.start(),
     metrics.init()
   ])
-  // await upgradeScripts(mongo.db, resolve(import.meta.dirname, '../..'))
+  await upgradeScripts(mongo.db, locks, resolve(import.meta.dirname, '../..'))
 
-  const colorWarnings = getColorsWarnings(config.i18n.defaultLocale, config.theme.colors, await publicProviders())
+  const colorWarnings = getSiteColorsWarnings(config.i18n.defaultLocale, config.theme, await publicProviders())
   if (colorWarnings.length) {
     console.error('Configuration contains color warnings')
     for (const cw of colorWarnings) console.error('  - ' + cw)

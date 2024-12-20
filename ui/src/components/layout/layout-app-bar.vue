@@ -1,8 +1,8 @@
 <template>
   <v-app-bar
     density="comfortable"
-    flat
-    scroll-behavior="hide"
+    class="border-b-sm"
+    scroll-behavior="elevate"
   >
     <template v-if="$route.name !== '/'">
       <div class="logo-container">
@@ -105,6 +105,7 @@
         <v-divider />
       </template>
     </personal-menu>
+    <theme-switcher />
     <lang-switcher :locales="$uiConfig.i18n.locales" />
   </v-app-bar>
 </template>
@@ -113,4 +114,5 @@
 const { user, organization } = useSession()
 import PersonalMenu from '@data-fair/lib-vuetify/personal-menu.vue'
 import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
+import ThemeSwitcher from '@data-fair/lib-vuetify/theme-switcher.vue'
 </script>

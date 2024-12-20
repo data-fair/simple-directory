@@ -1,4 +1,4 @@
-import type { Colors } from '#types/site-public/index.ts'
+import type { Colors, Theme } from '#types/site-public/index.ts'
 import tinycolor from 'tinycolor2'
 import { getMessage } from '#i18n'
 
@@ -30,22 +30,29 @@ export const readableColor = (color: string, colors: Colors) => {
   return contrastColorCache[cacheKey]
 } */
 
-function readableWarning (locale: string, colorCode?: string, colorName?: string, bgColorCode?: string, bgColorName?: string) {
+function readableWarning (readableOptions: tinycolor.WCAG2Options, locale: string, colorCode?: string, colorName?: string, bgColorCode?: string, bgColorName?: string, themeName?: string) {
   if (!colorCode || !bgColorCode) return
   if (!tinycolor.isReadable(colorCode, bgColorCode, readableOptions)) {
-    return getMessage(locale, 'colors.readableWarning', { colorCode, colorName: getMessage(locale, `colors.${colorName}`), bgColorCode, bgColorName: getMessage(locale, `colors.${bgColorName}`) })
+    return getMessage(locale, 'colors.readableWarning', { colorCode, colorName: getMessage(locale, `colors.${colorName}`), bgColorCode, bgColorName: getMessage(locale, `colors.${bgColorName}`), themeName: getMessage(locale, `colors.theme.${themeName}`) })
   }
 }
 
-export function getColorsWarnings (locale: string, colors: Colors, authProviders?: { title?: string, color?: string }[]): string[] {
+function getColorsWarnings (locale: string, colors: Colors, themeName: string, readableOptions: tinycolor.WCAG2Options = { level: 'AA', size: 'small' }): string[] {
   const warnings: (string | undefined)[] = []
   for (const color of ['primary']) {
-    warnings.push(readableWarning(locale, colors[`${color}-text` as keyof Colors], color, colors.background, 'background'))
-    warnings.push(readableWarning(locale, colors[`${color}-text` as keyof Colors], color, colors.surface, 'surface'))
+    warnings.push(readableWarning(readableOptions, locale, colors[`${color}-text` as keyof Colors], color, colors.background, 'background', themeName))
+    warnings.push(readableWarning(readableOptions, locale, colors[`${color}-text` as keyof Colors], color, colors.surface, 'surface', themeName))
   }
   for (const color of ['background', 'surface', 'primary', 'secondary', 'accent', 'error', 'warning', 'info', 'success', 'admin']) {
-    warnings.push(readableWarning(locale, colors[`on-${color}` as keyof Colors], 'text', colors[color as keyof Colors], color))
+    warnings.push(readableWarning(readableOptions, locale, colors[`on-${color}` as keyof Colors], 'text', colors[color as keyof Colors], color, themeName))
   }
+  return warnings.filter(w => w !== undefined)
+}
+
+export function getSiteColorsWarnings (locale: string, theme: Theme, authProviders?: { title?: string, color?: string }[]): string[] {
+  let warnings: (string | undefined)[] = getColorsWarnings(locale, theme.colors, 'default')
+  if (theme.dark && theme.darkColors) warnings = warnings.concat(getColorsWarnings(locale, theme.darkColors, 'dark'))
+  if (theme.hc && theme.hcColors) warnings = warnings.concat(getColorsWarnings(locale, theme.hcColors, 'hc', { level: 'AAA', size: 'small' }))
   if (authProviders) {
     for (const p of authProviders) {
       if (p.color && p.title) {

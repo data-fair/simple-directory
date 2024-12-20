@@ -61,7 +61,7 @@
 
     <v-list
       v-if="orga.departments?.length"
-      class="elevation-1 mt-1"
+      class="py-0 mt-1 border-sm"
     >
       <template
         v-for="(department, i) in currentPage"

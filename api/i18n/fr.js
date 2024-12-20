@@ -168,7 +168,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         nbMembers: 'Nombre maximal de membres (0 pour aucune limite)'
       },
       sites: {
-        createSite: 'Déclarer un nouveau site'
+        createSite: 'Déclarer un nouveau site',
+        colorWarnings: 'Avertissements de contraste',
       }
     },
     login: {
@@ -431,7 +432,12 @@ N'hésitez pas à nous contacter à {contact}.
     addMember: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.'
   },
   colors: {
-    readableWarning: 'la couleur {colorName} ({colorCode}) n\'est pas suffisamment lisible par dessus la couleur {bgColorName} ({bgColorCode})',
+    theme: {
+      default: 'par défaut',
+      dark: 'sombre',
+      hc: 'à contraste élevé'
+    },
+    readableWarning: 'la couleur {colorName} ({colorCode}) du thème {themeName} n\'est pas suffisamment lisible par dessus la couleur {bgColorName} ({bgColorCode})',
     authProvider: 'du fournisseur d\'identité {title}',
     white: 'blanche',
     text: 'de texte',

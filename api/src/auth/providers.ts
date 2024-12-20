@@ -46,7 +46,7 @@ export const publicProviders = async (site?: Site) => {
         const otherSiteUrl = (p.site.startsWith('http://') || p.site.startsWith('https://')) ? p.site : `https://${p.site}`
         const otherSite = await getSiteByUrl(otherSiteUrl)
         if (otherSite && otherSite.owner.type === site.owner.type && otherSite.owner.id === site.owner.id) {
-          providers.push({ type: 'otherSite', id: slug(otherSite.host + (otherSite.path ?? ''), { lower: true, strict: true }), title: p.title as string, color: site.theme?.primaryColor, img: site.logo, host: otherSite.host })
+          providers.push({ type: 'otherSite', id: slug(otherSite.host + (otherSite.path ?? ''), { lower: true, strict: true }), title: p.title as string, color: site.theme.colors.primary, img: site.theme.logo, host: otherSite.host })
         }
       }
     }

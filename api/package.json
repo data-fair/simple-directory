@@ -3,7 +3,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "NODE_ENV=development DEBUG=upgrade node --watch --experimental-strip-types index.ts"
+    "dev": "NODE_ENV=development DEBUG=upgrade* node --watch --experimental-strip-types index.ts"
   },
   "imports": {
     "#config": "./src/config.ts",

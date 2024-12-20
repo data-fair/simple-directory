@@ -4,7 +4,7 @@
     v-show="!delayedRendering"
     density="comfortable"
     flat
-    color="transparent"
+    style="background-color: transparent;"
   >
     <v-spacer />
     <lang-switcher :locales="$uiConfig.i18n.locales" />

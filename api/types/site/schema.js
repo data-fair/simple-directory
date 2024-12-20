@@ -49,24 +49,6 @@ export default {
       type: 'string',
       title: 'Préfixe de chemin'
     },
-    theme: {
-      type: 'object',
-      additionalProperties: false,
-      required: [
-        'primaryColor'
-      ],
-      properties: {
-        primaryColor: {
-          type: 'string',
-          title: 'Primary color',
-          layout: 'color-picker'
-        }
-      }
-    },
-    logo: {
-      type: 'string',
-      title: "URL d'un logo"
-    },
     authMode: {
       default: 'onlyBackOffice',
       title: "Mode d'authentification",
@@ -189,7 +171,8 @@ export default {
           }
         ]
       }
-    }
+    },
+    theme: { $ref: 'https://github.com/data-fair/simple-directory/api/config#/$defs/theme' }
   },
   $defs: {
     oidcProvider: {

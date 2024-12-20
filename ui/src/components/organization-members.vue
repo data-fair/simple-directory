@@ -105,7 +105,7 @@
 
     <v-list
       v-if="members && members.count"
-      class="elevation-1 mt-1"
+      class="py-0 mt-1 border-sm"
     >
       <template
         v-for="(member, i) in members.results"

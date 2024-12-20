@@ -1,4 +1,49 @@
 <template lang="html">
+  <!--
+  <v-btn
+    color="primary"
+    class="mx-2"
+  >
+    primary
+  </v-btn>
+  <v-btn
+    color="secondary"
+    class="mx-2"
+  >
+    secondary
+  </v-btn>
+  <v-btn
+    color="accent"
+    class="mx-2"
+  >
+    accent
+  </v-btn>
+  <v-btn
+    color="info"
+    class="mx-2"
+  >
+    info
+  </v-btn>
+  <v-btn
+    color="success"
+    class="mx-2"
+  >
+    success
+  </v-btn>
+  <v-btn
+    color="error"
+    class="mx-2"
+  >
+    error
+  </v-btn>
+  <v-btn
+    color="warning"
+    class="mx-2"
+  >
+    warning
+  </v-btn>
+  -->
+
   <v-container
     data-iframe-height
     :fluid="$route.query.fluid === 'true'"
@@ -194,35 +239,38 @@
           {{ $t('pages.me.sessions') }}
         </h2>
 
-        <v-list>
-          <v-list-item
+        <v-list class="py-0 border-sm">
+          <template
             v-for="session of userDetailsFetch.data.value?.sessions?.slice().reverse() ?? []"
             :key="session.id"
           >
-            <v-list-item-title>{{ session.deviceName }}</v-list-item-title>
-            <v-list-item-subtitle>{{ dayjs(session.createdAt).format('LLL') }}{{ session.lastKeepalive ? ' - ' + dayjs(session.lastKeepalive).format('LLL') : '' }}</v-list-item-subtitle>
-            <template #append>
-              <confirm-menu
-                yes-color="warning"
-                :title="$t('pages.me.deleteSession', session)"
-                :alert="$t('pages.me.deleteSessionWarning', {duration: duration($uiConfig.jwtDurations.idToken * 1000).humanize()})"
-                location="top end"
-                @confirm="deleteSession(session.id)"
-              >
-                <template #activator="{props}">
-                  <v-btn
-                    :title="$t('common.delete')"
-                    v-bind="props"
-                    variant="text"
-                    icon
-                    color="warning"
-                  >
-                    <v-icon :icon="mdiDelete" />
-                  </v-btn>
-                </template>
-              </confirm-menu>
-            </template>
-          </v-list-item>
+            <v-list-item>
+              <v-list-item-title>{{ session.deviceName }}</v-list-item-title>
+              <v-list-item-subtitle>{{ dayjs(session.createdAt).format('LLL') }}{{ session.lastKeepalive ? ' - ' + dayjs(session.lastKeepalive).format('LLL') : '' }}</v-list-item-subtitle>
+              <template #append>
+                <confirm-menu
+                  yes-color="warning"
+                  :title="$t('pages.me.deleteSession', session)"
+                  :alert="$t('pages.me.deleteSessionWarning', {duration: duration($uiConfig.jwtDurations.idToken * 1000).humanize()})"
+                  location="top end"
+                  @confirm="deleteSession(session.id)"
+                >
+                  <template #activator="{props}">
+                    <v-btn
+                      :title="$t('common.delete')"
+                      v-bind="props"
+                      variant="text"
+                      icon
+                      color="warning"
+                    >
+                      <v-icon :icon="mdiDelete" />
+                    </v-btn>
+                  </template>
+                </confirm-menu>
+              </template>
+            </v-list-item>
+            <v-divider v-if="session.id !== userDetailsFetch.data.value?.sessions?.[0].id" />
+          </template>
         </v-list>
       </template>
 

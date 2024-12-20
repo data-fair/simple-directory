@@ -74,6 +74,7 @@
     "@types/debug": "^4.1.12"
   },
   "relativeDependencies": {
-    "@data-fair/lib-vuetify": "../lib/packages/vuetify"
+    "@data-fair/lib-vuetify": "../lib/packages/vuetify",
+    "@data-fair/lib-vue": "../lib/packages/vue"
   }
 }

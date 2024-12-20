@@ -22,6 +22,7 @@
 
     "paths": {
       "#api/types": ["../api/types/index.ts"],
+      "#api/shared/*": ["../api/shared/*"],
       "#api/doc/*": ["../api/doc/*"],
       "~/*": ["./src/*"]
     },
