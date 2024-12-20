@@ -98,6 +98,28 @@
                 </v-btn>
               </template>
             </confirm-menu>
+            <v-menu v-if="props.item.colorWarnings.length">
+              <template #activator="{props: colorWarningsMenuProps}">
+                <v-btn
+                  :title="$t('pages.sites.colorWarnings')"
+                  color="warning"
+                  class="mx-2"
+                  variant="text"
+                  :icon="mdiThemeLightDark"
+                  v-bind="colorWarningsMenuProps"
+                />
+              </template>
+              <v-list class="border-sm">
+                <v-list-item
+                  v-for="(warning, i) of props.item.colorWarnings"
+                  :key="i"
+                >
+                  <v-list-item-title>
+                    {{ warning }}
+                  </v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
           </td>
         </tr>
       </template>
@@ -107,8 +129,10 @@
 
 <script setup lang="ts">
 
+type SiteWithColorWarnings = Site & { colorWarnings: string[] }
+
 const { t } = useI18n()
-const sites = useFetch<{ count: number, results: Site[] }>($apiPath + '/sites', { query: { showAll: true } })
+const sites = useFetch<{ count: number, results: SiteWithColorWarnings[] }>($apiPath + '/sites', { query: { showAll: true } })
 
 const deleteSite = withUiNotif(async (site: Site) => {
   await $fetch(`sites/${site._id}`, { method: 'DELETE' })
