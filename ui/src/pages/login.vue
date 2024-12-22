@@ -861,6 +861,7 @@ const actionPayload = actionToken.value ? jwtDecode(actionToken.value) as Action
 
 const logoUrl = computed(() => {
   if (reactiveSearchParams.logo) return reactiveSearchParams.logo
+  console.log(sitePublic.value)
   if (sitePublic.value?.theme.logo) return sitePublic.value?.theme.logo
   if (orgId) return `${$sdUrl}/api/avatars/organization/${orgId}/avatar.png`
   if ($uiConfig.theme.logo) return $uiConfig.theme.logo

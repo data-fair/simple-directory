@@ -39,11 +39,12 @@ function readableWarning (readableOptions: tinycolor.WCAG2Options, locale: strin
 
 function getColorsWarnings (locale: string, colors: Colors, themeName: string, readableOptions: tinycolor.WCAG2Options = { level: 'AA', size: 'small' }): string[] {
   const warnings: (string | undefined)[] = []
-  for (const color of ['primary']) {
-    warnings.push(readableWarning(readableOptions, locale, colors[`${color}-text` as keyof Colors], color, colors.background, 'background', themeName))
-    warnings.push(readableWarning(readableOptions, locale, colors[`${color}-text` as keyof Colors], color, colors.surface, 'surface', themeName))
+  for (const color of ['primary', 'secondary', 'accent', 'info', 'success', 'error', 'warning', 'admin']) {
+    const textColor = colors[`text-${color}` as keyof Colors] ?? colors[color as keyof Colors]
+    warnings.push(readableWarning(readableOptions, locale, textColor, `text-${color}`, colors.background, 'background', themeName))
+    warnings.push(readableWarning(readableOptions, locale, textColor, `text-${color}`, colors.surface, 'surface', themeName))
   }
-  for (const color of ['background', 'surface', 'primary', 'secondary', 'accent', 'error', 'warning', 'info', 'success', 'admin']) {
+  for (const color of ['background', 'surface', 'primary', 'secondary', 'accent', 'info', 'success', 'error', 'warning', 'admin']) {
     warnings.push(readableWarning(readableOptions, locale, colors[`on-${color}` as keyof Colors], 'text', colors[color as keyof Colors], color, themeName))
   }
   return warnings.filter(w => w !== undefined)
@@ -53,6 +54,7 @@ export function getSiteColorsWarnings (locale: string, theme: Theme, authProvide
   let warnings: (string | undefined)[] = getColorsWarnings(locale, theme.colors, 'default')
   if (theme.dark && theme.darkColors) warnings = warnings.concat(getColorsWarnings(locale, theme.darkColors, 'dark'))
   if (theme.hc && theme.hcColors) warnings = warnings.concat(getColorsWarnings(locale, theme.hcColors, 'hc', { level: 'AAA', size: 'small' }))
+  if (theme.hcDark && theme.hcDarkColors) warnings = warnings.concat(getColorsWarnings(locale, theme.hcDarkColors, 'hcDark', { level: 'AAA', size: 'small' }))
   if (authProviders) {
     for (const p of authProviders) {
       if (p.color && p.title) {

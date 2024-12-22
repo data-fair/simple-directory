@@ -4,10 +4,10 @@ import { SitePatch } from '../../../api/doc/sites/patch-req-body/index.ts'
 
 function createStore () {
   const { sendUiNotif } = useUiNotif()
-  const { user, site } = useSession()
+  const { user, fullSite } = useSession()
   const reactiveSearchParams = useReactiveSearchParams()
 
-  const sitePublic = computed(() => site.value as SitePublic | null)
+  const sitePublic = computed(() => fullSite.value as SitePublic | null)
 
   const userDetailsFetch = useFetch<User>(() => `${$apiPath}/users/${user.value?.id}`, { watch: false })
   const authProvidersFetch = useFetch<PublicAuthProvider[]>(`${$apiPath}/auth/providers`, { watch: false })

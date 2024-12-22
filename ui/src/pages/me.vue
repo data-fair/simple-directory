@@ -1,49 +1,4 @@
 <template lang="html">
-  <!--
-  <v-btn
-    color="primary"
-    class="mx-2"
-  >
-    primary
-  </v-btn>
-  <v-btn
-    color="secondary"
-    class="mx-2"
-  >
-    secondary
-  </v-btn>
-  <v-btn
-    color="accent"
-    class="mx-2"
-  >
-    accent
-  </v-btn>
-  <v-btn
-    color="info"
-    class="mx-2"
-  >
-    info
-  </v-btn>
-  <v-btn
-    color="success"
-    class="mx-2"
-  >
-    success
-  </v-btn>
-  <v-btn
-    color="error"
-    class="mx-2"
-  >
-    error
-  </v-btn>
-  <v-btn
-    color="warning"
-    class="mx-2"
-  >
-    warning
-  </v-btn>
-  -->
-
   <v-container
     data-iframe-height
     :fluid="$route.query.fluid === 'true'"

@@ -101,7 +101,7 @@
             <v-menu v-if="props.item.colorWarnings.length">
               <template #activator="{props: colorWarningsMenuProps}">
                 <v-btn
-                  :title="$t('pages.sites.colorWarnings')"
+                  :title="$t('pages.admin.sites.colorWarnings')"
                   color="warning"
                   class="mx-2"
                   variant="text"

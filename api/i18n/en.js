@@ -360,11 +360,20 @@ Feel free to contact us at {contact}.
     background: 'background',
     surface: 'surface',
     primary: 'primary',
+    'text-primary': 'primary text',
     secondary: 'secondary',
+    'text-secondary': 'secondary text',
+    accent: 'accent',
+    'text-accent': 'accent text',
     error: 'error',
+    'text-error': 'error text',
     warning: 'warning',
+    'text-warning': 'warning text',
     success: 'success',
+    'text-success': 'success text',
     info: 'info',
-    admin: 'admin'
+    'text-info': 'info text',
+    admin: 'admin',
+    'text-admin': 'admin text'
   }
 }

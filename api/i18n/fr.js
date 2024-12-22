@@ -435,7 +435,8 @@ N'hésitez pas à nous contacter à {contact}.
     theme: {
       default: 'par défaut',
       dark: 'sombre',
-      hc: 'à contraste élevé'
+      hc: 'à contraste élevé',
+      hcDark: 'sombre à contraste élevé'
     },
     readableWarning: 'la couleur {colorName} ({colorCode}) du thème {themeName} n\'est pas suffisamment lisible par dessus la couleur {bgColorName} ({bgColorCode})',
     authProvider: 'du fournisseur d\'identité {title}',
@@ -444,13 +445,20 @@ N'hésitez pas à nous contacter à {contact}.
     background: 'd\'arrière plan',
     surface: 'de surface',
     primary: 'primaire',
-    'primary-text': 'texte primaire',
+    'text-primary': 'texte primaire',
     secondary: 'secondaire',
-    'secondary-text': 'texte secondaire',
+    'text-secondary': 'texte secondaire',
+    accent: 'accentuée',
+    'text-accent': 'texte accentué',
     error: 'd\'erreur',
+    'text-error': 'texte d\'erreur',
     warning: 'd\'avertissement',
+    'text-warning': 'texte d\'avertissement',
     success: 'de succès',
+    'text-success': 'texte de succès',
     info: 'd\'information',
-    admin: 'd\'administration'
+    'text-info': 'texte d\'information',
+    admin: 'd\'administration',
+    'text-admin': 'texte d\'administration',
   }
 }
