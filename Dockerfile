@@ -67,6 +67,7 @@ FROM native-deps AS main
 
 COPY --from=api-installer /app/node_modules node_modules
 ADD /api api
+ADD /upgrade upgrade
 COPY --from=types /app/api/types api/types
 COPY --from=types /app/api/doc api/doc
 COPY --from=types /app/api/config api/config
