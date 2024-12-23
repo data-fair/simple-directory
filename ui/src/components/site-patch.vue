@@ -28,11 +28,13 @@
           v-model="valid"
           @submit.prevent
         >
-          <vjsf
-            v-model="patch"
-            :options="vjsfOptions"
-            :schema="resolvedSchema"
-          />
+          <v-defaults-provider :defaults="{VjsfTabs: {VWindowsItem: {eager: true}}}">
+            <vjsf
+              v-model="patch"
+              :options="vjsfOptions"
+              :schema="resolvedSchema"
+            />
+          </v-defaults-provider>
         </v-form>
       </v-card-text>
       <v-card-actions>
