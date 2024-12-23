@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { type SitePublic } from '#types'
+import { type Colors } from '#types/site-public/index.ts'
 import { Router, type Request } from 'express'
 import config from '#config'
 import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost, reqSitePath } from '@data-fair/lib-express'
@@ -106,8 +105,6 @@ router.delete('/:id', async (req, res, next) => {
   res.status(204).send()
 })
 
-const webfontsCssRaw = readFileSync(resolve(import.meta.dirname, '../../resources/webfonts.css'), 'utf8')
-const webfontsCache: Record<string, string> = {}
 router.get('/_public', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
 
@@ -136,12 +133,34 @@ router.get('/_public', async (req, res, next) => {
   }
 })
 
-router.get('/_webfonts.css', async (req, res, next) => {
+const getTextColorsCss = (colors: Colors, theme: string) => {
+  let css = ''
+  for (const color of ['primary', 'secondary', 'accent', 'error', 'info', 'success', 'warning', 'admin']) {
+    const key = `text-${color}` as keyof Colors
+    if (colors[key]) {
+      css += `
+.v-application.v-theme--${theme} .text-${color} {
+  color: ${colors[key]}!important;
+}`
+    }
+  }
+  return css
+}
+
+router.get('/_theme.css', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
+  const site = await reqSite(req)
   const sitePath = reqSitePath(req)
-  webfontsCache[sitePath] = webfontsCache[sitePath] ?? microTemplate(webfontsCssRaw, { SITE_PATH: sitePath })
+  let css = ''
+  const theme = site?.theme ?? config.theme
+  css += getTextColorsCss(theme.colors, 'dark')
+  if (theme.dark && theme.darkColors) css += getTextColorsCss(theme.darkColors, 'dark')
+  if (theme.hc && theme.hcColors) css += getTextColorsCss(theme.hcColors, 'hc')
+  if (theme.hcDark && theme.hcDarkColors) css += getTextColorsCss(theme.hcDarkColors, 'hc-dark')
+  css += '\n' + microTemplate(site?.theme?.bodyFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'BodyFontFamily' })
+  css += '\n' + microTemplate(site?.theme?.headingFontFamilyCss ?? site?.theme?.bodyFontFamilyCss ?? config.theme.headingFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
   res.contentType('css')
-  res.send(webfontsCache[sitePath])
+  res.send(css)
 })
 
 router.get('/:id/_theme_warnings', async (req, res, next) => {

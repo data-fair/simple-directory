@@ -632,6 +632,8 @@
       "required": ["colors"],
       "layout": [
         "logo",
+        "bodyFontFamilyCss",
+        "headingFontFamilyCss",
         {
           "comp": "tabs",
           "children": [{
@@ -652,6 +654,20 @@
       "properties": {
         "logo": {
           "title": "URL d'un logo",
+          "type": "string"
+        },
+        "bodyFontFamilyCss": {
+          "title": "CSS police de caractères pour le corps du texte",
+          "description": "Par défaut une police Nunito auto-hébergée est utilisée. Vous pouvez aussi copier le CSS proposé par une plateforme comme Google Fonts, dans ce cas il faut remplacer le nom de la police par '{FONT_FAMILY}'.",
+          "type": "string",
+          "layout": "textarea"
+        },
+        "headingFontFamilyCss": {
+          "title": "CSS police de caractères pour les titres",
+          "layout": {
+            "comp": "textarea",
+            "hint": "laissez vide pour utiliser la police du corps du texte"
+          },
           "type": "string"
         },
         "colors": { "$ref": "#/$defs/colors" },

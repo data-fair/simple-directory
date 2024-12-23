@@ -31,10 +31,10 @@ describe('sites api', () => {
     const siteDirectoryUrl = 'http://127.0.0.1:5989/simple-directory'
     const publicSite = (await anonymousAx.get(`${siteDirectoryUrl}/api/sites/_public`)).data
     assert.equal(publicSite.authMode, 'onlyBackOffice')
-    assert.ok(publicSite.colors.primary)
-    assert.ok(publicSite.logo.startsWith('http://127.0.0.1:5989/'))
-    const webfonts = (await anonymousAx.get<string>(`${siteDirectoryUrl}/api/sites/_webfonts.css`)).data
-    assert.ok(webfonts.startsWith('@font-face'))
+    assert.ok(publicSite.theme.colors.primary)
+    assert.ok(publicSite.theme.logo.startsWith('http://127.0.0.1:5989/'))
+    const themeCss = (await anonymousAx.get<string>(`${siteDirectoryUrl}/api/sites/_theme.css`)).data
+    assert.ok(themeCss.includes('@font-face{font-family:BodyFontFamily'))
 
     let sites = (await ax.get('/api/sites')).data
     assert.equal(sites.count, 0)

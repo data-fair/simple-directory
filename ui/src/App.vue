@@ -25,14 +25,12 @@
 <script lang="ts" setup>
 import uiNotif from '@data-fair/lib-vuetify/ui-notif.vue'
 import inIframe from '@data-fair/lib-utils/in-iframe.js'
-import { vuetifySessionStyle } from '@data-fair/lib-vuetify'
 
 const session = useSession()
 const route = useRoute()
 
 useHead({
   htmlAttrs: () => ({ lang: session.lang.value ?? 'fr' }),
-  style: [vuetifySessionStyle(session)]
   // style: () => globalStyle
   // __dangerouslyDisableSanitizers: ['style']
 })
