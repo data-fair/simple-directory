@@ -55,6 +55,7 @@ router.post('', async (req, res, next) => {
     const theme = JSON.parse(JSON.stringify(config.theme))
     theme.dark = false
     theme.hc = false
+    theme.hcDark = false
     theme.colors.primary = body.theme.primaryColor
     if (body.logo) {
       theme.logo = body.logo
@@ -68,6 +69,7 @@ router.post('', async (req, res, next) => {
     const theme = JSON.parse(JSON.stringify(config.theme))
     theme.dark = false
     theme.hc = false
+    theme.hcDark = false
     site.theme = theme
   }
   if (site.path?.endsWith('/')) site.path = site.path.slice(0, -1)
