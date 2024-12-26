@@ -14,6 +14,7 @@ declare module 'vue' {
     AuthProvidersLoginLinks: typeof import('./../src/components/auth-providers-login-links.vue')['default']
     CancelDeletion: typeof import('./../src/components/cancel-deletion.vue')['default']
     ChangeHost: typeof import('./../src/components/change-host.vue')['default']
+    ColorsPreview: typeof import('./../src/components/colors-preview.vue')['default']
     ConfirmMenu: typeof import('./../src/components/confirm-menu.vue')['default']
     DeleteDepartmentMenu: typeof import('./../src/components/delete-department-menu.vue')['default']
     DeleteMemberMenu: typeof import('./../src/components/delete-member-menu.vue')['default']

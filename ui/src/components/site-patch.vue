@@ -33,7 +33,15 @@
               v-model="patch"
               :options="vjsfOptions"
               :schema="resolvedSchema"
-            />
+            >
+              <template #colors-preview="context">
+                <colors-preview
+                  :colors-key="context.colorsKey"
+                  :colors="context.node.data[context.colorsKey]"
+                  :dark="context.dark"
+                />
+              </template>
+            </vjsf>
           </v-defaults-provider>
         </v-form>
       </v-card-text>

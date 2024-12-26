@@ -638,16 +638,28 @@
           "comp": "tabs",
           "children": [{
             "title": "Thème par défaut",
-            "children": ["colors"]
+            "children": [
+              { "key": "colors", "cols": 8 },
+              { "name": "colors-preview", "cols": 4, "props": { "colorsKey": "colors", "dark": false } }
+            ]
           }, {
             "title": "Thème sombre",
-            "children": ["dark", "darkColors"]
+            "children": [
+              { "children": ["dark", "darkColors"], "cols": 8 },
+              { "name": "colors-preview", "cols": 4, "props": { "colorsKey": "darkColors", "dark": true } }
+            ]
           }, {
             "title": "Thème à fort contraste",
-            "children": ["hc", "hcColors"]
+            "children": [
+              { "children": ["hc", "hcColors"], "cols": 8 },
+              { "name": "colors-preview", "cols": 4, "props": { "colorsKey": "hcColors", "dark": false } }
+            ]
           }, {
             "title": "Thème sombre à fort contraste",
-            "children": ["hcDark", "hcDarkColors"]
+            "children": [
+              { "children": ["hcDark", "hcDarkColors"], "cols": 8 },
+              { "name": "colors-preview", "cols": 4, "props": { "colorsKey": "hcDarkColors", "dark": true } }
+            ]
           }]
         }
       ],
