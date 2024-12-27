@@ -65,6 +65,10 @@ export async function findAllSites () {
   }
 }
 
+export async function getSite (siteId: string) {
+  return mongo.sites.findOne({ _id: siteId })
+}
+
 export async function patchSite (patch: Partial<Site> & Pick<Site, '_id'>, createIfMissing = false) {
   return (await mongo.sites.findOneAndUpdate({ _id: patch._id }, { $set: patch }, { upsert: createIfMissing, returnDocument: 'after' })) as Site
 }

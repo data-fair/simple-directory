@@ -49,6 +49,7 @@ export default {
       type: 'string',
       title: 'Préfixe de chemin'
     },
+    theme: { $ref: 'https://github.com/data-fair/simple-directory/api/config#/$defs/theme' },
     authMode: {
       default: 'onlyBackOffice',
       title: "Mode d'authentification",
@@ -171,8 +172,7 @@ export default {
           }
         ]
       }
-    },
-    theme: { $ref: 'https://github.com/data-fair/simple-directory/api/config#/$defs/theme' }
+    }
   },
   $defs: {
     oidcProvider: {
@@ -220,6 +220,7 @@ export default {
           }
         },
         createMember: {
+          title: 'Créer les utilisateurs en tant que membres',
           type: 'object',
           description: "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
           default: {
@@ -230,8 +231,7 @@ export default {
               title: 'jamais',
               properties: {
                 type: {
-                  const: 'never',
-                  title: 'Créer les utilisateurs en tant que membres'
+                  const: 'never'
                 }
               }
             },

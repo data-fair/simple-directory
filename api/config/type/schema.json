@@ -632,33 +632,33 @@
       "required": ["colors"],
       "layout": [
         "logo",
-        "bodyFontFamilyCss",
-        "headingFontFamilyCss",
+        {"key": "bodyFontFamilyCss", "cols": 6},
+        {"key": "headingFontFamilyCss", "cols": 6},
         {
           "comp": "tabs",
           "children": [{
             "title": "Thème par défaut",
             "children": [
-              { "key": "colors", "cols": 8 },
-              { "name": "colors-preview", "cols": 4, "props": { "colorsKey": "colors", "dark": false } }
+              { "key": "colors", "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "colors", "dark": false } }
             ]
           }, {
             "title": "Thème sombre",
             "children": [
-              { "children": ["dark", "darkColors"], "cols": 8 },
-              { "name": "colors-preview", "cols": 4, "props": { "colorsKey": "darkColors", "dark": true } }
+              { "children": ["dark", "darkColors"], "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "darkColors", "dark": true } }
             ]
           }, {
             "title": "Thème à fort contraste",
             "children": [
-              { "children": ["hc", "hcColors"], "cols": 8 },
-              { "name": "colors-preview", "cols": 4, "props": { "colorsKey": "hcColors", "dark": false } }
+              { "children": ["hc", "hcColors"], "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "hcColors", "dark": false } }
             ]
           }, {
             "title": "Thème sombre à fort contraste",
             "children": [
-              { "children": ["hcDark", "hcDarkColors"], "cols": 8 },
-              { "name": "colors-preview", "cols": 4, "props": { "colorsKey": "hcDarkColors", "dark": true } }
+              { "children": ["hcDark", "hcDarkColors"], "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "hcDarkColors", "dark": true } }
             ]
           }]
         }
@@ -670,16 +670,20 @@
         },
         "bodyFontFamilyCss": {
           "title": "CSS police de caractères pour le corps du texte",
+          "layout": {
+            "comp": "textarea",
+            "rows": 3
+          },
           "description": "Par défaut une police Nunito auto-hébergée est utilisée. Vous pouvez aussi copier le CSS proposé par une plateforme comme Google Fonts, dans ce cas il faut remplacer le nom de la police par '{FONT_FAMILY}'.",
-          "type": "string",
-          "layout": "textarea"
+          "type": "string"
         },
         "headingFontFamilyCss": {
           "title": "CSS police de caractères pour les titres",
           "layout": {
             "comp": "textarea",
-            "hint": "laissez vide pour utiliser la police du corps du texte"
+            "rows": 3
           },
+          "description": "Renseignez de la même manière que pour le corps de texte, ou laissez vide pour utiliser la police du corps du texte",
           "type": "string"
         },
         "colors": { "$ref": "#/$defs/colors" },

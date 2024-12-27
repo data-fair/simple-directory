@@ -1,15 +1,15 @@
-import { type SitePublic } from '#types'
-import { type Colors } from '#types/site-public/index.ts'
+import { type Site, type SitePublic } from '#types'
 import { Router, type Request } from 'express'
 import config from '#config'
 import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost, reqSitePath } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
-import { findAllSites, findOwnerSites, patchSite, deleteSite } from './service.ts'
+import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite } from './service.ts'
 import { reqSite } from '#services'
 import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
 import { getSiteColorsWarnings } from '../utils/color.ts'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
+import { getTextColorsCss } from '#shared/site.ts'
 
 const router = Router()
 export default router
@@ -20,22 +20,26 @@ const checkSecret = async (req: Request) => {
   }
 }
 
+const prepareFullSite = (req: Request, site: Site) => {
+  site.theme.logo = site.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
+  if (site.authProviders) {
+    for (const p of site.authProviders) {
+      if (p.type === 'oidc') p.id = getOidcProviderId(p.discovery)
+    }
+  }
+  const resultWithColorWarnings: any = site as any
+  const { localeCode } = reqI18n(req)
+  resultWithColorWarnings.colorWarnings = getSiteColorsWarnings(localeCode, site.theme, site.authProviders as { title?: string, color?: string }[])
+}
+
 router.get('', async (req, res, next) => {
   const sessionState = reqSessionAuthenticated(req)
   const { query } = (await import('#doc/sites/list-req/index.ts')).returnValid(req, { name: 'req' })
   if (query.showAll && !reqUser(req)?.adminMode) throw httpError(403)
   if (query.showAll) {
     const response = await findAllSites()
-    const { localeCode } = reqI18n(req)
     for (const result of response.results) {
-      result.theme.logo = result.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${result.owner.type}/${result.owner.id}/avatar.png`
-      if (result.authProviders) {
-        for (const p of result.authProviders) {
-          if (p.type === 'oidc') p.id = getOidcProviderId(p.discovery)
-        }
-      }
-      const resultWithColorWarnings: any = result as any
-      resultWithColorWarnings.colorWarnings = getSiteColorsWarnings(localeCode, result.theme, result.authProviders as { title?: string, color?: string }[])
+      prepareFullSite(req, result)
     }
     res.send(response)
   } else {
@@ -135,20 +139,6 @@ router.get('/_public', async (req, res, next) => {
   }
 })
 
-const getTextColorsCss = (colors: Colors, theme: string) => {
-  let css = ''
-  for (const color of ['primary', 'secondary', 'accent', 'error', 'info', 'success', 'warning', 'admin']) {
-    const key = `text-${color}` as keyof Colors
-    if (colors[key]) {
-      css += `
-.v-application.v-theme--${theme} .text-${color} {
-  color: ${colors[key]}!important;
-}`
-    }
-  }
-  return css
-}
-
 router.get('/_theme.css', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
   const site = await reqSite(req)
@@ -169,4 +159,12 @@ router.get('/:id/_theme_warnings', async (req, res, next) => {
   const site = await reqSite(req)
   const { localeCode } = reqI18n(req)
   res.send(getSiteColorsWarnings(localeCode, site?.theme ?? config.theme, site?.authProviders as { title?: string, color?: string }[]))
+})
+
+router.get('/:id', async (req, res, next) => {
+  if (!reqSessionAuthenticated(req)?.user.adminMode) throw httpError(403)
+  const site = await getSite(req.params.id)
+  if (!site) throw httpError(404)
+  prepareFullSite(req, site)
+  res.send(site)
 })

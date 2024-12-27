@@ -76,11 +76,11 @@
             </v-btn>
           </td>
           <td>
-            <site-patch
-              v-if="sites.data.value"
-              :site="props.item"
-              :sites="sites.data.value.results"
-              @change="sites.refresh()"
+            <v-btn
+              :title="$t('common.editTitle', {name: props.item.host})"
+              variant="text"
+              :to="`/admin/sites/${props.item._id}`"
+              :icon="mdiPencil"
             />
             <confirm-menu
               yes-color="warning"
