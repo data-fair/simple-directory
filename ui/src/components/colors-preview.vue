@@ -72,10 +72,11 @@ const { colorsKey, colors, dark } = defineProps({
 })
 
 watch(() => colors, () => {
-  theme.themes.value['preview-' + colorsKey] = {
-    dark,
-    colors,
-    variables: dark ? theme.themes.value.dark.variables : theme.themes.value.light.variables
+  const key = 'preview-' + colorsKey
+  if (theme.themes.value[key]) {
+    Object.assign(theme.themes.value[key].colors, colors)
+  } else {
+    theme.themes.value[key] = { dark, colors, variables: dark ? theme.themes.value.dark.variables : theme.themes.value.light.variables }
   }
 }, { immediate: true })
 
