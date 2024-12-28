@@ -10,4 +10,15 @@ const schema = jsonSchema(SiteSchema)
 schema.$id = 'https://github.com/data-fair/simple-directory/sites/patch-req-body'
 schema['x-exports'] = ['validate', 'types', 'resolvedSchemaJson']
 
+schema.layout = {
+  title: null,
+  children: [
+    { key: 'theme' },
+    {
+      title: 'Gestion des utilisateurs',
+      children: ['reducedPersonalInfoAtCreation', 'tosMessage', 'authMode', 'authOnlyOtherSite', 'authProviders']
+    }
+  ]
+}
+
 export default schema

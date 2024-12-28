@@ -9,6 +9,7 @@
     />
     <v-form
       v-else
+      ref="form"
       v-model="valid"
       @submit.prevent
     >
@@ -54,6 +55,7 @@ const form = ref<InstanceType<typeof VForm>>()
 
 const vjsfOptions = computed(() => ({
   density: 'comfortable',
+  initialValidation: 'always',
   context: {
     otherSites: sites.data.value?.results.filter(s => s._id !== siteId).map(site => site.host),
     otherSitesProviders: sites.data.value?.results.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {} as Record<string, string[]>)

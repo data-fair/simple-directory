@@ -629,6 +629,7 @@
     },
     "theme": {
       "type": "object",
+      "title": "Thème",
       "required": ["colors"],
       "layout": [
         "logo",

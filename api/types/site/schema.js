@@ -100,6 +100,12 @@ export default {
       title: "Fournisseurs d'identité (SSO)",
       items: {
         type: 'object',
+        layout: {
+          switch: [{
+            if: 'summary',
+            children: ['title']
+          }]
+        },
         required: [
           'title',
           'type'
@@ -210,21 +216,26 @@ export default {
           properties: {
             id: {
               type: 'string',
-              title: 'Identifiant du client'
+              title: 'Identifiant du client',
+              layout: { cols: 6 }
             },
             secret: {
               type: 'string',
               title: 'Secret',
-              writeOnly: true
+              writeOnly: true,
+              layout: { cols: 6 }
             }
           }
         },
         createMember: {
-          title: 'Créer les utilisateurs en tant que membres',
           type: 'object',
-          description: "si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
           default: {
             type: 'never'
+          },
+          layout: { cols: 6 },
+          oneOfLayout: {
+            label: 'Créer les utilisateurs en tant que membres',
+            help: "Si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
           },
           oneOf: [
             {
@@ -259,7 +270,11 @@ export default {
         },
         memberRole: {
           type: 'object',
-          description: "Le rôle des membres créés automatiquement par ce fournisseur d'identité.",
+          layout: { cols: 6 },
+          oneOfLayout: {
+            label: 'Attribution du rôle des membres',
+            help: "Le rôle des membres créés automatiquement par ce fournisseur d'identité.",
+          },
           default: {
             type: 'none'
           },
@@ -268,8 +283,7 @@ export default {
               title: 'Aucun rôle par défaut (simple utilisateur)',
               properties: {
                 type: {
-                  const: 'none',
-                  title: 'Attribution du rôle des membres'
+                  const: 'none'
                 }
               }
             },
@@ -313,17 +327,19 @@ export default {
         },
         redirectMode: {
           type: 'object',
-          description: "Si vous utilisez un mode basé sur l'email alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.",
           default: {
             type: 'button'
+          },
+          oneOfLayout: {
+            label: 'Controlez la manière dont les utilisateurs sont redirigés vers ce fournisseur',
+            help: "Si vous utilisez un mode basé sur l'email alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.",
           },
           oneOf: [
             {
               title: 'bouton',
               properties: {
                 type: {
-                  const: 'button',
-                  title: 'Controlez la manière dont les utilisateurs sont redirigés vers ce fournisseur'
+                  const: 'button'
                 }
               }
             },
