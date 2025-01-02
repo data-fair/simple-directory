@@ -130,7 +130,7 @@ router.get('/_public', async (req, res, next) => {
     const sitePublic: SitePublic = {
       host: site.host,
       theme: {
-        ...site.theme,
+        ...theme,
         logo: site.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
       },
       authMode: site.authMode ?? 'onlyBackOffice'
