@@ -49,6 +49,7 @@ COPY --from=types /app/api/config api/config
 COPY --from=types /app/api/types api/types
 COPY --from=types /app/api/doc api/doc
 ADD /api/i18n api/i18n
+ADD /api/shared api/shared
 ADD /api/src/config.ts api/src/config.ts
 ADD /api/src/ui-config.ts api/src/ui-config.ts
 ADD /ui ui
