@@ -122,7 +122,7 @@ router.get('/_public', async (req, res, next) => {
     const sitePublic: SitePublic = {
       main: true,
       host: reqHost(req),
-      theme: config.theme,
+      theme,
       authMode: 'onlyLocal',
     }
     res.send(sitePublic)
