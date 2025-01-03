@@ -635,8 +635,39 @@
         "logo",
         {"key": "bodyFontFamilyCss", "cols": 6},
         {"key": "headingFontFamilyCss", "cols": 6},
+        "assistedMode",
         {
           "comp": "tabs",
+          "if": "data.assistedMode",
+          "children": [{
+            "title": "Thème par défaut",
+            "children": [
+              { "key": "assistedModeColors", "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "colors", "dark": false } }
+            ]
+          }, {
+            "title": "Thème sombre",
+            "children": [
+              { "key": "dark", "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "darkColors", "dark": true } }
+            ]
+          }, {
+            "title": "Thème à fort contraste",
+            "children": [
+              { "key": "hc", "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "hcColors", "dark": false } }
+            ]
+          }, {
+            "title": "Thème sombre à fort contraste",
+            "children": [
+              { "key": "hcDark", "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "hcDarkColors", "dark": true } }
+            ]
+          }]
+        },
+        {
+          "comp": "tabs",
+          "if": "!data.assistedMode",
           "children": [{
             "title": "Thème par défaut",
             "children": [
@@ -686,6 +717,41 @@
           },
           "description": "Renseignez de la même manière que pour le corps de texte, ou laissez vide pour utiliser la police du corps du texte",
           "type": "string"
+        },
+        "assistedMode": {
+          "type": "boolean",
+          "title": "mode de gestion des couleurs simplifié",
+          "description": "Si activé vous ne devrez saisir que les couleurs principales du thème, d'autres couleurs seront affectées par défaut et les couleurs de texte seront automatiquement ajustées pour être lisibles sur les couleurs de fond.",
+          "default": true
+        },
+        "assistedModeColors": {
+          "type": "object",
+          "properties": {
+            "primary": {
+              "type": "string",
+              "title": "Couleur principale",
+              "layout": {
+                "comp": "color-picker",
+                "cols": 4
+              }
+            },
+            "secondary": {
+              "type": "string",
+              "title": "Couleur secondaire",
+              "layout": {
+                "comp": "color-picker",
+                "cols": 4
+              }
+            },
+            "accent": {
+              "type": "string",
+              "title": "Couleur accentuée",
+              "layout": {
+                "comp": "color-picker",
+                "cols": 4
+              }
+            }
+          }
         },
         "colors": { "$ref": "#/$defs/colors" },
         "dark": { "type": "boolean", "title": "proposer ce thème aux utilisateurs" },

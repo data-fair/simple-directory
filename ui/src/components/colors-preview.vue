@@ -3,12 +3,18 @@
     :theme="'preview-' + colorsKey"
     with-background
   >
-    <component :is="'style'">
+    <component
+      :is="'style'"
+      v-if="colors"
+    >
       {{ getTextColorsCss(colors, 'preview-' + colorsKey) }}
     </component>
     <v-container fluid>
       <h2>Aperçu du rendu des couleurs</h2>
-      <v-card title="Un exemple de carte">
+      <v-card
+        title="Un exemple de carte"
+        class="my-2"
+      >
         <v-card-text>
           Elle utilise la couleur des "surfaces".
         </v-card-text>
@@ -25,7 +31,7 @@
             <v-btn
               :color="color"
               :variant="variant"
-              class="ma-4"
+              class="ma-2"
             >
               {{ color }}
             </v-btn>
@@ -33,7 +39,7 @@
           <v-icon
             :icon="mdiEmoticonKissOutline"
             :color="color"
-            class="ma-4"
+            class="ma-2"
           />
         </v-row>
       </template>
@@ -44,23 +50,33 @@
 <script setup lang="ts">
 import { useTheme } from 'vuetify'
 import type { VBtn } from 'vuetify/components/VBtn'
-import type { Colors } from '../../../api/config/type'
+import type { Theme } from '../../../api/config/type'
 import { mdiEmoticonKissOutline } from '@mdi/js'
-import { getTextColorsCss } from '../../../api/shared/site.ts'
+import { fillTheme, getTextColorsCss } from '../../../api/shared/site.ts'
 
-const theme = useTheme()
-const { colorsKey, colors, dark } = defineProps({
-  colorsKey: { type: String, required: true },
-  colors: { type: Object as () => Colors, required: true },
+const vuetifyTheme = useTheme()
+const { colorsKey, theme, dark } = defineProps({
+  colorsKey: { type: String as () => 'colors' | 'darkColors' | 'hcColors' | 'hcDarkColors', required: true },
+  theme: { type: Object as () => Theme, required: true },
   dark: { type: Boolean, default: false }
 })
 
-watch(() => colors, () => {
+const defaultTheme = useFetch<Theme>(`${$apiPath}/sites/_default_theme`)
+
+const fullTheme = computed(() => {
+  if (!defaultTheme.data.value) return
+  return fillTheme(theme, defaultTheme.data.value)
+})
+
+const colors = computed(() => fullTheme.value?.[colorsKey])
+
+watch(fullTheme, () => {
+  if (!fullTheme.value) return
   const key = 'preview-' + colorsKey
-  if (theme.themes.value[key]) {
-    Object.assign(theme.themes.value[key].colors, colors)
+  if (vuetifyTheme.themes.value[key]) {
+    Object.assign(vuetifyTheme.themes.value[key].colors, fullTheme.value[colorsKey])
   } else {
-    theme.themes.value[key] = { dark, colors, variables: dark ? theme.themes.value.dark.variables : theme.themes.value.light.variables }
+    vuetifyTheme.themes.value[key] = { dark, colors: fullTheme.value[colorsKey], variables: dark ? vuetifyTheme.themes.value.dark.variables : vuetifyTheme.themes.value.light.variables }
   }
 }, { immediate: true })
 

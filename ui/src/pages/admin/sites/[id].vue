@@ -13,21 +13,19 @@
       v-model="valid"
       @submit.prevent
     >
-      <v-defaults-provider :defaults="{VjsfTabs: {VWindowsItem: {eager: true}}}">
-        <vjsf
-          v-model="patch"
-          :options="vjsfOptions"
-          :schema="resolvedSchema"
-        >
-          <template #colors-preview="context">
-            <colors-preview
-              :colors-key="context.colorsKey"
-              :colors="context.node.data[context.colorsKey]"
-              :dark="context.dark"
-            />
-          </template>
-        </vjsf>
-      </v-defaults-provider>
+      <vjsf
+        v-model="patch"
+        :options="vjsfOptions"
+        :schema="resolvedSchema"
+      >
+        <template #colors-preview="context">
+          <colors-preview
+            :colors-key="context.colorsKey"
+            :theme="context.node.data"
+            :dark="context.dark"
+          />
+        </template>
+      </vjsf>
     </v-form>
     <v-row class="ma-0 mt-4">
       <v-spacer />

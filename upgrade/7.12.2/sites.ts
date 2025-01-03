@@ -3,6 +3,12 @@ import type { UpgradeScript } from '@data-fair/lib-node/upgrade-scripts.js'
 // copied from api/config/default.cjs
 const defaultTheme = {
   logo: undefined,
+  assistedMode: true,
+  assistedModeColors: {
+    primary: '#1976D2',
+    secondary: '#81D4FA',
+    accent: '#2962FF',
+  },
   colors: {
     // standard vuetify colors, see https://vuetifyjs.com/en/styles/colors/#material-colors
     background: '#FAFAFA', // grey-lighten-5
@@ -133,12 +139,19 @@ const defaultTheme = {
 const upgradeScript: UpgradeScript = {
   description: 'Upgrade sites definitions for more complete themes',
   async exec (db, debug) {
-    for await (const site of db.collection('sites').find({ 'theme.hcDarkColors': { $exists: false } })) {
+    for await (const site of db.collection('sites').find({ 'theme.assistedModeColors': { $exists: false } })) {
       debug(`update site (${site.host}${site.path || ''})`)
 
       const theme = { ...defaultTheme }
       if (site.theme?.logo) theme.logo = site.theme.logo
       theme.colors.primary = site.theme.primaryColor ?? site.theme.colors.primary ?? theme.colors.primary
+
+      theme.assistedMode = true
+      theme.assistedModeColors = {
+        primary: theme.colors.primary,
+        secondary: theme.colors.secondary,
+        accent: theme.colors.accent,
+      }
 
       await db.collection('sites').updateOne({ _id: site._id }, { $set: { theme }, $unset: { logo: 1 } })
     }

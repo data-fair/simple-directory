@@ -37,7 +37,7 @@
               <template #colors-preview="context">
                 <colors-preview
                   :colors-key="context.colorsKey"
-                  :colors="context.node.data[context.colorsKey]"
+                  :theme="context.node.data"
                   :dark="context.dark"
                 />
               </template>

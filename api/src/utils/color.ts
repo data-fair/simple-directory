@@ -6,30 +6,6 @@ import { getMessage } from '#i18n'
 
 const readableOptions = { level: 'AA' as const, size: 'small' as const }
 
-/* TODO:
-  - add a default text color (mostly to switch between a dark gray and black)
-  - extend site colors configuration to more colors than primary
-  - check for other color warnings based on what colors are actually used as text of button background, etc in our services
-  - detect that some configured colors should be used with light or dark text (example: a light primary color should be displayed with dark grey or black text)
-*/
-
-// calculate a variant of a color with guaranteed readability
-// default background is #FAFAFA the light grey background
-// TODO: deprecate this, instead we rely on warnings showed to admins when the colors they chose don't have a sufficient contrast
-/* const contrastColorCache: Record<string, string> = {}
-export const readableColor = (color: string, colors: Colors) => {
-  const cacheKey = JSON.stringify([color, colors.background, colors.surface])
-  if (contrastColorCache[cacheKey]) return contrastColorCache[cacheKey]
-  const c = tinycolor(color)
-  const b = tinycolor(colors.background)
-  const s = tinycolor(colors.background)
-  while (!tinycolor.isReadable(c, b, readableOptions) || !tinycolor.isReadable(c, s, readableOptions)) {
-    c.darken(1)
-  }
-  contrastColorCache[cacheKey] = c.toString()
-  return contrastColorCache[cacheKey]
-} */
-
 function readableWarning (readableOptions: tinycolor.WCAG2Options, locale: string, colorCode?: string, colorName?: string, bgColorCode?: string, bgColorName?: string, themeName?: string) {
   if (!colorCode || !bgColorCode) return
   if (!tinycolor.isReadable(colorCode, bgColorCode, readableOptions)) {

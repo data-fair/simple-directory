@@ -9,7 +9,8 @@ import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
 import { getSiteColorsWarnings } from '../utils/color.ts'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
-import { getTextColorsCss } from '#shared/site.ts'
+import { fillTheme, getTextColorsCss } from '#shared/site.ts'
+import clone from '@data-fair/lib-utils/clone.js'
 
 const router = Router()
 export default router
@@ -56,7 +57,7 @@ router.post('', async (req, res, next) => {
   const body = req.body
   // manage retro-compatibility with old portals manager
   if (body.theme?.primaryColor) {
-    const theme = JSON.parse(JSON.stringify(config.theme))
+    const theme = clone(config.theme)
     theme.dark = false
     theme.hc = false
     theme.hcDark = false
@@ -70,10 +71,16 @@ router.post('', async (req, res, next) => {
 
   const site = (await import('#doc/sites/post-req-body/index.ts')).returnValid(body, { name: 'req.body' })
   if (!site.theme) {
-    const theme = JSON.parse(JSON.stringify(config.theme))
+    const theme = clone(config.theme)
     theme.dark = false
     theme.hc = false
     theme.hcDark = false
+    theme.assistedMode = true
+    theme.assistedModeColors = {
+      primary: theme.colors.primary,
+      secondary: theme.colors.secondary,
+      accent: theme.colors.accent,
+    }
     site.theme = theme
   }
   if (site.path?.endsWith('/')) site.path = site.path.slice(0, -1)
@@ -84,23 +91,29 @@ router.post('', async (req, res, next) => {
 
 router.patch('/:id', async (req, res, next) => {
   if (!reqUserAuthenticated(req)?.adminMode) throw httpError(403)
-  // manage retro-compatibility with old portals manager
   const body = req.body
+
+  const site = await getSite(req.params.id)
+  if (!site) throw httpError(404)
+
   if (body.theme.primaryColor || body.logo) {
-    const site = await reqSite(req)
-    if (site) {
-      const theme = JSON.parse(JSON.stringify(site.theme))
-      if (body.theme.primaryColor) {
-        theme.colors.primary = body.theme.primaryColor
-      }
-      if (body.logo) {
-        theme.logo = body.logo
-      }
-      body.theme = theme
+    // manage re-reo-compatibility with old portals manager
+    const theme = clone(site.theme)
+    if (body.theme.primaryColor) {
+      theme.colors.primary = body.theme.primaryColor
     }
+    if (body.logo) {
+      theme.logo = body.logo
+    }
+    body.theme = theme
   }
 
-  const patch = (await import('#doc/sites/patch-req-body/index.ts')).returnValid(req.body, { name: 'req.body' })
+  const patch = (await import('#doc/sites/patch-req-body/index.ts')).returnValid(body, { name: 'req.body' })
+
+  if (patch.theme) {
+    patch.theme = fillTheme(patch.theme, config.theme)
+  }
+
   const patchedSite = await patchSite({ _id: req.params.id, ...patch })
   res.send(patchedSite)
 })
@@ -137,6 +150,10 @@ router.get('/_public', async (req, res, next) => {
     }
     res.send(sitePublic)
   }
+})
+
+router.get('/_default_theme', async (req, res, next) => {
+  res.send(config.theme)
 })
 
 router.get('/_theme.css', async (req, res, next) => {

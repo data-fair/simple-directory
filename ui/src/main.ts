@@ -30,6 +30,10 @@ import dFrameContent from '@data-fair/frame/lib/vue-router/d-frame-content.js'
     ...vuetifySessionOptions(session),
     icons: { defaultSet: 'mdi', aliases, sets: { mdi, } }
   })
+  if (vuetify.defaults.value) {
+    vuetify.defaults.value.VjsfTabs = { VWindowsItem: { eager: true } }
+    vuetify.defaults.value.VColorPicker = { mode: 'hex' }
+  }
   const i18n = createI18n({ locale: session.state.lang, messages: $uiConfig.publicMessages })
   const head = createHead();
 
