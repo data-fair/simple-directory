@@ -46,9 +46,10 @@ export const __ = (req: Request, key: string, params: Record<string, string> = {
 }
 
 export const __all = (key: string, params: Record<string, string> = {}) => {
+  const flatKey = key.replace(/\./g, '_')
   const res: Record<string, string> = {}
   for (const locale of config.i18n.locales) {
-    const value = flatMessages[locale + '_' + key]
+    const value = flatMessages[locale + '_' + flatKey]
     if (value) {
       res[locale] = microTemplate(value, params)
     }
