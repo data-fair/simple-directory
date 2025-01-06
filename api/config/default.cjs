@@ -142,7 +142,7 @@ module.exports = {
       'text-accent': undefined,
       info: '#FFE0B2', // orange-lighten-4
       'on-info': '#000000',
-      'text-info': '#bf4300',
+      'text-info': '#BF4300',
       success: '#B9F6CA', // green-accent-1
       'on-success': '#000000',
       'text-success': '#2E7D32', // green-darken-3
