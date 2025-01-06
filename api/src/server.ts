@@ -15,6 +15,7 @@ import storages from '#storages'
 import { createHttpTerminator } from 'http-terminator'
 import app from './app.ts'
 import config from '#config'
+import * as eventsQueue from '#events-queue'
 import { publicProviders } from './auth/providers.ts'
 import { getSiteColorsWarnings } from './utils/color.ts'
 
@@ -35,6 +36,7 @@ export const start = async () => {
   await mongo.init()
   await locks.start(mongo.db)
   await Promise.all([
+    eventsQueue.start(),
     oauth.init(),
     saml2.init(),
     storages.init(),
@@ -64,7 +66,8 @@ export const stop = async () => {
     config.observer.active && stopObserver(),
     usersWorker.stop(),
     mailsTransport.stop(),
-    keysManager.start()
+    keysManager.start(),
+    eventsQueue.stop(),
   ])
   await locks.stop()
   await mongo.client.close()

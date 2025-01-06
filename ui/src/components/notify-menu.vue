@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/no-deprecated-slot-attribute -->
 <template>
   <v-menu
+    v-if="$uiConfig.useEvents"
     :close-on-content-click="false"
     location="top"
   >

@@ -27,7 +27,8 @@ export const uiConfig = {
   plannedDeletionDelay: config.plannedDeletionDelay,
   noBirthday: config.noBirthday,
   userSelfDelete: config.userSelfDelete,
-  orgStorageOverwrite: config.storage.ldap.overwrite
+  orgStorageOverwrite: config.storage.ldap.overwrite,
+  useEvents: !!config.privateEventsUrl
 }
 export type UiConfig = typeof uiConfig
 export default uiConfig

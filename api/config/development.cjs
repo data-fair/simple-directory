@@ -77,12 +77,12 @@ module.exports = {
     limits: 'testkey',
     readAll: 'testkey',
     metrics: 'testkey',
-    notifications: 'secret-events',
+    events: 'secret-events',
     sites: 'secret-sites'
   },
   perOrgStorageTypes: ['ldap'],
   cipherPassword: 'dev',
-  privateNotifyUrl: 'http://localhost:8088',
+  privateEventsUrl: 'http://localhost:8088',
   plannedDeletionDelay: 1,
   cleanup: {
     cron: '*/1 * * * *',

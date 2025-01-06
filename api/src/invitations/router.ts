@@ -3,7 +3,7 @@ import { Router } from 'express'
 import config from '#config'
 import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError, reqUserAuthenticated } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
-import { pushEvent, pushNotification } from '@data-fair/lib-node/events-queue.js'
+import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 import { reqI18n, __all, __ } from '#i18n'
@@ -70,7 +70,7 @@ router.post('', async (req, res, next) => {
       debug('in alwaysAcceptInvitation and the user already exists, immediately add it as member', invitation.email)
       await storage.addMember(orga, existingUser, invitation.role, invitation.department)
       await setNbMembersLimit(orga.id)
-      pushEvent({
+      eventsQueue?.pushEvent({
         sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
         topic: { key: 'simple-directory:invitation-sent' },
         title: __all('notifications.sentInvitation', { email: body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
@@ -112,9 +112,9 @@ router.post('', async (req, res, next) => {
         title: __all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
       }
       // send notif to all admins subscribed to the topic
-      pushEvent(event)
+      eventsQueue?.pushEvent(event)
       // send same notif to user himself
-      pushNotification({
+      eventsQueue?.pushNotification({
         sender: event.sender,
         topic: event.topic,
         title: __(req, 'notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') }),
@@ -137,7 +137,7 @@ router.post('', async (req, res, next) => {
       eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
     }
 
-    pushEvent({
+    eventsQueue?.pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
       topic: { key: 'simple-directory:invitation-sent' },
       title: __all('notifications.sentInvitation', { email: body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
@@ -263,9 +263,9 @@ router.get('/_accept', async (req, res, next) => {
     title: __all('notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
   }
   // send notif to all admins subscribed to the topic
-  pushEvent(event)
+  eventsQueue?.pushEvent(event)
   // send same notif to user himself
-  pushNotification({
+  eventsQueue?.pushNotification({
     sender: event.sender,
     topic: event.topic,
     title: __(req, 'notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') }),

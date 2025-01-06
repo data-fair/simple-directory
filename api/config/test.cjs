@@ -25,6 +25,7 @@ module.exports = {
     limits: 'testkey',
     readAll: 'testkey',
     metrics: 'testkey',
+    events: 'testkey',
     sites: 'testkey'
   },
   authRateLimit: {

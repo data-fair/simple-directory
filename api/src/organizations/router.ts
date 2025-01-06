@@ -2,7 +2,7 @@ import { type Member } from '#types'
 import { Router, type Request } from 'express'
 import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, session, mongoPagination, mongoSort, type EventLogContext } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
-import { pushEvent } from '@data-fair/lib-node/events-queue.js'
+import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
 import config from '#config'
 import { reqI18n } from '#i18n'
@@ -372,7 +372,7 @@ if (config.managePartners) {
     }
     await sendMail('partnerInvitation', reqI18n(req).messages, partnerPost.contactEmail, params)
 
-    pushEvent({
+    eventsQueue?.pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
       topic: { key: 'simple-directory:partner-invitation-sent' },
       title: __all('notifications.sentPartnerInvitation', { partnerName: partnerPost.name, email: partnerPost.contactEmail, orgName: orga.name })

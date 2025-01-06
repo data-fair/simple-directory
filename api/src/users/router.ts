@@ -4,7 +4,7 @@ import config, { superadmin } from '#config'
 import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession, httpError } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
-import { pushEvent } from '@data-fair/lib-node/events-queue.js'
+import eventsQueue from '#events-queue'
 import { reqI18n, __all, __date } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
@@ -145,7 +145,7 @@ router.post('', async (req, res, next) => {
     }
     eventsLog.info('sd.user.accept-invite', 'user accepted an invitation', logContext)
     await storage.addMember(orga, createdUser, invit.role, invit.department)
-    pushEvent({
+    eventsQueue?.pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: createdUser.name, email: createdUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })

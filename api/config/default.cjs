@@ -298,7 +298,7 @@ module.exports = {
     limits: undefined,
     readAll: undefined,
     metrics: undefined,
-    notifications: undefined,
+    events: undefined,
     sites: undefined
   },
   // A link to the terms of services for the site
@@ -365,7 +365,7 @@ module.exports = {
   // allow configuring external storages per organization
   perOrgStorageTypes: [],
   cipherPassword: undefined,
-  privateNotifyUrl: undefined,
+  privateEventsUrl: undefined,
   plannedDeletionDelay: 14,
   cleanup: {
     cron: '0 5 * * *',

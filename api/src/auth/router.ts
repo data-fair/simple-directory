@@ -1,7 +1,7 @@
 import config, { superadmin } from '#config'
 import { Router, type RequestHandler } from 'express'
 import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError } from '@data-fair/lib-express'
-import { pushEvent } from '@data-fair/lib-node/events-queue.js'
+import eventsQueue from '#events-queue'
 import bodyParser from 'body-parser'
 import { nanoid } from 'nanoid'
 import Cookies from 'cookies'
@@ -758,7 +758,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
 
     await storage.addMember(invitOrga, user, invit.role, invit.department)
     eventsLog.info('sd.auth.oauth.accept-invite', `a user accepted an invitation in oauth callback ${user.id}`, logContext)
-    pushEvent({
+    eventsQueue?.pushEvent({
       sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
@@ -969,7 +969,7 @@ router.post('/saml2-assert', async (req, res) => {
     }
     await storage.addMember(invitOrga, user, invit.role, invit.department)
     eventsLog.info('sd.auth.saml.accept-invite', `a user accepted an invitation in saml callback ${user.id}`, logContext)
-    pushEvent({
+    eventsQueue?.pushEvent({
       sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })

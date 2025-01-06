@@ -179,7 +179,7 @@ module.exports = {
     limits: 'SECRET_LIMITS',
     readAll: 'SECRET_READ_ALL',
     metrics: 'SECRET_METRICS',
-    notifications: 'SECRET_NOTIFICATIONS',
+    events: 'SECRET_EVENTS',
     sites: 'SECRET_SITES'
   },
   listenWhenReady: 'LISTEN_WHEN_READY',
@@ -224,7 +224,7 @@ module.exports = {
   },
   perOrgStorageTypes: jsonEnv('PER_ORG_STORAGE_TYPES'),
   cipherPassword: 'CIPHER_PASSWORD',
-  privateNotifyUrl: 'PRIVATE_NOTIFY_URL',
+  privateEventsUrl: 'PRIVATE_EVENTS_URL',
   plannedDeletionDelay: 'PLANNED_DELETION_DELAY',
   cleanup: {
     cron: 'CLEANUP_CRON',
