@@ -59,7 +59,7 @@
 </template>
 
 <script lang="ts" setup>
-import { PublicAuthProvider } from '#api/types'
+import { PublicAuthProvider } from '@sd/api/types'
 
 const { authProvidersFetch, sitePublic, mainPublicUrl } = useStore()
 

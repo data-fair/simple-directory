@@ -29,6 +29,7 @@ COPY --from=package-strip /app/package.json package.json
 COPY --from=package-strip /app/package-lock.json package-lock.json
 ADD ui/package.json ui/package.json
 ADD api/package.json api/package.json
+ADD shared/package.json shared/package.json
 # full deps install used for types and ui building
 # also used to fill the npm cache for faster install of api deps
 RUN npm ci --omit=dev --omit=optional --omit=peer --no-audit --no-fund
@@ -49,7 +50,7 @@ COPY --from=types /app/api/config api/config
 COPY --from=types /app/api/types api/types
 COPY --from=types /app/api/doc api/doc
 ADD /api/i18n api/i18n
-ADD /api/shared api/shared
+ADD /shared shared
 ADD /api/src/config.ts api/src/config.ts
 ADD /api/src/ui-config.ts api/src/ui-config.ts
 ADD /ui ui
@@ -68,6 +69,7 @@ FROM native-deps AS main
 
 COPY --from=api-installer /app/node_modules node_modules
 ADD /api api
+ADD /shared shared
 ADD /upgrade upgrade
 COPY --from=types /app/api/types api/types
 COPY --from=types /app/api/doc api/doc

@@ -41,7 +41,7 @@ process.env.EVENTS_LOG_LEVEL = 'silent'
 process.env.SUPPRESS_NO_CONFIG_WARNING = '1'
 
 export const startApiServer = async () => {
-  process.env.NODE_CONFIG_DIR = 'api/config/'
+  process.env.NODE_CONFIG_DIR = './api/config/'
   const apiServer = await import('../../api/src/server.ts')
   await apiServer.start()
 }

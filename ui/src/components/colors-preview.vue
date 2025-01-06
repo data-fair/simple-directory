@@ -52,7 +52,7 @@ import { useTheme } from 'vuetify'
 import type { VBtn } from 'vuetify/components/VBtn'
 import type { Theme } from '../../../api/config/type'
 import { mdiEmoticonKissOutline } from '@mdi/js'
-import { fillTheme, getTextColorsCss } from '../../../api/shared/site.ts'
+import { fillTheme, getTextColorsCss } from '@sd/shared/site.ts'
 
 const vuetifyTheme = useTheme()
 const { colorsKey, theme, dark } = defineProps({

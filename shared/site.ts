@@ -1,4 +1,4 @@
-import { type Colors, type Theme } from '#types/site-public/index.ts'
+import { type Colors, type Theme } from '../api/types/site-public/index.ts'
 import clone from '@data-fair/lib-utils/clone.js'
 import tinycolor from 'tinycolor2'
 

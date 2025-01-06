@@ -63,7 +63,7 @@
 
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
-import { Organization } from '#api/types'
+import { Organization } from '@sd/api/types'
 
 const i18n = useI18n()
 const { patchOrganization } = useStore()

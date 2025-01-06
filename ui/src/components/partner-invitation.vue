@@ -118,7 +118,7 @@
 
 <script setup lang="ts">
 import { type OrganizationMembership } from '@data-fair/lib-vue/session'
-import { type Organization, type ShortenedPartnerInvitation } from '#api/types'
+import { type Organization, type ShortenedPartnerInvitation } from '@sd/api/types'
 import { jwtDecode } from 'jwt-decode'
 
 const reactiveSearchParams = useReactiveSearchParams()

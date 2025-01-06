@@ -9,7 +9,7 @@ import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
 import { getSiteColorsWarnings } from '../utils/color.ts'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
-import { fillTheme, getTextColorsCss } from '#shared/site.ts'
+import { fillTheme, getTextColorsCss } from '@sd/shared/site.ts'
 import clone from '@data-fair/lib-utils/clone.js'
 
 const router = Router()

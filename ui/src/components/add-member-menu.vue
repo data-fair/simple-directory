@@ -120,7 +120,7 @@
 
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
-import type { Organization, Member, Invitation } from '#api/types'
+import type { Organization, Member, Invitation } from '@sd/api/types'
 
 const { host, mainPublicUrl, redirects, sitesFetch } = useStore()
 const { sendUiNotif } = useUiNotif()

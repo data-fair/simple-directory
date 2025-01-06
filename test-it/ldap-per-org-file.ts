@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert'
 import { it, describe, before, beforeEach, after } from 'node:test'
 import { axiosAuth, clean, startApiServer, stopApiServer } from './utils/index.ts'
 
-process.env.NODE_CONFIG_DIR = 'api/config/'
+process.env.NODE_CONFIG_DIR = './api/config/'
 const config = (await import('../api/src/config.ts')).default
 const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
 ldapConfig.organizations.staticSingleOrg = { id: 'test-ldap', name: 'Test single org' }

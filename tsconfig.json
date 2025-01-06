@@ -8,10 +8,7 @@
     "strict": true,
     "allowJs": true,
     "checkJs": true,
-    "skipLibCheck": true,
-    "paths": {
-      "#shared/*": ["./shared/*"]
-    }
+    "skipLibCheck": true
   },
   "exclude": ["node_modules", ".type", "ui", "dev", "test-it"],
   "types": ["vuetify"]

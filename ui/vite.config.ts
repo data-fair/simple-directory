@@ -54,7 +54,7 @@ export default defineConfig({
         ...(autoImports as any),
         unheadVueComposablesImports,
         {
-          from: '#api/types',
+          from: '@sd/api/types',
           imports: ['Organization', 'User', 'Member', 'Partner', 'Invitation', 'Site', 'Limits'],
           type: true,
         },

@@ -4,7 +4,7 @@ import { axiosAuth, clean, startApiServer, stopApiServer, createUser } from './u
 import type { LdapStorage } from '../api/src/storages/ldap.ts'
 
 process.env.STORAGE_TYPE = 'mongo'
-process.env.NODE_CONFIG_DIR = 'api/config/'
+process.env.NODE_CONFIG_DIR = './api/config/'
 const config = (await import('../api/src/config.ts')).default
 const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
 

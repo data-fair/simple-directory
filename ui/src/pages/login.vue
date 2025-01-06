@@ -794,15 +794,15 @@
 </template>
 
 <script lang="ts" setup>
-import { ActionPayload, ShortenedInvitation } from '#api/types'
+import { ActionPayload, ShortenedInvitation } from '@sd/api/types'
 import { jwtDecode } from 'jwt-decode'
 import type { VForm } from 'vuetify/components'
-import type { PostUserReq } from '#api/doc/users/post-req/index.ts'
-import type { PatchUserReq } from '#api/doc/users/patch-req/index.ts'
-import type { PostOrganizationReq } from '#api/doc/organizations/post-req/index.ts'
-import type { PostPasswordlessAuthReq } from '#api/doc/auth/post-passwordless-req/index.ts'
-import type { PostPasswordAuthReq } from '#api/doc/auth/post-password-req/index.ts'
-import type { PostActionAuthReq } from '#api/doc/auth/post-action-req/index.ts'
+import type { PostUserReq } from '@sd/api/doc/users/post-req/index.ts'
+import type { PatchUserReq } from '@sd/api/doc/users/patch-req/index.ts'
+import type { PostOrganizationReq } from '@sd/api/doc/organizations/post-req/index.ts'
+import type { PostPasswordlessAuthReq } from '@sd/api/doc/auth/post-passwordless-req/index.ts'
+import type { PostPasswordAuthReq } from '@sd/api/doc/auth/post-password-req/index.ts'
+import type { PostActionAuthReq } from '@sd/api/doc/auth/post-action-req/index.ts'
 import UiNotifAlert from '@data-fair/lib-vuetify/ui-notif-alert.vue'
 import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
 
