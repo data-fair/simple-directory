@@ -4,13 +4,12 @@ import Debug from 'debug'
 
 const debug = Debug('events-queue')
 
-let eventsQueue: EventsQueue | undefined
+const eventsQueue: EventsQueue | undefined = config.secretKeys.events && config.privateEventsUrl ? new EventsQueue() : undefined
 
 export default eventsQueue
 
 export async function start () {
-  if (config.secretKeys.events && config.privateEventsUrl) {
-    eventsQueue = new EventsQueue()
+  if (eventsQueue && config.secretKeys.events && config.privateEventsUrl) {
     debug('start events queue', config.privateEventsUrl)
     await eventsQueue.start({ eventsUrl: config.privateEventsUrl, eventsSecret: config.secretKeys.events })
   } else {

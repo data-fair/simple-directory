@@ -28,7 +28,7 @@ export const uiConfig = {
   noBirthday: config.noBirthday,
   userSelfDelete: config.userSelfDelete,
   orgStorageOverwrite: config.storage.ldap.overwrite,
-  useEvents: !!config.privateEventsUrl
+  useEvents: Boolean(config.secretKeys.events && config.privateEventsUrl)
 }
 export type UiConfig = typeof uiConfig
 export default uiConfig
