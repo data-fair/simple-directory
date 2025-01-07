@@ -62,6 +62,7 @@ router.post('', async (req, res, next) => {
     theme.hc = false
     theme.hcDark = false
     theme.colors.primary = body.theme.primaryColor
+    theme.colors.background = '#FFFFFF'
     if (body.logo) {
       theme.logo = body.logo
       delete body.logo

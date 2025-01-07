@@ -11,7 +11,7 @@ const defaultTheme = {
   },
   colors: {
     // standard vuetify colors, see https://vuetifyjs.com/en/styles/colors/#material-colors
-    background: '#FAFAFA', // grey-lighten-5
+    background: '#FFFFFF', // grey-lighten-5 replaced by white for better integration with older portals
     'on-background': '#424242', // grey-darken-3
     surface: '#FFFFFF',
     'on-surface': '#424242', // grey-darken-3
