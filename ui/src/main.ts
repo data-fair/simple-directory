@@ -39,7 +39,7 @@ import dFrameContent from '@data-fair/frame/lib/vue-router/d-frame-content.js'
 
   (window as any).vIframeOptions = { router }
 
-  createApp(App)
+  const app = createApp(App)
     .use(router)
     .use(reactiveSearchParams)
     .use(session)
@@ -48,5 +48,7 @@ import dFrameContent from '@data-fair/frame/lib/vue-router/d-frame-content.js'
     .use(vuetify)
     .use(i18n)
     .use(head)
-    .mount('#app')
+
+  await router.isReady()
+  app.mount('#app')
 })()
