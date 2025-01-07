@@ -83,4 +83,21 @@ describe('Session management', () => {
     assert.ok(!me.adminMode)
     await assert.rejects(ax.get('/api/users?allFields=true'), { status: 403 })
   })
+
+  it('Toggle asAdmin mode', async () => {
+    const ax = await axiosAuth({ email: 'admin@test.com', adminMode: true })
+    await ax.post('/api/auth/asadmin', { id: 'dmeadus0' })
+    let me = (await ax.get('/api/auth/me')).data
+    assert.equal(me.id, 'dmeadus0')
+    assert.equal(me.asAdmin?.id, 'superadmin')
+    assert.ok(!me.adminMode)
+    await ax.post('/api/auth/keepalive')
+    await ax.post('/api/auth/keepalive')
+    me = (await ax.get('/api/auth/me')).data
+    assert.equal(me.id, 'dmeadus0')
+    await ax.delete('/api/auth/asadmin')
+    me = (await ax.get('/api/auth/me')).data
+    assert.equal(me.id, 'superadmin')
+    assert.ok(me.adminMode)
+  })
 })
