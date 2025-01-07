@@ -11,6 +11,9 @@ import { getSiteColorsWarnings } from '../utils/color.ts'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import { fillTheme, getTextColorsCss } from '@sd/shared/site.ts'
 import clone from '@data-fair/lib-utils/clone.js'
+import Debug from 'debug'
+
+const debugPostSite = Debug('post-site')
 
 const router = Router()
 export default router
@@ -55,23 +58,45 @@ router.get('', async (req, res, next) => {
 router.post('', async (req, res, next) => {
   await checkSecret(req)
   const body = req.body
+  debugPostSite('received POST', body)
+
+  let existingSite
+  if (body._id) existingSite = await getSite(req.body._id)
+
   // manage retro-compatibility with old portals manager
   if (body.theme?.primaryColor) {
-    const theme = clone(config.theme)
-    theme.dark = false
-    theme.hc = false
-    theme.hcDark = false
-    theme.colors.primary = body.theme.primaryColor
-    theme.colors.background = '#FFFFFF'
+    debugPostSite('manage retro-compatibility with old portals manager')
+    if (existingSite?.theme) {
+      const theme = clone(existingSite?.theme)
+      if (theme.assistedMode && theme.assistedModeColors) {
+        theme.assistedModeColors.primary = body.theme.primaryColor
+        body.theme = fillTheme(theme, config.theme)
+      } else {
+        theme.colors.primary = body.theme.primaryColor
+        body.theme = theme
+      }
+    } else {
+      const theme = clone(config.theme)
+      theme.dark = false
+      theme.hc = false
+      theme.hcDark = false
+      theme.colors.primary = body.theme.primaryColor
+      theme.assistedMode = true
+      theme.assistedModeColors = {
+        primary: body.theme.primaryColor
+      }
+      theme.colors.background = '#FFFFFF'
+      body.theme = fillTheme(theme, config.theme)
+    }
     if (body.logo) {
-      theme.logo = body.logo
+      body.theme.logo = body.logo
       delete body.logo
     }
-    body.theme = theme
+    debugPostSite('processed body for retro-compatibility', body)
   }
 
-  const site = (await import('#doc/sites/post-req-body/index.ts')).returnValid(body, { name: 'req.body' })
-  if (!site.theme) {
+  const postSite = (await import('#doc/sites/post-req-body/index.ts')).returnValid(body, { name: 'req.body' })
+  if (!postSite.theme) {
     const theme = clone(config.theme)
     theme.dark = false
     theme.hc = false
@@ -82,11 +107,12 @@ router.post('', async (req, res, next) => {
       secondary: theme.colors.secondary,
       accent: theme.colors.accent,
     }
-    site.theme = theme
+    postSite.theme = theme
   }
-  if (site.path?.endsWith('/')) site.path = site.path.slice(0, -1)
-  if (site.path === '') delete site.path
-  const patchedSite = await patchSite({ ...site, _id: site._id ?? nanoid() }, true)
+  if (postSite.path?.endsWith('/')) postSite.path = postSite.path.slice(0, -1)
+  if (postSite.path === '') delete postSite.path
+  const patchedSite = await patchSite({ ...postSite, _id: postSite._id ?? nanoid() }, true)
+  debugPostSite('patched site', patchedSite._id)
   res.send(patchedSite)
 })
 
