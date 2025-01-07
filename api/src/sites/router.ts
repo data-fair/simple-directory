@@ -67,6 +67,7 @@ router.post('', async (req, res, next) => {
   if (body.theme?.primaryColor) {
     debugPostSite('manage retro-compatibility with old portals manager')
     if (existingSite?.theme) {
+      debugPostSite('patching existing theme with new primary color')
       const theme = clone(existingSite?.theme)
       if (theme.assistedMode && theme.assistedModeColors) {
         theme.assistedModeColors.primary = body.theme.primaryColor
@@ -76,6 +77,7 @@ router.post('', async (req, res, next) => {
         body.theme = theme
       }
     } else {
+      debugPostSite('init a new theme from env level config')
       const theme = clone(config.theme)
       theme.dark = false
       theme.hc = false
