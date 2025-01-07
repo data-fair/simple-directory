@@ -38,7 +38,7 @@
   "devDependencies": {
     "@commitlint/config-conventional": "^19.2.2",
     "@data-fair/lib-express": "^1.10.0",
-    "@data-fair/lib-node": "^2.2.0",
+    "@data-fair/lib-node": "^2.2.1",
     "@reporters/bail": "^1.2.1",
     "@types/accept-language-parser": "^1.5.6",
     "@types/capitalize": "^2.0.2",

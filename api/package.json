@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@data-fair/lib-express": "^1.10.1",
-    "@data-fair/lib-node": "^2.2.0",
+    "@data-fair/lib-node": "^2.2.1",
     "@data-fair/lib-utils": "^1.2.0",
     "@sd/shared": "*",
     "accept-language-parser": "^1.5.0",
