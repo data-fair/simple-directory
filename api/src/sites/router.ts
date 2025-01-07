@@ -71,11 +71,10 @@ router.post('', async (req, res, next) => {
       const theme = clone(existingSite?.theme)
       if (theme.assistedMode && theme.assistedModeColors) {
         theme.assistedModeColors.primary = body.theme.primaryColor
-        body.theme = fillTheme(theme, config.theme)
       } else {
         theme.colors.primary = body.theme.primaryColor
-        body.theme = theme
       }
+      body.theme = fillTheme(theme, config.theme)
     } else {
       debugPostSite('init a new theme from env level config')
       const theme = clone(config.theme)
