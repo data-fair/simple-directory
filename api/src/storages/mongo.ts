@@ -158,7 +158,8 @@ class MongodbStorage implements SdStorage {
     if (params.q) {
       filter.$or = [
         { name: { $regex: escapeRegExp(params.q), $options: 'i' } },
-        { email: { $regex: escapeRegExp(params.q), $options: 'i' } }
+        { email: { $regex: escapeRegExp(params.q), $options: 'i' } },
+        { _id: params.q }
       ]
     }
 
@@ -316,7 +317,10 @@ class MongodbStorage implements SdStorage {
       filter._id = { $in: params.ids }
     }
     if (params.q) {
-      filter.name = { $regex: escapeRegExp(params.q), $options: 'i' }
+      filter.$or = [
+        { name: { $regex: escapeRegExp(params.q), $options: 'i' } },
+        { _id: params.q }
+      ]
     }
     if (params.creator) {
       filter['created.id'] = params.creator

@@ -40,7 +40,7 @@
           :append-inner-icon="mdiMagnify"
           clearable
           @click:clear="$nextTick(() => $nextTick(() => filterPartners()))"
-          @click:append="filterPartners"
+          @click:append-inner="filterPartners"
           @keyup.enter="filterPartners"
         />
       </v-col>

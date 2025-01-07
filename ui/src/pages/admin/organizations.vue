@@ -18,7 +18,9 @@
         density="comfortable"
         style="max-width:300px;"
         :append-inner-icon="mdiMagnify"
-        @click:append="validQ = q"
+        clearable
+        @click:clear="validQ = ''"
+        @click:append-inner="validQ = q"
         @keyup.enter="validQ = q"
       />
     </v-row>
@@ -175,8 +177,8 @@
 <script setup lang="ts">
 const { t } = useI18n()
 
-const q = ref('')
-const validQ = ref('')
+const validQ = useStringSearchParam('q')
+const q = ref(validQ.value)
 const itemsPerPage = ref(10)
 const page = ref(1)
 const sortBy = ref<{ key: string, order: 'asc' | 'desc' }[]>([{ key: 'name', order: 'asc' }])

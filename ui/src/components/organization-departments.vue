@@ -42,7 +42,7 @@
           :append-inner-icon="mdiMagnify"
           clearable
           @click:clear="$nextTick(() => $nextTick(() => filterDeps()))"
-          @click:append="filterDeps"
+          @click:append-inner="filterDeps"
           @keyup.enter="filterDeps"
         />
       </v-col>

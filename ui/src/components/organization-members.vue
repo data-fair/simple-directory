@@ -51,7 +51,7 @@
           clearable
           hide-details="auto"
           @click:clear="$nextTick(() => $nextTick(() => refetchMembers()))"
-          @click:append="refetchMembers()"
+          @click:append-inner="refetchMembers()"
           @keyup.enter="refetchMembers()"
         />
       </v-col>
