@@ -2,6 +2,7 @@ import type { User } from '#types/user/index.ts'
 import type { Organization } from '#types/organization/index.ts'
 import type { PostIdentityReq } from '@data-fair/lib-express/identities/types/post-req/index.js'
 import axios from '@data-fair/lib-node/axios.js'
+import { internalError } from '@data-fair/lib-node/observer.js'
 import config from '#config'
 import Debug from 'debug'
 
@@ -17,12 +18,15 @@ export async function postOrganizationIdentityWebhook (org: Pick<Organization, '
 
 const postIdentityWebhook = async (identity: PostIdentityReq['body'] & PostIdentityReq['params']) => {
   for (const webhook of config.webhooks.identities) {
+    for (const org of identity.organizations || []) {
+      if (org.department === null || org.department === '') delete org.department
+    }
     const url = `${webhook.base}/${identity.type}/${identity.id}`
     debug(`Send identity name webhook to ${url} : `, identity)
     try {
       await axios.post(url, identity, { params: { key: webhook.key } })
     } catch (err: any) {
-      console.error('Failure in POST identity webhook', err)
+      internalError('webhook-identity-post', err)
     }
   }
 }
@@ -34,7 +38,7 @@ export const deleteIdentityWebhook = async (type: string, id: string) => {
     try {
       await axios.delete(url, { params: { key: webhook.key } })
     } catch (err: any) {
-      console.error('Failure in DELETE identity webhook', err)
+      internalError('webhook-identity-delete', err)
     }
   }
 }
