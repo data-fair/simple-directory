@@ -55,14 +55,19 @@ const patch = ref()
 const valid = ref(false)
 const form = ref<InstanceType<typeof VForm>>()
 
-const vjsfOptions = computed(() => ({
-  density: 'comfortable',
-  initialValidation: 'always',
-  context: {
-    otherSites: sites.data.value?.results.filter(s => s._id !== siteId).map(site => site.host),
-    otherSitesProviders: sites.data.value?.results.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {} as Record<string, string[]>)
+const vjsfOptions = computed(() => {
+  const owner = site.data.value?.owner
+  const otherSites = sites.data.value?.results
+    .filter(s => s.owner.type === owner?.type && s.owner.id === owner?.id && s._id !== siteId)
+  return {
+    density: 'comfortable',
+    initialValidation: 'always',
+    context: {
+      otherSites: otherSites?.map(site => site.host),
+      otherSitesProviders: otherSites?.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {} as Record<string, string[]>)
+    }
   }
-}))
+})
 
 type SiteWithColorWarnings = Site & { colorWarnings: string[] }
 
