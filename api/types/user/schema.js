@@ -137,10 +137,16 @@ export default {
     '2FA': {
       type: 'object',
       additionalProperties: false,
-      required: ['active', 'recovery'],
+      required: ['active'],
       properties: {
         active: {
           type: 'boolean'
+        },
+        secret: {
+          type: 'string'
+        },
+        recovery: {
+          type: 'object'
         }
       }
     },
