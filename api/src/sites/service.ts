@@ -4,6 +4,9 @@ import { type Request } from 'express'
 import { reqSiteUrl, httpError, type Account } from '@data-fair/lib-express'
 import mongo from '#mongo'
 import memoize from 'memoizee'
+import Debug from 'debug'
+
+const debugRedirectSite = Debug('redirect-site')
 
 export const getSiteByUrl = memoize(async (url: string) => {
   const urlObj = new URL(url)
@@ -19,20 +22,24 @@ export const getRedirectSite = async (req: Request, redirect: string) => {
   const currentSite = await reqSite(req)
   if (redirect.startsWith(currentSiteUrl)) return currentSite
   const redirectSite = await getSiteByUrl(redirect)
+  debugRedirectSite('redirectSite', currentSiteUrl, currentSite, redirectSite)
   if (!redirectSite) throw httpError(400, `impossible to redirect to ${redirect} from ${currentSiteUrl}, no matching site found`)
   if (!currentSite && ['onlyBackOffice', 'ssoBackOffice', undefined].includes(redirectSite.authMode)) {
     // redirect from back-office is accepted for this site
+    debugRedirectSite('redirect from back-affice is accepted', redirectSite.authMode)
     return redirectSite
   }
   if (!currentSite && redirectSite.authMode === 'onlyOtherSite' && redirectSite.authOnlyOtherSite) {
     // special case of double redirect from org site to another then to back-office
     const otherSite = await getSiteByUrl('https://' + redirectSite.authOnlyOtherSite)
+    debugRedirectSite('intermediate site in onlyOtherSite mode', otherSite)
     if (
       otherSite &&
       otherSite.owner.type === redirectSite.owner.type && otherSite.owner.id === redirectSite.owner.id &&
       ['onlyBackOffice', 'ssoBackOffice', undefined].includes(otherSite.authMode)
     ) {
       // redirect from this site is accepted
+      debugRedirectSite('accept redirect based on intermediate site')
       return redirectSite
     }
   }
@@ -42,8 +49,10 @@ export const getRedirectSite = async (req: Request, redirect: string) => {
     redirectSite.authMode === 'onlyOtherSite' && redirectSite.authOnlyOtherSite === currentSite.host + (currentSite.path ?? '')
   ) {
     // redirect from this site is accepted
+    debugRedirectSite('accept redirect in onlyOtherSite mode')
     return redirectSite
   }
+  debugRedirectSite('reject redirect')
   throw httpError(400, `impossible to redirect to ${redirect} from ${currentSiteUrl}`)
 }
 
