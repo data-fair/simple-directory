@@ -174,7 +174,8 @@ router.get('/_public', async (req, res, next) => {
         ...theme,
         logo: site.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
       },
-      authMode: site.authMode ?? 'onlyBackOffice'
+      authMode: site.authMode ?? 'onlyBackOffice',
+      authOnlyOtherSite: site.authOnlyOtherSite
     }
     res.send(sitePublic)
   }
