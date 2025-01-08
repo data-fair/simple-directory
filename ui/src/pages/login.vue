@@ -592,6 +592,7 @@
                   :src="qrcode"
                   :title="$t('pages.login.configure2FAQRCode')"
                   max-width="170"
+                  class="my-2"
                 />
                 <v-text-field
                   v-model="configure2FACode"
