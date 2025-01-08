@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@data-fair/frame": "^0.2.1",
-    "@data-fair/lib-vue": "^1.15.3",
+    "@data-fair/lib-vue": "^1.15.5",
     "@data-fair/lib-vuetify": "^1.8.0",
     "@intlify/unplugin-vue-i18n": "^5.2.0",
     "@koumoul/v-iframe": "^2.4.4",

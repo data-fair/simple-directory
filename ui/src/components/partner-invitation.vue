@@ -129,7 +129,7 @@ import { type Organization, type ShortenedPartnerInvitation } from '@sd/api/type
 import { jwtDecode } from 'jwt-decode'
 
 const reactiveSearchParams = useReactiveSearchParams()
-const { user, loginUrl } = useSession()
+const { user, loginUrl, switchOrganization } = useSession()
 const { mainPublicUrl } = useStore()
 
 const createOrganizationName = ref('')
@@ -151,7 +151,7 @@ const createOrga = withUiNotif(async () => {
   if (!createOrganizationName.value) return
   const orga = await $fetch<Organization>('organizations', { method: 'POST', body: { name: createOrganizationName.value } })
   if (!user.value?.organizations.length) {
-    await $fetch('users/' + user.value?.id, { body: { defaultOrg: orga.id, ignorePersonalAccount: true } })
+    await $fetch('users/' + user.value?.id, { method: 'PATCH', body: { defaultOrg: orga.id, ignorePersonalAccount: true } })
   }
   acceptPartnerInvitation(orga)
 })
@@ -172,6 +172,8 @@ const goToRedirect = withUiNotif(async (org: string) => {
   let redirect = reactiveSearchParams.redirect
   if (mainPublicUrl.host !== new URL(redirect).host) {
     redirect = await $fetch('auth/site_redirect', { method: 'POST', body: { redirect, org } })
+  } else {
+    switchOrganization(org, undefined, false)
   }
   window.location.href = redirect
 })
