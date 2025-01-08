@@ -19,10 +19,22 @@ export const getRedirectSite = async (req: Request, redirect: string) => {
   const currentSite = await reqSite(req)
   if (redirect.startsWith(currentSiteUrl)) return currentSite
   const redirectSite = await getSiteByUrl(redirect)
-  if (!redirectSite) throw httpError(400, `impossible to redirect to ${redirect} from ${currentSiteUrl}`)
+  if (!redirectSite) throw httpError(400, `impossible to redirect to ${redirect} from ${currentSiteUrl}, no matching site found`)
   if (!currentSite && ['onlyBackOffice', 'ssoBackOffice', undefined].includes(redirectSite.authMode)) {
     // redirect from back-office is accepted for this site
     return redirectSite
+  }
+  if (!currentSite && redirectSite.authMode === 'onlyOtherSite' && redirectSite.authOnlyOtherSite) {
+    // special case of double redirect from org site to another then to back-office
+    const otherSite = await getSiteByUrl('https://' + redirectSite.authOnlyOtherSite)
+    if (
+      otherSite &&
+      otherSite.owner.type === redirectSite.owner.type && otherSite.owner.id === redirectSite.owner.id &&
+      ['onlyBackOffice', 'ssoBackOffice', undefined].includes(otherSite.authMode)
+    ) {
+      // redirect from this site is accepted
+      return redirectSite
+    }
   }
   if (
     currentSite &&
