@@ -13,6 +13,10 @@
       v-model="valid"
       @submit.prevent
     >
+      <h1 class="text-h3 mb-3">
+        Configuration du site
+      </h1>
+      <a :href="siteHref">{{ siteHref }}</a> - {{ site.data.value?._id }}
       <vjsf
         v-model="patch"
         :options="vjsfOptions"
@@ -65,6 +69,8 @@ type SiteWithColorWarnings = Site & { colorWarnings: string[] }
 const siteId = useRoute<'/admin/sites/[id]'>().params.id
 const sites = useFetch<{ count: number, results: SiteWithColorWarnings[] }>($apiPath + '/sites', { query: { showAll: true } })
 const site = useFetch<SiteWithColorWarnings>($apiPath + '/sites/' + siteId, { query: { showAll: true } })
+
+const siteHref = computed(() => `http://${site.data.value?.host}${site.data.value?.path ?? ''}`)
 
 const { patchSite } = useStore()
 
