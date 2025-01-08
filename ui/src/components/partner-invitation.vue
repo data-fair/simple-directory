@@ -9,6 +9,7 @@
       :value="true"
       variant="outlined"
       density="compact"
+      class="mb-2"
     >
       <p>
         L'organisation {{ invit.on }} souhaite ajouter {{ invit.n }} comme partenaire avec {{ invit.e }} comme adresse de contact.
@@ -20,7 +21,7 @@
     </v-alert>
 
     <template v-if="user && user.email !== invit.e">
-      <p>
+      <p class="my-4">
         Vous êtes connecté avec le compte utilisateur {{ user.name }} ({{ user.email }}). Vous pouvez vous connecter avec un autre compte ou créer un nouveau compte en cliquant sur le bouton ci-dessous.
       </p>
       <p>
@@ -59,10 +60,16 @@
     </template>
 
     <template v-if="user">
-      <p v-if="otherUserOrgs?.length === 0">
+      <p
+        v-if="otherUserOrgs?.length === 0"
+        class="mt-4"
+      >
         Vous n'appartenez à aucune organisation. Vous pouvez créer une nouvelle organisation et accepter l'invitation en son nom.
       </p>
-      <p v-else>
+      <p
+        v-else
+        class="mt-4"
+      >
         Vous pouvez accepter cette invitation au nom d'une organisation dont vous êtes administrateur, ou bien créer une nouvelle organisation et accepter l'invitation en son nom.
       </p>
 
@@ -142,7 +149,7 @@ if (invit) {
 
 const createOrga = withUiNotif(async () => {
   if (!createOrganizationName.value) return
-  const orga = await $fetch<Organization>('api/organizations', { method: 'POST', body: { name: createOrganizationName.value } })
+  const orga = await $fetch<Organization>('organizations', { method: 'POST', body: { name: createOrganizationName.value } })
   if (!user.value?.organizations.length) {
     await $fetch('users/' + user.value?.id, { body: { defaultOrg: orga.id, ignorePersonalAccount: true } })
   }
@@ -151,7 +158,7 @@ const createOrga = withUiNotif(async () => {
 
 const acceptPartnerInvitation = withUiNotif(async (org: Organization) => {
   if (!invit) return
-  await $fetch(`/api/organizations/${invit.o}/partners/_accept`, { method: 'POST', body: { id: org.id, contactEmail: invit.e, token } })
+  await $fetch(`organizations/${invit.o}/partners/_accept`, { method: 'POST', body: { id: org.id, contactEmail: invit.e, token } })
   goToRedirect(org.id)
 })
 
@@ -164,7 +171,7 @@ const toggleSelectedUserOrg = (userOrg: OrganizationMembership, toggle: boolean)
 const goToRedirect = withUiNotif(async (org: string) => {
   let redirect = reactiveSearchParams.redirect
   if (mainPublicUrl.host !== new URL(redirect).host) {
-    redirect = await $fetch('/api/auth/site_redirect', { method: 'POST', body: { redirect, org } })
+    redirect = await $fetch('auth/site_redirect', { method: 'POST', body: { redirect, org } })
   }
   window.location.href = redirect
 })

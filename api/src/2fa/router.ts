@@ -13,8 +13,6 @@ import { checkPassword, hashPassword, reqSite } from '#services'
 const router = Router()
 export default router
 
-// TODO: apply some rate limiting
-
 router.post('/', async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
