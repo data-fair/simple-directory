@@ -25,7 +25,7 @@ const isUser: RequestHandler = (req, res, next) => {
 const isAccountMember: RequestHandler = (req, res, next) => {
   if (req.query.key && req.query.key === config.secretKeys.limits) return next()
   const session = reqSessionAuthenticated(req)
-  assertAccountRole(session, { type: 'organization', id: req.params.id }, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
+  assertAccountRole(session, { type: 'organization', id: req.params.id }, 'admin', { acceptDepAsRoot: true })
   next()
 }
 
