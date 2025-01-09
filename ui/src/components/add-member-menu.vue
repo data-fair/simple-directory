@@ -79,6 +79,8 @@
             :disabled="mainPublicUrl.host !== host"
             label="Site de redirection"
             :items="redirects"
+            item-value="value"
+            item-title="title"
             name="host"
             required
             density="compact"
@@ -146,24 +148,24 @@ const defaultRedirect = computed(() => {
 })
 
 const inviteForm = ref<InstanceType<typeof VForm>>()
-const newInvitation = {
+const createInvitation = () => ({
   id: orga.id,
   name: orga.name,
   email: '',
   role: null,
   department,
-  redirect: defaultRedirect.value
-}
-const invitation = ref({ ...newInvitation })
+  redirect: defaultRedirect.value?.value
+})
+const invitation = ref<ReturnType<typeof createInvitation>>()
 const validInvitation = ref(false)
 const link = ref('')
 
 const menu = ref(false)
 watch(menu, async () => {
   if (!menu) return
-  invitation.value = { ...newInvitation }
-  link.value = ''
   if ($uiConfig.manageSites) await sitesFetch.refresh()
+  invitation.value = createInvitation()
+  link.value = ''
   inviteForm.value?.reset()
 })
 
