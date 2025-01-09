@@ -41,7 +41,14 @@
             >{{ props.item.host }}</a>
           </td>
           <td>{{ props.item._id }}</td>
-          <td>{{ props.item.owner.name }}</td>
+          <td>
+            <router-link
+              :to="`/organization/${props.item.owner.id}`"
+              class="text-primary"
+            >
+              {{ props.item.owner.name }}
+            </router-link>
+          </td>
           <td>{{ props.item.authMode }}</td>
           <td>
             <v-btn
