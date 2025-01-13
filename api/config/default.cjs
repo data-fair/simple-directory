@@ -156,7 +156,7 @@ module.exports = {
       'on-admin': '#FFFFFF',
       'text-admin': undefined,
     },
-    dark: true,
+    dark: false,
     darkColors: {
       background: '#121212',
       'on-background': '#FFFFFF', // white
@@ -187,7 +187,7 @@ module.exports = {
       'on-admin': '#FFFFFF',
       'text-admin': '#FFCDD2'
     },
-    hc: true,
+    hc: false,
     hcColors: {
       // standard vuetify colors, see https://vuetifyjs.com/en/styles/colors/#material-colors
       background: '#FFFFFF',
@@ -219,7 +219,7 @@ module.exports = {
       'on-admin': '#FFFFFF',
       'text-admin': undefined,
     },
-    hcDark: true,
+    hcDark: false,
     hcDarkColors: {
       background: '#121212',
       'on-background': '#FFFFFF', // white
