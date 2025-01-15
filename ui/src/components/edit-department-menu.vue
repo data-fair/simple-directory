@@ -42,6 +42,7 @@
         <v-spacer />
         <v-btn
           variant="text"
+          :disabled="loading"
           @click="menu = false"
         >
           {{ $t('common.confirmCancel') }}
@@ -49,6 +50,7 @@
         <v-btn
           color="primary"
           variant="flat"
+          :disabled="loading"
           @click="confirmEdit"
         >
           {{ $t('common.confirmOk') }}
@@ -88,13 +90,17 @@ watch(avatar, () => {
   loadAvatarDebug('avatar ref changed', avatar.value)
 }, { immediate: true })
 
+const loading = ref(false)
+
 const confirmEdit = withUiNotif(async () => {
-  menu.value = false
+  loading.value = true
   const departments = (orga.departments ?? []).map(d => d.id === editDepartment.value?.id ? editDepartment.value : d)
   await patchOrganization.execute(orga.id, { departments }, t('common.modificationOk'))
   loadAvatarDebug('confirm edit department, load avatar ?', avatar.value)
   await avatar.value?.validate()
   emit('change')
+  menu.value = false
+  loading.value = false
 })
 </script>
 
