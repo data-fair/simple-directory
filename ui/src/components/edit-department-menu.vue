@@ -84,6 +84,10 @@ watch(menu, () => {
   editDepartment.value = JSON.parse(JSON.stringify(department))
 })
 
+watch(avatar, () => {
+  loadAvatarDebug('avatar ref changed', avatar.value)
+}, { immediate: true })
+
 const confirmEdit = withUiNotif(async () => {
   menu.value = false
   const departments = (orga.departments ?? []).map(d => d.id === editDepartment.value?.id ? editDepartment.value : d)
