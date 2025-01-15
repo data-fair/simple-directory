@@ -86,10 +86,6 @@ watch(menu, () => {
   editDepartment.value = JSON.parse(JSON.stringify(department))
 })
 
-watch(avatar, () => {
-  loadAvatarDebug('avatar ref changed', avatar.value)
-}, { immediate: true })
-
 const loading = ref(false)
 
 const confirmEdit = withUiNotif(async () => {
