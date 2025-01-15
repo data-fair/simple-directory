@@ -58,6 +58,9 @@
 import VueCropper from 'vue-cropperjs'
 import 'cropperjs/dist/cropper.css'
 import type { AccountKeys } from '@data-fair/lib-vue/session'
+import debugModule from 'debug'
+
+const debug = debugModule('sd:load-avatar')
 
 // see https://stackoverflow.com/a/5100158
 function dataURItoBlob (dataURI: string) {
@@ -110,11 +113,13 @@ const change = () => {
 }
 
 const validate = withUiNotif(async () => {
+  debug('validate', file.value)
   if (!file.value) return
   loading.value = true
   const croppedImg = dataURItoBlob(cropper.value?.getCroppedCanvas({ width: 100, height: 100 }).toDataURL('image/png'))
   const formData = new FormData()
   formData.append('avatar', croppedImg)
+  debug('send new avatar', avatarUrl.value)
   await $fetch(avatarUrl.value, { method: 'POST', body: formData })
   loading.value = false
   file.value = null

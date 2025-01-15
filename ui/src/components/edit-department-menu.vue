@@ -59,6 +59,10 @@
 </template>
 
 <script setup lang="ts">
+import debugModule from 'debug'
+
+const loadAvatarDebug = debugModule('sd:load-avatar')
+
 type Department = { id: string, name: string }
 
 const { orga, department, departmentLabel } = defineProps({
@@ -84,6 +88,7 @@ const confirmEdit = withUiNotif(async () => {
   menu.value = false
   const departments = (orga.departments ?? []).map(d => d.id === editDepartment.value?.id ? editDepartment.value : d)
   await patchOrganization.execute(orga.id, { departments }, t('common.modificationOk'))
+  loadAvatarDebug('confirm edit department, load avatar ?', avatar.value)
   await avatar.value?.validate()
   emit('change')
 })
