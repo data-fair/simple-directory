@@ -48,7 +48,7 @@ export interface SdStorage {
   getUser(userId: string): Promise<User | undefined>
   createUser(user: UserWritable, byUser?: { id: string, name: string }, site?: Site): Promise<User>
   getUserByEmail(email: string, site?: Site): Promise<User | undefined>
-  updateLogged(userId: string, serverSessionId: string): Promise<void>
+  updateLogged(userId: string, serverSessionId: string | null): Promise<void>
   confirmEmail(userId: string): Promise<void>
   deleteUser(userId: string): Promise<void>
   patchUser (userId: string, patch: any, byUser?: { id: string, name: string }): Promise<User>

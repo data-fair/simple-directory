@@ -125,7 +125,7 @@ class MongodbStorage implements SdStorage {
     return user
   }
 
-  async updateLogged (id: string, serverSessionId: string) {
+  async updateLogged (id: string, serverSessionId: string | null) {
     const logged = new Date().toISOString()
     mongo.users.updateOne(
       { _id: id },

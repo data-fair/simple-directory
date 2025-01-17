@@ -160,40 +160,51 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   const idTokenDep = cookies.get('id_token_dep')
 
   const exchangeToken = cookies.get('id_token_ex')
-  const serverSessionInfo = exchangeToken && ((await session.verifyToken(exchangeToken)) as SessionInfoPayload | undefined)
+  const serverSessionInfo = exchangeToken ? ((await session.verifyToken(exchangeToken)) as SessionInfoPayload | undefined) : null
   if (!serverSessionInfo) {
-    await logout(req, res)
-    eventsLog.info('sd.auth.keepalive.fail', 'a user without an echange token tried to prolongate a session', logContext)
-    throw httpError(401, 'Informations de session manquantes')
+    // accept tokens signed by a key before the introduction of the exchange token (kid=simple-directory)
+    // const payload = decodeToken(cookies.get('id_token'))
+    const completeTokenInfo = jwt.decode(cookies.get('id_token') + '.' + cookies.get('id_token_sign'), { complete: true })
+    if (completeTokenInfo?.header.kid === 'simple-directory') {
+      console.log('accept tokens signed by a key before the introduction of the exchange token')
+    } else {
+      await logout(req, res)
+      eventsLog.info('sd.auth.keepalive.fail', 'a user without a valid echange token tried to prolongate a session', logContext)
+      throw httpError(401, 'Informations de session manquantes')
+    }
   }
   if (sessionState.user.asAdmin) {
     const adminUser = await storage.getUser(sessionState.user.asAdmin.id)
     if (!adminUser) throw httpError(401, 'Utilisateur inexistant')
-    if (serverSessionInfo.user !== adminUser.id) {
-      await logout(req, res)
-      eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with another user\'s exchange token tried to prolongate a session', logContext)
-      throw httpError(401, 'Informations de session manquantes')
-    }
-    const serverSession = adminUser.sessions?.find(s => s.id === serverSessionInfo.session)
-    if (!serverSession) {
-      await logout(req, res)
-      eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with a deleted session reference tried to prolongate a session', logContext)
-      throw httpError(401, 'Session interrompue')
+    if (serverSessionInfo) {
+      if (serverSessionInfo.user !== adminUser.id) {
+        await logout(req, res)
+        eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with another user\'s exchange token tried to prolongate a session', logContext)
+        throw httpError(401, 'Informations de session manquantes')
+      }
+      const serverSession = adminUser.sessions?.find(s => s.id === serverSessionInfo.session)
+      if (!serverSession) {
+        await logout(req, res)
+        eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with a deleted session reference tried to prolongate a session', logContext)
+        throw httpError(401, 'Session interrompue')
+      }
     }
   } else {
-    if (serverSessionInfo.user !== user.id) {
-      await logout(req, res)
-      eventsLog.info('sd.auth.keepalive.fail', 'a user with another user\'s exchange token tried to prolongate a session', logContext)
-      throw httpError(401, 'Informations de session manquantes')
-    }
-    const serverSession = user.sessions?.find(s => s.id === serverSessionInfo.session)
-    if (!serverSession) {
-      await logout(req, res)
-      eventsLog.info('sd.auth.keepalive.fail', 'a user with a deleted session reference tried to prolongate a session', logContext)
-      throw httpError(401, 'Session interrompue')
+    if (serverSessionInfo) {
+      if (serverSessionInfo.user !== user.id) {
+        await logout(req, res)
+        eventsLog.info('sd.auth.keepalive.fail', 'a user with another user\'s exchange token tried to prolongate a session', logContext)
+        throw httpError(401, 'Informations de session manquantes')
+      }
+      const serverSession = user.sessions?.find(s => s.id === serverSessionInfo.session)
+      if (!serverSession) {
+        await logout(req, res)
+        eventsLog.info('sd.auth.keepalive.fail', 'a user with a deleted session reference tried to prolongate a session', logContext)
+        throw httpError(401, 'Session interrompue')
+      }
     }
   }
-  const serverSessionId = serverSessionInfo.session
+  const serverSessionId = serverSessionInfo ? serverSessionInfo.session : null
 
   const payload = getTokenPayload(user)
   if (sessionState.user.isAdmin && sessionState.user.adminMode && !removeAdminMode) payload.adminMode = 1

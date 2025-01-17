@@ -70,6 +70,14 @@ describe('Session management', () => {
     assert.equal(user.sessions.length, 1)
     await assert.rejects(ax.post('/api/auth/keepalive'), { status: 401 })
     await assert.rejects(ax.get('/api/users/dmeadus0'), { status: 401 })
+
+    // failing to send exchange token shoulb be a 401
+    await passwordLogin(ax, 'dmeadus0@answers.com', 'TestPasswd01')
+    user = (await ax.get('/api/users/dmeadus0')).data
+    assert.equal(user.sessions.length, 2)
+    await ax.post('/api/auth/keepalive')
+    ax.cookieJar.setCookie('id_token_ex=; Path=/simple-directory/', 'http://localhost')
+    await assert.rejects(ax.post('/api/auth/keepalive'), { status: 401 })
   })
 
   it('Toggle admin mode', async () => {
