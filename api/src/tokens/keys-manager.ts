@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto'
 import dayjs from 'dayjs'
 import locks from '@data-fair/lib-node/locks.js'
 import { cipher, decipher } from '../utils/cipher.ts'
+import { internalError } from '@data-fair/lib-node/observer.js'
 
 type WebKey = { alg: 'RS256', kid: string, use: 'sig' }
 type SignatureKeys = { privateKey: string, publicKey: string, webKeys: [WebKey, WebKey?], lastUpdate: Date }
@@ -21,29 +22,39 @@ let rotatePromise: Promise<void> | undefined
 
 export const start = async () => {
   const existingKeys = await readSignatureKeys()
-  if (existingKeys) return
-
-  // manage transition with old FS based persistence of keys
-  const existingFSKeys = await readDeprecatedSignatureKeys()
-  if (existingFSKeys) {
-    const signatureKeys: SignatureKeys = { ...existingFSKeys, webKeys: [createWekKey(existingFSKeys.publicKey)], lastUpdate: new Date() }
-    await writeSignatureKeys(signatureKeys)
-    return
+  if (!existingKeys) {
+    console.log('Initializing signature keys')
+    // manage transition with old FS based persistence of keys
+    const existingFSKeys = await readDeprecatedSignatureKeys()
+    if (existingFSKeys) {
+      console.log('Migrating signature keys from filesystem to database')
+      const signatureKeys: SignatureKeys = { ...existingFSKeys, webKeys: [createWekKey(existingFSKeys.publicKey)], lastUpdate: new Date() }
+      await writeSignatureKeys(signatureKeys)
+    } else {
+      console.log('Generating new signature keys')
+      const newKeys = await createKeys()
+      const signatureKeys: SignatureKeys = { ...newKeys, webKeys: [createWekKey(newKeys.publicKey)], lastUpdate: new Date() }
+      await writeSignatureKeys(signatureKeys)
+    }
   }
 
-  const newKeys = await createKeys()
-  const signatureKeys: SignatureKeys = { ...newKeys, webKeys: [createWekKey(newKeys.publicKey)], lastUpdate: new Date() }
-  await writeSignatureKeys(signatureKeys)
+  rotateLoop()
+}
 
+const rotateLoop = async () => {
   // eslint-disable-next-line no-unmodified-loop-condition
   while (!stopped) {
-    if (await locks.acquire('signature-keys-rotation')) {
-      const signatureKeys = await getSignatureKeys()
-      if (dayjs().diff(dayjs(signatureKeys.lastUpdate), 'day') > 30) {
-        rotatePromise = rotateKeys()
-        await rotatePromise
+    try {
+      if (await locks.acquire('signature-keys-rotation')) {
+        const signatureKeys = await getSignatureKeys()
+        if (dayjs().diff(dayjs(signatureKeys.lastUpdate), 'day') > 30) {
+          rotatePromise = rotateKeys()
+          await rotatePromise
+        }
+        await locks.release('signature-keys-rotation')
       }
-      await locks.release('signature-keys-rotation')
+    } catch (err) {
+      internalError('sign-keys-rotation', err)
     }
     await new Promise(resolve => setTimeout(resolve, 10 * 60 * 1000))
   }
@@ -100,6 +111,7 @@ const createWekKey = (publicKey: string) => {
 
 // TODO: a script to force key rotation for testing ?
 export const rotateKeys = async () => {
+  console.log('Rotating signature keys')
   const existingKeys = await readSignatureKeys()
   const newKeys = await createKeys()
   const webKeys: [WebKey, WebKey?] = [createWekKey(newKeys.publicKey)]

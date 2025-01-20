@@ -85,8 +85,14 @@ export const saml2GlobalProviders = () => {
 export const init = async () => {
   let certificates = await readCertificates()
   if (!certificates) {
+    console.log('Initializing SAML certificates')
     certificates = await readDeprecatedCertificates()
-    if (!certificates) certificates = { signing: await createCert(), encrypt: await createCert() }
+    if (certificates) {
+      console.log('Migrating SAML certificates from filesystem to database')
+    } else {
+      console.log('Generating new SAML certificates')
+      certificates = { signing: await createCert(), encrypt: await createCert() }
+    }
     await writeCertificates(certificates)
   }
 
