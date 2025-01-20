@@ -11,6 +11,7 @@ import type { Password } from '../utils/passwords.ts'
 import dayjs from 'dayjs'
 import { nanoid } from 'nanoid'
 import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
+import type { MatchKeysAndValues, UpdateOptions } from 'mongodb'
 
 const collation = { locale: 'en', strength: 1 }
 
@@ -127,14 +128,20 @@ class MongodbStorage implements SdStorage {
 
   async updateLogged (id: string, serverSessionId: string | null) {
     const logged = new Date().toISOString()
-    mongo.users.updateOne(
+    const mongoSet: MatchKeysAndValues<UserInDb> = { logged }
+    const updateOptions: UpdateOptions = {}
+    if (serverSessionId) {
+      mongoSet['sessions.$[currentSession].lastKeepalive'] = logged
+      updateOptions.arrayFilters = [{ 'currentSession.id': serverSessionId }]
+    }
+    await mongo.users.updateOne(
       { _id: id },
-      { $set: { logged, 'sessions.$[currentSession].lastKeepalive': logged } },
-      { arrayFilters: [{ 'currentSession.id': serverSessionId }] })
+      { $set: mongoSet },
+      updateOptions)
   }
 
   async confirmEmail (id: string) {
-    mongo.users.updateOne({ _id: id }, { $set: { emailConfirmed: true } })
+    await mongo.users.updateOne({ _id: id }, { $set: { emailConfirmed: true } })
   }
 
   async deleteUser (userId: string) {
