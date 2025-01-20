@@ -28,7 +28,7 @@ export const start = async () => {
     const existingFSKeys = await readDeprecatedSignatureKeys()
     if (existingFSKeys) {
       console.log('Migrating signature keys from filesystem to database')
-      const signatureKeys: SignatureKeys = { ...existingFSKeys, webKeys: [createWekKey(existingFSKeys.publicKey)], lastUpdate: new Date() }
+      const signatureKeys: SignatureKeys = { ...existingFSKeys, webKeys: [createWekKey(existingFSKeys.publicKey, 'simple-directory')], lastUpdate: new Date() }
       await writeSignatureKeys(signatureKeys)
     } else {
       console.log('Generating new signature keys')
@@ -93,6 +93,7 @@ const readDeprecatedSignatureKeys = async () => {
     await access(privateKeyPath, constants.R_OK)
     await access(publicKeyPath, constants.R_OK)
   } catch (err) {
+    console.log('No deprecated signature keys found, this message is expected on a new deployment', err)
     return null
   }
   return {
@@ -101,9 +102,9 @@ const readDeprecatedSignatureKeys = async () => {
   }
 }
 
-const createWekKey = (publicKey: string) => {
+const createWekKey = (publicKey: string, kid?: string) => {
   const webKey = JSONWebKey.fromPEM(publicKey)
-  webKey.kid = config.kid + '-' + randomUUID()
+  webKey.kid = kid ?? (config.kid + '-' + randomUUID())
   webKey.alg = 'RS256'
   webKey.use = 'sig'
   return webKey.toJSON() as WebKey
