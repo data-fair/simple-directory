@@ -16,14 +16,19 @@ import App from './App.vue'
 import '@koumoul/v-iframe/content-window'
 import 'iframe-resizer/js/iframeResizer.contentWindow.js'
 import dFrameContent from '@data-fair/frame/lib/vue-router/d-frame-content.js'
+import debugModule from 'debug'
+
+const debug = debugModule('sd:main');
 
 (window as any).iFrameResizer = { heightCalculationMethod: 'taggedElement' };
 
 (async function () {
+  debug('Starting simple-directory app')
   const router = createRouter({ history: createWebHistory($sitePath + '/simple-directory/'), routes })
   dFrameContent(router)
   const reactiveSearchParams = createReactiveSearchParams(router)
   const session = await createSession({ directoryUrl: $sitePath + '/simple-directory', siteInfo: true })
+  debug('Session created', session.state)
   const localeDayjs = createLocaleDayjs(session.state.lang)
   const uiNotif = createUiNotif()
   const vuetify = createVuetify({
@@ -50,5 +55,6 @@ import dFrameContent from '@data-fair/frame/lib/vue-router/d-frame-content.js'
     .use(head)
 
   await router.isReady()
+  debug('Router is ready')
   app.mount('#app')
 })()

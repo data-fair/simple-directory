@@ -806,6 +806,9 @@ import type { PostPasswordAuthReq } from '@sd/api/doc/auth/post-password-req/ind
 import type { PostActionAuthReq } from '@sd/api/doc/auth/post-action-req/index.ts'
 import UiNotifAlert from '@data-fair/lib-vuetify/ui-notif-alert.vue'
 import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
+import debugModule from 'debug'
+
+const debug = debugModule('sd:login')
 
 const reactiveSearchParams = useReactiveSearchParams()
 const { t } = useI18n()
@@ -938,13 +941,26 @@ if (user.value && redirect && !redirect.startsWith($siteUrl)) {
 }
 
 const delayedRendering = computed(() => {
-  if (redirectToOtherSite) return true
+  if (redirectToOtherSite) {
+    debug('do not render login page because we are redirecting to another site')
+    return true
+  }
   // step is not login, render immediately
-  if (step.value !== 'login') return false
+  if (step.value !== 'login') {
+    debug('render login page, step is not login')
+    return false
+  }
   // we have to wait for auth providers
-  if (!authProvidersFetch.data.value) return true
+  if (!authProvidersFetch.data.value) {
+    debug('do not render login page, waiting for auth providers')
+    return true
+  }
   // we have to wait for the redirection to be done by auth-providers-login-links.vue
-  if (authProvidersFetch.data.value.find(p => p.redirectMode?.type === 'always')) return true
+  if (authProvidersFetch.data.value.find(p => p.redirectMode?.type === 'always')) {
+    debug('do not render login page, waiting for auth providers to auth provider')
+    return true
+  }
+  debug('render login page')
   return false
 })
 
