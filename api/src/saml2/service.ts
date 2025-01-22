@@ -40,6 +40,7 @@ const readDeprecatedCertificates = async (): Promise<undefined | Certificates> =
     await access('/webapp/security/saml2/encrypt.key', constants.R_OK)
     await access('/webapp/security/saml2/encrypt.crt', constants.R_OK)
   } catch (err) {
+    // TODO: remove this log after a few months
     console.log('No deprecated saml certificates found, this message is expected on a new deployment', err)
     return undefined
   }

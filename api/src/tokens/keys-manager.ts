@@ -93,6 +93,7 @@ const readDeprecatedSignatureKeys = async () => {
     await access(privateKeyPath, constants.R_OK)
     await access(publicKeyPath, constants.R_OK)
   } catch (err) {
+    // TODO: remove this log after a few months
     console.log('No deprecated signature keys found, this message is expected on a new deployment', err)
     return null
   }
