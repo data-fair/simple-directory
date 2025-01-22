@@ -143,7 +143,7 @@ module.exports = {
     },
     {
       /* Instructions to create the keycloak test client
-        - login to keycloak (localhost:8888)
+        - login to keycloak (localhost:8888, admin/admin)
         - section "Clients" > "Create"
         - Client type: OpenID Connect
         - Client ID: test-sd
@@ -160,8 +160,8 @@ module.exports = {
         - section "Advanced"
         - Access Token Lifespan: short value for tests
         - Client Session Idle and Client Session Max: longer to allow for refreshing tokens on keepalive
-        - section "Credentials", get the secret
-        - section "Realm Settings" > "General" > "Endpoints", get OIDC configuration URL
+        - section "Credentials", get the secret and write it here in client.secret
+        - section "Realm Settings" > "General" > "Endpoints", get OIDC configuration URL and write it here in discovery
 
         - section "Users" > "Add user" then "Credentials"
 
@@ -172,9 +172,10 @@ module.exports = {
       discovery: 'http://localhost:8888/realms/master/.well-known/openid-configuration',
       client: {
         id: 'test-sd',
-        secret: 'zBqlw69dURcFIFww1RcjG38qmR41yKdS'
+        secret: 'F652euPulSE7WKUgAc5YBbsnzdxFFlgf'
       },
       coreIdProvider: true,
+      ignoreEmailVerified: true,
       /* redirectMode: {
         type: 'always'
       }, */
