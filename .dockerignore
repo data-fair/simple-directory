@@ -1,11 +1,5 @@
-/node_modules
-/.nyc_output
-/coverage
-/.nuxt
-/security
-/data
-/nuxt-dist
+node_modules
+/dev/data
 /dist
 /.git
 config/local*
-/types/node_modules

@@ -1,0 +1,25 @@
+{
+  "$id": "https://github.com/data-fair/simple-directory/sites/list-req",
+  "x-exports": [
+    "types",
+    "validate"
+  ],
+  "x-ajv": {
+    "coerceTypes": true
+  },
+  "title": "List sites req",
+  "type": "object",
+  "required": ["query"],
+  "properties": {
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "showAll": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

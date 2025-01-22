@@ -1,0 +1,35 @@
+{
+  "$id": "https://github.com/data-fair/simple-directory/site-public",
+  "x-exports": ["types"],
+  "title": "site-public",
+  "type":"object",
+  "additionalProperties":false,
+  "required":[
+    "host",
+    "theme",
+    "authMode"
+  ],
+  "properties":{
+    "main": {
+      "type": "boolean"
+    },
+    "host": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/host"
+    },
+    "theme": {
+      "$ref": "https://github.com/data-fair/simple-directory/api/config#/$defs/theme"
+    },
+    "reducedPersonalInfoAtCreation": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/reducedPersonalInfoAtCreation"
+    },
+    "tosMessage": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/tosMessage"
+    },
+    "authMode": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/authMode"
+    },
+    "authOnlyOtherSite": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/authOnlyOtherSite"
+    }
+  }
+}

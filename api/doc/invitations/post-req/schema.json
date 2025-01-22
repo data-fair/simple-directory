@@ -1,0 +1,23 @@
+{
+  "$id": "https://github.com/data-fair/simple-directory/invitations/post-req",
+  "x-ajv": { "coerceTypes": true },
+  "x-exports": ["types", "validate"],
+  "title": "Post invitation req",
+  "type":"object",
+  "required": ["body", "query"],
+  "properties":{
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "skip_mail": {
+          "type": "boolean"
+        },
+        "force_mail": {
+          "type": "boolean"
+        }
+      }
+    },
+    "body": { "$ref": "https://github.com/data-fair/simple-directory/invitation" }
+  }
+}

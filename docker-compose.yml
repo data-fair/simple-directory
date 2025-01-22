@@ -1,5 +1,8 @@
-version: '3'
 services:
+  #####
+  # reverse proxy for the whole environment
+  #####
+
   nginx:
     image: nginx:1.23.1-alpine
     profiles:
@@ -7,17 +10,11 @@ services:
       - test
     network_mode: host
     volumes:
-      - ./test/resources/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./dev/resources/nginx.conf:/etc/nginx/nginx.conf:ro
 
-  mongo:
-    profiles:
-      - dev
-      - test
-    image: mongo:4.2
-    ports:
-      - 27017:27017
-    volumes:
-      - mongo-data4:/data/db
+  #####
+  # mail server mock
+  #####
 
   maildev:
     profiles:
@@ -31,16 +28,19 @@ services:
     healthcheck:
       test: 'wget -O - http://127.0.0.1:$${MAILDEV_WEB_PORT}$${MAILDEV_BASE_PATHNAME}/healthz || exit 1'
 
-  # LDAP mock
+  #####
+  # auth providers
+  #####
+
   ldap:
     profiles:
       - dev
       - test
     image: osixia/openldap:1.4.0
     volumes:
-      - ./data/ldap:/var/lib/ldap
-      - ./data/slapd.d:/etc/ldap/slapd.d
-      - ./test/resources:/test-resources
+      - ./dev/data/ldap:/var/lib/ldap
+      - ./dev/data/slapd.d:/etc/ldap/slapd.d
+      - ./dev/resources:/test-resources
     ports:
       - 389:389
       - 636:636
@@ -49,6 +49,8 @@ services:
       - dev
     image: osixia/phpldapadmin:0.9.0
     ports:
+      # open over HTTPS https://localhost:6443/
+      # log with cn=admin,dc=example,dc=org / admin
       - 6443:443
     environment:
       - PHPLDAPADMIN_LDAP_HOSTS=ldap
@@ -67,7 +69,7 @@ services:
       - SIMPLESAMLPHP_SP_ENTITY_ID=http://localhost:5689/simple-directory/api/auth/saml2-metadata.xml
       - SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE=http://localhost:5689/simple-directory/api/auth/saml2-assert
       - SIMPLESAMLPHP_SP_SINGLE_LOGOUT_SERVICE=http://localhost:5689/simple-directory/api/auth/saml2-logout
-
+  
   # WARNING: does not work on a recent chrome, this provider tries to use a cookie with samesite=none option and this is not permitted without https
   # list of users : harley@qlik.example
   # harley@qlik.example Password1!
@@ -76,7 +78,6 @@ services:
       - dev
       - test
     image: qlik/simple-oidc-provider:0.2.5
-    platform: linux/amd64
     network_mode: host
     environment:
       - REDIRECTS=http://localhost:5689/simple-directory/api/auth/oauth-callback
@@ -94,23 +95,41 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin
     network_mode: host
     volumes:
-      - ./data/keycloak:/opt/keycloak/data/
+      - ./dev/data/keycloak:/opt/keycloak/data/
     command: ["start-dev", "--http-port=8888"]
+  
+  #####
+  # related services from the data-fair stack
+  #####
 
-  notify:
+  events:
     profiles:
       - dev
-    image: ghcr.io/data-fair/notify:master
+    image: ghcr.io/data-fair/events:main
     network_mode: host
     environment:
       - PORT=8088
       - PUBLIC_URL=http://localhost:5689/notify
       - WS_PUBLIC_URL=ws://localhost:5689/notify
-      - DIRECTORY_URL=http://localhost:5689
-      - SECRET_NOTIFICATIONS=secret-notifications
+      - PRIVATE_DIRECTORY_URL=http://localhost:5689/simple-directory
+      - SECRET_EVENTS=secret-events
+      - SECRET_IDENTITIES=secret-identities
       - SECRET_SENDMAILS=secret-sendmails
-      - PROMETHEUS_ACTIVE=false
+      - OBSERVER_ACTIVE=false
+
+  #####
+  # db
+  #####
+
+  mongo:
+    profiles:
+      - dev
+      - test
+    image: mongo:4.2
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-data:/data/db
 
 volumes:
-  mongo-data4:
-  mongo-data7:
+  mongo-data:

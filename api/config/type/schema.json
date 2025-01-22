@@ -1,0 +1,1007 @@
+{
+  "$id": "https://github.com/data-fair/simple-directory/api/config",
+  "x-exports": [
+    "types",
+    "validate"
+  ],
+  "x-ajv": {
+    "coerceTypes": "array"
+  },
+  "x-jstt": {
+    "additionalProperties": false
+  },
+  "type": "object",
+  "title": "Api config",
+  "required": [
+    "info",
+    "publicUrl",
+    "secret",
+    "kid",
+    "contact",
+    "mongo",
+    "port",
+    "observer",
+    "secretKeys",
+    "theme",
+    "i18n",
+    "admins",
+    "storage",
+    "cipherPassword",
+    "anonymousAction",
+    "quotas",
+    "jwtDurations",
+    "perOrgStorageTypes",
+    "mails",
+    "maildev",
+    "roles",
+    "listEntitiesMode",
+    "oauth",
+    "oidc",
+    "saml2",
+    "webhooks",
+    "authRateLimit",
+    "plannedDeletionDelay",
+    "cleanup",
+    "avatars",
+    "noBirthday"
+  ],
+  "properties": {
+    "info": {
+      "type": "object"
+    },
+    "port": {
+      "type": "number"
+    },
+    "publicUrl": {
+      "type": "string"
+    },
+    "homePage": {
+      "type": "string"
+    },
+    "mongo": {
+      "type": "object",
+      "required": [
+        "url",
+        "options"
+      ],
+      "properties": {
+        "url": { "type": "string" },
+        "options": {
+          "type": "object"
+        }
+      }
+    },
+    "secret": {
+      "type": "object",
+      "required": [
+        "public",
+        "private"
+      ],
+      "properties": {
+        "public": { "type": "string" },
+        "private": { "type": "string" }
+      }
+    },
+    "kid": {
+      "type": "string"
+    },
+    "secretKeys": {
+      "type": "object",
+      "properties": {
+        "identities": { "type": "string" },
+        "events": { "type": "string" },
+        "sendMails": { "type": "string" },
+        "limits": { "type": "string" },
+        "readAll": { "type": "string" },
+        "sites": { "type": "string" }
+      }
+    },
+    "observer": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean"
+        },
+        "port": {
+          "type": "number"
+        }
+      }
+    },
+    "theme": { "$ref": "#/$defs/theme" },
+    "i18n": {
+      "type": "object",
+      "required": [
+        "defaultLocale",
+        "locales"
+      ],
+      "properties": {
+        "defaultLocale": {
+          "type": "string",
+          "default": "fr"
+        },
+        "locales": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "admins": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "adminsOrg": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+    "adminCredentials": {
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "password": {
+          "type": "object"
+        }
+      }
+    },
+    "cipherPassword": {
+      "type": "string"
+    },
+    "storage": {
+      "type": "object",
+      "required": [
+        "type",
+        "file",
+        "mongo",
+        "ldap"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "file",
+            "mongo",
+            "ldap"
+          ]
+        },
+        "file": {
+          "$ref": "#/$defs/fileParams"
+        },
+        "mongo": {
+          "type": "object",
+          "properties": {
+            "readonly": {
+              "type": "boolean"
+            },
+            "url": {
+              "type": "string",
+              "deprecated": true
+            },
+            "options": {
+              "type": "object",
+              "deprecated": true
+            }
+          }
+        },
+        "ldap": {
+          "$ref": "https://github.com/data-fair/simple-directory/ldap-params"
+        }
+      }
+    },
+    "onlyCreateInvited": {
+      "type": "boolean"
+    },
+    "manageSites": {
+      "type": "boolean"
+    },
+    "managePartners": {
+      "type": "boolean"
+    },
+    "manageDepartments": {
+      "type": "boolean"
+    },
+    "manageDepartmentLabel": {
+      "type": "boolean"
+    },
+    "manageSessions": {
+      "type": "boolean"
+    },
+    "contact": {
+      "type": "string",
+      "format": "email"
+    },
+    "anonymousContactForm": {
+      "type": "boolean"
+    },
+    "anonymousAction": {
+      "type": "object",
+      "required": [
+        "expiresIn",
+        "notBefore"
+      ],
+      "properties": {
+        "expiresIn": { "type": "string" },
+        "notBefore": { "type": "string" }
+      }
+    },
+    "quotas": {
+      "type": "object",
+      "required": [
+        "defaultMaxCreatedOrgs",
+        "defaultMaxNbMembers"
+      ],
+      "properties": {
+        "defaultMaxCreatedOrgs": {
+          "type": "number"
+        },
+        "defaultMaxNbMembers": {
+          "type": "number"
+        }
+      }
+    },
+    "depAdminIsOrgAdmin": {
+      "type": "boolean"
+    },
+    "alwaysAcceptInvitation": {
+      "type": "boolean"
+    },
+    "invitationRedirect": {
+      "type": "string"
+    },
+    "jwtDurations": {
+      "type": "object",
+      "required": [
+        "initialToken",
+        "idToken",
+        "exchangeToken",
+        "invitationToken",
+        "partnerInvitationToken",
+        "2FAToken"
+      ],
+      "properties": {
+        "initialToken": { "type": "string" },
+        "idToken": { "type": "string" },
+        "exchangeToken": { "type": "string" },
+        "invitationToken": { "type": "string" },
+        "partnerInvitationToken": { "type": "string" },
+        "2FAToken": { "type": "string" }
+      }
+    },
+    "passwordless": {
+      "type": "boolean"
+    },
+    "perOrgStorageTypes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "defaultLoginRedirect": {
+      "type": "string"
+    },
+    "mails": {
+      "type": "object",
+      "properties": {
+        "from": { "type": "string" },
+        "transport": {
+          "type": "object"
+        },
+        "extraParams": {
+          "type": "object"
+        }
+      }
+    },
+    "maildev": {
+      "type": "object",
+      "required": [
+        "url",
+        "active"
+      ],
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        }
+      }
+    },
+    "listEntitiesMode": {
+      "enum": [
+        "anonymous",
+        "authenticated",
+        "admin"
+      ]
+    },
+    "listUsersMode": {
+      "enum": [
+        "anonymous",
+        "authenticated",
+        "admin"
+      ]
+    },
+    "listOrganizationsMode": {
+      "enum": [
+        "anonymous",
+        "authenticated",
+        "admin"
+      ]
+    },
+    "roles": {
+      "type": "object",
+      "required": [
+        "defaults"
+      ],
+      "properties": {
+        "defaults": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "oauth": {
+      "type": "object",
+      "required": [
+        "providers",
+        "github",
+        "facebook",
+        "google",
+        "linkedin"
+      ],
+      "properties": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "github",
+              "facebook",
+              "google",
+              "linkedin"
+            ]
+          }
+        },
+        "github": {
+          "$ref": "#/$defs/oauthClient"
+        },
+        "facebook": {
+          "$ref": "#/$defs/oauthClient"
+        },
+        "google": {
+          "$ref": "#/$defs/oauthClient"
+        },
+        "linkedin": {
+          "$ref": "#/$defs/oauthClient"
+        }
+      }
+    },
+    "oidc": {
+      "type": "object",
+      "required": [
+        "providers"
+      ],
+      "properties": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/oidcProvider"
+          }
+        }
+      }
+    },
+    "saml2": {
+      "type": "object",
+      "required": [
+        "sp",
+        "providers"
+      ],
+      "properties": {
+        "sp": {
+          "type": "object"
+        },
+        "providers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/saml2Provider"
+          }
+        }
+      }
+    },
+    "webhooks": {
+      "type": "object",
+      "required": [
+        "identities"
+      ],
+      "properties": {
+        "identities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "key"
+            ],
+            "properties": {
+              "base": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "authRateLimit": {
+      "type": "object",
+      "required": [
+        "attempts",
+        "duration"
+      ],
+      "properties": {
+        "attempts": {
+          "type": "integer"
+        },
+        "duration": {
+          "type": "integer"
+        }
+      }
+    },
+    "plannedDeletionDelay": {
+      "type": "integer"
+    },
+    "cleanup": {
+      "type": "object",
+      "required": [
+        "cron",
+        "deleteInactive",
+        "deleteInactiveDelay"
+      ],
+      "properties": {
+        "cron": { "type": "string" },
+        "deleteInactive": {
+          "type": "boolean"
+        },
+        "deleteInactiveDelay": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "days",
+                "weeks",
+                "months",
+                "years"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "defaultOrg": {
+      "type": "string"
+    },
+    "userSelfDelete": {
+      "type": "boolean"
+    },
+    "admins2FA": {
+      "type": "boolean"
+    },
+    "singleMembership": {
+      "type": "boolean"
+    },
+    "serveUi": {
+      "type": "boolean"
+    },
+    "tosUrl": {
+      "type": "string"
+    },
+    "avatars": {
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "boolean"
+        },
+        "orgs": {
+          "type": "boolean"
+        }
+      }
+    },
+    "noBirthday": {
+      "type": "boolean"
+    },
+    "privateEventsUrl": {
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "oauthClient": {
+      "type": "object",
+      "required": [
+        "id",
+        "secret"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "secret": { "type": "string" }
+      }
+    },
+    "oidcProvider": {
+      "type": "object",
+      "title": "OpenID Connect",
+      "required": [
+        "title",
+        "discovery",
+        "client"
+      ],
+      "allOf": [
+        {
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "$ref": "https://github.com/data-fair/simple-directory/site#/$defs/oidcProvider"
+        }
+      ]
+    },
+    "saml2Provider": {
+      "type": "object",
+      "title": "Saml 2",
+      "required": [
+        "title"
+      ],
+      "properties": {
+        "metadata": { "type": "string" },
+        "title": { "type": "string" },
+        "color": { "type": "string" },
+        "icon": { "type": "string" },
+        "img": { "type": "string" },
+        "coreIdProvider": {
+          "type": "boolean"
+        },
+        "redirectMode": {
+          "$ref": "#/$defs/redirectMode"
+        }
+      }
+    },
+    "redirectMode": {
+      "type": "object",
+      "description": "Si vous utilisez un mode basé sur l'email alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.",
+      "default": {
+        "type": "button"
+      },
+      "oneOf": [
+        {
+          "title": "bouton",
+          "properties": {
+            "type": {
+              "const": "button",
+              "title": "Controlez la manière dont les utilisateurs sont redirigés vers ce fournisseur"
+            }
+          }
+        },
+        {
+          "title": "redirection auto quand l'email appartient à un nom de domaine",
+          "properties": {
+            "type": {
+              "const": "emailDomain"
+            },
+            "emailDomain": {
+              "type": "string",
+              "title": "nom de domaine de l'email"
+            }
+          }
+        },
+        {
+          "title": "toujours rediriger implicitement",
+          "properties": {
+            "type": {
+              "const": "always"
+            }
+          }
+        }
+      ]
+    },
+    "fileParams": {
+      "type": "object",
+      "required": [
+        "users",
+        "organizations"
+      ],
+      "properties": {
+        "users": { "type": "string" },
+        "organizations": { "type": "string" }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "title": "Thème",
+      "required": ["colors"],
+      "layout": [
+        "logo",
+        {"key": "bodyFontFamilyCss", "cols": 6},
+        {"key": "headingFontFamilyCss", "cols": 6},
+        "assistedMode",
+        {
+          "comp": "tabs",
+          "if": "data.assistedMode",
+          "children": [{
+            "title": "Thème par défaut",
+            "children": [
+              { "key": "assistedModeColors", "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "colors", "dark": false } }
+            ]
+          }, {
+            "title": "Thème sombre",
+            "children": [
+              { "key": "dark", "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "darkColors", "dark": true } }
+            ]
+          }, {
+            "title": "Thème à fort contraste",
+            "children": [
+              { "key": "hc", "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "hcColors", "dark": false } }
+            ]
+          }, {
+            "title": "Thème sombre à fort contraste",
+            "children": [
+              { "key": "hcDark", "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "hcDarkColors", "dark": true } }
+            ]
+          }]
+        },
+        {
+          "comp": "tabs",
+          "if": "!data.assistedMode",
+          "children": [{
+            "title": "Thème par défaut",
+            "children": [
+              { "key": "colors", "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "colors", "dark": false } }
+            ]
+          }, {
+            "title": "Thème sombre",
+            "children": [
+              { "children": ["dark", "darkColors"], "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "darkColors", "dark": true } }
+            ]
+          }, {
+            "title": "Thème à fort contraste",
+            "children": [
+              { "children": ["hc", "hcColors"], "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "hcColors", "dark": false } }
+            ]
+          }, {
+            "title": "Thème sombre à fort contraste",
+            "children": [
+              { "children": ["hcDark", "hcDarkColors"], "cols": {"sm": 7, "lg": 9} },
+              { "name": "colors-preview", "cols": {"sm": 5, "lg": 3}, "props": { "colorsKey": "hcDarkColors", "dark": true } }
+            ]
+          }]
+        }
+      ],
+      "properties": {
+        "logo": {
+          "title": "URL d'un logo",
+          "type": "string"
+        },
+        "bodyFontFamilyCss": {
+          "title": "CSS police de caractères pour le corps du texte",
+          "layout": {
+            "comp": "textarea",
+            "rows": 3
+          },
+          "description": "Par défaut une police Nunito auto-hébergée est utilisée. Vous pouvez aussi copier le CSS proposé par une plateforme comme Google Fonts, dans ce cas il faut remplacer le nom de la police par '{FONT_FAMILY}'.",
+          "type": "string"
+        },
+        "headingFontFamilyCss": {
+          "title": "CSS police de caractères pour les titres",
+          "layout": {
+            "comp": "textarea",
+            "rows": 3
+          },
+          "description": "Renseignez de la même manière que pour le corps de texte, ou laissez vide pour utiliser la police du corps du texte",
+          "type": "string"
+        },
+        "assistedMode": {
+          "type": "boolean",
+          "title": "mode de gestion des couleurs simplifié",
+          "description": "Si activé vous ne devrez saisir que les couleurs principales du thème, d'autres couleurs seront affectées par défaut et les couleurs de texte seront automatiquement ajustées pour être lisibles sur les couleurs de fond.",
+          "default": true
+        },
+        "assistedModeColors": {
+          "type": "object",
+          "properties": {
+            "primary": {
+              "type": "string",
+              "title": "Couleur principale",
+              "layout": {
+                "comp": "color-picker",
+                "cols": 4
+              }
+            },
+            "secondary": {
+              "type": "string",
+              "title": "Couleur secondaire",
+              "layout": {
+                "comp": "color-picker",
+                "cols": 4
+              }
+            },
+            "accent": {
+              "type": "string",
+              "title": "Couleur accentuée",
+              "layout": {
+                "comp": "color-picker",
+                "cols": 4
+              }
+            }
+          }
+        },
+        "colors": { "$ref": "#/$defs/colors" },
+        "dark": { "type": "boolean", "title": "proposer ce thème aux utilisateurs" },
+        "darkColors": { "$ref": "#/$defs/colors" },
+        "hc": { "type": "boolean", "title": "proposer ce thème aux utilisateurs" },
+        "hcColors": { "$ref": "#/$defs/colors" },
+        "hcDark": { "type": "boolean", "title": "proposer ce thème aux utilisateurs" },
+        "hcDarkColors": { "$ref": "#/$defs/colors" }
+      }
+    },
+    "colors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "background",
+        "on-background",
+        "surface",
+        "on-surface",
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "accent",
+        "on-accent",
+        "error",
+        "on-error",
+        "info",
+        "on-info",
+        "success",
+        "on-success",
+        "warning",
+        "on-warning",
+        "admin",
+        "on-admin"
+      ],
+      "properties": {
+        "background": {
+          "type": "string",
+          "title": "Couleur de fond",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "on-background": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur de fond",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "surface": {
+          "type": "string",
+          "title": "Couleur des surfaces (vignettes, listes, etc)",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "on-surface": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur des surfaces",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 3
+          }
+        },
+        "primary": {
+          "type": "string",
+          "title": "Couleur principale",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "on-primary": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur principale",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "text-primary": {
+          "type": "string",
+          "title": "Couleur de texte principal",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4,
+            "hint": "laissez vide pour utiliser la couleur principale"
+          }
+        },
+        "secondary": {
+          "type": "string",
+          "title": "Couleur secondaire",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "on-secondary": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur secondaire",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "text-secondary": {
+          "type": "string",
+          "title": "Couleur de texte secondaire",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4,
+            "hint": "laissez vide pour utiliser la couleur secondaire"
+          }
+        },
+        "accent": {
+          "type": "string",
+          "title": "Couleur accentuée",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "on-accent": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur accentuée",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "text-accent": {
+          "type": "string",
+          "title": "Couleur de texte accentué",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4,
+            "hint": "laissez vide pour utiliser la couleur accentuée"
+          }
+        },
+        "info": {
+          "type": "string",
+          "title": "Couleur info",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "on-info": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur info",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "text-info": {
+          "type": "string",
+          "title": "Couleur de texte info",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4,
+            "hint": "laissez vide pour utiliser la couleur info"
+          }
+        },
+        "success": {
+          "type": "string",
+          "title": "Couleur succès",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "on-success": {
+          "type": "string",
+          "title": "Couleur succès",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "text-success": {
+          "type": "string",
+          "title": "Couleur de texte succès",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4,
+            "hint": "laissez vide pour utiliser la couleur succès"
+          }
+        },
+        "error": {
+          "type": "string",
+          "title": "Couleur erreur",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "on-error": {
+          "type": "string",
+          "title": "Couleur de texte sur couleur erreur",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "text-error": {
+          "type": "string",
+          "title": "Couleur de texte erreur",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4,
+            "hint": "laissez vide pour utiliser la couleur erreur"
+          }
+        },
+        "warning": {
+          "type": "string",
+          "title": "Couleur avertissement",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "on-warning": {
+          "type": "string",
+          "title": "Couleur de texte sur avertissement",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4
+          }
+        },
+        "text-warning": {
+          "type": "string",
+          "title": "Couleur de texte avertissement",
+          "layout": {
+            "comp": "color-picker",
+            "cols": 4,
+            "hint": "laissez vide pour utiliser la couleur avertissement"
+          }
+        },
+        "admin": { "type": "string", "layout": "none" },
+        "on-admin": { "type": "string", "layout": "none" },
+        "text-admin": { "type": "string", "layout": "none" }
+      }
+    }
+  }
+}

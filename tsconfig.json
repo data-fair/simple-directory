@@ -3,12 +3,13 @@
     "target": "esnext",
     "module": "nodenext",
     "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": true,
     "allowJs": true,
     "checkJs": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true
+    "skipLibCheck": true
   },
-  "exclude": ["node_modules", "public", "nuxt-dist", "data", ".nuxt", "upgrade", "test", "types/*/validate.js", "types/*/stringify.js"]
+  "exclude": ["node_modules", ".type", "ui", "dev", "test-it"],
+  "types": ["vuetify"]
 }

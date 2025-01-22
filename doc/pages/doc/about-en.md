@@ -1,3 +1,0 @@
-# Simple Directory
-
-TODO

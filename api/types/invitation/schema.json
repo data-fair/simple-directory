@@ -1,0 +1,33 @@
+{
+  "$id": "https://github.com/data-fair/simple-directory/invitation",
+  "x-exports": ["types"],
+  "title": "Invitation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "email", "role"],
+  "properties": {
+    "id": {
+      "description": "The unique id of the organization",
+      "type": "string"
+    },
+    "name": {
+      "description": "Name of the organization",
+      "type": "string"
+    },
+    "department": {
+      "type": "string"
+    },
+    "departmentName": {
+      "type": "string"
+    },
+    "redirect": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    }
+  }
+}
