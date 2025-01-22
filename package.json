@@ -1,6 +1,6 @@
 {
   "name": "simple-directory",
-  "version": "7.12.2",
+  "version": "7.13.1",
   "description": "Easy users and organizations management for modern Web-oriented architectures.",
   "type": "module",
   "scripts": {
