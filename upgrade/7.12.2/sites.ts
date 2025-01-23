@@ -143,7 +143,7 @@ const upgradeScript: UpgradeScript = {
       debug(`update site (${site.host}${site.path || ''})`)
 
       const theme = { ...defaultTheme }
-      if (site.theme?.logo) theme.logo = site.theme.logo
+      if (site.logo) theme.logo = site.logo
       theme.colors.primary = site.theme.primaryColor ?? site.theme.colors.primary ?? theme.colors.primary
 
       theme.assistedMode = true
