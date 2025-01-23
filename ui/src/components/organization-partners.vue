@@ -107,6 +107,7 @@
       <v-pagination
         v-model="page"
         :length="Math.ceil(filteredPartners.length / pageSize)"
+        total-visible="4"
       />
     </v-row>
   </v-container>

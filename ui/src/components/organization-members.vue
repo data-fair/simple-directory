@@ -201,6 +201,7 @@
       <v-pagination
         :model-value="membersPage"
         :length="Math.ceil(members.count / membersPageSize)"
+        total-visible="4"
         @update:model-value="page => {membersPage = page}"
       />
     </v-row>
