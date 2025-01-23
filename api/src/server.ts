@@ -16,7 +16,7 @@ import { createHttpTerminator } from 'http-terminator'
 import app from './app.ts'
 import config from '#config'
 import * as eventsQueue from '#events-queue'
-import { publicProviders } from './auth/providers.ts'
+import { publicGlobalProviders } from './auth/providers.ts'
 import { getSiteColorsWarnings } from './utils/color.ts'
 
 const server = createServer(app)
@@ -48,7 +48,7 @@ export const start = async () => {
   ])
   await upgradeScripts(mongo.db, locks, resolve(import.meta.dirname, '../..'))
 
-  const colorWarnings = getSiteColorsWarnings(config.i18n.defaultLocale, config.theme, await publicProviders())
+  const colorWarnings = getSiteColorsWarnings(config.i18n.defaultLocale, config.theme, await publicGlobalProviders())
   if (colorWarnings.length) {
     console.error('Configuration contains color warnings')
     for (const cw of colorWarnings) console.error('  - ' + cw)

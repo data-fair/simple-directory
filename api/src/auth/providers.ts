@@ -4,7 +4,7 @@ import _slug from 'slugify'
 
 const slug = _slug.default
 
-export const publicProviders = async (site?: Site) => {
+export const publicGlobalProviders = async () => {
   const providers: PublicAuthProvider[] = []
   for (const p of saml2GlobalProviders()) {
     providers.push({
@@ -28,29 +28,30 @@ export const publicProviders = async (site?: Site) => {
       redirectMode: p.redirectMode
     })
   }
+  return providers
+}
 
-  if (site) {
-    const siteProviders = await site.authProviders || []
-    for (const p of siteProviders) {
-      if (p.type === 'oidc') {
-        providers.push({
-          type: p.type,
-          id: getOidcProviderId(p.discovery),
-          title: p.title as string,
-          color: p.color,
-          img: p.img,
-          redirectMode: p.redirectMode
-        })
-      }
-      if (p.type === 'otherSite') {
-        const otherSiteUrl = (p.site.startsWith('http://') || p.site.startsWith('https://')) ? p.site : `https://${p.site}`
-        const otherSite = await getSiteByUrl(otherSiteUrl)
-        if (otherSite && otherSite.owner.type === site.owner.type && otherSite.owner.id === site.owner.id) {
-          providers.push({ type: 'otherSite', id: slug(otherSite.host + (otherSite.path ?? ''), { lower: true, strict: true }), title: p.title as string, color: site.theme.colors.primary, img: site.theme.logo, host: otherSite.host })
-        }
+export const publicSiteProviders = async (site: Site) => {
+  const providers: PublicAuthProvider[] = []
+  const siteProviders = await site.authProviders || []
+  for (const p of siteProviders) {
+    if (p.type === 'oidc') {
+      providers.push({
+        type: p.type,
+        id: getOidcProviderId(p.discovery),
+        title: p.title as string,
+        color: p.color,
+        img: p.img,
+        redirectMode: p.redirectMode
+      })
+    }
+    if (p.type === 'otherSite') {
+      const otherSiteUrl = (p.site.startsWith('http://') || p.site.startsWith('https://')) ? p.site : `https://${p.site}`
+      const otherSite = await getSiteByUrl(otherSiteUrl)
+      if (otherSite && otherSite.owner.type === site.owner.type && otherSite.owner.id === site.owner.id) {
+        providers.push({ type: 'otherSite', id: slug(otherSite.host + (otherSite.path ?? ''), { lower: true, strict: true }), title: p.title as string, color: site.theme.colors.primary, img: site.theme.logo, host: otherSite.host })
       }
     }
   }
-
   return providers
 }

@@ -16,7 +16,7 @@ import limiter from '../utils/limiter.ts'
 import storages from '#storages'
 import { checkPassword, type Password } from '../utils/passwords.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
-import { publicProviders } from './providers.ts'
+import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 
 const debug = Debug('auth')
 
@@ -593,7 +593,8 @@ router.get('/me', (req, res) => {
 })
 
 router.get('/providers', async (req, res) => {
-  res.send(await publicProviders(await reqSite(req)))
+  const site = await reqSite(req)
+  res.send(site ? await publicSiteProviders(site) : await publicGlobalProviders())
 })
 
 // OAUTH
