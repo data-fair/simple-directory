@@ -304,6 +304,7 @@ router.post('/site_redirect', async (req, res, next) => {
   const site = await getSiteByUrl(req.body.redirect)
   if (!site) return res.status(404).send('site not found')
   const payload = getTokenPayload(user)
+  if (loggedUser.adminMode) payload.adminMode = 1
   const callbackUrl = (await prepareCallbackUrl(req, payload, req.body.redirect, getDefaultUserOrg(user, req.body.org, req.body.dep))).href
   debug(`Redirect auth of user ${user.name} to site ${site.host}`, callbackUrl)
 
