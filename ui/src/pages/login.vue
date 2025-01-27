@@ -25,7 +25,7 @@
             v-if="logoUrl"
             :src="logoUrl"
             style="max-width:250px;max-height:120px;"
-            @alt="$t('pages.login.siteLogo')"
+            :alt="$t('pages.login.siteLogo')"
           >
           <logo
             v-else
@@ -814,6 +814,8 @@ const reactiveSearchParams = useReactiveSearchParams()
 const { t } = useI18n()
 const { user, switchOrganization } = useSession()
 const { authProvidersFetch, sitePublic, mainPublicUrl } = useStore()
+
+useHead({ title: t('pages.login.title'), })
 
 const error = useStringSearchParam('error')
 const plannedDeletion = reactiveSearchParams.planned_deletion
