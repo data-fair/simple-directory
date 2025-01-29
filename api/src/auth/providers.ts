@@ -12,7 +12,6 @@ export const publicGlobalProviders = async () => {
       id: p.id,
       title: p.title,
       color: p.color,
-      icon: p.icon,
       img: p.img,
       redirectMode: p.redirectMode
     })

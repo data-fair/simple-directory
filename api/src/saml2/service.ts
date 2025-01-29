@@ -2,7 +2,7 @@
 // https://medium.com/disney-streaming/setup-a-single-sign-on-saml-test-environment-with-docker-and-nodejs-c53fc1a984c9
 
 import { readFile, access, constants } from 'node:fs/promises'
-import type { Saml2 } from '../../config/type/index.ts'
+import type { SAML2 } from '../../config/type/index.ts'
 import config from '#config'
 import _slug from 'slugify'
 import samlify from 'samlify'
@@ -18,7 +18,7 @@ const slug = _slug.default
 
 type Certificates = { signing: { privateKey: string, cert: string }, encrypt: { privateKey: string, cert: string } }
 
-type PreparedSaml2Provider = Saml2 & { id: string, idp: samlify.IdentityProviderInstance }
+type PreparedSaml2Provider = SAML2 & { id: string, idp: samlify.IdentityProviderInstance }
 
 // const validator = require('@authenio/samlify-xsd-schema-validator')
 // samlify.setSchemaValidator(validator)
