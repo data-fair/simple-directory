@@ -46,7 +46,9 @@ export const start = async () => {
     keysManager.start(),
     metrics.init()
   ])
-  await upgradeScripts(mongo.db, locks, resolve(import.meta.dirname, '../..'))
+  await upgradeScripts(mongo.db, locks, resolve(import.meta.dirname, '../..'), async () => {
+    return ((await mongo.sites.countDocuments()) === 0)
+  })
 
   const colorWarnings = getSiteColorsWarnings(config.i18n.defaultLocale, config.theme, await publicGlobalProviders())
   if (colorWarnings.length) {
