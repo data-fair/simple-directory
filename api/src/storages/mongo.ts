@@ -27,6 +27,7 @@ function cleanUser (resource: any): User {
     delete resource['2FA'].recovery
   }
   resource.isAdmin = config.admins.includes(resource.email)
+  if (resource.onlyCreateInvited) resource.ignorePersonalAccount = true
   return resource
 }
 

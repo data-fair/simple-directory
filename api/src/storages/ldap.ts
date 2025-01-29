@@ -307,6 +307,7 @@ export class LdapStorage implements SdStorage {
         user.sessions = (await mongo.ldapUserSessions.findOne({ _id: user.id }))?.sessions
       }
       user.isAdmin = config.admins.includes(user.email)
+      if (config.onlyCreateInvited) user.ignorePersonalAccount = true
       return { ...res.fullResults[0], user }
     })
   }
