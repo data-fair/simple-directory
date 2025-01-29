@@ -302,7 +302,7 @@ class LdapStorage {
     if (!user) return
     const dn = user.entry.objectName
 
-    const client = ldap.createClient({ url: this.ldapParams.url, reconnect: false, timeout: 4000 })
+    const client = ldap.createClient({ url: this.ldapParams.url, reconnect: false, timeout: 4000, ...this.ldapParams.clientOptions })
     client.bind = promisify(client.bind)
     client.unbind = promisify(client.unbind)
     try {
