@@ -7,6 +7,7 @@ export default {
   required: ['url', 'baseDN', 'users', 'organizations', 'members'],
   properties: {
     url: { type: 'string' },
+    clientOptions: { type: 'object' },
     searchUserDN: { type: 'string' },
     searchUserPassword: { type: ['string', 'object'] },
     baseDN: { type: 'string' },

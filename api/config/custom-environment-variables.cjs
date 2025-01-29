@@ -49,6 +49,7 @@ module.exports = {
     },
     ldap: {
       url: 'STORAGE_LDAP_URL',
+      clientOptions: jsonEnv('STORAGE_LDAP_CLIENT_OPTIONS'),
       searchUserDN: 'STORAGE_LDAP_SEARCH_USER_DN',
       searchUserPassword: 'STORAGE_LDAP_SEARCH_USER_PASS',
       baseDN: 'STORAGE_LDAP_BASE_DN',

@@ -47,6 +47,7 @@ module.exports = {
     },
     ldap: {
       url: 'ldap://ldap:389',
+      clientOptions: undefined,
       searchUserDN: 'cn=admin,dc=example,dc=org',
       searchUserPassword: '',
       baseDN: 'dc=example,dc=org',

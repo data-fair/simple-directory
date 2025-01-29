@@ -135,7 +135,7 @@ export class LdapStorage implements SdStorage {
   }
 
   private async withClient <T>(fn: (client: ldap.Client) => Promise<T>) {
-    const client = ldap.createClient({ url: this.ldapParams.url, timeout: 4000 })
+    const client = ldap.createClient({ url: this.ldapParams.url, timeout: 4000, ...this.ldapParams.clientOptions })
     client.on('error', err => console.error(err.message))
 
     const bind = promisify(client.bind).bind(client)
@@ -326,7 +326,7 @@ export class LdapStorage implements SdStorage {
     const dn = user.entry.dn.toString()
     if (!dn) return false
 
-    const client = ldap.createClient({ url: this.ldapParams.url, reconnect: false, timeout: 4000 })
+    const client = ldap.createClient({ url: this.ldapParams.url, reconnect: false, timeout: 4000, ...this.ldapParams.clientOptions })
     const bind = promisify(client.bind).bind(client)
     try {
       debug('try to bind user', dn)
