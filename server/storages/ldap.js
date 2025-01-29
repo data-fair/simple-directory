@@ -137,7 +137,7 @@ class LdapStorage {
   }
 
   async _client (fn) {
-    const client = ldap.createClient({ url: this.ldapParams.url, timeout: 4000 })
+    const client = ldap.createClient({ url: this.ldapParams.url, timeout: 4000, ...this.ldapParams.clientOptions })
     client.on('error', err => console.error(err.message))
 
     client.bind = promisify(client.bind)
