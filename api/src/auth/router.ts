@@ -6,7 +6,7 @@ import bodyParser from 'body-parser'
 import { nanoid } from 'nanoid'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getOrgLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession, getRedirectSite } from '#services'
+import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getOrgLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession, getRedirectSite, getSamlProviderById } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User, UserWritable } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -809,9 +809,9 @@ router.post('/oauth-logout', oauthLogoutCallback)
 const debugSAML = Debug('saml')
 
 // expose metadata to declare ourselves to identity provider
-router.get('/saml2-metadata.xml', (req, res) => {
+router.get('/saml2-metadata.xml', async (req, res) => {
   res.type('application/xml')
-  res.send(saml2ServiceProvider().getMetadata())
+  res.send((await saml2ServiceProvider(await reqSite(req))).getMetadata())
 })
 
 // starts login
@@ -819,7 +819,7 @@ router.get('/saml2/:providerId/login', async (req, res) => {
   const logContext: EventLogContext = { req }
 
   debugSAML('login request', req.params.providerId)
-  const provider = saml2GlobalProviders().find(p => p.id === req.params.providerId)
+  const provider = await getSamlProviderById(req, req.params.providerId)
   if (!provider) {
     eventsLog.info('sd.auth.saml.fail', 'a user tried to login with an unknown saml provider', logContext)
     return res.redirect(`${reqSiteUrl(req) + '/simple-directory'}/login?error=unknownSAMLProvider`)
@@ -835,7 +835,7 @@ router.get('/saml2/:providerId/login', async (req, res) => {
   ]
   // relay state should be a request level parameter but it is not in current version of samlify
   // cf https://github.com/tngan/samlify/issues/163
-  const sp = saml2ServiceProvider()
+  const sp = await saml2ServiceProvider(await reqSite(req))
   sp.entitySetting.relayState = JSON.stringify(relayState)
 
   // TODO: apply nameid parameter ? { nameid: req.query.email }
@@ -845,6 +845,7 @@ router.get('/saml2/:providerId/login', async (req, res) => {
   if (typeof req.query.email === 'string') parsedURL.searchParams.append('login_hint', req.query.email)
   debugSAML('redirect', parsedURL.href)
   eventsLog.info('sd.auth.saml.redirect', 'a user was redirected to a saml provider', logContext)
+  console.log('REDIRECT SAMLRequest', parsedURL.searchParams.get('SAMLRequest'))
   res.redirect(parsedURL.href)
 })
 
@@ -855,7 +856,7 @@ router.post('/saml2-assert', async (req, res) => {
   const site = await reqSite(req)
   const storage = storages.globalStorage
   const providers = saml2GlobalProviders()
-  const sp = saml2ServiceProvider()
+  const sp = await saml2ServiceProvider(await reqSite(req))
 
   let provider
   const referer = (req.headers.referer || req.headers.referrer) as string | undefined

@@ -1,6 +1,7 @@
 // useful tutorial
 // https://medium.com/disney-streaming/setup-a-single-sign-on-saml-test-environment-with-docker-and-nodejs-c53fc1a984c9
 
+import type { Request } from 'express'
 import { readFile, access, constants } from 'node:fs/promises'
 import type { SAML2 } from '../../config/type/index.ts'
 import config from '#config'
@@ -11,6 +12,8 @@ import mongo from '#mongo'
 import { decipher, cipher } from '../utils/cipher.ts'
 import { exec } from 'node:child_process'
 import { promisify } from 'node:util'
+import { getSiteBaseUrl, reqSite } from '#services'
+import { type Site } from '#types'
 
 const execAsync = promisify(exec)
 const debug = Debug('saml')
@@ -28,6 +31,27 @@ samlify.setSchemaValidator({
     return Promise.resolve('skipped')
   }
 })
+
+export const getSamlProviderById = async (req: Request, id: string): Promise<PreparedSaml2Provider | undefined> => {
+  const site = await reqSite(req)
+  if (!site) {
+    return saml2GlobalProviders().find(p => p.id === id)
+  } else {
+    const providerInfo = site.authProviders?.find(p => p.type === 'saml2' && getSamlConfigId(p) === id) as SAML2
+    const idp = samlify.IdentityProvider(providerInfo)
+    return {
+      id,
+      ...providerInfo,
+      idp
+    }
+  }
+}
+
+export const getSamlConfigId = (providerConfig: SAML2) => {
+  const idp = samlify.IdentityProvider(providerConfig)
+  if (!idp.entityMeta.meta.entityID) throw new Error('missing entityID in saml IDP metadata')
+  return getSamlProviderId(idp.entityMeta.meta.entityID)
+}
 
 export const getSamlProviderId = (url: string) => {
   return slug(new URL(url).host, { lower: true, strict: true })
@@ -56,8 +80,16 @@ const readDeprecatedCertificates = async (): Promise<undefined | Certificates> =
   }
 }
 
-const readCertificates = async (): Promise<undefined | Certificates> => {
-  const secret = await mongo.secrets.findOne({ _id: 'saml-certificates' })
+const getSiteCertKey = (site?: Site) => {
+  if (!site) return 'saml-certificates'
+  let key = 'saml-certificates-' + slug(site.host)
+  if (site.path) key += `--${slug(site.path)}`
+  return key
+}
+
+const readCertificates = async (site?: Site): Promise<undefined | Certificates> => {
+  const key = getSiteCertKey(site)
+  const secret = await mongo.secrets.findOne({ _id: key })
   if (secret) {
     const certificates = secret.data
     certificates.signing.privateKey = decipher(certificates.signing.privateKey)
@@ -66,52 +98,47 @@ const readCertificates = async (): Promise<undefined | Certificates> => {
   }
 }
 
-const writeCertificates = async (certificates: Certificates) => {
+const writeCertificates = async (certificates: Certificates, site?: Site) => {
+  const key = getSiteCertKey(site)
   const storedCertificates = { signing: { ...certificates.signing }, encrypt: { ...certificates.encrypt } } as any
   storedCertificates.signing.privateKey = cipher(certificates.signing.privateKey)
   storedCertificates.encrypt.privateKey = cipher(certificates.encrypt.privateKey)
-  await mongo.secrets.insertOne({ _id: 'saml-certificates', data: storedCertificates })
+  await mongo.secrets.insertOne({ _id: key, data: storedCertificates })
 }
 
 const _globalProviders: PreparedSaml2Provider[] = []
 let _sp: samlify.ServiceProviderInstance | undefined
-export const saml2ServiceProvider = () => {
-  if (!_sp) throw new Error('Global Saml 2 providers ware not initialized')
+export const saml2ServiceProvider = async (site?: Site) => {
+  if (!_sp) throw new Error('Global Saml 2 provider was not initialized')
+  if (site) return await initServiceProvider(site)
   return _sp
 }
 export const saml2GlobalProviders = () => {
-  if (!_sp) throw new Error('Global Saml 2 providers ware not initialized')
+  if (!_sp) throw new Error('Global Saml 2 provider was not initialized')
   return _globalProviders
 }
 
-export const init = async () => {
-  let certificates = await readCertificates()
+const initCertificates = async (site?: Site) => {
+  let certificates = await readCertificates(site)
   if (!certificates) {
     console.log('Initializing SAML certificates')
-    certificates = await readDeprecatedCertificates()
-    if (certificates) {
-      console.log('Migrating SAML certificates from filesystem to database')
-    } else {
+    if (!site) {
+      certificates = await readDeprecatedCertificates()
+      if (certificates) {
+        console.log('Migrating SAML certificates from filesystem to database')
+      }
+    }
+    if (!certificates) {
       console.log('Generating new SAML certificates')
       certificates = { signing: await createCert(), encrypt: await createCert() }
     }
-    await writeCertificates(certificates)
+    await writeCertificates(certificates, site)
   }
+  return certificates
+}
 
-  const assertionConsumerService = [{
-    Binding: samlify.Constants.namespace.binding.post,
-    Location: `${config.publicUrl}/api/auth/saml2-assert`
-  }]
-  debug('config service provider')
-  _sp = samlify.ServiceProvider({
-    entityID: `${config.publicUrl}/api/auth/saml2-metadata.xml`,
-    assertionConsumerService,
-    signingCert: certificates.signing.cert,
-    privateKey: certificates.signing.privateKey,
-    encryptCert: certificates.encrypt.cert,
-    encPrivateKey: certificates.encrypt.privateKey,
-    ...config.saml2.sp
-  })
+export const init = async () => {
+  _sp = await initServiceProvider()
 
   debug('config identity providers')
   for (const providerConfig of config.saml2.providers) {
@@ -124,6 +151,27 @@ export const init = async () => {
       idp
     })
   }
+}
+
+export const initServiceProvider = async (site?: Site) => {
+  const certificates = await initCertificates(site)
+  const url = site ? getSiteBaseUrl(site) : config.publicUrl
+  const assertionConsumerService = [{
+    Binding: samlify.Constants.namespace.binding.post,
+    Location: `${url}/api/auth/saml2-assert`
+  }]
+  debug('config service provider')
+  return samlify.ServiceProvider({
+    entityID: `${url}/api/auth/saml2-metadata.xml`,
+    assertionConsumerService,
+    signingCert: certificates.signing.cert,
+    privateKey: certificates.signing.privateKey,
+    encryptCert: certificates.encrypt.cert,
+    encPrivateKey: certificates.encrypt.privateKey,
+    // @ts-ignore if we use a boolean the attribute is set as empty in the xml output, and some IDP don't like that
+    allowCreate: 'false',
+    ...config.saml2.sp
+  })
 }
 
 const createCert = async () => {

@@ -198,7 +198,7 @@ export default {
         metadata: {
           type: 'string',
           title: 'XML metadata',
-          layout: 'textarea'
+          layout: { comp: 'textarea', slots: { before: { name: 'saml-help' } } }
         },
         color: {
           type: 'string',
@@ -247,7 +247,8 @@ export default {
         discovery: {
           type: 'string',
           title: 'URL de découverte',
-          description: 'probablement de la forme http://mon-fournisseur/.well-known/openid-configuration'
+          description: 'probablement de la forme http://mon-fournisseur/.well-known/openid-configuration',
+          layout: { slots: { before: { name: 'oidc-help' } } }
         },
         client: {
           type: 'object',

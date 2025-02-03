@@ -1,7 +1,7 @@
 ##########################
-FROM node:22.11.0-alpine3.20 AS base
+FROM node:22.13.1-alpine3.21 AS base
 
-RUN npm install -g npm@10.9.1
+RUN npm install -g npm@11.1.0
 
 WORKDIR /app
 ENV NODE_ENV=production
@@ -59,7 +59,6 @@ RUN npm -w ui run build
 ##########################
 FROM installer AS api-installer
 
-# remove other workspaces and reinstall, otherwise we can get rig have some peer dependencies from other workspaces
 RUN npm ci -w api --prefer-offline --omit=dev --omit=optional --omit=peer --no-audit --no-fund && \
     npx clean-modules --yes "!ramda/src/test.js"
 RUN mkdir -p /app/api/node_modules
@@ -77,8 +76,13 @@ COPY --from=types /app/api/config api/config
 COPY --from=api-installer /app/api/node_modules api/node_modules
 COPY --from=ui /app/ui/dist ui/dist
 ADD package.json README.md LICENSE BUILD.json* ./
+
 EXPOSE 8080
 EXPOSE 9090
+
 USER node
 WORKDIR /app/api
+
+ENV DEBUG upgrade*
+
 CMD ["node", "--max-http-header-size", "65536", "--experimental-strip-types", "index.ts"]

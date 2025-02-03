@@ -29,6 +29,12 @@
             :dark="context.dark"
           />
         </template>
+        <template #oidc-help>
+          Donnez cette URL de retour de connexion ({{ siteHref + '/simple-directory/api/auth/oauth-callback' }}) au fournisseur d'identité et définissez les scopes "openid", "profile", "email".
+        </template>
+        <template #saml-help>
+          Remplissez le champ ci-dessous avec les métadonnées au format XML données par le fournisseurs d'identité. Et donnez ce <a :href="siteHref + '/simple-directory/api/auth/saml2-metadata.xml'">lien en retour</a>.
+        </template>
       </vjsf>
     </v-form>
     <v-row class="ma-0 mt-4">
@@ -75,7 +81,7 @@ const siteId = useRoute<'/admin/sites/[id]'>().params.id
 const sites = useFetch<{ count: number, results: SiteWithColorWarnings[] }>($apiPath + '/sites', { query: { showAll: true } })
 const site = useFetch<SiteWithColorWarnings>($apiPath + '/sites/' + siteId, { query: { showAll: true } })
 
-const siteHref = computed(() => `http://${site.data.value?.host}${site.data.value?.path ?? ''}`)
+const siteHref = computed(() => `${site.data.value?.host.startsWith('localhost:') ? 'http' : 'https'}://${site.data.value?.host}${site.data.value?.path ?? ''}`)
 
 const { patchSite } = useStore()
 
