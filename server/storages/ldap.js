@@ -236,6 +236,7 @@ class LdapStorage {
       org = { id: this.org.id, name: this.org.name }
     } else if (this.ldapParams.members.organizationAsDC) {
       const dn = ldap.parseDN(entry.objectName)
+      debug('set user org based on dc/dc', entry.objectName, JSON.stringify(dn))
       const orgDC = dn.rdns[1].attrs.dc.value
       orgCache[orgDC] = orgCache[orgDC] || await this._getOrganization(client, orgDC)
       org = orgCache[orgDC]
