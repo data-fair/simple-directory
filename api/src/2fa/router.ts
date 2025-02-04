@@ -18,9 +18,7 @@ router.post('/', async (req, res, next) => {
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!req.body.password) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
 
-  try {
-    await limiter(req).consume(reqIp(req), 1)
-  } catch (err) {
+  if (!await limiter()(reqIp(req))) {
     eventsLog.warn('sd.2fa.rate-limit', `rate limit error for /2fa route with email ${req.body.email}`, { req })
     return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }

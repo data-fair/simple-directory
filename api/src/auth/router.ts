@@ -65,11 +65,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
-  try {
-    await limiter(req).consume(reqIp(req), 1)
-    await limiter(req).consume(body.email, 1)
-  } catch (err) {
-    console.error('Rate limit error for /password route', reqIp(req), body.email, err)
+  if (!await limiter()(reqIp(req)) || !await limiter()(body.email)) {
     eventsLog.warn('sd.auth.password.rate-limit', `rate limit error for /auth/password route ${body.email}`, logContext)
     return returnError('rateLimitAuth', 429)
   }
@@ -235,9 +231,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
 
   const { body, query } = (await import('#doc/auth/post-passwordless-req/index.ts')).returnValid(req, { name: 'req' })
 
-  try {
-    await limiter(req).consume(reqIp(req), 1)
-  } catch (err) {
+  if (!await limiter()(reqIp(req))) {
     eventsLog.warn('sd.auth.passwordless.rate-limit', `rate limit error for /auth/passwordless route ${body.email}`, logContext)
     return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }
@@ -505,10 +499,7 @@ router.post('/action', async (req, res, next) => {
 
   const { body } = (await import('#doc/auth/post-action-req/index.ts')).returnValid(req, { name: 'req' })
 
-  try {
-    await limiter(req).consume(reqIp(req), 1)
-  } catch (err) {
-    console.error('Rate limit error for /action route', reqIp(req), req.body.email, err)
+  if (!await limiter()(reqIp(req))) {
     eventsLog.warn('sd.auth.action.rate-limit', 'rate limit error for /action route', logContext)
     return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }

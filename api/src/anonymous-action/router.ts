@@ -10,9 +10,7 @@ import { signToken } from '#services'
 // simply get a token to perform an anonymous action in the close future
 // useful to ensure that the user is human and waits for a little while before submitting a form
 const route: RequestHandler = async (req, res, next) => {
-  try {
-    await limiter(req).consume(reqIp(req), 1)
-  } catch (err) {
+  if (!await limiter()(reqIp(req))) {
     eventsLog.warn('sd.anonym-action.rate-limit', 'rate limit error for /anonymous-action route', { req })
     return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }
