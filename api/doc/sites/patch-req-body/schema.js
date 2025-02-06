@@ -7,6 +7,7 @@ const schema = jsonSchema(SiteSchema)
   .appendTitle(' patch')
   .schema
 
+delete schema.required
 schema.$id = 'https://github.com/data-fair/simple-directory/sites/patch-req-body'
 schema['x-exports'] = ['validate', 'types', 'resolvedSchemaJson']
 

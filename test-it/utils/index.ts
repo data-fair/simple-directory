@@ -19,7 +19,8 @@ export const axiosAuth = async (opts: string | Omit<AxiosAuthOptions, 'password'
 export const clean = async (options?: { ldapConfig?: any }) => {
   const mongo = (await (import('../../api/src/mongo.ts'))).default
   await mongo.organizations.deleteMany({ _id: { $ne: 'admins-org' } })
-  await mongo.users.deleteMany({ _id: { $ne: 'admin@test.com' } })
+  await mongo.users.deleteMany({})
+  await mongo.sites.deleteMany({})
   await mongo.oauthTokens.deleteMany()
   await mongo.ldapUserSessions.deleteMany()
   await mongo.fileUserSessions.deleteMany()

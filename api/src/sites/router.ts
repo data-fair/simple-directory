@@ -124,7 +124,7 @@ router.patch('/:id', async (req, res, next) => {
   const site = await getSite(req.params.id)
   if (!site) throw httpError(404)
 
-  if (body.theme.primaryColor || body.logo) {
+  if (body.theme?.primaryColor || body.logo) {
     // manage re-reo-compatibility with old portals manager
     const theme = clone(site.theme)
     if (body.theme.primaryColor) {

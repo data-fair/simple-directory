@@ -89,7 +89,12 @@ router.post('', async (req, res, next) => {
     organizations: []
   }
   const site = await reqSite(req)
-  if (site) newUser.host = site.host
+  if (site) {
+    if (['onlyBackOffice', 'onlyOtherSites', undefined].includes(site.authMode)) {
+      throw httpError(400, 'Cannot create a user on a secondary site')
+    }
+    newUser.host = site.host
+  }
 
   if (invit) {
     newUser.emailConfirmed = true

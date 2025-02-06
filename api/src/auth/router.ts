@@ -289,8 +289,6 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
 router.post('/site_redirect', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const loggedUser = reqUserAuthenticated(req)
-  const currentSite = await reqSite(req)
-  if (currentSite) return res.status(400).send()
   const storage = storages.globalStorage
   const user = await storage.getUserByEmail(loggedUser.email)
   if (!user) return res.status(404).send('user not found')
@@ -716,7 +714,12 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
       coreIdProvider: provider.coreIdProvider ? { type: provider.type || 'oauth', id: provider.id } : undefined,
       organizations: []
     }
-    if (site) newUser.host = site.host
+    if (site) {
+      if (['onlyBackOffice', 'onlyOtherSites', undefined].includes(site.authMode)) {
+        throw httpError(400, 'Cannot create a user on a secondary site')
+      }
+      newUser.host = site.host
+    }
     if (invit && invitOrga) {
       newUser.defaultOrg = invitOrga.id
       newUser.ignorePersonalAccount = true
@@ -931,7 +934,12 @@ router.post('/saml2-assert', async (req, res) => {
       },
       organizations: []
     }
-    if (site) newUser.host = site.host
+    if (site) {
+      if (['onlyBackOffice', 'onlyOtherSites', undefined].includes(site.authMode)) {
+        throw httpError(400, 'Cannot create a user on a secondary site')
+      }
+      newUser.host = site.host
+    }
     if (invit && invitOrga) {
       newUser.defaultOrg = invitOrga.id
       newUser.ignorePersonalAccount = true

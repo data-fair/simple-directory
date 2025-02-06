@@ -12,6 +12,7 @@ describe('sites api', () => {
   it('should create a site for a standalone portal', async () => {
     const config = (await import('../api/src/config.ts')).default
 
+    const { ax: adminAx } = await createUser('admin@test.com', true)
     const anonymousAx = await axios()
     await assert.rejects(anonymousAx.post('/api/sites', { host: '127.0.0.1:5989' }), { status: 401 })
     await assert.rejects(anonymousAx.post('/api/sites', { host: '127.0.0.1:5989' }, { params: { key: config.secretKeys.sites } }), { status: 400 })
@@ -42,10 +43,6 @@ describe('sites api', () => {
     sites = (await orgAx.get('/api/sites')).data
     assert.equal(sites.count, 1)
 
-    // a user created directly on the second site
-    const { ax: siteAx1 } = await createUser('test-site2@test.com', false, 'TestPasswd01', siteDirectoryUrl)
-    await siteAx1.get('/api/auth/me')
-
     // the first user can connect on secondary site from the main one
     const siteRedirect = (await ax.post<string>('/api/auth/site_redirect', { redirect: siteDirectoryUrl })).data
     assert.ok(siteRedirect.startsWith(`${siteDirectoryUrl}/api/auth/token_callback`))
@@ -59,5 +56,23 @@ describe('sites api', () => {
       if (redirectError) throw new Error(redirectError)
       assert.equal(err.headers['set-cookie']?.length, 3)
     }
+
+    // cannot create a user on a site in onlyBackOffice mode
+    await assert.rejects(createUser('test-site2@test.com', false, 'TestPasswd01', siteDirectoryUrl), { status: 400 })
+
+    // switch auth mode to ssoBackOffice
+    await adminAx.patch('/api/sites/test', { authMode: 'ssoBackOffice' });
+    (await import('../api/src/sites/service.ts')).getSiteByUrl.clear()
+
+    // a user can be created directly on the second site
+    const { ax: siteAx1 } = await createUser('test-site2@test.com', false, 'TestPasswd01', siteDirectoryUrl)
+    await siteAx1.get('/api/auth/me')
+
+    // switch auth mode to onlyLocal
+    await adminAx.patch('/api/sites/test', { authMode: 'onlyLocal' });
+    (await import('../api/src/sites/service.ts')).getSiteByUrl.clear()
+
+    // using site_redirect is no longer possible
+    await assert.rejects(ax.post<string>('/api/auth/site_redirect', { redirect: siteDirectoryUrl }), { status: 400 })
   })
 })

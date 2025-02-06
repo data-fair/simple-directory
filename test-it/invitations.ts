@@ -236,6 +236,7 @@ describe('invitations', () => {
 
   it('should invite an existing user on another site', async () => {
     const config = (await import('../api/src/config.ts')).default
+    const { ax: adminAx } = await createUser('admin@test.com', true)
     const { ax } = await createUser('test-invit12@test.com')
     await createUser('test-invit11@test.com')
     const anonymousAx = await axios()
@@ -246,6 +247,7 @@ describe('invitations', () => {
     await anonymousAx.post('/api/sites',
       { _id: 'test', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:5989', theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
+    await adminAx.patch('/api/sites/test', { authMode: 'ssoBackOffice' })
 
     const mailPromise = waitForMail()
     await ax.post('/api/invitations', {
