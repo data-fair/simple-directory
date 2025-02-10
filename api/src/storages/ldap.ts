@@ -114,6 +114,10 @@ export class LdapStorage implements SdStorage {
     return this._orgMapping
   }
 
+  private get useDC () {
+    return this.ldapParams.members.organizationAsDC === true || typeof this.ldapParams.members.organizationAsDC === 'number'
+  }
+
   constructor (params: LdapParams, org?: Organization) {
     this.ldapParams = params
     this.org = org
@@ -135,7 +139,7 @@ export class LdapStorage implements SdStorage {
         ['id'],
         [],
         this.ldapParams.organizations.objectClass,
-        this.ldapParams.members.organizationAsDC ? 'dcObject' : undefined,
+        this.useDC ? 'dcObject' : undefined,
         {}
       )
     }
@@ -239,7 +243,7 @@ export class LdapStorage implements SdStorage {
     if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
     if (this.ldapParams.organizations.staticSingleOrg || this.org) {
       return `${dnKey}=${entry[dnKey]}, ${this.ldapParams.baseDN}`
-    } else if (this.ldapParams.members.organizationAsDC) {
+    } else if (this.useDC) {
       if (!user.organizations || !user.organizations.length) {
         throw new Error('L\'utilisateur doit être associé à une organisation dès la création')
       }
@@ -265,12 +269,12 @@ export class LdapStorage implements SdStorage {
       org = this.ldapParams.organizations.staticSingleOrg
     } else if (this.org) {
       org = { id: this.org.id, name: this.org.name }
-    } else if (this.ldapParams.members.organizationAsDC === true || typeof this.ldapParams.members.organizationAsDC === 'number') {
-      const ind = this.ldapParams.members.organizationAsDC === true ? 0 : this.ldapParams.members.organizationAsDC
+    } else if (this.useDC) {
+      const ind = typeof this.ldapParams.members.organizationAsDC === 'number' ? this.ldapParams.members.organizationAsDC : 0
       const dn = entry.dn.toString()
       const parsedDN = parseDN(dn)
       const orgDC = parsedDN.dc?.[ind]
-      debug(`extract org id based on DC in user DN: dn=${dn}, dc=${orgDC}, parsedDN=${JSON.stringify(parsedDN)}`)
+      debug(`extract org id based on DC in user DN: dn=${dn}, parsedDN=${JSON.stringify(parsedDN)}, orgDC=${orgDC}`)
       if (!orgDC) {
         throw new Error(`failed to map the user to an organization using dn/dc: dn=${dn}, dc=${orgDC}, parsedDN=${JSON.stringify(parsedDN)}`)
       }
