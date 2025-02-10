@@ -845,7 +845,6 @@ router.get('/saml2/:providerId/login', async (req, res) => {
   if (typeof req.query.email === 'string') parsedURL.searchParams.append('login_hint', req.query.email)
   debugSAML('redirect', parsedURL.href)
   eventsLog.info('sd.auth.saml.redirect', 'a user was redirected to a saml provider', logContext)
-  console.log('REDIRECT SAMLRequest', parsedURL.searchParams.get('SAMLRequest'))
   res.redirect(parsedURL.href)
 })
 
