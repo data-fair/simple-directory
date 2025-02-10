@@ -29,6 +29,18 @@ function sortCompare (sort: Record<string, 1 | -1>, propKey?: string) {
   }
 }
 
+const parseDN = (dn: string) => {
+  const obj: Record<string, string[]> = {}
+  const parts = dn.split(',')
+  for (const part of parts) {
+    const [k, value] = part.split('=')
+    const key = k.toLowerCase()
+    obj[key] = obj[key] ?? []
+    obj[key].push(value)
+  }
+  return obj
+}
+
 type MappingFn = (from: Record<string, any>) => Record<string, any>
 
 function buildMappingFn (
@@ -253,10 +265,15 @@ export class LdapStorage implements SdStorage {
       org = this.ldapParams.organizations.staticSingleOrg
     } else if (this.org) {
       org = { id: this.org.id, name: this.org.name }
-    } else if (this.ldapParams.members.organizationAsDC) {
-      const dn = ldap.parseDN(entry.dn.toString())
-      dn.shift()
-      const orgDC = dn.shift().toString().replace('dc=', '')
+    } else if (this.ldapParams.members.organizationAsDC === true || typeof this.ldapParams.members.organizationAsDC === 'number') {
+      const ind = this.ldapParams.members.organizationAsDC === true ? 0 : this.ldapParams.members.organizationAsDC
+      const dn = entry.dn.toString()
+      const parsedDN = parseDN(dn)
+      const orgDC = parsedDN.dc?.[ind]
+      debug(`extract org id based on DC in user DN: dn=${dn}, dc=${orgDC}, parsedDN=${JSON.stringify(parsedDN)}`)
+      if (!orgDC) {
+        throw new Error(`failed to map the user to an organization using dn/dc: dn=${dn}, dc=${orgDC}, parsedDN=${JSON.stringify(parsedDN)}`)
+      }
       orgCache[orgDC] = orgCache[orgDC] || await this._getOrganization(client, orgDC)
       org = orgCache[orgDC]
     } else {

@@ -90,7 +90,7 @@ export default {
       additionalProperties: false,
       required: ['role'],
       properties: {
-        organizationAsDC: { type: 'boolean' },
+        organizationAsDC: { type: ['number', 'boolean'] },
         onlyWithRole: { type: 'boolean' },
         role: {
           type: 'object',
