@@ -155,7 +155,7 @@ export const init = async () => {
 
 export const initServiceProvider = async (site?: Site) => {
   const certificates = await initCertificates(site)
-  const url = site ? getSiteBaseUrl(site) : config.publicUrl
+  const url = site ? `${getSiteBaseUrl(site)}/simple-directory` : config.publicUrl
   const assertionConsumerService = [{
     Binding: samlify.Constants.namespace.binding.post,
     Location: `${url}/api/auth/saml2-assert`
