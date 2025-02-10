@@ -38,7 +38,7 @@
               :href="`http://${props.item.host}${props.item.path ?? ''}`"
               target="blank"
               class="text-primary"
-            >{{ props.item.host }}</a>
+            >{{ `${props.item.host}${props.item.path ?? ''}` }}</a>
           </td>
           <td>{{ props.item._id }}</td>
           <td>

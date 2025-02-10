@@ -1,4 +1,4 @@
-import { oauthGlobalProviders, getOidcProviderId, saml2GlobalProviders, getSiteByUrl } from '#services'
+import { oauthGlobalProviders, getOidcProviderId, saml2GlobalProviders, getSamlConfigId, getSiteByUrl } from '#services'
 import type { Site, PublicAuthProvider } from '#types'
 import _slug from 'slugify'
 
@@ -12,7 +12,6 @@ export const publicGlobalProviders = async () => {
       id: p.id,
       title: p.title,
       color: p.color,
-      icon: p.icon,
       img: p.img,
       redirectMode: p.redirectMode
     })
@@ -39,6 +38,16 @@ export const publicSiteProviders = async (site: Site) => {
       providers.push({
         type: p.type,
         id: getOidcProviderId(p.discovery),
+        title: p.title as string,
+        color: p.color,
+        img: p.img,
+        redirectMode: p.redirectMode
+      })
+    }
+    if (p.type === 'saml2') {
+      providers.push({
+        type: p.type,
+        id: getSamlConfigId(p),
         title: p.title as string,
         color: p.color,
         img: p.img,

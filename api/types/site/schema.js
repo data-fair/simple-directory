@@ -129,6 +129,9 @@ export default {
             $ref: '#/$defs/oidcProvider'
           },
           {
+            $ref: '#/$defs/saml2Provider'
+          },
+          {
             type: 'object',
             title: 'Un autre de vos sites',
             required: [
@@ -181,6 +184,45 @@ export default {
     }
   },
   $defs: {
+    saml2Provider: {
+      type: 'object',
+      title: 'SAML 2',
+      required: [
+        'metadata'
+      ],
+      properties: {
+        type: {
+          type: 'string',
+          const: 'saml2'
+        },
+        metadata: {
+          type: 'string',
+          title: 'XML metadata',
+          layout: { comp: 'textarea', slots: { before: { name: 'saml-help' } } }
+        },
+        color: {
+          type: 'string',
+          title: 'Couleur',
+          layout: 'color-picker'
+        },
+        img: {
+          type: 'string',
+          title: 'URL du logo (petite taille)'
+        },
+        createMember: {
+          $ref: '#/$defs/createMember'
+        },
+        memberRole: {
+          $ref: '#/$defs/memberRole'
+        },
+        coreIdProvider: {
+          $ref: '#/$defs/coreIdProvider'
+        },
+        redirectMode: {
+          $ref: '#/$defs/redirectMode'
+        }
+      }
+    },
     oidcProvider: {
       type: 'object',
       title: 'OpenID Connect',
@@ -205,7 +247,8 @@ export default {
         discovery: {
           type: 'string',
           title: 'URL de découverte',
-          description: 'probablement de la forme http://mon-fournisseur/.well-known/openid-configuration'
+          description: 'probablement de la forme http://mon-fournisseur/.well-known/openid-configuration',
+          layout: { slots: { before: { name: 'oidc-help' } } }
         },
         client: {
           type: 'object',
@@ -228,92 +271,10 @@ export default {
           }
         },
         createMember: {
-          type: 'object',
-          default: {
-            type: 'never'
-          },
-          layout: { cols: 6 },
-          oneOfLayout: {
-            label: 'Créer les utilisateurs en tant que membres',
-            help: "Si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
-          },
-          oneOf: [
-            {
-              title: 'jamais',
-              properties: {
-                type: {
-                  const: 'never'
-                }
-              }
-            },
-            {
-              title: 'toujours',
-              properties: {
-                type: {
-                  const: 'always'
-                }
-              }
-            },
-            {
-              title: "quand l'email appartient à un nom de domaine",
-              properties: {
-                type: {
-                  const: 'emailDomain'
-                },
-                emailDomain: {
-                  type: 'string',
-                  title: "nom de domaine de l'email"
-                }
-              }
-            }
-          ]
+          $ref: '#/$defs/createMember'
         },
         memberRole: {
-          type: 'object',
-          layout: { cols: 6 },
-          oneOfLayout: {
-            label: 'Attribution du rôle des membres',
-            help: "Le rôle des membres créés automatiquement par ce fournisseur d'identité.",
-          },
-          default: {
-            type: 'none'
-          },
-          oneOf: [
-            {
-              title: 'Aucun rôle par défaut (simple utilisateur)',
-              properties: {
-                type: {
-                  const: 'none'
-                }
-              }
-            },
-            {
-              title: 'Tout le temps ce rôle : ',
-              required: ['role'],
-              properties: {
-                type: {
-                  const: 'static'
-                },
-                role: {
-                  type: 'string',
-                  title: 'Rôle des membres'
-                }
-              }
-            },
-            {
-              title: "Rôle lu dans un attribut de l'identité",
-              required: ['attribute'],
-              properties: {
-                type: {
-                  const: 'attribute'
-                },
-                attribute: {
-                  type: 'string',
-                  title: "Nom de l'attribut"
-                }
-              }
-            }
-          ]
+          $ref: '#/$defs/memberRole'
         },
         ignoreEmailVerified: {
           type: 'boolean',
@@ -321,51 +282,145 @@ export default {
           description: "Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement."
         },
         coreIdProvider: {
-          type: 'boolean',
-          title: "Traiter ce fournisseur comme une source principale d'identité",
-          description: "Cette option a plusieurs effets :\n  - un compte associé à ce fournisseur ne peut pas avoir d'autre moyen d'authentification (mot de posse ou autre fournisseur rattaché au même compte)\n  - les informations du compte seront en lecture seule et synchronisées automatiquement depuis le fournisseur quand l'utilisateur a une session active\n  - cette synchronisation inclue la destruction de la session et la désactivation du compte si celui-ci n'existe plus dans le fournisseur d'identité\n - si l'option \"Rôle des membres\" est utilisée le rôle sera lui aussi synchronisé et ne sera pas éditable dans le back-office"
+          $ref: '#/$defs/coreIdProvider'
         },
         redirectMode: {
-          type: 'object',
-          default: {
-            type: 'button'
-          },
-          oneOfLayout: {
-            label: 'Controlez la manière dont les utilisateurs sont redirigés vers ce fournisseur',
-            help: "Si vous utilisez un mode basé sur l'email alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.",
-          },
-          oneOf: [
-            {
-              title: 'bouton',
-              properties: {
-                type: {
-                  const: 'button'
-                }
-              }
-            },
-            {
-              title: "redirection auto quand l'email appartient à un nom de domaine",
-              properties: {
-                type: {
-                  const: 'emailDomain'
-                },
-                emailDomain: {
-                  type: 'string',
-                  title: "nom de domaine de l'email"
-                }
-              }
-            },
-            {
-              title: 'toujours rediriger implicitement',
-              properties: {
-                type: {
-                  const: 'always'
-                }
-              }
-            }
-          ]
+          $ref: '#/$defs/redirectMode'
         }
       }
+    },
+    createMember: {
+      type: 'object',
+      default: {
+        type: 'never'
+      },
+      layout: { cols: 6 },
+      oneOfLayout: {
+        label: 'Créer les utilisateurs en tant que membres',
+        help: "Si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
+      },
+      oneOf: [
+        {
+          title: 'jamais',
+          properties: {
+            type: {
+              const: 'never'
+            }
+          }
+        },
+        {
+          title: 'toujours',
+          properties: {
+            type: {
+              const: 'always'
+            }
+          }
+        },
+        {
+          title: "quand l'email appartient à un nom de domaine",
+          properties: {
+            type: {
+              const: 'emailDomain'
+            },
+            emailDomain: {
+              type: 'string',
+              title: "nom de domaine de l'email"
+            }
+          }
+        }
+      ]
+    },
+    memberRole: {
+      type: 'object',
+      layout: { cols: 6 },
+      oneOfLayout: {
+        label: 'Attribution du rôle des membres',
+        help: "Le rôle des membres créés automatiquement par ce fournisseur d'identité.",
+      },
+      default: {
+        type: 'none'
+      },
+      oneOf: [
+        {
+          title: 'Aucun rôle par défaut (simple utilisateur)',
+          properties: {
+            type: {
+              const: 'none'
+            }
+          }
+        },
+        {
+          title: 'Tout le temps ce rôle : ',
+          required: ['role'],
+          properties: {
+            type: {
+              const: 'static'
+            },
+            role: {
+              type: 'string',
+              title: 'Rôle des membres'
+            }
+          }
+        },
+        {
+          title: "Rôle lu dans un attribut de l'identité",
+          required: ['attribute'],
+          properties: {
+            type: {
+              const: 'attribute'
+            },
+            attribute: {
+              type: 'string',
+              title: "Nom de l'attribut"
+            }
+          }
+        }
+      ]
+    },
+    coreIdProvider: {
+      type: 'boolean',
+      title: "Traiter ce fournisseur comme une source principale d'identité",
+      description: "Cette option a plusieurs effets :\n  - un compte associé à ce fournisseur ne peut pas avoir d'autre moyen d'authentification (mot de posse ou autre fournisseur rattaché au même compte)\n  - les informations du compte seront en lecture seule et synchronisées automatiquement depuis le fournisseur quand l'utilisateur a une session active\n  - cette synchronisation inclue la destruction de la session et la désactivation du compte si celui-ci n'existe plus dans le fournisseur d'identité\n - si l'option \"Rôle des membres\" est utilisée le rôle sera lui aussi synchronisé et ne sera pas éditable dans le back-office"
+    },
+    redirectMode: {
+      type: 'object',
+      default: {
+        type: 'button'
+      },
+      oneOfLayout: {
+        label: 'Controlez la manière dont les utilisateurs sont redirigés vers ce fournisseur',
+        help: "Si vous utilisez un mode basé sur l'email alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.",
+      },
+      oneOf: [
+        {
+          title: 'bouton',
+          properties: {
+            type: {
+              const: 'button'
+            }
+          }
+        },
+        {
+          title: "redirection auto quand l'email appartient à un nom de domaine",
+          properties: {
+            type: {
+              const: 'emailDomain'
+            },
+            emailDomain: {
+              type: 'string',
+              title: "nom de domaine de l'email"
+            }
+          }
+        },
+        {
+          title: 'toujours rediriger implicitement',
+          properties: {
+            type: {
+              const: 'always'
+            }
+          }
+        }
+      ]
     }
   }
 }

@@ -17,6 +17,11 @@ export const getSiteByUrl = memoize(async (url: string) => {
   maxAge: 2000 // 2s
 })
 
+const publicUrl = new URL(config.publicUrl)
+export const getSiteBaseUrl = (site: Site) => {
+  return `${publicUrl.protocol}//${site.host}${site.path ?? ''}`
+}
+
 export const getRedirectSite = async (req: Request, redirect: string) => {
   const currentSiteUrl = reqSiteUrl(req)
   const currentSite = await reqSite(req)

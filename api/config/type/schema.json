@@ -543,11 +543,7 @@
     "oidcProvider": {
       "type": "object",
       "title": "OpenID Connect",
-      "required": [
-        "title",
-        "discovery",
-        "client"
-      ],
+      "required": [ "title" ],
       "allOf": [
         {
           "properties": {
@@ -563,59 +559,18 @@
     },
     "saml2Provider": {
       "type": "object",
-      "title": "Saml 2",
-      "required": [
-        "title"
-      ],
-      "properties": {
-        "metadata": { "type": "string" },
-        "title": { "type": "string" },
-        "color": { "type": "string" },
-        "icon": { "type": "string" },
-        "img": { "type": "string" },
-        "coreIdProvider": {
-          "type": "boolean"
-        },
-        "redirectMode": {
-          "$ref": "#/$defs/redirectMode"
-        }
-      }
-    },
-    "redirectMode": {
-      "type": "object",
-      "description": "Si vous utilisez un mode basé sur l'email alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.",
-      "default": {
-        "type": "button"
-      },
-      "oneOf": [
+      "title": "SAML 2",
+      "required": [ "title" ],
+      "allOf": [
         {
-          "title": "bouton",
           "properties": {
-            "type": {
-              "const": "button",
-              "title": "Controlez la manière dont les utilisateurs sont redirigés vers ce fournisseur"
+            "title": {
+              "type": "string"
             }
           }
         },
         {
-          "title": "redirection auto quand l'email appartient à un nom de domaine",
-          "properties": {
-            "type": {
-              "const": "emailDomain"
-            },
-            "emailDomain": {
-              "type": "string",
-              "title": "nom de domaine de l'email"
-            }
-          }
-        },
-        {
-          "title": "toujours rediriger implicitement",
-          "properties": {
-            "type": {
-              "const": "always"
-            }
-          }
+          "$ref": "https://github.com/data-fair/simple-directory/site#/$defs/saml2Provider"
         }
       ]
     },
