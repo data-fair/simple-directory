@@ -298,11 +298,16 @@ export class LdapStorage implements SdStorage {
       orgCache[orgDC] = orgCache[orgDC] || await this._getOrganization(client, orgDC)
       org = orgCache[orgDC]
     } else if (this.ldapParams.members.organization?.attr) {
-      let ldapOrg = attrs[this.ldapParams.members.organization.attr]
-      if (ldapOrg?.length && this.organizationCaptureRegexp) {
-        const match = ldapOrg[0].match(this.organizationCaptureRegexp)
+      let ldapOrg = attrs[this.ldapParams.members.organization.attr]?.[0]
+      if (!ldapOrg) {
+        throw new Error(`failed to map the user to an organization using attribute: ${this.ldapParams.members.organization.attr}=${ldapOrg}`)
+      }
+      if (this.organizationCaptureRegexp) {
+        const match = ldapOrg.match(this.organizationCaptureRegexp)
+        debug('applied organization capture regexp', ldapOrg, match)
         if (match) ldapOrg = match[1]
       }
+
       orgCache[ldapOrg] = orgCache[ldapOrg] || await this._getOrganization(client, ldapOrg)
       org = orgCache[ldapOrg]
     }
@@ -316,6 +321,7 @@ export class LdapStorage implements SdStorage {
             .find(role => {
               if (this.roleCaptureRegexp) {
                 const match = role.match(this.roleCaptureRegexp)
+                debug('applied role capture regexp', role, match)
                 if (match) role = match[1]
               }
               return !!ldapRoles.find((ldapRole: string) => this.ldapParams.members.role.values?.[role].includes(ldapRole))
@@ -328,6 +334,7 @@ export class LdapStorage implements SdStorage {
         if (ldapDepartment?.length) {
           if (this.departmentCaptureRegexp) {
             const match = ldapDepartment[0].match(this.departmentCaptureRegexp)
+            debug('applied department capture regexp', ldapDepartment[0], match)
             if (match) {
               department = match[1]
             }
