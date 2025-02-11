@@ -120,6 +120,7 @@ export class LdapStorage implements SdStorage {
 
   private roleCaptureRegexp: RegExp | undefined
   private departmentCaptureRegexp: RegExp | undefined
+  private organizationCaptureRegexp: RegExp | undefined
 
   constructor (params: LdapParams, org?: Organization) {
     this.ldapParams = params
@@ -132,6 +133,9 @@ export class LdapStorage implements SdStorage {
     }
     if (this.ldapParams.members.department?.captureRegexp) {
       this.departmentCaptureRegexp = new RegExp(this.ldapParams.members.department.captureRegexp)
+    }
+    if (this.ldapParams.members.organization?.captureRegexp) {
+      this.organizationCaptureRegexp = new RegExp(this.ldapParams.members.organization.captureRegexp)
     }
 
     const prefixes: Record<string, string> = org ? { id: `ldap_${org.id}_` } : {}
@@ -293,8 +297,14 @@ export class LdapStorage implements SdStorage {
       }
       orgCache[orgDC] = orgCache[orgDC] || await this._getOrganization(client, orgDC)
       org = orgCache[orgDC]
-    } else {
-      // TODO
+    } else if (this.ldapParams.members.organization?.attr) {
+      let ldapOrg = attrs[this.ldapParams.members.organization.attr]
+      if (ldapOrg?.length && this.organizationCaptureRegexp) {
+        const match = ldapOrg[0].match(this.organizationCaptureRegexp)
+        if (match) ldapOrg = match[1]
+      }
+      orgCache[ldapOrg] = orgCache[ldapOrg] || await this._getOrganization(client, ldapOrg)
+      org = orgCache[ldapOrg]
     }
 
     if (org) {
@@ -315,7 +325,7 @@ export class LdapStorage implements SdStorage {
       let department
       if (this.ldapParams.members.department?.attr) {
         const ldapDepartment = attrs[this.ldapParams.members.department.attr]
-        if (ldapDepartment) {
+        if (ldapDepartment?.length) {
           if (this.departmentCaptureRegexp) {
             const match = ldapDepartment[0].match(this.departmentCaptureRegexp)
             if (match) {

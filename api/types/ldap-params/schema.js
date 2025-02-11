@@ -91,6 +91,14 @@ export default {
       required: ['role'],
       properties: {
         organizationAsDC: { type: ['number', 'boolean'] },
+        organization: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            attr: { type: 'string' },
+            captureRegexp: { type: 'string' }
+          }
+        },
         onlyWithRole: { type: 'boolean' },
         role: {
           type: 'object',
@@ -116,7 +124,7 @@ export default {
         department: {
           type: 'object',
           additionalProperties: false,
-          required: ['attr'],
+          required: [],
           properties: {
             attr: { type: 'string' },
             captureRegexp: { type: 'string' }
