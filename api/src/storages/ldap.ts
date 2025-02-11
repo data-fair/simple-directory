@@ -286,17 +286,6 @@ export class LdapStorage implements SdStorage {
       org = this.ldapParams.organizations.staticSingleOrg
     } else if (this.org) {
       org = { id: this.org.id, name: this.org.name }
-    } else if (this.useDC) {
-      const ind = typeof this.ldapParams.members.organizationAsDC === 'number' ? this.ldapParams.members.organizationAsDC : 0
-      const dn = entry.dn.toString()
-      const parsedDN = parseDN(dn)
-      const orgDC = parsedDN.dc?.[ind]
-      debug(`extract org id based on DC in user DN: dn=${dn}, parsedDN=${JSON.stringify(parsedDN)}, orgDC=${orgDC}`)
-      if (!orgDC) {
-        throw new Error(`failed to map the user to an organization using dn/dc: dn=${dn}, dc=${orgDC}, parsedDN=${JSON.stringify(parsedDN)}`)
-      }
-      orgCache[orgDC] = orgCache[orgDC] || await this._getOrganization(client, orgDC)
-      org = orgCache[orgDC]
     } else if (this.ldapParams.members.organization?.attr) {
       let ldapOrg = attrs[this.ldapParams.members.organization.attr]?.[0]
       if (!ldapOrg) {
@@ -310,6 +299,17 @@ export class LdapStorage implements SdStorage {
 
       orgCache[ldapOrg] = orgCache[ldapOrg] || await this._getOrganization(client, ldapOrg)
       org = orgCache[ldapOrg]
+    } else if (this.useDC) {
+      const ind = typeof this.ldapParams.members.organizationAsDC === 'number' ? this.ldapParams.members.organizationAsDC : 0
+      const dn = entry.dn.toString()
+      const parsedDN = parseDN(dn)
+      const orgDC = parsedDN.dc?.[ind]
+      debug(`extract org id based on DC in user DN: dn=${dn}, parsedDN=${JSON.stringify(parsedDN)}, orgDC=${orgDC}`)
+      if (!orgDC) {
+        throw new Error(`failed to map the user to an organization using dn/dc: dn=${dn}, dc=${orgDC}, parsedDN=${JSON.stringify(parsedDN)}`)
+      }
+      orgCache[orgDC] = orgCache[orgDC] || await this._getOrganization(client, orgDC)
+      org = orgCache[orgDC]
     }
 
     if (org) {
