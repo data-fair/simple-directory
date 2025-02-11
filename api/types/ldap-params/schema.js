@@ -98,6 +98,7 @@ export default {
           required: ['default'],
           properties: {
             attr: { type: 'string' },
+            captureRegexp: { type: 'string' },
             default: { type: 'string' },
             values: {
               type: 'object',

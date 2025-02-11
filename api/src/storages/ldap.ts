@@ -118,11 +118,21 @@ export class LdapStorage implements SdStorage {
     return this.ldapParams.members.organizationAsDC === true || typeof this.ldapParams.members.organizationAsDC === 'number'
   }
 
+  private roleCaptureRegexp: RegExp | undefined
+  private departmentCaptureRegexp: RegExp | undefined
+
   constructor (params: LdapParams, org?: Organization) {
     this.ldapParams = params
     this.org = org
     console.log('Connecting to ldap ' + params.url)
     // check connexion at startup
+
+    if (this.ldapParams.members.role.captureRegexp) {
+      this.roleCaptureRegexp = new RegExp(this.ldapParams.members.role.captureRegexp)
+    }
+    if (this.ldapParams.members.department?.captureRegexp) {
+      this.departmentCaptureRegexp = new RegExp(this.ldapParams.members.department.captureRegexp)
+    }
 
     const prefixes: Record<string, string> = org ? { id: `ldap_${org.id}_` } : {}
     this.userMapping = buildMappingFn(
@@ -293,15 +303,21 @@ export class LdapStorage implements SdStorage {
         const ldapRoles = attrs[this.ldapParams.members.role.attr]
         if (ldapRoles) {
           role = Object.keys(this.ldapParams.members.role.values ?? {})
-            .find(role => !!ldapRoles.find((ldapRole: string) => this.ldapParams.members.role.values?.[role].includes(ldapRole)))
+            .find(role => {
+              if (this.roleCaptureRegexp) {
+                const match = role.match(this.roleCaptureRegexp)
+                if (match) role = match[1]
+              }
+              return !!ldapRoles.find((ldapRole: string) => this.ldapParams.members.role.values?.[role].includes(ldapRole))
+            })
         }
       }
       let department
       if (this.ldapParams.members.department?.attr) {
         const ldapDepartment = attrs[this.ldapParams.members.department.attr]
         if (ldapDepartment) {
-          if (this.ldapParams.members.department.captureRegexp) {
-            const match = ldapDepartment[0].match(new RegExp(this.ldapParams.members.department.captureRegexp))
+          if (this.departmentCaptureRegexp) {
+            const match = ldapDepartment[0].match(this.departmentCaptureRegexp)
             if (match) {
               department = match[1]
             }

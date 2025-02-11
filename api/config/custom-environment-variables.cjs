@@ -73,8 +73,13 @@ module.exports = {
         onlyWithRole: 'STORAGE_LDAP_ONLY_WITH_ROLE',
         role: {
           attr: 'STORAGE_LDAP_MEMBERS_ROLE_ATTR',
+          captureRegex: 'STORAGE_LDAP_MEMBERS_ROLE_CAPTURE_REGEX',
           values: jsonEnv('STORAGE_LDAP_MEMBERS_ROLE_VALUES'),
           default: 'STORAGE_LDAP_MEMBERS_ROLE_DEFAULT'
+        },
+        department: {
+          attr: 'STORAGE_LDAP_MEMBERS_DEPARTMENT_ATTR',
+          captureRegex: 'STORAGE_LDAP_MEMBERS_DEPARTMENT_CAPTURE_REGEX',
         },
         overwrite: jsonEnv('STORAGE_LDAP_MEMBERS_OVERWRITE')
       }
