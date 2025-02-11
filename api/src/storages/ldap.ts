@@ -176,6 +176,9 @@ export class LdapStorage implements SdStorage {
     if (this.ldapParams.members.role.attr) {
       attributes.push(this.ldapParams.members.role.attr)
     }
+    if (this.ldapParams.members.department?.attr) {
+      attributes.push(this.ldapParams.members.department.attr)
+    }
     if (this.ldapParams.members.onlyWithRole) {
       extraFilters.push(this._getRoleFilter(Object.keys(this.ldapParams.members.role.values ?? {})))
     }
@@ -293,6 +296,20 @@ export class LdapStorage implements SdStorage {
             .find(role => !!ldapRoles.find((ldapRole: string) => this.ldapParams.members.role.values?.[role].includes(ldapRole)))
         }
       }
+      let department
+      if (this.ldapParams.members.department?.attr) {
+        const ldapDepartment = attrs[this.ldapParams.members.department.attr]
+        if (ldapDepartment) {
+          if (this.ldapParams.members.department.captureRegexp) {
+            const match = ldapDepartment[0].match(new RegExp(this.ldapParams.members.department.captureRegexp))
+            if (match) {
+              department = match[1]
+            }
+          } else {
+            department = ldapDepartment[0]
+          }
+        }
+      }
       let overwrite
       if ((this.ldapParams.overwrite || []).includes('members')) {
         overwrite = await mongo.ldapMembersOverwrite.findOne({ orgId: org.id, userId: user.id })
@@ -301,7 +318,7 @@ export class LdapStorage implements SdStorage {
         .find(o => (o.orgId === org.id || !o.orgId) && o.email?.toLowerCase() === user.email?.toLowerCase())
 
       role = (overwrite && overwrite.role) || role || this.ldapParams.members.role.default
-      const department = overwrite ? overwrite.department : org.department
+      department = (overwrite && overwrite.department) || department || org.department
       user.organizations = [{ ...org, role, department }]
     }
   }
@@ -310,6 +327,7 @@ export class LdapStorage implements SdStorage {
     debug('search single user', filter)
     const attributes = Object.values(this.ldapParams.users.mapping)
     if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
+    if (this.ldapParams.members.department?.attr) attributes.push(this.ldapParams.members.department.attr)
     return this.withClient<{ user: User, entry: ldap.SearchEntry } | undefined>(async (client) => {
       const res = await this._search<User>(
         client,
@@ -504,16 +522,27 @@ export class LdapStorage implements SdStorage {
       }
       overwrite = overwrite || (this.ldapParams.organizations.overwrite || []).find(o => (o.id === org.id))
       if (overwrite) Object.assign(org, overwrite)
-      org.departments = org.departments || []
     }
     return org as Organization
   }
 
-  async getOrganization (id: string) {
-    return this.withClient(async (client) => {
-      return this._getOrganization(client, id)
-    })
+  async _getOrganizationWithDeps (client: ldap.Client, id: string) {
+    const org = await this._getOrganization(client, id)
+    if (!org) return org
+    if (!org.departments && this.ldapParams.members.department?.attr) {
+      const allMembers = await this.findMembers(org.id, { skip: 0, size: 10000 })
+      const memberDeps = [...new Set(allMembers.results.map(m => m.department).filter(d => !!d))].sort() as string[]
+      org.departments = memberDeps.map(dep => ({ id: dep, name: dep }))
+    }
+    org.departments = org.departments || []
+    return org
   }
+
+  getOrganization = memoize((id: string) => {
+    return this.withClient(async (client) => {
+      return this._getOrganizationWithDeps(client, id)
+    })
+  }, { maxAge: config.storage.ldap.cacheMS })
 
   async findOrganizations (params: FindOrganizationsParams) {
     debug('find orgs', params)
@@ -563,7 +592,7 @@ export class LdapStorage implements SdStorage {
   // WARNING: the following is used only in tests as ldap storage is always readonly
   // except for the overwritten properties stored in mongo
 
-  async _createUser (user: Omit<UserWritable, 'password'> & { password?: string }) {
+  async _createUser (user: Omit<UserWritable, 'password'> & { password?: string }, extraAttrs: Record<string, string> = {}) {
     const entry = this.userMapping.to({ ...user, lastName: user.lastName || 'missing', name: userName(user) })
     if (user.password) entry.userPassword = user.password
     const dn = this.userDN(user)
@@ -572,6 +601,8 @@ export class LdapStorage implements SdStorage {
       const roleValue = roleValues?.[0]
       entry[this.ldapParams.members.role.attr] = roleValue || this.ldapParams.members.role.default
     }
+
+    Object.assign(entry, extraAttrs)
 
     debug('add user to ldap', dn, entry)
     await this.withClient(async (client) => {

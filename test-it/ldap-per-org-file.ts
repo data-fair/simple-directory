@@ -23,14 +23,14 @@ describe('ldap storage per organization in file storage mode', () => {
       firstName: 'Alban',
       lastName: 'Mouton',
       email: 'alban.mouton@koumoul.com',
-      organizations: [{ id: 'test-ldap', role: 'admin', name: 'test ldap' }]
-    })
+      organizations: []
+    }, { employeeType: 'administrator', departmentNumber: '/prefix/2/dep1' })
     await storage._createUser({
       id: 'alban2',
       firstName: 'Alban',
       lastName: '',
       email: 'alban.mouton@gmail.com',
-      organizations: [{ id: 'test-ldap', role: 'admin', name: 'test ldap' }]
+      organizations: []
     })
   })
 
@@ -50,10 +50,13 @@ describe('ldap storage per organization in file storage mode', () => {
     res = await ax.get('/api/organizations/test-ldap/members', { params: { org_storage: true } })
     assert.equal(res.status, 200)
     // 1 of the registered was rejected by the extraFilters param
+    const member = res.data.results[0]
     assert.equal(res.data.count, 1)
-    assert.equal(res.data.results[0].email, 'alban.mouton@koumoul.com')
-    assert.equal(res.data.results[0].orgStorage, true)
-    assert.equal(res.data.results[0].id, 'ldap_test-ldap_alban')
+    assert.equal(member.email, 'alban.mouton@koumoul.com')
+    assert.equal(member.orgStorage, true)
+    assert.equal(member.id, 'ldap_test-ldap_alban')
+    assert.equal(member.role, 'admin')
+    assert.equal(member.department, 'dep1')
 
     // TODO: add auth test with user password
   })

@@ -47,6 +47,10 @@ module.exports = {
       searchUserDN: 'cn=admin,dc=example,dc=org',
       searchUserPassword: 'admin',
       members: {
+        // organizations arr the parent DC of their users
+        organizationAsDC: true,
+        // only list users/members with a known role
+        onlyWithRole: false,
         role: {
           attr: 'employeeType',
           values: {
@@ -54,7 +58,14 @@ module.exports = {
             user: []
           },
           default: 'user'
-        }
+        },
+        department: {
+          attr: 'departmentNumber',
+          captureRegexp: '^.*/(.*)$'
+        },
+        // an array of objects that can be used to overwrite member role based on matching "orgId" and "email" properties
+        // leave orgId empty to overwrite role for all organizations of the user
+        overwrite: []
       },
       organizations: {
         staticSingleOrg: { id: 'static-org', name: 'Static Org' }

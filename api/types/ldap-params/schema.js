@@ -112,6 +112,15 @@ export default {
             }
           }
         },
+        department: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['attr'],
+          properties: {
+            attr: { type: 'string' },
+            captureRegexp: { type: 'string' }
+          }
+        },
         overwrite: {
           type: 'array',
           items: { $ref: '#/$defs/memberOverwrite' }
