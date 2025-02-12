@@ -364,6 +364,7 @@ export class LdapStorage implements SdStorage {
     const attributes = Object.values(this.ldapParams.users.mapping)
     if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
     if (this.ldapParams.members.department?.attr) attributes.push(this.ldapParams.members.department.attr)
+    if (this.ldapParams.members.organization?.attr) attributes.push(this.ldapParams.members.organization.attr)
     return this.withClient<{ user: User, entry: ldap.SearchEntry } | undefined>(async (client) => {
       const res = await this._search<User>(
         client,
