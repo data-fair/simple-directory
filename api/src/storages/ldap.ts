@@ -193,6 +193,9 @@ export class LdapStorage implements SdStorage {
     if (this.ldapParams.members.department?.attr) {
       attributes.push(this.ldapParams.members.department.attr)
     }
+    if (this.ldapParams.members.organization?.attr) {
+      attributes.push(this.ldapParams.members.organization.attr)
+    }
     if (this.ldapParams.members.onlyWithRole) {
       extraFilters.push(this._getRoleFilter(Object.keys(this.ldapParams.members.role.values ?? {})))
     }
