@@ -386,16 +386,18 @@ export class LdapStorage implements SdStorage {
       if (overwrite) Object.assign(user, overwrite)
       if (this.org) user.orgStorage = true
       if (withSession) user.sessions = (await mongo.ldapUserSessions.findOne({ _id: user.id }))?.sessions
-      user.isAdmin = config.admins.includes(user.email)
-      if (!user.isAdmin && this.ldapParams.isAdmin?.attr && this.ldapParams.isAdmin?.values?.length) {
-        debug('check if user is admin', user.email, res.fullResults[0].attrs)
-        const values = res.fullResults[0].attrs[this.ldapParams.isAdmin.attr] ?? []
-        for (const value of values) {
-          if (this.ldapParams.isAdmin?.values.includes(value)) user.isAdmin = true
+      if (!this.org) {
+        user.isAdmin = config.admins.includes(user.email)
+        if (!user.isAdmin && this.ldapParams.isAdmin?.attr && this.ldapParams.isAdmin?.values?.length) {
+          debug('check if user is admin', user.email, res.fullResults[0].attrs)
+          const values = res.fullResults[0].attrs[this.ldapParams.isAdmin.attr] ?? []
+          for (const value of values) {
+            if (this.ldapParams.isAdmin?.values.includes(value)) user.isAdmin = true
+          }
         }
-      }
-      if (user.isAdmin && config.adminsOrg) {
-        user.organizations.push({ ...config.adminsOrg, role: 'admin' })
+        if (user.isAdmin && config.adminsOrg) {
+          user.organizations.push({ ...config.adminsOrg, role: 'admin' })
+        }
       }
       if (config.onlyCreateInvited) user.ignorePersonalAccount = true
       return { ...res.fullResults[0], user }
