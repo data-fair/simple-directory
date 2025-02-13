@@ -187,18 +187,11 @@ export class LdapStorage implements SdStorage {
   _getAllUsers = memoize(async (client) => {
     const attributes = Object.values(this.ldapParams.users.mapping)
     const extraFilters: any[] = [...(this.ldapParams.users.extraFilters || [])]
-    if (this.ldapParams.members.role.attr) {
-      attributes.push(this.ldapParams.members.role.attr)
-    }
-    if (this.ldapParams.members.department?.attr) {
-      attributes.push(this.ldapParams.members.department.attr)
-    }
-    if (this.ldapParams.members.organization?.attr) {
-      attributes.push(this.ldapParams.members.organization.attr)
-    }
-    if (this.ldapParams.members.onlyWithRole) {
-      extraFilters.push(this._getRoleFilter(Object.keys(this.ldapParams.members.role.values ?? {})))
-    }
+    if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
+    if (this.ldapParams.members.department?.attr) attributes.push(this.ldapParams.members.department.attr)
+    if (this.ldapParams.members.organization?.attr) attributes.push(this.ldapParams.members.organization.attr)
+    if (this.ldapParams.isAdmin?.attr) attributes.push(this.ldapParams.isAdmin.attr)
+    if (this.ldapParams.members.onlyWithRole) extraFilters.push(this._getRoleFilter(Object.keys(this.ldapParams.members.role.values ?? {})))
     const res = await this._search<User>(
       client,
       this.ldapParams.baseDN,
@@ -365,6 +358,7 @@ export class LdapStorage implements SdStorage {
     if (this.ldapParams.members.role.attr) attributes.push(this.ldapParams.members.role.attr)
     if (this.ldapParams.members.department?.attr) attributes.push(this.ldapParams.members.department.attr)
     if (this.ldapParams.members.organization?.attr) attributes.push(this.ldapParams.members.organization.attr)
+    if (this.ldapParams.isAdmin?.attr) attributes.push(this.ldapParams.isAdmin.attr)
     return this.withClient<{ user: User, entry: ldap.SearchEntry } | undefined>(async (client) => {
       const res = await this._search<User>(
         client,
@@ -383,6 +377,15 @@ export class LdapStorage implements SdStorage {
         user.sessions = (await mongo.ldapUserSessions.findOne({ _id: user.id }))?.sessions
       }
       user.isAdmin = config.admins.includes(user.email)
+      if (!user.isAdmin && this.ldapParams.isAdmin?.attr && this.ldapParams.isAdmin?.values?.length) {
+        debug('check if user is admin', user.email, res.fullResults[0].attrs)
+        const values = res.fullResults[0].attrs[this.ldapParams.isAdmin.attr] ?? []
+        for (const value of values) {
+          if (this.ldapParams.isAdmin?.values.includes(value)) {
+            user.isAdmin = true
+          }
+        }
+      }
       if (config.onlyCreateInvited) user.ignorePersonalAccount = true
       return { ...res.fullResults[0], user }
     })

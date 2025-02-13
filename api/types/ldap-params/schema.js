@@ -135,6 +135,20 @@ export default {
           items: { $ref: '#/$defs/memberOverwrite' }
         }
       }
+    },
+    isAdmin: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['attr', 'values'],
+      properties: {
+        attr: { type: 'string' },
+        values: {
+          type: 'array',
+          items: {
+            type: 'string'
+          }
+        }
+      }
     }
   },
   $defs: {

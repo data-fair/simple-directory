@@ -86,6 +86,10 @@ module.exports = {
           captureRegex: 'STORAGE_LDAP_MEMBERS_DEP_CAPTURE_REGEX',
         },
         overwrite: jsonEnv('STORAGE_LDAP_MEMBERS_OVERWRITE')
+      },
+      isAdmin: {
+        attr: 'STORAGE_LDAP_IS_ADMIN_ATTR',
+        values: jsonEnv('STORAGE_LDAP_IS_ADMIN_VALUES')
       }
     }
   },
