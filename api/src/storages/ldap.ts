@@ -394,6 +394,9 @@ export class LdapStorage implements SdStorage {
           if (this.ldapParams.isAdmin?.values.includes(value)) user.isAdmin = true
         }
       }
+      if (user.isAdmin && config.adminsOrg) {
+        user.organizations.push({ ...config.adminsOrg, role: 'admin' })
+      }
       if (config.onlyCreateInvited) user.ignorePersonalAccount = true
       return { ...res.fullResults[0], user }
     })
