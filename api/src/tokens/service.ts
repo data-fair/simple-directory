@@ -114,7 +114,14 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
   const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
   if (serverSessionId !== null) {
     const existingExchangeToken = cookies.get('id_token_ex')
-    const existingServerSessionInfo = existingExchangeToken && ((await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined)
+    let existingServerSessionInfo: SessionInfoPayload | undefined
+    if (existingExchangeToken) {
+      try {
+        existingServerSessionInfo = (await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined
+      } catch (err) {
+        // ignore an old invalid exchange token
+      }
+    }
     if (existingServerSessionInfo && existingServerSessionInfo.session !== serverSessionId) {
       // case of a session where id_token was cleared but id_token_ex persisted, this server sessions is deprecated and can be cleared
       await storages.deleteSessionById(existingServerSessionInfo.session)
@@ -160,7 +167,16 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   const idTokenDep = cookies.get('id_token_dep')
 
   const exchangeToken = cookies.get('id_token_ex')
-  const serverSessionInfo = exchangeToken ? ((await session.verifyToken(exchangeToken)) as SessionInfoPayload | undefined) : null
+  let serverSessionInfo: SessionInfoPayload | undefined
+  if (exchangeToken) {
+    try {
+      serverSessionInfo = await session.verifyToken(exchangeToken) as SessionInfoPayload | undefined
+    } catch (err) {
+      await logout(req, res)
+      eventsLog.info('sd.auth.keepalive.fail', 'a user with a broken echange token tried to prolongate a session', logContext)
+      throw httpError(401, 'Informations de session erronées')
+    }
+  }
   if (!serverSessionInfo) {
     // accept tokens signed by a key before the introduction of the exchange token (kid=simple-directory)
     // const payload = decodeToken(cookies.get('id_token'))
@@ -190,7 +206,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
       }
     }
   } else {
-    if (serverSessionInfo) {
+    if (serverSessionInfo && user.id !== '_superadmin') {
       if (serverSessionInfo.user !== user.id) {
         await logout(req, res)
         eventsLog.info('sd.auth.keepalive.fail', 'a user with another user\'s exchange token tried to prolongate a session', logContext)
