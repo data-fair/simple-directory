@@ -545,14 +545,18 @@ export class LdapStorage implements SdStorage {
         org = this.ldapParams.organizations.staticSingleOrg
       }
     } else {
-      const res = await this._search<Organization>(
-        client,
-        this.ldapParams.baseDN,
-        this.orgMapping.filter({ id }, this.ldapParams.organizations.objectClass, this.ldapParams.organizations.extraFilters),
-        Object.values(this.ldapParams.organizations.mapping),
-        this.orgMapping.from
-      )
-      org = res.results[0]
+      if (!this.org && config.adminsOrg && config.adminsOrg.id === id) {
+        org = { ...config.adminsOrg, departments: [] }
+      } else {
+        const res = await this._search<Organization>(
+          client,
+          this.ldapParams.baseDN,
+          this.orgMapping.filter({ id }, this.ldapParams.organizations.objectClass, this.ldapParams.organizations.extraFilters),
+          Object.values(this.ldapParams.organizations.mapping),
+          this.orgMapping.from
+        )
+        org = res.results[0]
+      }
     }
     if (org) {
       let overwrite
@@ -600,8 +604,14 @@ export class LdapStorage implements SdStorage {
         Object.values(this.ldapParams.organizations.mapping),
         this.orgMapping.from
       )
-      res.results.sort(sortCompare(params.sort))
-      return { count: res.count, results: res.results }
+      const results = res.results
+      let count = res.count
+      if (!this.org && config.adminsOrg) {
+        results.push({ ...config.adminsOrg, departments: [] })
+        count += 1
+      }
+      results.sort(sortCompare(params.sort))
+      return { count, results }
     })
   }
 
