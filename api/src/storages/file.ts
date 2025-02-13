@@ -242,12 +242,12 @@ class FileStorage implements SdStorage {
     throw new Error('Method not implemented.')
   }
 
-  findInactiveUsers (): Promise<User[]> {
-    throw new Error('Method not implemented.')
+  async findInactiveUsers () {
+    return []
   }
 
-  findUsersToDelete (): Promise<User[]> {
-    throw new Error('Method not implemented.')
+  async findUsersToDelete () {
+    return []
   }
 
   createOrganization (org: OrganizationPost, user: UserRef): Promise<Organization> {
