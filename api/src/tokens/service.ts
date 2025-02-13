@@ -206,7 +206,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
       }
     }
   } else {
-    if (serverSessionInfo) {
+    if (serverSessionInfo && user.id !== '_superadmin') {
       if (serverSessionInfo.user !== user.id) {
         await logout(req, res)
         eventsLog.info('sd.auth.keepalive.fail', 'a user with another user\'s exchange token tried to prolongate a session', logContext)
