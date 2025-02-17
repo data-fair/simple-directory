@@ -1,5 +1,5 @@
 ##########################
-FROM node:22.13.1-alpine3.21 AS base
+FROM node:22.14.0-alpine3.21 AS base
 
 RUN npm install -g npm@11.1.0
 
