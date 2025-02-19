@@ -1,21 +1,48 @@
 import useragent from 'useragent'
+import debugModule from 'debug'
 import config from '#config'
 import type { Request } from 'express'
-import type { Site, User, Organization, ServerSession } from '#types'
-import { type OAuthProvider } from '../oauth/service.ts'
+import { session, httpError } from '@data-fair/lib-express'
+import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import type { Site, User, Organization, ServerSession, UserWritable } from '#types'
 import storages from '#storages'
+import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
+import type { CreateMember, MemberRole } from '#types/site/index.ts'
+import { getOrgLimits, getRedirectSite, getTokenPayload, prepareCallbackUrl, reqSite, setNbMembersLimit, unshortenInvit } from '#services'
+import { __all, reqI18n } from '#i18n'
 
-type OAuthMemberInfo = { create: boolean, org?: Organization, readOnly: boolean, role: string }
+const debugAuthProvider = debugModule('auth-provider')
 
-export const authCoreProviderMemberInfo = async (site: Site | undefined, provider: OAuthProvider, email: string, oauthInfo: any): Promise<OAuthMemberInfo> => {
+type AuthProviderMemberInfo = { create: boolean, org?: Organization, readOnly: boolean, role: string }
+
+type AuthProvider = {
+  id: string,
+  type: 'saml2' | 'oidc' | 'oauth',
+  createMember?: CreateMember,
+  memberRole?: MemberRole,
+  coreIdProvider?: boolean
+}
+
+type AuthProviderRef = Pick<AuthProvider, 'id' | 'type'>
+
+type AuthProviderUserAttrs = { email: string, name?: string, firstName?: string, lastName?: string, avatarUrl?: string, coreIdProvider?: AuthProviderRef }
+
+type AuthProviderAuthInfo = {
+  data: any,
+  user: AuthProviderUserAttrs,
+  logged?: string,
+  coreId?: boolean
+}
+
+export const authProviderMemberInfo = async (site: Site | undefined, provider: AuthProvider, authInfo: AuthProviderAuthInfo): Promise<AuthProviderMemberInfo> => {
   let create = false
   if ((provider.createMember as unknown as boolean) === true) {
     // retro-compatibility for when createMember was a boolean
     create = true
   } else if (provider.createMember && provider.createMember.type === 'always') {
     create = true
-  } else if (provider.createMember && provider.createMember.type === 'emailDomain' && email.endsWith(`@${provider.createMember.emailDomain}`)) {
+  } else if (provider.createMember && provider.createMember.type === 'emailDomain' && authInfo.user.email.endsWith(`@${provider.createMember.emailDomain}`)) {
     create = true
   }
 
@@ -36,27 +63,158 @@ export const authCoreProviderMemberInfo = async (site: Site | undefined, provide
     role = provider.memberRole.role
   }
   if (provider.memberRole?.type === 'attribute') {
-    role = oauthInfo.data[provider.memberRole.attribute]
+    role = authInfo.data[provider.memberRole.attribute]
   }
 
   return { create, org, readOnly, role }
 }
 
-export const patchCoreOAuthUser = async (provider: OAuthProvider, user: User, oauthInfo: any, memberInfo: OAuthMemberInfo) => {
-  const providerType = (provider.type || 'oauth') as 'oidc' | 'oauth'
-  if (provider.coreIdProvider) {
-    oauthInfo.coreId = true
-    oauthInfo.user.coreIdProvider = { type: providerType, id: provider.id }
+export const authProviderLoginCallback = async (
+  req: Request,
+  invitToken: string,
+  authInfo: AuthProviderAuthInfo,
+  logContext: EventLogContext,
+  provider: AuthProvider,
+  redirect: string,
+  org: string,
+  dep: string,
+  adminMode: boolean
+): Promise<[string, User]> => {
+  const storage = storages.globalStorage
+  const site = await reqSite(req)
+  authInfo = { ...authInfo, logged: new Date().toISOString() }
+
+  // used to create a user and accept a member invitation at the same time
+  // if the invitation is not valid, better not to proceed with the user creation
+  let invit, invitOrga
+  if (invitToken) {
+    try {
+      invit = unshortenInvit(await session.verifyToken(invitToken))
+      eventsLog.info('sd.auth.provider.invit', `a user was invited to join an organization ${invit.id}`, logContext)
+    } catch (err: any) {
+      throw httpError(400, err.name === 'TokenExpiredError' ? 'expiredInvitationToken' : 'invalidInvitationToken')
+    }
+    invitOrga = await storage.getOrganization(invit.id)
+    if (!invitOrga) throw httpError(400, 'orgaUnknown')
+    if (invit.email !== authInfo.user.email) throw httpError(400, 'badProviderInvitEmail')
   }
-  const existingOAuthInfo = user[providerType]?.[provider.id] as any
+
+  // check for user with same email
+  let user = await storage.getUserByEmail(authInfo.user.email, site)
+  logContext.user = user
+
+  if (!user && !invit && config.onlyCreateInvited && !provider.coreIdProvider) {
+    throw httpError(400, 'onlyCreateInvited')
+  }
+  if (!user && storage.readonly) {
+    throw httpError(403, 'userUnknown')
+  }
+
+  // Re-create a user that was never validated.. first clean temporary user
+  if (user && user.emailConfirmed === false) {
+    if (user.organizations && invit) {
+      // This user was created empty from an invitation in 'alwaysAcceptInvitations' mode
+    } else {
+      eventsLog.info('sd.auth.provider.del-temp-user', `a temporary user was deleted in oauth callback ${user.id}`, logContext)
+      await storage.deleteUser(user.id)
+      user = undefined
+    }
+  }
+
+  const memberInfo = await authProviderMemberInfo(site, provider, authInfo)
+
+  if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
+
+  if (!user) {
+    const newUser: UserWritable = {
+      ...authInfo.user,
+      id: nanoid(),
+      emailConfirmed: true,
+      [provider.type]: {
+        [provider.id]: { ...authInfo, coreId: provider.coreIdProvider ? true : undefined }
+      },
+      coreIdProvider: provider.coreIdProvider ? { type: provider.type, id: provider.id } : undefined,
+      organizations: []
+    }
+    if (site) {
+      if (['onlyBackOffice', 'onlyOtherSites', undefined].includes(site.authMode)) {
+        throw httpError(400, 'Cannot create a user on a secondary site')
+      }
+      newUser.host = site.host
+    }
+    if (invit && invitOrga) {
+      newUser.defaultOrg = invitOrga.id
+      newUser.ignorePersonalAccount = true
+    } else if (memberInfo.create && memberInfo.org) {
+      newUser.defaultOrg = memberInfo.org.id
+      newUser.ignorePersonalAccount = true
+    }
+    debugAuthProvider('Create user authenticated through oauth', user)
+    logContext.user = user
+    eventsLog.info('sd.auth.provider.create-user', `a user was created in oauth callback ${newUser.id}`, logContext)
+    const redirectSite = await getRedirectSite(req, redirect)
+    user = await storage.createUser(newUser, undefined, redirectSite)
+
+    if (memberInfo.create && memberInfo.org) {
+      logContext.account = { type: 'organization', ...memberInfo.org }
+      eventsLog.info('sd.auth.provider.create-member', `a user was added as a member in oauth callback ${user.id} / ${memberInfo.role}`, logContext)
+      await storage.addMember(memberInfo.org, user, memberInfo.role, null, memberInfo.readOnly)
+    }
+  } else {
+    if (user.coreIdProvider && (user.coreIdProvider.type !== (provider.type || 'oauth') || user.coreIdProvider.id !== provider.id)) {
+      throw httpError(400, 'Utilisateur déjà lié à un autre fournisseur d\'identité principale')
+    }
+    debugAuthProvider('Existing user authenticated through oauth', user, authInfo)
+    await patchCoreOAuthUser(provider, user, authInfo, memberInfo)
+  }
+
+  if (invit && invitOrga && !config.alwaysAcceptInvitation) {
+    const limits = await getOrgLimits(invitOrga)
+    if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+      throw httpError(400, reqI18n(req).messages.errors.maxNbMembers)
+    }
+
+    await storage.addMember(invitOrga, user, invit.role, invit.department)
+    eventsLog.info('sd.auth.provider.accept-invite', `a user accepted an invitation in oauth callback ${user.id}`, logContext)
+    eventsQueue?.pushEvent({
+      sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
+      topic: { key: 'simple-directory:invitation-accepted' },
+      title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
+    })
+    await setNbMembersLimit(invitOrga.id)
+  }
+
+  const payload = getTokenPayload(user)
+  if (adminMode) {
+    // TODO: also check that the user actually inputted the password on this redirect
+    if (payload.isAdmin) payload.adminMode = 1
+    else {
+      eventsLog.alert('sd.auth.oauth.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
+      throw httpError(403, 'adminModeOnly')
+    }
+  }
+  const linkUrl = await prepareCallbackUrl(req, payload, redirect, (invit && invitOrga)
+    ? { id: invit.id, department: invit.department }
+    : { id: org as string, department: dep as string })
+  debugAuthProvider(`Auth provider based authentication of user ${user.name}`)
+
+  return [linkUrl.href, user]
+}
+
+export const patchCoreOAuthUser = async (provider: AuthProvider, user: User, authInfo: AuthProviderAuthInfo, memberInfo: AuthProviderMemberInfo) => {
+  if (provider.coreIdProvider) {
+    authInfo.coreId = true
+    authInfo.user.coreIdProvider = { type: provider.type, id: provider.id }
+  }
+  const existingAuthInfo = user[provider.type]?.[provider.id] as any
   const patch: Partial<User> = {
-    [providerType]: { ...user[providerType] },
+    [provider.type]: { ...user[provider.type] },
     emailConfirmed: true
   }
-  const userProviders = patch[providerType] = patch[providerType as 'oidc' | 'oauth'] ?? {}
-  userProviders[provider.id] = { ...existingOAuthInfo, ...oauthInfo }
+  const userProviders = patch[provider.type] = patch[provider.type] ?? {}
+  userProviders[provider.id] = { ...existingAuthInfo, ...authInfo }
   if (provider.coreIdProvider) {
-    Object.assign(patch, oauthInfo.user)
+    Object.assign(patch, authInfo.user)
     if (!memberInfo.readOnly && memberInfo.org) {
       if (memberInfo.create) {
         patch.defaultOrg = memberInfo.org.id
@@ -67,8 +225,8 @@ export const patchCoreOAuthUser = async (provider: OAuthProvider, user: User, oa
       }
     }
   } else {
-    if (oauthInfo.user.firstName && !user.firstName) patch.firstName = oauthInfo.user.firstName
-    if (oauthInfo.user.lastName && !user.lastName) patch.lastName = oauthInfo.user.lastName
+    if (authInfo.user.firstName && !user.firstName) patch.firstName = authInfo.user.firstName
+    if (authInfo.user.lastName && !user.lastName) patch.lastName = authInfo.user.lastName
   }
   return await storages.globalStorage.patchUser(user.id, patch)
 }

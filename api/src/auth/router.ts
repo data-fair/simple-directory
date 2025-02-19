@@ -1,22 +1,22 @@
 import config, { superadmin } from '#config'
 import { Router, type RequestHandler } from 'express'
 import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError } from '@data-fair/lib-express'
-import eventsQueue from '#events-queue'
 import bodyParser from 'body-parser'
-import { nanoid } from 'nanoid'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authCoreProviderMemberInfo, patchCoreOAuthUser, unshortenInvit, getOrgLimits, setNbMembersLimit, getSamlProviderId, saml2GlobalProviders, saml2ServiceProvider, initServerSession, getRedirectSite, getSamlProviderById } from '#services'
+import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreOAuthUser, getSamlProviderId, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
-import type { ActionPayload, ServerSession, User, UserWritable } from '#types'
+import type { ActionPayload, ServerSession, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import emailValidator from 'email-validator'
-import { reqI18n, __all } from '#i18n'
+import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
 import { checkPassword, type Password } from '../utils/passwords.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
+import { type OAuthRelayState } from '../oauth/service.ts'
+import type { PreparedSaml2Provider, Saml2RelayState } from '../saml2/service.ts'
 
 const debug = Debug('auth')
 
@@ -462,7 +462,7 @@ router.post('/keepalive', async (req, res, next) => {
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
         const userInfo = await provider.userInfo(newToken.access_token)
-        const memberInfo = await authCoreProviderMemberInfo(await reqSite(req), provider, user.email, userInfo)
+        const memberInfo = await authProviderMemberInfo(await reqSite(req), provider, userInfo)
         user = await patchCoreOAuthUser(provider, user, userInfo, memberInfo)
         await writeOAuthToken(user, provider, newToken, offlineRefreshToken)
         eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
@@ -597,14 +597,14 @@ const oauthLogin: RequestHandler = async (req, res, next) => {
     eventsLog.info('sd.auth.oauth.fail', 'a user tried to login with an unknown oauth provider', logContext)
     return res.redirect(`${reqSiteUrl(req) + '/simple-directory'}/login?error=unknownOAuthProvider`)
   }
-  const relayState = [
+  const relayState: OAuthRelayState = [
     provider.state,
-    req.headers.referer,
+    req.headers.referer || '',
     (req.query.redirect as string || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
-    req.query.org || '',
-    req.query.dep || '',
-    req.query.invit_token || '',
-    req.query.adminMode || '' // TODO: force re-submit password in this case ?
+    (req.query.org || '') as string,
+    (req.query.dep || '') as string,
+    (req.query.invit_token || '') as string,
+    (req.query.adminMode || '') as string // TODO: force re-submit password in this case ?
   ]
   const authorizationUri = provider.authorizationUri(relayState, req.query.email as string, provider.coreIdProvider, req.query.adminMode === 'true')
   debugOAuth('login authorizationUri', authorizationUri)
@@ -617,16 +617,14 @@ router.get('/oidc/:oauthId/login', oauthLogin)
 
 const oauthCallback: RequestHandler = async (req, res, next) => {
   const logContext: EventLogContext = { req }
-  const site = await reqSite(req)
 
-  const storage = storages.globalStorage
   debugOAuth('oauth login callback')
 
   if (!req.query.state) {
     console.error('missing OAuth state')
     throw new Error('Bad OAuth state')
   }
-  const [providerState, loginReferer, redirect, org, dep, invitToken, adminMode] = JSON.parse(req.query.state as string)
+  const [providerState, loginReferer, redirect, org, dep, invitToken, adminMode] = JSON.parse(req.query.state as string) as OAuthRelayState
 
   const returnError = (error: string, errorCode: number) => {
     eventsLog.info('sd.auth.oauth.fail', `a user failed to authenticate with oauth due to ${error}`, logContext)
@@ -652,134 +650,23 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   const { token, offlineRefreshToken } = await provider.getToken(req.query.code as string, provider.coreIdProvider)
   const accessToken = token.access_token
 
-  const userInfo = await provider.userInfo(accessToken)
+  const authInfo = await provider.userInfo(accessToken)
 
-  if (!userInfo.user.email) {
-    console.error('Email attribute not fetched from OAuth', provider.id, userInfo)
+  if (!authInfo.user.email) {
+    console.error('Email attribute not fetched from OAuth', provider.id, authInfo)
     throw new Error('Email manquant dans les attributs de l\'utilisateur.')
   }
-  debugOAuth('Got user info from oauth', provider.id, userInfo)
+  debugOAuth('Got user info from oauth', provider.id, authInfo)
 
-  const oauthInfo = { ...userInfo, logged: new Date().toISOString() }
-
-  // used to create a user and accept a member invitation at the same time
-  // if the invitation is not valid, better not to proceed with the user creation
-  let invit, invitOrga
-  if (invitToken) {
-    try {
-      invit = unshortenInvit(await session.verifyToken(invitToken))
-      eventsLog.info('sd.auth.oauth.invit', `a user was invited to join an organization ${invit.id}`, logContext)
-    } catch (err: any) {
-      return returnError(err.name === 'TokenExpiredError' ? 'expiredInvitationToken' : 'invalidInvitationToken', 400)
+  try {
+    const [callbackUrl, user] = await authProviderLoginCallback(req, invitToken, authInfo, logContext, provider, redirect, org, dep, !!adminMode)
+    if (provider.coreIdProvider) {
+      await writeOAuthToken(user, provider, token, offlineRefreshToken)
     }
-    invitOrga = await storage.getOrganization(invit.id)
-    if (!invitOrga) return returnError('orgaUnknown', 400)
-    if (invit.email !== userInfo.user.email) return returnError('badProviderInvitEmail', 400)
+    res.redirect(callbackUrl)
+  } catch (err : any) {
+    return returnError(err.message as string, err.code || 500)
   }
-
-  // check for user with same email
-  let user = await storage.getUserByEmail(userInfo.user.email, site)
-  logContext.user = user
-
-  if (!user && !invit && config.onlyCreateInvited && !provider.coreIdProvider) {
-    return returnError('onlyCreateInvited', 400)
-  }
-  if (!user && storage.readonly) {
-    return returnError('userUnknown', 403)
-  }
-
-  // Re-create a user that was never validated.. first clean temporary user
-  if (user && user.emailConfirmed === false) {
-    if (user.organizations && invit) {
-      // This user was created empty from an invitation in 'alwaysAcceptInvitations' mode
-    } else {
-      eventsLog.info('sd.auth.oauth.del-temp-user', `a temporary user was deleted in oauth callback ${user.id}`, logContext)
-      await storage.deleteUser(user.id)
-      user = undefined
-    }
-  }
-
-  const memberInfo = await authCoreProviderMemberInfo(site, provider, userInfo.user.email, oauthInfo)
-
-  if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
-
-  if (!user) {
-    const newUser: UserWritable = {
-      ...userInfo.user,
-      id: nanoid(),
-      emailConfirmed: true,
-      [provider.type || 'oauth']: {
-        [provider.id]: { ...oauthInfo, coreId: provider.coreIdProvider ? true : undefined }
-      },
-      coreIdProvider: provider.coreIdProvider ? { type: provider.type || 'oauth', id: provider.id } : undefined,
-      organizations: []
-    }
-    if (site) {
-      if (['onlyBackOffice', 'onlyOtherSites', undefined].includes(site.authMode)) {
-        throw httpError(400, 'Cannot create a user on a secondary site')
-      }
-      newUser.host = site.host
-    }
-    if (invit && invitOrga) {
-      newUser.defaultOrg = invitOrga.id
-      newUser.ignorePersonalAccount = true
-    } else if (memberInfo.create && memberInfo.org) {
-      newUser.defaultOrg = memberInfo.org.id
-      newUser.ignorePersonalAccount = true
-    }
-    debugOAuth('Create user authenticated through oauth', user)
-    logContext.user = user
-    eventsLog.info('sd.auth.oauth.create-user', `a user was created in oauth callback ${newUser.id}`, logContext)
-    const redirectSite = await getRedirectSite(req, redirect)
-    user = await storage.createUser(newUser, undefined, redirectSite)
-
-    if (memberInfo.create && memberInfo.org) {
-      logContext.account = { type: 'organization', ...memberInfo.org }
-      eventsLog.info('sd.auth.oauth.create-member', `a user was added as a member in oauth callback ${user.id} / ${memberInfo.role}`, logContext)
-      await storage.addMember(memberInfo.org, user, memberInfo.role, null, memberInfo.readOnly)
-    }
-  } else {
-    if (user.coreIdProvider && (user.coreIdProvider.type !== (provider.type || 'oauth') || user.coreIdProvider.id !== provider.id)) {
-      return res.status(400).send('Utilisateur déjà lié à un autre fournisseur d\'identité principale')
-    }
-    debugOAuth('Existing user authenticated through oauth', user, userInfo)
-    await patchCoreOAuthUser(provider, user, oauthInfo, memberInfo)
-  }
-
-  if (invit && invitOrga && !config.alwaysAcceptInvitation) {
-    const limits = await getOrgLimits(invitOrga)
-    if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
-      return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
-    }
-
-    await storage.addMember(invitOrga, user, invit.role, invit.department)
-    eventsLog.info('sd.auth.oauth.accept-invite', `a user accepted an invitation in oauth callback ${user.id}`, logContext)
-    eventsQueue?.pushEvent({
-      sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
-      topic: { key: 'simple-directory:invitation-accepted' },
-      title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
-    })
-    await setNbMembersLimit(invitOrga.id)
-  }
-
-  if (provider.coreIdProvider) {
-    await writeOAuthToken(user, provider, token, offlineRefreshToken)
-  }
-
-  const payload = getTokenPayload(user)
-  if (adminMode) {
-    // TODO: also check that the user actually inputted the password on this redirect
-    if (payload.isAdmin) payload.adminMode = 1
-    else {
-      eventsLog.alert('sd.auth.oauth.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
-      return returnError('adminModeOnly', 403)
-    }
-  }
-  const linkUrl = await prepareCallbackUrl(req, payload, redirect, (invit && invitOrga)
-    ? { id: invit.id, department: invit.department }
-    : { id: org as string, department: dep as string })
-  debugOAuth(`OAuth based authentication of user ${user.name}`)
-  res.redirect(linkUrl.href)
 }
 
 // kept for retro-compatibility
@@ -820,12 +707,13 @@ router.get('/saml2/:providerId/login', async (req, res) => {
   }
 
   // relay_state is used to remember some information about the login attempt
-  const relayState = [
-    req.headers.referer,
+  const relayState: Saml2RelayState = [
+    req.headers.referer || '',
     (req.query.redirect as string || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
-    req.query.org || '',
-    req.query.invit_token || '',
-    req.query.adminMode || '' // TODO: force re-submit password in this case ?
+    (req.query.org || '') as string,
+    (req.query.dep || '') as string,
+    (req.query.invit_token || '') as string,
+    (req.query.adminMode || '') as string // TODO: force re-submit password in this case ?
   ]
   // relay state should be a request level parameter but it is not in current version of samlify
   // cf https://github.com/tngan/samlify/issues/163
@@ -846,17 +734,13 @@ router.get('/saml2/:providerId/login', async (req, res) => {
 router.post('/saml2-assert', async (req, res) => {
   const logContext: EventLogContext = { req }
 
-  const site = await reqSite(req)
-  const storage = storages.globalStorage
-  const providers = saml2GlobalProviders()
   const sp = await saml2ServiceProvider(await reqSite(req))
 
-  let provider
+  let provider: PreparedSaml2Provider | undefined
   const referer = (req.headers.referer || req.headers.referrer) as string | undefined
-  if (!referer && providers.length === 1) provider = providers[0]
-  else if (referer) {
+  if (referer) {
     const providerId = getSamlProviderId(referer)
-    provider = providers.find(p => p.id === providerId)
+    provider = await getSamlProviderById(req, providerId)
   }
 
   if (!provider) return res.status(404).send('unknown saml2 provider')
@@ -865,7 +749,7 @@ router.post('/saml2-assert', async (req, res) => {
   const samlResponse = await sp.parseLoginResponse(provider.idp, 'post', req)
   debugSAML('login success', JSON.stringify(samlResponse.extract, null, 2))
 
-  const [loginReferer, redirect, org, invitToken, adminMode] = JSON.parse(req.body.RelayState)
+  const [loginReferer, redirect, org, dep, invitToken, adminMode] = JSON.parse(req.body.RelayState) as Saml2RelayState
 
   const returnError = (error: string, errorCode: number) => {
     eventsLog.info('sd.auth.saml.fail', `a user failed to authenticate with saml due to ${error}`, logContext)
@@ -883,46 +767,28 @@ router.post('/saml2-assert', async (req, res) => {
   if (!email) {
     console.error('Email attribute not fetched from SAML', provider.id, samlResponse.extract.attributes)
     eventsLog.info('sd.auth.saml.fail', 'a user failed to authenticate with saml due to missing email', logContext)
-    throw new Error('Email attribute not fetched from OAuth')
+    throw new Error('Email attribute not fetched from SAML')
   }
   debugSAML('Got user info from saml', provider.id, samlResponse.extract.attributes)
 
+  const userAttrs = {
+    email,
+    firstName: samlResponse.extract.attributes.firstName as string | undefined,
+    lastName: samlResponse.extract.attributes.lastName as string | undefined
+  }
+  const authInfo = {
+    data: samlResponse.extract.attributes,
+    user: userAttrs
+  }
+
+  try {
+    const [callbackUrl] = await authProviderLoginCallback(req, invitToken, authInfo, logContext, provider, redirect, org, dep, !!adminMode)
+    res.redirect(callbackUrl)
+  } catch (err : any) {
+    return returnError(err.message as string, err.code || 500)
+  }
+  /*
   const samlInfo = { ...samlResponse.extract.attributes, logged: new Date().toISOString() }
-
-  // used to create a user and accept a member invitation at the same time
-  // if the invitation is not valid, better not to proceed with the user creation
-  let invit, invitOrga
-  if (invitToken) {
-    try {
-      invit = unshortenInvit(await session.verifyToken(invitToken))
-    } catch (err: any) {
-      return returnError(err.name === 'TokenExpiredError' ? 'expiredInvitationToken' : 'invalidInvitationToken', 400)
-    }
-    invitOrga = await storage.getOrganization(invit.id)
-    if (!invitOrga) return returnError('orgaUnknown', 400)
-    if (invit.email !== email) return returnError('badProviderInvitEmail', 400)
-  }
-
-  // check for user with same email
-  let user = await storage.getUserByEmail(email, site)
-
-  if (!user && !invit && config.onlyCreateInvited && !provider.coreIdProvider) {
-    return returnError('onlyCreateInvited', 400)
-  }
-  if (!user && storage.readonly) {
-    return returnError('userUnknown', 403)
-  }
-
-  // Re-create a user that was never validated.. first clean temporary user
-  if (user && user.emailConfirmed === false) {
-    if (user.organizations && invit) {
-      // This user was created empty from an invitation in 'alwaysAcceptInvitations' mode
-    } else {
-      eventsLog.info('sd.auth.saml.del-temp-user', `a temporary user was deleted in saml callback ${user.id}`, logContext)
-      await storage.deleteUser(user.id)
-      user = undefined
-    }
-  }
 
   if (!user) {
     const newUser: UserWritable = {
@@ -995,6 +861,7 @@ router.post('/saml2-assert', async (req, res) => {
   // Note:  In practice these should be saved in the user session, not globally.
   // name_id = saml_response.user.name_id;
   // session_index = saml_response.user.session_index;
+  */
 })
 
 // logout not implemented
