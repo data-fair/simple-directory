@@ -64,7 +64,7 @@ const task = async () => {
           const refreshedToken = await provider.refreshToken(token.token, false)
           const { newToken, offlineRefreshToken } = refreshedToken
           const userInfo = await provider.userInfo(newToken.access_token)
-          const memberInfo = await authProviderMemberInfo(undefined, provider, user.email, userInfo)
+          const memberInfo = await authProviderMemberInfo(undefined, provider, userInfo)
           await patchCoreOAuthUser(provider, user, userInfo, memberInfo)
           await writeOAuthToken(user, provider, newToken, offlineRefreshToken, token.loggedOut)
           eventsLog.info('sd.cleanup-cron.offline-token.refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { user })

@@ -10,7 +10,6 @@ import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
 import type { CreateMember, MemberRole } from '#types/site/index.ts'
 import { getOrgLimits, getRedirectSite, getTokenPayload, prepareCallbackUrl, reqSite, setNbMembersLimit, unshortenInvit } from '#services'
-import type { OAuthUserInfo } from '../oauth/service.ts'
 import { __all, reqI18n } from '#i18n'
 
 const debugAuthProvider = debugModule('auth-provider')
@@ -25,14 +24,25 @@ type AuthProvider = {
   coreIdProvider?: boolean
 }
 
-export const authProviderMemberInfo = async (site: Site | undefined, provider: AuthProvider, email: string, oauthInfo: any): Promise<AuthProviderMemberInfo> => {
+type AuthProviderRef = Pick<AuthProvider, 'id' | 'type'>
+
+type AuthProviderUserAttrs = { email: string, name?: string, firstName?: string, lastName?: string, avatarUrl?: string, coreIdProvider?: AuthProviderRef }
+
+type AuthProviderAuthInfo = {
+  data: any,
+  user: AuthProviderUserAttrs,
+  logged?: string,
+  coreId?: boolean
+}
+
+export const authProviderMemberInfo = async (site: Site | undefined, provider: AuthProvider, authInfo: AuthProviderAuthInfo): Promise<AuthProviderMemberInfo> => {
   let create = false
   if ((provider.createMember as unknown as boolean) === true) {
     // retro-compatibility for when createMember was a boolean
     create = true
   } else if (provider.createMember && provider.createMember.type === 'always') {
     create = true
-  } else if (provider.createMember && provider.createMember.type === 'emailDomain' && email.endsWith(`@${provider.createMember.emailDomain}`)) {
+  } else if (provider.createMember && provider.createMember.type === 'emailDomain' && authInfo.user.email.endsWith(`@${provider.createMember.emailDomain}`)) {
     create = true
   }
 
@@ -53,7 +63,7 @@ export const authProviderMemberInfo = async (site: Site | undefined, provider: A
     role = provider.memberRole.role
   }
   if (provider.memberRole?.type === 'attribute') {
-    role = oauthInfo.data[provider.memberRole.attribute]
+    role = authInfo.data[provider.memberRole.attribute]
   }
 
   return { create, org, readOnly, role }
@@ -62,7 +72,7 @@ export const authProviderMemberInfo = async (site: Site | undefined, provider: A
 export const authProviderLoginCallback = async (
   req: Request,
   invitToken: string,
-  userInfo: OAuthUserInfo,
+  authInfo: AuthProviderAuthInfo,
   logContext: EventLogContext,
   provider: AuthProvider,
   redirect: string,
@@ -72,7 +82,7 @@ export const authProviderLoginCallback = async (
 ): Promise<[string, User]> => {
   const storage = storages.globalStorage
   const site = await reqSite(req)
-  const authInfo = { ...userInfo, logged: new Date().toISOString() }
+  authInfo = { ...authInfo, logged: new Date().toISOString() }
 
   // used to create a user and accept a member invitation at the same time
   // if the invitation is not valid, better not to proceed with the user creation
@@ -86,11 +96,11 @@ export const authProviderLoginCallback = async (
     }
     invitOrga = await storage.getOrganization(invit.id)
     if (!invitOrga) throw httpError(400, 'orgaUnknown')
-    if (invit.email !== userInfo.user.email) throw httpError(400, 'badProviderInvitEmail')
+    if (invit.email !== authInfo.user.email) throw httpError(400, 'badProviderInvitEmail')
   }
 
   // check for user with same email
-  let user = await storage.getUserByEmail(userInfo.user.email, site)
+  let user = await storage.getUserByEmail(authInfo.user.email, site)
   logContext.user = user
 
   if (!user && !invit && config.onlyCreateInvited && !provider.coreIdProvider) {
@@ -111,19 +121,19 @@ export const authProviderLoginCallback = async (
     }
   }
 
-  const memberInfo = await authProviderMemberInfo(site, provider, userInfo.user.email, authInfo)
+  const memberInfo = await authProviderMemberInfo(site, provider, authInfo)
 
   if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
 
   if (!user) {
     const newUser: UserWritable = {
-      ...userInfo.user,
+      ...authInfo.user,
       id: nanoid(),
       emailConfirmed: true,
-      [provider.type || 'oauth']: {
+      [provider.type]: {
         [provider.id]: { ...authInfo, coreId: provider.coreIdProvider ? true : undefined }
       },
-      coreIdProvider: provider.coreIdProvider ? { type: provider.type || 'oauth', id: provider.id } : undefined,
+      coreIdProvider: provider.coreIdProvider ? { type: provider.type, id: provider.id } : undefined,
       organizations: []
     }
     if (site) {
@@ -154,7 +164,7 @@ export const authProviderLoginCallback = async (
     if (user.coreIdProvider && (user.coreIdProvider.type !== (provider.type || 'oauth') || user.coreIdProvider.id !== provider.id)) {
       throw httpError(400, 'Utilisateur déjà lié à un autre fournisseur d\'identité principale')
     }
-    debugAuthProvider('Existing user authenticated through oauth', user, userInfo)
+    debugAuthProvider('Existing user authenticated through oauth', user, authInfo)
     await patchCoreOAuthUser(provider, user, authInfo, memberInfo)
   }
 
@@ -191,21 +201,20 @@ export const authProviderLoginCallback = async (
   return [linkUrl.href, user]
 }
 
-export const patchCoreOAuthUser = async (provider: AuthProvider, user: User, oauthInfo: any, memberInfo: AuthProviderMemberInfo) => {
-  const providerType = (provider.type || 'oauth') as 'oidc' | 'oauth'
+export const patchCoreOAuthUser = async (provider: AuthProvider, user: User, authInfo: AuthProviderAuthInfo, memberInfo: AuthProviderMemberInfo) => {
   if (provider.coreIdProvider) {
-    oauthInfo.coreId = true
-    oauthInfo.user.coreIdProvider = { type: providerType, id: provider.id }
+    authInfo.coreId = true
+    authInfo.user.coreIdProvider = { type: provider.type, id: provider.id }
   }
-  const existingOAuthInfo = user[providerType]?.[provider.id] as any
+  const existingAuthInfo = user[provider.type]?.[provider.id] as any
   const patch: Partial<User> = {
-    [providerType]: { ...user[providerType] },
+    [provider.type]: { ...user[provider.type] },
     emailConfirmed: true
   }
-  const userProviders = patch[providerType] = patch[providerType as 'oidc' | 'oauth'] ?? {}
-  userProviders[provider.id] = { ...existingOAuthInfo, ...oauthInfo }
+  const userProviders = patch[provider.type] = patch[provider.type] ?? {}
+  userProviders[provider.id] = { ...existingAuthInfo, ...authInfo }
   if (provider.coreIdProvider) {
-    Object.assign(patch, oauthInfo.user)
+    Object.assign(patch, authInfo.user)
     if (!memberInfo.readOnly && memberInfo.org) {
       if (memberInfo.create) {
         patch.defaultOrg = memberInfo.org.id
@@ -216,8 +225,8 @@ export const patchCoreOAuthUser = async (provider: AuthProvider, user: User, oau
       }
     }
   } else {
-    if (oauthInfo.user.firstName && !user.firstName) patch.firstName = oauthInfo.user.firstName
-    if (oauthInfo.user.lastName && !user.lastName) patch.lastName = oauthInfo.user.lastName
+    if (authInfo.user.firstName && !user.firstName) patch.firstName = authInfo.user.firstName
+    if (authInfo.user.lastName && !user.lastName) patch.lastName = authInfo.user.lastName
   }
   return await storages.globalStorage.patchUser(user.id, patch)
 }
