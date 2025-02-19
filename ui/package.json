@@ -18,7 +18,7 @@
     "@data-fair/lib-vuetify": "^1.9.1",
     "@intlify/unplugin-vue-i18n": "^5.2.0",
     "@koumoul/v-iframe": "^2.4.4",
-    "@koumoul/vjsf": "^3.8.0",
+    "@koumoul/vjsf": "^3.10.2",
     "@mdi/js": "^7.4.47",
     "@sd/shared": "*",
     "@types/config": "^3.3.5",
