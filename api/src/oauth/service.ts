@@ -25,8 +25,9 @@ export type OAuthUserInfo = {
   url?: string
 }
 
-export type OAuthProvider = Omit<OpenIDConnect, 'discovery'> & {
+export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
   id: string,
+  type: 'oauth' | 'oidc',
   oidc?: boolean,
   title?: string,
   icon?: string,
@@ -46,6 +47,8 @@ export type PreparedOAuthProvider = OAuthProvider & {
   getToken (code: string, offlineAccess?: boolean): Promise<any>
   refreshToken (tokenObj: any, onlyIfExpired: boolean): Promise<any>
 }
+
+export type OAuthRelayState = [string, string, string, string, string, string, string]
 
 export const getOAuthProviderById = async (req: Request, id: string): Promise<PreparedOAuthProvider | undefined> => {
   const site = await reqSite(req)

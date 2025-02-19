@@ -67,6 +67,7 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
   return {
     ...p,
     id,
+    type: 'oidc',
     oidc: true,
     scope: 'openid email profile',
     auth,
