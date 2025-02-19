@@ -21,7 +21,9 @@ const slug = _slug.default
 
 type Certificates = { signing: { privateKey: string, cert: string }, encrypt: { privateKey: string, cert: string } }
 
-type PreparedSaml2Provider = SAML2 & { id: string, idp: samlify.IdentityProviderInstance }
+export type PreparedSaml2Provider = SAML2 & { id: string, type: 'saml2', idp: samlify.IdentityProviderInstance }
+
+export type Saml2RelayState = [string, string, string, string, string, string]
 
 // const validator = require('@authenio/samlify-xsd-schema-validator')
 // samlify.setSchemaValidator(validator)
@@ -41,6 +43,7 @@ export const getSamlProviderById = async (req: Request, id: string): Promise<Pre
     const idp = samlify.IdentityProvider(providerInfo)
     return {
       id,
+      type: 'saml2',
       ...providerInfo,
       idp
     }
@@ -147,6 +150,7 @@ export const init = async () => {
     const id = getSamlProviderId(idp.entityMeta.meta.entityID)
     _globalProviders.push({
       id,
+      type: 'saml2',
       ...providerConfig,
       idp
     })
