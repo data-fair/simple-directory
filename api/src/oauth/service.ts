@@ -159,6 +159,12 @@ export const init = async () => {
     _globalProviders.push(await initOAuthProvider(p))
   }
   for (const oidc of config.oidc.providers) {
+    if (oidc.client.secret.startsWith('env:')) {
+      const envKey = oidc.client.secret.slice(4)
+      const envSecret = process.env[envKey]
+      if (!envSecret) throw new Error(`Missing environment variable ${envKey} for OIDC provider ${oidc.title}`)
+      oidc.client.secret = envSecret
+    }
     _globalProviders.push(await initOAuthProvider(await completeOidcProvider(oidc)))
   }
   initialized = true
