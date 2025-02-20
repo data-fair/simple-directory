@@ -98,92 +98,93 @@ export default {
       },
       type: 'array',
       title: "Fournisseurs d'identité (SSO)",
-      items: {
-        type: 'object',
-        layout: {
-          switch: [{
-            if: 'summary',
-            children: ['title']
-          }]
-        },
-        required: [
-          'title',
-          'type'
-        ],
-        properties: {
-          id: {
-            type: 'string',
-            title: 'Identifiant',
-            readOnly: true
-          },
-          title: {
-            type: 'string',
-            title: 'Nom'
-          }
-        },
-        oneOfLayout: {
-          label: 'Type de fournisseur',
-        },
-        oneOf: [
-          {
-            $ref: '#/$defs/oidcProvider'
-          },
-          {
-            $ref: '#/$defs/saml2Provider'
-          },
-          {
-            type: 'object',
-            title: 'Un autre de vos sites',
-            required: [
-              'site'
-            ],
-            properties: {
-              type: {
-                type: 'string',
-                const: 'otherSite'
-              },
-              site: {
-                type: 'string',
-                title: 'Site',
-                layout: {
-                  getItems: 'context.otherSites'
-                }
-              }
-            }
-          },
-          {
-            type: 'object',
-            title: "Un fournisseur d'identité configuré sur autre de vos sites",
-            required: [
-              'provider'
-            ],
-            properties: {
-              type: {
-                type: 'string',
-                const: 'otherSiteProvider'
-              },
-              site: {
-                type: 'string',
-                title: 'Site',
-                layout: {
-                  getItems: 'context.otherSites'
-                }
-              },
-              provider: {
-                type: 'string',
-                title: 'Fournisseur',
-                layout: {
-                  if: 'parent.data.site',
-                  getItems: 'context.otherSitesProviders[parent.data.site]'
-                }
-              }
-            }
-          }
-        ]
-      }
+      items: { $ref: '#/$defs/authProvider' }
     }
   },
   $defs: {
+    authProvider: {
+      type: 'object',
+      layout: {
+        switch: [{
+          if: 'summary',
+          children: ['title']
+        }]
+      },
+      required: [
+        'title',
+        'type'
+      ],
+      properties: {
+        id: {
+          type: 'string',
+          title: 'Identifiant',
+          readOnly: true
+        },
+        title: {
+          type: 'string',
+          title: 'Nom'
+        }
+      },
+      oneOfLayout: {
+        label: 'Type de fournisseur',
+      },
+      oneOf: [
+        {
+          $ref: '#/$defs/oidcProvider'
+        },
+        {
+          $ref: '#/$defs/saml2Provider'
+        },
+        {
+          type: 'object',
+          title: 'Un autre de vos sites',
+          required: [
+            'site'
+          ],
+          properties: {
+            type: {
+              type: 'string',
+              const: 'otherSite'
+            },
+            site: {
+              type: 'string',
+              title: 'Site',
+              layout: {
+                getItems: 'context.otherSites'
+              }
+            }
+          }
+        },
+        {
+          type: 'object',
+          title: "Un fournisseur d'identité configuré sur autre de vos sites",
+          required: [
+            'provider'
+          ],
+          properties: {
+            type: {
+              type: 'string',
+              const: 'otherSiteProvider'
+            },
+            site: {
+              type: 'string',
+              title: 'Site',
+              layout: {
+                getItems: 'context.otherSites'
+              }
+            },
+            provider: {
+              type: 'string',
+              title: 'Fournisseur',
+              layout: {
+                if: 'parent.data.site',
+                getItems: 'context.otherSitesProviders[parent.data.site]'
+              }
+            }
+          }
+        }
+      ]
+    },
     saml2Provider: {
       type: 'object',
       title: 'SAML 2',
@@ -263,10 +264,10 @@ export default {
               layout: { cols: 6 }
             },
             secret: {
-              type: 'string',
+              type: ['string', 'object'],
               title: 'Secret',
               writeOnly: true,
-              layout: { cols: 6 }
+              layout: { comp: 'text-field', cols: 6 }
             }
           }
         },

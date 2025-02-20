@@ -5,7 +5,7 @@
 import config from '#config'
 import { createHash, randomBytes, createCipheriv, createDecipheriv } from 'node:crypto'
 
-type CipheredContent = { iv: string, alg: 'aes256', data: string }
+export type CipheredContent = { iv: string, alg: 'aes256', data: string }
 
 // the secret key for cipher/decipher is a simple hash of config.cipherPassword
 const hash = createHash('sha256')
