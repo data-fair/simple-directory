@@ -8,7 +8,7 @@ import type { Site, User, Organization, ServerSession, UserWritable } from '#typ
 import storages from '#storages'
 import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
-import type { CreateMember, MemberRole } from '#types/site/index.ts'
+import type { CreateMember, AuthProvider, MemberRole, OpenIDConnect } from '#types/site/index.ts'
 import { getOrgLimits, getRedirectSite, getTokenPayload, prepareCallbackUrl, reqSite, setNbMembersLimit, unshortenInvit } from '#services'
 import { __all, reqI18n } from '#i18n'
 
@@ -16,7 +16,7 @@ const debugAuthProvider = debugModule('auth-provider')
 
 type AuthProviderMemberInfo = { create: boolean, org?: Organization, readOnly: boolean, role: string }
 
-type AuthProvider = {
+type AuthProviderCore = {
   id: string,
   type: 'saml2' | 'oidc' | 'oauth',
   createMember?: CreateMember,
@@ -24,7 +24,7 @@ type AuthProvider = {
   coreIdProvider?: boolean
 }
 
-type AuthProviderRef = Pick<AuthProvider, 'id' | 'type'>
+type AuthProviderRef = Pick<AuthProviderCore, 'id' | 'type'>
 
 type AuthProviderUserAttrs = { email: string, name?: string, firstName?: string, lastName?: string, avatarUrl?: string, coreIdProvider?: AuthProviderRef }
 
@@ -35,7 +35,7 @@ type AuthProviderAuthInfo = {
   coreId?: boolean
 }
 
-export const authProviderMemberInfo = async (site: Site | undefined, provider: AuthProvider, authInfo: AuthProviderAuthInfo): Promise<AuthProviderMemberInfo> => {
+export const authProviderMemberInfo = async (site: Site | undefined, provider: AuthProviderCore, authInfo: AuthProviderAuthInfo): Promise<AuthProviderMemberInfo> => {
   let create = false
   if ((provider.createMember as unknown as boolean) === true) {
     // retro-compatibility for when createMember was a boolean
@@ -74,7 +74,7 @@ export const authProviderLoginCallback = async (
   invitToken: string,
   authInfo: AuthProviderAuthInfo,
   logContext: EventLogContext,
-  provider: AuthProvider,
+  provider: AuthProviderCore,
   redirect: string,
   org: string,
   dep: string,
@@ -201,7 +201,7 @@ export const authProviderLoginCallback = async (
   return [linkUrl.href, user]
 }
 
-export const patchCoreOAuthUser = async (provider: AuthProvider, user: User, authInfo: AuthProviderAuthInfo, memberInfo: AuthProviderMemberInfo) => {
+export const patchCoreOAuthUser = async (provider: AuthProviderCore, user: User, authInfo: AuthProviderAuthInfo, memberInfo: AuthProviderMemberInfo) => {
   if (provider.coreIdProvider) {
     authInfo.coreId = true
     authInfo.user.coreIdProvider = { type: provider.type, id: provider.id }
@@ -239,4 +239,8 @@ export const initServerSession = (req: Request): ServerSession => {
     createdAt: new Date().toISOString(),
     deviceName
   }
+}
+
+export const isOIDCProvider = (provider: AuthProvider): provider is OpenIDConnect => {
+  return provider.type === 'oidc'
 }
