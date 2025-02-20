@@ -55,7 +55,7 @@
           />
         </template>
         <v-alert
-          :value="!!link"
+          v-if="!!link"
           type="warning"
           variant="outlined"
         >
