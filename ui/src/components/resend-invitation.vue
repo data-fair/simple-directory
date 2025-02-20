@@ -5,15 +5,13 @@
   >
     <template #activator="{props}">
       <v-btn
-        icon
+        :icon="mdiSend"
         color="warning"
+        variant="text"
         size="small"
         :title="$t('pages.organization.sendInvitationLink')"
-
         v-bind="props"
-      >
-        <v-icon :icon="mdiSend" />
-      </v-btn>
+      />
     </template>
     <v-card
       v-if="menu"
@@ -98,6 +96,7 @@ const emit = defineEmits({ sent: (_invit: Invitation) => true })
 
 const { sendUiNotif } = useUiNotif()
 const { t } = useI18n()
+const redirect = useStringSearchParam('redirect')
 
 const menu = ref(false)
 const link = ref<string | null>(null)
@@ -107,13 +106,12 @@ const newInvitation = () => {
     name: orga.name,
     email: member.email,
     role: member.role,
-    redirect: reactiveSearchParams.redirect
+    redirect: redirect.value
   }
   if (member.department) invit.department = member.department
   return invit
 }
 const invitation = ref(newInvitation())
-const reactiveSearchParams = useReactiveSearchParams()
 
 watch(menu, () => {
   if (!menu.value) return
