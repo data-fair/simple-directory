@@ -90,6 +90,7 @@ module.exports = {
     deleteInactiveDelay: [1, 'days']
   },
   alwaysAcceptInvitation: true,
+  // invitationRedirect: 'http://localhost:5689/test',
   onlyCreateInvited: false,
   singleMembership: true,
   saml2: {
