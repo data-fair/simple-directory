@@ -735,7 +735,8 @@ router.get('/saml2/:providerId/login', async (req, res) => {
 router.post('/saml2-assert', async (req, res) => {
   const logContext: EventLogContext = { req }
 
-  const [loginReferer, redirect, org, dep, invitToken, adminMode, providerId] = JSON.parse(req.body.RelayState) as Saml2RelayState
+  if (!req.body.RelayState) throw httpError(400, 'missing body.RelayState')
+  const [loginReferer, redirect, org, dep, invitToken, adminMode, providerId] = JSON.parse(req.body.RelayState as string) as Saml2RelayState
 
   const provider = await getSamlProviderById(req, providerId)
   if (!provider) return res.status(404).send('unknown saml2 provider ' + providerId)
