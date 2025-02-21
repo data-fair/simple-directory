@@ -17,6 +17,7 @@ export const uiConfig = {
   anonymousContactForm: config.anonymousContactForm,
   homePage: config.homePage,
   alwaysAcceptInvitation: config.alwaysAcceptInvitation,
+  invitationRedirect: config.invitationRedirect,
   avatars: config.avatars,
   manageDepartments: config.manageDepartments,
   manageDepartmentLabel: config.manageDepartmentLabel,

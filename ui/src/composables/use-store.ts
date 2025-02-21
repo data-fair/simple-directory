@@ -34,13 +34,18 @@ function createStore () {
   const mainRedirect = computed(() => {
     const mainRedirect = reactiveSearchParams.main_redirect || reactiveSearchParams.mainRedirect
     if (!mainRedirect && redirect.value?.startsWith(mainPublicUrl.origin)) return redirect.value
+    if (!mainRedirect && $uiConfig.invitationRedirect) {
+      if ($uiConfig.invitationRedirect.startsWith('/')) return mainPublicUrl.origin + $uiConfig.invitationRedirect
+      return $uiConfig.invitationRedirect
+    }
     return mainRedirect ?? mainPublicUrl.href
   })
 
   const redirects = computed(() => {
     if (!sitesFetch.data.value) return
+    const invitationPath = $uiConfig.invitationRedirect?.startsWith('/') ? $uiConfig.invitationRedirect : '/me/account'
     const redirects: { title: string, value: string }[] = [{ title: mainPublicUrl.host, value: mainRedirect.value }]
-      .concat(sitesFetch.data.value.results.map(site => ({ title: site.host, value: 'https://' + site.host + '/me/account' })))
+      .concat(sitesFetch.data.value.results.map(site => ({ title: site.host, value: 'https://' + site.host + invitationPath })))
     if (mainPublicUrl.host !== host && !sitesFetch.data.value.results.find(site => site.host === host)) {
       redirects.push({ title: host, value: 'https://' + host + '/me/account' })
     }

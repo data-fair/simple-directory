@@ -9,6 +9,7 @@ import standardProviders from './standard-providers.ts'
 import { completeOidcProvider, getOidcProviderId } from './oidc.ts'
 import { reqSite, decodeToken } from '#services'
 import { type OpenIDConnect1 } from '../../config/type/index.ts'
+import { type CipheredContent, decipher } from '../utils/cipher.ts'
 
 export { getOidcProviderId } from './oidc.ts'
 
@@ -75,8 +76,9 @@ export const getOAuthProviderByState = async (req: Request, state: string): Prom
 }
 
 async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl): Promise<PreparedOAuthProvider> {
+  const client = { id: p.client.id, secret: decipher(p.client.secret as CipheredContent) }
   const oauthClient = new oauth2.AuthorizationCode({
-    client: p.client,
+    client,
     auth: p.auth
   })
 
@@ -159,6 +161,12 @@ export const init = async () => {
     _globalProviders.push(await initOAuthProvider(p))
   }
   for (const oidc of config.oidc.providers) {
+    if (typeof oidc.client.secret === 'string' && oidc.client.secret.startsWith('env:')) {
+      const envKey = oidc.client.secret.slice(4)
+      const envSecret = process.env[envKey]
+      if (!envSecret) throw new Error(`Missing environment variable ${envKey} for OIDC provider ${oidc.title}`)
+      oidc.client.secret = envSecret
+    }
     _globalProviders.push(await initOAuthProvider(await completeOidcProvider(oidc)))
   }
   initialized = true

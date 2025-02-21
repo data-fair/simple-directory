@@ -4,7 +4,7 @@ import config from '#config'
 import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost, reqSitePath } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
 import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite } from './service.ts'
-import { reqSite } from '#services'
+import { isOIDCProvider, reqSite } from '#services'
 import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
 import { getSiteColorsWarnings } from '../utils/color.ts'
@@ -12,6 +12,8 @@ import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import { fillTheme, getTextColorsCss } from '@sd/shared/site.ts'
 import clone from '@data-fair/lib-utils/clone.js'
 import Debug from 'debug'
+import { cipher } from '../utils/cipher.ts'
+import { type OpenIDConnect } from '#types/site/index.ts'
 
 const debugPostSite = Debug('post-site')
 
@@ -28,7 +30,10 @@ const prepareFullSite = (req: Request, site: Site) => {
   site.theme.logo = site.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
   if (site.authProviders) {
     for (const p of site.authProviders) {
-      if (p.type === 'oidc') p.id = getOidcProviderId(p.discovery)
+      if (isOIDCProvider(p)) {
+        p.id = getOidcProviderId(p.discovery)
+        p.client.secret = '*****'
+      }
     }
   }
   const resultWithColorWarnings: any = site as any
@@ -140,6 +145,24 @@ router.patch('/:id', async (req, res, next) => {
 
   if (patch.theme) {
     patch.theme = fillTheme(patch.theme, config.theme)
+  }
+
+  if (patch.authProviders) {
+    for (const authProvider of patch.authProviders) {
+      if (isOIDCProvider(authProvider)) {
+        if (typeof authProvider.client.secret === 'string' && authProvider.client.secret && !authProvider.client.secret.trim().match(/^\**$/)) {
+          authProvider.client.secret = cipher(authProvider.client.secret)
+        } else {
+          const previousProvider = site.authProviders?.find(p => {
+            return isOIDCProvider(p) && getOidcProviderId(p.discovery) === getOidcProviderId(authProvider.discovery)
+          }) as OpenIDConnect | undefined
+          if (!previousProvider) {
+            throw httpError(400, 'no existing secret for provider ' + getOidcProviderId(authProvider.discovery))
+          }
+          authProvider.client.secret = previousProvider.client.secret
+        }
+      }
+    }
   }
 
   const patchedSite = await patchSite({ _id: req.params.id, ...patch })
