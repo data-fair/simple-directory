@@ -4,7 +4,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError } 
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreOAuthUser, getSamlProviderId, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback } from '#services'
+import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreOAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -16,7 +16,7 @@ import { checkPassword, type Password } from '../utils/passwords.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
-import type { PreparedSaml2Provider, Saml2RelayState } from '../saml2/service.ts'
+import type { Saml2RelayState } from '../saml2/service.ts'
 
 const debug = Debug('auth')
 
@@ -713,7 +713,8 @@ router.get('/saml2/:providerId/login', async (req, res) => {
     (req.query.org || '') as string,
     (req.query.dep || '') as string,
     (req.query.invit_token || '') as string,
-    (req.query.adminMode || '') as string // TODO: force re-submit password in this case ?
+    (req.query.adminMode || '') as string, // TODO: force re-submit password in this case ?
+    req.params.providerId
   ]
   // relay state should be a request level parameter but it is not in current version of samlify
   // cf https://github.com/tngan/samlify/issues/163
@@ -734,22 +735,16 @@ router.get('/saml2/:providerId/login', async (req, res) => {
 router.post('/saml2-assert', async (req, res) => {
   const logContext: EventLogContext = { req }
 
+  const [loginReferer, redirect, org, dep, invitToken, adminMode, providerId] = JSON.parse(req.body.RelayState) as Saml2RelayState
+
+  const provider = await getSamlProviderById(req, providerId)
+  if (!provider) return res.status(404).send('unknown saml2 provider ' + providerId)
+
   const sp = await saml2ServiceProvider(await reqSite(req))
-
-  let provider: PreparedSaml2Provider | undefined
-  const referer = (req.headers.referer || req.headers.referrer) as string | undefined
-  if (referer) {
-    const providerId = getSamlProviderId(referer)
-    provider = await getSamlProviderById(req, providerId)
-  }
-
-  if (!provider) return res.status(404).send('unknown saml2 provider')
 
   debugSAML('saml2 assert full body', req.body)
   const samlResponse = await sp.parseLoginResponse(provider.idp, 'post', req)
   debugSAML('login success', JSON.stringify(samlResponse.extract, null, 2))
-
-  const [loginReferer, redirect, org, dep, invitToken, adminMode] = JSON.parse(req.body.RelayState) as Saml2RelayState
 
   const returnError = (error: string, errorCode: number) => {
     eventsLog.info('sd.auth.saml.fail', `a user failed to authenticate with saml due to ${error}`, logContext)

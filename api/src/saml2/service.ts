@@ -23,7 +23,7 @@ type Certificates = { signing: { privateKey: string, cert: string }, encrypt: { 
 
 export type PreparedSaml2Provider = SAML2 & { id: string, type: 'saml2', idp: samlify.IdentityProviderInstance }
 
-export type Saml2RelayState = [string, string, string, string, string, string]
+export type Saml2RelayState = [string, string, string, string, string, string, string]
 
 // const validator = require('@authenio/samlify-xsd-schema-validator')
 // samlify.setSchemaValidator(validator)
@@ -39,7 +39,8 @@ export const getSamlProviderById = async (req: Request, id: string): Promise<Pre
   if (!site) {
     return saml2GlobalProviders().find(p => p.id === id)
   } else {
-    const providerInfo = site.authProviders?.find(p => p.type === 'saml2' && getSamlConfigId(p) === id) as SAML2
+    const providerInfo = site.authProviders?.find(p => p.type === 'saml2' && getSamlConfigId(p) === id) as SAML2 | undefined
+    if (!providerInfo) return undefined
     const idp = samlify.IdentityProvider(providerInfo)
     return {
       id,
