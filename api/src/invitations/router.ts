@@ -202,24 +202,21 @@ router.get('/_accept', async (req, res, next) => {
   if (existingUser && existingUser.organizations && existingUser.organizations.find(o => o.id === invit.id && (o.department || null) === (invit.department || null))) {
     debug('invitation was already accepted, redirect', redirectUrl.href)
     // missing password, invitation must have been accepted without completing account creation
-    if (!storage.getPassword) {
-      throw new Error('missing password verification implementation')
-    } else {
-      if (!await storage.getPassword(invit.email) && !config.passwordless) {
-        const payload: ActionPayload = { id: existingUser.id, email: existingUser.email, action: 'changePassword' }
-        const token = await signToken(payload, config.jwtDurations.initialToken)
-        const reboundRedirect = redirectUrl.href
-        redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
-        redirectUrl.searchParams.set('step', 'changePassword')
-        redirectUrl.searchParams.set('email', invit.email)
-        redirectUrl.searchParams.set('id_token_org', invit.id)
-        if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
-        redirectUrl.searchParams.set('action_token', token)
-        redirectUrl.searchParams.set('redirect', reboundRedirect)
-        debug('redirect to changePassword step', redirectUrl.href)
-        return res.redirect(redirectUrl.href)
-      }
+    if (storage.getPassword && !await storage.getPassword(existingUser.id) && !config.passwordless) {
+      const payload: ActionPayload = { id: existingUser.id, email: existingUser.email, action: 'changePassword' }
+      const token = await signToken(payload, config.jwtDurations.initialToken)
+      const reboundRedirect = redirectUrl.href
+      redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
+      redirectUrl.searchParams.set('step', 'changePassword')
+      redirectUrl.searchParams.set('email', invit.email)
+      redirectUrl.searchParams.set('id_token_org', invit.id)
+      if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
+      redirectUrl.searchParams.set('action_token', token)
+      redirectUrl.searchParams.set('redirect', reboundRedirect)
+      debug('redirect to changePassword step', redirectUrl.href)
+      return res.redirect(redirectUrl.href)
     }
+
     if (!loggedUser || loggedUser.email !== invit.email) {
       const reboundRedirect = redirectUrl.href
       redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
