@@ -16,7 +16,7 @@ import { checkPassword, type Password } from '../utils/passwords.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
-import type { Saml2RelayState } from '../saml2/service.ts'
+import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
 
 const debug = Debug('auth')
 
@@ -759,19 +759,7 @@ router.post('/saml2-assert', async (req, res) => {
     }
   }
 
-  const email = samlResponse.extract.attributes.email || samlResponse.extract.attributes['urn:oid:0.9.2342.19200300.100.1.3']
-  if (!email) {
-    console.error('Email attribute not fetched from SAML', provider.id, samlResponse.extract.attributes)
-    eventsLog.info('sd.auth.saml.fail', 'a user failed to authenticate with saml due to missing email', logContext)
-    throw new Error('Email attribute not fetched from SAML')
-  }
-  debugSAML('Got user info from saml', provider.id, samlResponse.extract.attributes)
-
-  const userAttrs = {
-    email,
-    firstName: samlResponse.extract.attributes.firstName as string | undefined,
-    lastName: samlResponse.extract.attributes.lastName as string | undefined
-  }
+  const userAttrs = getSamlUserAttrs(samlResponse.extract.attributes, logContext)
   const authInfo = {
     data: samlResponse.extract.attributes,
     user: userAttrs
@@ -783,81 +771,6 @@ router.post('/saml2-assert', async (req, res) => {
   } catch (err : any) {
     return returnError(err.message as string, err.code || 500)
   }
-  /*
-  const samlInfo = { ...samlResponse.extract.attributes, logged: new Date().toISOString() }
-
-  if (!user) {
-    const newUser: UserWritable = {
-      email,
-      id: nanoid(),
-      emailConfirmed: true,
-      saml2: {
-        [provider.id]: samlInfo
-      },
-      organizations: []
-    }
-    if (site) {
-      if (['onlyBackOffice', 'onlyOtherSites', undefined].includes(site.authMode)) {
-        throw httpError(400, 'Cannot create a user on a secondary site')
-      }
-      newUser.host = site.host
-    }
-    if (invit && invitOrga) {
-      newUser.defaultOrg = invitOrga.id
-      newUser.ignorePersonalAccount = true
-    }
-    // TODO: also a dynamic mapping
-    if (samlInfo.firstName) newUser.firstName = samlInfo.firstName
-    if (samlInfo.lastName) newUser.lastName = samlInfo.lastName
-    debugSAML('Create user', newUser)
-    const redirectSite = await getRedirectSite(req, redirect)
-    user = await storage.createUser(newUser, undefined, redirectSite)
-    logContext.user = user
-    eventsLog.info('sd.auth.saml.create-user', `a user was created in saml callback ${user.id}`, logContext)
-  } else {
-    if (user.coreIdProvider && (user.coreIdProvider.type !== 'saml' || user.coreIdProvider.id !== provider.id)) {
-      return res.status(400).send('Utilisateur déjà lié à un autre fournisseur d\'identité principale')
-    }
-    debugSAML('Existing user authenticated', provider.id, user)
-    const patch = { saml2: { ...user.saml2, [provider.id]: samlInfo }, emailConfirmed: true }
-    // TODO: map more attributes ? lastName, firstName ?
-    await storage.patchUser(user.id, patch)
-    eventsLog.info('sd.auth.saml.update-user', `a user was updated in saml callback ${user.id}`, logContext)
-  }
-
-  if (invit && invitOrga && !config.alwaysAcceptInvitation) {
-    const limits = await getOrgLimits(invitOrga)
-    if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
-      return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
-    }
-    await storage.addMember(invitOrga, user, invit.role, invit.department)
-    eventsLog.info('sd.auth.saml.accept-invite', `a user accepted an invitation in saml callback ${user.id}`, logContext)
-    eventsQueue?.pushEvent({
-      sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
-      topic: { key: 'simple-directory:invitation-accepted' },
-      title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
-    })
-    await setNbMembersLimit(invitOrga.id)
-  }
-
-  const payload = getTokenPayload(user)
-  if (adminMode) {
-    // TODO: also check that the user actually inputted the password on this redirect
-    if (payload.isAdmin) payload.adminMode = 1
-    else {
-      eventsLog.alert('sd.auth.saml.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
-      return returnError('adminModeOnly', 403)
-    }
-  }
-  const linkUrl = await prepareCallbackUrl(req, payload, redirect, invitOrga ? invitOrga.id : org)
-  debugSAML(`SAML based authentication of user ${user.name}`)
-  res.redirect(linkUrl.href)
-
-  // TODO: Save name_id and session_index for logout ?
-  // Note:  In practice these should be saved in the user session, not globally.
-  // name_id = saml_response.user.name_id;
-  // session_index = saml_response.user.session_index;
-  */
 })
 
 // logout not implemented

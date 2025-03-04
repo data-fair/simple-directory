@@ -14,6 +14,7 @@ import { exec } from 'node:child_process'
 import { promisify } from 'node:util'
 import { getSiteBaseUrl, reqSite } from '#services'
 import { type Site } from '#types'
+import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 
 const execAsync = promisify(exec)
 const debug = Debug('saml')
@@ -187,4 +188,43 @@ const createCert = async () => {
   certPromise.child.stdin?.end()
   const cert = (await certPromise).stdout
   return { privateKey, cert }
+}
+
+// attributes for microsoft entra https://learn.microsoft.com/en-us/entra/identity-platform/reference-saml-tokens
+// oid keys https://ldap.com/ldap-oid-reference-guide/
+const emailKeys = [
+  'email',
+  'emailAddress', 'emailaddress', 'email_address',
+  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+  'urn:oid:0.9.2342.19200300.100.1.3'
+]
+const firstNameKeys = [
+  'firstName', 'firstname', 'first_name',
+  'givenName', 'givenname', 'given_name',
+  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname',
+  'urn:oid:2.5.4.42'
+]
+const lastNameKeys = [
+  'lastName', 'lastname', 'last_name',
+  'surName', 'surname', 'sn',
+  'familyName', 'familyname', 'family_name',
+  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname',
+  'urn:oid:2.5.4.4'
+]
+
+export const getUserAttrs = (attrs: any, logContext: EventLogContext) => {
+  const emailKey = emailKeys.find(k => attrs[k])
+  const firstNameKey = firstNameKeys.find(k => attrs[k])
+  const lastNameKey = lastNameKeys.find(k => attrs[k])
+  const email = emailKey && attrs[emailKey] as string
+  if (!email) {
+    console.error('Email attribute not fetched from SAML', attrs)
+    eventsLog.info('sd.auth.saml.fail', 'a user failed to authenticate with saml due to missing email', logContext)
+    throw new Error('Email attribute not fetched from SAML')
+  }
+  return {
+    email,
+    firstName: firstNameKey && attrs[firstNameKey] as string,
+    lastName: lastNameKey && attrs[lastNameKey] as string
+  }
 }
