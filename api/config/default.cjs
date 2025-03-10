@@ -383,5 +383,8 @@ module.exports = {
   managePartners: false,
   manageSessions: true,
   defaultOrg: undefined,
-  serveUi: true
+  serveUi: true,
+  passwordPolicy: {
+
+  }
 }

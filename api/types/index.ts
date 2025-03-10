@@ -10,6 +10,7 @@ export type { Limits } from './limits/index.ts'
 export type { Invitation } from './invitation/index.ts'
 export type { Partner } from './partner/index.ts'
 export type { LdapParams, MemberOverwrite, OrganizationOverwrite } from './ldap-params/index.ts'
+export type { PasswordList } from './password-list/index.ts'
 
 export type UserWritable = Omit<User, 'created' | 'updated' | 'name' | 'sessions'>
 
