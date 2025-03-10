@@ -91,7 +91,8 @@ export default {
     oauthTokens: 'Jetons OAUTH',
     plannedDeletion: 'Suppression programmée',
     plannedDeletionShort: 'Suppr prog',
-    owner: 'Propriéraire'
+    owner: 'Propriéraire',
+    passwordLists: 'Mots de passe',
   },
   doc: {
     about: {

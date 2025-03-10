@@ -74,6 +74,14 @@
         >
           {{ $t(`common.oauthTokens`) }}
         </v-btn>
+        <v-btn
+          to="/admin/password-lists"
+          color="admin"
+          theme="dark"
+          variant="flat"
+        >
+          {{ $t(`common.passwordLists`) }}
+        </v-btn>
       </template>
       <v-btn
         v-if="$uiConfig.anonymousContactForm"
