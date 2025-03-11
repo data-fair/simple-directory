@@ -543,6 +543,9 @@
           "maximum": 4
         }
       }
+    },
+    "passwordUpdateInterval": {
+      "type": "integer"
     }
   },
   "$defs": {

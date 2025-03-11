@@ -388,5 +388,6 @@ module.exports = {
     entropy: 50,
     minLength: undefined,
     minCharClasses: undefined,
-  }
+  },
+  passwordUpdateInterval: undefined
 }

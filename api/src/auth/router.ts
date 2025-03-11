@@ -17,6 +17,7 @@ import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
+import dayjs from 'dayjs'
 
 const debug = Debug('auth')
 
@@ -120,6 +121,13 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     if (!user) return returnError('badCredentials', 400)
   }
   if (storage.getPassword) {
+    if (config.passwordUpdateInterval && (
+      user.passwordUpdate?.force ||
+      (user.passwordUpdate?.last && dayjs().subtract(config.passwordUpdateInterval, 'days').isAfter(dayjs(user.passwordUpdate.last)))
+    )) {
+      eventsLog.info('sd.auth.password.fail', `a user failed to authenticate with an outdated password email=${body.email}`, logContext)
+      return returnError('updatePassword', 400)
+    }
     const storedPassword = await storage.getPassword(user.id)
     const validPassword = await checkPassword(body.password, storedPassword)
     if (!validPassword) {

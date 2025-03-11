@@ -289,5 +289,6 @@ module.exports = {
   manageSites: 'MANAGE_SITES',
   managePartners: 'MANAGE_PARTNERS',
   manageSessions: 'MANAGE_SESSIONS',
-  defaultOrg: 'DEFAULT_ORG'
+  defaultOrg: 'DEFAULT_ORG',
+  passwordUpdateInterval: jsonEnv('PASSWORD_UPDATE_INTERVAL'),
 }

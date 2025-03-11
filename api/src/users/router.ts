@@ -10,7 +10,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
-import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMail, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite } from '#services'
+import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMail, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword } from '#services'
 
 const router = Router()
 
@@ -110,6 +110,7 @@ router.post('', async (req, res, next) => {
       return res.status(400).send(passwordValidationError)
     }
     newUser.password = await hashPassword(body.password)
+    newUser.passwordUpdate = { last: new Date().toISOString() }
   }
 
   const user = await storages.globalStorage.getUserByEmail(body.email, await reqSite(req))
@@ -286,8 +287,21 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
   if (decoded.action !== 'changePassword') return res.status(401).send('wrong action for this token')
   const passwordValidationError = await validatePassword(req, body.password)
   if (passwordValidationError) return res.status(400).send(passwordValidationError)
-  const storedPassword = await hashPassword(body.password)
-  await storages.globalStorage.patchUser(req.params.userId, { password: storedPassword })
+
+  const storage = storages.globalStorage
+  let samePassword = false
+  if (storage.getPassword) {
+    const storedPassword = await storage.getPassword(req.params.userId)
+    samePassword = await checkPassword(body.password, storedPassword)
+  } else if (storage.checkPassword) {
+    samePassword = await storage.checkPassword(req.params.userId, body.password)
+  }
+
+  if (samePassword) return res.status(400).send(reqI18n(req).messages.errors.samePassword)
+
+  const newStoredPassword = await hashPassword(body.password)
+
+  await storage.patchUser(req.params.userId, { password: newStoredPassword, 'passwordUpdate.last': new Date().toISOString(), 'passwordUpdate.force': null })
 
   eventsLog.info('sd.user.change-password', `user changed password ${req.params.userId}`, logContext)
 

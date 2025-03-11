@@ -56,5 +56,6 @@ module.exports = {
   },
   passwordValidation: {
     entropy: 40,
-  }
+  },
+  passwordUpdateInterval: 1
 }
