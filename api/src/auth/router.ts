@@ -457,7 +457,7 @@ router.post('/keepalive', async (req, res, next) => {
     const tokenJson = oauthToken.token
 
     try {
-      const refreshedToken = await provider.refreshToken(tokenJson, true)
+      const refreshedToken = await provider.refreshToken(tokenJson)
 
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken

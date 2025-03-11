@@ -46,7 +46,7 @@ export type PreparedOAuthProvider = OAuthProvider & {
   state: string
   authorizationUri (relayState: any, email: string, offlineAccess?: boolean, forceLogin?: boolean): string
   getToken (code: string, offlineAccess?: boolean): Promise<any>
-  refreshToken (tokenObj: any, onlyIfExpired: boolean): Promise<any>
+  refreshToken (tokenObj: any): Promise<any>
 }
 
 export type OAuthRelayState = [string, string, string, string, string, string, string]
@@ -132,9 +132,9 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     return { token, offlineRefreshToken }
   }
 
-  const refreshToken = async (tokenObj: any, onlyIfExpired = false) => {
+  const refreshToken = async (tokenObj: any) => {
     const token = oauthClient.createToken(tokenObj)
-    if (onlyIfExpired && !token.expired()) return null
+    // if (onlyIfExpired && !token.expired()) return null
     const newToken = (await token.refresh({ scope: p.scope })).token
     const decodedRefreshToken = decodeToken(newToken.refresh_token as string)
     const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'

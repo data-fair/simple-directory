@@ -61,7 +61,7 @@ const task = async () => {
         console.error('offline token for unknown user', token)
       } else {
         try {
-          const refreshedToken = await provider.refreshToken(token.token, false)
+          const refreshedToken = await provider.refreshToken(token.token)
           const { newToken, offlineRefreshToken } = refreshedToken
           const userInfo = await provider.userInfo(newToken.access_token)
           const memberInfo = await authProviderMemberInfo(undefined, provider, userInfo)
