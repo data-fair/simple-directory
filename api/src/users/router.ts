@@ -105,8 +105,9 @@ router.post('', async (req, res, next) => {
 
   // password is optional as we support passwordless auth
   if (body.password) {
-    if (!validatePassword(req.body.password)) {
-      return res.status(400).send(reqI18n(req).messages.errors.malformedPassword)
+    const passwordValidationError = await validatePassword(req, req.body.password)
+    if (passwordValidationError) {
+      return res.status(400).send(passwordValidationError)
     }
     newUser.password = await hashPassword(body.password)
   }
@@ -283,7 +284,8 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
   }
   if (decoded.id !== req.params.userId) return res.status(401).send('wrong user id in token')
   if (decoded.action !== 'changePassword') return res.status(401).send('wrong action for this token')
-  if (!validatePassword(body.password)) return res.status(400).send(reqI18n(req).messages.errors.malformedPassword)
+  const passwordValidationError = await validatePassword(req, body.password)
+  if (passwordValidationError) return res.status(400).send(passwordValidationError)
   const storedPassword = await hashPassword(body.password)
   await storages.globalStorage.patchUser(req.params.userId, { password: storedPassword })
 

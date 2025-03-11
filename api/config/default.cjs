@@ -384,7 +384,9 @@ module.exports = {
   manageSessions: true,
   defaultOrg: undefined,
   serveUi: true,
-  passwordPolicy: {
-
+  passwordValidation: {
+    entropy: 50,
+    minLength: undefined,
+    minCharClasses: undefined,
   }
 }

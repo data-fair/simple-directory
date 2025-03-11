@@ -53,5 +53,8 @@ module.exports = {
   serveUi: false,
   observer: {
     active: false
+  },
+  passwordValidation: {
+    entropy: 40,
   }
 }

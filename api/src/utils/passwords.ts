@@ -1,5 +1,10 @@
+import type { Request } from 'express'
 import { pbkdf2 as pbkdf2Async, randomBytes as randomBytesAsync } from 'node:crypto'
 import { promisify } from 'node:util'
+import { validatePassword as validatePasswordRules } from '@sd/shared/password.ts'
+import config from '#config'
+import { reqI18n } from '#i18n'
+import { checkForbiddenPassword } from '../password-lists/service.ts'
 
 const randomBytes = promisify(randomBytesAsync)
 const pbkdf2 = promisify(pbkdf2Async)
@@ -14,12 +19,11 @@ function isClearPassword (password: Password): password is ClearPassword {
   return 'clear' in password
 }
 
-export const validatePassword = (password: string) => {
-  if (password.length < 8) return false
-  if (!/[a-z]/.exec(password)) return false
-  if (!/[A-Z]/.exec(password)) return false
-  if (!/[0-9]/.exec(password)) return false
-  return true
+export const validatePassword = async (req: Request, password: string) => {
+  const i18n = reqI18n(req)
+  const rulesError = validatePasswordRules(password, config.passwordValidation, i18n.messages)
+  if (typeof rulesError === 'string') return rulesError
+  if ((await checkForbiddenPassword(password)).found) return i18n.messages.errors.forbiddenPassword as string
 }
 
 // Derive a hashed key from a password, and return the key and all associated params

@@ -342,9 +342,10 @@
                   id="password"
                   v-model="newUser.password"
                   :label="$t('common.password')"
-                  :rules="[v => !!v || '']"
                   name="newUserPassword"
+                  :rules="newUserPasswordErrors"
                   :type="showNewUserPassword ? 'text' : 'password'"
+                  validate-on="invalid-input"
                   autocomplete="new-password"
                   variant="outlined"
                   density="compact"
@@ -358,31 +359,15 @@
                       @click="showNewUserPassword = !showNewUserPassword"
                     />
                   </template>
-                  <template #append>
-                    <v-tooltip
-
-                      location="right"
-                      max-width="400"
-                    >
-                      <template #activator="{props}">
-                        <v-icon
-                          v-bind="props"
-                          color="info"
-                          :icon="mdiInformation"
-                        />
-                      </template>
-                      <div v-html="$t('errors.malformedPassword')" />
-                    </v-tooltip>
-                  </template>
                 </v-text-field>
 
                 <v-text-field
                   v-model="newUserPassword2"
                   :label="$t('pages.login.newPassword2')"
-                  :rules="[v => !!v || '']"
-                  :error-messages="newUserPassword2Errors"
+                  :rules="newUserPassword2Errors"
                   name="newUserPassword2"
                   :type="showNewUserPassword ? 'text' : 'password'"
+                  validate-on="invalid-input"
                   autocomplete="new-password"
                   variant="outlined"
                   density="compact"
@@ -498,9 +483,10 @@
                   v-model="newPassword"
                   :autofocus="true"
                   :label="$t('pages.login.newPassword')"
-                  :rules="[v => !!v || '']"
+                  :rules="newPasswordErrors"
                   name="newPassword"
                   :type="showNewPassword ? 'text' : 'password'"
+                  validate-on="invalid-input"
                   autocomplete="new-password"
                   variant="outlined"
                   density="compact"
@@ -514,28 +500,14 @@
                       @click="showNewPassword = !showNewPassword"
                     />
                   </template>
-                  <template #append>
-                    <v-tooltip
-                      location="right"
-                      max-width="400"
-                    >
-                      <template #activator="{props}">
-                        <v-icon
-                          v-bind="props"
-                          color="info"
-                          :icon="mdiInformation"
-                        />
-                      </template>
-                      <div v-html="$t('errors.malformedPassword')" />
-                    </v-tooltip>
-                  </template>
                 </v-text-field>
                 <v-text-field
                   v-model="newPassword2"
                   :label="$t('pages.login.newPassword2')"
-                  :error-messages="newPassword2Error"
+                  :rules="newPassword2Errors"
                   name="newPassword2"
                   :type="showNewPassword ? 'text' : 'password'"
+                  validate-on="invalid-input"
                   autocomplete="new-password"
                   variant="outlined"
                   density="compact"
@@ -807,11 +779,12 @@ import type { PostActionAuthReq } from '@sd/api/doc/auth/post-action-req/index.t
 import UiNotifAlert from '@data-fair/lib-vuetify/ui-notif-alert.vue'
 import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
 import debugModule from 'debug'
+import { validatePassword } from '@sd/shared/password'
 
 const debug = debugModule('sd:login')
 
 const reactiveSearchParams = useReactiveSearchParams()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { user, switchOrganization } = useSession()
 const { authProvidersFetch, sitePublic, mainPublicUrl } = useStore()
 
@@ -835,19 +808,28 @@ const rememberMe = ref(true)
 
 const showNewPassword = ref(false)
 const newPassword = ref('')
+const newPasswordErrors = computed(() => {
+  if (!newPassword.value) return ['']
+  return [validatePassword(newPassword.value, $uiConfig.passwordValidation, $uiConfig.publicMessages[locale.value])]
+})
 const newPassword2 = ref('')
-const newPassword2Error = computed(() => {
-  if (!newPassword2.value) return ''
-  if (newPassword.value !== newPassword2.value) return t('errors.differentPasswords')
+const newPassword2Errors = computed(() => {
+  if (!newPassword2.value) return ['']
+  if (newPassword.value !== newPassword2.value) return [t('errors.differentPasswords')]
+  return []
 })
 
 const newUser = ref({ firstName: '', lastName: '', password: '' })
+const newUserPasswordErrors = computed(() => {
+  if (!newUser.value.password) return ['']
+  return [validatePassword(newUser.value.password, $uiConfig.passwordValidation, $uiConfig.publicMessages[locale.value])]
+})
 const newUserPassword2 = ref('')
 const newUserPassword2Errors = computed(() => {
-  if (!newUserPassword2.value) return ''
-  if (newUser.value.password !== newUserPassword2.value) return t('errors.differentPasswords')
+  if (!newUserPassword2.value) return ['']
+  if (newUser.value.password !== newUserPassword2.value) return [t('errors.differentPasswords')]
+  return []
 })
-
 const showNewUserPassword = ref(false)
 const tosAccepted = ref(false)
 const createOrganization = ref({ active: false, name: '' })
@@ -867,7 +849,6 @@ const actionPayload = actionToken.value ? jwtDecode(actionToken.value) as Action
 
 const logoUrl = computed(() => {
   if (reactiveSearchParams.logo) return reactiveSearchParams.logo
-  console.log(sitePublic.value)
   if (sitePublic.value?.theme.logo) return sitePublic.value?.theme.logo
   if (orgId) return `${$sdUrl}/api/avatars/organization/${orgId}/avatar.png`
   if ($uiConfig.theme.logo) return $uiConfig.theme.logo

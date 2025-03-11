@@ -43,7 +43,8 @@
     "plannedDeletionDelay",
     "cleanup",
     "avatars",
-    "noBirthday"
+    "noBirthday",
+    "passwordValidation"
   ],
   "properties": {
     "info": {
@@ -526,6 +527,22 @@
     },
     "privateEventsUrl": {
       "type": "string"
+    },
+    "passwordValidation": {
+      "type": "object",
+      "properties": {
+        "entropy": {
+          "type": "integer"
+        },
+        "minLength": {
+          "type": "integer"
+        },
+        "minCharClasses": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        }
+      }
     }
   },
   "$defs": {

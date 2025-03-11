@@ -1,6 +1,6 @@
 import readline from 'node:readline'
 import { Writable } from 'node:stream'
-import { hashPassword, validatePassword } from '../src/utils/passwords.ts'
+import { hashPassword } from '../src/utils/passwords.ts'
 
 async function main () {
   let muted = false
@@ -19,7 +19,6 @@ async function main () {
   const passwordPromise = new Promise<string>((resolve) => rl.question('password: ', resolve))
   muted = true
   const password = await passwordPromise
-  if (!validatePassword(password)) throw new Error('password does not respect complexity rules')
   const hash = await hashPassword(password)
   console.log(JSON.stringify({ email, password: hash }))
   rl.close()
