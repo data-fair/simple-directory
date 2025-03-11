@@ -57,5 +57,5 @@ module.exports = {
   passwordValidation: {
     entropy: 40,
   },
-  passwordUpdateInterval: 1
+  passwordUpdateInterval: [1, 'days']
 }

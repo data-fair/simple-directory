@@ -473,24 +473,7 @@
         "deleteInactive": {
           "type": "boolean"
         },
-        "deleteInactiveDelay": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "integer"
-            },
-            {
-              "type": "string",
-              "enum": [
-                "days",
-                "weeks",
-                "months",
-                "years"
-              ]
-            }
-          ]
-        }
+        "deleteInactiveDelay": { "$ref": "#/$defs/interval" }
       }
     },
     "defaultOrg": {
@@ -544,11 +527,28 @@
         }
       }
     },
-    "passwordUpdateInterval": {
-      "type": "integer"
-    }
+    "passwordUpdateInterval": { "$ref": "#/$defs/interval" }
   },
   "$defs": {
+    "interval": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string",
+          "enum": [
+            "days",
+            "weeks",
+            "months",
+            "years"
+          ]
+        }
+      ]
+    },
     "oauthClient": {
       "type": "object",
       "required": [
