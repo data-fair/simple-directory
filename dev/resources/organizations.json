@@ -115,6 +115,20 @@
             "lastName": "sn"
           },
           "extraFilters": ["sn=Mouton"]
+        },
+        "members": {
+          "role": {
+            "attr": "employeeType",
+            "values": {
+              "admin": ["administrator"],
+              "user": []
+            },
+            "default": "user"
+          },
+          "department": {
+            "attr": "departmentNumber",
+            "captureRegexp": "^.*/(.*)$"
+          }
         }
       }
     }

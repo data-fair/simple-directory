@@ -96,14 +96,14 @@
             </td>
           </template>
           <template v-else>
-            <td class="justify-center layout px-0">
-              <v-btn
-                :to="`/organization/${props.item.id}`"
-                icon
-                class="mx-0"
-              >
-                <v-icon :icon="mdiEye" />
-              </v-btn>
+            <td>
+              <div class="d-flex">
+                <v-btn
+                  :to="`/organization/${props.item.id}`"
+                  :icon="mdiEye"
+                  variant="text"
+                />
+              </div>
             </td>
           </template>
         </tr>

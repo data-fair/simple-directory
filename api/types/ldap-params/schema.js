@@ -90,7 +90,15 @@ export default {
       additionalProperties: false,
       required: ['role'],
       properties: {
-        organizationAsDC: { type: 'boolean' },
+        organizationAsDC: { type: ['number', 'boolean'] },
+        organization: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            attr: { type: 'string' },
+            captureRegexp: { type: 'string' }
+          }
+        },
         onlyWithRole: { type: 'boolean' },
         role: {
           type: 'object',
@@ -98,6 +106,7 @@ export default {
           required: ['default'],
           properties: {
             attr: { type: 'string' },
+            captureRegexp: { type: 'string' },
             default: { type: 'string' },
             values: {
               type: 'object',
@@ -112,9 +121,32 @@ export default {
             }
           }
         },
+        department: {
+          type: 'object',
+          additionalProperties: false,
+          required: [],
+          properties: {
+            attr: { type: 'string' },
+            captureRegexp: { type: 'string' }
+          }
+        },
         overwrite: {
           type: 'array',
           items: { $ref: '#/$defs/memberOverwrite' }
+        }
+      }
+    },
+    isAdmin: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['attr', 'values'],
+      properties: {
+        attr: { type: 'string' },
+        values: {
+          type: 'array',
+          items: {
+            type: 'string'
+          }
         }
       }
     }

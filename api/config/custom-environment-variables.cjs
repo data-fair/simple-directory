@@ -70,13 +70,26 @@ module.exports = {
       },
       members: {
         organizationAsDC: 'STORAGE_LDAP_MEMBERS_ORG_AS_DC',
+        organization: {
+          attr: 'STORAGE_LDAP_MEMBERS_ORG_ATTR',
+          captureRegex: 'STORAGE_LDAP_MEMBERS_ORG_CAPTURE_REGEX'
+        },
         onlyWithRole: 'STORAGE_LDAP_ONLY_WITH_ROLE',
         role: {
           attr: 'STORAGE_LDAP_MEMBERS_ROLE_ATTR',
+          captureRegex: 'STORAGE_LDAP_MEMBERS_ROLE_CAPTURE_REGEX',
           values: jsonEnv('STORAGE_LDAP_MEMBERS_ROLE_VALUES'),
           default: 'STORAGE_LDAP_MEMBERS_ROLE_DEFAULT'
         },
+        department: {
+          attr: 'STORAGE_LDAP_MEMBERS_DEP_ATTR',
+          captureRegex: 'STORAGE_LDAP_MEMBERS_DEP_CAPTURE_REGEX',
+        },
         overwrite: jsonEnv('STORAGE_LDAP_MEMBERS_OVERWRITE')
+      },
+      isAdmin: {
+        attr: 'STORAGE_LDAP_IS_ADMIN_ATTR',
+        values: jsonEnv('STORAGE_LDAP_IS_ADMIN_VALUES')
       }
     }
   },

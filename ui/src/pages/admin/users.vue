@@ -146,17 +146,17 @@
             </td>
           </template>
           <template v-else>
-            <v-btn
-              :title="$t('common.asAdmin')"
-              icon
-              class="mx-0"
-              @click="asAdmin(props.item)"
-            >
-              <v-icon
-                color="warning"
-                :icon="mdiAccountSwitch"
-              />
-            </v-btn>
+            <td>
+              <div class="d-flex">
+                <v-btn
+                  :title="$t('common.asAdmin')"
+                  color="admin"
+                  :icon="mdiAccountSwitch"
+                  variant="text"
+                  @click="asAdmin(props.item)"
+                />
+              </div>
+            </td>
           </template>
         </tr>
       </template>

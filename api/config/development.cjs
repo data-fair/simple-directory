@@ -6,7 +6,7 @@ module.exports = {
   publicUrl: 'http://localhost:5689/simple-directory',
   // use this host when debugging a data-fair inside a virtualbox vm
   // publicUrl: 'http://10.0.2.2:5689',
-  admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com', 'admin@test.com'],
+  // admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com', 'admin@test.com'],
   adminsOrg: { id: 'admins-org', name: 'Admins organization' },
   admins2FA: false,
   adminCredentials: {
@@ -36,8 +36,8 @@ module.exports = {
     active: true
   },
   storage: {
-    type: 'mongo',
-    // type: 'ldap',
+    // type: 'mongo',
+    type: 'ldap',
     file: {
       users: './dev/resources/users.json',
       organizations: './dev/resources/organizations.json'
@@ -47,6 +47,10 @@ module.exports = {
       searchUserDN: 'cn=admin,dc=example,dc=org',
       searchUserPassword: 'admin',
       members: {
+        // organizations arr the parent DC of their users
+        organizationAsDC: true,
+        // only list users/members with a known role
+        onlyWithRole: false,
         role: {
           attr: 'employeeType',
           values: {
@@ -54,10 +58,21 @@ module.exports = {
             user: []
           },
           default: 'user'
-        }
+        },
+        department: {
+          attr: 'departmentNumber',
+          captureRegexp: '^.*/(.*)$'
+        },
+        // an array of objects that can be used to overwrite member role based on matching "orgId" and "email" properties
+        // leave orgId empty to overwrite role for all organizations of the user
+        overwrite: []
       },
       organizations: {
         staticSingleOrg: { id: 'static-org', name: 'Static Org' }
+      },
+      isAdmin: {
+        attr: 'employeeType',
+        values: ['administrator']
       }
     }
   },
