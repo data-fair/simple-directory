@@ -43,12 +43,13 @@
         v-for="passwordList of passwordLists.data.value"
         :key="passwordList._id"
         :title="passwordList.name"
-        :subtitle="dayjs(passwordList.createdAt).format('LLL') + ' - ' + passwordList.count + ' mots de passe'"
+        :subtitle="(passwordList.active ? 'actif' : 'inactif') + ' - ' + dayjs(passwordList.createdAt).format('LLL') + ' - ' + passwordList.count + ' mots de passe'"
       >
         <template #prepend>
           <v-list-item-action start>
             <v-checkbox-btn
               :model-value="passwordList.active"
+              color="primary"
               @change="togglePasswordList.execute(passwordList)"
             />
           </v-list-item-action>
