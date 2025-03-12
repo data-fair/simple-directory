@@ -386,8 +386,8 @@ module.exports = {
   serveUi: true,
   passwordValidation: {
     entropy: 50,
-    minLength: undefined,
-    minCharClasses: undefined,
+    minLength: 9,
+    minCharClasses: 3,
   },
   passwordUpdateInterval: undefined
 }
