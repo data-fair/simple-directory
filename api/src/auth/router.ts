@@ -12,7 +12,7 @@ import emailValidator from 'email-validator'
 import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
-import { checkPassword, type Password } from '../utils/passwords.ts'
+import { checkPassword, validatePassword, type Password } from '../utils/passwords.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
@@ -133,6 +133,12 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     if (!validPassword) {
       eventsLog.info('sd.auth.password.fail', `a user failed to authenticate with a wrong password email=${body.email}`, logContext)
       return returnError('badCredentials', 400)
+    }
+    if (config.passwordValidateOnLogin) {
+      const passwordValidationError = await validatePassword(req, body.password)
+      if (passwordValidationError) {
+        return returnError(passwordValidationError, 400)
+      }
     }
   } else if (storage.checkPassword) {
     if (!await storage.checkPassword(user.id, body.password)) {

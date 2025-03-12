@@ -527,7 +527,8 @@
         }
       }
     },
-    "passwordUpdateInterval": { "$ref": "#/$defs/interval" }
+    "passwordUpdateInterval": { "$ref": "#/$defs/interval" },
+    "passwordValidateOnLogin": { "type": "boolean" }
   },
   "$defs": {
     "interval": {

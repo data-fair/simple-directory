@@ -389,5 +389,6 @@ module.exports = {
     minLength: 9,
     minCharClasses: 3,
   },
-  passwordUpdateInterval: undefined
+  passwordUpdateInterval: undefined,
+  passwordValidateOnLogin: false
 }

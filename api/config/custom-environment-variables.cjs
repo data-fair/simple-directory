@@ -291,9 +291,10 @@ module.exports = {
   manageSessions: 'MANAGE_SESSIONS',
   defaultOrg: 'DEFAULT_ORG',
   passwordValidation: {
-    entropy: jsonEnv('PASSWORD_VALIDATION_ENTROPY'),
-    minLength: jsonEnv('PASSWORD_VALIDATION_MIN_LENGTH'),
-    minCharClasses: jsonEnv('PASSWORD_VALIDATION_MIN_CHAR_CLASSES'),
+    entropy: 'PASSWORD_VALIDATION_ENTROPY',
+    minLength: 'PASSWORD_VALIDATION_MIN_LENGTH',
+    minCharClasses: 'PASSWORD_VALIDATION_MIN_CHAR_CLASSES',
   },
   passwordUpdateInterval: jsonEnv('PASSWORD_UPDATE_INTERVAL'),
+  passwordValidateOnLogin: 'PASSWORD_VALIDATE_ON_LOGIN',
 }
