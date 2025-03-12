@@ -542,6 +542,7 @@
         {
           "type": "string",
           "enum": [
+            "hours",
             "days",
             "weeks",
             "months",
