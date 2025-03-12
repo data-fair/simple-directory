@@ -12,11 +12,12 @@ import emailValidator from 'email-validator'
 import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
-import { checkPassword, type Password } from '../utils/passwords.ts'
+import { checkPassword, validatePassword, type Password } from '../utils/passwords.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
+import dayjs from 'dayjs'
 
 const debug = Debug('auth')
 
@@ -120,11 +121,24 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     if (!user) return returnError('badCredentials', 400)
   }
   if (storage.getPassword) {
+    if (config.passwordUpdateInterval && (
+      user.passwordUpdate?.force ||
+      (user.passwordUpdate?.last && dayjs().subtract(config.passwordUpdateInterval[0], config.passwordUpdateInterval[1]).isAfter(dayjs(user.passwordUpdate.last)))
+    )) {
+      eventsLog.info('sd.auth.password.fail', `a user failed to authenticate with an outdated password email=${body.email}`, logContext)
+      return returnError('updatePassword', 400)
+    }
     const storedPassword = await storage.getPassword(user.id)
     const validPassword = await checkPassword(body.password, storedPassword)
     if (!validPassword) {
       eventsLog.info('sd.auth.password.fail', `a user failed to authenticate with a wrong password email=${body.email}`, logContext)
       return returnError('badCredentials', 400)
+    }
+    if (config.passwordValidateOnLogin) {
+      const passwordValidationError = await validatePassword(req, body.password)
+      if (passwordValidationError) {
+        return returnError(passwordValidationError, 400)
+      }
     }
   } else if (storage.checkPassword) {
     if (!await storage.checkPassword(user.id, body.password)) {

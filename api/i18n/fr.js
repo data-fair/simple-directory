@@ -91,7 +91,8 @@ export default {
     oauthTokens: 'Jetons OAUTH',
     plannedDeletion: 'Suppression programmée',
     plannedDeletionShort: 'Suppr prog',
-    owner: 'Propriéraire'
+    owner: 'Propriéraire',
+    passwordLists: 'Mots de passe',
   },
   doc: {
     about: {
@@ -286,9 +287,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     unknownRole: 'Rôle {role} inconnu.',
     serviceUnavailable: 'Service indisponible pour cause de maintenance.',
     badCredentials: 'Adresse email ou mot de passe invalide.',
+    updatePassword: 'Il est nécessaire de mettre à jour votre mot de passe, car il n\'a pas été changé depuis une période trop longue, conformément à nos politiques de sécurité.',
     missingToken: 'Le paramètre id_token est manquant.',
     invalidToken: 'Le jeton n\'est pas valide. Il est peut-être périmé.',
-    malformedPassword: 'Le mot de passe doit contenir au moins 8 caractères dont au moins un chiffre, une lettre minuscule et une lettre majuscule.',
     differentPasswords: 'Les mots de passe sont différents',
     noPasswordless: 'L\'authentification sans mot de passe n\'est pas acceptée par ce service.',
     rateLimitAuth: 'Trop de tentatives dans un bref interval. Veuillez patienter avant d\'essayer de nouveau.',
@@ -304,7 +305,12 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     plannedDeletion: 'La suppression de l\'utilisateur {name} et toutes ses informations est programmée le {plannedDeletion}.',
     onlyCreateInvited: 'Impossible de créer un utilisateur en dehors d\'une invitation.',
     badIDPQuery: 'Requête considérée comme invalide par le fournisseur d\'identité.',
-    duplicateDep: 'Le nouveau département est un doublon'
+    duplicateDep: 'Le nouveau département est un doublon',
+    passwordEntropy: 'Le mot de passe est trop faible.',
+    passwordMinLength: 'Le mot de passe doit contenir au moins {minLength} caractères.',
+    passwordMinCharClasses: 'Le mot de passe doit contenir au moins {minCharClasses} classes de caractères (minuscule, majuscule, nombre, caractère spécial).',
+    forbiddenPassword: 'Le mot de passe a été trouvé dans une liste de mots de passe connus et ne peut pas être utilisé.',
+    samePassword: 'Le nouveau mot de passe doit être différent de l\'ancien.',
   },
   mails: {
     creation: {

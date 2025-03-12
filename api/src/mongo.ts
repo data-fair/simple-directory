@@ -1,4 +1,4 @@
-import type { Site, Limits, OAuthToken, MemberOverwrite, OrganizationOverwrite, ServerSession } from '#types'
+import type { Site, Limits, OAuthToken, MemberOverwrite, OrganizationOverwrite, ServerSession, PasswordList } from '#types'
 import type { Avatar } from '#services'
 import type { OrgInDb, UserInDb } from './storages/mongo.ts'
 
@@ -46,6 +46,10 @@ export class SdMongo {
 
   get oidcDiscovery () {
     return mongo.db.collection<{ _id: string, content: any }>('oidc-discovery')
+  }
+
+  get passwordLists () {
+    return mongo.db.collection<PasswordList>('password-lists')
   }
 
   get ldapMembersOverwrite () {

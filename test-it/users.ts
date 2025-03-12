@@ -46,6 +46,22 @@ describe('users api', () => {
     const mail = await mailPromise
     assert.ok(mail.link.includes('action_token'))
     const actionToken = (new URL(mail.link)).searchParams.get('action_token')
+
+    // not strong enough
+    await assert.rejects(ax.post(
+      `/api/users/${user.id}/password`,
+      { password: 'test' },
+      { params: { action_token: actionToken } }
+    ), { status: 400 })
+
+    // not changed
+    await assert.rejects(ax.post(
+      `/api/users/${user.id}/password`,
+      { password: 'TestPasswd01' },
+      { params: { action_token: actionToken } }
+    ), { status: 400 })
+
+    // actually change password
     await ax.post(
       `/api/users/${user.id}/password`,
       { password: 'TestPassword01' },
@@ -82,5 +98,22 @@ describe('users api', () => {
       { host: '127.0.0.1:5989' },
       { params: { action_token: actionToken } }
     )
+  })
+
+  it('should force a user to change their password after delay', async () => {
+    const ax = await axios()
+    await createUser('user4@test.com')
+    let loginRes = (await ax.post('/api/auth/password', { email: 'user4@test.com', password: 'TestPasswd01' })).data
+    assert.ok(loginRes.includes('token_callback'))
+
+    const mongo = (await (import('../api/src/mongo.ts'))).default
+    // half a day later, still ok
+    await mongo.db.collection('users').updateOne({ email: 'user4@test.com' }, { $set: { 'passwordUpdate.last': new Date(Date.now() - 1000 * 60 * 60 * 24 * 0.5).toISOString() } })
+    loginRes = (await ax.post('/api/auth/password', { email: 'user4@test.com', password: 'TestPasswd01' })).data
+    assert.ok(loginRes.includes('token_callback'))
+
+    // 2 days later, need to change password
+    await mongo.db.collection('users').updateOne({ email: 'user4@test.com' }, { $set: { 'passwordUpdate.last': new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString() } })
+    await assert.rejects(ax.post('/api/auth/password', { email: 'user4@test.com', password: 'TestPasswd01' }), { status: 400 })
   })
 })

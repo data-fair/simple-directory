@@ -1,6 +1,5 @@
 // WARN: do not use underscore in keys, it is used as delimiter when reading
 // messages from environment variables
-
 export default {
   root: {
     title: 'Simple Directory',
@@ -230,8 +229,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     unknownRole: 'Role {role} is unknown.',
     serviceUnavailable: 'Service unavailable because of maintenance.',
     badCredentials: 'Email address or password invalid.',
+    updatePassword: 'It is necessary to update your password, because it was not updated for a long time.',
     invalidToken: 'The token is not valid. Maybe it is expired.',
-    malformedPassword: 'The password should be at least 8 characters long and contain at least one number, one lowercase letter and one uppercase letter.',
     differentPasswords: 'The passwords are different',
     noPasswordless: 'Passordless authentication is not accepted by this service.',
     rateLimitAuth: 'Too many attemps in a short interval. Please wait before trying again.',
@@ -242,7 +241,13 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     unknownSAMLProvider: 'SAML identification not supported.',
     adminModeOnly: 'Functionality reserved for super administrators.',
     plannedDeletion: 'The deletion of the user {name} and all its data is planned on the {plannedDeletion}.',
-    duplicateDep: 'The new department is a duplicate'
+    onlyCreateInvited: 'You can not create an account directly. You must be invited by an organization.',
+    duplicateDep: 'The new department is a duplicate',
+    passwordEntropy: 'The password is not strong enough.',
+    passwordMinLength: 'The password must contain at least {minLength} chars.',
+    passwordMinCharClasses: 'The password must contain at least {minCharClasses} different types of characters (lowercase, uppercase, digit, special char).',
+    forbiddenPassword: 'This password was found in a list of known passwords and cannot be used.',
+    samePassword: 'The new password must be different from the old one.',
   },
   mails: {
     creation: {

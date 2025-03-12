@@ -24,6 +24,14 @@ export const clean = async (options?: { ldapConfig?: any }) => {
   await mongo.oauthTokens.deleteMany()
   await mongo.ldapUserSessions.deleteMany()
   await mongo.fileUserSessions.deleteMany()
+  for (const passwordList of await mongo.passwordLists.find().toArray()) {
+    try {
+      await mongo.db.collection('password-list-' + passwordList._id).drop()
+    } catch (err) {
+      if (err.code !== 26) throw err
+    }
+  }
+  await mongo.passwordLists.deleteMany()
 
   if (options?.ldapConfig) {
     const ldapStorage = await import('../../api/src/storages/ldap.ts')

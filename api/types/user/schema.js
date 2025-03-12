@@ -134,6 +134,21 @@ export default {
     password: {
       type: 'object'
     },
+    passwordUpdate: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['last'],
+      readOnly: true,
+      properties: {
+        last: {
+          type: 'string',
+          format: 'date-time'
+        },
+        force: {
+          type: 'boolean'
+        }
+      }
+    },
     '2FA': {
       type: 'object',
       additionalProperties: false,

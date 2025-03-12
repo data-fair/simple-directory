@@ -53,5 +53,11 @@ module.exports = {
   serveUi: false,
   observer: {
     active: false
-  }
+  },
+  passwordValidation: {
+    entropy: 40,
+    minLength: 8,
+    minCharClasses: 3
+  },
+  passwordUpdateInterval: [1, 'days']
 }

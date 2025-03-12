@@ -20,6 +20,7 @@ import oauthTokens from './oauth-tokens/router.ts'
 import tokens from './tokens/router.ts'
 import sites from './sites/router.ts'
 import accounts from './accounts/router.ts'
+import passwordLists from './password-lists/router.ts'
 
 const app = express()
 export default app
@@ -68,6 +69,7 @@ app.use('/api/2fa', twoFA)
 app.use('/api/oauth-tokens', oauthTokens)
 app.use('/api/accounts', accounts)
 app.use('/api/sites', sites)
+app.use('/api/password-lists', passwordLists)
 
 app.use('/api/', (req, res) => {
   res.status(404).send('unknown api endpoint')

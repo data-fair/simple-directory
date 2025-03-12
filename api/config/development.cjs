@@ -193,5 +193,11 @@ module.exports = {
   manageSites: true,
   managePartners: true,
   defaultOrg: 'admins-org',
-  serveUi: false
+  serveUi: false,
+  passwordValidation: {
+    // entropy: 50,
+    entropy: 20,
+    // minLength: 8,
+    // minCharClasses: 3,
+  }
 }
