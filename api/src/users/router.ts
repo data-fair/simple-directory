@@ -163,13 +163,13 @@ router.post('', async (req, res, next) => {
   if (invit) {
     // no need to confirm email if the user already comes from an invitation link
     // we already created the user with emailConfirmed=true
-    const payload = getTokenPayload(createdUser)
+    const payload = getTokenPayload(createdUser, site)
     const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, invit && invit.id, invit && invit.department))
     return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication
     // the user will be validated and authenticated at the same time by the token_callback route
-    const payload = { ...getTokenPayload(createdUser), emailConfirmed: true }
+    const payload = { ...getTokenPayload(createdUser, site), emailConfirmed: true }
     const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, query.org, query.dep))
     await sendMail('creation', reqI18n(req).messages, body.email, { link: linkUrl.href })
     // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc

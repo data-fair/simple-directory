@@ -184,7 +184,7 @@ export const authProviderLoginCallback = async (
     await setNbMembersLimit(invitOrga.id)
   }
 
-  const payload = getTokenPayload(user)
+  const payload = getTokenPayload(user, site)
   if (adminMode) {
     // TODO: also check that the user actually inputted the password on this redirect
     if (payload.isAdmin) payload.adminMode = 1

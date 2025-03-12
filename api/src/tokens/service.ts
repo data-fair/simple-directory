@@ -1,4 +1,4 @@
-import type { SessionInfoPayload, User } from '#types'
+import type { SessionInfoPayload, Site, User } from '#types'
 import type { Request, Response } from 'express'
 import type { OrganizationMembership, SessionState, User as SessionUser } from '@data-fair/lib-express'
 import { reqSession, reqSiteUrl, session, reqSitePath, reqSessionAuthenticated, httpError } from '@data-fair/lib-express'
@@ -26,7 +26,7 @@ export const signToken = async (payload: any, exp: string | number, notBefore?: 
 
 export const decodeToken = (token: string) => jwt.decode(token) as JwtPayload
 
-export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>) => {
+export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site: Site | undefined) => {
   const payload: SessionState['user'] = {
     id: user.id,
     email: user.email,
@@ -46,6 +46,7 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>) => {
   if (user.orgStorage) payload.os = 1
   // if (user.readonly) payload.readonly = user.readonly
   if (user.coreIdProvider) payload.idp = 1
+  if (site) payload.siteOwner = site.owner
   return payload
 }
 
@@ -222,7 +223,8 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   }
   const serverSessionId = serverSessionInfo ? serverSessionInfo.session : null
 
-  const payload = getTokenPayload(user)
+  const site = await reqSite(req)
+  const payload = getTokenPayload(user, site)
   if (sessionState.user.isAdmin && sessionState.user.adminMode && !removeAdminMode) payload.adminMode = 1
   if (sessionState.user.rememberMe) payload.rememberMe = 1
   if (sessionState.user.asAdmin) {

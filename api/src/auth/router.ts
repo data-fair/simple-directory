@@ -94,10 +94,12 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     storage = await storages.createOrgStorage(org) ?? storage
   }
 
+  const site = await reqSite(req)
+
   if (config.adminCredentials?.password && config.adminCredentials.email === body.email) {
     const validPassword = await checkPassword(body.password, config.adminCredentials.password as Password)
     if (validPassword) {
-      const payload = getTokenPayload(superadmin)
+      const payload = getTokenPayload(superadmin, site)
       payload.adminMode = 1
       const callbackUrl = (await prepareCallbackUrl(req, payload, query.redirect)).href
       debug('Password based authentication of superadmin with password from config', callbackUrl)
@@ -109,7 +111,6 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
-  const site = await reqSite(req)
   let user = await storage.getUserByEmail(body.email, site)
   logContext.user = user
   let userFromMainHost = false
@@ -170,7 +171,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
-  const payload = getTokenPayload(user)
+  const payload = getTokenPayload(user, site)
   if (body.adminMode) {
     if (payload.isAdmin) payload.adminMode = 1
     else {
@@ -263,7 +264,8 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   if (body.orgStorage && org) {
     storage = await storages.createOrgStorage(org) ?? storage
   }
-  const user = await storage.getUserByEmail(body.email, await reqSite(req))
+  const site = await reqSite(req)
+  const user = await storage.getUserByEmail(body.email, site)
   logContext.user = user
 
   const redirect = query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
@@ -283,7 +285,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
-  const payload = getTokenPayload(user)
+  const payload = getTokenPayload(user, site)
   if (req.body.rememberMe) payload.rememberMe = 1
 
   // passwordless is not compatible with 2FA for now
@@ -309,7 +311,7 @@ router.post('/site_redirect', async (req, res, next) => {
   if (!req.body.redirect) return res.status(400).send()
   const site = await getSiteByUrl(req.body.redirect)
   if (!site) return res.status(404).send('site not found')
-  const payload = getTokenPayload(user)
+  const payload = getTokenPayload(user, site)
   if (loggedUser.adminMode) payload.adminMode = 1
   const callbackUrl = (await prepareCallbackUrl(req, payload, req.body.redirect, getDefaultUserOrg(user, req.body.org, req.body.dep))).href
   debug(`Redirect auth of user ${user.name} to site ${site.host}`, callbackUrl)
@@ -354,7 +356,8 @@ router.get('/token_callback', async (req, res, next) => {
 
   const reboundRedirect = query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me'
 
-  const payload = getTokenPayload(user)
+  const site = await reqSite(req)
+  const payload = getTokenPayload(user, site)
   if (decoded.rememberMe) payload.rememberMe = 1
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = 1
 
@@ -410,7 +413,7 @@ router.get('/token_callback', async (req, res, next) => {
     eventsLog.info('sd.auth.exchange.fail', 'a deleted user tried to prolongate a session', logContext)
     return res.status(401).send('User does not exist anymore')
   }
-  const payload = getTokenPayload(user)
+  const payload = getTokenPayload(user, site)
   if (decoded.adminMode && req.query.noAdmin !== 'true') payload.adminMode = 1
   if (decoded.asAdmin) {
     payload.asAdmin = decoded.asAdmin
@@ -562,7 +565,8 @@ router.post('/asadmin', async (req, res, next) => {
   const storage = storages.globalStorage
   const user = await storage.getUser(req.body.id)
   if (!user) return res.status(404).send('User does not exist')
-  const payload = getTokenPayload(user)
+  const site = await reqSite(req)
+  const payload = getTokenPayload(user, site)
   payload.name += ' (administration)'
   payload.asAdmin = { id: loggedUser.id, name: loggedUser.name }
   delete payload.isAdmin
@@ -581,7 +585,8 @@ router.delete('/asadmin', async (req, res, next) => {
   const storage = storages.globalStorage
   const user = loggedUser.asAdmin.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.asAdmin.id)
   if (!user) return res.status(401).send('User does not exist anymore')
-  const payload = getTokenPayload(user)
+  const site = await reqSite(req)
+  const payload = getTokenPayload(user, site)
   payload.adminMode = 1
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
   await setSessionCookies(req, res, payload, null, getDefaultUserOrg(user))
