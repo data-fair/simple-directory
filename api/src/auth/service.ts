@@ -49,7 +49,7 @@ export const authProviderMemberInfo = async (site: Site | undefined, provider: A
   let org
   if (create) {
     const orgId = site ? site.owner.id : config.defaultOrg
-    if (!orgId) throw new Error('createMember option on auth provider requires defaultOf to be defined')
+    if (!orgId) throw new Error('createMember option on auth provider requires defaultOrg to be defined')
     org = await storages.globalStorage.getOrganization(orgId)
     if (!org) throw new Error(`Organization not found ${orgId}`)
   }
@@ -165,7 +165,7 @@ export const authProviderLoginCallback = async (
       throw httpError(400, 'Utilisateur déjà lié à un autre fournisseur d\'identité principale')
     }
     debugAuthProvider('Existing user authenticated through oauth', user, authInfo)
-    await patchCoreOAuthUser(provider, user, authInfo, memberInfo)
+    user = await patchCoreAuthUser(provider, user, authInfo, memberInfo)
   }
 
   if (invit && invitOrga && !config.alwaysAcceptInvitation) {
@@ -201,7 +201,7 @@ export const authProviderLoginCallback = async (
   return [linkUrl.href, user]
 }
 
-export const patchCoreOAuthUser = async (provider: AuthProviderCore, user: User, authInfo: AuthProviderAuthInfo, memberInfo: AuthProviderMemberInfo) => {
+export const patchCoreAuthUser = async (provider: AuthProviderCore, user: User, authInfo: AuthProviderAuthInfo, memberInfo: AuthProviderMemberInfo) => {
   if (provider.coreIdProvider) {
     authInfo.coreId = true
     authInfo.user.coreIdProvider = { type: provider.type, id: provider.id }
@@ -215,7 +215,7 @@ export const patchCoreOAuthUser = async (provider: AuthProviderCore, user: User,
   userProviders[provider.id] = { ...existingAuthInfo, ...authInfo }
   if (provider.coreIdProvider) {
     Object.assign(patch, authInfo.user)
-    if (!memberInfo.readOnly && memberInfo.org) {
+    if (memberInfo.readOnly && memberInfo.org) {
       if (memberInfo.create) {
         patch.defaultOrg = memberInfo.org.id
         patch.ignorePersonalAccount = true

@@ -1,7 +1,7 @@
 import { type User } from '#types'
 import config, { jwtDurations } from '#config'
 import cron from 'node-cron'
-import { deleteOAuthToken, writeOAuthToken, oauthGlobalProviders, findOfflineOAuthTokens, authProviderMemberInfo, patchCoreOAuthUser, deleteIdentityWebhook } from '#services'
+import { deleteOAuthToken, writeOAuthToken, oauthGlobalProviders, findOfflineOAuthTokens, authProviderMemberInfo, patchCoreAuthUser, deleteIdentityWebhook } from '#services'
 import { internalError } from '@data-fair/lib-node/observer.js'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { defaultLocale, localizedDayjs, messages } from '#i18n'
@@ -65,7 +65,7 @@ const task = async () => {
           const { newToken, offlineRefreshToken } = refreshedToken
           const userInfo = await provider.userInfo(newToken.access_token)
           const memberInfo = await authProviderMemberInfo(undefined, provider, userInfo)
-          await patchCoreOAuthUser(provider, user, userInfo, memberInfo)
+          await patchCoreAuthUser(provider, user, userInfo, memberInfo)
           await writeOAuthToken(user, provider, newToken, offlineRefreshToken, token.loggedOut)
           eventsLog.info('sd.cleanup-cron.offline-token.refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { user })
         } catch (err: any) {
