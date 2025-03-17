@@ -93,6 +93,8 @@ export default {
     plannedDeletionShort: 'Suppr prog',
     owner: 'Propriéraire',
     passwordLists: 'Mots de passe',
+    adminGlobal: 'Administration générale',
+    adminSite: 'Administration de site',
   },
   doc: {
     about: {

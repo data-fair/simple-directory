@@ -41,47 +41,45 @@
       <template
         v-if="user && user.adminMode"
       >
-        <v-btn
-          to="/admin/users"
-          color="admin"
-          theme="dark"
-          variant="flat"
-        >
-          {{ $t(`common.users`) }}
-        </v-btn>
-        <v-btn
-          to="/admin/organizations"
-          color="admin"
-          theme="dark"
-          variant="flat"
-        >
-          {{ $t(`common.organizations`) }}
-        </v-btn>
-        <v-btn
-          v-if="$uiConfig.manageSites"
-          to="/admin/sites"
-          color="admin"
-          theme="dark"
-          variant="flat"
-        >
-          {{ $t(`common.sites`) }}
-        </v-btn>
-        <v-btn
-          to="/admin/oauth-tokens"
-          color="admin"
-          theme="dark"
-          variant="flat"
-        >
-          {{ $t(`common.oauthTokens`) }}
-        </v-btn>
-        <v-btn
-          to="/admin/password-lists"
-          color="admin"
-          theme="dark"
-          variant="flat"
-        >
-          {{ $t(`common.passwordLists`) }}
-        </v-btn>
+        <v-menu>
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              color="admin"
+              variant="flat"
+            >
+              {{ $t(`common.adminGlobal`) }}
+            </v-btn>
+          </template>
+          <v-list color="admin">
+            <v-list-item
+              to="/admin/users"
+            >
+              {{ $t(`common.users`) }}
+            </v-list-item>
+            <v-list-item
+              to="/admin/organizations"
+            >
+              {{ $t(`common.organizations`) }}
+            </v-list-item>
+            <v-list-item
+              v-if="$uiConfig.manageSites"
+              to="/admin/sites"
+            >
+              {{ $t(`common.sites`) }}
+            </v-list-item>
+            <v-list-item
+              to="/admin/oauth-tokens"
+            >
+              {{ $t(`common.oauthTokens`) }}
+            </v-list-item>
+            <v-list-item
+              to="/admin/password-lists"
+            >
+              {{ $t(`common.passwordLists`) }}
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </template>
       <v-btn
         v-if="$uiConfig.anonymousContactForm"

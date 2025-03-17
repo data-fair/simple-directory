@@ -70,7 +70,9 @@ export default {
     emailNotConfirmed: 'creation not finalized',
     noRole: 'no role',
     downloadCsv: 'download the list in CSV format',
-    authMode: 'Authentication mode'
+    authMode: 'Authentication mode',
+    adminGlobal: 'Global administration',
+    adminSite: 'Site administration',
   },
   doc: {
     about: {
