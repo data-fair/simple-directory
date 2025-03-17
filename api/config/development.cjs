@@ -6,7 +6,7 @@ module.exports = {
   publicUrl: 'http://localhost:5689/simple-directory',
   // use this host when debugging a data-fair inside a virtualbox vm
   // publicUrl: 'http://10.0.2.2:5689',
-  // admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com', 'admin@test.com'],
+  admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com', 'admin@test.com'],
   adminsOrg: { id: 'admins-org', name: 'Admins organization' },
   admins2FA: false,
   adminCredentials: {
