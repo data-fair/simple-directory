@@ -159,6 +159,7 @@ export const authProviderLoginCallback = async (
       logContext.account = { type: 'organization', ...memberInfo.org }
       eventsLog.info('sd.auth.provider.create-member', `a user was added as a member in oauth callback ${user.id} / ${memberInfo.role}`, logContext)
       await storage.addMember(memberInfo.org, user, memberInfo.role, null, memberInfo.readOnly)
+      await setNbMembersLimit(memberInfo.org.id)
     }
   } else {
     if (user.coreIdProvider && (user.coreIdProvider.type !== (provider.type || 'oauth') || user.coreIdProvider.id !== provider.id)) {
@@ -223,6 +224,7 @@ export const patchCoreAuthUser = async (provider: AuthProviderCore, user: User, 
       } else {
         await storages.globalStorage.removeMember(memberInfo.org.id, user.id)
       }
+      await setNbMembersLimit(memberInfo.org.id)
     }
   } else {
     if (authInfo.user.firstName && !user.firstName) patch.firstName = authInfo.user.firstName
