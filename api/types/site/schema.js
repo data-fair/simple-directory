@@ -302,7 +302,7 @@ export default {
       },
       oneOf: [
         {
-          title: 'jamais',
+          title: 'jamais (ou uniquement sur invitation)',
           properties: {
             type: {
               const: 'never'

@@ -103,9 +103,6 @@ export const authProviderLoginCallback = async (
   let user = await storage.getUserByEmail(authInfo.user.email, site)
   logContext.user = user
 
-  if (!user && !invit && config.onlyCreateInvited && !provider.coreIdProvider) {
-    throw httpError(400, 'onlyCreateInvited')
-  }
   if (!user && storage.readonly) {
     throw httpError(403, 'userUnknown')
   }
@@ -122,6 +119,10 @@ export const authProviderLoginCallback = async (
   }
 
   const memberInfo = await authProviderMemberInfo(site, provider, authInfo)
+
+  if (!user && !invit && config.onlyCreateInvited && !memberInfo.create) {
+    throw httpError(400, 'onlyCreateInvited')
+  }
 
   if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
 
