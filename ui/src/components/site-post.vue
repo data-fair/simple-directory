@@ -1,8 +1,9 @@
 <template>
-  <v-dialog
+  <v-menu
     v-model="menu"
-    fullscreen
     :close-on-content-click="false"
+    persistent
+    width="500"
   >
     <template #activator="{props}">
       <v-btn
@@ -53,7 +54,7 @@
         </v-btn>
       </v-card-actions>
     </v-card>
-  </v-dialog>
+  </v-menu>
 </template>
 
 <script setup lang="ts">

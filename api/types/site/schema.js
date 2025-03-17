@@ -216,6 +216,9 @@ export default {
         memberRole: {
           $ref: '#/$defs/memberRole'
         },
+        memberDepartment: {
+          $ref: '#/$defs/memberDepartment'
+        },
         coreIdProvider: {
           $ref: '#/$defs/coreIdProvider'
         },
@@ -277,6 +280,9 @@ export default {
         memberRole: {
           $ref: '#/$defs/memberRole'
         },
+        memberDepartment: {
+          $ref: '#/$defs/memberDepartment'
+        },
         ignoreEmailVerified: {
           type: 'boolean',
           title: 'Accepter les utilisateurs aux emails non vérifiés',
@@ -295,14 +301,13 @@ export default {
       default: {
         type: 'never'
       },
-      layout: { cols: 6 },
       oneOfLayout: {
         label: 'Créer les utilisateurs en tant que membres',
         help: "Si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
       },
       oneOf: [
         {
-          title: 'jamais',
+          title: 'jamais (ou uniquement sur invitation)',
           properties: {
             type: {
               const: 'never'
@@ -333,7 +338,7 @@ export default {
     },
     memberRole: {
       type: 'object',
-      layout: { cols: 6 },
+      layout: { cols: 6, if: 'parent.data.createMember && parent.data.createMember.type !== "never"' },
       oneOfLayout: {
         label: 'Attribution du rôle des membres',
         help: "Le rôle des membres créés automatiquement par ce fournisseur d'identité.",
@@ -373,6 +378,63 @@ export default {
             attribute: {
               type: 'string',
               title: "Nom de l'attribut"
+            }
+          }
+        }
+      ]
+    },
+    memberDepartment: {
+      type: 'object',
+      layout: { cols: 6, if: 'parent.data.createMember && parent.data.createMember.type !== "never"' },
+      oneOfLayout: {
+        label: 'Attribution du département des membres',
+        help: "Le département des membres créés automatiquement par ce fournisseur d'identité.",
+      },
+      default: {
+        type: 'none'
+      },
+      oneOf: [
+        {
+          title: 'Aucun département (racine de l\'organisation)',
+          properties: {
+            type: {
+              const: 'none'
+            }
+          }
+        },
+        {
+          title: 'Tout le temps ce département : ',
+          required: ['department'],
+          properties: {
+            type: {
+              const: 'static'
+            },
+            department: {
+              type: 'string',
+              title: 'Département des membres'
+            }
+          }
+        },
+        {
+          title: "Département lu dans un attribut de l'identité",
+          required: ['attribute'],
+          properties: {
+            type: {
+              const: 'attribute'
+            },
+            attribute: {
+              type: 'string',
+              title: "Nom de l'attribut"
+            },
+            required: {
+              type: 'boolean',
+              title: 'Rendre l\'attribut obligatoire',
+              description: "Si cette option n'est pas activée et que l'attribut n'est pas présent l'utilisateur sera dans la racine de l'organisation"
+            },
+            orgRootValue: {
+              type: 'string',
+              title: 'Valeur de l\'attribut pour la racine de l\'organisation',
+              description: "Si l'attribut a cette valeur l'utilisateur ne sera pas dans un département"
             }
           }
         }

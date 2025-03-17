@@ -432,8 +432,12 @@ class MongodbStorage implements SdStorage {
   }
 
   async removeMember (organizationId: string, userId: string, department?: string) {
-    await mongo.users
-      .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId, department } } })
+    if (department === '*') {
+      await mongo.users.updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId } } })
+    } else {
+      await mongo.users
+        .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId, department } } })
+    }
   }
 
   async required2FA (user: User) {
