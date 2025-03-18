@@ -54,32 +54,9 @@
           <td>{{ props.item.description }}</td>
           <template v-if="!$uiConfig.readonly">
             <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
-            <td v-if="$uiConfig.manageSites && $uiConfig.siteOrgs">
-              {{ props.item.host && (props.item.host + (props.item.path ?? '')) }}
-            </td>
             <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
             <td>
               <div class="d-flex">
-                <v-btn
-                  :loading="!limits[props.item.id]"
-                  :color="!limits[props.item.id] ? 'default' : (limits[props.item.id].store_nb_members.consumption >= limits[props.item.id].store_nb_members.limit ? 'warning' : 'primary')"
-                  size="small"
-                  rounded
-                  class="mt-3 text-lowercase"
-                  @click="currentOrganization = props.item;currentLimits = JSON.parse(JSON.stringify(limits[props.item.id]));limitOrganizationDialog = true"
-                >
-                  <template v-if="limits[props.item.id]">
-                    <template v-if="!limits[props.item.id].store_nb_members || !limits[props.item.id].store_nb_members.consumption">
-                      {{ $t('common.missingInfo') }}
-                    </template>
-                    <template v-else-if="limits[props.item.id].store_nb_members.limit === 0">
-                      {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
-                    </template>
-                    <template v-else>
-                      {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} / {{ limits[props.item.id].store_nb_members.limit.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
-                    </template>
-                  </template>
-                </v-btn>
                 <v-btn
                   :title="$t('common.editTitle', {name: props.item.name})"
                   :to="`/organization/${props.item.id}`"
@@ -141,44 +118,17 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <v-dialog
-      v-model="limitOrganizationDialog"
-      max-width="500px"
-    >
-      <v-card v-if="currentOrganization && currentLimits">
-        <v-card-title>
-          {{ $t('pages.admin.organizations.limitOrganizationTitle', {name: currentOrganization.name}) }}
-        </v-card-title>
-        <v-card-text v-if="currentLimits">
-          <v-text-field
-            v-model.number="currentLimits.store_nb_members.limit"
-            :label="$t('pages.admin.organizations.nbMembers')"
-            type="number"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="limitOrganizationDialog = false"
-          >
-            {{ $t('common.confirmCancel') }}
-          </v-btn>
-          <v-btn
-            color="warning"
-            @click="limitOrganizationDialog = false;saveLimits(currentOrganization, currentLimits)"
-          >
-            {{ $t('common.confirmOk') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-container>
 </template>
 
 <script setup lang="ts">
 const { t } = useI18n()
+const { site: siteRef } = useSession()
+
+const site = siteRef.value
+if (!site) {
+  throw new Error('No site')
+}
 
 const validQ = useStringSearchParam('q')
 const q = ref(validQ.value)
@@ -189,34 +139,15 @@ const sort = computed(() => {
   if (!sortBy.value.length) return ''
   return (sortBy.value[0].order === 'desc' ? '-' : '') + sortBy.value[0].key
 })
-const organizationsQuery = computed(() => ({ q: validQ.value, allFields: true, page: page.value, size: itemsPerPage.value, sort: sort.value }))
+const organizationsQuery = computed(() => ({ q: validQ.value, allFields: true, page: page.value, size: itemsPerPage.value, sort: sort.value, host: window.location.host, path: $sitePath || undefined }))
 const organizations = useFetch<{ count: number, results: Organization[] }>($apiPath + '/organizations', { query: organizationsQuery })
 
 const deleteOrganizationDialog = ref(false)
 const currentOrganization = ref<Organization | null>(null)
-const limitOrganizationDialog = ref(false)
-const currentLimits = ref<Limits | null>(null)
 
 const deleteOrganization = withUiNotif(async (org) => {
   await $fetch(`organizations/${org.id}`, { method: 'DELETE' })
   organizations.refresh()
-})
-
-const limits = reactive<Record<string, Limits>>({})
-const fetchLimits = withUiNotif(async () => {
-  if (!organizations.data.value) return
-  for (const org of organizations.data.value.results) {
-    if (!limits[org.id]) {
-      limits[org.id] = await $fetch(`limits/organization/${org.id}`)
-    }
-  }
-})
-if (!$uiConfig.readonly) watch(organizations.data, fetchLimits)
-
-const saveLimits = withUiNotif(async (org: Organization, limits: Limits) => {
-  if (!limits.store_nb_members.limit) limits.store_nb_members.limit = 0
-  await $fetch(`limits/organization/${org.id}`, { body: limits, method: 'POST' })
-  delete limits[org.id]
 })
 
 const headers: { title: string, value?: string, sortable?: boolean }[] = []
@@ -226,9 +157,6 @@ headers.push({ title: t('common.id'), value: 'id', sortable: false })
 headers.push({ title: t('common.description'), value: 'description', sortable: false })
 if (!$uiConfig.readonly) {
   headers.push({ title: t('common.createdAt'), value: 'created.date', sortable: true })
-  if ($uiConfig.manageSites && $uiConfig.siteOrgs) {
-    headers.push({ title: t('common.host'), value: 'host', sortable: true })
-  }
   headers.push({ title: t('common.updatedAt'), value: 'updated.date', sortable: true })
 }
 headers.push({ title: '', value: 'actions', sortable: false })

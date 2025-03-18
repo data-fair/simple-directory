@@ -22,7 +22,9 @@ export type FindOrganizationsParams = {
   skip: number,
   sort?: any,
   creator?: string,
-  select?: string[]
+  select?: string[],
+  host?: string,
+  path?: string
 }
 
 export type FindUsersParams = {
@@ -31,7 +33,9 @@ export type FindUsersParams = {
   size: number,
   skip: number,
   sort?: any,
-  select?: string[]
+  select?: string[],
+  host?: string,
+  path?: string
 }
 
 export interface SdStorageFactory {

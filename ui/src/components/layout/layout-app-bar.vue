@@ -82,7 +82,7 @@
         </v-menu>
       </template>
       <template
-        v-if="siteRole === 'admin'"
+        v-if="$uiConfig.siteAdmin && siteRole === 'admin'"
       >
         <v-menu>
           <template #activator="{ props }">

@@ -24,17 +24,29 @@ const rejectCoreIdUser: RequestHandler = (req, res, next) => {
 router.get('', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const session = reqSession(req)
+  const user = session.user
 
   const listMode = config.listUsersMode || config.listEntitiesMode
-  if (listMode === 'authenticated' && !session.user) return res.send({ results: [], count: 0 })
-  if (listMode === 'admin' && !session.user?.adminMode) return res.send({ results: [], count: 0 })
+  if (listMode === 'authenticated' && !user) return res.send({ results: [], count: 0 })
+  if (listMode === 'admin' && !user?.adminMode) return res.send({ results: [], count: 0 })
 
   const params: FindUsersParams = { ...mongoPagination(req.query), sort: mongoSort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
   if (allFields) {
-    if (!session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+    if (user?.adminMode) {
+      // ok
+    } else if (config.siteAdmin && session.siteRole === 'admin') {
+      const site = await reqSite(req)
+      if (!site || site.host !== req.query.host || site.path !== req.query.path) {
+        throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+      }
+    } else {
+      throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+    }
+    if (typeof req.query.host === 'string') params.host = req.query.host
+    if (typeof req.query.path === 'string') params.path = req.query.path
   } else {
     params.select = ['id', 'name']
   }
@@ -94,6 +106,7 @@ router.post('', async (req, res, next) => {
       throw httpError(400, 'Cannot create a user on a secondary site')
     }
     newUser.host = site.host
+    if (site.path) newUser.path = site.path
   }
 
   if (invit) {

@@ -130,6 +130,14 @@ export default {
       type: 'array',
       readOnly: true,
       items: { $ref: 'https://github.com/data-fair/simple-directory/partner' }
+    },
+    host: {
+      description: 'Site where the organization was created (leave empty if it is the main public site or if siteOrgs option is not activated)',
+      type: 'string'
+    },
+    path: {
+      type: 'string',
+      title: 'Path prefix of the site where the user was created'
     }
   }
 }

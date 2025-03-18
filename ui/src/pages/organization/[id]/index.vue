@@ -150,7 +150,13 @@ const { t } = useI18n()
 const fetchOrga = useFetch<Organization>($apiPath + `/organizations/${orgId}`)
 const orga = ref<Organization | null>(null)
 watch(fetchOrga.data, (freshOrga) => { orga.value = freshOrga })
-const orgRole = computed(() => getAccountRole(session.state, { type: 'organization', id: orgId }, { acceptDepAsRoot: $uiConfig.depAdminIsOrgAdmin }))
+const orgRole = computed(() => {
+  const role = getAccountRole(session.state, { type: 'organization', id: orgId }, { acceptDepAsRoot: $uiConfig.depAdminIsOrgAdmin })
+  if (role) return role
+  if ($uiConfig.siteAdmin && session.siteRole.value === 'admin' && orga.value && orga.value.host === window.location.host && (orga.value.path || '') === ($sitePath || '')) {
+    return 'admin'
+  }
+})
 const limits = useFetch<Limits>($apiPath + `/limits/organization/${orgId}`, { watch: orgRole.value === 'admin' })
 
 const form = ref<InstanceType<typeof VForm>>()

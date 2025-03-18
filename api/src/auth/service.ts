@@ -156,6 +156,7 @@ export const authProviderLoginCallback = async (
         throw httpError(400, 'Cannot create a user on a secondary site')
       }
       newUser.host = site.host
+      if (site.path) newUser.path = site.path
     }
     if (invit && invitOrga) {
       newUser.defaultOrg = invitOrga.id

@@ -528,7 +528,9 @@
       }
     },
     "passwordUpdateInterval": { "$ref": "#/$defs/interval" },
-    "passwordValidateOnLogin": { "type": "boolean" }
+    "passwordValidateOnLogin": { "type": "boolean" },
+    "siteOrgs": { "type": "boolean" },
+    "siteAdmin": { "type": "boolean" }
   },
   "$defs": {
     "interval": {

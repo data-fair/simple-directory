@@ -121,7 +121,7 @@
           <template v-if="!$uiConfig.readonly">
             <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
             <td v-if="$uiConfig.manageSites">
-              {{ props.item.host }}
+              {{ props.item.host && (props.item.host + (props.item.path ?? '')) }}
             </td>
             <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
             <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
