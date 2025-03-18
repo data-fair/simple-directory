@@ -39,7 +39,7 @@
     <v-spacer />
     <v-toolbar-items>
       <template
-        v-if="user && user.adminMode"
+        v-if="user?.adminMode"
       >
         <v-menu>
           <template #activator="{ props }">
@@ -81,6 +81,34 @@
           </v-list>
         </v-menu>
       </template>
+      <template
+        v-if="siteRole === 'admin'"
+      >
+        <v-menu>
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              color="admin"
+              variant="outlined"
+              class="ml-2"
+            >
+              {{ $t(`common.adminSite`) }}
+            </v-btn>
+          </template>
+          <v-list color="admin">
+            <v-list-item
+              to="/site-admin/users"
+            >
+              {{ $t(`common.users`) }}
+            </v-list-item>
+            <v-list-item
+              to="/site-admin/organizations"
+            >
+              {{ $t(`common.organizations`) }}
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </template>
       <v-btn
         v-if="$uiConfig.anonymousContactForm"
         to="/contact"
@@ -117,7 +145,7 @@
 </template>
 
 <script lang="ts" setup>
-const { user, organization } = useSession()
+const { user, organization, siteRole } = useSession()
 import PersonalMenu from '@data-fair/lib-vuetify/personal-menu.vue'
 import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
 import ThemeSwitcher from '@data-fair/lib-vuetify/theme-switcher.vue'
