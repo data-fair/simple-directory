@@ -1,6 +1,6 @@
 import config, { superadmin } from '#config'
 import { Router, type RequestHandler } from 'express'
-import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError } from '@data-fair/lib-express'
+import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, reqSession } from '@data-fair/lib-express'
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
@@ -561,11 +561,18 @@ router.delete('/adminmode', async (req, res, next) => {
 router.post('/asadmin', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const loggedUser = reqUserAuthenticated(req)
-  if (!loggedUser.adminMode) throw httpError(403, 'This functionality is for admins only')
+  const session = reqSession(req)
   const storage = storages.globalStorage
   const user = await storage.getUser(req.body.id)
-  if (!user) return res.status(404).send('User does not exist')
   const site = await reqSite(req)
+  if (loggedUser.adminMode) {
+    // ok as global admin
+  } else if (config.siteAdmin && site && session.siteRole === 'admin' && site.host === user?.host && site.path === user?.path) {
+    // ok as site admin
+  } else {
+    throw httpError(403, 'This functionality is for admins only')
+  }
+  if (!user) return res.status(404).send('User does not exist')
   const payload = getTokenPayload(user, site)
   payload.name += ' (administration)'
   payload.asAdmin = { id: loggedUser.id, name: loggedUser.name }
@@ -587,7 +594,7 @@ router.delete('/asadmin', async (req, res, next) => {
   if (!user) return res.status(401).send('User does not exist anymore')
   const site = await reqSite(req)
   const payload = getTokenPayload(user, site)
-  payload.adminMode = 1
+  if (user.isAdmin) payload.adminMode = 1
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
   await setSessionCookies(req, res, payload, null, getDefaultUserOrg(user))
 

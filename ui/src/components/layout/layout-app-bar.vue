@@ -102,6 +102,7 @@
               {{ $t(`common.users`) }}
             </v-list-item>
             <v-list-item
+              v-if="$uiConfig.siteOrgs"
               to="/site-admin/organizations"
             >
               {{ $t(`common.organizations`) }}
