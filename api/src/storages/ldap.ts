@@ -118,9 +118,9 @@ export class LdapStorage implements SdStorage {
     return this.ldapParams.members.organizationAsDC === true || typeof this.ldapParams.members.organizationAsDC === 'number'
   }
 
-  private roleCaptureRegexp: RegExp | undefined
-  private departmentCaptureRegexp: RegExp | undefined
-  private organizationCaptureRegexp: RegExp | undefined
+  private roleCaptureRegex: RegExp | undefined
+  private departmentCaptureRegex: RegExp | undefined
+  private organizationCaptureRegex: RegExp | undefined
 
   constructor (params: LdapParams, org?: Organization) {
     this.ldapParams = params
@@ -128,14 +128,14 @@ export class LdapStorage implements SdStorage {
     console.log('Connecting to ldap ' + params.url)
     // check connexion at startup
 
-    if (this.ldapParams.members.role.captureRegexp) {
-      this.roleCaptureRegexp = new RegExp(this.ldapParams.members.role.captureRegexp)
+    if (this.ldapParams.members.role.captureRegex) {
+      this.roleCaptureRegex = new RegExp(this.ldapParams.members.role.captureRegex)
     }
-    if (this.ldapParams.members.department?.captureRegexp) {
-      this.departmentCaptureRegexp = new RegExp(this.ldapParams.members.department.captureRegexp)
+    if (this.ldapParams.members.department?.captureRegex) {
+      this.departmentCaptureRegex = new RegExp(this.ldapParams.members.department.captureRegex)
     }
-    if (this.ldapParams.members.organization?.captureRegexp) {
-      this.organizationCaptureRegexp = new RegExp(this.ldapParams.members.organization.captureRegexp)
+    if (this.ldapParams.members.organization?.captureRegex) {
+      this.organizationCaptureRegex = new RegExp(this.ldapParams.members.organization.captureRegex)
     }
 
     const prefixes: Record<string, string> = org ? { id: `ldap_${org.id}_` } : {}
@@ -376,8 +376,8 @@ export class LdapStorage implements SdStorage {
       if (!ldapOrg) {
         throw new Error(`failed to map the user to an organization using attribute: ${this.ldapParams.members.organization.attr}=${ldapOrg}`)
       }
-      if (this.organizationCaptureRegexp) {
-        const match = ldapOrg.match(this.organizationCaptureRegexp)
+      if (this.organizationCaptureRegex) {
+        const match = ldapOrg.match(this.organizationCaptureRegex)
         debug('applied organization capture regexp', ldapOrg, match)
         if (match) ldapOrg = match[1]
       }
@@ -404,8 +404,8 @@ export class LdapStorage implements SdStorage {
         if (ldapRoles) {
           role = Object.keys(this.ldapParams.members.role.values ?? {})
             .find(role => {
-              if (this.roleCaptureRegexp) {
-                const match = role.match(this.roleCaptureRegexp)
+              if (this.roleCaptureRegex) {
+                const match = role.match(this.roleCaptureRegex)
                 debug('applied role capture regexp', role, match)
                 if (match) role = match[1]
               }
@@ -417,8 +417,8 @@ export class LdapStorage implements SdStorage {
       if (this.ldapParams.members.department?.attr) {
         const ldapDepartment = attrs[this.ldapParams.members.department.attr]
         if (ldapDepartment?.length) {
-          if (this.departmentCaptureRegexp) {
-            const match = ldapDepartment[0].match(this.departmentCaptureRegexp)
+          if (this.departmentCaptureRegex) {
+            const match = ldapDepartment[0].match(this.departmentCaptureRegex)
             debug('applied department capture regexp', ldapDepartment[0], match)
             if (match) {
               department = match[1]

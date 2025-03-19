@@ -99,7 +99,7 @@ export default {
           additionalProperties: false,
           properties: {
             attr: { type: 'string' },
-            captureRegexp: { type: 'string' }
+            captureRegex: { type: 'string' }
           }
         },
         onlyWithRole: { type: 'boolean' },
@@ -109,7 +109,7 @@ export default {
           required: ['default'],
           properties: {
             attr: { type: 'string' },
-            captureRegexp: { type: 'string' },
+            captureRegex: { type: 'string' },
             default: { type: 'string' },
             values: {
               type: 'object',
@@ -130,7 +130,7 @@ export default {
           required: [],
           properties: {
             attr: { type: 'string' },
-            captureRegexp: { type: 'string' }
+            captureRegex: { type: 'string' }
           }
         },
         overwrite: {
