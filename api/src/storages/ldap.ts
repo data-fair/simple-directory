@@ -272,6 +272,14 @@ export class LdapStorage implements SdStorage {
         this.orgMapping.from
       )
       const results = res.results
+      for (const org of results) {
+        let overwrite
+        if ((this.ldapParams.overwrite || []).includes('organizations')) {
+          overwrite = await mongo.ldapOrganizationsOverwrite.findOne({ id: org.id })
+        }
+        overwrite = overwrite || (this.ldapParams.organizations.overwrite || []).find(o => (o.id === org.id))
+        if (overwrite) Object.assign(org, overwrite)
+      }
       if (!this.org && config.adminsOrg) {
         results.push({ ...config.adminsOrg, departments: [] })
       }
@@ -527,7 +535,11 @@ export class LdapStorage implements SdStorage {
       const lq = params.q.toLowerCase()
       results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
     }
+    if (params.sort && Object.keys(params.sort).length && !params.q && !ids) {
+      results = [...results]
+    }
     results.sort(sortCompare(params.sort))
+
     const count = results.length
     const skip = params.skip || 0
     const size = params.size || 20
@@ -673,6 +685,9 @@ export class LdapStorage implements SdStorage {
       const lq = params.q.toLowerCase()
       results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
     }
+    if (params.sort && Object.keys(params.sort).length && !params.q) {
+      results = [...results]
+    }
     results.sort(sortCompare(params.sort))
     const count = results.length
     const skip = params.skip || 0
@@ -815,6 +830,12 @@ export class LdapStorage implements SdStorage {
 
   validatePartner (orgId: string, partnerId: string, partner: Organization): Promise<void> {
     throw new Error('Method not implemented.')
+  }
+
+  clearCache () {
+    this.allUsersCache = {}
+    this.allOrgsCache = {}
+    this.getOrganization.clear()
   }
 }
 

@@ -49,7 +49,8 @@ module.exports = {
         // an array of objects that can be used to overwrite member role based on matching "orgId" and "email" properties
         // leave orgId empty to overwrite role for all organizations of the user
         overwrite: []
-      }
+      },
+      prefillCache: false
     }
   },
   secretKeys: {

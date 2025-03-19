@@ -85,5 +85,10 @@ describe('storage ldap', () => {
     assert.deepEqual(org.departments, [{ id: 'dep1', name: 'dep1' }])
     await storage.getOrganization('myorg')
     await storage.getOrganization('myorg')
+
+    const orgs = await storage.findOrganizations({ skip: 0, size: 10, sort: { name: -1 } })
+    assert.equal(orgs.count, 2)
+    assert.equal(orgs.results[0].id, 'myorg')
+    assert.equal(orgs.results[0].name, 'Org overwritten')
   })
 })
