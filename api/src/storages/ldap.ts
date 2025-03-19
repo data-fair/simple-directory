@@ -159,9 +159,16 @@ export class LdapStorage implements SdStorage {
     }
 
     if (this.ldapParams.prefillCache) {
+      debug('prefill users cache')
       this.getAllUsers().catch(err => {
         console.error('failed to prefill users cache', err)
       })
+      if (!this.ldapParams.organizations.staticSingleOrg) {
+        debug('prefill orgs cache')
+        this.getAllOrgs().catch(err => {
+          console.error('failed to prefill orgs cache', err)
+        })
+      }
     }
   }
 
@@ -204,6 +211,7 @@ export class LdapStorage implements SdStorage {
   private allUsersCache: { dataPromise?: Promise<User[]>, lastFetch?: Date, previousData?: User[] } = {}
 
   private async _getAllUsers () {
+    debug('fetch whole users list')
     const { attributes, extraFilters } = this.getUserSearchParams()
     return this.withClient(async (client) => {
       const res = await this._search<User>(
@@ -213,6 +221,7 @@ export class LdapStorage implements SdStorage {
         attributes,
         this.userMapping.from
       )
+      debug(`found ${res.count} users`)
       const results: User[] = []
       const orgCache = {}
       for (let i = 0; i < res.fullResults.length; i++) {
@@ -248,6 +257,38 @@ export class LdapStorage implements SdStorage {
     } else {
       return this.allUsersCache.dataPromise
     }
+  }
+
+  private allOrgsCache: { dataPromise?: Promise<Organization[]>, lastFetch?: Date } = {}
+
+  private async _getAllOrgs () {
+    debug('fetch whole organizations list')
+    return this.withClient(async (client) => {
+      const res = await this._search<Organization>(
+        client,
+        this.ldapParams.baseDN,
+        this.orgMapping.filter({}, this.ldapParams.organizations.objectClass, this.ldapParams.organizations.extraFilters),
+        Object.values(this.ldapParams.organizations.mapping),
+        this.orgMapping.from
+      )
+      const results = res.results
+      if (!this.org && config.adminsOrg) {
+        results.push({ ...config.adminsOrg, departments: [] })
+      }
+      return results
+    })
+  }
+
+  private async getAllOrgs (): Promise<Organization[]> {
+    if (!this.allOrgsCache.dataPromise || !this.allOrgsCache.lastFetch || (Date.now() - this.allOrgsCache.lastFetch.getTime()) > (config.storage.ldap.cacheMS || 1000 * 60 * 5)) {
+      const orgsPromise = this._getAllOrgs()
+      this.allOrgsCache.dataPromise = orgsPromise
+      this.allOrgsCache.lastFetch = new Date()
+      orgsPromise.catch(err => {
+        console.error('failed to fetch all orgs', err)
+      })
+    }
+    return this.allOrgsCache.dataPromise
   }
 
   // promisified search
@@ -627,24 +668,17 @@ export class LdapStorage implements SdStorage {
         results: [this.ldapParams.organizations.staticSingleOrg]
       }
     }
-    const extraFilters = [...(this.ldapParams.organizations.extraFilters || [])]
-    return this.withClient(async (client) => {
-      const res = await this._search<Organization>(
-        client,
-        this.ldapParams.baseDN,
-        this.orgMapping.filter({ q: params.q }, this.ldapParams.organizations.objectClass, extraFilters),
-        Object.values(this.ldapParams.organizations.mapping),
-        this.orgMapping.from
-      )
-      const results = res.results
-      let count = res.count
-      if (!this.org && config.adminsOrg) {
-        results.push({ ...config.adminsOrg, departments: [] })
-        count += 1
-      }
-      results.sort(sortCompare(params.sort))
-      return { count, results }
-    })
+    let results = await this.getAllOrgs()
+    if (params.q) {
+      const lq = params.q.toLowerCase()
+      results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
+    }
+    results.sort(sortCompare(params.sort))
+    const count = results.length
+    const skip = params.skip || 0
+    const size = params.size || 20
+    results = results.slice(skip, skip + size)
+    return { count, results }
   }
 
   async patchOrganization (id: string, patch: any, user: UserRef) {
