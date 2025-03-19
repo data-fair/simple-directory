@@ -365,6 +365,8 @@ export class LdapStorage implements SdStorage {
       role = (overwrite && overwrite.role) || role || this.ldapParams.members.role.default
       department = (overwrite && overwrite.department) || department || org.department
       user.organizations = [{ ...org, role, department }]
+    } else {
+      user.organizations = []
     }
   }
 
