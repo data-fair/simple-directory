@@ -22,6 +22,9 @@ export default {
     cacheMS: {
       type: 'number'
     },
+    prefillCache: {
+      type: 'boolean',
+    },
     users: {
       type: 'object',
       additionalProperties: false,

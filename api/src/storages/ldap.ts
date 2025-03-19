@@ -157,6 +157,12 @@ export class LdapStorage implements SdStorage {
         {}
       )
     }
+
+    if (this.ldapParams.prefillCache) {
+      this.getAllUsers().catch(err => {
+        console.error('failed to prefill users cache', err)
+      })
+    }
   }
 
   async init () {
@@ -195,28 +201,54 @@ export class LdapStorage implements SdStorage {
     return { attributes, extraFilters }
   }
 
-  _getAllUsers = memoize(async (client) => {
+  private allUsersCache: { dataPromise?: Promise<User[]>, lastFetch?: Date, previousData?: User[] } = {}
+
+  private async _getAllUsers () {
     const { attributes, extraFilters } = this.getUserSearchParams()
-    const res = await this._search<User>(
-      client,
-      this.ldapParams.baseDN,
-      this.userMapping.filter({}, this.ldapParams.users.objectClass, extraFilters),
-      attributes,
-      this.userMapping.from
-    )
-    const results: User[] = []
-    const orgCache = {}
-    for (let i = 0; i < res.fullResults.length; i++) {
-      const user = res.fullResults[i].item
-      await this._setUserOrg(client, user, res.fullResults[i].entry, res.fullResults[i].attrs, orgCache)
-      const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email === user.email)
-      if (overwrite) Object.assign(user, overwrite)
-      // email is implicitly confirmed in ldap mode
-      user.emailConfirmed = true
-      results.push(user)
+    return this.withClient(async (client) => {
+      const res = await this._search<User>(
+        client,
+        this.ldapParams.baseDN,
+        this.userMapping.filter({}, this.ldapParams.users.objectClass, extraFilters),
+        attributes,
+        this.userMapping.from
+      )
+      const results: User[] = []
+      const orgCache = {}
+      for (let i = 0; i < res.fullResults.length; i++) {
+        const user = res.fullResults[i].item
+        await this._setUserOrg(client, user, res.fullResults[i].entry, res.fullResults[i].attrs, orgCache)
+        const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email === user.email)
+        if (overwrite) Object.assign(user, overwrite)
+        // email is implicitly confirmed in ldap mode
+        user.emailConfirmed = true
+        results.push(user)
+      }
+      return results
+    })
+  }
+
+  private async getAllUsers (): Promise<User[]> {
+    if (!this.allUsersCache.dataPromise || !this.allUsersCache.lastFetch || (Date.now() - this.allUsersCache.lastFetch.getTime()) > (config.storage.ldap.cacheMS || 1000 * 60 * 5)) {
+      const usersPromise = this._getAllUsers()
+      this.allUsersCache.dataPromise = usersPromise
+      this.allUsersCache.lastFetch = new Date()
+      usersPromise.then((users) => {
+        this.allUsersCache.previousData = users
+      }, err => {
+        console.error('failed to fetch all users', err)
+      })
     }
-    return results
-  }, { maxAge: config.storage.ldap.cacheMS }) // 5 minutes cache
+    const previousData = this.allUsersCache.previousData
+    if (previousData) {
+      return Promise.race<User[]>([
+        this.allUsersCache.dataPromise,
+        new Promise<User[]>(resolve => setTimeout(() => resolve(previousData), 10000))
+      ])
+    } else {
+      return this.allUsersCache.dataPromise
+    }
+  }
 
   // promisified search
   async _search <T>(client: ldap.Client, base: string, filter: any, attributes: string[], mappingFn: MappingFn) {
@@ -445,23 +477,21 @@ export class LdapStorage implements SdStorage {
   // ids, q, sort, select, skip, size
   async findUsers (params: FindUsersParams) {
     debug('find users', params)
-    return this.withClient(async (client) => {
-      let results = await this._getAllUsers(client)
-      const ids = params.ids
-      if (ids) {
-        results = results.filter(user => ids.find(id => user.id === id))
-      }
-      if (params.q) {
-        const lq = params.q.toLowerCase()
-        results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
-      }
-      results.sort(sortCompare(params.sort))
-      const count = results.length
-      const skip = params.skip || 0
-      const size = params.size || 20
-      results = results.slice(skip, skip + size)
-      return { count, results }
-    })
+    let results = await this.getAllUsers()
+    const ids = params.ids
+    if (ids) {
+      results = results.filter(user => ids.find(id => user.id === id))
+    }
+    if (params.q) {
+      const lq = params.q.toLowerCase()
+      results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
+    }
+    results.sort(sortCompare(params.sort))
+    const count = results.length
+    const skip = params.skip || 0
+    const size = params.size || 20
+    results = results.slice(skip, skip + size)
+    return { count, results }
   }
 
   private _getRoleFilter (roles: string[]) {
