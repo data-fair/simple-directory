@@ -587,7 +587,7 @@ export class LdapStorage implements SdStorage {
   private _findAllMembers = (orgId: string, users: User[]) => {
     // if users did not change (same reference from cache), return the cached members
     if (this.membersCache[orgId]?.fromUsers === users) return this.membersCache[orgId].members
-    const members = users
+    const members: Member[] = users
       .filter(user => user.organizations.find(o => o.id === orgId))
       .map(user => {
         const userOrga = user.organizations.find(o => o.id === orgId)
