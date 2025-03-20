@@ -4,7 +4,7 @@ export default {
   type: 'object',
   title: 'ldap params',
   additionalProperties: false,
-  required: ['url', 'baseDN', 'users', 'organizations', 'members'],
+  required: ['url', 'baseDN', 'users', 'organizations', 'members', 'cacheMS'],
   properties: {
     url: { type: 'string' },
     clientOptions: { type: 'object' },

@@ -240,7 +240,7 @@ export class LdapStorage implements SdStorage {
 
   private async getAllUsers (): Promise<{ results: User[], fromCache?: string }> {
     let fromCache: string | undefined
-    if (!this.allUsersCache.dataPromise || !this.allUsersCache.lastFetch || (Date.now() - this.allUsersCache.lastFetch.getTime()) > (config.storage.ldap.cacheMS || 1000 * 60 * 5)) {
+    if (!this.allUsersCache.dataPromise || !this.allUsersCache.lastFetch || (Date.now() - this.allUsersCache.lastFetch.getTime()) > config.storage.ldap.cacheMS) {
       const usersPromise = this._getAllUsers()
       this.allUsersCache.dataPromise = usersPromise
       const date = new Date()
@@ -300,7 +300,7 @@ export class LdapStorage implements SdStorage {
 
   private async getAllOrgs (): Promise<{ results: Organization[], fromCache?: string }> {
     let fromCache: string | undefined
-    if (!this.allOrgsCache.dataPromise || !this.allOrgsCache.lastFetch || (Date.now() - this.allOrgsCache.lastFetch.getTime()) > (config.storage.ldap.cacheMS || 1000 * 60 * 5)) {
+    if (!this.allOrgsCache.dataPromise || !this.allOrgsCache.lastFetch || (Date.now() - this.allOrgsCache.lastFetch.getTime()) > config.storage.ldap.cacheMS) {
       const orgsPromise = this._getAllOrgs()
       this.allOrgsCache.dataPromise = orgsPromise
       this.allOrgsCache.lastFetch = new Date()
