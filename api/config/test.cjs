@@ -36,8 +36,9 @@ module.exports = {
         onlyWithRole: false,
         role: {
           attr: 'employeeType',
+          captureRegex: '^(.{0,3}).*$',
           values: {
-            admin: ['administrator'],
+            admin: ['adm'],
             user: []
           },
           default: 'user'
