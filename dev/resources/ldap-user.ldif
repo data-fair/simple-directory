@@ -3,3 +3,5 @@ objectClass: inetOrgPerson
 cn: alban
 sn: alban
 mail: alban.mouton@koumoul.com
+userPassword: test
+employeeType: administrator

@@ -208,7 +208,7 @@ export class LdapStorage implements SdStorage {
     return { attributes, extraFilters }
   }
 
-  private allUsersCache: { dataPromise?: Promise<User[]>, lastFetch?: Date, previousData?: User[] } = {}
+  private allUsersCache: { dataPromise?: Promise<User[]>, lastFetch?: Date, previousData?: User[], previousFetch?: Date } = {}
 
   private async _getAllUsers () {
     debug('fetch whole users list')
@@ -237,25 +237,35 @@ export class LdapStorage implements SdStorage {
     })
   }
 
-  private async getAllUsers (): Promise<User[]> {
+  private async getAllUsers (): Promise<{ results: User[], fromCache?: string }> {
+    let fromCache: string | undefined
     if (!this.allUsersCache.dataPromise || !this.allUsersCache.lastFetch || (Date.now() - this.allUsersCache.lastFetch.getTime()) > (config.storage.ldap.cacheMS || 1000 * 60 * 5)) {
       const usersPromise = this._getAllUsers()
       this.allUsersCache.dataPromise = usersPromise
-      this.allUsersCache.lastFetch = new Date()
+      const date = new Date()
+      this.allUsersCache.lastFetch = date
       usersPromise.then((users) => {
         this.allUsersCache.previousData = users
+        this.allUsersCache.previousFetch = date
       }, err => {
         console.error('failed to fetch all users', err)
       })
+    } else {
+      fromCache = this.allUsersCache.lastFetch.toISOString()
     }
     const previousData = this.allUsersCache.previousData
-    if (previousData) {
-      return Promise.race<User[]>([
+    const previousFetch = this.allUsersCache.previousFetch?.toISOString()
+    if (previousData && previousFetch) {
+      const results = await Promise.race<User[]>([
         this.allUsersCache.dataPromise,
-        new Promise<User[]>(resolve => setTimeout(() => resolve(previousData), 10000))
+        new Promise<User[]>(resolve => setTimeout(() => {
+          fromCache = previousFetch
+          resolve(previousData)
+        }, 10000))
       ])
+      return { results, fromCache }
     } else {
-      return this.allUsersCache.dataPromise
+      return { results: await this.allUsersCache.dataPromise, fromCache }
     }
   }
 
@@ -287,7 +297,8 @@ export class LdapStorage implements SdStorage {
     })
   }
 
-  private async getAllOrgs (): Promise<Organization[]> {
+  private async getAllOrgs (): Promise<{ results: Organization[], fromCache?: string }> {
+    let fromCache: string | undefined
     if (!this.allOrgsCache.dataPromise || !this.allOrgsCache.lastFetch || (Date.now() - this.allOrgsCache.lastFetch.getTime()) > (config.storage.ldap.cacheMS || 1000 * 60 * 5)) {
       const orgsPromise = this._getAllOrgs()
       this.allOrgsCache.dataPromise = orgsPromise
@@ -295,8 +306,10 @@ export class LdapStorage implements SdStorage {
       orgsPromise.catch(err => {
         console.error('failed to fetch all orgs', err)
       })
+    } else {
+      fromCache = this.allOrgsCache.lastFetch.toISOString()
     }
-    return this.allOrgsCache.dataPromise
+    return { results: await this.allOrgsCache.dataPromise, fromCache }
   }
 
   // promisified search
@@ -526,7 +539,7 @@ export class LdapStorage implements SdStorage {
   // ids, q, sort, select, skip, size
   async findUsers (params: FindUsersParams) {
     debug('find users', params)
-    let results = await this.getAllUsers()
+    let { results, fromCache } = await this.getAllUsers()
     const ids = params.ids
     if (ids) {
       results = results.filter(user => ids.find(id => user.id === id))
@@ -544,7 +557,7 @@ export class LdapStorage implements SdStorage {
     const skip = params.skip || 0
     const size = params.size || 20
     results = results.slice(skip, skip + size)
-    return { count, results }
+    return { count, results, fromCache }
   }
 
   private _getRoleFilter (roles: string[]) {
@@ -565,8 +578,8 @@ export class LdapStorage implements SdStorage {
 
   async findMembers (organizationId: string, params: FindMembersParams) {
     debug('find members', params)
-    const users = (await this.findUsers({ ...params, sort: null, skip: 0, size: 10000 })).results
-    let members = users
+    const { results, fromCache } = await this.getAllUsers()
+    let members = results
       .filter(user => user.organizations.find(o => o.id === organizationId))
       .map(user => {
         const userOrga = user.organizations.find(o => o.id === organizationId)
@@ -580,6 +593,14 @@ export class LdapStorage implements SdStorage {
           emailConfirmed: true
         }
       })
+    const ids = params.ids
+    if (ids) {
+      members = members.filter(member => ids.find(id => member.id === id))
+    }
+    if (params.q) {
+      const lq = params.q.toLowerCase()
+      members = members.filter(member => member.name.toLowerCase().indexOf(lq) >= 0)
+    }
     const roles = params.roles
     if (roles?.length) {
       members = members.filter(member => roles.includes(member.role))
@@ -595,7 +616,8 @@ export class LdapStorage implements SdStorage {
     members = members.slice(skip, skip + size)
     return {
       count,
-      results: members
+      results: members,
+      fromCache
     }
   }
 
@@ -680,7 +702,7 @@ export class LdapStorage implements SdStorage {
         results: [this.ldapParams.organizations.staticSingleOrg]
       }
     }
-    let results = await this.getAllOrgs()
+    let { results, fromCache } = await this.getAllOrgs()
     if (params.q) {
       const lq = params.q.toLowerCase()
       results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
@@ -693,7 +715,7 @@ export class LdapStorage implements SdStorage {
     const skip = params.skip || 0
     const size = params.size || 20
     results = results.slice(skip, skip + size)
-    return { count, results }
+    return { count, results, fromCache }
   }
 
   async patchOrganization (id: string, patch: any, user: UserRef) {
