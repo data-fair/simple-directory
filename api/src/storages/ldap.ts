@@ -158,7 +158,7 @@ export class LdapStorage implements SdStorage {
       )
     }
 
-    if (this.ldapParams.prefillCache) {
+    if (this.ldapParams.prefillCache && !this.org) {
       debug('prefill users cache')
       this.getAllUsers().catch(err => {
         console.error('failed to prefill users cache', err)
