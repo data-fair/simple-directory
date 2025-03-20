@@ -423,6 +423,7 @@ export class LdapStorage implements SdStorage {
       let role
       if (this.ldapParams.members.role.attr) {
         const ldapRoles = attrs[this.ldapParams.members.role.attr]
+        debug(`try to map role for user ${user.id}`, ldapRoles)
         if (ldapRoles) {
           role = Object.keys(this.ldapParams.members.role.values ?? {})
             .find(role => {
@@ -440,6 +441,7 @@ export class LdapStorage implements SdStorage {
       let department
       if (this.ldapParams.members.department?.attr) {
         const ldapDepartment = attrs[this.ldapParams.members.department.attr]
+        debug(`try to map department for user ${user.id}`, ldapDepartment)
         if (ldapDepartment?.length) {
           if (this.departmentCaptureRegex) {
             const match = ldapDepartment[0].match(this.departmentCaptureRegex)
