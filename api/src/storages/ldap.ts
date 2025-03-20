@@ -1,6 +1,6 @@
 import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
 import config from '#config'
-import type { LdapParams, ServerSession, Site } from '#types'
+import type { LdapParams, Member, ServerSession, Site } from '#types'
 import type { Organization, Partner, User, UserWritable } from '#types'
 import mongo from '#mongo'
 import memoize from 'memoizee'
@@ -262,7 +262,7 @@ export class LdapStorage implements SdStorage {
         new Promise<User[]>(resolve => setTimeout(() => {
           fromCache = previousFetch
           resolve(previousData)
-        }, 10000))
+        }, 5000))
       ])
       return { results, fromCache }
     } else {
@@ -543,7 +543,8 @@ export class LdapStorage implements SdStorage {
   // ids, q, sort, select, skip, size
   async findUsers (params: FindUsersParams) {
     debug('find users', params)
-    let { results, fromCache } = await this.getAllUsers()
+    const { results: ogResults, fromCache } = await this.getAllUsers()
+    let results = ogResults
     const ids = params.ids
     if (ids) {
       results = results.filter(user => ids.find(id => user.id === id))
@@ -552,7 +553,7 @@ export class LdapStorage implements SdStorage {
       const lq = params.q.toLowerCase()
       results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
     }
-    if (params.sort && Object.keys(params.sort).length && !params.q && !ids) {
+    if (params.sort && Object.keys(params.sort).length && results === ogResults) {
       results = [...results]
     }
     results.sort(sortCompare(params.sort))
@@ -580,13 +581,14 @@ export class LdapStorage implements SdStorage {
     }
   }
 
-  async findMembers (organizationId: string, params: FindMembersParams) {
-    debug('find members', params)
-    const { results, fromCache } = await this.getAllUsers()
-    let members = results
-      .filter(user => user.organizations.find(o => o.id === organizationId))
+  private membersCache: { [orgId: string]: { members: Member[], fromUsers: User[] } } = {}
+  private _findAllMembers = (orgId: string, users: User[]) => {
+    // if users did not change (same reference from cache), return the cached members
+    if (this.membersCache[orgId]?.fromUsers === users) return this.membersCache[orgId].members
+    const members = users
+      .filter(user => user.organizations.find(o => o.id === orgId))
       .map(user => {
-        const userOrga = user.organizations.find(o => o.id === organizationId)
+        const userOrga = user.organizations.find(o => o.id === orgId)
         if (!userOrga) throw new Error('impossible error')
         return {
           id: user.id,
@@ -597,30 +599,42 @@ export class LdapStorage implements SdStorage {
           emailConfirmed: true
         }
       })
+    this.membersCache[orgId] = { members, fromUsers: users }
+    return members
+  }
+
+  async findMembers (organizationId: string, params: FindMembersParams) {
+    debug('find members', params)
+    const { results: users, fromCache } = await this.getAllUsers()
+    const ogResults = this._findAllMembers(organizationId, users)
+    let results = ogResults
     const ids = params.ids
     if (ids) {
-      members = members.filter(member => ids.find(id => member.id === id))
+      results = results.filter(member => ids.find(id => member.id === id))
     }
     if (params.q) {
       const lq = params.q.toLowerCase()
-      members = members.filter(member => member.name.toLowerCase().indexOf(lq) >= 0)
+      results = results.filter(member => member.name.toLowerCase().indexOf(lq) >= 0)
     }
     const roles = params.roles
     if (roles?.length) {
-      members = members.filter(member => roles.includes(member.role))
+      results = results.filter(member => roles.includes(member.role))
     }
     const deps = params.departments
     if (deps?.length) {
-      members = members.filter(member => member.department && deps.includes(member.department))
+      results = results.filter(member => member.department && deps.includes(member.department))
     }
-    members.sort(sortCompare(params.sort))
-    const count = members.length
+    if (params.sort && Object.keys(params.sort).length && results === ogResults) {
+      results = [...results]
+    }
+    results.sort(sortCompare(params.sort))
+    const count = results.length
     const skip = params.skip || 0
     const size = params.size || 20
-    members = members.slice(skip, skip + size)
+    results = results.slice(skip, skip + size)
     return {
       count,
-      results: members,
+      results,
       fromCache
     }
   }
@@ -684,7 +698,7 @@ export class LdapStorage implements SdStorage {
     const org = await this._getOrganization(client, id)
     if (!org) return org
     if (!org.departments && this.ldapParams.members.department?.attr) {
-      const allMembers = await this.findMembers(org.id, { skip: 0, size: 10000 })
+      const allMembers = await this.findMembers(org.id, { skip: 0, size: 100000 })
       const memberDeps = [...new Set(allMembers.results.map(m => m.department).filter(d => !!d))].sort() as string[]
       org.departments = memberDeps.map(dep => ({ id: dep, name: dep }))
     }
@@ -706,12 +720,13 @@ export class LdapStorage implements SdStorage {
         results: [this.ldapParams.organizations.staticSingleOrg]
       }
     }
-    let { results, fromCache } = await this.getAllOrgs()
+    const { results: ogResults, fromCache } = await this.getAllOrgs()
+    let results = ogResults
     if (params.q) {
       const lq = params.q.toLowerCase()
       results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
     }
-    if (params.sort && Object.keys(params.sort).length && !params.q) {
+    if (params.sort && Object.keys(params.sort).length && results === ogResults) {
       results = [...results]
     }
     results.sort(sortCompare(params.sort))
