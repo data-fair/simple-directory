@@ -1,7 +1,7 @@
-dn: cn=alban,dc=example,dc=org
+dn: cn=superadmin,dc=example,dc=org
 objectClass: inetOrgPerson
-cn: alban
-sn: alban
-mail: alban.mouton@koumoul.com
+cn: superadmin
+sn: superadmin
+mail: superadmin@test.com
 userPassword: test
 employeeType: administrator
