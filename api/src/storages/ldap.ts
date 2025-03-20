@@ -231,6 +231,7 @@ export class LdapStorage implements SdStorage {
         if (overwrite) Object.assign(user, overwrite)
         // email is implicitly confirmed in ldap mode
         user.emailConfirmed = true
+        user.name = user.name || userName(user)
         results.push(user)
       }
       return results
@@ -498,6 +499,7 @@ export class LdapStorage implements SdStorage {
         }
       }
       if (config.onlyCreateInvited) user.ignorePersonalAccount = true
+      user.name = user.name || userName(user)
       return { ...res.fullResults[0], user }
     })
   }
