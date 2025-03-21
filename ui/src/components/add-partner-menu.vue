@@ -15,68 +15,68 @@
     </template>
 
     <v-card
-      v-if="editPartner"
       data-iframe-height
       :width="500"
-      :loading="$uiConfig.manageSites && !redirects"
+      :loading="!editPartner || loadingRedirects"
     >
       <v-card-title>
         {{ $t('pages.organization.addPartner') }}
       </v-card-title>
-      <v-card-text>
-        <v-form
-          ref="createForm"
-          @submit.prevent
-        >
-          <v-text-field
-            v-model="editPartner.name"
-            :label="$t('common.orgName')"
-            :rules="[v => !!v || '']"
-            name="name"
-            required
-            density="compact"
-            variant="outlined"
-            autocomplete="off"
-          />
-          <v-text-field
-            v-model="editPartner.contactEmail"
-            :label="$t('common.contactEmail')"
-            :rules="[v => !!v || '']"
-            name="contactEmail"
-            required
-            density="compact"
-            variant="outlined"
-            autocomplete="off"
-          />
-          <v-select
-            v-if="$uiConfig.manageSites && redirects && redirects.filter(r => r.value !== editPartner.redirect).length"
-            v-model="editPartner.redirect"
-            label="Site de redirection"
-            :items="redirects"
-            name="host"
-            required
-            density="compact"
-            variant="outlined"
-          />
-        </v-form>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn
-          variant="text"
-          @click="menu = false"
-        >
-          {{ $t('common.confirmCancel') }}
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
-          :disabled="$uiConfig.manageSites && !redirects"
-          @click="confirmCreate"
-        >
-          {{ $t('common.confirmOk') }}
-        </v-btn>
-      </v-card-actions>
+      <template v-if="editPartner && !loadingRedirects">
+        <v-card-text>
+          <v-form
+            ref="createForm"
+            @submit.prevent
+          >
+            <v-text-field
+              v-model="editPartner.name"
+              :label="$t('common.orgName')"
+              :rules="[v => !!v || '']"
+              name="name"
+              required
+              density="compact"
+              variant="outlined"
+              autocomplete="off"
+            />
+            <v-text-field
+              v-model="editPartner.contactEmail"
+              :label="$t('common.contactEmail')"
+              :rules="[v => !!v || '']"
+              name="contactEmail"
+              required
+              density="compact"
+              variant="outlined"
+              autocomplete="off"
+            />
+            <v-select
+              v-if="redirects && redirects.length > 1"
+              v-model="editPartner.redirect"
+              label="Site de redirection"
+              :items="redirects"
+              name="host"
+              required
+              density="compact"
+              variant="outlined"
+            />
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            variant="text"
+            @click="menu = false"
+          >
+            {{ $t('common.confirmCancel') }}
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            @click="confirmCreate"
+          >
+            {{ $t('common.confirmOk') }}
+          </v-btn>
+        </v-card-actions>
+      </template>
     </v-card>
   </v-menu>
 </template>
@@ -84,8 +84,6 @@
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
 
-const { redirects, sitesFetch } = useStore()
-const reactiveSearchParams = useReactiveSearchParams()
 const { sendUiNotif } = useUiNotif()
 const { t } = useI18n()
 
@@ -94,23 +92,19 @@ const { orga } = defineProps({
 })
 const emit = defineEmits(['change'])
 
+const { redirects, loadingRedirects } = useRedirects({ type: 'organization', id: orga.id })
+const defaultRedirect = computed(() => redirects.value?.[0])
+
 const menu = ref(false)
-const redirect = ref('')
 const createForm = ref<InstanceType<typeof VForm>>()
-const newPartner = () => ({ name: '', contactEmail: '', redirect: redirect.value })
+const newPartner = () => ({ name: '', contactEmail: '', redirect: defaultRedirect.value?.value })
 const editPartner = ref(newPartner())
 
 watch(menu, () => {
   if (!menu.value) return
-  if ($uiConfig.manageSites) sitesFetch.refresh()
   editPartner.value = newPartner()
   createForm.value?.reset()
 })
-
-watch(redirects, () => {
-  redirect.value = reactiveSearchParams.redirect || (redirects.value?.[0]?.value) || ''
-  editPartner.value.redirect = redirect.value
-}, { immediate: true })
 
 const confirmCreate = withUiNotif(async () => {
   await createForm.value?.validate()

@@ -1,7 +1,7 @@
 import config from '#config'
 import { type Site, type SitePublic } from '#types'
 import { type Request } from 'express'
-import { reqSiteUrl, httpError, type Account } from '@data-fair/lib-express'
+import { reqSiteUrl, httpError, type AccountKeys } from '@data-fair/lib-express'
 import mongo from '#mongo'
 import memoize from 'memoizee'
 import Debug from 'debug'
@@ -71,7 +71,7 @@ export const reqSite = async (req: Request): Promise<Site | undefined> => {
   }
 }
 
-export async function findOwnerSites (owner: Account) {
+export async function findOwnerSites (owner: AccountKeys) {
   const filter: any = { 'owner.type': owner.type, 'owner.id': owner.id }
   if (owner.department) filter['owner.department'] = owner.department
   const sites = await mongo.sites.find(filter).limit(10000)

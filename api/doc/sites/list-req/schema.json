@@ -18,6 +18,9 @@
       "properties": {
         "showAll": {
           "type": "boolean"
+        },
+        "owner": {
+          "type": "string"
         }
       }
     }

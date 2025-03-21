@@ -5,13 +5,11 @@ import { SitePatch } from '../../../api/doc/sites/patch-req-body/index.ts'
 function createStore () {
   const { sendUiNotif } = useUiNotif()
   const { user, fullSite } = useSession()
-  const reactiveSearchParams = useReactiveSearchParams()
 
   const sitePublic = computed(() => fullSite.value as SitePublic | null)
 
   const userDetailsFetch = useFetch<User>(() => `${$apiPath}/users/${user.value?.id}`, { watch: false })
   const authProvidersFetch = useFetch<PublicAuthProvider[]>(`${$apiPath}/auth/providers`, { watch: false })
-  const sitesFetch = useFetch<{ count: number, results: SitePublic[] }>(`${$apiPath}/sites`, { watch: false })
 
   const patchOrganization = useAsyncAction(async (id: string, patch: Partial<Organization>, msg: string) => {
     await $fetch(`organizations/${id}`, { method: 'PATCH', body: patch })
@@ -30,39 +28,15 @@ function createStore () {
   const host = window.location.host
   const mainPublicUrl = new URL($uiConfig.publicUrl)
 
-  const redirect = useStringSearchParam('redirect')
-  const mainRedirect = computed(() => {
-    const mainRedirect = reactiveSearchParams.main_redirect || reactiveSearchParams.mainRedirect
-    if (!mainRedirect && redirect.value?.startsWith(mainPublicUrl.origin)) return redirect.value
-    if (!mainRedirect && $uiConfig.invitationRedirect) {
-      if ($uiConfig.invitationRedirect.startsWith('/')) return mainPublicUrl.origin + $uiConfig.invitationRedirect
-      return $uiConfig.invitationRedirect
-    }
-    return mainRedirect ?? mainPublicUrl.href
-  })
-
-  const redirects = computed(() => {
-    if (!sitesFetch.data.value) return
-    const invitationPath = $uiConfig.invitationRedirect?.startsWith('/') ? $uiConfig.invitationRedirect : '/me/account'
-    const redirects: { title: string, value: string }[] = [{ title: mainPublicUrl.host, value: mainRedirect.value }]
-      .concat(sitesFetch.data.value.results.map(site => ({ title: site.host, value: 'https://' + site.host + invitationPath })))
-    if (mainPublicUrl.host !== host && !sitesFetch.data.value.results.find(site => site.host === host)) {
-      redirects.push({ title: host, value: 'https://' + host + '/me/account' })
-    }
-    return redirects
-  })
-
   return {
     sitePublic,
-    sitesFetch,
     userDetailsFetch,
     authProvidersFetch,
     patchOrganization,
     postSite,
     patchSite,
     host,
-    mainPublicUrl,
-    redirects
+    mainPublicUrl
   }
 }
 
