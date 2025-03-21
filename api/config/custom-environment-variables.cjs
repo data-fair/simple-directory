@@ -311,5 +311,5 @@ module.exports = {
   passwordUpdateInterval: jsonEnv('PASSWORD_UPDATE_INTERVAL'),
   passwordValidateOnLogin: 'PASSWORD_VALIDATE_ON_LOGIN',
   siteOrgs: 'SITE_ORGS',
-  siteUsers: 'SITE_USERS'
+  siteAdmin: 'SITE_ADMIN'
 }
