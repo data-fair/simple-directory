@@ -92,6 +92,16 @@ export default {
       title: "Message des conditions d'utilisation",
       description: "Vous pouvez remplacer le message des conditions d'utilisation par défaut."
     },
+    mails: {
+      type: 'object',
+      properties: {
+        from: {
+          type: 'string',
+          title: 'Email de l\'expéditeur',
+          description: 'Attention, la configuration doit être effectuée sur le service d\'envoi de mail pour que cet expéditeur ne soit pas considéré comme illégitime.'
+        }
+      }
+    },
     authProviders: {
       layout: {
         if: "parent.data.authMode !== 'onlyOtherSite' && parent.data.authMode !== 'onlyBackOffice'"

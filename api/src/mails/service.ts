@@ -6,6 +6,7 @@ import config from '#config'
 import { flatten } from 'flat'
 import EventEmitter from 'node:events'
 import mailsTransport from './transport.ts'
+import { getSiteByUrl } from '#services'
 
 export const events = new EventEmitter()
 
@@ -26,11 +27,18 @@ if (existsSync(oldNoButtonTplPath)) {
 }
 
 export const sendMail = async (key: string, messages: any, to: string, params: Record<string, string>) => {
+  const site = params.link && (await getSiteByUrl(params.link))
+  const flatTheme: Record<string, any> = flatten({ theme: config.theme })
+  let logo = config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/v0.12.3/public/assets/logo-150x150.png'
+  if (site && site?.mails?.from) {
+    Object.assign(flatTheme, flatten({ theme: site.theme }))
+    logo = site.theme.logo || logo
+  }
   params = {
     ...params,
-    ...flatten({ theme: config.theme }),
+    ...flatTheme,
     contact: config.contact,
-    logo: config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/v0.12.3/public/assets/logo-150x150.png',
+    logo,
     ...config.mails.extraParams // override with extra params from config, default to {}
   }
   if (params.link) {
