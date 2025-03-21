@@ -28,6 +28,12 @@ export const getReadableColor = (baseColor: string, bgColors: string [], darkMod
   return c.toHexString()
 }
 
+export const getOnColor = (color: string) => {
+  // priority to white text if it is readable
+  if (tinycolor.isReadable(color, '#FFFFFF', { level: 'AA', size: 'small' })) return '#FFFFFF'
+  return tinycolor.mostReadable(color, ['#000000', '#FFFFFF']).toHexString()
+}
+
 export const fillTheme = (theme: Theme, defaultTheme: Theme) => {
   const fullTheme = clone(theme)
   if (fullTheme.assistedMode && fullTheme.assistedModeColors) {
@@ -45,10 +51,11 @@ export const fillTheme = (theme: Theme, defaultTheme: Theme) => {
       primary: fullTheme.assistedModeColors.primary,
       secondary: fullTheme.assistedModeColors.secondary,
       accent: fullTheme.assistedModeColors.accent,
-      'on-primary': tinycolor.mostReadable(fullTheme.assistedModeColors.primary, ['#000000', '#FFFFFF']).toHexString(),
-      'on-secondary': tinycolor.mostReadable(fullTheme.assistedModeColors.secondary, ['#000000', '#FFFFFF']).toHexString(),
-      'on-accent': tinycolor.mostReadable(fullTheme.assistedModeColors.accent, ['#000000', '#FFFFFF']).toHexString()
+      'on-primary': getOnColor(fullTheme.assistedModeColors.primary),
+      'on-secondary': getOnColor(fullTheme.assistedModeColors.secondary),
+      'on-accent': getOnColor(fullTheme.assistedModeColors.accent)
     }
+
     Object.assign(fullTheme.colors, customColors)
     Object.assign(fullTheme.darkColors, customColors)
     Object.assign(fullTheme.hcColors, customColors)
