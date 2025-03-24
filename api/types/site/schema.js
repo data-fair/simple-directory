@@ -424,7 +424,8 @@ export default {
             },
             attribute: {
               type: 'string',
-              title: "Nom de l'attribut"
+              title: "Nom de l'attribut",
+              description: 'La valeur de l\'attribut sera comparée à la fois avec l\'id du départment et son libellé'
             },
             required: {
               type: 'boolean',

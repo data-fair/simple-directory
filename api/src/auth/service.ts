@@ -66,7 +66,7 @@ export const authProviderMemberInfo = async (site: Site | undefined, provider: A
   if (provider.memberRole?.type === 'attribute') {
     role = authInfo.data[provider.memberRole.attribute] ?? role
   }
-  let department
+  let department: string | undefined
   if (provider.memberDepartment?.type === 'static') {
     department = provider.memberDepartment.department
   }
@@ -78,6 +78,13 @@ export const authProviderMemberInfo = async (site: Site | undefined, provider: A
     if (provider.memberDepartment.orgRootValue && department === provider.memberDepartment.orgRootValue) {
       department = undefined
     }
+  }
+  if (org && department) {
+    const matchedDepartment = org.departments?.find(dep => dep.id === department || dep.name === department)
+    if (!matchedDepartment) {
+      throw httpError(400, `Department ${department} not found in organization ${org.id}`)
+    }
+    department = matchedDepartment.id
   }
 
   return { create, org, readOnly, role, department }
