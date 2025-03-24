@@ -39,6 +39,13 @@
       </h2>
     </v-row>
 
+    <v-row
+      v-if="members?.fromCache"
+      class="mb-3 mx-0"
+    >
+      Dernière synchronisation de cette liste avec le fournisseur d'identités : {{ dayjs(members?.fromCache).fromNow() }}.
+    </v-row>
+
     <v-row dense>
       <v-col :cols="filterMemberCols">
         <v-text-field
@@ -210,6 +217,7 @@
 
 <script setup lang="ts">
 import type { QueryObject } from 'ufo'
+const { dayjs } = useLocaleDayjs()
 
 const { isAdminOrga, orga, nbMembersLimits, orgStorage, readonly, adminDepartment } = defineProps({
   isAdminOrga: {
@@ -281,7 +289,7 @@ const membersParams = computed(() => {
   return params
 })
 
-const fetchMembers = useFetch<{ count: number, results: any[] }>(() => `${$apiPath}/organizations/${orga.id}/members`, { query: membersParams })
+const fetchMembers = useFetch<{ count: number, results: any[], fromCache?: string }>(() => `${$apiPath}/organizations/${orga.id}/members`, { query: membersParams })
 const members = computed(() => fetchMembers.data.value)
 const refetchMembers = async () => {
   membersPage.value = 1

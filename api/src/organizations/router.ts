@@ -212,7 +212,7 @@ router.get('/:organizationId/members', async (req, res, next) => {
   if (typeof req.query.role === 'string') params.roles = req.query.role.split(',')
   if (typeof req.query.department === 'string') params.departments = req.query.department.split(',')
   if (typeof req.query.email_confirmed === 'string') params.emailConfirmed = req.query.email_confirmed === 'true'
-  const members = { count: 0, results: [] as Member[] }
+  const members: { count: number, results: Member[], fromCache?: string } = { count: 0, results: [] }
   for (const storage of orgStorages) {
     // do our best to mix results in "org_storage=both" mode
     if (members.count <= (pagination.skip + pagination.size)) {
@@ -225,6 +225,7 @@ router.get('/:organizationId/members', async (req, res, next) => {
       if (storageMembers && storageMembers.count) {
         members.count += storageMembers.count
         members.results = members.results.concat(storageMembers.results.map(r => ({ ...r, orgStorage: storage.orgStorage })))
+        members.fromCache = storageMembers.fromCache
       }
     }
   }

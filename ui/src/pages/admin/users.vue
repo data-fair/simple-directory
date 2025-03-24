@@ -18,6 +18,13 @@
       </p>
     </v-row>
 
+    <v-row
+      v-if="users.data.value?.fromCache"
+      class="mb-3 mx-0"
+    >
+      Dernière synchronisation de cette liste avec le fournisseur d'identités : {{ dayjs(users.data.value?.fromCache).fromNow() }}.
+    </v-row>
+
     <v-row class="mb-3 mx-0">
       <v-text-field
         v-model="q"
@@ -314,6 +321,7 @@
 <script setup lang="ts">
 const { t } = useI18n()
 const { asAdmin } = useSession()
+const { dayjs } = useLocaleDayjs()
 
 const validQ = useStringSearchParam('q')
 const q = ref(validQ.value)
@@ -325,7 +333,7 @@ const sort = computed(() => {
   return (sortBy.value[0].order === 'desc' ? '-' : '') + sortBy.value[0].key
 })
 const usersQuery = computed(() => ({ q: validQ.value, allFields: true, page: page.value, size: itemsPerPage.value, sort: sort.value }))
-const users = useFetch<{ count: number, results: User[] }>($apiPath + '/users', { query: usersQuery })
+const users = useFetch<{ count: number, results: User[], fromCache?: string }>($apiPath + '/users', { query: usersQuery })
 
 const deleteUserDialog = ref(false)
 const deleteUser = withUiNotif(async (user: User) => {

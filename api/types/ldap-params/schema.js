@@ -4,7 +4,7 @@ export default {
   type: 'object',
   title: 'ldap params',
   additionalProperties: false,
-  required: ['url', 'baseDN', 'users', 'organizations', 'members'],
+  required: ['url', 'baseDN', 'users', 'organizations', 'members', 'cacheMS'],
   properties: {
     url: { type: 'string' },
     clientOptions: { type: 'object' },
@@ -21,6 +21,9 @@ export default {
     },
     cacheMS: {
       type: 'number'
+    },
+    prefillCache: {
+      type: 'boolean',
     },
     users: {
       type: 'object',
@@ -96,7 +99,7 @@ export default {
           additionalProperties: false,
           properties: {
             attr: { type: 'string' },
-            captureRegexp: { type: 'string' }
+            captureRegex: { type: 'string' }
           }
         },
         onlyWithRole: { type: 'boolean' },
@@ -106,7 +109,7 @@ export default {
           required: ['default'],
           properties: {
             attr: { type: 'string' },
-            captureRegexp: { type: 'string' },
+            captureRegex: { type: 'string' },
             default: { type: 'string' },
             values: {
               type: 'object',
@@ -127,7 +130,7 @@ export default {
           required: [],
           properties: {
             attr: { type: 'string' },
-            captureRegexp: { type: 'string' }
+            captureRegex: { type: 'string' }
           }
         },
         overwrite: {

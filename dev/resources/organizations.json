@@ -127,7 +127,7 @@
           },
           "department": {
             "attr": "departmentNumber",
-            "captureRegexp": "^.*/(.*)$"
+            "captureRegex": "^.*/(.*)$"
           }
         }
       }
