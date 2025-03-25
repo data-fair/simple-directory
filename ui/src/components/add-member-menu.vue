@@ -18,7 +18,7 @@
       v-if="orga && menu"
       data-iframe-height
       width="500px"
-      :loading="!invitation"
+      :loading="!invitation || loadingRedirects"
     >
       <v-card-title
         v-if="!link"
@@ -34,88 +34,90 @@
           {{ $t('pages.organization.disableInvite') }}
         </v-alert>
       </v-card-text>
-      <v-card-text v-else-if="invitation">
-        <v-form
-          v-if="!link"
-          ref="inviteForm"
-          v-model="validInvitation"
-          @submit.prevent
-        >
-          <v-text-field
-            id="id"
-            v-model="invitation.email"
-            :label="$t('pages.organization.inviteEmail')"
-            :rules="[v => !!v || '']"
-            name="email"
-            required
+      <template v-else-if="invitation && !loadingRedirects">
+        <v-card-text>
+          <v-form
+            v-if="!link"
+            ref="inviteForm"
+            v-model="validInvitation"
+            @submit.prevent
+          >
+            <v-text-field
+              id="id"
+              v-model="invitation.email"
+              :label="$t('pages.organization.inviteEmail')"
+              :rules="[v => !!v || '']"
+              name="email"
+              required
+              variant="outlined"
+              density="compact"
+              autocomplete="off"
+            />
+            <v-select
+              v-model="invitation.role"
+              :items="orga.roles"
+              :label="$t('common.role')"
+              :rules="[v => !!v || '']"
+              name="role"
+              variant="outlined"
+              density="compact"
+            />
+            <v-autocomplete
+              v-if="$uiConfig.manageDepartments && orga.departments && orga.departments.length && !department"
+              v-model="invitation.department"
+              :items="orga.departments"
+              :label="orga.departmentLabel || $t('common.department')"
+              item-value="id"
+              item-title="name"
+              name="department"
+              clearable
+              variant="outlined"
+              density="compact"
+            />
+            <v-select
+              v-if="redirects && redirects.length > 1"
+              v-model="invitation.redirect"
+              :disabled="mainPublicUrl.host !== host"
+              label="Site de redirection"
+              :items="redirects"
+              item-value="value"
+              item-title="title"
+              name="host"
+              required
+              density="compact"
+              variant="outlined"
+            />
+          </v-form>
+          <v-alert
+            v-if="!!link"
+            type="warning"
             variant="outlined"
-            density="compact"
-            autocomplete="off"
-          />
-          <v-select
-            v-model="invitation.role"
-            :items="orga.roles"
-            :label="$t('common.role')"
-            :rules="[v => !!v || '']"
-            name="role"
-            variant="outlined"
-            density="compact"
-          />
-          <v-autocomplete
-            v-if="$uiConfig.manageDepartments && orga.departments && orga.departments.length && !department"
-            v-model="invitation.department"
-            :items="orga.departments"
-            :label="orga.departmentLabel || $t('common.department')"
-            item-value="id"
-            item-title="name"
-            name="department"
-            clearable
-            variant="outlined"
-            density="compact"
-          />
-          <v-select
-            v-if="$uiConfig.manageSites && redirects && redirects.filter(r => r.value !== defaultRedirect?.value).length"
-            v-model="invitation.redirect"
-            :disabled="mainPublicUrl.host !== host"
-            label="Site de redirection"
-            :items="redirects"
-            item-value="value"
-            item-title="title"
-            name="host"
-            required
-            density="compact"
-            variant="outlined"
-          />
-        </v-form>
-        <v-alert
-          v-if="!!link"
-          type="warning"
-          variant="outlined"
-        >
-          <p>{{ $t('pages.organization.inviteLink') }}</p>
-          <p style="word-break: break-all;">
-            {{ link }}
-          </p>
-        </v-alert>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn
-          v-if="!link"
-          variant="text"
-          @click="menu=false"
-        >
-          {{ $t('common.confirmCancel') }}
-        </v-btn>
-        <v-btn
-          :disabled="disableInvite || !invitation || !invitation.email || !invitation.role"
-          color="primary"
-          variant="flat"
-          @click="confirmInvitation()"
-        >
-          {{ $t('common.confirmOk') }}
-        </v-btn>
-      </v-card-actions>
+          >
+            <p>{{ $t('pages.organization.inviteLink') }}</p>
+            <p style="word-break: break-all;">
+              {{ link }}
+            </p>
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            v-if="!link"
+            variant="text"
+            @click="menu=false"
+          >
+            {{ $t('common.confirmCancel') }}
+          </v-btn>
+          <v-btn
+            :disabled="disableInvite || !invitation.email || !invitation.role"
+            color="primary"
+            variant="flat"
+            @click="confirmInvitation()"
+          >
+            {{ $t('common.confirmOk') }}
+          </v-btn>
+        </v-card-actions>
+      </template>
     </v-card>
   </v-menu>
 </template>
@@ -124,7 +126,7 @@
 import type { VForm } from 'vuetify/components'
 import type { Organization, Member, Invitation } from '@sd/api/types'
 
-const { host, mainPublicUrl, redirects, sitesFetch } = useStore()
+const { host, mainPublicUrl } = useStore()
 const { sendUiNotif } = useUiNotif()
 const i18n = useI18n()
 
@@ -135,16 +137,12 @@ const { orga, department } = defineProps({
   disableInvite: { type: Boolean, default: false },
   department: { type: String, default: null }
 })
+
+const { redirects, loadingRedirects } = useRedirects({ type: 'organization', id: orga.id })
+const defaultRedirect = computed(() => redirects.value?.[0])
+
 const emit = defineEmits({
   sent: (_invit: Invitation) => true
-})
-
-const defaultRedirect = computed(() => {
-  if (host === mainPublicUrl.host) {
-    return redirects.value?.[0]
-  } else {
-    return redirects.value?.find(r => r.value && new URL(r.value).host === host)
-  }
 })
 
 const inviteForm = ref<InstanceType<typeof VForm>>()
@@ -163,7 +161,6 @@ const link = ref('')
 const menu = ref(false)
 watch(menu, async () => {
   if (!menu) return
-  if ($uiConfig.manageSites) await sitesFetch.refresh()
   invitation.value = createInvitation()
   link.value = ''
   inviteForm.value?.reset()

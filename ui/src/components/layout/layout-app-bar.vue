@@ -39,49 +39,76 @@
     <v-spacer />
     <v-toolbar-items>
       <template
-        v-if="user && user.adminMode"
+        v-if="user?.adminMode"
       >
-        <v-btn
-          to="/admin/users"
-          color="admin"
-          theme="dark"
-          variant="flat"
-        >
-          {{ $t(`common.users`) }}
-        </v-btn>
-        <v-btn
-          to="/admin/organizations"
-          color="admin"
-          theme="dark"
-          variant="flat"
-        >
-          {{ $t(`common.organizations`) }}
-        </v-btn>
-        <v-btn
-          v-if="$uiConfig.manageSites"
-          to="/admin/sites"
-          color="admin"
-          theme="dark"
-          variant="flat"
-        >
-          {{ $t(`common.sites`) }}
-        </v-btn>
-        <v-btn
-          to="/admin/oauth-tokens"
-          color="admin"
-          theme="dark"
-          variant="flat"
-        >
-          {{ $t(`common.oauthTokens`) }}
-        </v-btn>
-        <v-btn
-          to="/admin/password-lists"
-          color="admin"
-          theme="dark"
-          variant="flat"
-        >
-          {{ $t(`common.passwordLists`) }}
-        </v-btn>
+        <v-menu>
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              color="admin"
+              variant="flat"
+            >
+              {{ $t(`common.adminGlobal`) }}
+            </v-btn>
+          </template>
+          <v-list color="admin">
+            <v-list-item
+              to="/admin/users"
+            >
+              {{ $t(`common.users`) }}
+            </v-list-item>
+            <v-list-item
+              to="/admin/organizations"
+            >
+              {{ $t(`common.organizations`) }}
+            </v-list-item>
+            <v-list-item
+              v-if="$uiConfig.manageSites"
+              to="/admin/sites"
+            >
+              {{ $t(`common.sites`) }}
+            </v-list-item>
+            <v-list-item
+              to="/admin/oauth-tokens"
+            >
+              {{ $t(`common.oauthTokens`) }}
+            </v-list-item>
+            <v-list-item
+              to="/admin/password-lists"
+            >
+              {{ $t(`common.passwordLists`) }}
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </template>
+      <template
+        v-if="$uiConfig.siteAdmin && siteRole === 'admin'"
+      >
+        <v-menu>
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              color="admin"
+              variant="outlined"
+              class="ml-2"
+            >
+              {{ $t(`common.adminSite`) }}
+            </v-btn>
+          </template>
+          <v-list color="admin">
+            <v-list-item
+              to="/site-admin/users"
+            >
+              {{ $t(`common.users`) }}
+            </v-list-item>
+            <v-list-item
+              v-if="$uiConfig.siteOrgs"
+              to="/site-admin/organizations"
+            >
+              {{ $t(`common.organizations`) }}
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </template>
       <v-btn
         v-if="$uiConfig.anonymousContactForm"
@@ -119,7 +146,7 @@
 </template>
 
 <script lang="ts" setup>
-const { user, organization } = useSession()
+const { user, organization, siteRole } = useSession()
 import PersonalMenu from '@data-fair/lib-vuetify/personal-menu.vue'
 import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
 import ThemeSwitcher from '@data-fair/lib-vuetify/theme-switcher.vue'

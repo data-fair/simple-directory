@@ -24,17 +24,29 @@ const rejectCoreIdUser: RequestHandler = (req, res, next) => {
 router.get('', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const session = reqSession(req)
+  const user = session.user
 
   const listMode = config.listUsersMode || config.listEntitiesMode
-  if (listMode === 'authenticated' && !session.user) return res.send({ results: [], count: 0 })
-  if (listMode === 'admin' && !session.user?.adminMode) return res.send({ results: [], count: 0 })
+  if (listMode === 'authenticated' && !user) return res.send({ results: [], count: 0 })
+  if (listMode === 'admin' && !user?.adminMode) return res.send({ results: [], count: 0 })
 
   const params: FindUsersParams = { ...mongoPagination(req.query), sort: mongoSort(req.query.sort) }
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
   if (allFields) {
-    if (!session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+    if (user?.adminMode) {
+      // ok
+    } else if (config.siteAdmin && session.siteRole === 'admin') {
+      const site = await reqSite(req)
+      if (!site || site.host !== req.query.host || site.path !== req.query.path) {
+        throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+      }
+    } else {
+      throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+    }
+    if (typeof req.query.host === 'string') params.host = req.query.host
+    if (typeof req.query.path === 'string') params.path = req.query.path
   } else {
     params.select = ['id', 'name']
   }
@@ -94,6 +106,7 @@ router.post('', async (req, res, next) => {
       throw httpError(400, 'Cannot create a user on a secondary site')
     }
     newUser.host = site.host
+    if (site.path) newUser.path = site.path
   }
 
   if (invit) {
@@ -163,13 +176,13 @@ router.post('', async (req, res, next) => {
   if (invit) {
     // no need to confirm email if the user already comes from an invitation link
     // we already created the user with emailConfirmed=true
-    const payload = getTokenPayload(createdUser)
+    const payload = getTokenPayload(createdUser, site)
     const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, invit && invit.id, invit && invit.department))
     return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication
     // the user will be validated and authenticated at the same time by the token_callback route
-    const payload = { ...getTokenPayload(createdUser), emailConfirmed: true }
+    const payload = { ...getTokenPayload(createdUser, site), emailConfirmed: true }
     const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, query.org, query.dep))
     await sendMail('creation', reqI18n(req).messages, body.email, { link: linkUrl.href })
     // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc

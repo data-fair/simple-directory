@@ -84,7 +84,10 @@ router.post('', async (req, res, next) => {
         defaultOrg: invitation.id,
         ignorePersonalAccount: true
       }
-      if (invitSite) newUserDraft.host = invitSite.host
+      if (invitSite) {
+        newUserDraft.host = invitSite.host
+        if (invitSite.path) newUserDraft.path = invitSite.path
+      }
       if (invitation.department) newUserDraft.defaultDep = invitation.department
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUserDraft)
       const reboundRedirect = new URL(invitation.redirect || config.invitationRedirect || `${reqSiteUrl(req) + '/simple-directory'}/invitation`)

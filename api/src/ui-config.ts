@@ -30,7 +30,9 @@ export const uiConfig = {
   userSelfDelete: config.userSelfDelete,
   orgStorageOverwrite: config.storage.ldap.overwrite,
   useEvents: Boolean(config.secretKeys.events && config.privateEventsUrl),
-  passwordValidation: config.passwordValidation
+  passwordValidation: config.passwordValidation,
+  siteOrgs: config.siteOrgs,
+  siteAdmin: config.siteAdmin
 }
 export type UiConfig = typeof uiConfig
 export default uiConfig

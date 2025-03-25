@@ -1,7 +1,7 @@
 import { type Site, type SitePublic } from '#types'
 import { Router, type Request } from 'express'
 import config from '#config'
-import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost, reqSitePath } from '@data-fair/lib-express'
+import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost, reqSitePath, type AccountKeys } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
 import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite } from './service.ts'
 import { isOIDCProvider, reqSite } from '#services'
@@ -52,9 +52,17 @@ router.get('', async (req, res, next) => {
     }
     res.send(response)
   } else {
-    const response = await findOwnerSites(sessionState.account)
+    let account: AccountKeys = sessionState.account
+    if (query.owner) {
+      const [type, id] = query.owner.split(':')
+      if (type !== account.type || id !== account.id) {
+        if (!reqUser(req)?.adminMode) throw httpError(403)
+        account = { type: type as 'organization' | 'user', id }
+      }
+    }
+    const response = await findOwnerSites(account)
     for (const result of response.results) {
-      result.theme.logo = result.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${sessionState.account.type}/${sessionState.account.id}/avatar.png`
+      result.theme.logo = result.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${account.type}/${account.id}/avatar.png`
     }
     res.send(response)
   }

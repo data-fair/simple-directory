@@ -170,6 +170,8 @@ class MongodbStorage implements SdStorage {
         { _id: params.q }
       ]
     }
+    if (params.host) filter.host = params.host
+    if (params.path) filter.path = params.path
 
     const [count, users] = await Promise.all([
       mongo.users.countDocuments(filter),
@@ -333,6 +335,8 @@ class MongodbStorage implements SdStorage {
     if (params.creator) {
       filter['created.id'] = params.creator
     }
+    if (params.host) filter.host = params.host
+    if (params.path) filter.path = params.path
 
     const [count, organizations] = await Promise.all([
       mongo.organizations.countDocuments(filter),

@@ -180,6 +180,7 @@ export const authProviderLoginCallback = async (
         throw httpError(400, 'Cannot create a user on a secondary site')
       }
       newUser.host = site.host
+      if (site.path) newUser.path = site.path
     }
     if (invit && invitOrga) {
       newUser.defaultOrg = invitOrga.id
@@ -224,7 +225,7 @@ export const authProviderLoginCallback = async (
     await setNbMembersLimit(invitOrga.id)
   }
 
-  const payload = getTokenPayload(user)
+  const payload = getTokenPayload(user, site)
   if (adminMode) {
     // TODO: also check that the user actually inputted the password on this redirect
     if (payload.isAdmin) payload.adminMode = 1

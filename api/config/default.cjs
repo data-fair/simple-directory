@@ -391,5 +391,7 @@ module.exports = {
     minCharClasses: 3,
   },
   passwordUpdateInterval: undefined,
-  passwordValidateOnLogin: false
+  passwordValidateOnLogin: false,
+  siteOrgs: false,
+  siteAdmin: false
 }

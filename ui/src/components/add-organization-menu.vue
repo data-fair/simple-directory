@@ -5,11 +5,21 @@
   >
     <template #activator="{props}">
       <v-btn
+        v-if="mode === 'icon'"
+        :title="$t('common.createOrganization')"
+        color="primary"
+        v-bind="props"
+        :icon="mdiPlus"
+        size="small"
+        class="mb-2 mx-2"
+      />
+      <v-btn
+        v-else
         :title="$t('common.createOrganization')"
         color="primary"
         variant="text"
-        class="mt-3"
         v-bind="props"
+        class="mt-3"
       >
         {{ $t('common.createOrganization') }}
       </v-btn>
@@ -70,6 +80,11 @@
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
 
+const { autoAdmin, mode } = defineProps({
+  autoAdmin: { type: Boolean, default: true },
+  mode: { type: String, default: 'link' },
+})
+
 const { switchOrganization } = useSession()
 
 const menu = ref(false)
@@ -88,7 +103,7 @@ const confirmCreate = withUiNotif(async () => {
   await createForm.value?.validate()
   if (createForm.value?.isValid) {
     menu.value = false
-    const res = await $fetch('organizations', { method: 'POST', body: editOrganization.value, params: { autoAdmin: true } })
+    const res = await $fetch('organizations', { method: 'POST', body: editOrganization.value, params: { autoAdmin } })
     switchOrganization(res.id)
     // reloading top page, so that limits are re-fetched, etc.
     window.top?.location.reload()
