@@ -96,7 +96,8 @@ export default defineConfig({
             'mdiSort',
             'mdiWeb',
             'mdiMonitorCellphoneStar',
-            'mdiThemeLightDark'
+            'mdiThemeLightDark',
+            'mdiLoginVariant'
           ]
         }
       ],

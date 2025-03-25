@@ -105,6 +105,12 @@
                 </v-btn>
               </template>
             </confirm-menu>
+            <v-btn
+              title="Se connecter sur le site"
+              variant="text"
+              :icon="mdiLoginVariant"
+              @click="siteRedirect(props.item)"
+            />
             <v-menu v-if="props.item.colorWarnings.length">
               <template #activator="{props: colorWarningsMenuProps}">
                 <v-btn
@@ -156,6 +162,13 @@ const headers: { title: string, value?: string, sortable?: boolean }[] = [
   { title: '', sortable: false }
 ]
 
+const siteRedirect = (site: Site) => {
+  $fetch<string>('auth/site_redirect', { method: 'POST', body: { redirect: `${window.location.protocol}//${site.host}` } })
+    .then((res) => {
+      console.log('RES', res)
+      window.location.replace(res)
+    })
+}
 </script>
 
 <style lang="css">

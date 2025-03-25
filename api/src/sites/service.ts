@@ -1,7 +1,7 @@
 import config from '#config'
 import { type Site, type SitePublic } from '#types'
 import { type Request } from 'express'
-import { reqSiteUrl, httpError, type Account } from '@data-fair/lib-express'
+import { reqSiteUrl, httpError, type Account, reqUser } from '@data-fair/lib-express'
 import mongo from '#mongo'
 import memoize from 'memoizee'
 import Debug from 'debug'
@@ -27,6 +27,8 @@ export const getRedirectSite = async (req: Request, redirect: string) => {
   const currentSite = await reqSite(req)
   if (redirect.startsWith(currentSiteUrl)) return currentSite
   const redirectSite = await getSiteByUrl(redirect)
+  const user = reqUser(req)
+  if (user?.adminMode) return redirectSite
   debugRedirectSite('redirectSite', currentSiteUrl, currentSite, redirectSite)
   if (!redirectSite) throw httpError(400, `impossible to redirect to ${redirect} from ${currentSiteUrl}, no matching site found`)
   if (!currentSite && ['onlyBackOffice', 'ssoBackOffice', undefined].includes(redirectSite.authMode)) {
