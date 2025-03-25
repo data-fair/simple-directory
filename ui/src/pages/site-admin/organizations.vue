@@ -7,6 +7,10 @@
       <h2 class="text-h6 mb-3">
         {{ $t('common.organizations') }} <span v-if="organizations.data.value">({{ $n(organizations.data.value.count) }})</span>
       </h2>
+      <add-organization-menu
+        :auto-admin="false"
+        mode="icon"
+      />
     </v-row>
 
     <v-row class="mb-3 mx-0">

@@ -153,7 +153,9 @@ router.post('', async (req, res, next) => {
   const createdOrga = await storage.createOrganization(orga, user)
   logContext.account = { type: 'organization', id: createdOrga.id, name: createdOrga.name }
   eventsLog.info('sd.org.create', `a user created an organization: ${orga.name} (${orga.id})`, logContext)
-  if (!reqUser(req)?.adminMode || req.query.autoAdmin !== 'false') await storage.addMember(createdOrga, user, 'admin')
+  let autoAdmin = !reqUser(req)?.adminMode
+  if (typeof req.query.autoAdmin === 'string') autoAdmin = req.query.autoAdmin === 'true'
+  if (autoAdmin) await storage.addMember(createdOrga, user, 'admin')
   postOrganizationIdentityWebhook(createdOrga)
 
   // update session info
