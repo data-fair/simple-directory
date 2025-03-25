@@ -164,7 +164,6 @@ export const authProviderLoginCallback = async (
   }
 
   if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
-
   if (!user) {
     const newUser: UserWritable = {
       ...authInfo.user,
@@ -201,7 +200,7 @@ export const authProviderLoginCallback = async (
       await storage.addMember(memberInfo.org, user, memberInfo.role, memberInfo.department, memberInfo.readOnly)
       await setNbMembersLimit(memberInfo.org.id)
     }
-  } else {
+  } else if (!storage.readonly) {
     if (user.coreIdProvider && (user.coreIdProvider.type !== (provider.type || 'oauth') || user.coreIdProvider.id !== provider.id)) {
       throw httpError(400, 'Utilisateur déjà lié à un autre fournisseur d\'identité principale')
     }
