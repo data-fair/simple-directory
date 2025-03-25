@@ -378,6 +378,30 @@ export default {
             attribute: {
               type: 'string',
               title: "Nom de l'attribut"
+            },
+            defaultRole: {
+              type: 'string',
+              title: 'Rôle par défaut',
+              description: "Si l'attribut n'est pas présent ou ne correspond à aucun rôle connu"
+            },
+            values: {
+              title: 'Correspondances rôle -> liste de valeurs de l\'attribut',
+              type: 'object',
+              patternPropertiesLayout: {
+                messages: {
+                  addItem: 'Saisissez un rôle',
+                }
+              },
+              patternProperties: {
+                '.*': {
+                  title: 'Valeurs de d\'attribut',
+                  type: 'array',
+                  default: [],
+                  items: {
+                    type: 'string'
+                  }
+                }
+              }
             }
           }
         }

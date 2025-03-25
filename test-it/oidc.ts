@@ -101,7 +101,7 @@ describe('global OIDC configuration', () => {
 
   it('should implement a standard login workflow', async () => {
     const { ax } = await createUser('test-org@test.com')
-    await ax.post('/api/organizations', { name: 'test', id: 'org1' })
+    await ax.post('/api/organizations', { name: 'test', id: 'org1', roles: ['admin', 'user', 'contrib'] })
 
     const anonymousAx = await axios()
     const providers = (await anonymousAx.get('/api/auth/providers')).data
@@ -127,7 +127,7 @@ describe('global OIDC configuration', () => {
 
   it('should implement a standard login workflow on a core id provider', async () => {
     const { ax } = await createUser('test-org@test.com')
-    await ax.post('/api/organizations', { name: 'test', id: 'org1' })
+    await ax.post('/api/organizations', { name: 'test', id: 'org1', roles: ['admin', 'user', 'contrib'] })
 
     const anonymousAx = await axios()
     const providers = (await anonymousAx.get('/api/auth/providers')).data
