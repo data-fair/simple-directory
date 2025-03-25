@@ -33,7 +33,7 @@ describe('storage ldap', () => {
       lastName: 'User',
       email: 'test@test.com',
       organizations: [{ id: 'myorg', role: 'user', name: 'my org' }]
-    }, { departmentNumber: '/prefix/2/dep1' })
+    }, { departmentNumber: '/prefix/2/dep1', employeeType: 'administrator' })
     const users = await storage.findUsers({ skip: 0, size: 10, sort: { email: 1 } })
     assert.equal(users.count, 2)
     assert.ok(users.results[0].id)
@@ -65,7 +65,7 @@ describe('storage ldap', () => {
     assert.equal(members.results[0].role, 'overwritten')
     assert.equal(members.results[0].department, undefined)
     assert.equal(members.results[1].name, 'test1')
-    assert.equal(members.results[1].role, 'user')
+    assert.equal(members.results[1].role, 'admin')
     assert.equal(members.results[1].department, 'dep1')
 
     const members2 = await storage.findMembers('myorg', { q: 'notauser', skip: 0, size: 10 })
@@ -85,5 +85,10 @@ describe('storage ldap', () => {
     assert.deepEqual(org.departments, [{ id: 'dep1', name: 'dep1' }])
     await storage.getOrganization('myorg')
     await storage.getOrganization('myorg')
+
+    const orgs = await storage.findOrganizations({ skip: 0, size: 10, sort: { name: -1 } })
+    assert.equal(orgs.count, 2)
+    assert.equal(orgs.results[0].id, 'myorg')
+    assert.equal(orgs.results[0].name, 'Org overwritten')
   })
 })

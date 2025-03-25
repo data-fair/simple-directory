@@ -53,15 +53,16 @@ module.exports = {
         onlyWithRole: false,
         role: {
           attr: 'employeeType',
+          captureRegex: '^(.{0,3}).*$',
           values: {
-            admin: ['administrator'],
+            admin: ['adm'],
             user: []
           },
           default: 'user'
         },
         department: {
           attr: 'departmentNumber',
-          captureRegexp: '^.*/(.*)$'
+          captureRegex: '^.*/(.*)$'
         },
         // an array of objects that can be used to overwrite member role based on matching "orgId" and "email" properties
         // leave orgId empty to overwrite role for all organizations of the user

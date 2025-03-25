@@ -53,6 +53,7 @@ module.exports = {
       searchUserDN: 'STORAGE_LDAP_SEARCH_USER_DN',
       searchUserPassword: 'STORAGE_LDAP_SEARCH_USER_PASS',
       baseDN: 'STORAGE_LDAP_BASE_DN',
+      cacheMS: 'STORAGE_LDAP_CACHE_MS',
       users: {
         objectClass: 'STORAGE_LDAP_USERS_OBJECT_CLASS',
         dnKey: 'STORAGE_LDAP_USERS_DN_KEY',

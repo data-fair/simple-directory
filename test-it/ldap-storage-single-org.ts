@@ -7,6 +7,7 @@ const config = (await import('../api/src/config.ts')).default
 const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
 ldapConfig.organizations.staticSingleOrg = { id: 'test-single-org', name: 'Test single org' }
 ldapConfig.members.role.values = { admin: ['administrator'], user: [] }
+delete ldapConfig.members.role.captureRegex
 
 describe('ldap single org', () => {
   before(startApiServer)

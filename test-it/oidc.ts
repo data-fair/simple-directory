@@ -1,8 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { it, describe, before, beforeEach, after } from 'node:test'
-import { axios, clean, startApiServer, stopApiServer, createUser } from './utils/index.ts'
+import { axios, clean, startApiServer, stopApiServer, createUser, loginWithOIDC } from './utils/index.ts'
 import { OAuth2Server } from 'oauth2-mock-server'
-import { CookieJar } from 'tough-cookie'
 
 process.env.STORAGE_TYPE = 'mongo'
 process.env.OAUTH_PROVIDERS = '["github"]'
@@ -41,39 +40,6 @@ process.env.DEFAULT_ORG = 'org1'
 const oidcUserInfo1 = { sub: 'testoidc1', email: 'oidc1@test.com', given_name: 'OIDC', family_name: 'Test', role: 'contrib' }
 const oidcUserInfo2 = { sub: 'testoidc2', email: 'oidc2@test.com', given_name: 'OIDC', family_name: 'Test', role: 'contrib' }
 
-const loginWithOIDC = async (port: number) => {
-  const anonymousAx = await axios()
-
-  // request a login from the provider
-  const loginInitial = await anonymousAx.get(`/api/auth/oauth/localhost${port}/login`, { validateStatus: (status) => status === 302 })
-  const providerAuthUrl = new URL(loginInitial.headers.location)
-  // redirect to the provider with proper params
-  assert.equal(providerAuthUrl.host, 'localhost:' + port)
-  assert.equal(providerAuthUrl.pathname, '/authorize')
-  assert.equal(providerAuthUrl.searchParams.get('redirect_uri'), 'http://localhost:5689/simple-directory/api/auth/oauth-callback')
-  // successful login on the provider followed by redirect to our callback url
-  const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (status) => status === 302 })
-  const providerAuthRedirect = new URL(loginProvider.headers.location)
-  assert.equal(providerAuthRedirect.host, 'localhost:5689')
-  assert.equal(providerAuthRedirect.pathname, '/simple-directory/api/auth/oauth-callback')
-  // open our callback url that produces a temporary token to be transformed in a session token by a token_callback url
-  const oauthCallback = await anonymousAx(providerAuthRedirect.href, { validateStatus: (status) => status === 302 })
-  const callbackRedirect = new URL(oauthCallback.headers.location)
-  assert.equal(callbackRedirect.host, 'localhost:5689')
-  assert.equal(callbackRedirect.pathname, '/simple-directory/api/auth/token_callback')
-  // finally the token_callback url will set cookies and redirect to our final destination
-  const tokenCallback = await anonymousAx(callbackRedirect.href, { validateStatus: (status) => status === 302 })
-  assert.equal(tokenCallback.headers['set-cookie']?.length, 4)
-  const cookieJar = new CookieJar()
-  for (const cookie of tokenCallback.headers['set-cookie']) {
-    cookieJar.setCookie(cookie, callbackRedirect.origin)
-  }
-
-  anonymousAx.defaults.headers.Cookie = await cookieJar.getCookieString(callbackRedirect.origin)
-
-  return anonymousAx
-}
-
 const startOAuthServer = async (port: number, oidcUserInfo: any) => {
   const oauthServer = new OAuth2Server()
   await oauthServer.issuer.keys.generate('RS256')
@@ -101,7 +67,7 @@ describe('global OIDC configuration', () => {
 
   it('should implement a standard login workflow', async () => {
     const { ax } = await createUser('test-org@test.com')
-    await ax.post('/api/organizations', { name: 'test', id: 'org1' })
+    await ax.post('/api/organizations', { name: 'test', id: 'org1', roles: ['admin', 'user', 'contrib'] })
 
     const anonymousAx = await axios()
     const providers = (await anonymousAx.get('/api/auth/providers')).data
@@ -127,7 +93,7 @@ describe('global OIDC configuration', () => {
 
   it('should implement a standard login workflow on a core id provider', async () => {
     const { ax } = await createUser('test-org@test.com')
-    await ax.post('/api/organizations', { name: 'test', id: 'org1' })
+    await ax.post('/api/organizations', { name: 'test', id: 'org1', roles: ['admin', 'user', 'contrib'] })
 
     const anonymousAx = await axios()
     const providers = (await anonymousAx.get('/api/auth/providers')).data

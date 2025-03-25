@@ -1,6 +1,6 @@
 import config, { superadmin } from '#config'
 import { Router, type RequestHandler } from 'express'
-import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, reqSession } from '@data-fair/lib-express'
+import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, reqSession, reqSessionAuthenticated } from '@data-fair/lib-express'
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
@@ -442,8 +442,9 @@ router.get('/token_callback', async (req, res, next) => {
 }) */
 
 router.post('/keepalive', async (req, res, next) => {
-  const loggedUser = reqUserAuthenticated(req)
-  const storage = storages.globalStorage
+  const session = reqSessionAuthenticated(req)
+  const loggedUser = session.user
+  const storage = await storages.getSessionStorage(session)
   let user = loggedUser.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.id)
   if (!user) throw httpError(404)
 

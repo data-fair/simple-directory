@@ -60,5 +60,7 @@ describe('ldap storage per organization in mongodb storage mode', () => {
     assert.equal(res.status, 200)
     assert.ok(res.data.id.endsWith('_alban'))
     assert.equal(res.data.organizations?.[0].id, org.id)
+
+    await ax.post('/api/auth/keepalive')
   })
 })

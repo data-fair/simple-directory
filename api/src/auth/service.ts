@@ -55,28 +55,53 @@ export const authProviderMemberInfo = async (site: Site | undefined, provider: A
     if (!org) throw new Error(`Organization not found ${orgId}`)
   }
 
-  let role = 'user'
+  let role
   let readOnly = false
   if (provider.coreIdProvider && ((provider.memberRole && provider.memberRole?.type !== 'none') || (provider.memberDepartment && provider.memberDepartment?.type !== 'none'))) {
     readOnly = true
   }
-  if (provider.memberRole?.type === 'static') {
-    role = provider.memberRole.role
-  }
-  if (provider.memberRole?.type === 'attribute') {
-    role = authInfo.data[provider.memberRole.attribute] ?? role
-  }
-  let department
-  if (provider.memberDepartment?.type === 'static') {
-    department = provider.memberDepartment.department
-  }
-  if (provider.memberDepartment?.type === 'attribute') {
-    department = authInfo.data[provider.memberDepartment.attribute] as string | undefined
-    if (!department && provider.memberDepartment.required) {
-      throw httpError(400, "l'attribute de département n'est pas défini et est obligatoire")
+  let department: string | undefined
+  if (org) {
+    const roles = org.roles || config.roles.defaults
+    if (provider.memberRole?.type === 'static') {
+      role = provider.memberRole.role
     }
-    if (provider.memberDepartment.orgRootValue && department === provider.memberDepartment.orgRootValue) {
-      department = undefined
+    if (provider.memberRole?.type === 'attribute') {
+      role = authInfo.data[provider.memberRole.attribute] ?? role
+      if (provider.memberRole.values) {
+        for (const [key, values] of Object.entries(provider.memberRole.values)) {
+          if (values.includes(role)) {
+            role = key
+            break
+          }
+        }
+      }
+      if (provider.memberRole.defaultRole && (!role || !roles.includes(role))) {
+        role = provider.memberRole.defaultRole
+      }
+    }
+    if (!role) role = 'user'
+    if (!roles.includes(role)) {
+      throw httpError(400, `Rôle ${role} inconnu dans l'organisation ${org.id}`)
+    }
+    if (provider.memberDepartment?.type === 'static') {
+      department = provider.memberDepartment.department
+    }
+    if (provider.memberDepartment?.type === 'attribute') {
+      department = authInfo.data[provider.memberDepartment.attribute] as string | undefined
+      if (!department && provider.memberDepartment.required) {
+        throw httpError(400, "l'attribute de département n'est pas défini et est obligatoire")
+      }
+      if (provider.memberDepartment.orgRootValue && department === provider.memberDepartment.orgRootValue) {
+        department = undefined
+      }
+    }
+    if (org && department) {
+      const matchedDepartment = org.departments?.find(dep => dep.id === department || dep.name === department)
+      if (!matchedDepartment) {
+        throw httpError(400, `Department ${department} not found in organization ${org.id}`)
+      }
+      department = matchedDepartment.id
     }
   }
 
@@ -139,7 +164,6 @@ export const authProviderLoginCallback = async (
   }
 
   if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
-
   if (!user) {
     const newUser: UserWritable = {
       ...authInfo.user,
@@ -177,7 +201,7 @@ export const authProviderLoginCallback = async (
       await storage.addMember(memberInfo.org, user, memberInfo.role, memberInfo.department, memberInfo.readOnly)
       await setNbMembersLimit(memberInfo.org.id)
     }
-  } else {
+  } else if (!storage.readonly) {
     if (user.coreIdProvider && (user.coreIdProvider.type !== (provider.type || 'oauth') || user.coreIdProvider.id !== provider.id)) {
       throw httpError(400, 'Utilisateur déjà lié à un autre fournisseur d\'identité principale')
     }

@@ -48,7 +48,7 @@ export interface SdStorage {
 
   readonly?: boolean
 
-  findUsers (params: FindUsersParams): Promise<{ count: number, results: User[] }>
+  findUsers (params: FindUsersParams): Promise<{ count: number, results: User[], fromCache?: string }>
   getUser(userId: string): Promise<User | undefined>
   createUser(user: UserWritable, byUser?: { id: string, name: string }, site?: Site): Promise<User>
   getUserByEmail(email: string, site?: Site): Promise<User | undefined>
@@ -63,7 +63,7 @@ export interface SdStorage {
 
   getOrganization(ordId: string): Promise<Organization | undefined>
   createOrganization(org: OrganizationPost, user: UserRef): Promise<Organization>
-  findOrganizations(params: FindOrganizationsParams): Promise<{ count: number, results: Organization[] }>
+  findOrganizations(params: FindOrganizationsParams): Promise<{ count: number, results: Organization[], fromCache?: string }>
   patchOrganization(orgId: string, patch: any, user: UserRef): Promise<Organization>
   deleteOrganization(orgId: string): Promise<void>
 
@@ -74,7 +74,7 @@ export interface SdStorage {
   set2FA(userId: string, twoFA: TwoFA): Promise<void>
 
   addMember (orga: Organization, user: UserRef, role: string, department?: string | null, readOnly?: boolean): Promise<void>
-  findMembers (organizationId: string, params: FindMembersParams): Promise<{ count: number, results: Member[] }>
+  findMembers (organizationId: string, params: FindMembersParams): Promise<{ count: number, results: Member[], fromCache?: string }>
   removeMember (orgId: string, userId: string, department?: string): Promise<void>
   patchMember(orgId: string, userId: string, department: string | null | undefined, patch: PatchMemberBody): Promise<void>
 
