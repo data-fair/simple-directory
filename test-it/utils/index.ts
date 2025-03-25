@@ -3,6 +3,7 @@ import type { AxiosAuthInstance, AxiosAuthOptions } from '@data-fair/lib-node/ax
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
 import eventPromise from '@data-fair/lib-utils/event-promise.js'
+import { CookieJar } from 'tough-cookie'
 
 const directoryUrl = 'http://localhost:5689/simple-directory'
 
@@ -37,12 +38,15 @@ export const clean = async (options?: { ldapConfig?: any }) => {
     const ldapStorage = await import('../../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(options.ldapConfig)
 
-    for (const email of ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'test@test.com']) {
+    for (const email of ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'test@test.com', 'oidc1@test.com']) {
       const user = await storage.getUserByEmail(email)
       if (user) await storage._deleteUser(user.id)
     }
-    const org = await storage.getOrganization('myorg')
-    if (org) await storage._deleteOrganization(org.id)
+    for (const id of ['org1', 'myorg']) {
+      const org = await storage.getOrganization(id)
+      if (org) await storage._deleteOrganization(org.id)
+    }
+
     storage.clearCache()
   }
 }
@@ -104,4 +108,38 @@ export const passwordLogin = async (ax: AxiosAuthInstance, email: string, passwo
     const redirectError = redirectUrl.searchParams.get('error')
     if (redirectError) throw new Error(redirectError)
   }
+}
+
+export const loginWithOIDC = async (port: number) => {
+  const anonymousAx = await axios()
+
+  // request a login from the provider
+  const loginInitial = await anonymousAx.get(`/api/auth/oauth/localhost${port}/login`, { validateStatus: (status) => status === 302 })
+  const providerAuthUrl = new URL(loginInitial.headers.location)
+  // redirect to the provider with proper params
+  assert.equal(providerAuthUrl.host, 'localhost:' + port)
+  assert.equal(providerAuthUrl.pathname, '/authorize')
+  assert.equal(providerAuthUrl.searchParams.get('redirect_uri'), 'http://localhost:5689/simple-directory/api/auth/oauth-callback')
+  // successful login on the provider followed by redirect to our callback url
+  const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (status) => status === 302 })
+  const providerAuthRedirect = new URL(loginProvider.headers.location)
+  assert.equal(providerAuthRedirect.host, 'localhost:5689')
+  assert.equal(providerAuthRedirect.pathname, '/simple-directory/api/auth/oauth-callback')
+  // open our callback url that produces a temporary token to be transformed in a session token by a token_callback url
+  const oauthCallback = await anonymousAx(providerAuthRedirect.href, { validateStatus: (status) => status === 302 })
+  const callbackRedirect = new URL(oauthCallback.headers.location)
+  assert.equal(callbackRedirect.host, 'localhost:5689')
+  assert.equal(callbackRedirect.pathname, '/simple-directory/api/auth/token_callback')
+  // finally the token_callback url will set cookies and redirect to our final destination
+  const tokenCallback = await anonymousAx(callbackRedirect.href, { validateStatus: (status) => status === 302 })
+  const setCookies = tokenCallback.headers['set-cookie']
+  assert.ok(setCookies && setCookies.length >= 3)
+  const cookieJar = new CookieJar()
+  for (const cookie of setCookies) {
+    cookieJar.setCookie(cookie.replace('/simple-directory/', '/'), callbackRedirect.origin)
+  }
+
+  anonymousAx.defaults.headers.Cookie = await cookieJar.getCookieString(callbackRedirect.origin)
+
+  return anonymousAx
 }
