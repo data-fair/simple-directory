@@ -58,6 +58,7 @@ declare global {
   const mdiFileTable: typeof import('@mdi/js')['mdiFileTable']
   const mdiGraph: typeof import('@mdi/js')['mdiGraph']
   const mdiInformation: typeof import('@mdi/js')['mdiInformation']
+  const mdiLoginVariant: typeof import('@mdi/js')['mdiLoginVariant']
   const mdiMagnify: typeof import('@mdi/js')['mdiMagnify']
   const mdiMonitorCellphoneStar: typeof import('@mdi/js')['mdiMonitorCellphoneStar']
   const mdiPencil: typeof import('@mdi/js')['mdiPencil']
@@ -204,6 +205,7 @@ declare module 'vue' {
     readonly mdiFileTable: UnwrapRef<typeof import('@mdi/js')['mdiFileTable']>
     readonly mdiGraph: UnwrapRef<typeof import('@mdi/js')['mdiGraph']>
     readonly mdiInformation: UnwrapRef<typeof import('@mdi/js')['mdiInformation']>
+    readonly mdiLoginVariant: UnwrapRef<typeof import('@mdi/js')['mdiLoginVariant']>
     readonly mdiMagnify: UnwrapRef<typeof import('@mdi/js')['mdiMagnify']>
     readonly mdiMonitorCellphoneStar: UnwrapRef<typeof import('@mdi/js')['mdiMonitorCellphoneStar']>
     readonly mdiPencil: UnwrapRef<typeof import('@mdi/js')['mdiPencil']>

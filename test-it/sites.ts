@@ -74,5 +74,13 @@ describe('sites api', () => {
 
     // using site_redirect is no longer possible
     await assert.rejects(ax.post<string>('/api/auth/site_redirect', { redirect: siteDirectoryUrl }), { status: 400 })
+
+    /* TODO: implement asadmin on the second site
+    // a superadmin can use asadmin to connect directly on the second site
+    await adminAx.post('/api/auth/asadmin', { id: siteUser1.id })
+    const me = (await ax.get(siteDirectoryUrl + '/api/auth/me')).data
+    assert.equal(me.id, 'dmeadus0')
+    assert.equal(me.asAdmin?.id, 'superadmin')
+    */
   })
 })
