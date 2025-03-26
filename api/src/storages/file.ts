@@ -131,6 +131,9 @@ class FileStorage implements SdStorage {
     if (ids?.length) {
       filteredUsers = filteredUsers.filter(user => ids.find(id => user.id === id))
     }
+    if (params.host) {
+      filteredUsers = filteredUsers.filter(user => user.host === params.host)
+    }
     if (params.q) {
       const lq = params.q.toLowerCase()
       filteredUsers = filteredUsers.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
@@ -152,10 +155,6 @@ class FileStorage implements SdStorage {
       if (!user) throw Error('unknown user as member ' + m.id)
       return { ...m, name: user.name, email: user.email, host: user.host, emailConfirmed: user.emailConfirmed, plannedDeletion: user.plannedDeletion }
     })
-    if (params.q) {
-      const lq = params.q.toLowerCase()
-      members = members.filter(member => member.name.toLowerCase().indexOf(lq) >= 0)
-    }
     const ids = params.ids
     if (ids?.length) {
       members = members.filter(member => ids.includes(member.id))
@@ -173,6 +172,10 @@ class FileStorage implements SdStorage {
         }
         return false
       })
+    }
+    if (params.q) {
+      const lq = params.q.toLowerCase()
+      members = members.filter(member => member.name.toLowerCase().indexOf(lq) >= 0)
     }
     for (const member of members.filter(m => m.department)) {
       const dep = orga.departments && orga.departments.find(d2 => d2.id === member.department)
@@ -199,6 +202,9 @@ class FileStorage implements SdStorage {
     const ids = params.ids
     if (ids?.length) {
       filteredOrganizations = filteredOrganizations.filter(organization => ids.find(id => organization.id === id))
+    }
+    if (params.host) {
+      filteredOrganizations = filteredOrganizations.filter(organization => organization.host === params.host)
     }
     if (params.q) {
       const lq = params.q.toLowerCase()
