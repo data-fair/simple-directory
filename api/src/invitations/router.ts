@@ -1,7 +1,7 @@
 import { type UserWritable, type Invitation, type ActionPayload, type ShortenedInvitation } from '#types'
 import { Router } from 'express'
 import config from '#config'
-import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError, reqUserAuthenticated } from '@data-fair/lib-express'
+import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError, reqSessionAuthenticated } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
@@ -19,7 +19,8 @@ export default router
 
 // Invitation for a user to join an organization from an admin of this organization
 router.post('', async (req, res, next) => {
-  const user = reqUserAuthenticated(req)
+  const session = reqSessionAuthenticated(req)
+  const user = session.user
 
   const { query, body } = (await import('#doc/invitations/post-req/index.ts')).returnValid(req, { name: 'req' })
 
@@ -29,7 +30,6 @@ router.post('', async (req, res, next) => {
   debug('new invitation', body)
   const storage = storages.globalStorage
   const invitation = body
-  assertAccountRole(reqSession(req), { type: 'organization', id: invitation.id, department: invitation.department }, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
 
   let invitSite = await reqSite(req)
   let invitPublicBaseUrl = reqSiteUrl(req) + '/simple-directory'
@@ -45,6 +45,12 @@ router.post('', async (req, res, next) => {
 
   const orga = await storage.getOrganization(invitation.id)
   if (!orga) return res.status(404).send('unknown organization')
+
+  if (session.siteRole === 'admin' && invitSite && invitSite.host === orga.host) {
+    // ok for site admins
+  } else {
+    assertAccountRole(reqSession(req), { type: 'organization', id: invitation.id, department: invitation.department }, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
+  }
 
   const limits = await getOrgLimits(orga)
   if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
