@@ -94,10 +94,11 @@ export default {
     },
     mails: {
       type: 'object',
+      title: 'Emails',
       properties: {
         from: {
           type: 'string',
-          title: 'Email de l\'expéditeur',
+          title: 'Adresse email de l\'expéditeur',
           description: 'Attention, la configuration doit être effectuée sur le service d\'envoi de mail pour que cet expéditeur ne soit pas considéré comme illégitime.'
         }
       }
