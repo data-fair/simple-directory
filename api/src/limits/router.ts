@@ -1,10 +1,11 @@
 import config from '#config'
-import { Router, type RequestHandler } from 'express'
+import { Router, type RequestHandler, type Request } from 'express'
 import { reqUser, reqSessionAuthenticated, assertAccountRole, httpError } from '@data-fair/lib-express'
 import * as limitsSchema from '#types/limits/index.ts'
-import { getOrgLimits } from '#services'
+import { getOrgLimits, reqSite } from '#services'
 import mongo from '#mongo'
 import storages from '#storages'
+import type { Organization } from '#types'
 
 const router = Router()
 export default router
@@ -22,11 +23,12 @@ const isUser: RequestHandler = (req, res, next) => {
   next()
 }
 
-const isAccountMember: RequestHandler = (req, res, next) => {
-  if (req.query.key && req.query.key === config.secretKeys.limits) return next()
+const assertAccountMember = async (req: Request, org: Organization) => {
+  if (req.query.key && req.query.key === config.secretKeys.limits) return
   const session = reqSessionAuthenticated(req)
+  const site = await reqSite(req)
+  if (session.siteRole === 'admin' && site && org.host && org.host === site.host) return
   assertAccountRole(session, { type: 'organization', id: req.params.id }, 'admin', { acceptDepAsRoot: true })
-  next()
 }
 
 // Endpoint for customers service to create/update limits
@@ -41,9 +43,10 @@ router.post('/:type/:id', isSuperAdmin, async (req, res, next) => {
 })
 
 // A user can get limits information for his org
-router.get('/organization/:id', isAccountMember, async (req, res, next) => {
+router.get('/organization/:id', async (req, res, next) => {
   const org = await storages.globalStorage.getOrganization(req.params.id)
   if (!org) throw httpError(404)
+  await assertAccountMember(req, org)
   res.send(await getOrgLimits(org))
 })
 router.get('/user/:id', isUser, async (req, res, next) => {

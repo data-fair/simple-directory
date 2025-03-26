@@ -157,7 +157,10 @@ const orgRole = computed(() => {
     return 'admin'
   }
 })
-const limits = useFetch<Limits>($apiPath + `/limits/organization/${orgId}`, { watch: orgRole.value === 'admin' })
+const limits = useFetch<Limits>($apiPath + `/limits/organization/${orgId}`, { watch: false })
+watch(orga, () => {
+  if (orgRole.value === 'admin') limits.refresh()
+})
 
 const form = ref<InstanceType<typeof VForm>>()
 const save = async () => {

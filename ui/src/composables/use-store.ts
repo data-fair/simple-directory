@@ -27,6 +27,7 @@ function createStore () {
 
   const host = window.location.host
   const mainPublicUrl = new URL($uiConfig.publicUrl)
+  const isMainSite = host === mainPublicUrl.host
 
   return {
     sitePublic,
@@ -36,7 +37,8 @@ function createStore () {
     postSite,
     patchSite,
     host,
-    mainPublicUrl
+    mainPublicUrl,
+    isMainSite
   }
 }
 
