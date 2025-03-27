@@ -4,6 +4,7 @@ import { type OAuthProvider, type OAuthUserInfo } from './service.ts'
 import mongo from '#mongo'
 import Debug from 'debug'
 import _slug from 'slugify'
+import jwt from 'jsonwebtoken'
 
 const slug = _slug.default
 const debug = Debug('oauth')
@@ -37,9 +38,14 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     authorizePath: authURL.pathname
   }
   const userInfo = async (accessToken: string) => {
-    const claims = (await axios.get(discoveryContent.userinfo_endpoint, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    })).data
+    let claims
+    if (discoveryContent.userinfo_endpoint) {
+      claims = (await axios.get(discoveryContent.userinfo_endpoint, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })).data
+    } else {
+      claims = jwt.decode(accessToken) as any
+    }
     debug('fetch userInfo claims from oidc provider', claims)
     if (claims.email_verified === false && !p.ignoreEmailVerified) {
       throw new Error('Authentification refusée depuis le fournisseur. L\'adresse mail est indiquée comme non validée.')
