@@ -12,6 +12,7 @@ import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 import type { UserRef } from '@data-fair/lib-express'
 import type { TwoFA } from '#services'
 import userName from '../utils/user-name.ts'
+import slugify from 'slugify'
 
 const debug = Debug('ldap')
 
@@ -284,6 +285,7 @@ export class LdapStorage implements SdStorage {
       )
       const results = res.results
       for (const org of results) {
+        org.id = slugify.default(org.id, { lower: true, strict: true })
         let overwrite
         if ((this.ldapParams.overwrite || []).includes('organizations')) {
           overwrite = await mongo.ldapOrganizationsOverwrite.findOne({ id: org.id })
@@ -675,23 +677,11 @@ export class LdapStorage implements SdStorage {
       if (!this.org && config.adminsOrg && config.adminsOrg.id === id) {
         org = { ...config.adminsOrg, departments: [] }
       } else {
-        const res = await this._search<Organization>(
-          client,
-          this.ldapParams.baseDN,
-          this.orgMapping.filter({ id }, this.ldapParams.organizations.objectClass, this.ldapParams.organizations.extraFilters),
-          Object.values(this.ldapParams.organizations.mapping),
-          this.orgMapping.from
-        )
-        org = res.results[0]
+        // we cannot performe a ldap search with a filter on the id as we slugify it
+        // so we need to fetch all orgs and filter in memory
+        const allOrgs = await this.getAllOrgs()
+        org = allOrgs.results.find(o => o.id === id)
       }
-    }
-    if (org) {
-      let overwrite
-      if ((this.ldapParams.overwrite || []).includes('organizations') || (this.ldapParams.overwrite || []).includes('departments')) {
-        overwrite = await mongo.ldapOrganizationsOverwrite.findOne({ id: org.id })
-      }
-      overwrite = overwrite || (this.ldapParams.organizations.overwrite || []).find(o => (o.id === org.id))
-      if (overwrite) Object.assign(org, overwrite)
     }
     return org as Organization
   }
