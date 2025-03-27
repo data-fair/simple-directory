@@ -679,8 +679,9 @@ export class LdapStorage implements SdStorage {
       } else {
         // we cannot performe a ldap search with a filter on the id as we slugify it
         // so we need to fetch all orgs and filter in memory
+        const slugId = slugify.default(id, { lower: true, strict: true })
         const allOrgs = await this.getAllOrgs()
-        org = allOrgs.results.find(o => o.id === id)
+        org = allOrgs.results.find(o => o.id === slugId)
       }
     }
     return org as Organization

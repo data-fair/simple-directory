@@ -19,20 +19,20 @@ describe('storage ldap', () => {
   it('create and find users', async () => {
     const ldapStorage = await import('../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(ldapConfig)
-    await storage._createOrganization({ id: 'myorg', name: 'My Org' })
+    await storage._createOrganization({ id: 'MyOrg', name: 'My Org' })
     await storage._createUser({
       id: 'alban1',
       firstName: 'Alban',
       lastName: 'Mouton',
       email: 'alban.mouton@koumoul.com',
-      organizations: [{ id: 'myorg', role: 'admin', name: 'my org' }]
+      organizations: [{ id: 'MyOrg', role: 'admin', name: 'my org' }]
     })
     await storage._createUser({
       id: 'test1',
       firstName: 'Test',
       lastName: 'User',
       email: 'test@test.com',
-      organizations: [{ id: 'myorg', role: 'user', name: 'my org' }]
+      organizations: [{ id: 'MyOrg', role: 'user', name: 'my org' }]
     }, { departmentNumber: '/prefix/2/dep1', employeeType: 'administrator' })
     const users = await storage.findUsers({ skip: 0, size: 10, sort: { email: 1 } })
     assert.equal(users.count, 2)
