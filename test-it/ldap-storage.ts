@@ -61,10 +61,10 @@ describe('storage ldap', () => {
 
     const members = await storage.findMembers('myorg', { skip: 0, size: 10 })
     assert.equal(members.count, 2)
-    assert.equal(members.results[0].name, 'alban1')
+    assert.equal(members.results[0].name, 'Alban Overwritten')
     assert.equal(members.results[0].role, 'overwritten')
     assert.equal(members.results[0].department, undefined)
-    assert.equal(members.results[1].name, 'test1')
+    assert.equal(members.results[1].name, 'Test User')
     assert.equal(members.results[1].role, 'admin')
     assert.equal(members.results[1].department, 'dep1')
 

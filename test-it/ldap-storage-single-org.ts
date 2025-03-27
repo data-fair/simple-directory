@@ -43,7 +43,7 @@ describe('ldap single org', () => {
 
     const members = await storage.findMembers('test-single-org', { skip: 0, size: 10 })
     assert.equal(members.count, 1)
-    assert.equal(members.results[0].name, 'alban1')
+    assert.equal(members.results[0].name, 'Alban Mouton')
     assert.equal(members.results[0].role, 'admin')
 
     const member2 = await storage.findMembers('test-single-org', { q: 'notauser', skip: 0, size: 10 })
