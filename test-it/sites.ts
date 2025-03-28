@@ -62,7 +62,7 @@ describe('sites api', () => {
 
     // switch auth mode to ssoBackOffice
     await adminAx.patch('/api/sites/test', { authMode: 'ssoBackOffice' });
-    (await import('../api/src/sites/service.ts')).getSiteByUrl.clear()
+    (await import('../api/src/sites/service.ts')).getSiteByHost.clear()
 
     // a user can be created directly on the second site
     const { ax: siteAx1 } = await createUser('test-site2@test.com', false, 'TestPasswd01', siteDirectoryUrl)
@@ -70,7 +70,7 @@ describe('sites api', () => {
 
     // switch auth mode to onlyLocal
     await adminAx.patch('/api/sites/test', { authMode: 'onlyLocal' });
-    (await import('../api/src/sites/service.ts')).getSiteByUrl.clear()
+    (await import('../api/src/sites/service.ts')).getSiteByHost.clear()
 
     // using site_redirect is no longer possible
     await assert.rejects(ax.post<string>('/api/auth/site_redirect', { redirect: siteDirectoryUrl }), { status: 400 })

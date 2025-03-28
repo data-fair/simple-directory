@@ -4,6 +4,9 @@ export default {
   'x-exports': ['types', 'validate'],
   additionalProperties: false,
   properties: {
+    sender: {
+      $ref: 'https://github.com/data-fair/lib/session-state#/$defs/account'
+    },
     to: {
       type: 'array',
       items: {

@@ -2,15 +2,15 @@ import config from '#config'
 import { Router } from 'express'
 import { reqSiteUrl, reqIp, reqUser, session, httpError, reqIsInternal } from '@data-fair/lib-express'
 import { internalError } from '@data-fair/lib-node/observer.js'
-import { type SendMailOptions } from 'nodemailer'
 import storages from '#storages'
 import mongo from '#mongo'
 import { RateLimiterMongo } from 'rate-limiter-flexible'
 import emailValidator from 'email-validator'
 import multer from 'multer'
 import { reqI18n } from '#i18n'
-import mailsTransport from './transport.ts'
+import { sendMail } from './service.ts'
 import type { FindMembersParams } from '../storages/interface.ts'
+import { reqSite } from '#services'
 
 const router = Router()
 export default router
@@ -50,25 +50,39 @@ router.post('/', async (req, res, next) => {
       const members = await storage.findMembers(t.id, membersParams)
       members.results.forEach(member => to.add(member.email))
     }
-
-    const mail: SendMailOptions = {
-      from: config.mails.from,
-      to: [...to].join(', '),
-      subject: mailBody.subject,
-      text: mailBody.text,
-    }
-
+    let attachments: { filename: string, path: string }[] = []
     if (req.files && Array.isArray(req.files)) {
-      mail.attachments = req.files.map(file => ({
+      attachments = req.files.map(file => ({
         filename: file.originalname,
         path: file.path
       }))
     }
 
-    if (mailBody.html) {
-      mail.html = mailBody.html
+    let host, path
+    if (mailBody.sender) {
+      if (mailBody.sender.type === 'organization') {
+        const org = await storage.getOrganization(mailBody.sender.id)
+        if (org) {
+          host = org.host
+          path = org.path
+        }
+      }
+      if (mailBody.sender.type === 'user') {
+        const user = await storage.getUser(mailBody.sender.id)
+        if (user) {
+          host = user.host
+          path = user.path
+        }
+      }
     }
-    results.push(await mailsTransport.sendMail(mail))
+
+    results.push(await sendMail([...to].join(', '), {
+      host,
+      path,
+      subject: mailBody.subject,
+      text: mailBody.text,
+      htmlMsg: mailBody.html
+    }, attachments))
   }
   res.send(results)
 })
@@ -119,13 +133,13 @@ router.post('/contact', async (req, res) => {
   
   ${req.body.text}`
 
-  const mail: SendMailOptions = {
-    from: config.mails.from,
-    to: config.contact,
+  const site = await reqSite(req)
+
+  await sendMail(config.contact, {
+    host: site?.host,
+    path: site?.path,
     subject: req.body.subject,
     text
-  }
-
-  await mailsTransport.sendMail(mail)
+  })
   res.send(req.body)
 })

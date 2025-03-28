@@ -6,7 +6,7 @@ import config from '#config'
 import { flatten } from 'flat'
 import EventEmitter from 'node:events'
 import mailsTransport from './transport.ts'
-import { getSiteByUrl } from '#services'
+import { getSiteByUrl, getSiteByHost } from '#services'
 
 export const events = new EventEmitter()
 
@@ -26,41 +26,89 @@ if (existsSync(oldNoButtonTplPath)) {
   mjmlNoButtonTemplate = readFileSync(oldNoButtonTplPath, 'utf8')
 }
 
-export const sendMailI18n = async (key: string, messages: any, to: string, params: Record<string, string>) => {
-  const site = params.link && (await getSiteByUrl(params.link))
-  const flatTheme: Record<string, any> = flatten({ theme: config.theme })
+type SendMailI18nParams = {
+  link?: string
+  host?: string
+  path?: string
+  origin?: string
+  [key: string]: any
+}
+
+type FlatTheme = {
+  'theme.colors.primary': string
+  [key: string]: any
+}
+
+type I18nMailMessages = {
+  subject: string
+  text?: string
+  htmlMsg?: string
+  htmlButton?: string
+  htmlAlternativeLink?: string
+  htmlCaption?: string
+}
+
+type SendMailTmplParams = SendMailI18nParams & FlatTheme & I18nMailMessages & {
+  contact: string
+  logo: string
+}
+
+type SendMailParams = SendMailI18nParams & I18nMailMessages
+
+export const getI18NParams = (key: string, messages: any, params: SendMailI18nParams) => {
+  const i18nParams: Record<string, any> = {}
+  Object.keys(messages.mails[key]).forEach(k => {
+    i18nParams[k] = microTemplate(messages.mails[key][k], params)
+  })
+  return i18nParams as I18nMailMessages
+}
+
+export const sendMailI18n = async (key: string, messages: any, to: string, params: SendMailI18nParams) => {
+  if (params.link) {
+    const linkUrl = new URL(params.link)
+    params.host = linkUrl.host
+    params.origin = linkUrl.origin
+    params.path = linkUrl.pathname
+  }
+  await sendMail(to, { ...params, ...getI18NParams(key, messages, params) })
+}
+
+export const sendMail = async (to: string, params: SendMailParams, attachments?: { filename: string, path: string }[]) => {
+  let site = params.link && (await getSiteByUrl(params.link))
+  if (!site && params.host) {
+    site = await getSiteByHost(params.host, params.path ?? '')
+  }
+
+  const flatTheme: FlatTheme = flatten({ theme: config.theme })
   let logo = config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/v0.12.3/public/assets/logo-150x150.png'
+  let from = config.mails.from
   if (site && site?.mails?.from) {
+    from = site.mails.from
     Object.assign(flatTheme, flatten({ theme: site.theme }))
     logo = site.theme.logo || logo
   }
-  params = {
+
+  const tmplParams: SendMailTmplParams = {
     ...params,
     ...flatTheme,
     contact: config.contact,
     logo,
     ...config.mails.extraParams // override with extra params from config, default to {}
   }
-  if (params.link) {
-    const linkUrl = new URL(params.link)
-    params.host = linkUrl.host
-    params.origin = linkUrl.origin
-  }
-  Object.keys(messages.mails[key]).forEach(k => {
-    params[k] = microTemplate(messages.mails[key][k], params)
-  })
-  events.emit('send', params)
-  const mjmlRes = mjml2html(microTemplate(params.htmlButton ? mjmlTemplate : mjmlNoButtonTemplate, params))
+
+  events.emit('send', tmplParams)
+  const mjmlRes = mjml2html(microTemplate(tmplParams.htmlButton ? mjmlTemplate : mjmlNoButtonTemplate, tmplParams))
   if (mjmlRes.errors && mjmlRes.errors.length) {
     console.error('Error while preparing mail body', mjmlRes.errors)
     throw new Error('Error while preparing mail body')
   }
 
   await mailsTransport.sendMail({
-    from: config.mails.from,
+    from,
     to,
-    subject: microTemplate(messages.mails[key].subject, params),
-    text: microTemplate(messages.mails[key].text, params),
-    html: mjmlRes.html
+    subject: params.subject,
+    text: params.text,
+    html: mjmlRes.html,
+    attachments
   })
 }
