@@ -9,7 +9,7 @@ import { reqI18n } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
 import type { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
-import { setNbMembersLimit, sendMail, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite } from '#services'
+import { setNbMembersLimit, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite } from '#services'
 import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
@@ -409,7 +409,7 @@ if (config.managePartners) {
       organization: orga.name,
       partner: partnerPost.name
     }
-    await sendMail('partnerInvitation', reqI18n(req).messages, partnerPost.contactEmail, params)
+    await sendMailI18n('partnerInvitation', reqI18n(req).messages, partnerPost.contactEmail, params)
 
     eventsQueue?.pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },

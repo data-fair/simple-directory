@@ -26,7 +26,7 @@ if (existsSync(oldNoButtonTplPath)) {
   mjmlNoButtonTemplate = readFileSync(oldNoButtonTplPath, 'utf8')
 }
 
-export const sendMail = async (key: string, messages: any, to: string, params: Record<string, string>) => {
+export const sendMailI18n = async (key: string, messages: any, to: string, params: Record<string, string>) => {
   const site = params.link && (await getSiteByUrl(params.link))
   const flatTheme: Record<string, any> = flatten({ theme: config.theme })
   let logo = config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/v0.12.3/public/assets/logo-150x150.png'

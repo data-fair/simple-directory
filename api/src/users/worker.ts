@@ -5,7 +5,7 @@ import { deleteOAuthToken, writeOAuthToken, oauthGlobalProviders, findOfflineOAu
 import { internalError } from '@data-fair/lib-node/observer.js'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { defaultLocale, localizedDayjs, messages } from '#i18n'
-import { sendMail } from '#services'
+import { sendMailI18n } from '#services'
 import locks from '@data-fair/lib-node/locks.js'
 import storages from '#storages'
 import mongo from '#mongo'
@@ -23,7 +23,7 @@ const planDeletion = async (user: User) => {
   const link = config.publicUrl + '/login?email=' + encodeURIComponent(user.email)
   if (user.emailConfirmed || user.logged) {
     // TODO: use a locale stored on the user ?
-    await sendMail('plannedDeletion', messages[defaultLocale], user.email, {
+    await sendMailI18n('plannedDeletion', messages[defaultLocale], user.email, {
       link,
       user: user.name,
       plannedDeletion: localizedDayjs(plannedDeletion).locale(defaultLocale).format('L'),
