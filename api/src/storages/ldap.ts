@@ -229,8 +229,6 @@ export class LdapStorage implements SdStorage {
         await this._setUserOrg(client, user, res.fullResults[i].entry, res.fullResults[i].attrs, orgCache)
         if (this.ldapParams.members.onlyWithRole) {
           if (!user.organizations?.length) continue
-          const org = user.organizations[0]
-          if (!org.role) continue
         }
         const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email === user.email)
         if (overwrite) Object.assign(user, overwrite)
@@ -467,9 +465,13 @@ export class LdapStorage implements SdStorage {
       overwrite = overwrite || (this.ldapParams.members.overwrite || [])
         .find(o => (o.orgId === org.id || !o.orgId) && o.email?.toLowerCase() === user.email?.toLowerCase())
 
-      role = (overwrite && overwrite.role) || role || this.ldapParams.members.role.default
+      role = (overwrite && overwrite.role) || role
+      if (!role && !this.ldapParams.members.onlyWithRole) {
+        role = this.ldapParams.members.role.default
+      }
       department = (overwrite && overwrite.department) || department || org.department
-      user.organizations = [{ id: org.id, name: org.name, role, department }]
+      if (role) user.organizations = [{ id: org.id, name: org.name, role, department }]
+      else user.organizations = []
     } else {
       user.organizations = []
     }
