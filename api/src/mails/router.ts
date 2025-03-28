@@ -18,18 +18,20 @@ router.post('/', async (req, res) => {
   if (!config.secretKeys.sendMails || config.secretKeys.sendMails !== key) {
     throw httpError(403, 'Bad secret in "key" parameter')
   }
+  const mailBody = (await import('#types/mail/index.ts')).returnValid(req.body)
   const storage = storages.globalStorage
   const results = []
-  for (const t of req.body.to) {
+  for (const t of mailBody.to) {
     // separte mail per recipient, prevents showing email addresses from other users
     // but a single mail per orgs/members, showing emails is not a problem in this case
     const to = new Set<string>([])
-    if (t.type === 'user') {
+    if (typeof t === 'string') {
+      to.add(t)
+    } else if (t.type === 'user') {
       const user = (await storage.getUser(t.id))
       if (user) to.add(user.email)
       else console.error('Trying to send an email to a user that doesn\'t exist anymore')
-    }
-    if (t.type === 'organization') {
+    } else if (t.type === 'organization') {
       const membersParams: FindMembersParams = { size: 10000, skip: 0 }
       if (t.role) membersParams.roles = [t.role]
       if (t.department && t.department !== '*') membersParams.departments = [t.department]
@@ -41,12 +43,12 @@ router.post('/', async (req, res) => {
     const mail: SendMailOptions = {
       from: config.mails.from,
       to: [...to].join(', '),
-      subject: req.body.subject,
-      text: req.body.text
+      subject: mailBody.subject,
+      text: mailBody.text
     }
 
-    if (req.body.html) {
-      mail.html = req.body.html
+    if (mailBody.html) {
+      mail.html = mailBody.html
     }
     results.push(await mailsTransport.sendMail(mail))
   }
