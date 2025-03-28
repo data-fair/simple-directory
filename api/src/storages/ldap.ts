@@ -205,7 +205,6 @@ export class LdapStorage implements SdStorage {
     if (this.ldapParams.members.organization?.attr) attributes.push(this.ldapParams.members.organization.attr)
     if (this.ldapParams.isAdmin?.attr) attributes.push(this.ldapParams.isAdmin.attr)
     const extraFilters: any[] = [...(this.ldapParams.users.extraFilters || [])]
-    if (this.ldapParams.members.onlyWithRole) extraFilters.push(this._getRoleFilter(Object.keys(this.ldapParams.members.role.values ?? {})))
     return { attributes, extraFilters }
   }
 
@@ -228,6 +227,11 @@ export class LdapStorage implements SdStorage {
       for (let i = 0; i < res.fullResults.length; i++) {
         const user = res.fullResults[i].item
         await this._setUserOrg(client, user, res.fullResults[i].entry, res.fullResults[i].attrs, orgCache)
+        if (this.ldapParams.members.onlyWithRole) {
+          if (!user.organizations?.length) continue
+          const org = user.organizations[0]
+          if (!org.role) continue
+        }
         const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email === user.email)
         if (overwrite) Object.assign(user, overwrite)
         // email is implicitly confirmed in ldap mode
@@ -567,22 +571,6 @@ export class LdapStorage implements SdStorage {
     const size = params.size || 20
     results = results.slice(skip, skip + size)
     return { count, results, fromCache }
-  }
-
-  private _getRoleFilter (roles: string[]) {
-    let roleAttrValues: string[] = []
-    roles.forEach(role => {
-      roleAttrValues = roleAttrValues.concat(this.ldapParams.members.role.values?.[role] || (role === this.ldapParams.members.role.default ? [] : [role]))
-    })
-    if (roleAttrValues.length) {
-      const roleAttrFilters = roleAttrValues.map(value => new ldap.EqualityFilter({ attribute: this.ldapParams.members.role.attr as string, value }))
-      if (roleAttrFilters.length > 1) {
-        // roleFilter = `(|${roleAttrFilters.join('')})`
-        return new ldap.OrFilter({ filters: roleAttrFilters })
-      } else {
-        return roleAttrFilters[0]
-      }
-    }
   }
 
   private membersCache: { [orgId: string]: { members: Member[], fromUsers: User[] } } = {}
