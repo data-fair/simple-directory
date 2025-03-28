@@ -1,6 +1,6 @@
 export default {
   type: 'object',
-  required: ['to', 'subject', 'body'],
+  required: ['to', 'subject'],
   'x-exports': ['types', 'validate'],
   additionalProperties: false,
   properties: {

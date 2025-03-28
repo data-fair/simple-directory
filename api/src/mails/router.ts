@@ -1,11 +1,13 @@
 import config from '#config'
 import { Router } from 'express'
-import { reqSiteUrl, reqIp, reqUser, session, httpError } from '@data-fair/lib-express'
+import { reqSiteUrl, reqIp, reqUser, session, httpError, reqIsInternal } from '@data-fair/lib-express'
+import { internalError } from '@data-fair/lib-node/observer.js'
 import { type SendMailOptions } from 'nodemailer'
 import storages from '#storages'
 import mongo from '#mongo'
 import { RateLimiterMongo } from 'rate-limiter-flexible'
 import emailValidator from 'email-validator'
+import multer from 'multer'
 import { reqI18n } from '#i18n'
 import mailsTransport from './transport.ts'
 import type { FindMembersParams } from '../storages/interface.ts'
@@ -13,12 +15,21 @@ import type { FindMembersParams } from '../storages/interface.ts'
 const router = Router()
 export default router
 
-router.post('/', async (req, res) => {
+const upload = multer({ storage: multer.diskStorage({}) })
+
+router.post('/', async (req, res, next) => {
   const key = req.query.key
   if (!config.secretKeys.sendMails || config.secretKeys.sendMails !== key) {
     throw httpError(403, 'Bad secret in "key" parameter')
   }
-  const mailBody = (await import('#types/mail/index.ts')).returnValid(req.body)
+  if (!reqIsInternal(req)) {
+    internalError('mails-send', 'Trying to send mails from an external request')
+    // TODO: make this blocking in a coming release
+    // throw httpError(403, 'Forbidden')
+  }
+  next()
+}, upload.any(), async (req, res) => {
+  const mailBody = (await import('#types/mail/index.ts')).returnValid(typeof req.body.body === 'string' ? JSON.parse(req.body.body) : req.body)
   const storage = storages.globalStorage
   const results = []
   for (const t of mailBody.to) {
@@ -44,7 +55,14 @@ router.post('/', async (req, res) => {
       from: config.mails.from,
       to: [...to].join(', '),
       subject: mailBody.subject,
-      text: mailBody.text
+      text: mailBody.text,
+    }
+
+    if (req.files && Array.isArray(req.files)) {
+      mail.attachments = req.files.map(file => ({
+        filename: file.originalname,
+        path: file.path
+      }))
     }
 
     if (mailBody.html) {
