@@ -14,7 +14,7 @@ describe('mails', () => {
     await assert.rejects(ax.post('/api/mails', {}), (res: any) => res.status === 403)
   })
 
-  it.only('Send email to a user', async () => {
+  it('Send email to a user', async () => {
     const ax = await axios()
     const res = await ax.post('/api/mails', {
       to: [{ type: 'user', id: 'dmeadus0' }],
@@ -27,6 +27,9 @@ describe('mails', () => {
     const email = emails.find(m => m.subject === 'test')
     assert.ok(email)
     assert.equal(email.envelope.to[0].address, 'dmeadus0@answers.com')
+    assert.equal(email.text, 'test mail content')
+    assert.ok(email.html.includes('test mail content'))
+    assert.ok(!email.html.includes('htmlCaption'))
   })
 
   it('Send email to members of an organization', async () => {

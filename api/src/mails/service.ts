@@ -10,20 +10,28 @@ import { getSiteByUrl, getSiteByHost } from '#services'
 
 export const events = new EventEmitter()
 
+const genericTplPath = join(import.meta.dirname, 'generic-mail.mjml')
+const genericTemplate = readFileSync(genericTplPath, 'utf8')
+let mainSiteTemplate = genericTemplate
+
 const newTplPath = join(import.meta.dirname, 'mail.mjml')
-let mjmlTemplate = readFileSync(newTplPath, 'utf8')
+if (existsSync(newTplPath)) mainSiteTemplate = readFileSync(newTplPath, 'utf8')
 const oldTplPath = '/webapp/server/mails/mail.mjml'
 if (existsSync(oldTplPath)) {
   console.error(`WARNING: found a mail template at deprecated path ${oldTplPath}, please use new path ${newTplPath}`)
-  mjmlTemplate = readFileSync(oldTplPath, 'utf8')
+  mainSiteTemplate = readFileSync(oldTplPath, 'utf8')
 }
 
+const genericNoButtonTplPath = join(import.meta.dirname, 'generic-mail-nobutton.mjml')
+const genericNoButtonTemplate = readFileSync(genericNoButtonTplPath, 'utf8')
+
+let mainSiteNoButtonTemplate = genericNoButtonTemplate
 const newNoButtonTplPath = join(import.meta.dirname, 'mail-nobutton.mjml')
-let mjmlNoButtonTemplate = readFileSync(newNoButtonTplPath, 'utf8')
+if (existsSync(newNoButtonTplPath)) mainSiteNoButtonTemplate = readFileSync(newNoButtonTplPath, 'utf8')
 const oldNoButtonTplPath = '/webapp/server/mails/mail-nobutton.mjml'
 if (existsSync(oldNoButtonTplPath)) {
   console.error(`WARNING: found a mail template at deprecated path ${oldNoButtonTplPath}, please use new path ${newNoButtonTplPath}`)
-  mjmlNoButtonTemplate = readFileSync(oldNoButtonTplPath, 'utf8')
+  mainSiteNoButtonTemplate = readFileSync(oldNoButtonTplPath, 'utf8')
 }
 
 type SendMailI18nParams = {
@@ -41,11 +49,11 @@ type FlatTheme = {
 
 type I18nMailMessages = {
   subject: string
-  text?: string
-  htmlMsg?: string
+  text: string
+  htmlMsg: string
+  htmlCaption: string
   htmlButton?: string
   htmlAlternativeLink?: string
-  htmlCaption?: string
 }
 
 type SendMailTmplParams = SendMailI18nParams & FlatTheme & I18nMailMessages & {
@@ -82,10 +90,12 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
   const flatTheme: FlatTheme = flatten({ theme: config.theme })
   let logo = config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/v0.12.3/public/assets/logo-150x150.png'
   let from = config.mails.from
+  let template = params.htmlButton ? mainSiteTemplate : mainSiteNoButtonTemplate
   if (site && site?.mails?.from) {
     from = site.mails.from
     Object.assign(flatTheme, flatten({ theme: site.theme }))
     logo = site.theme.logo || logo
+    template = params.htmlButton ? genericTemplate : genericNoButtonTemplate
   }
 
   const tmplParams: SendMailTmplParams = {
@@ -97,7 +107,8 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
   }
 
   events.emit('send', tmplParams)
-  const mjmlRes = mjml2html(microTemplate(tmplParams.htmlButton ? mjmlTemplate : mjmlNoButtonTemplate, tmplParams))
+
+  const mjmlRes = mjml2html(microTemplate(template, tmplParams))
   if (mjmlRes.errors && mjmlRes.errors.length) {
     console.error('Error while preparing mail body', mjmlRes.errors)
     throw new Error('Error while preparing mail body')

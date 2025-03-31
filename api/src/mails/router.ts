@@ -80,8 +80,9 @@ router.post('/', async (req, res, next) => {
       host,
       path,
       subject: mailBody.subject,
-      text: mailBody.text,
-      htmlMsg: mailBody.html
+      text: mailBody.text ?? '',
+      htmlMsg: mailBody.html ?? mailBody.text ?? '',
+      htmlCaption: ''
     }, attachments))
   }
   res.send(results)
@@ -139,7 +140,9 @@ router.post('/contact', async (req, res) => {
     host: site?.host,
     path: site?.path,
     subject: req.body.subject,
-    text
+    text,
+    htmlMsg: text,
+    htmlCaption: ''
   })
   res.send(req.body)
 })
