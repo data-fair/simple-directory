@@ -114,7 +114,7 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
     throw new Error('Error while preparing mail body')
   }
 
-  await mailsTransport.sendMail({
+  return await mailsTransport.sendMail({
     from,
     to,
     subject: params.subject,
