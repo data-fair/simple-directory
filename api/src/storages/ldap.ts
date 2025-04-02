@@ -1,6 +1,6 @@
 import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
 import config from '#config'
-import type { LdapParams, Member, ServerSession, Site } from '#types'
+import type { LdapParams, Member, MemberOverwrite, ServerSession, Site } from '#types'
 import type { Organization, Partner, User, UserWritable } from '#types'
 import mongo from '#mongo'
 import memoize from 'memoizee'
@@ -458,22 +458,44 @@ export class LdapStorage implements SdStorage {
           }
         }
       }
-      let overwrite
-      if ((this.ldapParams.overwrite || []).includes('members')) {
-        overwrite = await mongo.ldapMembersOverwrite.findOne({ orgId: org.id, userId: user.id })
-      }
-      overwrite = overwrite || (this.ldapParams.members.overwrite || [])
-        .find(o => (o.orgId === org.id || !o.orgId) && o.email?.toLowerCase() === user.email?.toLowerCase())
 
-      role = (overwrite && overwrite.role) || role
       if (!role && !this.ldapParams.members.onlyWithRole) {
         role = this.ldapParams.members.role.default
       }
-      department = (overwrite && overwrite.department) || department || org.department
+      department = department || org.department
       if (role) user.organizations = [{ id: org.id, name: org.name, role, department }]
       else user.organizations = []
     } else {
       user.organizations = []
+    }
+
+    let overwrites: MemberOverwrite[] = []
+    if ((this.ldapParams.overwrite || []).includes('members')) {
+      overwrites = await mongo.ldapMembersOverwrite.find({ userId: user.id }).toArray()
+    }
+    overwrites = overwrites.concat((this.ldapParams.members.overwrite || [])
+      .filter(o => (o.email?.toLowerCase() === user.email?.toLowerCase())))
+    for (const overwrite of overwrites) {
+      const overwriteRole = overwrite.role || (this.ldapParams.members.role.default)
+      if (!overwrite.orgId) {
+        for (const o of user.organizations) {
+          if (overwrite.role) o.role = overwrite.role
+          if (overwrite.department) o.department = overwrite.department
+        }
+      } else {
+        const userOrg = user.organizations.find(o => o.id === overwrite.orgId)
+        if (userOrg) {
+          if (overwrite.role) userOrg.role = overwrite.role
+          if (overwrite.department) userOrg.department = overwrite.department
+        } else {
+          const fullO = orgCache[overwrite.orgId] = orgCache[overwrite.orgId] || await this._getOrganization(client, overwrite.orgId)
+          if (fullO) {
+            user.organizations.push({ id: fullO.id, name: fullO.name, role: overwriteRole, department: overwrite.department })
+          } else {
+            debug('unknown organization referenced in members overwrite', overwrite.orgId)
+          }
+        }
+      }
     }
   }
 

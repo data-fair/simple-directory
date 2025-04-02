@@ -44,9 +44,7 @@ export const clean = async (options?: { ldapConfig?: any }) => {
     }
     for (const id of ['org1', 'myorg']) {
       const org = await storage.getOrganization(id)
-      console.log('org ??', org)
       if (org) await storage._deleteOrganization(org.id)
-      console.log('ok')
     }
 
     storage.clearCache()
