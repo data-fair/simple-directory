@@ -23,19 +23,22 @@ const createRedirects = (account: AccountKeys) => {
     return getFullRedirect(mainPublicUrl.host)
   })
 
-  // on the front-office if working on the account owner of the site and the current user is member of this account, propose all sites from same owner
-  const shouldFetchSites = session.user.value?.adminMode || (
-    session.account.value?.type === account.type && session.user.value?.siteOwner?.type === account.type &&
-    session.account.value?.id === account.id && session.user.value?.siteOwner?.id === account.id
-  )
-  const sitesFetch = $uiConfig.manageSites && shouldFetchSites && useFetch<{ count: number, results: SitePublic[] }>(`${$apiPath}/sites`, { query: { owner: `${account.type}:${account.id}` } })
+  const isBackoffice = mainPublicUrl.host === host
+  const isSiteOwnerAccount = session.user.value?.siteOwner?.type === account.type && session.user.value?.siteOwner?.id === account.id
+
+  // in the back-office, always propose all sites from current owner
+  // in a portal, if working on the account owner of the site propose all sites from same owner
+  // for any other account, only propose the current site
+  const shouldFetchSites = $uiConfig.manageSites && (session.user.value?.adminMode || isBackoffice || isSiteOwnerAccount)
+
+  const sitesFetch = shouldFetchSites && useFetch<{ count: number, results: SitePublic[] }>(`${$apiPath}/sites`, { query: { owner: `${account.type}:${account.id}` } })
   const loadingRedirects = computed(() => sitesFetch && sitesFetch?.loading.value)
 
   const redirects = computed(() => {
     const redirects: { title: string, value: string }[] = []
 
     // make sure the current host is always first in the list, it will be the default value
-    if (mainPublicUrl.host === host) {
+    if (isBackoffice) {
       // on the back-office always propose itself as first choice
       redirects.push({ title: mainPublicUrl.host, value: mainRedirect.value })
     } else {
