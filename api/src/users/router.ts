@@ -45,16 +45,16 @@ router.get('', async (req, res, next) => {
     } else {
       throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     }
-    if (typeof req.query.host === 'string') params.host = req.query.host
-    if (typeof req.query.path === 'string') params.path = req.query.path
   } else {
     params.select = ['id', 'name']
   }
 
-  if (req.query) {
-    if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
-    if (typeof req.query.q === 'string') params.q = req.query.q
-  }
+  if (typeof req.query.host === 'string') params.host = req.query.host
+  if (typeof req.query.path === 'string') params.path = req.query.path
+
+  if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
+  if (typeof req.query.q === 'string') params.q = req.query.q
+
   const users = await storages.globalStorage.findUsers(params)
 
   eventsLog.info('sd.list-users', 'list users', logContext)
