@@ -189,7 +189,7 @@ module.exports = {
       discovery: 'http://localhost:8888/realms/master/.well-known/openid-configuration',
       client: {
         id: 'test-sd',
-        secret: 'F652euPulSE7WKUgAc5YBbsnzdxFFlgf'
+        secret: 'x17YcfoJRPPrZoiXFTBwhWxSJGwTa5bi'
       },
       coreIdProvider: true,
       ignoreEmailVerified: true,
