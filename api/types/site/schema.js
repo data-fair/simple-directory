@@ -49,6 +49,10 @@ export default {
       type: 'string',
       title: 'Préfixe de chemin'
     },
+    title: {
+      type: 'string',
+      title: 'Titre du site'
+    },
     theme: { $ref: 'https://github.com/data-fair/simple-directory/api/config#/$defs/theme' },
     authMode: {
       default: 'onlyBackOffice',

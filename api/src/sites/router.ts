@@ -201,6 +201,8 @@ router.get('/_public', async (req, res, next) => {
   } else {
     const sitePublic: SitePublic = {
       host: site.host,
+      path: site.path,
+      title: site.title,
       theme: {
         ...theme,
         logo: site.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
