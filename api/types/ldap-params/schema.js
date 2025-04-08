@@ -160,10 +160,22 @@ export default {
       required: ['orgId'],
       title: 'member overwrite',
       properties: {
+        email: { type: 'string' },
+        matchAttrs: {
+          type: 'object',
+          patternProperties: {
+            '.*': {
+              type: 'array',
+              items: {
+                type: 'string'
+              }
+            }
+          }
+        },
         orgId: { type: 'string' },
+        orgOnly: { type: 'boolean' },
         department: { type: 'string' },
-        role: { type: 'string' },
-        email: { type: 'string' }
+        role: { type: 'string' }
       }
     },
     userOverwrite: {

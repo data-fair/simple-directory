@@ -204,6 +204,9 @@ export class LdapStorage implements SdStorage {
     if (this.ldapParams.members.department?.attr) attributes.push(this.ldapParams.members.department.attr)
     if (this.ldapParams.members.organization?.attr) attributes.push(this.ldapParams.members.organization.attr)
     if (this.ldapParams.isAdmin?.attr) attributes.push(this.ldapParams.isAdmin.attr)
+    for (const o of this.ldapParams.members?.overwrite || []) {
+      for (const attr in (o.attrs || {})) attributes.push(attr)
+    }
     const extraFilters: any[] = [...(this.ldapParams.users.extraFilters || [])]
     return { attributes, extraFilters }
   }
@@ -473,9 +476,24 @@ export class LdapStorage implements SdStorage {
     if ((this.ldapParams.overwrite || []).includes('members')) {
       overwrites = await mongo.ldapMembersOverwrite.find({ userId: user.id }).toArray()
     }
-    overwrites = overwrites.concat((this.ldapParams.members.overwrite || [])
-      .filter(o => (o.email?.toLowerCase() === user.email?.toLowerCase())))
+    overwrites = overwrites.concat((this.ldapParams.members.overwrite || []))
     for (const overwrite of overwrites) {
+      if (overwrite.email) {
+        if (overwrite.email?.toLowerCase() !== user.email?.toLowerCase()) continue
+      } else if (overwrite.matchAttrs && Object.keys(overwrite.matchAttrs).length) {
+        let match = true
+        for (const [attr, values] of Object.entries(overwrite.matchAttrs)) {
+          if (attrs[attr] === undefined || attrs[attr] === null) match = false
+          else if (Array.isArray(attrs[attr])) {
+            if (!attrs[attr].some(a => values.includes(a))) match = false
+          } else if (!values.includes(attrs[attr])) {
+            match = false
+          }
+        }
+        if (!match) continue
+      } else {
+        continue
+      }
       const overwriteRole = overwrite.role || (this.ldapParams.members.role.default)
       if (!overwrite.orgId) {
         for (const o of user.organizations) {
@@ -490,7 +508,9 @@ export class LdapStorage implements SdStorage {
         } else {
           const fullO = orgCache[overwrite.orgId] = orgCache[overwrite.orgId] || await this._getOrganization(client, overwrite.orgId)
           if (fullO) {
-            user.organizations.push({ id: fullO.id, name: fullO.name, role: overwriteRole, department: overwrite.department })
+            const newUserOrg = { id: fullO.id, name: fullO.name, role: overwriteRole, department: overwrite.department }
+            if (overwrite.orgOnly) user.organizations = [newUserOrg]
+            else user.organizations.push(newUserOrg)
           } else {
             debug('unknown organization referenced in members overwrite', overwrite.orgId)
           }

@@ -5,7 +5,10 @@ import { clean, startApiServer, stopApiServer } from './utils/index.ts'
 process.env.NODE_CONFIG_DIR = './api/config/'
 const config = (await import('../api/src/config.ts')).default
 const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
-ldapConfig.members.overwrite = [{ email: 'alban.mouton@koumoul.com', role: 'overwritten' }]
+ldapConfig.members.overwrite = [
+  { email: 'alban.mouton@koumoul.com', role: 'overwritten' },
+  { matchAttrs: { employeeType: ['org1Admin'] }, orgId: 'org1', orgOnly: true, role: 'admin' }
+]
 ldapConfig.users.overwrite = [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }]
 ldapConfig.organizations.overwrite = [{ id: 'myorg', name: 'Org overwritten' }]
 
@@ -20,6 +23,7 @@ describe('storage ldap', () => {
     const ldapStorage = await import('../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(ldapConfig)
     await storage._createOrganization({ id: 'MyOrg', name: 'My Org' })
+    await storage._createOrganization({ id: 'org1', name: 'Org 1' })
     await storage._createUser({
       id: 'alban1',
       firstName: 'Alban',
@@ -34,8 +38,15 @@ describe('storage ldap', () => {
       email: 'test@test.com',
       organizations: [{ id: 'MyOrg', role: 'user', name: 'my org' }]
     }, { departmentNumber: '/prefix/2/dep1', employeeType: 'administrator' })
+    await storage._createUser({
+      id: 'adminorg1',
+      firstName: 'Test in admin org',
+      lastName: 'User',
+      email: 'test2@test.com',
+      organizations: [{ id: 'MyOrg', role: 'user', name: 'my org' }]
+    }, { employeeType: 'org1Admin' })
     const users = await storage.findUsers({ skip: 0, size: 10, sort: { email: 1 } })
-    assert.equal(users.count, 2)
+    assert.equal(users.count, 3)
     assert.ok(users.results[0].id)
     assert.equal(users.results[0].email, 'alban.mouton@koumoul.com')
     assert.equal(users.results[0].lastName, 'Overwritten')
@@ -47,10 +58,10 @@ describe('storage ldap', () => {
     const users3 = await storage.findUsers({ q: 'alba', skip: 0, size: 10 })
     assert.equal(users3.count, 1)
     const users4 = await storage.findUsers({ skip: 0, size: 10, sort: { email: -1 } })
-    assert.equal(users4.count, 2)
+    assert.equal(users4.count, 3)
     assert.equal(users4.results[0].email, 'test@test.com')
 
-    const user = await storage.getUser(users4.results[1].id)
+    const user = await storage.getUser(users4.results[2].id)
     assert.ok(user)
     assert.equal(user.email, 'alban.mouton@koumoul.com')
     assert.equal(user.lastName, 'Overwritten')
@@ -67,6 +78,11 @@ describe('storage ldap', () => {
     assert.equal(members.results[1].name, 'Test User')
     assert.equal(members.results[1].role, 'admin')
     assert.equal(members.results[1].department, 'dep1')
+
+    const org1Members = await storage.findMembers('org1', { skip: 0, size: 10 })
+    assert.equal(org1Members.count, 1)
+    assert.equal(org1Members.results[0].id, 'adminorg1')
+    assert.equal(org1Members.results[0].role, 'admin')
 
     const members2 = await storage.findMembers('myorg', { q: 'notauser', skip: 0, size: 10 })
     assert.equal(members2.count, 0)
@@ -87,7 +103,7 @@ describe('storage ldap', () => {
     await storage.getOrganization('myorg')
 
     const orgs = await storage.findOrganizations({ skip: 0, size: 10, sort: { name: -1 } })
-    assert.equal(orgs.count, 2)
+    assert.equal(orgs.count, 3)
     assert.equal(orgs.results[0].id, 'myorg')
     assert.equal(orgs.results[0].name, 'Org overwritten')
   })
