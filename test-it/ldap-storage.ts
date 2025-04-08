@@ -7,7 +7,7 @@ const config = (await import('../api/src/config.ts')).default
 const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
 ldapConfig.members.overwrite = [
   { email: 'alban.mouton@koumoul.com', role: 'overwritten' },
-  { matchAttrs: { employeeType: ['org1Admin'] }, orgId: 'org1', orgOnly: true, role: 'admin' }
+  { matchAttrs: [{ attr: 'employeeType', values: ['Admin'], captureRegex: '^org1(.*)$' }], orgId: 'org1', orgOnly: true, role: 'admin' }
 ]
 ldapConfig.users.overwrite = [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }]
 ldapConfig.organizations.overwrite = [{ id: 'myorg', name: 'Org overwritten' }]

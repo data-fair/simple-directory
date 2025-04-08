@@ -162,13 +162,19 @@ export default {
       properties: {
         email: { type: 'string' },
         matchAttrs: {
-          type: 'object',
-          patternProperties: {
-            '.*': {
-              type: 'array',
-              items: {
-                type: 'string'
-              }
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['attr', 'values'],
+            properties: {
+              attr: { type: 'string' },
+              values: {
+                type: 'array',
+                items: {
+                  type: 'string'
+                }
+              },
+              captureRegex: { type: 'string' }
             }
           }
         },

@@ -394,7 +394,7 @@ export class LdapStorage implements SdStorage {
     return `${dnKey}=${entry[dnKey]},${this.ldapParams.baseDN}`
   }
 
-  async _setUserOrg (client: ldap.Client, user: User, entry: ldap.SearchEntry, attrs: Record<string, any>, orgCache: Record<string, Organization> = {}) {
+  async _setUserOrg (client: ldap.Client, user: User, entry: ldap.SearchEntry, attrs: Record<string, string[]>, orgCache: Record<string, Organization> = {}) {
     let org: { id: string, name: string, department?: string } | undefined
     if (this.ldapParams.organizations.staticSingleOrg) {
       org = this.ldapParams.organizations.staticSingleOrg
@@ -480,15 +480,22 @@ export class LdapStorage implements SdStorage {
     for (const overwrite of overwrites) {
       if (overwrite.email) {
         if (overwrite.email?.toLowerCase() !== user.email?.toLowerCase()) continue
-      } else if (overwrite.matchAttrs && Object.keys(overwrite.matchAttrs).length) {
+      } else if (overwrite.matchAttrs && overwrite.matchAttrs.length) {
         let match = true
-        for (const [attr, values] of Object.entries(overwrite.matchAttrs)) {
-          if (attrs[attr] === undefined || attrs[attr] === null) match = false
-          else if (Array.isArray(attrs[attr])) {
-            if (!attrs[attr].some(a => values.includes(a))) match = false
-          } else if (!values.includes(attrs[attr])) {
-            match = false
+        for (const matchAttr of overwrite.matchAttrs) {
+          let attrValues: string[] = []
+          if (attrs[matchAttr.attr]) {
+            if (matchAttr.captureRegex) {
+              const captureRegex = new RegExp(matchAttr.captureRegex)
+              for (const v of attrs[matchAttr.attr]) {
+                const m = v.match(captureRegex)
+                if (m && m[1]) attrValues.push(m[1])
+              }
+            } else {
+              attrValues = attrs[matchAttr.attr]
+            }
           }
+          if (!matchAttr.values.some(v => attrValues.includes(v))) match = false
         }
         if (!match) continue
       } else {
