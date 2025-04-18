@@ -23,6 +23,9 @@ export default {
             },
             id: {
               type: 'string'
+            },
+            name: {
+              type: 'string'
             }
           }
         }, {
@@ -37,10 +40,16 @@ export default {
             id: {
               type: 'string'
             },
+            name: {
+              type: 'string'
+            },
             role: {
               type: 'string'
             },
             department: {
+              type: 'string'
+            },
+            departmentName: {
               type: 'string'
             }
           }
