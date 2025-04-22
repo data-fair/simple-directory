@@ -322,6 +322,10 @@ export class LdapStorage implements SdStorage {
 
   // promisified search
   async _search <T>(client: ldap.Client, base: string, filter: any, attributes: string[], mappingFn: MappingFn) {
+    debug(`perform search
+      - base: ${base}
+      - filter: ${filter}
+      - attributes: ${JSON.stringify(attributes)}`)
     const results = await new Promise<any[]>((resolve, reject) => {
       client.search(base, {
         filter,
@@ -355,9 +359,6 @@ export class LdapStorage implements SdStorage {
     })
 
     debug(`search results
-  - base: ${base}
-  - filter: ${filter}
-  - attributes: ${JSON.stringify(attributes)}
   - nb results: ${results.length}
   - first result: `, results[0])
     return {
