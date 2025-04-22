@@ -40,13 +40,20 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
   const userInfo = async (accessToken: string) => {
     let claims
     if (discoveryContent.userinfo_endpoint) {
+      debug('fetch userInfo claims from oidc provider endpoint using the access token', discoveryContent.userinfo_endpoint)
       claims = (await axios.get(discoveryContent.userinfo_endpoint, {
         headers: { Authorization: `Bearer ${accessToken}` }
       })).data
     } else {
+      debug('read claims directly from the access token as a JWT')
       claims = jwt.decode(accessToken) as any
+      if (!claims) debug('failed to decode the access token as a JWT', accessToken)
     }
-    debug('fetch userInfo claims from oidc provider', claims)
+
+    if (!claims) {
+      throw new Error('Le fournisseur d\'identité n\'a pas retourné d\'information valide sur l\'utilisateur')
+    }
+
     if (claims.email_verified === false && !p.ignoreEmailVerified) {
       throw new Error('Authentification refusée depuis le fournisseur. L\'adresse mail est indiquée comme non validée.')
     }
