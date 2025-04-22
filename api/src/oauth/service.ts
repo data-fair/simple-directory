@@ -39,7 +39,7 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
     authorizeHost?: string,
     authorizePath: string
   },
-  userInfo: (accessToken: string) => Promise<OAuthUserInfo>
+  userInfo: (accessToken: string, refreshToken?: string) => Promise<OAuthUserInfo>
 }
 
 export type PreparedOAuthProvider = OAuthProvider & {

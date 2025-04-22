@@ -37,7 +37,7 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     authorizeHost: authURL.origin,
     authorizePath: authURL.pathname
   }
-  const userInfo = async (accessToken: string) => {
+  const userInfo = async (accessToken: string, refreshToken?: string) => {
     let claims
     if (discoveryContent.userinfo_endpoint) {
       debug('fetch userInfo claims from oidc provider endpoint using the access token', discoveryContent.userinfo_endpoint)
@@ -45,9 +45,13 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
         headers: { Authorization: `Bearer ${accessToken}` }
       })).data
     } else {
-      debug('read claims directly from the access token as a JWT')
+      debug('read claims directly from the access/refresh tokens as a JWT')
       claims = jwt.decode(accessToken) as any
       if (!claims) debug('failed to decode the access token as a JWT', accessToken)
+      if (refreshToken) {
+        claims = jwt.decode(refreshToken) as any
+        if (!claims) debug('failed to decode the refresh token as a JWT', refreshToken)
+      }
     }
 
     if (!claims) {
