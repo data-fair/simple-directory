@@ -183,7 +183,6 @@ export class LdapStorage implements SdStorage {
     client.on('error', err => console.error(err.message))
 
     const bind = promisify(client.bind).bind(client)
-    const unbind = promisify(client.unbind).bind(client)
 
     if (this.ldapParams.searchUserDN && this.ldapParams.searchUserPassword) {
       debug('bind service account', this.ldapParams.url, this.ldapParams.searchUserDN)
@@ -194,7 +193,7 @@ export class LdapStorage implements SdStorage {
     try {
       return await fn(client)
     } finally {
-      await unbind()
+      client.destroy()
     }
   }
 
@@ -592,7 +591,7 @@ export class LdapStorage implements SdStorage {
       debug('auth failure', id, err)
       return false
     } finally {
-      client.unbind()
+      client.destroy()
     }
   }
 
