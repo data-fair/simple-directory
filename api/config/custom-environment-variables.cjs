@@ -250,6 +250,7 @@ module.exports = {
   tosUrl: 'TOS_URL',
   manageDepartments: 'MANAGE_DEPARTMENTS',
   manageDepartmentLabel: 'MANAGE_DEPARTMENT_LABEL',
+  defaultDepartmentLabel: 'DEFAULT_DEPARTMENT_LABEL',
   passwordless: 'PASSWORDLESS',
   authRateLimit: {
     attempts: 'AUTHRATELIMIT_ATTEMPTS',

@@ -96,6 +96,7 @@ router.get('', async (req, res, next) => {
   if (allFields) {
     organizations.results.forEach(orga => {
       orga.roles = orga.roles || config.roles.defaults
+      if (config.manageDepartmentLabel && config.defaultDepartmentLabel) orga.departmentLabel = orga.departmentLabel || config.defaultDepartmentLabel
     })
   }
   res.json(organizations)
@@ -111,6 +112,8 @@ router.get('/:organizationId', async (req, res, next) => {
   const orga = await storages.globalStorage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   orga.roles = orga.roles || config.roles.defaults
+  if (config.manageDepartmentLabel && config.defaultDepartmentLabel) orga.departmentLabel = orga.departmentLabel || config.defaultDepartmentLabel
+
   if (!reqUser(req)?.adminMode && orga.orgStorage) delete orga.orgStorage.config
   res.send(orga)
 })

@@ -306,6 +306,7 @@ module.exports = {
   tosUrl: undefined,
   manageDepartments: false,
   manageDepartmentLabel: false,
+  defaultDepartmentLabel: undefined,
   passwordless: true,
   authRateLimit: {
     attempts: 5,

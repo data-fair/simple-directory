@@ -213,6 +213,9 @@
     "manageDepartmentLabel": {
       "type": "boolean"
     },
+    "defaultDepartmentLabel": {
+      "type": "string"
+    },
     "manageSessions": {
       "type": "boolean"
     },
