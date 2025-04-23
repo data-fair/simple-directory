@@ -244,13 +244,15 @@ export class LdapStorage implements SdStorage {
     })
   }
 
-  private async getAllUsers (): Promise<{ results: User[], fromCache?: string }> {
+  private async getAllUsers (): Promise<{ results: User[], fetchDate: string, fromCache?: string }> {
     let fromCache: string | undefined
+    let fetchDate: string
     if (!this.allUsersCache.dataPromise || !this.allUsersCache.lastFetch || (Date.now() - this.allUsersCache.lastFetch.getTime()) > config.storage.ldap.cacheMS) {
       const usersPromise = this._getAllUsers()
       this.allUsersCache.dataPromise = usersPromise
       const date = new Date()
       this.allUsersCache.lastFetch = date
+      fetchDate = date.toISOString()
       usersPromise.then((users) => {
         this.allUsersCache.previousData = users
         this.allUsersCache.previousFetch = date
@@ -259,6 +261,7 @@ export class LdapStorage implements SdStorage {
       })
     } else {
       fromCache = this.allUsersCache.lastFetch.toISOString()
+      fetchDate = fromCache
     }
     const previousData = this.allUsersCache.previousData
     const previousFetch = this.allUsersCache.previousFetch?.toISOString()
@@ -270,9 +273,9 @@ export class LdapStorage implements SdStorage {
           resolve(previousData)
         }, 5000))
       ])
-      return { results, fromCache }
+      return { results, fromCache, fetchDate }
     } else {
-      return { results: await this.allUsersCache.dataPromise, fromCache }
+      return { results: await this.allUsersCache.dataPromise, fromCache, fetchDate }
     }
   }
 
@@ -626,10 +629,10 @@ export class LdapStorage implements SdStorage {
     return { count, results, fromCache }
   }
 
-  private membersCache: { [orgId: string]: { members: Member[], fromUsers: User[] } } = {}
-  private _findAllMembers = (orgId: string, users: User[]) => {
+  private membersCache: { [orgId: string]: { members: Member[], fromCache: string } } = {}
+  private _findAllMembers = (orgId: string, users: User[], fetchDate: string) => {
     // if users did not change (same reference from cache), return the cached members
-    if (this.membersCache[orgId]?.fromUsers === users) return this.membersCache[orgId].members
+    if (this.membersCache[orgId]?.fromCache === fetchDate) return this.membersCache[orgId].members
     const members: Member[] = users
       .filter(user => user.organizations.find(o => o.id === orgId))
       .map(user => {
@@ -644,14 +647,14 @@ export class LdapStorage implements SdStorage {
           emailConfirmed: true
         }
       })
-    this.membersCache[orgId] = { members, fromUsers: users }
+    this.membersCache[orgId] = { members, fromCache: fetchDate }
     return members
   }
 
   async findMembers (organizationId: string, params: FindMembersParams) {
     debug('find members', params)
-    const { results: users, fromCache } = await this.getAllUsers()
-    const ogResults = this._findAllMembers(organizationId, users)
+    const { results: users, fromCache, fetchDate } = await this.getAllUsers()
+    const ogResults = this._findAllMembers(organizationId, users, fetchDate)
     let results = ogResults
     const ids = params.ids
     if (ids) {
