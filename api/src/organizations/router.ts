@@ -97,7 +97,7 @@ router.get('', async (req, res, next) => {
     organizations.results.forEach(orga => {
       orga.roles = orga.roles || config.roles.defaults
       if (config.manageDepartmentLabel && config.defaultDepartmentLabel && !orga.departmentLabel) orga.departmentLabel = config.defaultDepartmentLabel
-      if (config.manageRolesLabels && config.defaultRolesLabels && !orga.rolesLabels) orga.rolesLabels = config.defaultRolesLabels
+      if (config.manageRolesLabels) orga.rolesLabels = { ...config.defaultRolesLabels, ...orga.rolesLabels }
     })
   }
   res.json(organizations)
@@ -114,7 +114,7 @@ router.get('/:organizationId', async (req, res, next) => {
   if (!orga) return res.status(404).send()
   orga.roles = orga.roles || config.roles.defaults
   if (config.manageDepartmentLabel && config.defaultDepartmentLabel && !orga.departmentLabel) orga.departmentLabel = config.defaultDepartmentLabel
-  if (config.manageRolesLabels && config.defaultRolesLabels && !orga.rolesLabels) orga.rolesLabels = config.defaultRolesLabels
+  if (config.manageRolesLabels) orga.rolesLabels = { ...config.defaultRolesLabels, ...orga.rolesLabels }
 
   if (!reqUser(req)?.adminMode && orga.orgStorage) delete orga.orgStorage.config
   res.send(orga)

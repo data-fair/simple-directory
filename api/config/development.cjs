@@ -82,6 +82,12 @@ module.exports = {
   },
   tosUrl: 'https://test.com',
   manageDepartments: true,
+  manageDepartmentLabel: true,
+  defaultDepartmentLabel: 'Hello',
+  manageRolesLabels: true,
+  defaultRolesLabels: {
+    admin: 'Administrateur'
+  },
   quotas: {
     defaultMaxCreatedOrgs: 1
     // defaultMaxNbMembers: 0
