@@ -28,6 +28,8 @@ module.exports = {
   roles: {
     defaults: ['admin', 'user']
   },
+  manageRolesLabels: false,
+  defaultRolesLabels: undefined,
   contact: undefined,
   anonymousContactForm: false,
   anonymousAction: {

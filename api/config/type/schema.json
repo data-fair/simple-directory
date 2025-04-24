@@ -354,6 +354,13 @@
         }
       }
     },
+    "manageRolesLabels": {
+      "type": "boolean"
+    },
+    "defaultRolesLabels": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
     "oauth": {
       "type": "object",
       "required": [
