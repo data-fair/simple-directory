@@ -58,6 +58,7 @@ const createRedirects = (account: AccountKeys) => {
         redirects.push({ title: site.host, value: getFullRedirect(site.host) })
       }
     }
+    debug('redirects', redirects)
     return redirects
   })
 
