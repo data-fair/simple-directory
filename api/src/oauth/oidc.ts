@@ -37,14 +37,16 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     authorizeHost: authURL.origin,
     authorizePath: authURL.pathname
   }
-  const userInfo = async (accessToken: string) => {
+  const userInfo = async (accessToken: string, idToken?:string) => {
     let claims
-    if (discoveryContent.userinfo_endpoint) {
+    if (discoveryContent.userinfo_endpoint && !p.ignoreUserInfoEndpoint) {
       claims = (await axios.get(discoveryContent.userinfo_endpoint, {
         headers: { Authorization: `Bearer ${accessToken}` }
       })).data
-    } else {
-      claims = jwt.decode(accessToken) as any
+    } else if (idToken) {
+      debug('read claims directly from id token as a JWT')
+      claims = jwt.decode(idToken) as any
+      if (!claims) debug('failed to decode the id token as a JWT', idToken)
     }
     debug('fetch userInfo claims from oidc provider', claims)
     if (claims.email_verified === false && !p.ignoreEmailVerified) {
