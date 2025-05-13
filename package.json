@@ -30,7 +30,7 @@
     "shared"
   ],
   "author": "",
-  "license": "AGPL-3.0-only",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/koumoul-dev/simple-directory/issues"
   },
