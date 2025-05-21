@@ -28,9 +28,8 @@
           ref="form"
           v-model="valid"
         >
-          <vjsf
+          <vjsf-post-req-body
             v-model="site"
-            :schema="resolvedSchema"
             :options="vjsfOptions"
           />
         </v-form>
@@ -58,8 +57,6 @@
 </template>
 
 <script setup lang="ts">
-import Vjsf from '@koumoul/vjsf'
-import resolvedSchema from '../../../api/doc/sites/post-req-body/.type/resolved-schema.json'
 import type { VForm } from 'vuetify/components'
 const emit = defineEmits(['created'])
 

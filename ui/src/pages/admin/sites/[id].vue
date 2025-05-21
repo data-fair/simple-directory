@@ -17,10 +17,9 @@
         Configuration du site
       </h1>
       <a :href="siteHref">{{ siteHref }}</a> - {{ site.data.value?._id }}
-      <vjsf
+      <vjsf-patch-req-body
         v-model="patch"
         :options="vjsfOptions"
-        :schema="resolvedSchema"
       >
         <template #colors-preview="context">
           <colors-preview
@@ -35,7 +34,7 @@
         <template #saml-help>
           Remplissez le champ ci-dessous avec les métadonnées au format XML données par le fournisseurs d'identité. Et donnez ce <a :href="siteHref + '/simple-directory/api/auth/saml2-metadata.xml'">lien en retour</a>.
         </template>
-      </vjsf>
+      </vjsf-patch-req-body>
     </v-form>
     <v-row class="ma-0 mt-4">
       <v-spacer />
@@ -54,8 +53,6 @@
 
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
-import Vjsf from '@koumoul/vjsf'
-import resolvedSchema from '../../../../../api/doc/sites/patch-req-body/.type/resolved-schema.json'
 
 const patch = ref()
 const valid = ref(false)

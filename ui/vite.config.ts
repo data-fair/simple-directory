@@ -126,5 +126,10 @@ export default defineConfig({
       return { relative: true }
     }
   },
-  server: { hmr: { port: 7200 } }
+  server: {
+    hmr: { port: 7200 },
+    headers: {
+      // 'content-security-policy': "default-src 'self' 'unsafe-inline' https:;connect-src ws: http:",
+    }
+  }
 })
