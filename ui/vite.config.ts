@@ -31,6 +31,9 @@ export default defineConfig({
       '~': path.resolve(__dirname, 'src/')
     },
   },
+  html: {
+    cspNonce: '{CSP_NONCE}'
+  },
   plugins: [
     // we used this once to download fonts and prepare webfonts.css but we moved
     // and slightly transformed the result in public/fonts
@@ -59,7 +62,7 @@ export default defineConfig({
           type: true,
         },
         {
-          '~/context': ['$uiConfig', '$sitePath', '$siteUrl', '$sdUrl', '$apiPath', '$fetch'],
+          '~/context': ['$uiConfig', '$sitePath', '$cspNonce', '$siteUrl', '$sdUrl', '$apiPath', '$fetch'],
           '@mdi/js': [
             'mdiAccount',
             'mdiAccountCircle',
