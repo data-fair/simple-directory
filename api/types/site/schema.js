@@ -294,10 +294,15 @@ export default {
         memberDepartment: {
           $ref: '#/$defs/memberDepartment'
         },
-        ignoreUserInfoEndpoint: {
-          type: 'boolean',
-          title: 'Ne pas utiliser "userinfo_endpoint"',
-          description: 'Activez cette option si l\'URL de découverte retourne une URL "userinfo_endpoint" qu\'il faut ignorer. Dans ce cas les informations utilisateurs seront lues directement depuis le contenu du jeton id_token.'
+        userInfoSource: {
+          type: 'string',
+          title: 'Mode de récupération des informations de l\'utilisateur',
+          default: 'endpoint',
+          oneOf: [
+            { const: 'auto', title: 'Auto (endpoint "user_info" si disponible, sinon contenu id_token ou contenu access_token)' },
+            { const: 'id_token', title: 'Contenu du jeton id_token' },
+            { const: 'access_token', title: 'Contenu du jeton access_token' },
+          ]
         },
         ignoreEmailVerified: {
           type: 'boolean',

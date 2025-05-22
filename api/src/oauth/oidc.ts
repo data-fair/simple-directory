@@ -39,16 +39,36 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
   }
   const userInfo = async (accessToken: string, idToken?:string) => {
     let claims
-    if (discoveryContent.userinfo_endpoint && !p.ignoreUserInfoEndpoint) {
-      claims = (await axios.get(discoveryContent.userinfo_endpoint, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      })).data
-    } else if (idToken) {
-      debug('read claims directly from id token as a JWT')
-      claims = jwt.decode(idToken) as any
-      if (!claims) debug('failed to decode the id token as a JWT', idToken)
+    if (!p.userInfoSource || p.userInfoSource === 'auto') {
+      if (discoveryContent.userinfo_endpoint) {
+        debug('read claims from userinfo_endpoint')
+        claims = (await axios.get(discoveryContent.userinfo_endpoint, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        })).data
+      }
+      if (!claims?.email && idToken) {
+        debug('fallback to reading claims from id_token')
+        claims = jwt.decode(idToken) as any
+      }
+      if (!claims?.email) {
+        debug('fallback to reading claims from access_token')
+        claims = jwt.decode(accessToken) as any
+      }
     }
-    debug('fetch userInfo claims from oidc provider', claims)
+    if (p.userInfoSource === 'id_token' && idToken) {
+      debug('read claims directly from id_token')
+      claims = jwt.decode(idToken) as any
+      if (!claims) debug('failed to decode id_token as a JWT', idToken)
+    }
+    if (p.userInfoSource === 'access_token') {
+      debug('read claims directly from access_token')
+      claims = jwt.decode(accessToken) as any
+      if (!claims) debug('failed to decode access_token as a JWT', accessToken)
+    }
+    debug('found claims', claims)
+    if (!claims?.email) {
+      throw new Error('Authentification refusée depuis le fournisseur. Pas d\'adresse email trouvée dans les informations utilisateur.')
+    }
     if (claims.email_verified === false && !p.ignoreEmailVerified) {
       throw new Error('Authentification refusée depuis le fournisseur. L\'adresse mail est indiquée comme non validée.')
     }
