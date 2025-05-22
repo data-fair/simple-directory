@@ -297,7 +297,7 @@ export default {
         userInfoSource: {
           type: 'string',
           title: 'Mode de récupération des informations de l\'utilisateur',
-          default: 'endpoint',
+          default: 'auto',
           oneOf: [
             { const: 'auto', title: 'Auto (endpoint "user_info" si disponible, sinon contenu id_token ou contenu access_token)' },
             { const: 'id_token', title: 'Contenu du jeton id_token' },
