@@ -381,7 +381,6 @@ class MongodbStorage implements SdStorage {
       if (config.multiRoles && o.role !== role) return false
       return o.id === orga.id && (o.department || null) === (department || null)
     })
-    console.log('USER ORGA ?', userOrga)
 
     if (config.singleMembership && !userOrga && user.organizations.find(o => o.id === orga.id)) {
       throw httpError(400, 'cet utilisateur est déjà membre de cette organisation.')
