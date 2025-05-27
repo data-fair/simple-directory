@@ -298,6 +298,16 @@ export default {
         memberDepartment: {
           $ref: '#/$defs/memberDepartment'
         },
+        userInfoSource: {
+          type: 'string',
+          title: 'Mode de récupération des informations de l\'utilisateur',
+          default: 'auto',
+          oneOf: [
+            { const: 'auto', title: 'Auto (endpoint "user_info" si disponible, sinon contenu id_token ou contenu access_token)' },
+            { const: 'id_token', title: 'Contenu du jeton id_token' },
+            { const: 'access_token', title: 'Contenu du jeton access_token' },
+          ]
+        },
         ignoreEmailVerified: {
           type: 'boolean',
           title: 'Accepter les utilisateurs aux emails non vérifiés',

@@ -7,9 +7,10 @@ const schema = jsonSchema(SiteSchema)
   .appendTitle(' patch')
   .schema
 
+schema['$defs'].oidcProvider.properties.client.properties.secret.type = 'string'
 delete schema.required
 schema.$id = 'https://github.com/data-fair/simple-directory/sites/patch-req-body'
-schema['x-exports'] = ['validate', 'types', 'resolvedSchemaJson']
+schema['x-exports'] = ['validate', 'types', 'resolvedSchemaJson', 'vjsf']
 
 schema.layout = {
   title: null,

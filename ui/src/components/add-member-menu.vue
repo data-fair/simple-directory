@@ -77,7 +77,6 @@
             <v-select
               v-if="redirects && redirects.length > 1"
               v-model="invitation.redirect"
-              :disabled="mainPublicUrl.host !== host"
               label="Site de redirection"
               :items="redirects"
               item-value="value"
@@ -126,7 +125,6 @@
 import type { VForm } from 'vuetify/components'
 import type { Organization, Member, Invitation } from '@sd/api/types'
 
-const { host, mainPublicUrl } = useStore()
 const { sendUiNotif } = useUiNotif()
 const i18n = useI18n()
 

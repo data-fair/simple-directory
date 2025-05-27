@@ -38,7 +38,7 @@ export const clean = async (options?: { ldapConfig?: any }) => {
     const ldapStorage = await import('../../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(options.ldapConfig)
 
-    for (const email of ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'test@test.com', 'oidc1@test.com']) {
+    for (const email of ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'test@test.com', 'test2@test.com', 'oidc1@test.com']) {
       const user = await storage.getUserByEmail(email)
       if (user) await storage._deleteUser(user.id)
     }

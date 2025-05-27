@@ -28,6 +28,8 @@ module.exports = {
   roles: {
     defaults: ['admin', 'user']
   },
+  manageRolesLabels: false,
+  defaultRolesLabels: undefined,
   contact: undefined,
   anonymousContactForm: false,
   anonymousAction: {
@@ -62,7 +64,6 @@ module.exports = {
         dnKey: 'cn',
         mapping: {
           id: 'cn',
-          name: 'cn', // TODO: better to use userName ?
           email: 'mail',
           firstName: 'givenName',
           lastName: 'sn',
@@ -307,6 +308,7 @@ module.exports = {
   tosUrl: undefined,
   manageDepartments: false,
   manageDepartmentLabel: false,
+  defaultDepartmentLabel: undefined,
   passwordless: true,
   authRateLimit: {
     attempts: 5,

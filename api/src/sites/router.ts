@@ -159,6 +159,7 @@ router.patch('/:id', async (req, res, next) => {
     for (const authProvider of patch.authProviders) {
       if (isOIDCProvider(authProvider)) {
         if (typeof authProvider.client.secret === 'string' && authProvider.client.secret && !authProvider.client.secret.trim().match(/^\**$/)) {
+          // @ts-ignore
           authProvider.client.secret = cipher(authProvider.client.secret)
         } else {
           const previousProvider = site.authProviders?.find(p => {
@@ -167,6 +168,7 @@ router.patch('/:id', async (req, res, next) => {
           if (!previousProvider) {
             throw httpError(400, 'no existing secret for provider ' + getOidcProviderId(authProvider.discovery))
           }
+          // @ts-ignore
           authProvider.client.secret = previousProvider.client.secret
         }
       }

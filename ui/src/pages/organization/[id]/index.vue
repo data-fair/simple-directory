@@ -55,6 +55,7 @@
         v-model="orga.departmentLabel"
         :label="$t('pages.organization.departmentLabelTitle')"
         :disabled="orgRole !== 'admin' || $uiConfig.readonly"
+        :placeholder="$uiConfig.defaultDepartmentLabel"
         name="departmentLabel"
         density="compact"
         autocomplete="off"
@@ -71,10 +72,22 @@
                 :icon="mdiInformation"
               />
             </template>
-            <div v-html="$t('pages.organization.departmentLabelHelp')" />
+            <div v-html="$t('pages.organization.departmentLabelHelp', {defaultDepartmentLabel: $uiConfig.defaultDepartmentLabel || t('common.department')})" />
           </v-tooltip>
         </template>
       </v-text-field>
+      <template v-if="$uiConfig.manageRolesLabels && orga.rolesLabels">
+        <v-text-field
+          v-for="role in orga.roles"
+          :key="role"
+          v-model="orga.rolesLabels[role]"
+          :label="`Libellé du rôle ${role}`"
+          :placeholder="$uiConfig.defaultRolesLabels?.[role]"
+          :disabled="orgRole !== 'admin' || $uiConfig.readonly"
+          density="compact"
+          autocomplete="off"
+        />
+      </template>
       <v-select
         :model-value="orga['2FA']?.roles"
         :items="orga.roles"
@@ -149,7 +162,22 @@ const { t } = useI18n()
 
 const fetchOrga = useFetch<Organization>($apiPath + `/organizations/${orgId}`)
 const orga = ref<Organization | null>(null)
-watch(fetchOrga.data, (freshOrga) => { orga.value = freshOrga })
+watch(fetchOrga.data, (freshOrga) => {
+  if (!freshOrga) orga.value = null
+  else {
+    const editOrg = { ...freshOrga }
+    if (editOrg.departmentLabel === $uiConfig.defaultDepartmentLabel) editOrg.departmentLabel = ''
+    if (editOrg.rolesLabels && $uiConfig.defaultRolesLabels) {
+      editOrg.rolesLabels = { ...editOrg.rolesLabels }
+      for (const key in $uiConfig.defaultRolesLabels) {
+        if (editOrg.rolesLabels[key] && editOrg.rolesLabels[key] === $uiConfig.defaultRolesLabels[key]) {
+          editOrg.rolesLabels[key] = ''
+        }
+      }
+    }
+    orga.value = editOrg
+  }
+})
 const orgRole = computed(() => {
   const role = getAccountRole(session.state, { type: 'organization', id: orgId }, { acceptDepAsRoot: $uiConfig.depAdminIsOrgAdmin })
   if (role) return role
@@ -169,6 +197,7 @@ const save = async () => {
   if (!orga.value) return
   const patch: any = { name: orga.value.name, description: orga.value.description, '2FA': orga.value['2FA'] }
   if ($uiConfig.manageDepartments) patch.departmentLabel = orga.value.departmentLabel
+  if ($uiConfig.manageRolesLabels) patch.rolesLabels = orga.value.rolesLabels
   patchOrganization.execute(orgId, patch, t('common.modificationOk'))
 }
 const set2FARoles = (roles: string[]) => {

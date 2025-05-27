@@ -1,7 +1,11 @@
 import type { SitePublic } from '../../../api/types/index.ts'
 import type { AccountKeys } from '@data-fair/lib-vue/session'
+import debugModule from 'debug'
+
+const debug = debugModule('use-redirects')
 
 const createRedirects = (account: AccountKeys) => {
+  debug('init useRedirects', account)
   const session = useSession()
   const host = window.location.host
   const mainPublicUrl = new URL($uiConfig.publicUrl)
@@ -35,21 +39,26 @@ const createRedirects = (account: AccountKeys) => {
   const loadingRedirects = computed(() => sitesFetch && sitesFetch?.loading.value)
 
   const redirects = computed(() => {
+    debug('compute redirects', { shouldFetchSites, isBackoffice, isSiteOwnerAccount })
     const redirects: { title: string, value: string }[] = []
 
     // make sure the current host is always first in the list, it will be the default value
     if (isBackoffice) {
+      debug('add backoffice')
       // on the back-office always propose itself as first choice
       redirects.push({ title: mainPublicUrl.host, value: mainRedirect.value })
     } else {
+      debug('add current site')
       redirects.push({ title: host, value: getFullRedirect(host) })
     }
     if (sitesFetch && sitesFetch.data.value) {
+      debug('add other sites', sitesFetch.data.value)
       for (const site of sitesFetch.data.value.results) {
         if (redirects.some(r => r.title === site.host)) continue
         redirects.push({ title: site.host, value: getFullRedirect(site.host) })
       }
     }
+    debug('redirects', redirects)
     return redirects
   })
 

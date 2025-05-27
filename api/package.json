@@ -2,6 +2,7 @@
   "name": "@sd/api",
   "main": "index.js",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development DEBUG=upgrade* node --watch --experimental-strip-types index.ts"
   },
@@ -17,8 +18,8 @@
     "#i18n": "./i18n/index.ts"
   },
   "dependencies": {
-    "@data-fair/lib-express": "^1.16.0",
-    "@data-fair/lib-node": "^2.5.1",
+    "@data-fair/lib-express": "^1.18.1",
+    "@data-fair/lib-node": "^2.7.0",
     "@data-fair/lib-utils": "^1.2.0",
     "@sd/shared": "*",
     "accept-language-parser": "^1.5.0",
@@ -33,6 +34,7 @@
     "express": "^5.0.0",
     "flat": "^6.0.1",
     "gm": "^1.25.0",
+    "helmet": "^8.1.0",
     "http-terminator": "^3.2.0",
     "i18n": "^0.15.1",
     "initials": "^3.1.2",
