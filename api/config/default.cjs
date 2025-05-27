@@ -396,5 +396,6 @@ module.exports = {
   passwordUpdateInterval: undefined,
   passwordValidateOnLogin: false,
   siteOrgs: false,
-  siteAdmin: false
+  siteAdmin: false,
+  multiRoles: false
 }

@@ -177,7 +177,7 @@ router.post('', async (req, res, next) => {
     // no need to confirm email if the user already comes from an invitation link
     // we already created the user with emailConfirmed=true
     const payload = getTokenPayload(createdUser, site)
-    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, invit && invit.id, invit && invit.department))
+    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, invit && invit.id, invit && invit.department, invit && invit.role))
     return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication

@@ -365,7 +365,7 @@ router.get('/token_callback', async (req, res, next) => {
   await storage.addUserSession(user.id, serverSession)
 
   await confirmLog(storage, user, serverSession)
-  await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, query.id_token_org, query.id_token_dep))
+  await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, query.id_token_org, query.id_token_dep, query.id_token_role))
 
   eventsLog.info('sd.auth.callback.ok', 'a session was initialized after successful auth', logContext)
 

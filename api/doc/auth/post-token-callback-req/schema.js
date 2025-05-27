@@ -13,6 +13,7 @@ export default {
         id_token: { type: 'string' },
         id_token_org: { type: 'string' },
         id_token_dep: { type: 'string' },
+        id_token_role: { type: 'string' },
         redirect: { type: 'string' },
         org_storage: { type: 'boolean' }
       }
