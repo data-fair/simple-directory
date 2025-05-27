@@ -1,6 +1,6 @@
 {
   "name": "simple-directory",
-  "version": "8.4.0",
+  "version": "8.6.1",
   "description": "Easy users and organizations management for modern Web-oriented architectures.",
   "type": "module",
   "scripts": {
@@ -70,8 +70,8 @@
     "typescript": "~5.6.3"
   },
   "dependencies": {
-    "@data-fair/lib-types-builder": "^1.6.0",
-    "@koumoul/vjsf-compiler": "^0.2.2",
+    "@data-fair/lib-types-builder": "^1.8.1",
+    "@koumoul/vjsf-compiler": "^1.0.2",
     "@types/debug": "^4.1.12",
     "@types/vue-cropperjs": "^4.1.6"
   },

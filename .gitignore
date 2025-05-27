@@ -3,3 +3,4 @@
 node_modules
 dev/data
 *.tsbuildinfo
+ui/src/components/vjsf

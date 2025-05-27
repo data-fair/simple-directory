@@ -670,12 +670,6 @@
             </v-card-text>
 
             <v-card-actions>
-              <v-btn
-                variant="text"
-                @click="step='login'"
-              >
-                {{ $t('common.back') }}
-              </v-btn>
               <v-spacer />
               <v-btn
                 v-if="createOrganization.active"
@@ -905,11 +899,11 @@ watch(separateEmailPasswordSteps, (value) => {
 })
 
 let redirectToOtherSite = false
-if (sitePublic.value?.authMode === 'onlyBackOffice') {
+if (sitePublic.value?.authMode === 'onlyBackOffice' && !['createOrga', 'plannedDeletion'].includes(step.value)) {
   redirectToOtherSite = true
   window.location.replace(window.location.href.replace($sdUrl, mainPublicUrl.href))
 }
-if (sitePublic.value?.authMode === 'onlyOtherSite' && sitePublic.value?.authOnlyOtherSite) {
+if (sitePublic.value?.authMode === 'onlyOtherSite' && sitePublic.value?.authOnlyOtherSite && !['createOrga', 'plannedDeletion'].includes(step.value)) {
   // WARNING: this auth mode is not yet compatible with sites that have a path prefix
   redirectToOtherSite = true
   const otherSiteLoginUrl = new URL(window.location.href)

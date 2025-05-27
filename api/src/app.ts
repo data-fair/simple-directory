@@ -3,6 +3,7 @@ import config from '#config'
 import uiConfig from './ui-config.ts'
 import apiDocs from '../contract/api-docs.ts'
 import express, { type RequestHandler } from 'express'
+import helmet from 'helmet'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
 import { session, errorHandler, createSiteMiddleware, createSpaMiddleware, setReqUser, httpError } from '@data-fair/lib-express'
@@ -24,6 +25,18 @@ import passwordLists from './password-lists/router.ts'
 
 const app = express()
 export default app
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      // very restrictive by default, index.html of the UI will have custom rules defined in createSpaMiddleware
+      // https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html#security-headers
+      'frame-ancestors': ["'none'"],
+      'default-src': ["'none'"]
+    }
+  }
+}))
 
 // no fancy embedded arrays, just string and arrays of strings in req.query
 app.set('query parser', 'simple')
@@ -77,7 +90,9 @@ app.use('/api/', (req, res) => {
 app.use(tokens)
 
 if (config.serveUi) {
-  app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig))
+  app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig, {
+    csp: { nonce: true, header: true }
+  }))
 }
 
 app.use(errorHandler)

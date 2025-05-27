@@ -35,7 +35,8 @@ declare module 'vue' {
     ResendPartnerInvitation: typeof import('./../src/components/resend-partner-invitation.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    SitePatch: typeof import('./../src/components/site-patch.vue')['default']
     SitePost: typeof import('./../src/components/site-post.vue')['default']
+    VjsfPatchReqBody: typeof import('./../src/components/vjsf/vjsf-patch-req-body.vue')['default']
+    VjsfPostReqBody: typeof import('./../src/components/vjsf/vjsf-post-req-body.vue')['default']
   }
 }

@@ -13,7 +13,9 @@ router.use(async (req, res, next) => {
 })
 
 let info = { version: process.env.NODE_ENV }
-try { info = JSON.parse(await readFile(resolve(import.meta.dirname, '../../BUILD.json'), 'utf8')) } catch (err) {}
+if (process.env.NODE_ENV === 'production') {
+  info = JSON.parse(await readFile(resolve(import.meta.dirname, '../../../BUILD.json'), 'utf8'))
+}
 router.get('/info', (req, res) => {
   res.send(info)
 })
