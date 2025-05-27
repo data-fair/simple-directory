@@ -8,14 +8,18 @@ import Debug from 'debug'
 
 const debugRedirectSite = Debug('redirect-site')
 
-export const getSiteByUrl = memoize(async (url: string) => {
-  const urlObj = new URL(url)
-  const sites = await mongo.sites.find({ host: urlObj.host }).toArray()
-  return sites.find(s => urlObj.pathname.startsWith(s.path ?? ''))
+export const getSiteByHost = memoize(async (host: string, path: string) => {
+  const sites = await mongo.sites.find({ host }).toArray()
+  return sites.find(s => path.startsWith(s.path ?? ''))
 }, {
   promise: true,
   maxAge: 2000 // 2s
 })
+
+export const getSiteByUrl = async (url: string) => {
+  const urlObj = new URL(url)
+  return getSiteByHost(urlObj.host, urlObj.pathname)
+}
 
 const publicUrl = new URL(config.publicUrl)
 export const getSiteBaseUrl = (site: Site) => {

@@ -4,7 +4,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, r
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMail, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback } from '#services'
+import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -273,7 +273,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
 
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
-    await sendMail('noCreation', reqI18n(req).messages, body.email, { link: redirect, host: redirectUrl.host, origin: redirectUrl.origin })
+    await sendMailI18n('noCreation', reqI18n(req).messages, body.email, { link: redirect, host: redirectUrl.host, origin: redirectUrl.origin })
     eventsLog.info('sd.auth.passwordless.no-user', `a passwordless authentication failed because of missing user and a warning mail was sent ${req.body.email}`, logContext)
     return res.status(204).send()
   }
@@ -296,7 +296,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
 
   const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, body.org, body.dep), body.orgStorage)
   debug(`Passwordless authentication of user ${user.name}`)
-  await sendMail('login', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
+  await sendMailI18n('login', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
   eventsLog.info('sd.auth.passwordless.ok', 'a user successfully sent a authentication email', logContext)
   res.status(204).send()
 })
@@ -532,7 +532,7 @@ router.post('/action', async (req, res, next) => {
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
     const linkUrl = new URL(target)
-    await sendMail('noCreation', reqI18n(req).messages, body.email, { link: target, host: linkUrl.host, origin: linkUrl.origin })
+    await sendMailI18n('noCreation', reqI18n(req).messages, body.email, { link: target, host: linkUrl.host, origin: linkUrl.origin })
     eventsLog.info('sd.auth.action.fail', `an action ${action} failed because of missing user and a warning mail was sent ${body.email}`, logContext)
     return res.status(204).send()
   }
@@ -545,7 +545,7 @@ router.post('/action', async (req, res, next) => {
   const linkUrl = new URL(target)
   linkUrl.searchParams.set('action_token', token)
 
-  await sendMail('action', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
+  await sendMailI18n('action', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
   eventsLog.info('sd.auth.action.ok', `an action email ${action} was sent`, logContext)
   res.status(204).send()
 })

@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 import { reqI18n, __all, __ } from '#i18n'
 import storages from '#storages'
-import { getOrgLimits, setNbMembersLimit, reqSite, getSiteByUrl, shortenInvit, unshortenInvit, sendMail, decodeToken, signToken, postUserIdentityWebhook } from '#services'
+import { getOrgLimits, setNbMembersLimit, reqSite, getSiteByUrl, shortenInvit, unshortenInvit, sendMailI18n, decodeToken, signToken, postUserIdentityWebhook } from '#services'
 import emailValidator from 'email-validator'
 import Debug from 'debug'
 
@@ -111,7 +111,7 @@ router.post('', async (req, res, next) => {
       }
       // send the mail either if the user does not exist or it was created more that 24 hours ago
       if (!query.skip_mail && (!existingUser || query.force_mail || (existingUser.created && dayjs().diff(dayjs(existingUser.created.date), 'day', true) > 1))) {
-        await sendMail('invitation', reqI18n(req).messages, body.email, params)
+        await sendMailI18n('invitation', reqI18n(req).messages, body.email, params)
         eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
       }
 
@@ -142,7 +142,7 @@ router.post('', async (req, res, next) => {
       organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '')
     }
     if (!query.skip_mail) {
-      await sendMail('invitation', reqI18n(req).messages, body.email, params)
+      await sendMailI18n('invitation', reqI18n(req).messages, body.email, params)
       eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
     }
 

@@ -9,7 +9,7 @@ import { reqI18n } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
 import type { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
-import { setNbMembersLimit, sendMail, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite } from '#services'
+import { setNbMembersLimit, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite } from '#services'
 import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
@@ -82,11 +82,12 @@ router.get('', async (req, res, next) => {
     } else {
       throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     }
-    if (typeof req.query.host === 'string') params.host = req.query.host
-    if (typeof req.query.path === 'string') params.path = req.query.path
   } else {
     params.select = ['id', 'name']
   }
+
+  if (typeof req.query.host === 'string') params.host = req.query.host
+  if (typeof req.query.path === 'string') params.path = req.query.path
 
   if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
   if (typeof req.query.q === 'string') params.q = req.query.q
@@ -414,7 +415,7 @@ if (config.managePartners) {
       organization: orga.name,
       partner: partnerPost.name
     }
-    await sendMail('partnerInvitation', reqI18n(req).messages, partnerPost.contactEmail, params)
+    await sendMailI18n('partnerInvitation', reqI18n(req).messages, partnerPost.contactEmail, params)
 
     eventsQueue?.pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },

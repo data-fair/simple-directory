@@ -2,7 +2,7 @@ import config from '#config'
 import JWK from './JWK.ts'
 import user from '#types/user/schema.js'
 import organization from '#types/organization/schema.js'
-import mail from './mail.ts'
+import mail from '#types/mail/schema.js'
 
 const authenticationParams = [{
   name: 'Authorization',

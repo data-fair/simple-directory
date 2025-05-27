@@ -10,7 +10,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
-import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMail, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword } from '#services'
+import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword } from '#services'
 
 const router = Router()
 
@@ -45,16 +45,16 @@ router.get('', async (req, res, next) => {
     } else {
       throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     }
-    if (typeof req.query.host === 'string') params.host = req.query.host
-    if (typeof req.query.path === 'string') params.path = req.query.path
   } else {
     params.select = ['id', 'name']
   }
 
-  if (req.query) {
-    if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
-    if (typeof req.query.q === 'string') params.q = req.query.q
-  }
+  if (typeof req.query.host === 'string') params.host = req.query.host
+  if (typeof req.query.path === 'string') params.path = req.query.path
+
+  if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
+  if (typeof req.query.q === 'string') params.q = req.query.q
+
   const users = await storages.globalStorage.findUsers(params)
 
   eventsLog.info('sd.list-users', 'list users', logContext)
@@ -132,7 +132,7 @@ router.post('', async (req, res, next) => {
   const link = query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
   if (user && user.emailConfirmed !== false) {
     const linkUrl = new URL(link)
-    await sendMail('conflict', reqI18n(req).messages, body.email, { host: linkUrl.host, origin: linkUrl.origin })
+    await sendMailI18n('conflict', reqI18n(req).messages, body.email, { host: linkUrl.host, origin: linkUrl.origin })
     return res.status(204).send()
   }
 
@@ -184,7 +184,7 @@ router.post('', async (req, res, next) => {
     // the user will be validated and authenticated at the same time by the token_callback route
     const payload = { ...getTokenPayload(createdUser, site), emailConfirmed: true }
     const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, query.org, query.dep))
-    await sendMail('creation', reqI18n(req).messages, body.email, { link: linkUrl.href })
+    await sendMailI18n('creation', reqI18n(req).messages, body.email, { link: linkUrl.href })
     // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
     return res.status(204).send()
   }
@@ -234,7 +234,7 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
 
   const link = reqSiteUrl(req) + '/simple-directory/login?email=' + encodeURIComponent(session.user.email)
   if (patch.plannedDeletion) {
-    await sendMail('plannedDeletion', reqI18n(req).messages, session.user.email, {
+    await sendMailI18n('plannedDeletion', reqI18n(req).messages, session.user.email, {
       link,
       user: session.user.name,
       plannedDeletion: __date(req, patch.plannedDeletion).format('L'),
