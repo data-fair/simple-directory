@@ -10,6 +10,7 @@ import mongo from '#mongo'
 import type { Password } from '../utils/passwords.ts'
 import dayjs from 'dayjs'
 import { nanoid } from 'nanoid'
+import memoize from 'memoizee'
 import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 import type { MatchKeysAndValues, UpdateOptions } from 'mongodb'
 
@@ -18,7 +19,7 @@ const collation = { locale: 'en', strength: 1 }
 export type UserInDb = Omit<User, 'id'> & { _id: string }
 export type OrgInDb = Omit<Organization, 'id'> & { _id: string }
 
-function cleanUser (resource: any): User {
+async function cleanUser (resource: any): Promise<User> {
   resource.id = resource._id
   delete resource._id
   delete resource.password
@@ -28,6 +29,12 @@ function cleanUser (resource: any): User {
   }
   resource.isAdmin = config.admins.includes(resource.email)
   if (resource.onlyCreateInvited) resource.ignorePersonalAccount = true
+  if (resource.organizations) {
+    for (const org of resource.organizations) {
+      const rolesLabels = await getRolesLabels(org)
+      if (rolesLabels?.[org.role]) org.roleLabel = rolesLabels[org.role]
+    }
+  }
   return resource
 }
 
@@ -48,6 +55,15 @@ function prepareSelect (select?: string[]) {
   return select.reduce((a, key) => { a[key] = true; return a }, {} as Record<string, boolean>)
 }
 
+const getRolesLabels = memoize(async (orgId: string) => {
+  const org = await mongo.organizations.findOne({ _id: orgId }, { projection: { rolesLabels: 1 } })
+  if (!org) return config.defaultRolesLabels
+  return { ...config.defaultRolesLabels, ...org.rolesLabels }
+}, {
+  promise: true,
+  maxAge: 5 * 60 * 1000 // 5 minute
+})
+
 class MongodbStorage implements SdStorage {
   readonly?: boolean | undefined
   async init (params: any, org?: Organization) {
@@ -58,7 +74,7 @@ class MongodbStorage implements SdStorage {
   async getUser (userId: string) {
     const user = await mongo.users.findOne({ _id: userId })
     if (!user) return
-    return cleanUser(user)
+    return await cleanUser(user)
   }
 
   async getUserByEmail (email: string, site?: Site) {
@@ -71,7 +87,7 @@ class MongodbStorage implements SdStorage {
     }
     const user = (await mongo.users.find(filter).collation(collation).toArray())[0]
     if (!user) return
-    return cleanUser(user)
+    return await cleanUser(user)
   }
 
   async getPassword (userId: string) {
@@ -115,7 +131,7 @@ class MongodbStorage implements SdStorage {
       operation,
       { returnDocument: 'after' }
     )
-    const user = cleanUser(mongoRes)
+    const user = await cleanUser(mongoRes)
     const name = userName(user)
     if (name !== user.name) {
       await mongo.users.findOneAndUpdate(
@@ -181,21 +197,25 @@ class MongodbStorage implements SdStorage {
         .sort(params.sort)
         .skip(params.skip)
         .limit(params.size)
-        .toArray()
+        .toArray() as Promise<User[]>
     ])
-    return { count, results: users.map(cleanUser) }
+    for (const user of users) {
+      await cleanUser(user)
+    }
+    return { count, results: users }
   }
 
   async findUsersToDelete () {
-    return (await mongo.users
-      .find({ plannedDeletion: { $lt: dayjs().format('YYYY-MM-DD') } })
-      .limit(10000)
-      .toArray()).map(cleanUser)
+    const users: User[] = []
+    for await (const user of mongo.users.find({ plannedDeletion: { $lt: dayjs().format('YYYY-MM-DD') } })) {
+      users.push(await cleanUser(user))
+    }
+    return users
   }
 
   async findInactiveUsers () {
     const inactiveDelayDate = dayjs().subtract(config.cleanup.deleteInactiveDelay[0], config.cleanup.deleteInactiveDelay[1]).toDate().toISOString()
-    return (await mongo.users
+    const cursor = await mongo.users
       .find({
         plannedDeletion: { $exists: false },
         $or: [
@@ -203,8 +223,11 @@ class MongodbStorage implements SdStorage {
           { logged: { $exists: false }, 'created.date': { $lt: inactiveDelayDate } }
         ]
       })
-      .limit(10000)
-      .toArray()).map(cleanUser)
+    const users: User[] = []
+    for await (const user of cursor) {
+      users.push(await cleanUser(user))
+    }
+    return users
   }
 
   async findMembers (organizationId: string, params: FindMembersParams) {

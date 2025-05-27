@@ -128,6 +128,10 @@
                 :src="`${$sdUrl}/api/avatars/user/${member.id}/avatar.png`"
               />
             </v-avatar>
+            <div
+              v-else
+              style="width:56px;"
+            />
           </template>
 
           <template v-if="!members.results[i-1] || members.results[i-1].id !== member.id">
