@@ -75,8 +75,8 @@ export interface SdStorage {
 
   addMember (orga: Organization, user: UserRef, role: string, department?: string | null, readOnly?: boolean): Promise<void>
   findMembers (organizationId: string, params: FindMembersParams): Promise<{ count: number, results: Member[], fromCache?: string }>
-  removeMember (orgId: string, userId: string, department?: string): Promise<void>
-  patchMember(orgId: string, userId: string, department: string | null | undefined, patch: PatchMemberBody): Promise<void>
+  removeMember (orgId: string, userId: string, department?: string, role?: string): Promise<void>
+  patchMember(orgId: string, userId: string, department: string | null | undefined, role: string | null | undefined, patch: PatchMemberBody): Promise<void>
 
   addPartner (orgId: string, partner: Partner): Promise<void>
   deletePartner (orgId: string, partnerId: string): Promise<void>

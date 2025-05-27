@@ -114,7 +114,7 @@ module.exports = {
   alwaysAcceptInvitation: true,
   // invitationRedirect: 'http://localhost:5689/test',
   onlyCreateInvited: false,
-  singleMembership: true,
+  singleMembership: false,
   saml2: {
     providers: [{
       title: 'Test SAML IDP',
@@ -223,5 +223,6 @@ module.exports = {
     // minCharClasses: 3,
   },
   siteOrgs: true,
-  siteAdmin: true
+  siteAdmin: true,
+  multiRoles: true
 }

@@ -235,7 +235,7 @@ export const authProviderLoginCallback = async (
     }
   }
   const linkUrl = await prepareCallbackUrl(req, payload, redirect, (invit && invitOrga)
-    ? { id: invit.id, department: invit.department }
+    ? { id: invit.id, department: invit.department, role: invit.role }
     : { id: org as string, department: dep as string })
   debugAuthProvider(`Auth provider based authentication of user ${user.name}`)
 

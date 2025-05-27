@@ -284,7 +284,7 @@ class FileStorage implements SdStorage {
     throw new Error('Method not implemented.')
   }
 
-  patchMember (orgId: string, userId: string, department: string | null | undefined, patch: PatchMemberBody): Promise<void> {
+  patchMember (orgId: string, userId: string, department: string | null | undefined, role: string | null | undefined, patch: PatchMemberBody): Promise<void> {
     throw new Error('Method not implemented.')
   }
 

@@ -354,7 +354,11 @@ class MongodbStorage implements SdStorage {
   async addMember (orga: Organization, user: User, role: string, department: string | null = null, readOnly = false) {
     user.organizations = user.organizations || []
 
-    let userOrga = user.organizations.find(o => o.id === orga.id && (o.department || null) === department)
+    let userOrga = user.organizations.find(o => {
+      if (config.multiRoles && o.role !== role) return false
+      return o.id === orga.id && (o.department || null) === (department || null)
+    })
+    console.log('USER ORGA ?', userOrga)
 
     if (config.singleMembership && !userOrga && user.organizations.find(o => o.id === orga.id)) {
       throw httpError(400, 'cet utilisateur est déjà membre de cette organisation.')
@@ -388,9 +392,11 @@ class MongodbStorage implements SdStorage {
     return mongo.users.countDocuments({ 'organizations.id': organizationId })
   }
 
-  async patchMember (organizationId: string, userId: string, department = null, patch: PatchMemberBody) {
+  async patchMember (organizationId: string, userId: string, department = null, role = null, patch: PatchMemberBody) {
     // department is the optional department of the membership we are trying to change
     // patch.department is the optional new department of the membership
+
+    if (!role && config.multiRoles) throw httpError(400, 'role is required')
 
     const org = await mongo.organizations.findOne({ _id: organizationId })
     if (!org) throw httpError(404, 'organisation inconnue.')
@@ -401,12 +407,21 @@ class MongodbStorage implements SdStorage {
     }
     const user = await mongo.users.findOne({ _id: userId })
     if (!user) throw httpError(404, 'utilisateur inconnu.')
-    const userOrg = user.organizations.find(o => o.id === organizationId && (o.department || null) === (department || null))
+    const userOrg = user.organizations.find(o => {
+      if (config.multiRoles) if (o.role !== role) return false
+      return o.id === organizationId && (o.department || null) === (department || null)
+    })
     if (!userOrg) throw httpError(404, 'information de membre inconnue.')
+
+    const dupUserOrg = user.organizations.find(o => {
+      return o.id === organizationId && (o.department || null) === (patch.department || null) && o.role === patch.role
+    })
+    if (dupUserOrg) return
 
     // if we are switching department remove potential conflict
     if ((patch.department || null) !== (department || null)) {
       user.organizations = user.organizations.filter(o => {
+        if (config.multiRoles && o.role !== patch.role) return false
         const isConflict = o.id === organizationId && (o.department || null) === (patch.department || null)
         return !isConflict
       })
@@ -435,13 +450,12 @@ class MongodbStorage implements SdStorage {
     )
   }
 
-  async removeMember (organizationId: string, userId: string, department?: string) {
-    if (department === '*') {
-      await mongo.users.updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId } } })
-    } else {
-      await mongo.users
-        .updateOne({ _id: userId }, { $pull: { organizations: { id: organizationId, department } } })
-    }
+  async removeMember (organizationId: string, userId: string, department?: string, role?: string) {
+    if (config.multiRoles && !role) throw httpError(400, 'role parameter is required in multi-roles mode')
+    const filter: Record<string, string> = { id: organizationId }
+    if (role) filter.role = role
+    if (department !== '*' && department) filter.department = department
+    await mongo.users.updateOne({ _id: userId }, { $pull: { organizations: filter } })
   }
 
   async required2FA (user: User) {

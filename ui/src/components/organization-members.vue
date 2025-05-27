@@ -123,9 +123,8 @@
           :class="{'secondary-member': members.results[i-1] && members.results[i-1].id === member.id}"
         >
           <template #prepend>
-            <v-avatar>
+            <v-avatar v-if="!members.results[i-1] || members.results[i-1].id !== member.id">
               <v-img
-                v-if="!members.results[i-1] || members.results[i-1].id !== member.id"
                 :src="`${$sdUrl}/api/avatars/user/${member.id}/avatar.png`"
               />
             </v-avatar>
@@ -171,19 +170,23 @@
                 @save="(newMember: Member) => saveMember.execute(newMember, member)"
               />
             </v-list-item-action>
-            <v-list-item-action v-if="user.adminMode && !member.orgStorage">
+            <v-list-item-action
+              v-if="user.adminMode && !member.orgStorage"
+              class="ml-2"
+            >
               <v-btn
                 :title="$t('common.asAdmin')"
                 :icon="mdiAccountSwitch"
                 color="warning"
                 variant="text"
+                density="compact"
                 :disabled="!member.emailConfirmed"
                 @click="asAdmin(member)"
               />
             </v-list-item-action>
             <v-list-item-action
               v-if="isAdminOrga && !readonly"
-              class="ml-0"
+              class="ml-2"
             >
               <delete-member-menu
                 :member="member"
@@ -296,7 +299,10 @@ const refetchMembers = async () => {
 }
 
 const deleteMember = useAsyncAction(async (member: Member) => {
-  await $fetch(`organizations/${orga.id}/members/${member.id}`, { method: 'DELETE', params: { department: member.department } })
+  const params: Record<string, string> = {}
+  if (member.department) params.department = member.department
+  if ($uiConfig.multiRoles) params.role = member.role
+  await $fetch(`organizations/${orga.id}/members/${member.id}`, { method: 'DELETE', params })
   sendUiNotif({ type: 'success', msg: t('pages.organization.deleteMemberSuccess', { name: member.name }) })
   await fetchMembers.refresh()
   if (fetchMembers.data.value?.count && !fetchMembers.data.value.results.length && membersPage.value > 1) {
@@ -311,10 +317,13 @@ const saveMember = useAsyncAction(async (member: Member, oldMember: Member) => {
     const dep = orga.departments?.find(d => d.id === member.department)
     if (dep) patch.department = dep.id
   }
+  const params: Record<string, string> = {}
+  if (oldMember.department) params.department = oldMember.department
+  if ($uiConfig.multiRoles) params.role = oldMember.role
   await $fetch(`organizations/${orga.id}/members/${member.id}`, {
     method: 'PATCH',
     body: patch,
-    params: { department: oldMember.department }
+    params
   })
   fetchMembers.refresh()
 })
