@@ -300,7 +300,8 @@ module.exports = {
   },
   alwaysAcceptInvitation: 'ALWAYS_ACCEPT_INVITATION',
   observer: {
-    active: 'OBSERVER_ACTIVE'
+    active: 'OBSERVER_ACTIVE',
+    orgLevelMetrics: 'ORG_LEVEL_METRICS'
   },
   depAdminIsOrgAdmin: 'DEP_ADMIN_IS_ORG_ADMIN',
   manageSites: 'MANAGE_SITES',
