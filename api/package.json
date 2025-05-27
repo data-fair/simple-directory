@@ -2,6 +2,7 @@
   "name": "@sd/api",
   "main": "index.js",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development DEBUG=upgrade* node --watch --experimental-strip-types index.ts"
   },
