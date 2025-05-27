@@ -1,6 +1,6 @@
 import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
 import config from '#config'
-import type { LdapParams, Member, ServerSession, Site } from '#types'
+import type { LdapParams, Member, MemberOverwrite, ServerSession, Site } from '#types'
 import type { Organization, Partner, User, UserWritable } from '#types'
 import mongo from '#mongo'
 import memoize from 'memoizee'
@@ -12,6 +12,7 @@ import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 import type { UserRef } from '@data-fair/lib-express'
 import type { TwoFA } from '#services'
 import userName from '../utils/user-name.ts'
+import slugify from 'slugify'
 
 const debug = Debug('ldap')
 
@@ -182,7 +183,6 @@ export class LdapStorage implements SdStorage {
     client.on('error', err => console.error(err.message))
 
     const bind = promisify(client.bind).bind(client)
-    const unbind = promisify(client.unbind).bind(client)
 
     if (this.ldapParams.searchUserDN && this.ldapParams.searchUserPassword) {
       debug('bind service account', this.ldapParams.url, this.ldapParams.searchUserDN)
@@ -193,7 +193,7 @@ export class LdapStorage implements SdStorage {
     try {
       return await fn(client)
     } finally {
-      await unbind()
+      client.destroy()
     }
   }
 
@@ -203,8 +203,10 @@ export class LdapStorage implements SdStorage {
     if (this.ldapParams.members.department?.attr) attributes.push(this.ldapParams.members.department.attr)
     if (this.ldapParams.members.organization?.attr) attributes.push(this.ldapParams.members.organization.attr)
     if (this.ldapParams.isAdmin?.attr) attributes.push(this.ldapParams.isAdmin.attr)
+    for (const o of this.ldapParams.members?.overwrite || []) {
+      for (const attr in (o.attrs || {})) attributes.push(attr)
+    }
     const extraFilters: any[] = [...(this.ldapParams.users.extraFilters || [])]
-    if (this.ldapParams.members.onlyWithRole) extraFilters.push(this._getRoleFilter(Object.keys(this.ldapParams.members.role.values ?? {})))
     return { attributes, extraFilters }
   }
 
@@ -227,6 +229,9 @@ export class LdapStorage implements SdStorage {
       for (let i = 0; i < res.fullResults.length; i++) {
         const user = res.fullResults[i].item
         await this._setUserOrg(client, user, res.fullResults[i].entry, res.fullResults[i].attrs, orgCache)
+        if (this.ldapParams.members.onlyWithRole) {
+          if (!user.organizations?.length) continue
+        }
         const overwrite = (this.ldapParams.users.overwrite || []).find(o => o.email === user.email)
         if (overwrite) Object.assign(user, overwrite)
         // email is implicitly confirmed in ldap mode
@@ -238,13 +243,15 @@ export class LdapStorage implements SdStorage {
     })
   }
 
-  private async getAllUsers (): Promise<{ results: User[], fromCache?: string }> {
+  private async getAllUsers (): Promise<{ results: User[], fetchDate: string, fromCache?: string }> {
     let fromCache: string | undefined
+    let fetchDate: string
     if (!this.allUsersCache.dataPromise || !this.allUsersCache.lastFetch || (Date.now() - this.allUsersCache.lastFetch.getTime()) > config.storage.ldap.cacheMS) {
       const usersPromise = this._getAllUsers()
       this.allUsersCache.dataPromise = usersPromise
       const date = new Date()
       this.allUsersCache.lastFetch = date
+      fetchDate = date.toISOString()
       usersPromise.then((users) => {
         this.allUsersCache.previousData = users
         this.allUsersCache.previousFetch = date
@@ -253,6 +260,7 @@ export class LdapStorage implements SdStorage {
       })
     } else {
       fromCache = this.allUsersCache.lastFetch.toISOString()
+      fetchDate = fromCache
     }
     const previousData = this.allUsersCache.previousData
     const previousFetch = this.allUsersCache.previousFetch?.toISOString()
@@ -264,9 +272,9 @@ export class LdapStorage implements SdStorage {
           resolve(previousData)
         }, 5000))
       ])
-      return { results, fromCache }
+      return { results, fromCache, fetchDate }
     } else {
-      return { results: await this.allUsersCache.dataPromise, fromCache }
+      return { results: await this.allUsersCache.dataPromise, fromCache, fetchDate }
     }
   }
 
@@ -284,6 +292,7 @@ export class LdapStorage implements SdStorage {
       )
       const results = res.results
       for (const org of results) {
+        org.id = slugify.default(org.id, { lower: true, strict: true })
         let overwrite
         if ((this.ldapParams.overwrite || []).includes('organizations')) {
           overwrite = await mongo.ldapOrganizationsOverwrite.findOne({ id: org.id })
@@ -315,6 +324,10 @@ export class LdapStorage implements SdStorage {
 
   // promisified search
   async _search <T>(client: ldap.Client, base: string, filter: any, attributes: string[], mappingFn: MappingFn) {
+    debug(`perform search
+      - base: ${base}
+      - filter: ${filter}
+      - attributes: ${JSON.stringify(attributes)}`)
     const results = await new Promise<any[]>((resolve, reject) => {
       client.search(base, {
         filter,
@@ -348,9 +361,6 @@ export class LdapStorage implements SdStorage {
     })
 
     debug(`search results
-  - base: ${base}
-  - filter: ${filter}
-  - attributes: ${JSON.stringify(attributes)}
   - nb results: ${results.length}
   - first result: `, results[0])
     return {
@@ -387,7 +397,7 @@ export class LdapStorage implements SdStorage {
     return `${dnKey}=${entry[dnKey]},${this.ldapParams.baseDN}`
   }
 
-  async _setUserOrg (client: ldap.Client, user: User, entry: ldap.SearchEntry, attrs: Record<string, any>, orgCache: Record<string, Organization> = {}) {
+  async _setUserOrg (client: ldap.Client, user: User, entry: ldap.SearchEntry, attrs: Record<string, string[]>, orgCache: Record<string, Organization> = {}) {
     let org: { id: string, name: string, department?: string } | undefined
     if (this.ldapParams.organizations.staticSingleOrg) {
       org = this.ldapParams.organizations.staticSingleOrg
@@ -454,18 +464,68 @@ export class LdapStorage implements SdStorage {
           }
         }
       }
-      let overwrite
-      if ((this.ldapParams.overwrite || []).includes('members')) {
-        overwrite = await mongo.ldapMembersOverwrite.findOne({ orgId: org.id, userId: user.id })
-      }
-      overwrite = overwrite || (this.ldapParams.members.overwrite || [])
-        .find(o => (o.orgId === org.id || !o.orgId) && o.email?.toLowerCase() === user.email?.toLowerCase())
 
-      role = (overwrite && overwrite.role) || role || this.ldapParams.members.role.default
-      department = (overwrite && overwrite.department) || department || org.department
-      user.organizations = [{ id: org.id, name: org.name, role, department }]
+      if (!role && !this.ldapParams.members.onlyWithRole) {
+        role = this.ldapParams.members.role.default
+      }
+      department = department || org.department
+      if (role) user.organizations = [{ id: org.id, name: org.name, role, department }]
+      else user.organizations = []
     } else {
       user.organizations = []
+    }
+
+    let overwrites: MemberOverwrite[] = []
+    if ((this.ldapParams.overwrite || []).includes('members')) {
+      overwrites = await mongo.ldapMembersOverwrite.find({ userId: user.id }).toArray()
+    }
+    overwrites = overwrites.concat((this.ldapParams.members.overwrite || []))
+    for (const overwrite of overwrites) {
+      if (overwrite.email) {
+        if (overwrite.email?.toLowerCase() !== user.email?.toLowerCase()) continue
+      } else if (overwrite.matchAttrs && overwrite.matchAttrs.length) {
+        let match = true
+        for (const matchAttr of overwrite.matchAttrs) {
+          let attrValues: string[] = []
+          if (attrs[matchAttr.attr]) {
+            if (matchAttr.captureRegex) {
+              const captureRegex = new RegExp(matchAttr.captureRegex)
+              for (const v of attrs[matchAttr.attr]) {
+                const m = v.match(captureRegex)
+                if (m && m[1]) attrValues.push(m[1])
+              }
+            } else {
+              attrValues = attrs[matchAttr.attr]
+            }
+          }
+          if (!matchAttr.values.some(v => attrValues.includes(v))) match = false
+        }
+        if (!match) continue
+      } else {
+        continue
+      }
+      const overwriteRole = overwrite.role || (this.ldapParams.members.role.default)
+      if (!overwrite.orgId) {
+        for (const o of user.organizations) {
+          if (overwrite.role) o.role = overwrite.role
+          if (overwrite.department) o.department = overwrite.department
+        }
+      } else {
+        const userOrg = user.organizations.find(o => o.id === overwrite.orgId)
+        if (userOrg) {
+          if (overwrite.role) userOrg.role = overwrite.role
+          if (overwrite.department) userOrg.department = overwrite.department
+        } else {
+          const fullO = orgCache[overwrite.orgId] = orgCache[overwrite.orgId] || await this._getOrganization(client, overwrite.orgId)
+          if (fullO) {
+            const newUserOrg = { id: fullO.id, name: fullO.name, role: overwriteRole, department: overwrite.department }
+            if (overwrite.orgOnly) user.organizations = [newUserOrg]
+            else user.organizations.push(newUserOrg)
+          } else {
+            debug('unknown organization referenced in members overwrite', overwrite.orgId)
+          }
+        }
+      }
     }
   }
 
@@ -496,8 +556,9 @@ export class LdapStorage implements SdStorage {
             if (this.ldapParams.isAdmin?.values.includes(value)) user.isAdmin = true
           }
         }
-        if (user.isAdmin && config.adminsOrg) {
-          user.organizations.push({ ...config.adminsOrg, role: 'admin' })
+        const adminsOrg = config.adminsOrg
+        if (user.isAdmin && adminsOrg && !user.organizations.find(o => o.id === adminsOrg.id)) {
+          user.organizations.push({ ...adminsOrg, role: 'admin' })
         }
       }
       if (config.onlyCreateInvited) user.ignorePersonalAccount = true
@@ -530,7 +591,7 @@ export class LdapStorage implements SdStorage {
       debug('auth failure', id, err)
       return false
     } finally {
-      client.unbind()
+      client.destroy()
     }
   }
 
@@ -567,26 +628,10 @@ export class LdapStorage implements SdStorage {
     return { count, results, fromCache }
   }
 
-  private _getRoleFilter (roles: string[]) {
-    let roleAttrValues: string[] = []
-    roles.forEach(role => {
-      roleAttrValues = roleAttrValues.concat(this.ldapParams.members.role.values?.[role] || (role === this.ldapParams.members.role.default ? [] : [role]))
-    })
-    if (roleAttrValues.length) {
-      const roleAttrFilters = roleAttrValues.map(value => new ldap.EqualityFilter({ attribute: this.ldapParams.members.role.attr as string, value }))
-      if (roleAttrFilters.length > 1) {
-        // roleFilter = `(|${roleAttrFilters.join('')})`
-        return new ldap.OrFilter({ filters: roleAttrFilters })
-      } else {
-        return roleAttrFilters[0]
-      }
-    }
-  }
-
-  private membersCache: { [orgId: string]: { members: Member[], fromUsers: User[] } } = {}
-  private _findAllMembers = (orgId: string, users: User[]) => {
+  private membersCache: { [orgId: string]: { members: Member[], fromCache: string } } = {}
+  private _findAllMembers = (orgId: string, users: User[], fetchDate: string) => {
     // if users did not change (same reference from cache), return the cached members
-    if (this.membersCache[orgId]?.fromUsers === users) return this.membersCache[orgId].members
+    if (this.membersCache[orgId]?.fromCache === fetchDate) return this.membersCache[orgId].members
     const members: Member[] = users
       .filter(user => user.organizations.find(o => o.id === orgId))
       .map(user => {
@@ -601,14 +646,14 @@ export class LdapStorage implements SdStorage {
           emailConfirmed: true
         }
       })
-    this.membersCache[orgId] = { members, fromUsers: users }
+    this.membersCache[orgId] = { members, fromCache: fetchDate }
     return members
   }
 
   async findMembers (organizationId: string, params: FindMembersParams) {
     debug('find members', params)
-    const { results: users, fromCache } = await this.getAllUsers()
-    const ogResults = this._findAllMembers(organizationId, users)
+    const { results: users, fromCache, fetchDate } = await this.getAllUsers()
+    const ogResults = this._findAllMembers(organizationId, users, fetchDate)
     let results = ogResults
     const ids = params.ids
     if (ids) {
@@ -675,23 +720,12 @@ export class LdapStorage implements SdStorage {
       if (!this.org && config.adminsOrg && config.adminsOrg.id === id) {
         org = { ...config.adminsOrg, departments: [] }
       } else {
-        const res = await this._search<Organization>(
-          client,
-          this.ldapParams.baseDN,
-          this.orgMapping.filter({ id }, this.ldapParams.organizations.objectClass, this.ldapParams.organizations.extraFilters),
-          Object.values(this.ldapParams.organizations.mapping),
-          this.orgMapping.from
-        )
-        org = res.results[0]
+        // we cannot performe a ldap search with a filter on the id as we slugify it
+        // so we need to fetch all orgs and filter in memory
+        const slugId = slugify.default(id, { lower: true, strict: true })
+        const allOrgs = await this.getAllOrgs()
+        org = allOrgs.results.find(o => o.id === slugId)
       }
-    }
-    if (org) {
-      let overwrite
-      if ((this.ldapParams.overwrite || []).includes('organizations') || (this.ldapParams.overwrite || []).includes('departments')) {
-        overwrite = await mongo.ldapOrganizationsOverwrite.findOne({ id: org.id })
-      }
-      overwrite = overwrite || (this.ldapParams.organizations.overwrite || []).find(o => (o.id === org.id))
-      if (overwrite) Object.assign(org, overwrite)
     }
     return org as Organization
   }

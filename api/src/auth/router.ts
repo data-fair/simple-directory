@@ -616,6 +616,7 @@ router.get('/providers', async (req, res) => {
 
 // OAUTH
 const debugOAuth = Debug('oauth')
+const debugOAuthTokens = Debug('oauth-tokens')
 
 const oauthLogin: RequestHandler = async (req, res, next) => {
   const logContext: EventLogContext = { req }
@@ -675,6 +676,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   }
 
   const { token, offlineRefreshToken } = await provider.getToken(req.query.code as string, provider.coreIdProvider)
+  debugOAuthTokens('full oauth token', token)
   const authInfo = await provider.userInfo(token.access_token, token.id_token)
 
   if (!authInfo.user.email) {

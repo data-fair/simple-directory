@@ -213,6 +213,9 @@
     "manageDepartmentLabel": {
       "type": "boolean"
     },
+    "defaultDepartmentLabel": {
+      "type": "string"
+    },
     "manageSessions": {
       "type": "boolean"
     },
@@ -350,6 +353,13 @@
           }
         }
       }
+    },
+    "manageRolesLabels": {
+      "type": "boolean"
+    },
+    "defaultRolesLabels": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
     },
     "oauth": {
       "type": "object",

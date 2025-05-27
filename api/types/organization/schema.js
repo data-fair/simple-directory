@@ -32,6 +32,11 @@ export default {
         type: 'string'
       }
     },
+    rolesLabels: {
+      description: 'How the different roles should be labelled inside this organization',
+      type: 'object',
+      additionalProperties: { type: 'string' }
+    },
     '2FA': {
       properties: {
         roles: {
