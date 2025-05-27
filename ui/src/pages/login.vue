@@ -982,7 +982,7 @@ const createOrga = useAsyncAction(async () => {
   const orga = await $fetch('organizations', { method: 'POST', body })
   const userPatch: PatchUserReq['body'] = { ignorePersonalAccount: true, defaultOrg: orga.id }
   await $fetch('users/' + user.value.id, { method: 'PATCH', body: userPatch })
-  switchOrganization(orga.id, undefined, false)
+  switchOrganization(orga.id, undefined, undefined, false)
   goToRedirect()
 }, { catch: 'all' })
 

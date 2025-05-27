@@ -173,7 +173,7 @@ const goToRedirect = withUiNotif(async (org: string) => {
   if (mainPublicUrl.host !== new URL(redirect).host) {
     redirect = await $fetch('auth/site_redirect', { method: 'POST', body: { redirect, org } })
   } else {
-    switchOrganization(org, undefined, false)
+    switchOrganization(org, undefined, undefined, false)
   }
   window.location.href = redirect
 })
