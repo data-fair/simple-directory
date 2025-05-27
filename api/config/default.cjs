@@ -378,7 +378,8 @@ module.exports = {
   },
   alwaysAcceptInvitation: false,
   observer: {
-    active: true
+    active: true,
+    orgLevelMetrics: false
   },
   // temporary option to prevent some regression
   depAdminIsOrgAdmin: false,

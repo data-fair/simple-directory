@@ -80,7 +80,7 @@ export class SdMongo {
           { unique: true, collation, name: 'email_1' }
         ],
         logged_1: [ // for metrics
-          { logged: 1 },
+          { logged: -1 },
           { sparse: true }
         ],
         plannedDeletion_1: [

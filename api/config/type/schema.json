@@ -105,6 +105,9 @@
         },
         "port": {
           "type": "number"
+        },
+        "orgLevelMetrics": {
+          "type": "boolean"
         }
       }
     },
