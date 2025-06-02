@@ -292,7 +292,7 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
   if (!reqUser(req)) return res.status(401).send()
   const storage = storages.globalStorage
 
-  const dep = typeof req.query.department === 'string' ? req.query.department : undefined
+  const dep = (req.query.department && typeof req.query.department === 'string') ? req.query.department : undefined
   const filter: FindMembersParams = { ids: [req.params.userId], skip: 0, size: 1 }
   if (dep) filter.departments = [dep]
   const member = (await storage.findMembers(req.params.organizationId, filter)).results[0]
