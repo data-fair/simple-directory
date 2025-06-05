@@ -445,6 +445,10 @@ router.post('/keepalive', async (req, res, next) => {
   const session = reqSessionAuthenticated(req)
   const loggedUser = session.user
   const storage = await storages.getSessionStorage(session)
+
+  // prevent breaking sessions when ldap storage cache is filling up
+  if (storage.initializing) return res.status(204).send()
+
   let user = loggedUser.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.id)
   if (!user) throw httpError(404)
 

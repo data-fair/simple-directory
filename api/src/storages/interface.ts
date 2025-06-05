@@ -48,6 +48,8 @@ export interface SdStorage {
 
   readonly?: boolean
 
+  initializing?: boolean
+
   findUsers (params: FindUsersParams): Promise<{ count: number, results: User[], fromCache?: string }>
   getUser(userId: string): Promise<User | undefined>
   createUser(user: UserWritable, byUser?: { id: string, name: string }, site?: Site): Promise<User>

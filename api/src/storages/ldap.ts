@@ -104,7 +104,7 @@ function buildMappingFn (
 
 export class LdapStorage implements SdStorage {
   readonly?: boolean | undefined
-
+  initializing: boolean = true
   private ldapParams: LdapParams
   private org: Organization | undefined
   private userMapping: ReturnType<typeof buildMappingFn>
@@ -163,6 +163,8 @@ export class LdapStorage implements SdStorage {
       debug('prefill users cache')
       this.getAllUsers().catch(err => {
         console.error('failed to prefill users cache', err)
+      }).finally(() => {
+        this.initializing = false
       })
       if (!this.ldapParams.organizations.staticSingleOrg) {
         debug('prefill orgs cache')
@@ -170,6 +172,8 @@ export class LdapStorage implements SdStorage {
           console.error('failed to prefill orgs cache', err)
         })
       }
+    } else {
+      this.initializing = false
     }
   }
 
