@@ -37,7 +37,7 @@ describe('storage ldap', () => {
       lastName: 'User',
       email: 'test@test.com',
       organizations: [{ id: 'MyOrg', role: 'user', name: 'my org' }]
-    }, { departmentNumber: '/prefix/2/dep1', employeeType: 'administrator' })
+    }, { departmentNumber: '/prefix/2/dep1', employeeType: ['administrator', 'employee'] })
     await storage._createUser({
       id: 'adminorg1',
       firstName: 'Test in admin org',
@@ -106,5 +106,13 @@ describe('storage ldap', () => {
     assert.equal(orgs.count, 3)
     assert.equal(orgs.results[0].id, 'myorg')
     assert.equal(orgs.results[0].name, 'Org overwritten')
+
+    // mode MULTI_ROLES
+    config.multiRoles = true
+    storage.clearCache()
+    const members7 = await storage.findMembers('myorg', { skip: 0, size: 10 })
+    assert.equal(members7.count, 3)
+    assert.ok(members7.results.find(m => m.id === 'test1' && m.role === 'admin'))
+    assert.ok(members7.results.find(m => m.id === 'test1' && m.role === 'user'))
   })
 })

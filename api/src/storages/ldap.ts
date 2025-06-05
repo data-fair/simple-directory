@@ -429,14 +429,15 @@ export class LdapStorage implements SdStorage {
       org = orgCache[orgDC]
     }
 
+    user.organizations = []
     if (org) {
-      let role
+      let roles: string[] = []
       if (this.ldapParams.members.role.attr) {
         const ldapRoles = attrs[this.ldapParams.members.role.attr]
         debug(`try to map role for user ${user.id}`, ldapRoles)
         if (ldapRoles) {
-          role = Object.keys(this.ldapParams.members.role.values ?? {})
-            .find(role => {
+          roles = Object.keys(this.ldapParams.members.role.values ?? {})
+            .filter(role => {
               return !!ldapRoles.find((ldapRole: string) => {
                 if (this.roleCaptureRegex) {
                   const match = ldapRole.match(this.roleCaptureRegex)
@@ -465,14 +466,17 @@ export class LdapStorage implements SdStorage {
         }
       }
 
-      if (!role && !this.ldapParams.members.onlyWithRole) {
-        role = this.ldapParams.members.role.default
+      if (!roles.length && !this.ldapParams.members.onlyWithRole) {
+        roles = [this.ldapParams.members.role.default]
       }
       department = department || org.department
-      if (role) user.organizations = [{ id: org.id, name: org.name, role, department }]
-      else user.organizations = []
-    } else {
-      user.organizations = []
+      if (roles.length) {
+        if (config.multiRoles) {
+          user.organizations = [...new Set(roles)].map(role => ({ id: org.id, name: org.name, role, department }))
+        } else {
+          user.organizations = [{ id: org.id, name: org.name, role: roles[0], department }]
+        }
+      }
     }
 
     let overwrites: MemberOverwrite[] = []
@@ -632,20 +636,19 @@ export class LdapStorage implements SdStorage {
   private _findAllMembers = (orgId: string, users: User[], fetchDate: string) => {
     // if users did not change (same reference from cache), return the cached members
     if (this.membersCache[orgId]?.fromCache === fetchDate) return this.membersCache[orgId].members
-    const members: Member[] = users
-      .filter(user => user.organizations.find(o => o.id === orgId))
-      .map(user => {
-        const userOrga = user.organizations.find(o => o.id === orgId)
-        if (!userOrga) throw new Error('impossible error')
-        return {
+    const members: Member[] = []
+    for (const user of users) {
+      for (const userOrga of user.organizations.filter(o => o.id === orgId)) {
+        members.push({
           id: user.id,
           name: user.name,
           email: user.email,
           role: userOrga.role,
           department: userOrga.department,
           emailConfirmed: true
-        }
-      })
+        })
+      }
+    }
     this.membersCache[orgId] = { members, fromCache: fetchDate }
     return members
   }
@@ -799,18 +802,20 @@ export class LdapStorage implements SdStorage {
   // WARNING: the following is used only in tests as ldap storage is always readonly
   // except for the overwritten properties stored in mongo
 
-  async _createUser (user: Omit<UserWritable, 'password'> & { password?: string }, extraAttrs: Record<string, string> = {}) {
+  async _createUser (user: Omit<UserWritable, 'password'> & { password?: string }, extraAttrs: Record<string, string | string[]> = {}) {
     const entry = this.userMapping.to({ ...user, lastName: user.lastName || 'missing', name: userName(user) })
     if (user.password) entry.userPassword = user.password
     const dn = this.userDN(user)
-    if (user.organizations.length && this.ldapParams.members.role.attr) {
-      const roleValues = this.ldapParams.members.role.values?.[user.organizations[0].role]
-      const roleValue = roleValues?.[0]
-      entry[this.ldapParams.members.role.attr] = roleValue || this.ldapParams.members.role.default
+    if (this.ldapParams.members.role.attr) {
+      for (const userOrg of user.organizations) {
+        const roleValues = this.ldapParams.members.role.values?.[userOrg.role]
+        const roleValue = roleValues?.[0]
+        entry[this.ldapParams.members.role.attr] = entry[this.ldapParams.members.role.attr] ?? []
+        entry[this.ldapParams.members.role.attr].push(roleValue || this.ldapParams.members.role.default)
+      }
     }
 
     Object.assign(entry, extraAttrs)
-
     debug('add user to ldap', dn, entry)
     await this.withClient(async (client) => {
       const add = promisify(client.add).bind(client)
