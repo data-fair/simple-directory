@@ -487,6 +487,7 @@ export class LdapStorage implements SdStorage {
     let overwrites: MemberOverwrite[] = []
     if ((this.ldapParams.overwrite || []).includes('members')) {
       overwrites = await mongo.ldapMembersOverwrite.find({ userId: user.id }).toArray()
+      debug('found overwritten member info in local db', overwrites)
     }
     overwrites = overwrites.concat((this.ldapParams.members.overwrite || []))
     for (const overwrite of overwrites) {
@@ -516,20 +517,37 @@ export class LdapStorage implements SdStorage {
       const overwriteRole = overwrite.role || (this.ldapParams.members.role.default)
       if (!overwrite.orgId) {
         for (const o of user.organizations) {
-          if (overwrite.role) o.role = overwrite.role
-          if (overwrite.department) o.department = overwrite.department
+          if (overwrite.role) {
+            debug('apply overwrite role', o, overwrite.role)
+            o.role = overwrite.role
+          }
+          if (overwrite.department) {
+            debug('apply overwrite department', o, overwrite.department)
+            o.department = overwrite.department
+          }
         }
       } else {
         const userOrg = user.organizations.find(o => o.id === overwrite.orgId)
         if (userOrg) {
-          if (overwrite.role) userOrg.role = overwrite.role
-          if (overwrite.department) userOrg.department = overwrite.department
+          if (overwrite.role) {
+            debug('apply overwrite role', userOrg, overwrite.role)
+            userOrg.role = overwrite.role
+          }
+          if (overwrite.department) {
+            debug('apply overwrite department', userOrg, overwrite.department)
+            userOrg.department = overwrite.department
+          }
         } else {
           const fullO = orgCache[overwrite.orgId] = orgCache[overwrite.orgId] || await this._getOrganization(client, overwrite.orgId)
           if (fullO) {
             const newUserOrg = { id: fullO.id, name: fullO.name, role: overwriteRole, department: overwrite.department }
-            if (overwrite.orgOnly) user.organizations = [newUserOrg]
-            else user.organizations.push(newUserOrg)
+            if (overwrite.orgOnly) {
+              debug('define user organization from overwrite', newUserOrg)
+              user.organizations = [newUserOrg]
+            } else {
+              debug('push user organization from overwrite', newUserOrg)
+              user.organizations.push(newUserOrg)
+            }
           } else {
             debug('unknown organization referenced in members overwrite', overwrite.orgId)
           }
