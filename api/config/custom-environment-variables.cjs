@@ -54,6 +54,7 @@ module.exports = {
       clientOptions: jsonEnv('STORAGE_LDAP_CLIENT_OPTIONS'),
       searchUserDN: 'STORAGE_LDAP_SEARCH_USER_DN',
       searchUserPassword: 'STORAGE_LDAP_SEARCH_USER_PASS',
+      overwrite: jsonEnv('STORAGE_LDAP_OVERWRITE_DB'),
       baseDN: 'STORAGE_LDAP_BASE_DN',
       cacheMS: 'STORAGE_LDAP_CACHE_MS',
       users: {
@@ -103,6 +104,8 @@ module.exports = {
   theme: {
     logo: 'THEME_LOGO',
     favicon: 'THEME_FAVICON',
+    bodyFontFamilyCss: 'THEME_BODY_FONT_FAMILY_CSS',
+    headingFontFamilyCss: 'THEME_HEADING_FONT_FAMILY_CSS',
     colors: {
       background: 'THEME_BACKGROUND',
       'on-background': 'THEME_ON_BACKGROUND',
