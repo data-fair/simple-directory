@@ -27,7 +27,7 @@ async function cleanUser (resource: any): Promise<User> {
     delete resource['2FA'].secret
     delete resource['2FA'].recovery
   }
-  resource.isAdmin = config.admins.includes(resource.email)
+  resource.isAdmin = config.admins.includes(resource.email?.toLowerCase())
   if (resource.onlyCreateInvited) resource.ignorePersonalAccount = true
   if (resource.organizations) {
     for (const org of resource.organizations) {

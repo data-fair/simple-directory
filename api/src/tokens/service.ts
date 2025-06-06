@@ -33,7 +33,7 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site: S
     name: user.name,
     organizations: (user.organizations || []).map(o => ({ ...o }))
   }
-  if (user.isAdmin || config.admins.includes(user.email) || user.id === '_superadmin') {
+  if (user.isAdmin || config.admins.includes(user.email.toLowerCase()) || user.id === '_superadmin') {
     payload.isAdmin = 1
   }
   if (user.defaultOrg) {

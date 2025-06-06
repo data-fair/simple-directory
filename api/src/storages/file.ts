@@ -86,7 +86,7 @@ class FileStorage implements SdStorage {
   cleanUser (user: any): User {
     const res = { ...user, organizations: getUserOrgas(this.organizations, user) }
     delete res.password
-    res.isAdmin = config.admins.includes(res.email)
+    res.isAdmin = config.admins.includes(res.email.toLowerCase())
     if (config.onlyCreateInvited) res.ignorePersonalAccount = true
     return res
   }
