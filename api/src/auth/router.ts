@@ -643,6 +643,15 @@ const oauthLogin: RequestHandler = async (req, res, next) => {
 router.get('/oauth/:oauthId/login', oauthLogin)
 router.get('/oidc/:oauthId/login', oauthLogin)
 
+const getOAuthRelayState = (relayState: string) => {
+  try {
+    return JSON.parse(relayState)
+  } catch (err) {
+    console.error('bad relay state format in oauth callback', relayState)
+    throw httpError(400, 'Bad relay state format in oauth callback')
+  }
+}
+
 const oauthCallback: RequestHandler = async (req, res, next) => {
   const logContext: EventLogContext = { req }
 
@@ -652,7 +661,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     console.error('missing OAuth state')
     throw new Error('Bad OAuth state')
   }
-  const [providerState, loginReferer, redirect, org, dep, invitToken, adminMode] = JSON.parse(req.query.state as string) as OAuthRelayState
+  const [providerState, loginReferer, redirect, org, dep, invitToken, adminMode] = getOAuthRelayState(req.query.state as string) as OAuthRelayState
 
   const returnError = (error: string, errorCode: number) => {
     eventsLog.info('sd.auth.oauth.fail', `a user failed to authenticate with oauth due to ${error}`, logContext)
