@@ -440,17 +440,18 @@ export class LdapStorage implements SdStorage {
         const ldapRoles = attrs[this.ldapParams.members.role.attr]
         debug(`try to map role for user ${user.id}`, ldapRoles)
         if (ldapRoles) {
-          roles = Object.keys(this.ldapParams.members.role.values ?? {})
-            .filter(role => {
-              return !!ldapRoles.find((ldapRole: string) => {
-                if (this.roleCaptureRegex) {
-                  const match = ldapRole.match(this.roleCaptureRegex)
-                  debug('applied role capture regexp', ldapRole, match)
-                  if (match) ldapRole = match[1]
-                }
-                return this.ldapParams.members.role.values?.[role].includes(ldapRole)
-              })
-            })
+          for (let ldapRole of ldapRoles) {
+            if (this.roleCaptureRegex) {
+              const match = ldapRole.match(this.roleCaptureRegex)
+              debug('applied role capture regexp', ldapRole, match)
+              if (match) ldapRole = match[1]
+            }
+            for (const role of Object.keys(this.ldapParams.members.role.values ?? {})) {
+              if (this.ldapParams.members.role.values?.[role].includes(ldapRole)) {
+                roles.push(role)
+              }
+            }
+          }
         }
       }
       let department
