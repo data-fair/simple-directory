@@ -2,7 +2,7 @@ import useragent from 'useragent'
 import debugModule from 'debug'
 import config from '#config'
 import type { Request } from 'express'
-import { session, httpError } from '@data-fair/lib-express'
+import { session, httpError, type OrganizationMembership } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import type { Site, User, Organization, ServerSession, UserWritable } from '#types'
 import storages from '#storages'
@@ -110,14 +110,14 @@ export const authProviderMemberInfo = async (site: Site | undefined, provider: A
 
 export const authProviderLoginCallback = async (
   req: Request,
-  invitToken: string,
+  invitToken: string | undefined,
   authInfo: AuthProviderAuthInfo,
   logContext: EventLogContext,
   provider: AuthProviderCore,
   redirect: string,
-  org: string,
-  dep: string,
-  adminMode: boolean
+  org: string | undefined,
+  dep: string | undefined,
+  adminMode: boolean | undefined
 ): Promise<[string, User]> => {
   const storage = storages.globalStorage
   const site = await reqSite(req)
@@ -234,9 +234,10 @@ export const authProviderLoginCallback = async (
       throw httpError(403, 'adminModeOnly')
     }
   }
-  const linkUrl = await prepareCallbackUrl(req, payload, redirect, (invit && invitOrga)
-    ? { id: invit.id, department: invit.department }
-    : { id: org as string, department: dep as string })
+  let userOrg: Pick<OrganizationMembership, 'id' | 'department'> | undefined
+  if (invit && invitOrga) userOrg = { id: invit.id, department: invit.department }
+  else if (org) userOrg = { id: org, department: dep }
+  const linkUrl = await prepareCallbackUrl(req, payload, redirect, userOrg)
   debugAuthProvider(`Auth provider based authentication of user ${user.name}`)
 
   return [linkUrl.href, user]

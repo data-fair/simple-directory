@@ -4,6 +4,8 @@ import type { OrgInDb, UserInDb } from './storages/mongo.ts'
 
 import mongo from '@data-fair/lib-node/mongo.js'
 import config from './config.ts'
+import { type OAuthRelayState } from './oauth/service.ts'
+import { type Saml2RelayState } from './saml2/service.ts'
 
 const collation = { locale: 'en', strength: 1 }
 
@@ -42,6 +44,14 @@ export class SdMongo {
 
   get oauthTokens () {
     return mongo.db.collection<OAuthToken>('oauth-tokens')
+  }
+
+  get oauthRelayStates () {
+    return mongo.db.collection<OAuthRelayState>('oauth-relay-states')
+  }
+
+  get saml2RelayStates () {
+    return mongo.db.collection<Saml2RelayState>('saml2-relay-states')
   }
 
   get oidcDiscovery () {
@@ -121,6 +131,12 @@ export class SdMongo {
         'oauth-tokens-provider': { 'provider.id': 1 },
         'oauth-tokens-offline': { offlineRefreshToken: 1 },
         'oauth-tokens-sid': { 'token.session_state': 1 }
+      },
+      'oauth-relay-states': {
+        ttl: [{ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 }]
+      },
+      'saml2-relay-states': {
+        ttl: [{ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 }]
       },
       'ldap-members-overwrite': {
         'main-keys': [{ orgId: 1, userId: 1 }, { unique: true }],
