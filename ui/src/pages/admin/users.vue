@@ -136,6 +136,7 @@
             <td>
               <div class="d-flex">
                 <v-btn
+                  v-if="$uiConfig.asAdmin"
                   :title="$t('common.asAdmin')"
                   color="admin"
                   :icon="mdiAccountSwitch"

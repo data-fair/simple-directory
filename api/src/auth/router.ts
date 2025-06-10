@@ -562,6 +562,7 @@ router.delete('/adminmode', async (req, res, next) => {
 
 // create a session as a user but from a super admin session
 router.post('/asadmin', async (req, res, next) => {
+  if (!config.asAdmin) throw httpError(400, 'asAdmin functionality is disabled')
   const logContext: EventLogContext = { req }
   const loggedUser = reqUserAuthenticated(req)
   const session = reqSession(req)

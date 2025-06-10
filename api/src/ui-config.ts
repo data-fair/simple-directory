@@ -35,7 +35,8 @@ export const uiConfig = {
   useEvents: Boolean(config.secretKeys.events && config.privateEventsUrl),
   passwordValidation: config.passwordValidation,
   siteOrgs: config.siteOrgs,
-  siteAdmin: config.siteAdmin
+  siteAdmin: config.siteAdmin,
+  asAdmin: config.asAdmin
 }
 export type UiConfig = typeof uiConfig
 export default uiConfig

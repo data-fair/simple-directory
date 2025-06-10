@@ -543,7 +543,8 @@
     "passwordUpdateInterval": { "$ref": "#/$defs/interval" },
     "passwordValidateOnLogin": { "type": "boolean" },
     "siteOrgs": { "type": "boolean" },
-    "siteAdmin": { "type": "boolean" }
+    "siteAdmin": { "type": "boolean" },
+    "asAdmin": { "type": "boolean" }
   },
   "$defs": {
     "interval": {

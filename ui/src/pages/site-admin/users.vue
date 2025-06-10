@@ -81,7 +81,10 @@
             <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
             <td>{{ props.item.plannedDeletion && $d(new Date(props.item.plannedDeletion)) }}</td>
             <td>
-              <div class="d-flex">
+              <div
+                v-if="$uiConfig.asAdmin"
+                class="d-flex"
+              >
                 <v-btn
                   :title="$t('common.asAdmin')"
                   color="admin"

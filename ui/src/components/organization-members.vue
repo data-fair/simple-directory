@@ -171,7 +171,7 @@
                 @save="(newMember: Member) => saveMember.execute(newMember, member)"
               />
             </v-list-item-action>
-            <v-list-item-action v-if="user.adminMode && !member.orgStorage">
+            <v-list-item-action v-if="user.adminMode && !member.orgStorage && $uiConfig.asAdmin">
               <v-btn
                 :title="$t('common.asAdmin')"
                 :icon="mdiAccountSwitch"
