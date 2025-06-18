@@ -320,5 +320,6 @@ module.exports = {
   passwordValidateOnLogin: 'PASSWORD_VALIDATE_ON_LOGIN',
   siteOrgs: 'SITE_ORGS',
   siteAdmin: 'SITE_ADMIN',
-  multiRoles: 'MULTI_ROLES'
+  multiRoles: 'MULTI_ROLES',
+  asAdmin: 'AS_ADMIN'
 }

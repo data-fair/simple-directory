@@ -201,9 +201,9 @@ const save = async () => {
   patchOrganization.execute(orgId, patch, t('common.modificationOk'))
 }
 const set2FARoles = (roles: string[]) => {
-  if (!fetchOrga.data.value) return
-  fetchOrga.data.value['2FA'] = fetchOrga.data.value['2FA'] ?? {}
-  fetchOrga.data.value['2FA'].roles = roles
+  if (!orga.value) return
+  orga.value['2FA'] = orga.value['2FA'] ?? {}
+  orga.value['2FA'].roles = roles
 }
 </script>
 

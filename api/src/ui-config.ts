@@ -36,7 +36,8 @@ export const uiConfig = {
   passwordValidation: config.passwordValidation,
   siteOrgs: config.siteOrgs,
   siteAdmin: config.siteAdmin,
-  multiRoles: config.multiRoles
+  multiRoles: config.multiRoles,
+  asAdmin: config.asAdmin
 }
 export type UiConfig = typeof uiConfig
 export default uiConfig

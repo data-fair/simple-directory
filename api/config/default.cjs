@@ -397,5 +397,6 @@ module.exports = {
   passwordValidateOnLogin: false,
   siteOrgs: false,
   siteAdmin: false,
-  multiRoles: false
+  multiRoles: false,
+  asAdmin: true
 }

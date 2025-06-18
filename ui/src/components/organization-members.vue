@@ -175,7 +175,7 @@
               />
             </v-list-item-action>
             <v-list-item-action
-              v-if="user.adminMode && !member.orgStorage"
+              v-if="user.adminMode && !member.orgStorage && $uiConfig.asAdmin"
               class="ml-2"
             >
               <v-btn

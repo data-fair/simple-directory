@@ -24,7 +24,17 @@ type Certificates = { signing: { privateKey: string, cert: string }, encrypt: { 
 
 export type PreparedSaml2Provider = SAML2 & { id: string, type: 'saml2', idp: samlify.IdentityProviderInstance }
 
-export type Saml2RelayState = [string, string, string, string, string, string, string]
+export type Saml2RelayState = {
+  _id: string,
+  createdAt: Date,
+  providerId: string,
+  loginReferer?: string,
+  redirect: string,
+  org?: string,
+  dep?: string,
+  invitToken?: string,
+  adminMode?: boolean
+}
 
 // const validator = require('@authenio/samlify-xsd-schema-validator')
 // samlify.setSchemaValidator(validator)

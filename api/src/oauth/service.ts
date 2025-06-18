@@ -44,12 +44,22 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
 
 export type PreparedOAuthProvider = OAuthProvider & {
   state: string
-  authorizationUri (relayState: any, email: string, offlineAccess?: boolean, forceLogin?: boolean): string
+  authorizationUri (relayState: string, email: string, offlineAccess?: boolean, forceLogin?: boolean): string
   getToken (code: string, offlineAccess?: boolean): Promise<any>
   refreshToken (tokenObj: any): Promise<any>
 }
 
-export type OAuthRelayState = [string, string, string, string, string, string, string]
+export type OAuthRelayState = {
+  _id: string,
+  createdAt: Date,
+  providerState: string,
+  loginReferer?: string,
+  redirect: string,
+  org?: string,
+  dep?: string,
+  invitToken?: string,
+  adminMode?: boolean
+}
 
 export const getOAuthProviderById = async (req: Request, id: string): Promise<PreparedOAuthProvider | undefined> => {
   const site = await reqSite(req)
@@ -92,7 +102,7 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
   const callbackUri = p.oidc ? `${publicUrl}/api/auth/oauth-callback` : `${publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
-  const authorizationUri = (relayState: any, email: string, offlineAccess = false, forceLogin = false) => {
+  const authorizationUri = (relayState: string, email: string, offlineAccess = false, forceLogin = false) => {
     let scope = p.scope
     if (offlineAccess) {
       scope += ' offline_access'
@@ -100,7 +110,7 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     const params: Record<string, string> = {
       redirect_uri: callbackUri,
       scope,
-      state: JSON.stringify(relayState),
+      state: relayState,
       display: 'page'
     }
     if (forceLogin) {

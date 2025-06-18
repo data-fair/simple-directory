@@ -1,4 +1,5 @@
 import config, { superadmin } from '#config'
+import mongo from '#mongo'
 import { Router, type RequestHandler } from 'express'
 import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, reqSession, reqSessionAuthenticated } from '@data-fair/lib-express'
 import bodyParser from 'body-parser'
@@ -17,6 +18,7 @@ import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
+import { randomUUID } from 'node:crypto'
 import dayjs from 'dayjs'
 
 const debug = Debug('auth')
@@ -564,6 +566,7 @@ router.delete('/adminmode', async (req, res, next) => {
 
 // create a session as a user but from a super admin session
 router.post('/asadmin', async (req, res, next) => {
+  if (!config.asAdmin) throw httpError(400, 'asAdmin functionality is disabled')
   const logContext: EventLogContext = { req }
   const loggedUser = reqUserAuthenticated(req)
   const session = reqSession(req)
@@ -629,16 +632,19 @@ const oauthLogin: RequestHandler = async (req, res, next) => {
     eventsLog.info('sd.auth.oauth.fail', 'a user tried to login with an unknown oauth provider', logContext)
     return res.redirect(`${reqSiteUrl(req) + '/simple-directory'}/login?error=unknownOAuthProvider`)
   }
-  const relayState: OAuthRelayState = [
-    provider.state,
-    req.headers.referer || '',
-    (req.query.redirect as string || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
-    (req.query.org || '') as string,
-    (req.query.dep || '') as string,
-    (req.query.invit_token || '') as string,
-    (req.query.adminMode || '') as string // TODO: force re-submit password in this case ?
-  ]
-  const authorizationUri = provider.authorizationUri(relayState, req.query.email as string, provider.coreIdProvider, req.query.adminMode === 'true')
+  const relayState: OAuthRelayState = {
+    _id: randomUUID(),
+    createdAt: new Date(),
+    providerState: provider.state,
+    loginReferer: req.headers.referer,
+    redirect: (req.query.redirect as string || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
+    org: req.query.org as string,
+    dep: req.query.dep as string,
+    invitToken: req.query.invit_token as string,
+    adminMode: !!(req.query.adminMode as string) // TODO: force re-submit password in this case ?
+  }
+  await mongo.oauthRelayStates.insertOne(relayState)
+  const authorizationUri = provider.authorizationUri(relayState._id, req.query.email as string, provider.coreIdProvider, relayState.adminMode)
   debugOAuth('login authorizationUri', authorizationUri)
   eventsLog.info('sd.auth.oauth.redirect', 'a user was redirected to a oauth provider', logContext)
   res.redirect(authorizationUri)
@@ -656,8 +662,9 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     console.error('missing OAuth state')
     throw new Error('Bad OAuth state')
   }
-  const [providerState, loginReferer, redirect, org, dep, invitToken, adminMode] = JSON.parse(req.query.state as string) as OAuthRelayState
-
+  const relayState = await mongo.oauthRelayStates.findOne({ _id: req.query.state as string })
+  if (!relayState) return res.status(404).send('Unknown relay state')
+  const { providerState, loginReferer, redirect, org, dep, invitToken, adminMode } = relayState
   const returnError = (error: string, errorCode: number) => {
     eventsLog.info('sd.auth.oauth.fail', `a user failed to authenticate with oauth due to ${error}`, logContext)
     debugOAuth('login return error', error, errorCode)
@@ -690,7 +697,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   debugOAuth('Got user info from oauth', provider.id, authInfo)
 
   try {
-    const [callbackUrl, user] = await authProviderLoginCallback(req, invitToken, authInfo, logContext, provider, redirect, org, dep, !!adminMode)
+    const [callbackUrl, user] = await authProviderLoginCallback(req, invitToken, authInfo, logContext, provider, redirect, org, dep, adminMode)
     if (provider.coreIdProvider) {
       await writeOAuthToken(user, provider, token, offlineRefreshToken)
     }
@@ -738,19 +745,22 @@ router.get('/saml2/:providerId/login', async (req, res) => {
   }
 
   // relay_state is used to remember some information about the login attempt
-  const relayState: Saml2RelayState = [
-    req.headers.referer || '',
-    (req.query.redirect as string || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
-    (req.query.org || '') as string,
-    (req.query.dep || '') as string,
-    (req.query.invit_token || '') as string,
-    (req.query.adminMode || '') as string, // TODO: force re-submit password in this case ?
-    req.params.providerId
-  ]
+  const relayState: Saml2RelayState = {
+    _id: randomUUID(),
+    createdAt: new Date(),
+    loginReferer: req.headers.referer,
+    redirect: (req.query.redirect as string || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
+    org: req.query.org as string,
+    dep: req.query.dep as string,
+    invitToken: (req.query.invit_token || '') as string,
+    adminMode: !!(req.query.adminMode as string), // TODO: force re-submit password in this case ?
+    providerId: req.params.providerId
+  }
+  await mongo.saml2RelayStates.insertOne(relayState)
   // relay state should be a request level parameter but it is not in current version of samlify
   // cf https://github.com/tngan/samlify/issues/163
   const sp = await saml2ServiceProvider(await reqSite(req))
-  sp.entitySetting.relayState = JSON.stringify(relayState)
+  sp.entitySetting.relayState = relayState._id
 
   // TODO: apply nameid parameter ? { nameid: req.query.email }
   const { context: loginRequestURL } = sp.createLoginRequest(provider.idp, 'redirect')
@@ -767,7 +777,9 @@ router.post('/saml2-assert', async (req, res) => {
   const logContext: EventLogContext = { req }
 
   if (!req.body.RelayState) throw httpError(400, 'missing body.RelayState')
-  const [loginReferer, redirect, org, dep, invitToken, adminMode, providerId] = JSON.parse(req.body.RelayState as string) as Saml2RelayState
+  const relayState = await mongo.saml2RelayStates.findOne({ _id: req.body.RelayState })
+  if (!relayState) return res.status(404).send('unknown relay state')
+  const { loginReferer, redirect, org, dep, invitToken, adminMode, providerId } = relayState
 
   const provider = await getSamlProviderById(req, providerId)
   if (!provider) return res.status(404).send('unknown saml2 provider ' + providerId)
