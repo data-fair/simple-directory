@@ -34,13 +34,21 @@ router.post('', async (req, res, next) => {
   let invitSite = await reqSite(req)
   let invitPublicBaseUrl = reqSiteUrl(req) + '/simple-directory'
   if (invitation.redirect) {
-    const host = new URL(invitation.redirect).host
     invitSite = (await getSiteByUrl(invitation.redirect)) ?? undefined
-    if (invitSite) {
-      const url = new URL(config.publicUrl)
-      url.host = host
-      invitPublicBaseUrl = url.protocol + '//' + invitSite.host + (invitSite.path ?? '') + '/simple-directory'
-    }
+  }
+
+  if (invitSite?.authMode === 'onlyBackOffice') {
+    invitSite = undefined
+  }
+
+  if (invitSite?.authMode === 'onlyOtherSite' && invitSite.authOnlyOtherSite) {
+    // invite on the site that serves as auth source
+    invitSite = await getSiteByUrl('https://' + invitSite.authOnlyOtherSite)
+  }
+
+  if (invitSite) {
+    const url = new URL(config.publicUrl)
+    invitPublicBaseUrl = url.protocol + '//' + invitSite.host + (invitSite.path ?? '') + '/simple-directory'
   }
 
   const orga = await storage.getOrganization(invitation.id)
@@ -100,7 +108,7 @@ router.post('', async (req, res, next) => {
       const newUser = await storage.createUser(newUserDraft, user)
       await storage.addMember(orga, newUser, invitation.role, invitation.department)
       await setNbMembersLimit(orga.id)
-      const linkUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
+      const linkUrl = new URL(`${invitPublicBaseUrl}/login`)
       linkUrl.searchParams.set('step', 'createUser')
       linkUrl.searchParams.set('invit_token', token)
       linkUrl.searchParams.set('redirect', reboundRedirect.href)

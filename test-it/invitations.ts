@@ -248,7 +248,6 @@ describe('invitations', () => {
       { _id: 'test', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:5989', theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
     await adminAx.patch('/api/sites/test', { authMode: 'ssoBackOffice' })
-
     const mailPromise = waitForMail()
     await ax.post('/api/invitations', {
       id: org.id,
@@ -282,5 +281,57 @@ describe('invitations', () => {
     assert.ok(newMember)
     assert.equal(newMember.role, 'user')
     assert.equal(newMember.host, '127.0.0.1:5989')
+  })
+
+  it('should invite an existing user on another site in onlyBackOffice mode', async () => {
+    const config = (await import('../api/src/config.ts')).default
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const { ax } = await createUser('test-invit13@test.com')
+    const anonymousAx = await axios()
+
+    const org = (await ax.post('/api/organizations', { name: 'test' })).data
+    ax.setOrg(org.id)
+
+    await anonymousAx.post('/api/sites',
+      { _id: 'test', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:5989', theme: { primaryColor: '#FF00FF' } },
+      { params: { key: config.secretKeys.sites } });
+    (await import('../api/src/sites/service.ts')).getSiteByHost.clear()
+    await adminAx.patch('/api/sites/test', { authMode: 'onlyBackOffice' })
+    const mailPromise = waitForMail()
+    await ax.post('/api/invitations', {
+      id: org.id,
+      name: org.name,
+      email: 'test-invit14@test.com',
+      role: 'user',
+      redirect: 'http://127.0.0.1:5989'
+    })
+    const mail = await mailPromise
+    assert.ok(mail.link.startsWith('http://localhost:5689/simple-directory/api/invitations/_accept'))
+
+    // when clicking on the link the person is redirected to a page to create their user
+    // the invitation token is forwarded to be re-sent with the user creation requests
+    let redirect
+    await assert.rejects(anonymousAx.get(mail.link), (res: any) => {
+      assert.equal(res.status, 302)
+      redirect = res.headers.location
+      assert.ok(redirect.startsWith('http://localhost:5689/simple-directory/login?step=createUser&invit_token='))
+      const redirectUrl = new URL(redirect)
+      const reboundRedirect = redirectUrl.searchParams.get('redirect')
+      assert.ok(reboundRedirect?.startsWith('http://127.0.0.1:5989/'))
+      return true
+    })
+
+    const invitToken = new URL(mail.link).searchParams.get('invit_token')
+
+    // finalize user creation and invitation
+    await anonymousAx.post('http://localhost:5689/simple-directory/api/users', { email: 'test-invit14@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
+
+    // after accepting the user is a member
+    const members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 2)
+    const newMember = members.find(m => m.email === 'test-invit14@test.com')
+    assert.ok(newMember)
+    assert.equal(newMember.role, 'user')
+    assert.equal(newMember.host, undefined)
   })
 })
