@@ -31,24 +31,30 @@ router.post('', async (req, res, next) => {
   const storage = storages.globalStorage
   const invitation = body
 
+  debug('create invitation route', reqSiteUrl(req) + req.originalUrl)
+
   let invitSite = await reqSite(req)
   let invitPublicBaseUrl = reqSiteUrl(req) + '/simple-directory'
   if (invitation.redirect) {
     invitSite = (await getSiteByUrl(invitation.redirect)) ?? undefined
+    debug('site referenced in invitation', invitation.redirect, invitSite)
   }
 
   if (invitSite?.authMode === 'onlyBackOffice') {
+    debug('invit site is in onlyBackOffice, ignore it in invitation process and redirect to it at the end')
     invitSite = undefined
   }
 
   if (invitSite?.authMode === 'onlyOtherSite' && invitSite.authOnlyOtherSite) {
     // invite on the site that serves as auth source
     invitSite = await getSiteByUrl('https://' + invitSite.authOnlyOtherSite)
+    debug('invit site in in onlyOtherSite mode, replace it with target site in invitation process and redirect to it at then end', invitSite)
   }
 
   if (invitSite) {
     const url = new URL(config.publicUrl)
     invitPublicBaseUrl = url.protocol + '//' + invitSite.host + (invitSite.path ?? '') + '/simple-directory'
+    debug('invit base target url', invitPublicBaseUrl)
   }
 
   const orga = await storage.getOrganization(invitation.id)
@@ -76,6 +82,7 @@ router.post('', async (req, res, next) => {
   const token = await signToken(shortenInvit(invitation), config.jwtDurations.invitationToken)
 
   if (config.alwaysAcceptInvitation) {
+    debug('in alwaysAcceptInvitation mode')
     eventsLog.info('sd.invite.user-creation', `invitation sent in always accept mode immediately creates a user or adds it as member ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
     // in 'always accept invitation' mode the user is not sent an email to accept the invitation
     // he is simple added to the list of members and created if needed
@@ -143,6 +150,7 @@ router.post('', async (req, res, next) => {
       }
     }
   } else {
+    debug('not in alwaysAcceptInvitation mode')
     const linkUrl = new URL(invitPublicBaseUrl + '/api/invitations/_accept')
     debug('prepare accept link', linkUrl.href)
     linkUrl.searchParams.set('invit_token', token)
@@ -175,6 +183,8 @@ router.get('/_accept', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   if (typeof req.query.invit_token !== 'string') throw httpError(400)
 
+  debug('accept invitation route', reqSiteUrl(req) + req.originalUrl)
+
   let invit: Invitation
   let verified
   const errorUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
@@ -195,7 +205,7 @@ router.get('/_accept', async (req, res, next) => {
     invit = unshortenInvit(decodeToken(req.query.invit_token) as ShortenedInvitation)
     verified = false
   }
-  debug('accept invitation', invit, verified, reqSiteUrl(req))
+  debug('accept invitation', invit, verified)
   const storage = storages.globalStorage
 
   const existingUser = await storage.getUserByEmail(invit.email, await reqSite(req))
