@@ -49,6 +49,11 @@ router.post('', async (req, res, next) => {
     // invite on the site that serves as auth source
     invitSite = await getSiteByUrl('https://' + invitSite.authOnlyOtherSite)
     debug('invit site in in onlyOtherSite mode, replace it with target site in invitation process and redirect to it at then end', invitSite)
+    if (invitSite?.authMode === 'onlyBackOffice') {
+      debug('rebound invit site is in onlyBackOffice, ignore it in invitation process')
+      invitSite = undefined
+    }
+    if (invitSite?.authMode === 'onlyOtherSite' && invitSite.authOnlyOtherSite) return res.status(400).send(`Impossible d'utiliser le site ${invitSite.host} comme référence pour l'authentification, il est lui aussi configuré comme "uniquement sur un autre de vos sites".`)
   }
 
   if (invitSite) {
