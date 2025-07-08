@@ -144,12 +144,14 @@ router.post('', async (req, res, next) => {
     }
   } else {
     const linkUrl = new URL(invitPublicBaseUrl + '/api/invitations/_accept')
+    debug('prepare accept link', linkUrl.href)
     linkUrl.searchParams.set('invit_token', token)
     const params = {
       link: linkUrl.href,
       organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '')
     }
     if (!query.skip_mail) {
+      debug('send invitation email', body.email, params)
       await sendMailI18n('invitation', reqI18n(req).messages, body.email, params)
       eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
     }
@@ -193,10 +195,11 @@ router.get('/_accept', async (req, res, next) => {
     invit = unshortenInvit(decodeToken(req.query.invit_token) as ShortenedInvitation)
     verified = false
   }
-  debug('accept invitation', invit, verified)
+  debug('accept invitation', invit, verified, reqSiteUrl(req))
   const storage = storages.globalStorage
 
   const existingUser = await storage.getUserByEmail(invit.email, await reqSite(req))
+  debug('found existing user on site ?', existingUser)
   logContext.user = existingUser
   if (!existingUser && storage.readonly) {
     errorUrl.searchParams.set('error', 'userUnknown')
@@ -211,9 +214,6 @@ router.get('/_accept', async (req, res, next) => {
   logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invit.department }
 
   let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${reqSiteUrl(req) + '/simple-directory'}/invitation`)
-  redirectUrl.searchParams.set('email', invit.email)
-  redirectUrl.searchParams.set('id_token_org', invit.id)
-  if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
 
   // case where the invitation was already accepted, but we still want the user to proceed
   if (existingUser && existingUser.organizations && existingUser.organizations.find(o => o.id === invit.id && (o.department || null) === (invit.department || null))) {
@@ -230,23 +230,24 @@ router.get('/_accept', async (req, res, next) => {
       if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
       redirectUrl.searchParams.set('action_token', token)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
-      debug('redirect to changePassword step', redirectUrl.href)
+      debug('redirect existing user/member to changePassword step', redirectUrl.href)
       return res.redirect(redirectUrl.href)
     }
 
     if (!loggedUser || loggedUser.email !== invit.email) {
       const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
+      redirectUrl = new URL(`${reqSiteUrl(req)}/simple-directory/login`)
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
       if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
-      debug('redirect to login', redirectUrl.href)
+      debug('redirect existing user/member to login', redirectUrl.href)
       return res.redirect(redirectUrl.href)
     }
     return res.redirect(redirectUrl.href)
   }
   if (!verified) {
+    debug('reject invitation where token was expired')
     errorUrl.searchParams.set('error', 'expiredInvitationToken')
     return res.redirect(errorUrl.href)
   }
@@ -254,16 +255,17 @@ router.get('/_accept', async (req, res, next) => {
   const limits = await getOrgLimits(orga)
   if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
     errorUrl.searchParams.set('error', 'maxNbMembers')
+    debug('reject invitation because of nb members limits')
     return res.redirect(errorUrl.href)
   }
 
   if (!existingUser) {
     const reboundRedirect = redirectUrl.href
-    redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
+    redirectUrl = new URL(`${reqSiteUrl(req)}/simple-directory/login`)
     redirectUrl.searchParams.set('step', 'createUser')
     redirectUrl.searchParams.set('invit_token', req.query.invit_token)
     redirectUrl.searchParams.set('redirect', reboundRedirect)
-    debug('redirect to createUser step', redirectUrl.href)
+    debug('redirect non-existing to createUser step', redirectUrl.href)
     return res.redirect(redirectUrl.href)
   }
 
@@ -290,5 +292,19 @@ router.get('/_accept', async (req, res, next) => {
 
   await setNbMembersLimit(orga.id)
 
+  if (!loggedUser || loggedUser.email !== invit.email) {
+    const reboundRedirect = redirectUrl.href
+    redirectUrl = new URL(`${reqSiteUrl(req)}/simple-directory/login`)
+    redirectUrl.searchParams.set('email', invit.email)
+    redirectUrl.searchParams.set('id_token_org', invit.id)
+    if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
+    redirectUrl.searchParams.set('redirect', reboundRedirect)
+    debug('redirect to login', redirectUrl.href)
+    return res.redirect(redirectUrl.href)
+  }
+
+  redirectUrl.searchParams.set('email', invit.email)
+  redirectUrl.searchParams.set('id_token_org', invit.id)
+  if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
   res.redirect(redirectUrl.href)
 })

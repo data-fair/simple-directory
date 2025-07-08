@@ -70,13 +70,15 @@ describe('invitations', () => {
     const mail = await mailPromise
     assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
-    // when clicking on the link the person is redirected to a page to create their user
-    // the invitation token is forwarded to be re-sent with the user creation requests
+    // when clicking on the link the person is redirected to a page to login
     let redirect
     await assert.rejects(anonymousAx.get(mail.link), (res: any) => {
       assert.equal(res.status, 302)
       redirect = res.headers.location
-      assert.ok(redirect.startsWith(config.publicUrl + '/invitation'))
+      assert.ok(redirect.startsWith(config.publicUrl + '/login?email=test-invit4'))
+      const redirectUrl = new URL(redirect)
+      const reboundRedirect = redirectUrl.searchParams.get('redirect')
+      assert.equal(reboundRedirect, config.publicUrl + '/invitation')
       return true
     })
 
@@ -283,7 +285,7 @@ describe('invitations', () => {
     assert.equal(newMember.host, '127.0.0.1:5989')
   })
 
-  it('should invite an existing user on another site in onlyBackOffice mode', async () => {
+  it('should invite a user on another site in onlyBackOffice mode', async () => {
     const config = (await import('../api/src/config.ts')).default
     const { ax: adminAx } = await createUser('admin@test.com', true)
     const { ax } = await createUser('test-invit13@test.com')
@@ -333,5 +335,40 @@ describe('invitations', () => {
     assert.ok(newMember)
     assert.equal(newMember.role, 'user')
     assert.equal(newMember.host, undefined)
+
+    // invite same user in another org
+    const org2 = (await ax.post('/api/organizations', { name: 'test2' })).data
+    ax.setOrg(org2.id)
+
+    const mailPromise2 = waitForMail()
+    await ax.post('/api/invitations', {
+      id: org2.id,
+      name: org2.name,
+      email: 'test-invit14@test.com',
+      role: 'contrib',
+      redirect: 'http://127.0.0.1:5989'
+    })
+    const mail2 = await mailPromise2
+    assert.ok(mail2.link.startsWith('http://localhost:5689/simple-directory/api/invitations/_accept'))
+
+    // when clicking on the link the person is redirected to a page to accept the invitation (not create the user as it already exists)
+    let redirect2
+    await assert.rejects(anonymousAx.get(mail2.link), (res: any) => {
+      assert.equal(res.status, 302)
+      redirect2 = res.headers.location
+      assert.ok(redirect2.startsWith('http://localhost:5689/simple-directory/login?email=test-invit14'))
+      const redirectUrl = new URL(redirect2)
+      const reboundRedirect = redirectUrl.searchParams.get('redirect')
+      assert.ok(reboundRedirect?.startsWith('http://127.0.0.1:5989/'))
+      return true
+    })
+
+    // after accepting the user is a member in both orgs
+    const members2 = (await ax.get(`/api/organizations/${org2.id}/members`)).data.results
+    assert.equal(members2.length, 2)
+    const newMember2 = members2.find(m => m.email === 'test-invit14@test.com')
+    assert.ok(newMember2)
+    assert.equal(newMember2.role, 'contrib')
+    assert.equal(newMember2.host, undefined)
   })
 })
