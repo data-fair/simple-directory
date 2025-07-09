@@ -278,10 +278,12 @@ router.get('/:organizationId/members', async (req, res, next) => {
 
   if (req.query.format === 'csv') {
     res.setHeader('content-disposition', 'attachment; filename="members.csv"')
-    // add BOM for excel, cf https://stackoverflow.com/a/17879474
-    const csv = '\ufeff' + csvStringify(members.results, {
+    const csv = csvStringify(members.results, {
       header: true,
-      columns: ['name', 'email', 'role', 'department', 'departmentName']
+      columns: ['name', 'email', 'role', 'department', 'departmentName'],
+      // for better excel support
+      bom: true,
+      delimiter: ';'
     })
     res.send(csv)
   } else {
