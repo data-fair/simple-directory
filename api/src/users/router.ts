@@ -102,7 +102,7 @@ router.post('', async (req, res, next) => {
   }
   const site = await reqSite(req)
   if (site) {
-    if (['onlyBackOffice', 'onlyOtherSites', undefined].includes(site.authMode)) {
+    if (['onlyBackOffice', 'onlyOtherSite', undefined].includes(site.authMode)) {
       throw httpError(400, 'Cannot create a user on a secondary site')
     }
     newUser.host = site.host
