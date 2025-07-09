@@ -103,7 +103,7 @@ module.exports = {
     sites: 'secret-sites'
   },
   perOrgStorageTypes: ['ldap'],
-  cipherPassword: 'dev',
+  cipherPassword: 'SiK7LwFcuYnktJuxcNaF/Q==',
   privateEventsUrl: 'http://localhost:8088',
   plannedDeletionDelay: 1,
   cleanup: {
