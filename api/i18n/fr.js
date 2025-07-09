@@ -432,6 +432,8 @@ N'hésitez pas à nous contacter à {contact}.
     sentInvitation: 'Un email a été envoyé à {email} avec une invitation à rejoindre l\'organisation {orgName}.',
     acceptedInvitationTopic: 'une invitation est acceptée',
     acceptedInvitation: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.',
+    userCreated: 'L\'utilisateur {name} ({email}) s\'est enregistré sur le site {host}.',
+    userCreatedOrg: 'L\'utilisateur {name} ({email}) s\'est enregistré sur le site {host} dans l\'organisation {orgName}.',
     sentPartnerInvitationTopic: 'une invitation de partenaire est envoyée',
     sentPartnerInvitation: 'Un email a été envoyé à {email} avec une invitation pour l\'organisation {partnerName} à rejoindre l\'organisation {orgName} en tant que partenaire.',
     acceptedPartnerInvitationTopic: 'une invitation de partenaire est acceptée',
