@@ -40,7 +40,7 @@ router.post('', async (req, res, next) => {
     debug('site referenced in invitation', invitation.redirect, invitSite)
   }
 
-  if (invitSite?.authMode === 'onlyBackOffice') {
+  if (invitSite?.authMode === 'onlyBackOffice' || !invitSite?.authMode) {
     debug('invit site is in onlyBackOffice, ignore it in invitation process and redirect to it at the end')
     invitSite = undefined
   }
@@ -49,7 +49,7 @@ router.post('', async (req, res, next) => {
     // invite on the site that serves as auth source
     invitSite = await getSiteByUrl('https://' + invitSite.authOnlyOtherSite)
     debug('invit site in in onlyOtherSite mode, replace it with target site in invitation process and redirect to it at then end', invitSite)
-    if (invitSite?.authMode === 'onlyBackOffice') {
+    if (invitSite?.authMode === 'onlyBackOffice' || !invitSite?.authMode) {
       debug('rebound invit site is in onlyBackOffice, ignore it in invitation process')
       invitSite = undefined
     }
