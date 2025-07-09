@@ -157,6 +157,15 @@ router.post('', async (req, res, next) => {
   const linkSite = await getRedirectSite(req, link)
   const createdUser = await storage.createUser(newUser, undefined, linkSite)
   eventsLog.info('sd.user.create', 'user was created', logContext)
+  if (site) {
+    eventsQueue?.pushEvent({
+      sender: { ...site.owner, role: 'admin' },
+      topic: { key: 'simple-directory:user-created:' + site._id },
+      title: (invit && !config.alwaysAcceptInvitation && orga)
+        ? __all('notifications.userCreatedOrg', { host: site.host, name: createdUser.name, email: createdUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
+        : __all('notifications.userCreated', { host: site.host, name: createdUser.name, email: createdUser.email })
+    })
+  }
 
   if (invit && !config.alwaysAcceptInvitation && orga) {
     const limits = await getOrgLimits(orga)
