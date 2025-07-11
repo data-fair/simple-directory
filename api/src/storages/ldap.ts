@@ -13,6 +13,7 @@ import type { UserRef } from '@data-fair/lib-express'
 import type { TwoFA } from '#services'
 import userName from '../utils/user-name.ts'
 import slugify from 'slugify'
+import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 
 const debug = Debug('ldap')
 
@@ -721,7 +722,7 @@ export class LdapStorage implements SdStorage {
     )
   }
 
-  async patchMember (orgId: string, userId: string, department = null, patch: any) {
+  async patchMember (orgId: string, userId: string, department = null, role = null, patch: PatchMemberBody) {
     if (!(this.ldapParams.overwrite || []).includes('members')) throw new Error('ldap members overwrite not supported')
     await mongo.ldapMembersOverwrite.replaceOne(
       { orgId, userId },
