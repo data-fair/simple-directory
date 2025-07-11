@@ -13,7 +13,7 @@ import type { UserRef } from '@data-fair/lib-express'
 import type { TwoFA } from '#services'
 import userName from '../utils/user-name.ts'
 import slugify from 'slugify'
-import { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
+import { type PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 
 const debug = Debug('ldap')
 
