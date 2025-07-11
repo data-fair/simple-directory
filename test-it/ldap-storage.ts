@@ -114,5 +114,12 @@ describe('storage ldap', () => {
     assert.equal(members7.count, 3)
     assert.ok(members7.results.find(m => m.id === 'test1' && m.role === 'admin'))
     assert.ok(members7.results.find(m => m.id === 'test1' && m.role === 'user'))
+
+    // role overwritten in db
+    config.multiRoles = false
+    storage.clearCache()
+    await storage.patchMember('myorg', 'test1', null, null, { role: 'contrib' })
+    const members8 = await storage.findMembers('myorg', { skip: 0, size: 10 })
+    assert.equal(members8.results[1].role, 'contrib')
   })
 })

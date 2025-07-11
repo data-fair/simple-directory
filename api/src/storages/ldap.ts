@@ -492,7 +492,9 @@ export class LdapStorage implements SdStorage {
     }
     overwrites = overwrites.concat((this.ldapParams.members.overwrite || []))
     for (const overwrite of overwrites) {
-      if (overwrite.email) {
+      if (overwrite.userId) {
+        if (overwrite.userId !== user.id) continue
+      } else if (overwrite.email) {
         if (overwrite.email?.toLowerCase() !== user.email?.toLowerCase()) continue
       } else if (overwrite.matchAttrs && overwrite.matchAttrs.length) {
         let match = true

@@ -25,6 +25,8 @@ export const clean = async (options?: { ldapConfig?: any }) => {
   await mongo.oauthTokens.deleteMany()
   await mongo.ldapUserSessions.deleteMany()
   await mongo.fileUserSessions.deleteMany()
+  await mongo.ldapMembersOverwrite.deleteMany()
+  await mongo.ldapOrganizationsOverwrite.deleteMany()
   for (const passwordList of await mongo.passwordLists.find().toArray()) {
     try {
       await mongo.db.collection('password-list-' + passwordList._id).drop()
