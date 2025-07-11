@@ -367,7 +367,7 @@ export class LdapStorage implements SdStorage {
 
     debug(`search results
   - nb results: ${results.length}
-  - first result: `, results[0])
+  - first result: `, results[0]?.attrs, results[0]?.item)
     return {
       count: results.length,
       fullResults: results as { entry: ldap.SearchEntry, attrs: Record<string, any>, item: T }[],
