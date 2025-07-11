@@ -255,6 +255,7 @@ router.get('/:organizationId/members', async (req, res, next) => {
   else if (typeof req.query.id === 'string') params.ids = req.query.id.split(',')
   if (typeof req.query.role === 'string') params.roles = req.query.role.split(',')
   if (typeof req.query.department === 'string') params.departments = req.query.department.split(',')
+  if (typeof req.query.email === 'string') params.emails = req.query.email.split(',')
   if (typeof req.query.email_confirmed === 'string') params.emailConfirmed = req.query.email_confirmed === 'true'
   const members: { count: number, results: Member[], fromCache?: string } = { count: 0, results: [] }
   for (const storage of orgStorages) {

@@ -222,5 +222,15 @@ describe('organizations api', () => {
     assert.equal(emails.length, 1)
     assert.equal(emails[0].to.length, 1)
     assert.ok(emails[0].to.find(t => t.address === 'admin1dep1@test3.com'))
+
+    const membersEmail1 = (await ax.get(`/api/organizations/${org.id}/members`, {
+      params: { email: 'owner@test3.com' }
+    })).data.results
+    assert.equal(membersEmail1.length, 1)
+
+    const membersEmail2 = (await ax.get(`/api/organizations/${org.id}/members`, {
+      params: { email: 'owner@test3.com,admin1@test3.com' }
+    })).data.results
+    assert.equal(membersEmail2.length, 2)
   })
 })
