@@ -232,5 +232,15 @@ describe('organizations api', () => {
       params: { email: 'owner@test3.com,admin1@test3.com' }
     })).data.results
     assert.equal(membersEmail2.length, 2)
+
+    const memberEmails3Insensitive = (await ax.get(`/api/organizations/${org.id}/members`, {
+      params: { email: 'Owner@Test3.com,admin1@' }
+    })).data.results
+    assert.equal(memberEmails3Insensitive.length, 1)
+
+    const memberEmails3Insensitive2 = (await ax.get(`/api/organizations/${org.id}/members`, {
+      params: { email: 'Owner@Test3.com,admin1@test3.COM' }
+    })).data.results
+    assert.equal(memberEmails3Insensitive2.length, 2)
   })
 })

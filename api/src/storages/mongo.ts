@@ -230,7 +230,7 @@ class MongodbStorage implements SdStorage {
       filter.organizations.$elemMatch.$or = depOr
     }
     if (params.emails && params.emails.length) {
-      filter.email = { $in: params.emails }
+      filter.email = { $in: params.emails.map(email => new RegExp(`^${escapeRegExp(email)}$`, 'i')) }
     }
     if ('emailConfirmed' in params) {
       filter.emailConfirmed = params.emailConfirmed
