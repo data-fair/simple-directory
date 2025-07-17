@@ -12,6 +12,7 @@ export type FindMembersParams = {
   size: number,
   skip: number,
   sort?: any,
+  emails?: string[],
   emailConfirmed?: boolean
 }
 

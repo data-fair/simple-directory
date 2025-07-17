@@ -352,7 +352,9 @@ Feel free to contact us at {contact}.
     sentInvitationTopic: 'an invitation is sent',
     sentInvitation: 'An email was sent to {email} with an invitation to join the organization {orgName}.',
     acceptedInvitationTopic: 'an invitation is accepted',
-    acceptedInvitation: 'The user {name} ({email}) has joined the organization {orgName}.'
+    acceptedInvitation: 'The user {name} ({email}) has joined the organization {orgName}.',
+    userCreated: 'The user {name} ({email}) has registered on the site {host}.',
+    userCreatedOrg: 'The user {name} ({email}) has registered on the site {host} in the organization {orgName}.'
   },
   colors: {
     theme: {

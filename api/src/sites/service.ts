@@ -44,6 +44,7 @@ export const getRedirectSite = async (req: Request, redirect: string) => {
     // special case of double redirect from org site to another then to back-office
     const otherSite = await getSiteByUrl('https://' + redirectSite.authOnlyOtherSite)
     debugRedirectSite('intermediate site in onlyOtherSite mode', otherSite)
+    // TODO: onlyBackOffice should not be supported, it is a meaningless configuration, but it might exist in prod and we want to prevent regressions
     if (
       otherSite &&
       otherSite.owner.type === redirectSite.owner.type && otherSite.owner.id === redirectSite.owner.id &&

@@ -77,7 +77,7 @@
         <v-checkbox
           v-for="userOrg in otherUserOrgs"
           :key="userOrg.id"
-          :value="!!(selectedUserOrg && selectedUserOrg.id === userOrg.id)"
+          :model-value="!!(selectedUserOrg && selectedUserOrg.id === userOrg.id)"
           color="primary"
           :label="userOrg.name"
           hide-details

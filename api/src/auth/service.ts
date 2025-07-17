@@ -176,7 +176,7 @@ export const authProviderLoginCallback = async (
       organizations: []
     }
     if (site) {
-      if (['onlyBackOffice', 'onlyOtherSites', undefined].includes(site.authMode)) {
+      if (['onlyBackOffice', 'onlyOtherSite', undefined].includes(site.authMode)) {
         throw httpError(400, 'Cannot create a user on a secondary site')
       }
       newUser.host = site.host

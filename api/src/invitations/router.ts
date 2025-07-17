@@ -31,16 +31,35 @@ router.post('', async (req, res, next) => {
   const storage = storages.globalStorage
   const invitation = body
 
+  debug('create invitation route', reqSiteUrl(req) + req.originalUrl)
+
   let invitSite = await reqSite(req)
   let invitPublicBaseUrl = reqSiteUrl(req) + '/simple-directory'
   if (invitation.redirect) {
-    const host = new URL(invitation.redirect).host
     invitSite = (await getSiteByUrl(invitation.redirect)) ?? undefined
-    if (invitSite) {
-      const url = new URL(config.publicUrl)
-      url.host = host
-      invitPublicBaseUrl = url.protocol + '//' + invitSite.host + (invitSite.path ?? '') + '/simple-directory'
+    debug('site referenced in invitation', invitation.redirect, invitSite)
+  }
+
+  if (invitSite?.authMode === 'onlyBackOffice' || !invitSite?.authMode) {
+    debug('invit site is in onlyBackOffice, ignore it in invitation process and redirect to it at the end')
+    invitSite = undefined
+  }
+
+  if (invitSite?.authMode === 'onlyOtherSite' && invitSite.authOnlyOtherSite) {
+    // invite on the site that serves as auth source
+    invitSite = await getSiteByUrl('https://' + invitSite.authOnlyOtherSite)
+    debug('invit site in in onlyOtherSite mode, replace it with target site in invitation process and redirect to it at then end', invitSite)
+    if (invitSite?.authMode === 'onlyBackOffice' || !invitSite?.authMode) {
+      debug('rebound invit site is in onlyBackOffice, ignore it in invitation process')
+      invitSite = undefined
     }
+    if (invitSite?.authMode === 'onlyOtherSite' && invitSite.authOnlyOtherSite) return res.status(400).send(`Impossible d'utiliser le site ${invitSite.host} comme référence pour l'authentification, il est lui aussi configuré comme "uniquement sur un autre de vos sites".`)
+  }
+
+  if (invitSite) {
+    const url = new URL(config.publicUrl)
+    invitPublicBaseUrl = url.protocol + '//' + invitSite.host + (invitSite.path ?? '') + '/simple-directory'
+    debug('invit base target url', invitPublicBaseUrl)
   }
 
   const orga = await storage.getOrganization(invitation.id)
@@ -68,6 +87,7 @@ router.post('', async (req, res, next) => {
   const token = await signToken(shortenInvit(invitation), config.jwtDurations.invitationToken)
 
   if (config.alwaysAcceptInvitation) {
+    debug('in alwaysAcceptInvitation mode')
     eventsLog.info('sd.invite.user-creation', `invitation sent in always accept mode immediately creates a user or adds it as member ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
     // in 'always accept invitation' mode the user is not sent an email to accept the invitation
     // he is simple added to the list of members and created if needed
@@ -100,7 +120,7 @@ router.post('', async (req, res, next) => {
       const newUser = await storage.createUser(newUserDraft, user)
       await storage.addMember(orga, newUser, invitation.role, invitation.department)
       await setNbMembersLimit(orga.id)
-      const linkUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
+      const linkUrl = new URL(`${invitPublicBaseUrl}/login`)
       linkUrl.searchParams.set('step', 'createUser')
       linkUrl.searchParams.set('invit_token', token)
       linkUrl.searchParams.set('redirect', reboundRedirect.href)
@@ -135,13 +155,16 @@ router.post('', async (req, res, next) => {
       }
     }
   } else {
+    debug('not in alwaysAcceptInvitation mode')
     const linkUrl = new URL(invitPublicBaseUrl + '/api/invitations/_accept')
+    debug('prepare accept link', linkUrl.href)
     linkUrl.searchParams.set('invit_token', token)
     const params = {
       link: linkUrl.href,
       organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '')
     }
     if (!query.skip_mail) {
+      debug('send invitation email', body.email, params)
       await sendMailI18n('invitation', reqI18n(req).messages, body.email, params)
       eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
     }
@@ -164,6 +187,8 @@ router.get('/_accept', async (req, res, next) => {
   const loggedUser = reqUser(req)
   const logContext: EventLogContext = { req }
   if (typeof req.query.invit_token !== 'string') throw httpError(400)
+
+  debug('accept invitation route', reqSiteUrl(req) + req.originalUrl)
 
   let invit: Invitation
   let verified
@@ -189,6 +214,7 @@ router.get('/_accept', async (req, res, next) => {
   const storage = storages.globalStorage
 
   const existingUser = await storage.getUserByEmail(invit.email, await reqSite(req))
+  debug('found existing user on site ?', existingUser)
   logContext.user = existingUser
   if (!existingUser && storage.readonly) {
     errorUrl.searchParams.set('error', 'userUnknown')
@@ -203,9 +229,6 @@ router.get('/_accept', async (req, res, next) => {
   logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invit.department }
 
   let redirectUrl = new URL(invit.redirect || config.invitationRedirect || `${reqSiteUrl(req) + '/simple-directory'}/invitation`)
-  redirectUrl.searchParams.set('email', invit.email)
-  redirectUrl.searchParams.set('id_token_org', invit.id)
-  if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
 
   // case where the invitation was already accepted, but we still want the user to proceed
   if (existingUser && existingUser.organizations && existingUser.organizations.find(o => o.id === invit.id && (o.department || null) === (invit.department || null))) {
@@ -222,23 +245,24 @@ router.get('/_accept', async (req, res, next) => {
       if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
       redirectUrl.searchParams.set('action_token', token)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
-      debug('redirect to changePassword step', redirectUrl.href)
+      debug('redirect existing user/member to changePassword step', redirectUrl.href)
       return res.redirect(redirectUrl.href)
     }
 
     if (!loggedUser || loggedUser.email !== invit.email) {
       const reboundRedirect = redirectUrl.href
-      redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
+      redirectUrl = new URL(`${reqSiteUrl(req)}/simple-directory/login`)
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
       if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
-      debug('redirect to login', redirectUrl.href)
+      debug('redirect existing user/member to login', redirectUrl.href)
       return res.redirect(redirectUrl.href)
     }
     return res.redirect(redirectUrl.href)
   }
   if (!verified) {
+    debug('reject invitation where token was expired')
     errorUrl.searchParams.set('error', 'expiredInvitationToken')
     return res.redirect(errorUrl.href)
   }
@@ -246,16 +270,17 @@ router.get('/_accept', async (req, res, next) => {
   const limits = await getOrgLimits(orga)
   if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
     errorUrl.searchParams.set('error', 'maxNbMembers')
+    debug('reject invitation because of nb members limits')
     return res.redirect(errorUrl.href)
   }
 
   if (!existingUser) {
     const reboundRedirect = redirectUrl.href
-    redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
+    redirectUrl = new URL(`${reqSiteUrl(req)}/simple-directory/login`)
     redirectUrl.searchParams.set('step', 'createUser')
     redirectUrl.searchParams.set('invit_token', req.query.invit_token)
     redirectUrl.searchParams.set('redirect', reboundRedirect)
-    debug('redirect to createUser step', redirectUrl.href)
+    debug('redirect non-existing to createUser step', redirectUrl.href)
     return res.redirect(redirectUrl.href)
   }
 
@@ -282,5 +307,19 @@ router.get('/_accept', async (req, res, next) => {
 
   await setNbMembersLimit(orga.id)
 
+  if (!loggedUser || loggedUser.email !== invit.email) {
+    const reboundRedirect = redirectUrl.href
+    redirectUrl = new URL(`${reqSiteUrl(req)}/simple-directory/login`)
+    redirectUrl.searchParams.set('email', invit.email)
+    redirectUrl.searchParams.set('id_token_org', invit.id)
+    if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
+    redirectUrl.searchParams.set('redirect', reboundRedirect)
+    debug('redirect to login', redirectUrl.href)
+    return res.redirect(redirectUrl.href)
+  }
+
+  redirectUrl.searchParams.set('email', invit.email)
+  redirectUrl.searchParams.set('id_token_org', invit.id)
+  if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
   res.redirect(redirectUrl.href)
 })
