@@ -86,7 +86,7 @@ class FileStorage implements SdStorage {
   cleanUser (user: any): User {
     const res = { ...user, organizations: getUserOrgas(this.organizations, user) }
     delete res.password
-    res.isAdmin = config.admins.includes(res.email)
+    res.isAdmin = config.admins.includes(res.email.toLowerCase())
     if (config.onlyCreateInvited) res.ignorePersonalAccount = true
     return res
   }
@@ -284,7 +284,7 @@ class FileStorage implements SdStorage {
     throw new Error('Method not implemented.')
   }
 
-  patchMember (orgId: string, userId: string, department: string | null | undefined, patch: PatchMemberBody): Promise<void> {
+  patchMember (orgId: string, userId: string, department: string | null | undefined, role: string | null | undefined, patch: PatchMemberBody): Promise<void> {
     throw new Error('Method not implemented.')
   }
 

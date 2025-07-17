@@ -21,6 +21,10 @@ const apiConfig = process.env.NODE_ENV === 'test' ? config.util.loadFileConfigs(
 
 assertValid(apiConfig, { lang: 'en', name: 'config', internal: true })
 
+for (let i = 0; i < apiConfig.admins.length; i++) {
+  apiConfig.admins[i] = apiConfig.admins[i].toLowerCase()
+}
+
 export default apiConfig as ApiConfig
 
 export const superadmin: User = {

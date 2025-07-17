@@ -544,6 +544,7 @@
     "passwordValidateOnLogin": { "type": "boolean" },
     "siteOrgs": { "type": "boolean" },
     "siteAdmin": { "type": "boolean" },
+    "multiRoles": { "type": "boolean" },
     "asAdmin": { "type": "boolean" }
   },
   "$defs": {

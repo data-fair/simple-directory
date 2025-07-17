@@ -193,6 +193,10 @@ export default {
         role: {
           type: 'string'
         },
+        roleLabel: {
+          type: 'string',
+          readOnly: true
+        },
         department: {
           type: 'string'
         },

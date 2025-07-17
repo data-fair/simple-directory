@@ -39,7 +39,7 @@ module.exports = {
           captureRegex: '^(.{0,3}).*$',
           values: {
             admin: ['adm'],
-            user: []
+            user: ['emp']
           },
           default: 'user'
         },

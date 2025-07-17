@@ -234,8 +234,8 @@ export const authProviderLoginCallback = async (
       throw httpError(403, 'adminModeOnly')
     }
   }
-  let userOrg: Pick<OrganizationMembership, 'id' | 'department'> | undefined
-  if (invit && invitOrga) userOrg = { id: invit.id, department: invit.department }
+  let userOrg: Pick<OrganizationMembership, 'id' | 'department'> & { role?: string } | undefined
+  if (invit && invitOrga) userOrg = { id: invit.id, department: invit.department, role: invit.role }
   else if (org) userOrg = { id: org, department: dep }
   const linkUrl = await prepareCallbackUrl(req, payload, redirect, userOrg)
   debugAuthProvider(`Auth provider based authentication of user ${user.name}`)

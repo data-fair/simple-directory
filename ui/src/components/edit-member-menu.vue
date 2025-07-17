@@ -7,12 +7,10 @@
       <v-btn
         :title="$t('pages.organization.editMember')"
         variant="text"
-        icon
-
+        :icon="mdiPencil"
+        density="compact"
         v-bind="props"
-      >
-        <v-icon :icon="mdiPencil" />
-      </v-btn>
+      />
     </template>
     <v-card
       v-if="editMember"

@@ -285,6 +285,41 @@ describe('invitations', () => {
     assert.equal(newMember.host, '127.0.0.1:5989')
   })
 
+  it('should reject duplicate invitation', async () => {
+    const config = (await import('../api/src/config.ts')).default
+    config.alwaysAcceptInvitation = true
+    const { ax } = await createUser('test-invit12@test.com')
+    await createUser('test-invit13@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test' })).data
+    ax.setOrg(org.id)
+
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit13@test.com', role: 'user' })
+
+    // the user is a member
+    let members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 2)
+    let newMember = members.find(m => m.email === 'test-invit13@test.com')
+    assert.ok(newMember)
+    assert.equal(newMember.role, 'user')
+
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit13@test.com', role: 'admin' })
+
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 2)
+    newMember = members.find(m => m.email === 'test-invit13@test.com')
+    assert.ok(newMember)
+    assert.equal(newMember.role, 'admin')
+
+    config.multiRoles = true
+
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit13@test.com', role: 'user' })
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 3)
+
+    config.multiRoles = false
+    config.alwaysAcceptInvitation = false
+  })
+
   it('should invite a user on another site in onlyBackOffice mode', async () => {
     const config = (await import('../api/src/config.ts')).default
     const { ax: adminAx } = await createUser('admin@test.com', true)

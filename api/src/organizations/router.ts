@@ -302,21 +302,23 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
   const dep = (req.query.department && typeof req.query.department === 'string') ? req.query.department : undefined
   const filter: FindMembersParams = { ids: [req.params.userId], skip: 0, size: 1 }
   if (dep) filter.departments = [dep]
+  const role = typeof req.query.role === 'string' ? req.query.role : undefined
+  if (role) filter.roles = [role]
   const member = (await storage.findMembers(req.params.organizationId, filter)).results[0]
   if (!member) return res.status(404).send('member not found')
 
   // Only allowed for the organizations that the user is admin of
 
   // Only allowed for the organizations that the user is admin of (or admin of the member's department)
-  const role = getAccountRole(
+  const userRole = getAccountRole(
     reqSession(req),
     { type: 'organization', id: req.params.organizationId, department: dep },
     { acceptDepAsRoot: config.depAdminIsOrgAdmin }
   )
-  if (role !== 'admin') throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  if (userRole !== 'admin') throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
 
   eventsLog.info('sd.org.member.del', `a user removed a member from an organization ${member.name} (${member.id}), ${req.params.organizationId}`, logContext)
-  await storage.removeMember(req.params.organizationId, req.params.userId, dep)
+  await storage.removeMember(req.params.organizationId, req.params.userId, dep, role)
   await setNbMembersLimit(req.params.organizationId)
 
   const user = await storage.getUser(req.params.userId)
@@ -359,8 +361,9 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
   if (!orga) return res.status(404).send()
   logContext.account = { type: 'organization', id: orga.id, name: orga.name }
   const roles = orga.roles || config.roles.defaults
-  if (!roles.includes(body.role)) return res.status(400).send(reqI18n(req).messages.errors.unknownRole.replace('{role}', body.role))
-  await storage.patchMember(req.params.organizationId, req.params.userId, query.department, body)
+  if (!roles.includes(body.role)) throw httpError(400, reqI18n(req).messages.errors.unknownRole.replace('{role}', body.role))
+  if (config.multiRoles && !query.role) throw httpError(400, 'query.role is required in multi-roles mode')
+  await storage.patchMember(req.params.organizationId, req.params.userId, query.department, query.role, body)
   eventsLog.info('sd.org.member.patch', `a user changed the role of a member in an organization ${member.name} (${member.id}) ${body.role} ${body.department ?? ''}`, logContext)
   postUserIdentityWebhook(await storage.getUser(req.params.userId))
 

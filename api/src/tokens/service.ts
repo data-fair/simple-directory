@@ -33,7 +33,7 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site: S
     name: user.name,
     organizations: (user.organizations || []).map(o => ({ ...o }))
   }
-  if (user.isAdmin || config.admins.includes(user.email) || user.id === '_superadmin') {
+  if (user.isAdmin || config.admins.includes(user.email.toLowerCase()) || user.id === '_superadmin') {
     payload.isAdmin = 1
   }
   if (user.defaultOrg) {
@@ -50,15 +50,15 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site: S
   return payload
 }
 
-export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: string) => {
+export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: string, reqRole?: string) => {
   if (!user.organizations || !user.organizations.length) return
   if (reqOrgId) {
-    let reqOrg
-    if (reqDepId) {
-      reqOrg = user.organizations.find(o => o.id === reqOrgId && o.department === reqDepId)
-    } else {
-      reqOrg = user.organizations.find(o => o.id === reqOrgId && !o.department) || user.organizations.find(o => o.id === reqOrgId)
-    }
+    const reqOrg = user.organizations.find(o => {
+      if (o.id !== reqOrgId) return false
+      if (reqDepId && reqDepId !== o.department) return false
+      if (reqRole && reqRole !== o.role) return false
+      return true
+    })
     if (reqOrg) return reqOrg
   }
   if (user.defaultOrg) {
@@ -79,6 +79,7 @@ export const logout = async (req: Request, res: Response) => {
   cookies.set('id_token_sign', '', { ...opts, httpOnly: true })
   cookies.set('id_token_org', '', opts)
   cookies.set('id_token_dep', '', opts)
+  cookies.set('id_token_role', '', opts)
   cookies.set('id_token_ex', '', { ...opts, path: sitePath + '/simple-directory/', httpOnly: true })
 
   const exchangeToken = cookies.get('id_token_ex')
@@ -110,6 +111,7 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
   if (userOrg) {
     cookies.set('id_token_org', userOrg.id, { ...opts, httpOnly: false })
     if (userOrg.department) cookies.set('id_token_dep', userOrg.department, { ...opts, httpOnly: false })
+    if (config.multiRoles) cookies.set('id_token_role', userOrg.role, { ...opts, httpOnly: false })
   }
 
   const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
@@ -166,6 +168,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   const cookies = new Cookies(req, res, { secure })
   const idTokenOrg = cookies.get('id_token_org')
   const idTokenDep = cookies.get('id_token_dep')
+  const idTokenRole = cookies.get('id_token_role')
 
   const exchangeToken = cookies.get('id_token_ex')
   let serverSessionInfo: SessionInfoPayload | undefined
@@ -240,7 +243,12 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   }
   let userOrg
   if (idTokenOrg) {
-    userOrg = user.organizations.find(o => o.id === idTokenOrg && (o.department || null) === (idTokenDep ? decodeURIComponent(idTokenDep) : null))
+    userOrg = user.organizations.find(o => {
+      if (o.id !== idTokenOrg) return false
+      if (idTokenDep && decodeURIComponent(idTokenDep) !== o.department) return false
+      if (idTokenRole && idTokenRole !== o.role) return false
+      return true
+    })
   }
   await setSessionCookies(req, res, payload, serverSessionId, userOrg)
 
@@ -249,7 +257,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
 // this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
-export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:Pick<OrganizationMembership, 'id' | 'department'>, orgStorage?: boolean) => {
+export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:(Pick<OrganizationMembership, 'id' | 'department'> & { role?: string }), orgStorage?: boolean) => {
   redirect = redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me'
   const redirectUrl = new URL(redirect)
   const redirectSite = await getRedirectSite(req, redirect)
@@ -262,6 +270,7 @@ export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: 
   if (userOrg) {
     tokenCallbackUrl.searchParams.set('id_token_org', userOrg.id)
     if (userOrg.department) tokenCallbackUrl.searchParams.set('id_token_dep', userOrg.department)
+    if (config.multiRoles && userOrg.role) tokenCallbackUrl.searchParams.set('id_token_role', userOrg.role)
   }
   if (orgStorage) tokenCallbackUrl.searchParams.set('org_storage', 'true')
   return tokenCallbackUrl

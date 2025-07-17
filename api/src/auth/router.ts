@@ -367,7 +367,7 @@ router.get('/token_callback', async (req, res, next) => {
   await storage.addUserSession(user.id, serverSession)
 
   await confirmLog(storage, user, serverSession)
-  await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, query.id_token_org, query.id_token_dep))
+  await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, query.id_token_org, query.id_token_dep, query.id_token_role))
 
   eventsLog.info('sd.auth.callback.ok', 'a session was initialized after successful auth', logContext)
 
@@ -447,6 +447,10 @@ router.post('/keepalive', async (req, res, next) => {
   const session = reqSessionAuthenticated(req)
   const loggedUser = session.user
   const storage = await storages.getSessionStorage(session)
+
+  // prevent breaking sessions when ldap storage cache is filling up
+  if (storage.initializing) return res.status(204).send()
+
   let user = loggedUser.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.id)
   if (!user) throw httpError(404)
 

@@ -11,6 +11,9 @@ export default {
       properties: {
         department: {
           type: 'string'
+        },
+        role: {
+          type: 'string'
         }
       }
     },

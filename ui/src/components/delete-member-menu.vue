@@ -7,12 +7,11 @@
       <v-btn
         :title="$t('pages.organization.deleteMember')"
         variant="text"
-        icon
+        :icon="mdiDelete"
+        density="compact"
         color="warning"
         v-bind="props"
-      >
-        <v-icon :icon="mdiDelete" />
-      </v-btn>
+      />
     </template>
     <v-card
       data-iframe-height
