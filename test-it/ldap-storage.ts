@@ -115,11 +115,21 @@ describe('storage ldap', () => {
     assert.ok(members7.results.find(m => m.id === 'test1' && m.role === 'admin'))
     assert.ok(members7.results.find(m => m.id === 'test1' && m.role === 'user'))
 
-    // role overwritten in db
+    // role overwritten in db and read both with or without cache
     config.multiRoles = false
+    config.storage.ldap.cacheMS = 10000
     storage.clearCache()
-    await storage.patchMember('myorg', 'test1', null, null, { role: 'contrib' })
+    await storage.patchMember('myorg', 'test1', null, null, { role: 'contrib2' })
     const members8 = await storage.findMembers('myorg', { skip: 0, size: 10 })
-    assert.equal(members8.results[1].role, 'contrib')
+    assert.ok(!members8.fromCache)
+    assert.equal(members8.results[1].role, 'contrib2')
+    const members9 = await storage.findMembers('myorg', { skip: 0, size: 10 })
+    assert.ok(members9.fromCache)
+    assert.equal(members9.results[1].role, 'contrib2')
+    await storage.patchMember('myorg', 'test1', null, null, { role: 'contrib3' })
+    const members10 = await storage.findMembers('myorg', { skip: 0, size: 10 })
+    assert.ok(!members10.fromCache)
+    assert.equal(members10.results[1].role, 'contrib3')
+    config.storage.ldap.cacheMS = 0
   })
 })

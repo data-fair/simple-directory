@@ -722,6 +722,7 @@ export class LdapStorage implements SdStorage {
       { orgId: orga.id, department, userId: user.id, role },
       { upsert: true }
     )
+    this.allUsersCache = {}
   }
 
   async patchMember (orgId: string, userId: string, department = null, role = null, patch: PatchMemberBody) {
@@ -731,12 +732,14 @@ export class LdapStorage implements SdStorage {
       { ...patch, orgId, userId },
       { upsert: true }
     )
+    this.allUsersCache = {}
   }
 
   async removeMember (orgId: string, userId: string) {
     if (!(this.ldapParams.overwrite || []).includes('members')) throw new Error('ldap members overwrite not supported')
     await mongo.ldapMembersOverwrite
       .deleteOne({ orgId, userId })
+    this.allUsersCache = {}
   }
 
   async _getOrganization (client: ldap.Client, id: string) {
