@@ -45,6 +45,7 @@
     "@types/config": "^3.3.3",
     "@types/cookie-parser": "^1.4.7",
     "@types/cookies": "^0.9.0",
+    "@types/cors": "^2.8.19",
     "@types/gm": "^1.25.4",
     "@types/ldapjs": "^3.0.6",
     "@types/material-colors": "^1.2.3",

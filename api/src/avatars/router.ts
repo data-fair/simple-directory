@@ -9,6 +9,7 @@ import capitalize from 'capitalize'
 import multer from 'multer'
 import { getAvatar, setAvatar } from './service.ts'
 import storages from '#storages'
+import cors from 'cors'
 
 const colorCodes = Object.values(colors).filter(c => (c as any)['600']).map(c => (c as any)['600']) as string[]
 
@@ -93,8 +94,10 @@ const readAvatar: RequestHandler = async (req, res, next) => {
   res.set('Content-Type', 'image/png')
   res.send(avatar.buffer)
 }
-router.get('/:type/:id/avatar.png', readAvatar)
-router.get('/:type/:id/:department/avatar.png', readAvatar)
+
+// enable CORS specifically for get avatar as it is used in some SD users browser extension
+router.get('/:type/:id/avatar.png', cors(), readAvatar)
+router.get('/:type/:id/:department/avatar.png', cors(), readAvatar)
 
 const upload = multer({
   storage: multer.memoryStorage(),
