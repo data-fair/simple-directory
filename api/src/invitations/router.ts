@@ -34,7 +34,6 @@ router.post('', async (req, res, next) => {
   debug('create invitation route', reqSiteUrl(req) + req.originalUrl)
 
   let invitSite = await reqSite(req)
-  let invitPublicBaseUrl = reqSiteUrl(req) + '/simple-directory'
   if (invitation.redirect) {
     invitSite = (await getSiteByUrl(invitation.redirect)) ?? undefined
     debug('site referenced in invitation', invitation.redirect, invitSite)
@@ -56,10 +55,14 @@ router.post('', async (req, res, next) => {
     if (invitSite?.authMode === 'onlyOtherSite' && invitSite.authOnlyOtherSite) return res.status(400).send(`Impossible d'utiliser le site ${invitSite.host} comme référence pour l'authentification, il est lui aussi configuré comme "uniquement sur un autre de vos sites".`)
   }
 
+  let invitPublicBaseUrl
   if (invitSite) {
     const url = new URL(config.publicUrl)
     invitPublicBaseUrl = url.protocol + '//' + invitSite.host + (invitSite.path ?? '') + '/simple-directory'
-    debug('invit base target url', invitPublicBaseUrl)
+    debug('invit base target url is on a site', invitPublicBaseUrl)
+  } else {
+    invitPublicBaseUrl = config.publicUrl
+    debug('invit base target url is on backoffice', invitPublicBaseUrl)
   }
 
   const orga = await storage.getOrganization(invitation.id)
