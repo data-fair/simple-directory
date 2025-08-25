@@ -53,7 +53,7 @@ export default {
       type: 'string',
       title: 'Titre du site'
     },
-    theme: { $ref: 'https://github.com/data-fair/simple-directory/api/config#/$defs/theme' },
+    theme: { $ref: 'https://github.com/data-fair/lib/theme' },
     authMode: {
       default: 'onlyBackOffice',
       title: "Mode d'authentification",

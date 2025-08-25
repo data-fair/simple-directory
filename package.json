@@ -71,7 +71,7 @@
     "typescript": "~5.6.3"
   },
   "dependencies": {
-    "@data-fair/lib-types-builder": "^1.8.1",
+    "@data-fair/lib-types-builder": "^1.8.3",
     "@koumoul/vjsf-compiler": "^1.0.2",
     "@types/debug": "^4.1.12",
     "@types/vue-cropperjs": "^4.1.6"

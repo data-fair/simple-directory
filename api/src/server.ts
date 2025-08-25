@@ -17,7 +17,7 @@ import app from './app.ts'
 import config from '#config'
 import * as eventsQueue from '#events-queue'
 import { publicGlobalProviders } from './auth/providers.ts'
-import { getSiteColorsWarnings } from './utils/color.ts'
+import { getSiteColorsWarnings } from '@data-fair/lib-common-types/theme/index.js'
 
 const server = createServer(app)
 const httpTerminator = createHttpTerminator({ server })
@@ -50,7 +50,7 @@ export const start = async () => {
     return ((await mongo.sites.countDocuments()) === 0)
   })
 
-  const colorWarnings = getSiteColorsWarnings(config.i18n.defaultLocale, config.theme, await publicGlobalProviders())
+  const colorWarnings = getSiteColorsWarnings(config.i18n.defaultLocale as 'fr' | 'en', config.theme, await publicGlobalProviders())
   if (colorWarnings.length) {
     console.error('Configuration contains color warnings')
     for (const cw of colorWarnings) console.error('  - ' + cw)

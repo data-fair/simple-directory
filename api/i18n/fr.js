@@ -440,35 +440,5 @@ N'hésitez pas à nous contacter à {contact}.
     acceptedPartnerInvitation: 'L\'organisation {partnerName} ({email}) a rejoint l\'organisation {orgName} en tant que partenaire.',
     addMemberTopic: 'un membre a été ajouté',
     addMember: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.'
-  },
-  colors: {
-    theme: {
-      default: 'par défaut',
-      dark: 'sombre',
-      hc: 'à contraste élevé',
-      hcDark: 'sombre à contraste élevé'
-    },
-    readableWarning: 'la couleur {colorName} ({colorCode}) du thème {themeName} n\'est pas suffisamment lisible par dessus la couleur {bgColorName} ({bgColorCode})',
-    authProvider: 'du fournisseur d\'identité {title}',
-    white: 'blanche',
-    text: 'de texte',
-    background: 'd\'arrière plan',
-    surface: 'de surface',
-    primary: 'primaire',
-    'text-primary': 'texte primaire',
-    secondary: 'secondaire',
-    'text-secondary': 'texte secondaire',
-    accent: 'accentuée',
-    'text-accent': 'texte accentué',
-    error: 'd\'erreur',
-    'text-error': 'texte d\'erreur',
-    warning: 'd\'avertissement',
-    'text-warning': 'texte d\'avertissement',
-    success: 'de succès',
-    'text-success': 'texte de succès',
-    info: 'd\'information',
-    'text-info': 'texte d\'information',
-    admin: 'd\'administration',
-    'text-admin': 'texte d\'administration',
   }
 }

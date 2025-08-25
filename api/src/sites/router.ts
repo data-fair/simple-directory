@@ -7,9 +7,8 @@ import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite } from './
 import { isOIDCProvider, reqSite } from '#services'
 import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
-import { getSiteColorsWarnings } from '../utils/color.ts'
+import { getSiteColorsWarnings, fillTheme, getTextColorsCss } from '@data-fair/lib-common-types/theme/index.js'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
-import { fillTheme, getTextColorsCss } from '@sd/shared/site.ts'
 import clone from '@data-fair/lib-utils/clone.js'
 import Debug from 'debug'
 import { cipher } from '../utils/cipher.ts'
@@ -38,7 +37,7 @@ const prepareFullSite = (req: Request, site: Site) => {
   }
   const resultWithColorWarnings: any = site as any
   const { localeCode } = reqI18n(req)
-  resultWithColorWarnings.colorWarnings = getSiteColorsWarnings(localeCode, site.theme, site.authProviders as { title?: string, color?: string }[])
+  resultWithColorWarnings.colorWarnings = getSiteColorsWarnings(localeCode as 'fr' | 'en', site.theme, site.authProviders as { title?: string, color?: string }[])
 }
 
 router.get('', async (req, res, next) => {
@@ -239,7 +238,7 @@ router.get('/_theme.css', async (req, res, next) => {
 router.get('/:id/_theme_warnings', async (req, res, next) => {
   const site = await reqSite(req)
   const { localeCode } = reqI18n(req)
-  res.send(getSiteColorsWarnings(localeCode, site?.theme ?? config.theme, site?.authProviders as { title?: string, color?: string }[]))
+  res.send(getSiteColorsWarnings(localeCode as 'fr' | 'en', site?.theme ?? config.theme, site?.authProviders as { title?: string, color?: string }[]))
 })
 
 router.get('/:id', async (req, res, next) => {

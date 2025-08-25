@@ -355,34 +355,5 @@ Feel free to contact us at {contact}.
     acceptedInvitation: 'The user {name} ({email}) has joined the organization {orgName}.',
     userCreated: 'The user {name} ({email}) has registered on the site {host}.',
     userCreatedOrg: 'The user {name} ({email}) has registered on the site {host} in the organization {orgName}.'
-  },
-  colors: {
-    theme: {
-      default: 'default',
-      dark: 'dark',
-      hc: 'high contrast'
-    },
-    readableWarning: 'the {colorName} color ({colorCode}) of {themeName} theme is not sufficiently readable over the {bgColorName} color ({bgColorCode})',
-    authProvider: 'auth provider {title}',
-    white: 'white',
-    text: 'text',
-    background: 'background',
-    surface: 'surface',
-    primary: 'primary',
-    'text-primary': 'primary text',
-    secondary: 'secondary',
-    'text-secondary': 'secondary text',
-    accent: 'accent',
-    'text-accent': 'accent text',
-    error: 'error',
-    'text-error': 'error text',
-    warning: 'warning',
-    'text-warning': 'warning text',
-    success: 'success',
-    'text-success': 'success text',
-    info: 'info',
-    'text-info': 'info text',
-    admin: 'admin',
-    'text-admin': 'admin text'
   }
 }

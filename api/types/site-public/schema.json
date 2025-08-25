@@ -23,7 +23,7 @@
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/title"
     },
     "theme": {
-      "$ref": "https://github.com/data-fair/simple-directory/api/config#/$defs/theme"
+      "$ref": "https://github.com/data-fair/lib/theme"
     },
     "reducedPersonalInfoAtCreation": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/reducedPersonalInfoAtCreation"

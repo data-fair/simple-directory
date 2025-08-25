@@ -1,4 +1,13 @@
 <template>
+  <v-alert
+    v-for="(warning, i) of colorsWarnings"
+    :key="i"
+    type="warning"
+    variant="outlined"
+    class="mb-2"
+  >
+    {{ warning }}
+  </v-alert>
   <v-theme-provider
     :theme="'preview-' + colorsKey"
     with-background
@@ -52,7 +61,7 @@ import { useTheme } from 'vuetify'
 import type { VBtn } from 'vuetify/components/VBtn'
 import type { Theme } from '../../../api/config/type'
 import { mdiEmoticonKissOutline } from '@mdi/js'
-import { fillTheme, getTextColorsCss } from '@sd/shared/site.ts'
+import { fillTheme, getTextColorsCss, getColorsWarnings, readableOptions, hcReadableOptions } from '@data-fair/lib-common-types/theme/index.js'
 
 const vuetifyTheme = useTheme()
 const { colorsKey, theme, dark } = defineProps({
@@ -82,4 +91,16 @@ watch(fullTheme, () => {
 
 const buttonVariants: VBtn['variant'][] = ['flat', 'text']
 const colorKeys = ['primary', 'secondary', 'accent', 'info', 'success', 'error', 'warning']
+
+const themeNames = {
+  colors: 'default',
+  darkColors: 'dark',
+  hcColors: 'hc',
+  hcDarkColors: 'hcDark'
+}
+
+const colorsWarnings = computed(() => {
+  if (!colors.value) return []
+  return getColorsWarnings('fr', colors.value, themeNames[colorsKey], colorsKey.startsWith('hc') ? hcReadableOptions : readableOptions)
+})
 </script>
