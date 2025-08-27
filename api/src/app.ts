@@ -27,6 +27,7 @@ const app = express()
 export default app
 
 app.use(helmet({
+  strictTransportSecurity: new URL(config.publicUrl).protocol === 'https:',
   contentSecurityPolicy: {
     useDefaults: false,
     directives: {
