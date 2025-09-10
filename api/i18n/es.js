@@ -11,6 +11,7 @@ export default {
     logLink: 'Iniciar sesión / Registrarse',
     logout: 'Desconectarse',
     login: 'Connecterse',
+    signin: 'Sign up',
     activateAdminMode: 'Activar el modo de administrador',
     deactivateAdminMode: 'Desactivar el modo de administrador',
     documentation: 'Documentación',
@@ -19,6 +20,7 @@ export default {
     myOrganizations: 'Mis organizaciones',
     organization: 'Organización',
     organizations: 'Organizaciones',
+    organizationName: 'Nombre de la organización',
     user: 'Usuario',
     users: 'Usuarios',
     createOrganization: 'Crea una organización',
@@ -28,10 +30,12 @@ export default {
     name: 'Apellido',
     save: 'Grabar',
     members: 'Miembros',
+    orgStorageMembers: 'Miembros en almacenamiento secundario',
     role: 'Papel',
     search: 'Buscar',
     confirmOk: 'Ok',
     confirmCancel: 'Anular',
+    confirmTitle: '¿Desea confirmar esta operación?',
     firstName: 'Nombre de pila',
     lastName: 'Apellido',
     email: 'Correo electrónico',
@@ -44,11 +48,12 @@ export default {
     editTitle: 'Modificar {name}',
     loggedAt: 'Último acceso',
     createdAt: 'Creó el',
+    createdPhrase: 'Creado por {name} el {date}',
     host: 'Sitio',
     sites: 'Sitios',
-    createdPhrase: 'Creado por {name} el {date}',
     updatedAt: 'Actualizado el',
     maxCreatedOrgs: 'Número máximo de organizaciones a crear',
+    maxCreatedOrgsShort: 'Org máx',
     nbCreatedOrgs: 'Número de organizaciones creadas:',
     back: 'Regreso',
     next: 'Próximo',
@@ -56,6 +61,7 @@ export default {
     checkInbox: 'Revisa tu correo',
     spamWarning: 'Si no ha recibido un correo electrónico, compruebe que no se haya clasificado automáticamente como spam.',
     validate: 'Validar',
+    delete: 'Delete',
     department: 'Departamento',
     departments: 'Departamentos',
     autoAdmin: 'Agregarme automáticamente como administrador',
@@ -63,7 +69,32 @@ export default {
     delAsAdmin: 'Regresar a mi sesión de administrador',
     avatar: 'Avatar',
     birthday: 'Aniversario',
-    missingInfo: 'Falta información'
+    missingInfo: 'Falta información',
+    '2FA': 'Autenticación de dos factores',
+    userAccount: 'Cuenta personal',
+    continue: 'Continuar',
+    tooLong: 'el texto es demasiado largo',
+    settings: 'configuración',
+    emailConfirmed: 'creación finalizada',
+    emailNotConfirmed: 'creación no finalizada',
+    noRole: 'sin rol',
+    downloadCsv: 'descargar la lista en formato CSV',
+    authMode: 'Modo de autenticación',
+    authProviders: 'Proveedores de autenticación',
+    partners: 'Organizaciones socias',
+    contactEmail: 'Correo electrónico de contacto',
+    orgName: 'Nombre de la organización',
+    loginSignin: 'Iniciar sesión / crear una cuenta',
+    sort: 'Ordenar',
+    all: 'todos',
+    creationStep: 'Paso de creación',
+    oauthTokens: 'Tokens OAuth',
+    plannedDeletion: 'Eliminación programada',
+    plannedDeletionShort: 'Eliminación',
+    owner: 'Propietario',
+    passwordLists: 'Contraseñas',
+    adminGlobal: 'Administración global',
+    adminSite: 'Administración del sitio',
   },
   doc: {
     about: {
@@ -130,12 +161,18 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
         createdOrgsLimit: 'Los usuarios pueden crear {defaultMaxCreatedOrgs} organizacione(s) predeterminadas.',
         explainLimit: 'Establezca un valor para limitar la cantidad de organizaciones que este usuario puede crear. -1 para un número no especificado. Vacíe el campo para volver al valor predeterminado ({defaultMaxCreatedOrgs}).',
         editUserEmailTitle: 'Cambiar la dirección de correo electrónico del usuario {nombre}',
-        editUserEmailText: '¡Advertencia! El correo electrónico es una clave de usuario importante, al modificar esta información, corre el riesgo de insertar una dirección incorrecta, no funcional o inconsistente con otras entradas. Esta función solo se presenta a los administradores para desbloquear a un usuario cuyo buzón se vuelve inaccesible.'
+        editUserEmailText: '¡Advertencia! El correo electrónico es una clave de usuario importante, al modificar esta información, corre el riesgo de insertar una dirección incorrecta, no funcional o inconsistente con otras entradas. Esta función solo se presenta a los administradores para desbloquear a un usuario cuyo buzón se vuelve inaccesible.',
+        drop2FATitle: 'Desactivar la autenticación de dos factores',
+        drop2FAText: '¡Advertencia! Esta operación desactivará la autenticación de dos factores para este usuario.'
       },
       organizations: {
         limitOrganizationTitle: 'Cambiar los límites organizacionales',
         members: 'miembro(s)',
         nbMembers: 'Número máximo de miembros (0 sin límite)'
+      },
+      sites: {
+        createSite: 'Definir un nuevo sitio',
+        colorWarnings: 'Advertencias de contraste'
       }
     },
     login: {
@@ -155,36 +192,66 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       passwordlessConfirmed: 'Se ha enviado un correo electrónico a la dirección {email}. Este correo electrónico contiene un enlace para conectarse a nuestra plataforma.',
       createUserMsg1: 'Si aún no ha iniciado sesión en nuestra plataforma, cree una cuenta.',
       createUserMsg2: 'Crear una cuenta',
+      createUserInvit: 'Create an account to accept the invitation in organization {name}',
+      createUserOrganization: 'Do you want to create and organization ?',
+      createuserOrganizationHelp: 'If you create an organization you will be able to invite other users to join you and share resources.',
       tosMsg: 'Antes de crear su cuenta, lea <a href="{tosUrl}" target="_blank">nuestras condiciones generales de uso</a>.',
       tosConfirm: 'Confirmo que he leído las condiciones generales de uso de este sitio.',
       createUserConfirm: 'Crear una cuenta',
       createUserConfirmed: 'Se ha enviado un correo electrónico a la dirección {email}. Este correo electrónico contiene un enlace para validar la creación de la cuenta.',
       adminMode: 'Confirme su identidad para cambiar al modo de administración.',
       oauth: 'Conectar con:',
-      error: 'Error'
+      error: 'Error',
+      rememberMe: 'recordarme',
+      '2FACode': 'código de 6 dígitos o código de recuperación',
+      '2FAInfo': 'Ingrese un código de verificación para continuar. Puede obtener este código de la aplicación de verificación en su teléfono. Si pierde su dispositivo, puede usar el código de recuperación descargado al configurar la autenticación de dos factores.',
+      configure2FA: 'Configurar autenticación de dos factores',
+      configure2FAQRCode: 'Código QR de configuración de autenticación de dos factores',
+      configure2FAQRCodeMsg: 'Escanee este código QR con una herramienta de autenticación de su elección (como Authy o Google Authenticator) y luego ingrese el código de 6 dígitos ofrecido por esta aplicación.',
+      configure2FACode: 'código de 6 dígitos',
+      recovery2FA: 'Código de recuperación',
+      revovery2FAInfo: '¡Precaución! Guarde el código de recuperación a continuación en un lugar seguro. Sin él, no podrá recuperar su cuenta si pierde el dispositivo en el que acaba de configurar la autenticación de dos factores.',
+      recovery2FACode: 'código de recuperación: ',
+      recovery2FADownload: 'descargar un archivo que contiene el código de recuperación',
+      recovery2FAContent: 'Código de recuperación para autenticación de dos factores {name}',
+      plannedDeletion: 'Eliminación programada',
+      cancelDeletion: 'Cancelar la eliminación del usuario',
+      siteLogo: 'Logotipo del sitio',
+      partnerInvitation: 'Invitación de socio',
+      changeHost: 'Cuenta asociada con el back-office'
     },
     organization: {
       addMember: 'Invitar a un usuario a unirse a la organización',
       disableInvite: 'Esta organización ha alcanzado su número máximo de miembros.',
       deleteMember: 'Eliminar a este usuario de la lista de miembros de la organización',
       editMember: 'Cambiar el rol de este usuario en la organización',
+      memberReadOnly: 'This user\'s membership to the organization comes from an identity provider and cannot be modified here.',
       confirmEditMemberTitle: 'Editar {name}',
       confirmDeleteMemberTitle: 'Excluir {name}',
       confirmDeleteMemberMsg: '¿Está seguro de que desea eliminar a este usuario de la lista de miembros de la organización {org}?',
       deleteMemberSuccess: 'El usuario {name} ha sido expulsado de la organización.',
       inviteEmail: 'Dirección de correo electrónico del usuario',
       inviteSuccess: 'Se ha enviado una invitación a {email}',
+      invitePartnerSuccess: 'Se ha enviado una invitación a {email}',
       memberConflict: 'Este usuario ya es miembro',
-      departmentLabelTitle: 'Redacción del concepto "departamento"',
-      departmentLabelHelp: 'Déjelo en blanco para mostrar "departamento". Complete para usar otro vocabulario como "servicio", "agencia", etc.',
+      back: 'Back',
+      next: 'Next',
       addDepartment: 'Crear {departmentLabel}',
       editDepartment: 'Editar {departmentLabel}',
       deleteDepartment: 'Eliminar {departmentLabel}',
       confirmEditDepartmentTitle: 'Editar {name}',
       confirmDeleteDepartmentTitle: 'Eliminar {name}',
       confirmDeleteDepartmentMsg: '¿Está seguro de que desea eliminar a {name} de su organización?',
+      deleteDepartmentHasMembers: 'This department is affected to {count} member(s) of the organization. You can\'t delete it in this state.',
       departmentIdInvalid: 'El identificador debe contener solo letras, números y espacios.',
-      inviteLink: 'En caso de problema en la comunicación por correo electrónico puede enviar el enlace de confirmación a continuación por otro medio. Atención ! Corre el riesgo de insertar una dirección de correo electrónico incorrecta o no funcional en la base de datos de usuarios. Esta dirección de correo electrónico puede causar varios problemas posteriormente: cambio de contraseña, envío de alertas, etc.'
+      inviteLink: 'En caso de problema en la comunicación por correo electrónico puede enviar el enlace de confirmación a continuación por otro medio. Atención ! Corre el riesgo de insertar una dirección de correo electrónico incorrecta o no funcional en la base de datos de usuarios. Esta dirección de correo electrónico puede causar varios problemas posteriormente: cambio de contraseña, envío de alertas, etc.',
+      '2FARoles': 'Autenticación de dos factores.',
+      '2FARolesMsg': 'Hacer obligatoria la autenticación de dos factores para usuarios con estos roles:',
+      sendInvitationLink: 'Enviar otro enlace de invitación',
+      addPartner: 'Invitar a una organización socia',
+      deletePartner: 'Eliminar este socio',
+      depSortCreation: 'Última creación',
+      depSortAlpha: 'Orden alfabético'
     },
     invitation: {
       title: 'Invitación validada',
@@ -192,6 +259,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       msgDifferentUser: 'Esta invitación a ser miembro de una organización ha sido aceptada. Usted puede <a href="{loginUrl}">iniciar sesión</a> con la cuenta de invitado.'
     },
     avatar: {
+      load: 'cargar un nuevo avatar',
       prepare: 'Prepara la imagen'
     },
     me: {
@@ -199,11 +267,19 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       operations: 'Operaciones sensibles',
       deleteMyself: 'Eliminar esta cuenta',
       deleteMyselfAlert: 'Si elimina su cuenta, los datos asociados también serán eliminados y no podrán ser recuperados.',
-      deleteMyselfCheck: 'marque esta casilla y haga clic en OK para confirmar la eliminación.'
+      deleteMyselfCheck: 'marque esta casilla y haga clic en OK para confirmar la eliminación.',
+      accountChanges: 'Gestionar el cambio de cuenta',
+      defaultOrg: 'Activar esta cuenta por defecto después de cada inicio de sesión',
+      ignorePersonalAccount: 'Marque esta casilla si no desea utilizar esta plataforma fuera de una cuenta de organización',
+      sessions: 'Tus sesiones',
+      deleteSession: '¿Eliminar la sesión en {deviceName}?',
+      deleteSessionWarning: 'La eliminación de la sesión puede tardar un máximo de {duration} en aplicarse completamente.',
+      settings: 'Tus ajustes'
     }
   },
   errors: {
     badEmail: 'La dirección de correo electrónico está vacía o mal formada.',
+    badProviderInvitEmail: 'The email address you just used to log in does not match the one from the invitation you received',
     maxCreatedOrgs: 'El usuario no puede crear más organizaciones. Límite alcanzado.',
     permissionDenied: 'Permisos insuficientes.',
     nonEmptyOrganization: 'Debe eliminar a otros miembros de esta organización.',
@@ -213,14 +289,30 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
     unknownRole: 'El rol {role} es desconocido.',
     serviceUnavailable: 'Servicio no disponible por mantenimiento.',
     badCredentials: 'Dirección de correo electrónico o contraseña inválida.',
+    updatePassword: 'Es necesario actualizar su contraseña, porque no se ha actualizado por mucho tiempo.',
+    missingToken: 'El parámetro id_token está ausente.',
     invalidToken: 'El token no es válido. Quizás haya expirado.',
+    differentPasswords: 'Las contraseñas son diferentes',
     noPasswordless: 'La autenticación sin contraseña no es aceptada por este servicio.',
     rateLimitAuth: 'Demasiados intentos en un corto intervalo. Por favor espere antes de intentarlo de nuevo.',
     invalidInvitationToken: 'El enlace de invitación que recibió no es válido.',
     expiredInvitationToken: 'El enlace de invitación que recibió ha caducado, ya no puede aceptar esta invitación.',
     maxNbMembers: 'La organización ya contiene el número máximo de miembros permitidos por sus cuotas.',
     unknownOAuthProvider: 'No se admite la identificación OAuth.',
-    adminModeOnly: 'Funcionalidad reservada para superadministradores.'
+    unknownSAMLProvider: 'La identificación SAML no es compatible.',
+    adminModeOnly: 'Funcionalidad reservada para superadministradores.',
+    '2FANotConfigured': 'La autenticación de dos factores es requerida para esta cuenta y aún no está configurada.',
+    passwordless2FA: 'La autenticación sin contraseña es incompatible con la autenticación de dos factores requerida para esta cuenta.',
+    bad2FAToken: 'Código de verificación inválido o expirado para la autenticación de dos factores',
+    plannedDeletion: 'La eliminación del usuario {name} y todos sus datos está programada para el {plannedDeletion}.',
+    onlyCreateInvited: 'No puede crear una cuenta directamente. Debe ser invitado por una organización.',
+    badIDPQuery: 'Solicitud considerada inválida por el proveedor de identidad.',
+    duplicateDep: 'El nuevo departamento es un duplicado',
+    passwordEntropy: 'La contraseña no es lo suficientemente fuerte.',
+    passwordMinLength: 'La contraseña debe contener al menos {minLength} caracteres.',
+    passwordMinCharClasses: 'La contraseña debe contener al menos {minCharClasses} diferentes tipos de caracteres (minúsculas, mayúsculas, dígitos, caracteres especiales).',
+    forbiddenPassword: 'Esta contraseña se encontró en una lista de contraseñas conocidas y no puede ser utilizada.',
+    samePassword: 'La nueva contraseña debe ser diferente de la anterior.',
   },
   mails: {
     creation: {
@@ -289,6 +381,22 @@ Si aún no tiene una cuenta, se creará automáticamente.
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
       htmlCaption: 'Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },
+    partnerInvitation: {
+      subject: 'La organización {organization} en {host} desea agregar a {partner} como socio',
+      text: `
+Un administrador de la organización {organization} lo invita como contacto para la organización {partner} para unirse en {host}. Para aceptar esta invitación, copie la URL a continuación en su navegador. Esta URL es válida por 10 días.
+
+{link}
+
+Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no dude en contactarnos en {contact}.
+      `,
+      htmlMsg: `
+Un administrador de la organización {organization} lo invita como contacto para la organización {partner} para unirse en {host}. Para aceptar esta invitación, haga clic en el botón de abajo. El enlace es válido por 10 días.
+      `,
+      htmlButton: 'Aceptar la invitación',
+      htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
+      htmlCaption: 'Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
+    },
     action: {
       subject: 'Realice una acción en su cuenta el {host}',
       text: `
@@ -304,6 +412,35 @@ Se ha activado una acción solicitando confirmación por correo electrónico en 
       htmlButton: 'Validar',
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
       htmlCaption: 'Si tiene un problema con su cuenta o encuentra este mensaje sospechoso, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
+    },
+    plannedDeletion: {
+      subject: 'Eliminación de cuenta programada en {host}',
+      text: `
+El usuario {user} y todos los datos relacionados con él serán eliminados el {plannedDeletion}. {cause}
+
+Para cancelar la eliminación, puede iniciar sesión aquí {link}.
+
+No dude en contactarnos en {contact}.
+      `,
+      htmlMsg: 'El usuario {user} y todos los datos relacionados con él serán eliminados el {plannedDeletion}. {cause}',
+      htmlButton: 'Iniciar sesión para cancelar la eliminación',
+      htmlAlternativeLink: 'Si el botón no funciona, puede copiar/pegar este enlace en la barra de direcciones de su navegador:',
+      htmlCaption: 'Si tiene un problema con su cuenta o encuentra este mensaje sospechoso, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.',
+      causeInactivity: 'Esta operación se activó automáticamente porque esta cuenta está inactiva desde {date}.'
     }
+  },
+  notifications: {
+    sentInvitationTopic: 'se envió una invitación',
+    sentInvitation: 'Se envió un correo electrónico a {email} con una invitación para unirse a la organización {orgName}.',
+    acceptedInvitationTopic: 'se aceptó una invitación',
+    acceptedInvitation: 'El usuario {name} ({email}) se ha unido a la organización {orgName}.',
+    userCreated: 'El usuario {name} ({email}) se ha registrado en el sitio {host}.',
+    userCreatedOrg: 'El usuario {name} ({email}) se ha registrado en el sitio {host} en la organización {orgName}.',
+    sentPartnerInvitationTopic: 'se envió una invitación de socio',
+    sentPartnerInvitation: 'Se envió un correo electrónico a {email} con una invitación para que la organización {partnerName} se una a la organización {orgName} como socio.',
+    acceptedPartnerInvitationTopic: 'se aceptó una invitación de socio',
+    acceptedPartnerInvitation: 'La organización {partnerName} ({email}) se ha unido a la organización {orgName} como socio.',
+    addMemberTopic: 'se agregó un miembro',
+    addMember: 'El usuario {name} ({email}) se ha unido a la organización {orgName}.'
   }
 }
