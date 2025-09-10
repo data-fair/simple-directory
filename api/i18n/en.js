@@ -1,5 +1,6 @@
 // WARN: do not use underscore in keys, it is used as delimiter when reading
 // messages from environment variables
+
 export default {
   root: {
     title: 'Simple Directory',
@@ -10,6 +11,7 @@ export default {
     logLink: 'login / sign up',
     logout: 'logout',
     login: 'login',
+    signin: 'Sign up',
     activateAdminMode: 'Activate admin mode',
     deactivateAdminMode: 'Deactivate admin mode',
     documentation: 'Documentation',
@@ -18,6 +20,7 @@ export default {
     myOrganizations: 'My organizations',
     organization: 'Organization',
     organizations: 'Organizations',
+    organizationName: 'Organization name',
     user: 'User',
     users: 'Users',
     createOrganization: 'Create organization',
@@ -27,6 +30,7 @@ export default {
     name: 'Name',
     save: 'Save',
     members: 'Members',
+    orgStorageMembers: 'Members in secondary storage',
     role: 'Role',
     search: 'Search',
     confirmOk: 'Ok',
@@ -44,11 +48,12 @@ export default {
     editTitle: 'Edit {name}',
     loggedAt: 'Logged at',
     createdAt: 'Created on',
+    createdPhrase: 'Created by {name} on {date}',
     host: 'Site',
     sites: 'Sites',
-    createdPhrase: 'Created by {name} on {date}',
     updatedAt: 'Updated on',
     maxCreatedOrgs: 'Max number of created organizations',
+    maxCreatedOrgsShort: 'Max orgs',
     nbCreatedOrgs: 'Number of organizations created :',
     back: 'Back',
     next: 'Next',
@@ -56,6 +61,7 @@ export default {
     checkInbox: 'Check your mail box',
     spamWarning: 'If you didn\'t receive an email, check if it was classified as spam in your mail box.',
     validate: 'Validate',
+    delete: 'Delete',
     department: 'Department',
     departments: 'Departments',
     autoAdmin: 'Automatically add me as admin',
@@ -64,13 +70,29 @@ export default {
     avatar: 'Avatar',
     birthday: 'Birthday',
     missingInfo: 'Missing info',
+    '2FA': 'Two Factor Authentication',
+    userAccount: 'Personal account',
     continue: 'Continue',
     tooLong: 'text is too long',
     settings: 'settings',
+    emailConfirmed: 'creation finalized',
     emailNotConfirmed: 'creation not finalized',
     noRole: 'no role',
     downloadCsv: 'download the list in CSV format',
     authMode: 'Authentication mode',
+    authProviders: 'Authentication providers',
+    partners: 'Partner organizations',
+    contactEmail: 'Contact email',
+    orgName: 'Name of the organization',
+    loginSignin: 'Login / create an account',
+    sort: 'Sort',
+    all: 'all',
+    creationStep: 'Creation step',
+    oauthTokens: 'OAuth tokens',
+    plannedDeletion: 'Planned deletion',
+    plannedDeletionShort: 'Deletion',
+    owner: 'Owner',
+    passwordLists: 'Passwords',
     adminGlobal: 'Global administration',
     adminSite: 'Site administration',
   },
@@ -139,12 +161,18 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
         createdOrgsLimit: 'The users can create {defaultMaxCreatedOrgs} organization(s) by default.',
         explainLimit: 'Define a value to limit the number of organizations the user can create. -1 for an indeterminate value. Empty the field to fallback on the default value ({defaultMaxCreatedOrgs}).',
         editUserEmailTitle: 'Change the email address of the user {name}',
-        editUserEmailText: 'Warning! Email is an important user key, by modifying this information you run the risk of inserting an incorrect, non-functional or inconsistent address with other entries. This feature is only presented to administrators to unblock a user whose mailbox becomes inaccessible.'
+        editUserEmailText: 'Warning! Email is an important user key, by modifying this information you run the risk of inserting an incorrect, non-functional or inconsistent address with other entries. This feature is only presented to administrators to unblock a user whose mailbox becomes inaccessible.',
+        drop2FATitle: 'Disable two factor authentication',
+        drop2FAText: 'Warning! This operation will disable the two factor authentication for this user.'
       },
       organizations: {
         limitOrganizationTitle: 'Edit the limits of the organization',
         members: 'member(s)',
         nbMembers: 'maximum number of members (0 for no limit)'
+      },
+      sites: {
+        createSite: 'Define a new site',
+        colorWarnings: 'Contrast warnings'
       }
     },
     login: {
@@ -164,6 +192,9 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       passwordlessConfirmed: 'An email was sent to the address {email}. This email contains a link to connect to the platform.',
       createUserMsg1: 'If you didn\'t already connect to our platform you must create an account.',
       createUserMsg2: 'Create an account.',
+      createUserInvit: 'Create an account to accept the invitation in organization {name}',
+      createUserOrganization: 'Do you want to create and organization ?',
+      createuserOrganizationHelp: 'If you create an organization you will be able to invite other users to join you and share resources.',
       tosMsg: 'Before creating an account please read <a href="{tosUrl}" target="_blank">our terms of services</a>.',
       tosConfirm: 'I confirm that I have read the terms of services for this site.',
       createUserConfirm: 'Create the account',
@@ -171,21 +202,37 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       adminMode: 'Confirm your identity to switch to admin mode.',
       oauth: 'Connect with:',
       error: 'Error',
+      rememberMe: 'remember me',
+      '2FACode': '6-digit code or recovery code',
+      '2FAInfo': 'Enter a verification code to continue. You can get this code from the verification app on your phone. If you lose your device, you can use the recovery code downloaded when setting up two-factor authentication.',
+      configure2FA: 'Configure two-factor authentication',
+      configure2FAQRCode: '2-factor authentication setup qr code',
+      configure2FAQRCodeMsg: 'Scan this QR code with an authentication tool of your choice (like Authy or Google Authenticator) then enter the 6-digit code offered by this application.',
+      configure2FACode: '6-digit code',
+      recovery2FA: 'Recovery code',
+      revovery2FAInfo: 'Caution! Keep the recovery code below in a safe place. Without it, you won\'t be able to recover your account if you lose the device on which you just set up 2-factor authentication.',
+      recovery2FACode: 'recovery code: ',
+      recovery2FADownload: 'download a file containing the recovery code',
+      recovery2FAContent: 'Recovery code for two-factor authentication {name}',
       plannedDeletion: 'Planned deletion',
       cancelDeletion: 'Cancel the deletion of the user',
-      siteLogo: 'Site logo'
+      siteLogo: 'Site logo',
+      partnerInvitation: 'Partner invitation',
+      changeHost: 'Account associated with back-office'
     },
     organization: {
       addMember: 'Invite a user to join this organization',
       disableInvite: 'This organization already contains its maximum number of members.',
       deleteMember: 'Delete this user from the list of members',
       editMember: 'Change the role of this user in the organization',
+      memberReadOnly: 'This user\'s membership to the organization comes from an identity provider and cannot be modified here.',
       confirmEditMemberTitle: 'Change {name}',
       confirmDeleteMemberTitle: 'Exclude {name}',
       confirmDeleteMemberMsg: 'Do you really want to delete this user from the list of members of the organization {org} ?',
       deleteMemberSuccess: 'The user {name} was excluded from the organization',
       inviteEmail: 'Email address of the user',
-      inviteSuccess: 'An invitation was sent to the address {email}',
+      inviteSuccess: 'An invitation has been sent to the address {email}',
+      invitePartnerSuccess: 'An invitation has been sent to the address {email}',
       memberConflict: 'This user is already a member',
       back: 'Back',
       next: 'Next',
@@ -194,11 +241,17 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       deleteDepartment: 'Delete {departmentLabel}',
       confirmEditDepartmentTitle: 'Edit {name}',
       confirmDeleteDepartmentTitle: 'Delete {name}',
-      confirmDeleteDepartmentMsg: 'Are you you want to delete {name} from your organization ?',
+      confirmDeleteDepartmentMsg: 'Are you sure you want to delete {name} from your organization ?',
       deleteDepartmentHasMembers: 'This department is affected to {count} member(s) of the organization. You can\'t delete it in this state.',
       departmentIdInvalid: 'Identifier should contain anly letters, numbers and spaces',
       inviteLink: 'In case of problem in the communication by email you can send the confirmation link below by another means. Warning ! You risk inserting an incorrect or non-functional email address in the user database. This email address may cause multiple problems later: change of password, sending alerts, etc.',
-      sendInvitationLink: 'Send another invitation link'
+      '2FARoles': 'Two-factor authentication.',
+      '2FARolesMsg': 'Make two-factor authentication mandatory for users with these roles:',
+      sendInvitationLink: 'Send another invitation link',
+      addPartner: 'Invite a partner organization',
+      deletePartner: 'Delete this partner',
+      depSortCreation: 'Last created',
+      depSortAlpha: 'Alphabetical order'
     },
     invitation: {
       title: 'Invitation validated',
@@ -217,11 +270,16 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       deleteMyselfCheck: 'check and click on OK to confirm the deletion of the user {name} and all its data.',
       accountChanges: 'Managing account switching',
       defaultOrg: 'Activate this account by default after each login',
-      ignorePersonalAccount: 'Check this box if you do not wish to use this platform outside of an organization account'
+      ignorePersonalAccount: 'Check this box if you do not wish to use this platform outside of an organization account',
+      sessions: 'Vos sessions',
+      deleteSession: 'Supprimer la session sur {deviceName} ?',
+      deleteSessionWarning: 'La suppression de session peut mettre un délai maximal de {duration} à être entièrement appliquée.',
+      settings: 'Vos paramètres'
     }
   },
   errors: {
     badEmail: 'Email address is empty or malformed.',
+    badProviderInvitEmail: 'The email address you just used to log in does not match the one from the invitation you received',
     maxCreatedOrgs: 'The user cannot create more organizations. Limit attained.',
     permissionDenied: 'Insufficient permissions.',
     nonEmptyOrganization: 'You must remove other members from this organization',
@@ -232,6 +290,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     serviceUnavailable: 'Service unavailable because of maintenance.',
     badCredentials: 'Email address or password invalid.',
     updatePassword: 'It is necessary to update your password, because it was not updated for a long time.',
+    missingToken: 'The id_token parameter is missing.',
     invalidToken: 'The token is not valid. Maybe it is expired.',
     differentPasswords: 'The passwords are different',
     noPasswordless: 'Passordless authentication is not accepted by this service.',
@@ -242,8 +301,12 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     unknownOAuthProvider: 'OAuth identification not supported.',
     unknownSAMLProvider: 'SAML identification not supported.',
     adminModeOnly: 'Functionality reserved for super administrators.',
+    '2FANotConfigured': 'Two-factor authentication is required for this account and is not yet configured.',
+    passwordless2FA: 'Passwordless authentication is incompatible with two-factor authentication required for this account.',
+    bad2FAToken: 'Invalid or expired verification code for two-factor authentication',
     plannedDeletion: 'The deletion of the user {name} and all its data is planned on the {plannedDeletion}.',
     onlyCreateInvited: 'You can not create an account directly. You must be invited by an organization.',
+    badIDPQuery: 'Request considered invalid by the identity provider.',
     duplicateDep: 'The new department is a duplicate',
     passwordEntropy: 'The password is not strong enough.',
     passwordMinLength: 'The password must contain at least {minLength} chars.',
@@ -316,6 +379,22 @@ If you encounter a problem with your account or if you find this invitation susp
       htmlAlternativeLink: 'If the button doesn\'t work, you can copy/paste this link in the address bar of your browser:',
       htmlCaption: 'If you encounter a problem with your account or if you find this invitation suspicious feel free to contact us at <a href="mailto:{contact}">{contact}</a>.'
     },
+    partnerInvitation: {
+      subject: 'The organization {organization} on {host} wants to add {partner} as a partner',
+      text: `
+An administrator from the organization {organization} invites you as a contact for the organization {partner} to join on {host}. To accept this invitation, copy the URL below into your browser. This URL is valid for 10 days.
+
+{link}
+
+If you encounter a problem with your account or find this invitation suspicious, please contact us at {contact}.
+      `,
+      htmlMsg: `
+An administrator from the organization {organization} invites you as a contact for the organization {partner} to join on {host}. To accept this invitation, click the button below. The link is valid for 10 days.
+      `,
+      htmlButton: 'Accept the invitation',
+      htmlAlternativeLink: 'If the button above doesn\'t work, you can copy this link into your browser\'s address bar:',
+      htmlCaption: 'If you encounter a problem with your account or find this invitation suspicious, please contact us at <a href="mailto:{contact}">{contact}</a>.'
+    },
     action: {
       subject: 'Accomplish an action on your account {host}',
       text: `
@@ -354,6 +433,12 @@ Feel free to contact us at {contact}.
     acceptedInvitationTopic: 'an invitation is accepted',
     acceptedInvitation: 'The user {name} ({email}) has joined the organization {orgName}.',
     userCreated: 'The user {name} ({email}) has registered on the site {host}.',
-    userCreatedOrg: 'The user {name} ({email}) has registered on the site {host} in the organization {orgName}.'
+    userCreatedOrg: 'The user {name} ({email}) has registered on the site {host} in the organization {orgName}.',
+    sentPartnerInvitationTopic: 'a partner invitation is sent',
+    sentPartnerInvitation: 'An email was sent to {email} with an invitation for the organization {partnerName} to join the organization {orgName} as a partner.',
+    acceptedPartnerInvitationTopic: 'a partner invitation is accepted',
+    acceptedPartnerInvitation: 'The organization {partnerName} ({email}) has joined the organization {orgName} as a partner.',
+    addMemberTopic: 'a member has been added',
+    addMember: 'The user {name} ({email}) has joined the organization {orgName}.'
   }
 }
