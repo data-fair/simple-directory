@@ -184,7 +184,15 @@ export default {
         pt: 'Reduzir as informações pessoais na criação da conta',
         de: 'Reduzieren Sie persönliche Informationen bei der Kontoerstellung'
       },
-      description: "Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email."
+      description: "Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email.",
+      'x-i18n-description': {
+        fr: "Si cette option est activée, les informations personnelles demandées à la création d'un compte seront réduites à l'email.",
+        en: 'If this option is enabled, the personal information requested at account creation will be reduced to the email.',
+        es: 'Si esta opción está activada, la información personal solicitada en la creación de la cuenta se reducirá al correo electrónico.',
+        it: "Se questa opzione è attivata, le informazioni personali richieste alla creazione dell'account saranno ridotte all'email.",
+        pt: 'Se esta opção estiver ativada, as informações pessoais solicitadas na criação da conta serão reduzidas ao e-mail.',
+        de: 'Wenn diese Option aktiviert ist, werden die bei der Kontoerstellung angeforderten persönlichen Informationen auf die E-Mail reduziert.'
+      }
     },
     tosMessage: {
       type: 'string',
@@ -198,7 +206,15 @@ export default {
         pt: 'Mensagem dos termos de serviço',
         de: 'Nachricht der Nutzungsbedingungen'
       },
-      description: "Vous pouvez remplacer le message des conditions d'utilisation par défaut."
+      description: "Vous pouvez remplacer le message des conditions d'utilisation par défaut.",
+      'x-i18n-description': {
+        fr: "Vous pouvez remplacer le message des conditions d'utilisation par défaut.",
+        en: 'You can replace the default terms of service message.',
+        es: 'Puede reemplazar el mensaje predeterminado de los términos de servicio.',
+        it: 'Puoi sostituire il messaggio predefinito dei termini di servizio.',
+        pt: 'Você pode substituir a mensagem padrão dos termos de serviço.',
+        de: 'Sie können die Standard-Nutzungsbedingungen-Nachricht ersetzen.'
+      }
     },
     mails: {
       type: 'object',
@@ -223,7 +239,15 @@ export default {
             pt: 'Endereço de e-mail do remetente',
             de: 'E-Mail-Adresse des Absenders'
           },
-          description: 'Attention, la configuration doit être effectuée sur le service d\'envoi de mail pour que cet expéditeur ne soit pas considéré comme illégitime.'
+          description: 'Attention, la configuration doit être effectuée sur le service d\'envoi de mail pour que cet expéditeur ne soit pas considéré comme illégitime.',
+          'x-i18n-description': {
+            fr: 'Attention, la configuration doit être effectuée sur le service d\'envoi de mail pour que cet expéditeur ne soit pas considéré comme illégitime.',
+            en: 'Attention, the configuration must be set up on the mail sending service so that this sender is not considered illegitimate.',
+            es: 'Atención, la configuración debe realizarse en el servicio de envío de correo para que este remitente no sea considerado ilegítimo.',
+            it: 'Attenzione, la configurazione deve essere effettuata sul servizio di invio di posta in modo che questo mittente non sia considerato illegittimo.',
+            pt: 'Atenção, a configuração deve ser feita no serviço de envio de e-mail para que este remetente não seja considerado ilegítimo.',
+            de: 'Achtung, die Konfiguration muss im E-Mail-Versanddienst eingerichtet werden, damit dieser Absender nicht als unrechtmäßig gilt.'
+          }
         }
       }
     },

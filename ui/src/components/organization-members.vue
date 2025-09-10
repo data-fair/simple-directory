@@ -43,7 +43,7 @@
       v-if="members?.fromCache"
       class="mb-3 mx-0"
     >
-      Dernière synchronisation de cette liste avec le fournisseur d'identités : {{ dayjs(members?.fromCache).fromNow() }}.
+      {{ t('pages.organization.fromCache', { fromNow: dayjs(members?.fromCache).fromNow() }) }}
     </v-row>
 
     <v-row dense>

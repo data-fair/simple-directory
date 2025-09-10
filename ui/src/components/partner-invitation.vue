@@ -12,17 +12,17 @@
       class="mb-2"
     >
       <p>
-        L'organisation {{ invit.on }} souhaite ajouter {{ invit.n }} comme partenaire avec {{ invit.e }} comme adresse de contact.
+        {{ $t('pages.partnerInvitation.msg1', {name: invit.on, partnerName: invit.n, email: invit.e}) }}
       </p>
 
       <p class="mb-0">
-        Le nom "{{ invit.n }}" est indicatif et ne correspond pas nécessairement au libellé exact de votre organisation.
+        {{ $t('pages.partnerInvitation.msg2', {partnerName: invit.n}) }}
       </p>
     </v-alert>
 
     <template v-if="user && user.email !== invit.e">
       <p class="my-4">
-        Vous êtes connecté avec le compte utilisateur {{ user.name }} ({{ user.email }}). Vous pouvez vous connecter avec un autre compte ou créer un nouveau compte en cliquant sur le bouton ci-dessous.
+        {{ $t('pages.partnerInvitation.diffEmail', {userName: user.name, userEmail: user.email}) }}
       </p>
       <p>
         <v-btn
@@ -36,7 +36,7 @@
 
     <template v-if="!user">
       <p class="my-4">
-        Vous avez déjà un compte ? Vous pouvez vous connecter et vous serez redirigé vers cette page par la suite.
+        {{ $t('pages.partnerInvitation.noUser1') }}
       </p>
       <p>
         <v-btn
@@ -47,7 +47,7 @@
         />
       </p>
       <p class="my-4">
-        Vous n'avez pas encore de compte ? Vous pouvez en créer un et vous serez redirigé vers cette page par la suite.
+        {{ $t('pages.partnerInvitation.noUser2') }}
       </p>
       <p>
         <v-btn
@@ -64,13 +64,13 @@
         v-if="otherUserOrgs?.length === 0"
         class="mt-4"
       >
-        Vous n'appartenez à aucune organisation. Vous pouvez créer une nouvelle organisation et accepter l'invitation en son nom.
+        {{ $t('pages.partnerInvitation.noOrg') }}
       </p>
       <p
         v-else
         class="mt-4"
       >
-        Vous pouvez accepter cette invitation au nom d'une organisation dont vous êtes administrateur, ou bien créer une nouvelle organisation et accepter l'invitation en son nom.
+        {{ $t('pages.partnerInvitation.org') }}
       </p>
 
       <p>
@@ -87,7 +87,7 @@
         <v-checkbox
           v-model="createNewOrg"
           color="primary"
-          label="créer une nouvelle organisation"
+          :label="$t('pages.partnerInvitation.createOrg')"
           hide-details
           @update:model-value="selectedUserOrg = null"
         />
@@ -97,7 +97,7 @@
           color="primary"
           @click="acceptPartnerInvitation(selectedUserOrg)"
         >
-          accepter au nom de {{ selectedUserOrg.name }}
+          {{ $t('pages.partnerInvitation.acceptAs', {name: selectedUserOrg.name}) }}
         </v-btn>
       </p>
       <p v-if="createNewOrg">
@@ -106,7 +106,7 @@
           class="create-org-name"
           density="compact"
           variant="outlined"
-          label="nom de la nouvelle organisation"
+          :label="$t('pages.partnerInvitation.newOrgName')"
         >
           <template #append>
             <v-btn
@@ -114,7 +114,7 @@
               color="primary"
               @click="createOrga"
             >
-              créer
+              {{ $t('pages.partnerInvitation.create') }}
             </v-btn>
           </template>
         </v-text-field>

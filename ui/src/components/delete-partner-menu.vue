@@ -27,7 +27,7 @@
           {{ $t('common.confirmDeleteMsg', {name: partner.name}) }}
         </p>
         <p>
-          Attention les permissions accordées à l'organisation partenaire ne seront pas modifiées par cette opération. Vous devriez probablement aller les modifier vous même.
+          {{ $t('pages.organization.deletePartnerWarning') }}
         </p>
       </v-card-text>
       <v-card-actions>
