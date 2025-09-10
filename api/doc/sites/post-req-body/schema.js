@@ -12,5 +12,7 @@ schema['$defs'].oidcProvider.properties.client.properties.secret.type = 'string'
 schema.properties.theme.layout = 'none'
 schema.$id = 'https://github.com/data-fair/simple-directory/sites/post-req-body'
 schema['x-exports'] = ['validate', 'types', 'resolvedSchemaJson', 'vjsf']
+schema['x-vjsf'] = { xI18n: true }
+schema['x-vjsf-locales'] = ['en', 'fr', 'it', 'de', 'pt', 'es']
 
 export default schema

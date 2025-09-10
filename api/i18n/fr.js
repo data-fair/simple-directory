@@ -95,6 +95,7 @@ export default {
     passwordLists: 'Mots de passe',
     adminGlobal: 'Administration générale',
     adminSite: 'Administration de site',
+    no: 'non'
   },
   doc: {
     about: {
@@ -168,11 +169,15 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       organizations: {
         limitOrganizationTitle: 'Modifiez les limites de l\'organisation',
         members: 'membre(s)',
-        nbMembers: 'Nombre maximal de membres (0 pour aucune limite)'
+        nbMembers: 'Nombre maximal de membres (0 pour aucune limite)',
+        fromCache: 'Dernière synchronisation de cette liste avec le fournisseur d\'identités : '
       },
       sites: {
         createSite: 'Déclarer un nouveau site',
         colorWarnings: 'Avertissements de contraste',
+      },
+      site: {
+        title: 'Configuration du site'
       }
     },
     login: {

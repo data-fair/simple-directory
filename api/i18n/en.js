@@ -95,6 +95,7 @@ export default {
     passwordLists: 'Passwords',
     adminGlobal: 'Global administration',
     adminSite: 'Site administration',
+    no: 'no'
   },
   doc: {
     about: {
@@ -173,6 +174,9 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       sites: {
         createSite: 'Define a new site',
         colorWarnings: 'Contrast warnings'
+      },
+      site: {
+        title: 'Site configuration'
       }
     },
     login: {
@@ -234,6 +238,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       inviteSuccess: 'An invitation has been sent to the address {email}',
       invitePartnerSuccess: 'An invitation has been sent to the address {email}',
       memberConflict: 'This user is already a member',
+      departmentLabelTitle: 'Label for the concept "department"',
+      departmentLabelHelp: 'Leave empty to display "{defaultDepartmentLabel}". Fill in to use another vocabulary like "service", "agency", etc.',
       back: 'Back',
       next: 'Next',
       addDepartment: 'Create {departmentLabel}',

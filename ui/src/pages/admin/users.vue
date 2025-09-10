@@ -96,7 +96,7 @@
                 @click="showDrop2FADialog(props.item)"
               />
             </template>
-            <span v-else>non</span>
+            <span v-else>{{ $t('common.no') }}</span>
           </td>
           <td>
             <div

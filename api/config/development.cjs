@@ -78,7 +78,7 @@ module.exports = {
     }
   },
   webhooks: {
-    identities: [{ base: 'http://test-koumoul.com/identities', key: 'somesecret' }]
+    // identities: [{ base: 'http://test-koumoul.com/identities', key: 'somesecret' }]
   },
   tosUrl: 'https://test.com',
   manageDepartments: true,
