@@ -239,6 +239,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       inviteSuccess: 'Se ha enviado una invitación a {email}',
       invitePartnerSuccess: 'Se ha enviado una invitación a {email}',
       memberConflict: 'Este usuario ya es miembro',
+      departmentLabelTitle: 'Etiqueta para el concepto "departamento"',
       addDepartment: 'Crear {departmentLabel}',
       editDepartment: 'Editar {departmentLabel}',
       deleteDepartment: 'Eliminar {departmentLabel}',
@@ -307,6 +308,11 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       solution1: 'Solución: mover la cuenta a {host}',
       solution2: 'Si elige esta solución, perderá la posibilidad de iniciar sesión en {mainHost}.',
       confirmMigration: 'mover la cuenta a {host} y perder el acceso a {mainHost}'
+    },
+    orgStorage: {
+      activate: 'Activar el almacenamiento secundario de usuarios',
+      link: 'Enlace de conexión para usar este almacenamiento secundario',
+      ldap: 'Configuración LDAP'
     }
   },
   errors: {

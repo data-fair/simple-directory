@@ -239,8 +239,7 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       inviteSuccess: 'Foi enviado um convite para {email}',
       invitePartnerSuccess: 'Foi enviado um convite para {email}',
       memberConflict: 'Este utilizador já é um membro',
-      back: 'Voltar',
-      next: 'Próximo',
+      departmentLabelTitle: 'Etiqueta para o conceito "departamento"',
       addDepartment: 'Criar {departmentLabel}',
       editDepartment: 'Editar {departmentLabel}',
       deleteDepartment: 'Eliminar {departmentLabel}',
@@ -267,7 +266,7 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       msgDifferentUser: 'Este convite para ser membro de uma organização foi bem aceite. Pode <a href="{loginUrl}">login</a> com a conta de convidado.'
     },
     avatar: {
-      load: 'load a new avatar',
+      load: 'carregar um novo avatar',
       prepare: 'Preparar a imagem'
     },
     me: {
@@ -309,6 +308,11 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       solution1: 'Solução: mover a conta para {host}',
       solution2: 'Se escolher esta solução, perderá a possibilidade de iniciar sessão em {mainHost}.',
       confirmMigration: 'mover a conta para {host} e perder o acesso a {mainHost}'
+    },
+    orgStorage: {
+      activate: 'Ativar o armazenamento secundário de utilizadores',
+      link: 'Ligação de conexão para utilizar este armazenamento secundário',
+      ldap: 'Configuração LDAP'
     }
   },
   errors: {

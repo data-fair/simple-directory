@@ -239,8 +239,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       inviteSuccess: 'Eine Einladung wurde an {email} geschickt',
       invitePartnerSuccess: 'Eine Einladung wurde an {email} geschickt',
       memberConflict: 'Dieser Benutzer ist bereits Mitglied',
-      back: 'Zurück',
-      next: 'Nächste',
+      departmentLabelTitle: 'Bezeichnung für das Konzept "Abteilung"',
       addDepartment: '{departmentLabel} erstellen',
       editDepartment: 'Bearbeiten {departmentLabel}',
       deleteDepartment: 'Löschen {departmentLabel}',
@@ -267,7 +266,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       msgDifferentUser: 'Diese Einladung, Mitglied einer Organisation zu werden, wurde gut angenommen. Sie können <a href="{loginUrl}">Anmelden</a> mit dem Gastkonto.'
     },
     avatar: {
-      load: 'load a new avatar',
+      load: 'Laden Sie ein neues Avatar',
       prepare: 'Das Bild vorbereiten'
     },
     me: {
@@ -309,6 +308,11 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       solution1: 'Lösung: Konto zu {host} verschieben',
       solution2: 'Wenn Sie diese Lösung wählen, verlieren Sie die Möglichkeit, sich bei {mainHost} anzumelden.',
       confirmMigration: 'Konto zu {host} verschieben und den Zugriff auf {mainHost} verlieren'
+    },
+    orgStorage: {
+      activate: 'Aktivieren Sie den sekundären Benutzerspeicher',
+      link: 'Verbindungslink zum Verwenden dieses sekundären Speichers',
+      ldap: 'LDAP-Konfiguration'
     }
   },
   errors: {

@@ -309,6 +309,11 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       solution1: 'Solution: move the account to {host}',
       solution2: 'If you choose this solution, you will lose the ability to log in to {mainHost}.',
       confirmMigration: 'move the account to {host} and lose access to {mainHost}'
+    },
+    orgStorage: {
+      activate: 'Activate secondary user storage',
+      link: 'Connection link to use this secondary storage',
+      ldap: 'LDAP configuration'
     }
   },
   errors: {

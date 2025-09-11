@@ -309,6 +309,11 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       solution1: 'Soluzione: spostare l\'account su {host}',
       solution2: 'Se scegli questa soluzione perderai la possibilità di accedere a {mainHost}.',
       confirmMigration: 'sposta l\'account su {host} e perdi l\'accesso a {mainHost}'
+    },
+    orgStorage: {
+      activate: 'Attivare lo storage secondario degli utenti',
+      link: 'Link di connessione per utilizzare questo storage secondario',
+      ldap: 'Configurazione LDAP'
     }
   },
   errors: {

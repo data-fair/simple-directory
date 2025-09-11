@@ -310,6 +310,11 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       solution1: 'Solution : déplacer le compte vers {host}',
       solution2: 'Si vous choisissez cette solution vous perdrez la possibilité de vous connecter à {mainHost}.',
       confirmMigration: 'déplacer le compte vers {host} et perdre l\'accès à {mainHost}'
+    },
+    orgStorage: {
+      activate: 'Activer le stockage secondaire d\'utilisateurs',
+      link: 'Lien de connexion pour utiliser ce stockage secondaire',
+      ldap: 'Configuration LDAP'
     }
   },
   errors: {
