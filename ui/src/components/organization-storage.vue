@@ -8,7 +8,7 @@
   >
     <v-switch
       v-model="orgStorage.active"
-      label="Activer le stockage secondaire d'utilisateurs"
+      :label="$t('pages.orgStorage.activate')"
       class="mt-0"
       color="admin"
       hide-details
@@ -21,12 +21,12 @@
       <a
         :href="loginOrg"
         target="top"
-      >Lien de connexion pour utiliser ce stockage secondaire</a>
+      >{{ $t('pages.orgStorage.link') }}</a>
     </div>
     <v-textarea
       v-if="orgStorage.active && user.adminMode"
       v-model="ldapConfig"
-      label="Configuration LDAP"
+      :label="$t('pages.orgStorage.ldap')"
       rows="20"
       :error-messages="configParsingError"
     />
@@ -38,7 +38,7 @@
         :disabled="patch.loading.value || !diff"
         @click="patch.execute()"
       >
-        Enregistrer
+        {{ $t('common.save') }}
       </v-btn>
     </v-row>
   </v-alert>

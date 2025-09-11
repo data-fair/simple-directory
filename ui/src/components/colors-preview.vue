@@ -19,13 +19,13 @@
       {{ getTextColorsCss(colors, 'preview-' + colorsKey) }}
     </component>
     <v-container fluid>
-      <h2>Aperçu du rendu des couleurs</h2>
+      <h2>{{ $t('pages.colorsPreview.title') }}</h2>
       <v-card
-        title="Un exemple de carte"
+        :title="$t('pages.colorsPreview.cardTitle')"
         class="my-2"
       >
         <v-card-text>
-          Elle utilise la couleur des "surfaces".
+          {{ $t('pages.colorsPreview.cardText') }}
         </v-card-text>
       </v-card>
       <template

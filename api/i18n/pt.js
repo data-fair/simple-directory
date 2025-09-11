@@ -11,6 +11,7 @@ export default {
     logLink: 'Login / Registo',
     logout: 'Sair',
     login: 'Login',
+    signin: 'Registe-se',
     activateAdminMode: 'Activar o modo de administração',
     deactivateAdminMode: 'Desactivar o modo de administração',
     documentation: 'Documentação',
@@ -19,6 +20,7 @@ export default {
     myOrganizations: 'As minhas Organizações',
     organization: 'Organização',
     organizations: 'Organizações',
+    organizationName: 'Nome da organização',
     user: 'Utilizador',
     users: 'Utilizadores',
     createOrganization: 'Criar uma organização',
@@ -28,10 +30,12 @@ export default {
     name: 'Nome',
     save: 'Registe-se',
     members: 'Membros',
+    orgStorageMembers: 'Membros no armazenamento secundário',
     role: 'Papel',
     search: 'Pesquisa',
     confirmOk: 'Ok',
     confirmCancel: 'Cancelar',
+    confirmTitle: 'Deseja confirmar esta operação?',
     firstName: 'Primeiro nome',
     lastName: 'Sobrenome',
     email: 'Endereço de e-mail',
@@ -44,11 +48,12 @@ export default {
     editTitle: 'Modificar {name}',
     loggedAt: 'Último login',
     createdAt: 'Criado em',
+    createdPhrase: 'Criado por {name} em {date}.',
     host: 'Site',
     sites: 'Sites',
-    createdPhrase: 'Criado por {name} em {date}.',
     updatedAt: 'Actualizado em',
     maxCreatedOrgs: 'Número máximo de organizações a serem criadas',
+    maxCreatedOrgsShort: 'Org. máx.',
     nbCreatedOrgs: 'Número de organizações criadas:',
     back: 'Devolver',
     next: 'Próximo',
@@ -56,6 +61,7 @@ export default {
     checkInbox: 'Verifique a sua caixa de correio',
     spamWarning: 'Se não recebeu nenhum e-mail, verifique se este não foi automaticamente classificado como spam.',
     validate: 'Validar',
+    delete: 'Delete',
     department: 'Departamento',
     departments: 'Departamentos',
     autoAdmin: 'Adicionar-me automaticamente como administrador',
@@ -63,7 +69,34 @@ export default {
     delAsAdmin: 'Voltar à minha sessão de administrador',
     avatar: 'Avatar',
     birthday: 'Aniversário',
-    missingInfo: 'Informação em falta'
+    missingInfo: 'Informação em falta',
+    '2FA': 'Autenticação de Dois Fatores',
+    userAccount: 'Conta pessoal',
+    continue: 'Continuar',
+    tooLong: 'texto é muito longo',
+    settings: 'configurações',
+    emailConfirmed: 'criação finalizada',
+    emailNotConfirmed: 'criação não finalizada',
+    noRole: 'sem papel',
+    downloadCsv: 'baixar a lista em formato CSV',
+    authMode: 'Modo de autenticação',
+    authProviders: 'Provedores de autenticação',
+    partners: 'Organizações parceiras',
+    contactEmail: 'E-mail de contacto',
+    orgName: 'Nome da organização',
+    loginSignin: 'Login / criar uma conta',
+    sort: 'Ordenar',
+    all: 'todos',
+    creationStep: 'Passo de criação',
+    oauthTokens: 'Tokens OAuth',
+    plannedDeletion: 'Eliminação planeada',
+    plannedDeletionShort: 'Eliminação',
+    owner: 'Proprietário',
+    passwordLists: 'Senhas',
+    adminGlobal: 'Administração global',
+    adminSite: 'Administração do site',
+    no: 'não',
+    redirectSite: 'Site de redirecionamento'
   },
   doc: {
     about: {
@@ -130,12 +163,21 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
         createdOrgsLimit: 'Os utilizadores podem criar {defaultMaxCreatedOrgs} organização(ões) predefinida(s).',
         explainLimit: 'Definir um valor para limitar o número de organizações que este utilizador pode criar. -1 para qualquer número. Limpar o campo para voltar ao valor por defeito ({defaultMaxCreatedOrgs}).',
         editUserEmailTitle: 'Altere o endereço de e-mail do usuário {name}',
-        editUserEmailText: 'Aviso! O e-mail é uma chave de usuário importante, ao modificar essas informações você corre o risco de inserir um endereço incorreto, não funcional ou inconsistente com outras entradas. Este recurso é apresentado apenas aos administradores para desbloquear um usuário cuja caixa de correio se torna inacessível.'
+        editUserEmailText: 'Aviso! O e-mail é uma chave de usuário importante, ao modificar essas informações você corre o risco de inserir um endereço incorreto, não funcional ou inconsistente com outras entradas. Este recurso é apresentado apenas aos administradores para desbloquear um usuário cuja caixa de correio se torna inacessível.',
+        drop2FATitle: 'Desactivar a autenticação de dois fatores',
+        drop2FAText: 'Atenção! Esta operação irá desactivar a autenticação de dois fatores para este utilizador.'
       },
       organizations: {
         limitOrganizationTitle: 'Mudar os limites organizacionais',
         members: 'membro(s)',
         nbMembers: 'Número máximo de membros (0 para sem limite)'
+      },
+      sites: {
+        createSite: 'Definir um novo site',
+        colorWarnings: 'Avisos de contraste'
+      },
+      site: {
+        title: 'Configuração do site'
       }
     },
     login: {
@@ -155,36 +197,68 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       passwordlessConfirmed: 'Foi-lhe enviado um e-mail para {email}. Este e-mail contém um link para fazer login na nossa plataforma.',
       createUserMsg1: 'Se ainda não entrou na nossa plataforma, por favor crie uma conta.',
       createUserMsg2: 'Crie uma conta',
+      createUserInvit: 'Create an account to accept the invitation in organization {name}',
+      createUserOrganization: 'Do you want to create and organization ?',
+      createuserOrganizationHelp: 'If you create an organization you will be able to invite other users to join you and share resources.',
       tosMsg: 'Antes de criar a sua conta leia por favor <a href="{tosUrl}" target="_blank">os nossos termos e condições de utilização</a>.',
       tosConfirm: 'Eu confirmo que li os termos e condições de utilização deste site.',
       createUserConfirm: 'Criar uma conta',
       createUserConfirmed: 'Foi-lhe enviado um e-mail para {email}. Este e-mail contém um link para validar a criação da conta.',
       adminMode: 'Confirme a sua identidade para entrar no modo de administração.',
       oauth: 'Faça login com :',
-      error: 'Erro'
+      error: 'Erro',
+      rememberMe: 'lembrar-me',
+      '2FACode': 'código de 6 dígitos ou código de recuperação',
+      '2FAInfo': 'Digite um código de verificação para continuar. Você pode obter este código do aplicativo de verificação no seu telefone. Se perder seu dispositivo, você pode usar o código de recuperação baixado ao configurar a autenticação de dois fatores.',
+      configure2FA: 'Configurar autenticação de dois fatores',
+      configure2FAQRCode: 'Código QR de configuração de autenticação de dois fatores',
+      configure2FAQRCodeMsg: 'Digitalize este código QR com uma ferramenta de autenticação de sua escolha (como Authy ou Google Authenticator) e, em seguida, insira o código de 6 dígitos oferecido por este aplicativo.',
+      configure2FACode: 'código de 6 dígitos',
+      recovery2FA: 'Código de recuperação',
+      revovery2FAInfo: 'Atenção! Guarde o código de recuperação abaixo em um local seguro. Sem ele, você não poderá recuperar sua conta se perder o dispositivo no qual acabou de configurar a autenticação de dois fatores.',
+      recovery2FACode: 'código de recuperação: ',
+      recovery2FADownload: 'baixar um arquivo contendo o código de recuperação',
+      recovery2FAContent: 'Código de recuperação para autenticação de dois fatores {name}',
+      plannedDeletion: 'Eliminação planejada',
+      cancelDeletion: 'Cancelar a eliminação do utilizador',
+      siteLogo: 'Logótipo do site',
+      partnerInvitation: 'Convite de parceiro',
+      changeHost: 'Conta associada ao back-office'
     },
     organization: {
       addMember: 'Convidar um utilizador para se juntar à organização...',
       disableInvite: 'Esta organização atingiu o seu número máximo de membros.',
       deleteMember: 'Apague este utilizador da lista de membros da organização.',
       editMember: 'Mude o papel deste utilizador na organização.',
+      memberReadOnly: 'A associação deste utilizador à organização provém de um provedor de identidade e não pode ser modificada aqui.',
       confirmEditMemberTitle: 'Editar {name}',
       confirmDeleteMemberTitle: 'Excluir {name}',
       confirmDeleteMemberMsg: 'Deseja realmente remover este utilizador da lista de membros da organização {org}?',
       deleteMemberSuccess: 'O utilizador {name} foi expulso da organização',
       inviteEmail: '"Endereço de e-mail do utilizador".',
       inviteSuccess: 'Foi enviado um convite para {email}',
+      invitePartnerSuccess: 'Foi enviado um convite para {email}',
       memberConflict: 'Este utilizador já é um membro',
-      departmentLabelTitle: 'A formulação do conceito de "departamento".',
-      departmentLabelHelp: 'Deixe em branco para mostrar o "departamento". Preencha as informações para usar outro vocabulário como "departamento", "agência", etc.',
+      departmentLabelTitle: 'Etiqueta para o conceito "departamento"',
       addDepartment: 'Criar {departmentLabel}',
       editDepartment: 'Editar {departmentLabel}',
       deleteDepartment: 'Eliminar {departmentLabel}',
       confirmEditDepartmentTitle: 'Editar {name}',
       confirmDeleteDepartmentTitle: 'Apagar {name}',
       confirmDeleteDepartmentMsg: 'Quer mesmo apagar o {name} da sua organização?',
+      deleteDepartmentHasMembers: 'Este departamento está afetado a {count} membro(s) da organização. Não pode eliminá-lo neste estado.',
       departmentIdInvalid: 'O identificador deve conter apenas letras, números e espaços.',
-      inviteLink: 'Em caso de problema na comunicação por e-mail você pode enviar o link de confirmação abaixo por outro meio. Aviso ! Você corre o risco de inserir um endereço de e-mail incorreto ou não funcional no banco de dados do usuário. Este endereço de e-mail pode causar vários problemas posteriormente: alteração de senha, envio de alertas, etc.'
+      inviteLink: 'Em caso de problema na comunicação por e-mail você pode enviar o link de confirmação abaixo por outro meio. Aviso ! Você corre o risco de inserir um endereço de e-mail incorreto ou não funcional no banco de dados do usuário. Este endereço de e-mail pode causar vários problemas posteriormente: alteração de senha, envio de alertas, etc.',
+      '2FARoles': 'Autenticação de Dois Fatores.',
+      '2FARolesMsg': 'Tornar a autenticação de dois fatores obrigatória para utilizadores com estes papéis:',
+      sendInvitationLink: 'Enviar outro link de convite',
+      addPartner: 'Convidar uma organização parceira',
+      deletePartner: 'Eliminar este parceiro',
+      depSortCreation: 'Último criado',
+      depSortAlpha: 'Ordem alfabética',
+      deletePartnerWarning: 'Atenção, as permissões concedidas à organização parceira não serão modificadas por esta operação. Provavelmente deve ir modificá-las.',
+      fromCache: 'Última sincronização desta lista com o provedor de identidade: {fromNow}.',
+      roleLabel: 'Nome do papel "{role}"'
     },
     invitation: {
       title: 'Convite validado',
@@ -192,6 +266,7 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       msgDifferentUser: 'Este convite para ser membro de uma organização foi bem aceite. Pode <a href="{loginUrl}">login</a> com a conta de convidado.'
     },
     avatar: {
+      load: 'carregar um novo avatar',
       prepare: 'Preparar a imagem'
     },
     me: {
@@ -199,11 +274,50 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       operations: 'Operações sensíveis',
       deleteMyself: 'Apagar esta conta',
       deleteMyselfAlert: 'Se apagar a sua conta, os dados associados também serão apagados e não poderão ser recuperados.',
-      deleteMyselfCheck: 'marque esta caixa e clique em OK para confirmar a eliminação.'
+      deleteMyselfCheck: 'marque esta caixa e clique em OK para confirmar a eliminação.',
+      accountChanges: 'Gerir a alternância de contas',
+      defaultOrg: 'Ativar esta conta por defeito após cada login',
+      ignorePersonalAccount: 'Marque esta caixa se não pretender utilizar esta plataforma fora de uma conta de organização',
+      sessions: 'As suas sessões',
+      deleteSession: 'Eliminar a sessão em {deviceName}?',
+      deleteSessionWarning: 'A eliminação de uma sessão pode levar um tempo máximo de {duration} para ser totalmente aplicada.',
+      settings: 'As suas configurações'
+    },
+    colorsPreview: {
+      title: 'Pré-visualização do render das cores',
+      cardTitle: 'Um exemplo de cartão',
+      cardText: 'Ele utiliza a cor das "superfícies".'
+    },
+    partnerInvitation: {
+      msg1: 'A organização {name} deseja adicionar {partnerName} como parceiro com {email} como endereço de contacto.',
+      msg2: 'O nome "{partnerName}" é indicativo e não corresponde necessariamente ao nome exato da sua organização.',
+      diffEmail: 'Você está conectado com a conta de utilizador {userName} ({userEmail}). Pode conectar-se com outra conta ou criar uma nova conta clicando no botão abaixo.',
+      noUser1: 'Já tem uma conta? Pode iniciar sessão e será redirecionado para esta página posteriormente.',
+      noUser2: 'Ainda não tem uma conta? Pode criar uma e será redirecionado para esta página posteriormente.',
+      noOrg: 'Não pertence a nenhuma organização. Pode criar uma nova organização e aceitar o convite em seu nome.',
+      org: 'Pode aceitar este convite em nome de uma organização da qual seja administrador, ou criar uma nova organização e aceitar o convite em seu nome.',
+      createOrg: 'criar uma nova organização',
+      newOrgName: 'nome da nova organização',
+      create: 'criar',
+      acceptAs: 'aceitar em nome de {name}'
+    },
+    changeHost: {
+      msg1: 'A conta {email} não existe em {host} mas existe em {mainHost}.',
+      sso1: 'Solução: usar {mainHost} para iniciar sessão',
+      sso2: 'A página de login oferece um botão para iniciar sessão a partir de {mainHost} que pode usar. Pode também usar <a class="text-primary" href="{mainHostLogin}">este link.</a>.',
+      solution1: 'Solução: mover a conta para {host}',
+      solution2: 'Se escolher esta solução, perderá a possibilidade de iniciar sessão em {mainHost}.',
+      confirmMigration: 'mover a conta para {host} e perder o acesso a {mainHost}'
+    },
+    orgStorage: {
+      activate: 'Ativar o armazenamento secundário de utilizadores',
+      link: 'Ligação de conexão para utilizar este armazenamento secundário',
+      ldap: 'Configuração LDAP'
     }
   },
   errors: {
     badEmail: 'O endereço de email está vazio ou está incorreto.',
+    badProviderInvitEmail: 'O endereço de e-mail que acabou de usar para iniciar sessão não corresponde ao endereço do convite que recebeu',
     maxCreatedOrgs: 'O usuário não pode criar mais organizações. Limite atingido.',
     permissionDenied: 'Permissões insuficientes.',
     nonEmptyOrganization: 'Você deve remover outros membros desta organização.',
@@ -213,14 +327,30 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
     unknownRole: 'A função {role} é desconhecida.',
     serviceUnavailable: 'Serviço indisponível devido à manutenção.',
     badCredentials: 'Endereço de email ou senha inválidos.',
+    updatePassword: 'É necessário atualizar sua senha, pois ela não foi atualizada há muito tempo.',
+    missingToken: 'O parâmetro id_token está ausente.',
     invalidToken: 'O token não é válido. Talvez tenha expirado.',
+    differentPasswords: 'As senhas são diferentes',
     noPasswordless: 'A autenticação sem senha não é aceita por este serviço.',
     rateLimitAuth: 'Muitas tentativas em um curto intervalo. Aguarde antes de tentar novamente.',
     invalidInvitationToken: 'O link de convite que você recebeu é inválido.',
     expiredInvitationToken: 'O link de convite que você recebeu expirou, você não pode mais aceitar este convite.',
     maxNbMembers: 'A organização já possui o número máximo de membros permitido por suas cotas.',
     unknownOAuthProvider: 'A identificação OAuth não é compatível.',
-    adminModeOnly: 'Funcionalidade reservada para superadministradores.'
+    unknownSAMLProvider: 'Identificação SAML não suportada.',
+    adminModeOnly: 'Funcionalidade reservada para superadministradores.',
+    '2FANotConfigured': 'A autenticação de dois fatores é necessária para esta conta e ainda não está configurada.',
+    passwordless2FA: 'A autenticação sem senha é incompatível com a autenticação de dois fatores necessária para esta conta.',
+    bad2FAToken: 'Código de verificação inválido ou expirado para autenticação de dois fatores',
+    plannedDeletion: 'A eliminação do usuário {name} e de todos os seus dados está programada para o {plannedDeletion}.',
+    onlyCreateInvited: 'Você não pode criar uma conta diretamente. Deve ser convidado por uma organização.',
+    badIDPQuery: 'Pedido considerado inválido pelo provedor de identidade.',
+    duplicateDep: 'O novo departamento é um duplicado',
+    passwordEntropy: 'A senha não é suficientemente forte.',
+    passwordMinLength: 'A senha deve conter pelo menos {minLength} caracteres.',
+    passwordMinCharClasses: 'A senha deve conter pelo menos {minCharClasses} tipos diferentes de caracteres (minúsculas, maiúsculas, dígito, caractere especial).',
+    forbiddenPassword: 'Esta senha foi encontrada em uma lista de senhas conhecidas e não pode ser usada.',
+    samePassword: 'A nova senha deve ser diferente da antiga.',
   },
   mails: {
     creation: {
@@ -289,6 +419,22 @@ Se ainda não tiver uma conta, esta será criada automaticamente.
       htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
       htmlCaption: 'Se encontrar um problema com a sua conta ou achar este convite suspeito, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.'
     },
+    partnerInvitation: {
+      subject: 'A organização {organization} em {host} quer adicionar {partner} como parceiro',
+      text: `
+Um administrador da organização {organization} convida-o como contacto para a organização {partner} se juntar em {host}. Para aceitar este convite, copie o URL abaixo para um browser. Este URL é válido por 10 dias.
+
+{link}
+
+Se encontrar um problema com a sua conta ou achar este convite suspeito, por favor contacte-nos em {contact}.
+      `,
+      htmlMsg: `
+Um administrador da organização {organization} convida-o como contacto para a organização {partner} se juntar em {host}. Para aceitar este convite, clique no botão abaixo. A ligação é válida por 10 dias.
+      `,
+      htmlButton: 'Aceitar o convite',
+      htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
+      htmlCaption: 'Se encontrar um problema com a sua conta ou achar este convite suspeito, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.'
+    },
     action: {
       subject: 'Execute uma acção na sua conta em {host}.',
       text: `
@@ -304,6 +450,35 @@ Uma acção solicitando uma confirmação por correio electrónico foi desencade
       htmlButton: 'Validar',
       htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
       htmlCaption: 'Se encontrar um problema com a sua conta ou achar esta mensagem suspeita, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.'
+    },
+    plannedDeletion: {
+      subject: 'Eliminação de conta programada em {host}',
+      text: `
+O utilizador {user} e todos os dados relacionados com ele serão eliminados em {plannedDeletion}. {cause}
+
+Para cancelar a eliminação, pode iniciar sessão aqui {link}.
+
+Não hesite em contactar-nos em {contact}.
+      `,
+      htmlMsg: 'O utilizador {user} e todos os dados relacionados com ele serão eliminados em {plannedDeletion}. {cause}',
+      htmlButton: 'Iniciar sessão para cancelar a eliminação',
+      htmlAlternativeLink: 'Se o botão não funcionar, pode copiar/colar esta ligação na barra de endereço do seu navegador:',
+      htmlCaption: 'Se encontrar um problema com a sua conta ou achar esta mensagem suspeita, não hesite em contactar-nos em <a href="mailto:{contact}">{contact}</a>.',
+      causeInactivity: 'Esta operação foi desencadeada automaticamente porque esta conta está inactiva desde {date}.'
     }
+  },
+  notifications: {
+    sentInvitationTopic: 'um convite foi enviado',
+    sentInvitation: 'Um e-mail foi enviado para {email} com um convite para se juntar à organização {orgName}.',
+    acceptedInvitationTopic: 'um convite foi aceite',
+    acceptedInvitation: 'O utilizador {name} ({email}) juntou-se à organização {orgName}.',
+    userCreated: 'O utilizador {name} ({email}) registou-se no site {host}.',
+    userCreatedOrg: 'O utilizador {name} ({email}) registou-se no site {host} na organização {orgName}.',
+    sentPartnerInvitationTopic: 'um convite de parceiro foi enviado',
+    sentPartnerInvitation: 'Um e-mail foi enviado para {email} com um convite para a organização {partnerName} se juntar à organização {orgName} como parceiro.',
+    acceptedPartnerInvitationTopic: 'um convite de parceiro foi aceite',
+    acceptedPartnerInvitation: 'A organização {partnerName} ({email}) juntou-se à organização {orgName} como parceiro.',
+    addMemberTopic: 'um membro foi adicionado',
+    addMember: 'O utilizador {name} ({email}) juntou-se à organização {orgName}.'
   }
 }

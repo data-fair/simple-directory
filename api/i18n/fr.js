@@ -95,6 +95,8 @@ export default {
     passwordLists: 'Mots de passe',
     adminGlobal: 'Administration générale',
     adminSite: 'Administration de site',
+    no: 'non',
+    redirectSite: 'Site de redirection'
   },
   doc: {
     about: {
@@ -163,16 +165,20 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         editUserEmailTitle: 'Changez l\'adresse email de l\'utilisateur {name}',
         editUserEmailText: 'Attention ! L\'email est une clé importante de l\'utilisateur, en modifiant cette information vous courez le risque d\'insérer une adresse erronée, non fonctionnelle ou incohérente avec d\'autres saisies. Cette fonctionnalité est présentée uniquement aux administrateurs pour débloquer un utilisateur dont la boite mail devient inaccessible.',
         drop2FATitle: 'Effacer la configuration d\'authentification 2 facteurs de l\'utilisateur {name}',
-        drop2FAExplain: 'Attention ! Cette opération est réservée au débloquage d\'un utilisateur qui a à la fois perdu son appareil et son code de récupération pour l\'authentification 2 facteurs. Avant de continuer il est fortement recommandé de s\'assurer d\'une manière ou d\'une autre de l\'identité de la personne qui fait la demande (contacter un collègue membre d\'une même organisation par exemple).'
+        drop2FAExplain: 'Attention ! Cette opération est réservée au débloquage d\'un utilisateur qui a à la fois perdu son appareil et son code de récupération pour l\'authentification 2 facteurs. Avant de continuer il est fortement recommandé de s\'assurer d\'une manière ou d\'une autre de l\'identité de la personne qui fait la demande (contacter un collègue membre d\'une même organisation par exemple).',
       },
       organizations: {
         limitOrganizationTitle: 'Modifiez les limites de l\'organisation',
         members: 'membre(s)',
-        nbMembers: 'Nombre maximal de membres (0 pour aucune limite)'
+        nbMembers: 'Nombre maximal de membres (0 pour aucune limite)',
+        fromCache: 'Dernière synchronisation de cette liste avec le fournisseur d\'identités : '
       },
       sites: {
         createSite: 'Déclarer un nouveau site',
         colorWarnings: 'Avertissements de contraste',
+      },
+      site: {
+        title: 'Configuration du site'
       }
     },
     login: {
@@ -251,7 +257,10 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       addPartner: 'Inviter une organisation partenaire',
       deletePartner: 'Supprimer ce partenaire',
       depSortCreation: 'Derniers créés',
-      depSortAlpha: 'Ordre alphabétique'
+      depSortAlpha: 'Ordre alphabétique',
+      deletePartnerWarning: 'Attention les permissions accordées à l\'organisation partenaire ne seront pas modifiées par cette opération. Vous devriez probablement aller les modifier vous même.',
+      fromCache: 'Dernière synchronisation de cette liste avec le fournisseur d\'identités : {fromNow}.',
+      roleLabel: 'Libellé du rôle "{role}"'
     },
     invitation: {
       title: 'Invitation validée',
@@ -275,6 +284,37 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       deleteSession: 'Supprimer la session sur {deviceName} ?',
       deleteSessionWarning: 'La suppression de session peut mettre un délai maximal de {duration} à être entièrement appliquée.',
       settings: 'Vos paramètres'
+    },
+    colorsPreview: {
+      title: 'Aperçu du rendu des couleurs',
+      cardTitle: 'Un exemple de carte',
+      cardText: 'Elle utilise la couleur des "surfaces".'
+    },
+    partnerInvitation: {
+      msg1: 'L\'organisation {name} souhaite ajouter {partnerName} comme partenaire avec {email} comme adresse de contact.',
+      msg2: 'Le nom "{partnerName}" est indicatif et ne correspond pas nécessairement au libellé exact de votre organisation.',
+      diffEmail: 'Vous êtes connecté avec le compte utilisateur {userName} ({userEmail}). Vous pouvez vous connecter avec un autre compte ou créer un nouveau compte en cliquant sur le bouton ci-dessous.',
+      noUser1: 'Vous avez déjà un compte ? Vous pouvez vous connecter et vous serez redirigé vers cette page par la suite.',
+      noUser2: 'Vous n\'avez pas encore de compte ? Vous pouvez en créer un et vous serez redirigé vers cette page par la suite.',
+      noOrg: 'Vous n\'appartenez à aucune organisation. Vous pouvez créer une nouvelle organisation et accepter l\'invitation en son nom.',
+      org: 'Vous pouvez accepter cette invitation au nom d\'une organisation dont vous êtes administrateur, ou bien créer une nouvelle organisation et accepter l\'invitation en son nom.',
+      createOrg: 'créer une nouvelle organisation',
+      newOrgName: 'nom de la nouvelle organisation',
+      create: 'créer',
+      acceptAs: 'accepter au nom de {name}'
+    },
+    changeHost: {
+      msg1: 'Le compte {email} n\'existe pas sur {host} mais il existe sur {mainHost}.',
+      sso1: 'Solution : utiliser {mainHost} pour se connecter',
+      sso2: 'La page de login propose un bouton pour se connecter depuis {mainHost} que vous pouvez utiliser. Vous pouvez aussi utiliser <a class="text-primary" href="{mainHostLogin}">ce lien.</a>.',
+      solution1: 'Solution : déplacer le compte vers {host}',
+      solution2: 'Si vous choisissez cette solution vous perdrez la possibilité de vous connecter à {mainHost}.',
+      confirmMigration: 'déplacer le compte vers {host} et perdre l\'accès à {mainHost}'
+    },
+    orgStorage: {
+      activate: 'Activer le stockage secondaire d\'utilisateurs',
+      link: 'Lien de connexion pour utiliser ce stockage secondaire',
+      ldap: 'Configuration LDAP'
     }
   },
   errors: {

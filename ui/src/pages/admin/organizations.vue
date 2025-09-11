@@ -17,7 +17,7 @@
       v-if="organizations.data.value?.fromCache"
       class="mb-3 mx-0"
     >
-      Dernière synchronisation de cette liste avec le fournisseur d'identités : {{ dayjs(organizations.data.value?.fromCache).fromNow() }}.
+      {{ $t('pages.admin.organizations.fromCache') }} {{ dayjs(organizations.data.value?.fromCache).fromNow() }}.
     </v-row>
 
     <v-row class="mb-3 mx-0">
