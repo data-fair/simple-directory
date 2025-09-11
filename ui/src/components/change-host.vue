@@ -1,31 +1,29 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div v-if="user">
     <v-alert
       color="warning"
       variant="outlined"
     >
-      Le compte {{ user.email }} n'existe pas sur {{ host }} mais il existe sur {{ mainPublicUrl.host }}.
+      {{ $t('pages.changeHost.msg1', {email: user.email, host, mainHost: mainPublicUrl.host}) }}
     </v-alert>
     <template v-if="sitePublic?.authMode === 'ssoBackOffice'">
       <h3 class="subheader mb-2">
-        Solution : utiliser {{ mainPublicUrl.host }} pour se connecter
+        {{ $t('pages.changeHost.sso1', {mainHost: mainPublicUrl.host}) }}
       </h3>
-      <p>
-        La page de login propose un bouton pour se connecter depuis {{ mainPublicUrl.host }} que vous pouvez utiliser. Vous pouvez aussi utiliser <a
-          class="text-primary"
-          :href="mainHostLogin"
-        >ce lien.</a>.
-      </p>
+      <p v-html="$t('pages.changeHost.sso2', {mainHost: mainPublicUrl.host, mainHostLogin: mainHostLogin})" />
     </template>
     <h3 class="subheader mb-2">
-      Solution : déplacer le compte vers {{ host }}
+      {{ $t('pages.changeHost.solution1', {host}) }}
     </h3>
-    <p>Si vous choisissez cette solution vous perdrez la possibilité de vous connecter à {{ mainPublicUrl.host }}.</p>
+    <p>
+      {{ $t('pages.changeHost.solution2', {mainHost: mainPublicUrl.host}) }}
+    </p>
     <p>
       <v-checkbox
         v-model="confirmMigration"
         color="warning"
-        :label="`déplacer le compte vers ${ host } et perdre l'accès à ${ mainPublicUrl.host }`"
+        :label="$t('pages.changeHost.confirmMigration', {host, mainHost: mainPublicUrl.host})"
       />
     </p>
     <v-card-actions>

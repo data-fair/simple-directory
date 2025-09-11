@@ -301,6 +301,14 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       newOrgName: 'nom de la nouvelle organisation',
       create: 'créer',
       acceptAs: 'accepter au nom de {name}'
+    },
+    changeHost: {
+      msg1: 'Le compte {email} n\'existe pas sur {host} mais il existe sur {mainHost}.',
+      sso1: 'Solution : utiliser {mainHost} pour se connecter',
+      sso2: 'La page de login propose un bouton pour se connecter depuis {mainHost} que vous pouvez utiliser. Vous pouvez aussi utiliser <a class="text-primary" href="{mainHostLogin}">ce lien.</a>.',
+      solution1: 'Solution : déplacer le compte vers {host}',
+      solution2: 'Si vous choisissez cette solution vous perdrez la possibilité de vous connecter à {mainHost}.',
+      confirmMigration: 'déplacer le compte vers {host} et perdre l\'accès à {mainHost}'
     }
   },
   errors: {
