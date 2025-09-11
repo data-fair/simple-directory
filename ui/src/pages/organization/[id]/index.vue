@@ -81,7 +81,7 @@
           v-for="role in orga.roles"
           :key="role"
           v-model="orga.rolesLabels[role]"
-          :label="`Libellé du rôle ${role}`"
+          :label="$t('pages.organization.roleLabel', {role})"
           :placeholder="$uiConfig.defaultRolesLabels?.[role]"
           :disabled="orgRole !== 'admin' || $uiConfig.readonly"
           density="compact"

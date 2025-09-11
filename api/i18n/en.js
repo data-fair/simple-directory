@@ -95,7 +95,8 @@ export default {
     passwordLists: 'Passwords',
     adminGlobal: 'Global administration',
     adminSite: 'Site administration',
-    no: 'no'
+    no: 'no',
+    redirectSite: 'Redirect site'
   },
   doc: {
     about: {
@@ -240,8 +241,6 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       memberConflict: 'This user is already a member',
       departmentLabelTitle: 'Label for the concept "department"',
       departmentLabelHelp: 'Leave empty to display "{defaultDepartmentLabel}". Fill in to use another vocabulary like "service", "agency", etc.',
-      back: 'Back',
-      next: 'Next',
       addDepartment: 'Create {departmentLabel}',
       editDepartment: 'Edit {departmentLabel}',
       deleteDepartment: 'Delete {departmentLabel}',
@@ -257,7 +256,10 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       addPartner: 'Invite a partner organization',
       deletePartner: 'Delete this partner',
       depSortCreation: 'Last created',
-      depSortAlpha: 'Alphabetical order'
+      depSortAlpha: 'Alphabetical order',
+      deletePartnerWarning: 'Warning: permissions granted to the partner organization will not be modified by this operation. You should probably modify them yourself.',
+      fromCache: 'Last synchronization of this list with the identity provider: {fromNow}.',
+      roleLabel: 'Label for the role "{role}"'
     },
     invitation: {
       title: 'Invitation validated',
@@ -277,10 +279,36 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       accountChanges: 'Managing account switching',
       defaultOrg: 'Activate this account by default after each login',
       ignorePersonalAccount: 'Check this box if you do not wish to use this platform outside of an organization account',
-      sessions: 'Vos sessions',
-      deleteSession: 'Supprimer la session sur {deviceName} ?',
-      deleteSessionWarning: 'La suppression de session peut mettre un délai maximal de {duration} à être entièrement appliquée.',
-      settings: 'Vos paramètres'
+      sessions: 'Your sessions',
+      deleteSession: 'Delete the session on {deviceName}?',
+      deleteSessionWarning: 'Deleting a session may take up to {duration} to be fully applied.',
+      settings: 'Your settings'
+    },
+    colorsPreview: {
+      title: 'Preview of color rendering',
+      cardTitle: 'An example card',
+      cardText: 'It uses the color of "surfaces".'
+    },
+    partnerInvitation: {
+      msg1: 'The organization {name} wants to add {partnerName} as a partner with {email} as contact address.',
+      msg2: 'The name "{partnerName}" is indicative and does not necessarily correspond to your organization\'s exact name.',
+      diffEmail: 'You are logged in with the user account {userName} ({userEmail}). You can log in with another account or create a new account by clicking the button below.',
+      noUser1: 'Already have an account? You can log in and will be redirected to this page afterward.',
+      noUser2: 'Don\'t have an account yet? You can create one and will be redirected to this page afterward.',
+      noOrg: 'You are not a member of any organization. You can create a new organization and accept the invitation on its behalf.',
+      org: 'You can accept this invitation on behalf of an organization you administer, or create a new organization and accept the invitation on its behalf.',
+      createOrg: 'create a new organization',
+      newOrgName: 'name of the new organization',
+      create: 'create',
+      acceptAs: 'accept on behalf of {name}'
+    },
+    changeHost: {
+      msg1: 'The account {email} does not exist on {host} but exists on {mainHost}.',
+      sso1: 'Solution: use {mainHost} to log in',
+      sso2: 'The login page offers a button to log in from {mainHost} that you can use. You can also use <a class="text-primary" href="{mainHostLogin}">this link.</a>.',
+      solution1: 'Solution: move the account to {host}',
+      solution2: 'If you choose this solution, you will lose the ability to log in to {mainHost}.',
+      confirmMigration: 'move the account to {host} and lose access to {mainHost}'
     }
   },
   errors: {

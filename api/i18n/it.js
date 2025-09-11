@@ -7,7 +7,7 @@ export default {
     description: "Gestione semplificata dei suoi utenti e delle sue organizzazioni in un'architettura moderna orientata al web."
   },
   common: {
-    home: 'Home page',
+    home: 'Pagina iniziale',
     logLink: 'Accesso / Registrazione',
     logout: 'Disconnettiti',
     login: 'Login',
@@ -20,7 +20,7 @@ export default {
     myOrganizations: 'Le mie organizzazioni',
     organization: 'Organizzazione',
     organizations: 'Organizzazioni',
-    organizationName: 'Organization name',
+    organizationName: 'Nome dell\'organizzazione',
     user: 'Utente',
     users: 'Utenti',
     createOrganization: "Creare un'organizzazione",
@@ -30,12 +30,12 @@ export default {
     name: 'Nome',
     save: 'Registrati a',
     members: 'Membri',
-    orgStorageMembers: 'Members in secondary storage',
+    orgStorageMembers: 'Membri nello storage secondario',
     role: 'Ruolo',
     search: 'Ricerca',
     confirmOk: 'Ok',
     confirmCancel: 'Annulla',
-    confirmTitle: 'Do you want to confirm this operation ?',
+    confirmTitle: 'Vuoi confermare questa operazione?',
     firstName: 'Nome',
     lastName: 'Cognome',
     email: 'Indirizzo e-mail',
@@ -92,9 +92,11 @@ export default {
     plannedDeletion: 'Cancellazione programmata',
     plannedDeletionShort: 'Cancellazione',
     owner: 'Proprietario',
-    passwordLists: 'Password',
+    passwordLists: 'Elenchi di password',
     adminGlobal: 'Amministrazione globale',
     adminSite: 'Amministrazione del sito',
+    no: 'no',
+    redirectSite: 'Sito di reindirizzamento'
   },
   doc: {
     about: {
@@ -173,6 +175,9 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       sites: {
         createSite: 'Definire un nuovo sito',
         colorWarnings: 'Avvertenze di contrasto'
+      },
+      site: {
+        title: 'Configurazione del sito'
       }
     },
     login: {
@@ -236,8 +241,6 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       memberConflict: 'Questo utente è già membro',
       departmentLabelTitle: 'Etichetta per il concetto "dipartimento"',
       departmentLabelHelp: 'Lasciare vuoto per visualizzare "{defaultDepartmentLabel}". Compilare per utilizzare un altro vocabolario come "servizio", "agenzia", ecc.',
-      back: 'Ritorno',
-      next: 'Avanti',
       addDepartment: 'Creare {departmentLabel}',
       editDepartment: 'Modifica {departmentLabel}',
       deleteDepartment: 'Cancellare {departmentLabel}',
@@ -253,10 +256,13 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       addPartner: 'Invita un\'organizzazione partner',
       deletePartner: 'Elimina questo partner',
       depSortCreation: 'Ultimo creato',
-      depSortAlpha: 'Ordine alfabetico'
+      depSortAlpha: 'Ordine alfabetico',
+      deletePartnerWarning: 'Attenzione le autorizzazioni concesse all\'organizzazione partner non saranno modificate da questa operazione. Dovresti probabilmente modificarle tu stesso.',
+      fromCache: 'Ultima sincronizzazione di questo elenco con il provider di identità: {fromNow}.',
+      roleLabel: 'Etichetta del ruolo "{role}"'
     },
     invitation: {
-      title: 'Invitation validée',
+      title: 'Invito accettato',
       msgSameUser: 'Il vostro invito a far parte di un\'organizzazione è stato accettato. Potete consultare <a href="{profileUrl}">il tuo profilo</a>.',
       msgDifferentUser: 'L\'invito a far parte di un\'organizzazione è stato ben accolto. È possibile <a href="{loginUrl}">Accedi</a> con l\'account dell\'ospite.'
     },
@@ -277,6 +283,32 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       deleteSession: 'Eliminare la sessione su {deviceName} ?',
       deleteSessionWarning: 'La cancellazione della sessione può richiedere un tempo massimo di {duration} per essere completamente applicata.',
       settings: 'Le tue impostazioni'
+    },
+    colorsPreview: {
+      title: 'Anteprima del rendering dei colori',
+      cardTitle: 'Un esempio di carta',
+      cardText: 'Utilizza il colore delle "superfici".'
+    },
+    partnerInvitation: {
+      msg1: 'L\'organizzazione {name} desidera aggiungere {partnerName} come partner con {email} come indirizzo di contatto.',
+      msg2: 'Il nome "{partnerName}" è indicativo e non corrisponde necessariamente alla denominazione esatta della tua organizzazione.',
+      diffEmail: 'Sei connesso con l\'account utente {userName} ({userEmail}). Puoi connetterti con un altro account o creare un nuovo account cliccando sul pulsante qui sotto.',
+      noUser1: 'Hai già un account? Puoi accedere e sarai reindirizzato a questa pagina in seguito.',
+      noUser2: 'Non hai ancora un account? Puoi crearne uno e sarai reindirizzato a questa pagina in seguito.',
+      noOrg: 'Non appartieni a nessuna organizzazione. Puoi creare una nuova organizzazione e accettare l\'invito a suo nome.',
+      org: 'Puoi accettare questo invito a nome di un\'organizzazione di cui sei amministratore, oppure creare una nuova organizzazione e accettare l\'invito a suo nome.',
+      createOrg: 'creare una nuova organizzazione',
+      newOrgName: 'nome della nuova organizzazione',
+      create: 'creare',
+      acceptAs: 'accetta a nome di {name}'
+    },
+    changeHost: {
+      msg1: 'L\'account {email} non esiste su {host} ma esiste su {mainHost}.',
+      sso1: 'Soluzione: utilizzare {mainHost} per accedere',
+      sso2: 'La pagina di login propone un pulsante per accedere da {mainHost} che puoi utilizzare. Puoi anche utilizzare <a class="text-primary" href="{mainHostLogin}">questo link.</a>.',
+      solution1: 'Soluzione: spostare l\'account su {host}',
+      solution2: 'Se scegli questa soluzione perderai la possibilità di accedere a {mainHost}.',
+      confirmMigration: 'sposta l\'account su {host} e perdi l\'accesso a {mainHost}'
     }
   },
   errors: {

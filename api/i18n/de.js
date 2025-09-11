@@ -20,6 +20,7 @@ export default {
     myOrganizations: 'Meine Organisationen',
     organization: 'Organisation',
     organizations: 'Organisationen',
+    organizationName: 'Organisationsname',
     user: 'Nutzer',
     users: 'Benutzer',
     createOrganization: 'Erstellen einer Organisation',
@@ -94,6 +95,8 @@ export default {
     passwordLists: 'Passwörter',
     adminGlobal: 'Globale Verwaltung',
     adminSite: 'Seitenverwaltung',
+    no: 'Nein',
+    redirectSite: 'Website für die Weiterleitung'
   },
   doc: {
     about: {
@@ -172,6 +175,9 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       sites: {
         createSite: 'Eine neue Website definieren',
         colorWarnings: 'Kontrastwarnungen'
+      },
+      site: {
+        title: 'Website-Konfiguration'
       }
     },
     login: {
@@ -191,9 +197,9 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       passwordlessConfirmed: 'Unter {email} wurde eine E-Mail an Sie gesendet. Diese E-Mail enthält einen Link zur Verbindung mit unserer Plattform.',
       createUserMsg1: 'Wenn Sie sich noch nicht auf unserer Plattform angemeldet haben, erstellen Sie bitte ein Konto.',
       createUserMsg2: 'Ein Konto erstellen',
-      createUserInvit: 'Create an account to accept the invitation in organization {name}',
-      createUserOrganization: 'Do you want to create and organization ?',
-      createuserOrganizationHelp: 'If you create an organization you will be able to invite other users to join you and share resources.',
+      createUserInvit: 'Erstellen Sie ein Konto, um die Einladung in der Organisation {name} anzunehmen',
+      createUserOrganization: 'Möchten Sie eine Organisation erstellen?',
+      createuserOrganizationHelp: 'Wenn Sie eine Organisation erstellen, können Sie andere Benutzer einladen, Ihnen beizutreten und Ressourcen zu teilen.',
       tosMsg: 'Bevor Sie Ihr Konto erstellen, lesen Sie bitte <a href="{tosUrl}" target="_blank">unsere allgemeinen Nutzungsbedingungenn</a>.',
       tosConfirm: 'Ich bestätige, dass ich die allgemeinen Nutzungsbedingungen für diese Website gelesen habe.',
       createUserConfirm: 'Konto erstellen',
@@ -224,7 +230,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       disableInvite: 'Diese Organisation hat ihre maximale Mitgliederzahl erreicht.',
       deleteMember: 'Löschen Sie diesen Benutzer aus der Mitgliederliste der Organisation',
       editMember: 'Ändern Sie die Rolle dieses Benutzers in der Organisation',
-      memberReadOnly: 'This user\'s membership to the organization comes from an identity provider and cannot be modified here.',
+      memberReadOnly: 'Die Mitgliedschaft dieses Benutzers in der Organisation stammt aus einem Identitätsanbieter und kann hier nicht geändert werden.',
       confirmEditMemberTitle: 'Bearbeiten {name}',
       confirmDeleteMemberTitle: 'Ausschließen {name}',
       confirmDeleteMemberMsg: 'Wollen Sie diesen Benutzer wirklich von der Mitgliederliste der Organisation streichen {name}?',
@@ -241,7 +247,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       confirmEditDepartmentTitle: 'Bearbeiten {name}',
       confirmDeleteDepartmentTitle: '{name} entfernen',
       confirmDeleteDepartmentMsg: 'Möchten Sie {name} wirklich aus Ihrer Organisation entfernen?',
-      deleteDepartmentHasMembers: 'This department is affected to {count} member(s) of the organization. You can\'t delete it in this state.',
+      deleteDepartmentHasMembers: 'Este departamento está atribuído a {count} membro(s) da organização. Não pode ser excluído neste estado.',
       departmentIdInvalid: 'Der Bezeichner darf nur Buchstaben, Zahlen und Leerzeichen enthalten.',
       inviteLink: 'Bei Problemen bei der Kommunikation per E-Mail können Sie den untenstehenden Bestätigungslink auf andere Weise senden. Warnung ! Sie riskieren das Einfügen einer falschen oder nicht funktionierenden E-Mail-Adresse in die Benutzerdatenbank. Diese E-Mail-Adresse kann später mehrere Probleme verursachen: Passwortänderung, Senden von Benachrichtigungen usw.',
       '2FARoles': 'Zwei-Faktor-Authentifizierung.',
@@ -250,7 +256,10 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       addPartner: 'Laden Sie eine Partnerorganisation ein',
       deletePartner: 'Löschen Sie diesen Partner',
       depSortCreation: 'Zuletzt erstellt',
-      depSortAlpha: 'Alphabetische Reihenfolge'
+      depSortAlpha: 'Alphabetische Reihenfolge',
+      deletePartnerWarning: 'Achtung! Die Berechtigungen, die der Partnerorganisation gewährt wurden, werden durch diese Operation nicht geändert. Sie sollten diese wahrscheinlich selbst ändern.',
+      fromCache: 'Letzte Synchronisierung dieser Liste mit dem Identitätsanbieter: {fromNow}.',
+      roleLabel: 'Bezeichnung der Rolle "{role}"'
     },
     invitation: {
       title: 'Einladung validiert',
@@ -274,6 +283,32 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       deleteSession: 'Sitzung auf {deviceName} löschen?',
       deleteSessionWarning: 'Das Löschen einer Sitzung kann maximal {duration} dauern, bis es vollständig angewendet wird.',
       settings: 'Ihre Einstellungen'
+    },
+    colorsPreview: {
+      title: 'Vorschau der Farbdarstellung',
+      cardTitle: 'Ein Beispiel für eine Karte',
+      cardText: 'Sie verwendet die Farbe der "Oberflächen".'
+    },
+    partnerInvitation: {
+      msg1: 'Die Organisation {name} möchte {partnerName} als Partner hinzufügen, mit {email} als Kontaktadresse.',
+      msg2: 'Der Name "{partnerName}" ist nur eine Indikation und entspricht nicht unbedingt dem genauen Namen Ihrer Organisation.',
+      diffEmail: 'Sie sind mit dem Benutzerkonto {userName} ({userEmail}) angemeldet. Sie können sich mit einem anderen Konto anmelden oder ein neues Konto erstellen, indem Sie auf die Schaltfläche unten klicken.',
+      noUser1: 'Sie haben bereits ein Konto? Sie können sich anmelden und werden später auf diese Seite weitergeleitet.',
+      noUser2: 'Sie haben noch kein Konto? Sie können eines erstellen und werden später auf diese Seite weitergeleitet.',
+      noOrg: 'Sie gehören keiner Organisation an. Sie können eine neue Organisation erstellen und die Einladung im Namen der Organisation akzeptieren.',
+      org: 'Sie können diese Einladung im Namen einer Organisation akzeptieren, für die Sie Administrator sind, oder eine neue Organisation erstellen und die Einladung im Namen der Organisation akzeptieren.',
+      createOrg: 'eine neue Organisation erstellen',
+      newOrgName: 'Name der neuen Organisation',
+      create: 'erstellen',
+      acceptAs: 'akzeptieren im Namen von {name}'
+    },
+    changeHost: {
+      msg1: 'Das Konto {email} existiert nicht auf {host}, aber es existiert auf {mainHost}.',
+      sso1: 'Lösung: Verwenden Sie {mainHost} zum Anmelden',
+      sso2: 'Die Anmeldeseite bietet eine Schaltfläche zum Anmelden von {mainHost}, die Sie verwenden können. Sie können auch <a class="text-primary" href="{mainHostLogin}">diesen Link</a> verwenden.',
+      solution1: 'Lösung: Konto zu {host} verschieben',
+      solution2: 'Wenn Sie diese Lösung wählen, verlieren Sie die Möglichkeit, sich bei {mainHost} anzumelden.',
+      confirmMigration: 'Konto zu {host} verschieben und den Zugriff auf {mainHost} verlieren'
     }
   },
   errors: {

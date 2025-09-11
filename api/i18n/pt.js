@@ -30,12 +30,12 @@ export default {
     name: 'Nome',
     save: 'Registe-se',
     members: 'Membros',
-    orgStorageMembers: 'Members in secondary storage',
+    orgStorageMembers: 'Membros no armazenamento secundário',
     role: 'Papel',
     search: 'Pesquisa',
     confirmOk: 'Ok',
     confirmCancel: 'Cancelar',
-    confirmTitle: 'Do you want to confirm this operation ?',
+    confirmTitle: 'Deseja confirmar esta operação?',
     firstName: 'Primeiro nome',
     lastName: 'Sobrenome',
     email: 'Endereço de e-mail',
@@ -95,6 +95,8 @@ export default {
     passwordLists: 'Senhas',
     adminGlobal: 'Administração global',
     adminSite: 'Administração do site',
+    no: 'não',
+    redirectSite: 'Site de redirecionamento'
   },
   doc: {
     about: {
@@ -162,8 +164,8 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
         explainLimit: 'Definir um valor para limitar o número de organizações que este utilizador pode criar. -1 para qualquer número. Limpar o campo para voltar ao valor por defeito ({defaultMaxCreatedOrgs}).',
         editUserEmailTitle: 'Altere o endereço de e-mail do usuário {name}',
         editUserEmailText: 'Aviso! O e-mail é uma chave de usuário importante, ao modificar essas informações você corre o risco de inserir um endereço incorreto, não funcional ou inconsistente com outras entradas. Este recurso é apresentado apenas aos administradores para desbloquear um usuário cuja caixa de correio se torna inacessível.',
-        drop2FATitle: 'Disable two factor authentication',
-        drop2FAText: 'Warning! This operation will disable the two factor authentication for this user.'
+        drop2FATitle: 'Desactivar a autenticação de dois fatores',
+        drop2FAText: 'Atenção! Esta operação irá desactivar a autenticação de dois fatores para este utilizador.'
       },
       organizations: {
         limitOrganizationTitle: 'Mudar os limites organizacionais',
@@ -171,8 +173,11 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
         nbMembers: 'Número máximo de membros (0 para sem limite)'
       },
       sites: {
-        createSite: 'Define a new site',
-        colorWarnings: 'Contrast warnings'
+        createSite: 'Definir um novo site',
+        colorWarnings: 'Avisos de contraste'
+      },
+      site: {
+        title: 'Configuração do site'
       }
     },
     login: {
@@ -202,23 +207,23 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       adminMode: 'Confirme a sua identidade para entrar no modo de administração.',
       oauth: 'Faça login com :',
       error: 'Erro',
-      rememberMe: 'remember me',
-      '2FACode': '6-digit code or recovery code',
-      '2FAInfo': 'Enter a verification code to continue. You can get this code from the verification app on your phone. If you lose your device, you can use the recovery code downloaded when setting up two-factor authentication.',
-      configure2FA: 'Configure two-factor authentication',
-      configure2FAQRCode: '2-factor authentication setup qr code',
-      configure2FAQRCodeMsg: 'Scan this QR code with an authentication tool of your choice (like Authy or Google Authenticator) then enter the 6-digit code offered by this application.',
-      configure2FACode: '6-digit code',
-      recovery2FA: 'Recovery code',
-      revovery2FAInfo: 'Caution! Keep the recovery code below in a safe place. Without it, you won\'t be able to recover your account if you lose the device on which you just set up 2-factor authentication.',
-      recovery2FACode: 'recovery code: ',
-      recovery2FADownload: 'download a file containing the recovery code',
-      recovery2FAContent: 'Recovery code for two-factor authentication {name}',
-      plannedDeletion: 'Planned deletion',
-      cancelDeletion: 'Cancel the deletion of the user',
-      siteLogo: 'Site logo',
-      partnerInvitation: 'Partner invitation',
-      changeHost: 'Account associated with back-office'
+      rememberMe: 'lembrar-me',
+      '2FACode': 'código de 6 dígitos ou código de recuperação',
+      '2FAInfo': 'Digite um código de verificação para continuar. Você pode obter este código do aplicativo de verificação no seu telefone. Se perder seu dispositivo, você pode usar o código de recuperação baixado ao configurar a autenticação de dois fatores.',
+      configure2FA: 'Configurar autenticação de dois fatores',
+      configure2FAQRCode: 'Código QR de configuração de autenticação de dois fatores',
+      configure2FAQRCodeMsg: 'Digitalize este código QR com uma ferramenta de autenticação de sua escolha (como Authy ou Google Authenticator) e, em seguida, insira o código de 6 dígitos oferecido por este aplicativo.',
+      configure2FACode: 'código de 6 dígitos',
+      recovery2FA: 'Código de recuperação',
+      revovery2FAInfo: 'Atenção! Guarde o código de recuperação abaixo em um local seguro. Sem ele, você não poderá recuperar sua conta se perder o dispositivo no qual acabou de configurar a autenticação de dois fatores.',
+      recovery2FACode: 'código de recuperação: ',
+      recovery2FADownload: 'baixar um arquivo contendo o código de recuperação',
+      recovery2FAContent: 'Código de recuperação para autenticação de dois fatores {name}',
+      plannedDeletion: 'Eliminação planejada',
+      cancelDeletion: 'Cancelar a eliminação do utilizador',
+      siteLogo: 'Logótipo do site',
+      partnerInvitation: 'Convite de parceiro',
+      changeHost: 'Conta associada ao back-office'
     },
     organization: {
       addMember: 'Convidar um utilizador para se juntar à organização...',
@@ -251,7 +256,10 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       addPartner: 'Convidar uma organização parceira',
       deletePartner: 'Eliminar este parceiro',
       depSortCreation: 'Último criado',
-      depSortAlpha: 'Ordem alfabética'
+      depSortAlpha: 'Ordem alfabética',
+      deletePartnerWarning: 'Atenção, as permissões concedidas à organização parceira não serão modificadas por esta operação. Provavelmente deve ir modificá-las.',
+      fromCache: 'Última sincronização desta lista com o provedor de identidade: {fromNow}.',
+      roleLabel: 'Nome do papel "{role}"'
     },
     invitation: {
       title: 'Convite validado',
@@ -275,6 +283,32 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       deleteSession: 'Eliminar a sessão em {deviceName}?',
       deleteSessionWarning: 'A eliminação de uma sessão pode levar um tempo máximo de {duration} para ser totalmente aplicada.',
       settings: 'As suas configurações'
+    },
+    colorsPreview: {
+      title: 'Pré-visualização do render das cores',
+      cardTitle: 'Um exemplo de cartão',
+      cardText: 'Ele utiliza a cor das "superfícies".'
+    },
+    partnerInvitation: {
+      msg1: 'A organização {name} deseja adicionar {partnerName} como parceiro com {email} como endereço de contacto.',
+      msg2: 'O nome "{partnerName}" é indicativo e não corresponde necessariamente ao nome exato da sua organização.',
+      diffEmail: 'Você está conectado com a conta de utilizador {userName} ({userEmail}). Pode conectar-se com outra conta ou criar uma nova conta clicando no botão abaixo.',
+      noUser1: 'Já tem uma conta? Pode iniciar sessão e será redirecionado para esta página posteriormente.',
+      noUser2: 'Ainda não tem uma conta? Pode criar uma e será redirecionado para esta página posteriormente.',
+      noOrg: 'Não pertence a nenhuma organização. Pode criar uma nova organização e aceitar o convite em seu nome.',
+      org: 'Pode aceitar este convite em nome de uma organização da qual seja administrador, ou criar uma nova organização e aceitar o convite em seu nome.',
+      createOrg: 'criar uma nova organização',
+      newOrgName: 'nome da nova organização',
+      create: 'criar',
+      acceptAs: 'aceitar em nome de {name}'
+    },
+    changeHost: {
+      msg1: 'A conta {email} não existe em {host} mas existe em {mainHost}.',
+      sso1: 'Solução: usar {mainHost} para iniciar sessão',
+      sso2: 'A página de login oferece um botão para iniciar sessão a partir de {mainHost} que pode usar. Pode também usar <a class="text-primary" href="{mainHostLogin}">este link.</a>.',
+      solution1: 'Solução: mover a conta para {host}',
+      solution2: 'Se escolher esta solução, perderá a possibilidade de iniciar sessão em {mainHost}.',
+      confirmMigration: 'mover a conta para {host} e perder o acesso a {mainHost}'
     }
   },
   errors: {

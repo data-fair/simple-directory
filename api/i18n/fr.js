@@ -259,7 +259,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       depSortCreation: 'Derniers créés',
       depSortAlpha: 'Ordre alphabétique',
       deletePartnerWarning: 'Attention les permissions accordées à l\'organisation partenaire ne seront pas modifiées par cette opération. Vous devriez probablement aller les modifier vous même.',
-      fromCache: 'Dernière synchronisation de cette liste avec le fournisseur d\'identités : {fromNow}.'
+      fromCache: 'Dernière synchronisation de cette liste avec le fournisseur d\'identités : {fromNow}.',
+      roleLabel: 'Libellé du rôle "{role}"'
     },
     invitation: {
       title: 'Invitation validée',

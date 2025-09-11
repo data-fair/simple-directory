@@ -95,6 +95,8 @@ export default {
     passwordLists: 'Contraseñas',
     adminGlobal: 'Administración global',
     adminSite: 'Administración del sitio',
+    no: 'no',
+    redirectSite: 'Sitio de redirección'
   },
   doc: {
     about: {
@@ -173,6 +175,9 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       sites: {
         createSite: 'Definir un nuevo sitio',
         colorWarnings: 'Advertencias de contraste'
+      },
+      site: {
+        title: 'Configuración del sitio'
       }
     },
     login: {
@@ -192,9 +197,9 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       passwordlessConfirmed: 'Se ha enviado un correo electrónico a la dirección {email}. Este correo electrónico contiene un enlace para conectarse a nuestra plataforma.',
       createUserMsg1: 'Si aún no ha iniciado sesión en nuestra plataforma, cree una cuenta.',
       createUserMsg2: 'Crear una cuenta',
-      createUserInvit: 'Create an account to accept the invitation in organization {name}',
-      createUserOrganization: 'Do you want to create and organization ?',
-      createuserOrganizationHelp: 'If you create an organization you will be able to invite other users to join you and share resources.',
+      createUserInvit: 'Cree una cuenta para aceptar la invitación en la organización {name}',
+      createUserOrganization: '¿Desea crear una organización?',
+      createuserOrganizationHelp: 'Si crea una organización, podrá invitar a otros usuarios para unirse y compartir recursos.',
       tosMsg: 'Antes de crear su cuenta, lea <a href="{tosUrl}" target="_blank">nuestras condiciones generales de uso</a>.',
       tosConfirm: 'Confirmo que he leído las condiciones generales de uso de este sitio.',
       createUserConfirm: 'Crear una cuenta',
@@ -234,15 +239,13 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       inviteSuccess: 'Se ha enviado una invitación a {email}',
       invitePartnerSuccess: 'Se ha enviado una invitación a {email}',
       memberConflict: 'Este usuario ya es miembro',
-      back: 'Back',
-      next: 'Next',
       addDepartment: 'Crear {departmentLabel}',
       editDepartment: 'Editar {departmentLabel}',
       deleteDepartment: 'Eliminar {departmentLabel}',
       confirmEditDepartmentTitle: 'Editar {name}',
       confirmDeleteDepartmentTitle: 'Eliminar {name}',
       confirmDeleteDepartmentMsg: '¿Está seguro de que desea eliminar a {name} de su organización?',
-      deleteDepartmentHasMembers: 'This department is affected to {count} member(s) of the organization. You can\'t delete it in this state.',
+      deleteDepartmentHasMembers: 'Este departamento está afectado a {count} miembro(s) de la organización. No puede eliminarlo en este estado.',
       departmentIdInvalid: 'El identificador debe contener solo letras, números y espacios.',
       inviteLink: 'En caso de problema en la comunicación por correo electrónico puede enviar el enlace de confirmación a continuación por otro medio. Atención ! Corre el riesgo de insertar una dirección de correo electrónico incorrecta o no funcional en la base de datos de usuarios. Esta dirección de correo electrónico puede causar varios problemas posteriormente: cambio de contraseña, envío de alertas, etc.',
       '2FARoles': 'Autenticación de dos factores.',
@@ -251,7 +254,10 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       addPartner: 'Invitar a una organización socia',
       deletePartner: 'Eliminar este socio',
       depSortCreation: 'Última creación',
-      depSortAlpha: 'Orden alfabético'
+      depSortAlpha: 'Orden alfabético',
+      deletePartnerWarning: 'Atención, los permisos concedidos a la organización asociada no se modificarán con esta operación. Probablemente deberá modificarlos usted mismo.',
+      fromCache: 'Última sincronización de esta lista con el proveedor de identidad: {fromNow}.',
+      roleLabel: 'Etiqueta del rol "{role}"'
     },
     invitation: {
       title: 'Invitación validada',
@@ -275,6 +281,32 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       deleteSession: '¿Eliminar la sesión en {deviceName}?',
       deleteSessionWarning: 'La eliminación de la sesión puede tardar un máximo de {duration} en aplicarse completamente.',
       settings: 'Tus ajustes'
+    },
+    colorsPreview: {
+      title: 'Vista previa del renderizado de colores',
+      cardTitle: 'Un ejemplo de tarjeta',
+      cardText: 'Utiliza el color de las "superficies".'
+    },
+    partnerInvitation: {
+      msg1: 'La organización {name} desea agregar a {partnerName} como socio con {email} como dirección de contacto.',
+      msg2: 'El nombre "{partnerName}" es indicativo y no necesariamente corresponde al nombre exacto de su organización.',
+      diffEmail: 'Está conectado con la cuenta de usuario {userName} ({userEmail}). Puede conectarse con otra cuenta o crear una nueva cuenta haciendo clic en el botón de abajo.',
+      noUser1: '¿Ya tiene una cuenta? Puede iniciar sesión y será redirigido a esta página posteriormente.',
+      noUser2: '¿No tiene una cuenta aún? Puede crear una y será redirigido a esta página posteriormente.',
+      noOrg: 'No pertenece a ninguna organización. Puede crear una nueva organización y aceptar la invitación en su nombre.',
+      org: 'Puede aceptar esta invitación en nombre de una organización de la que sea administrador, o bien crear una nueva organización y aceptar la invitación en su nombre.',
+      createOrg: 'crear una nueva organización',
+      newOrgName: 'nombre de la nueva organización',
+      create: 'crear',
+      acceptAs: 'aceptar en nombre de {name}'
+    },
+    changeHost: {
+      msg1: 'La cuenta {email} no existe en {host} pero sí existe en {mainHost}.',
+      sso1: 'Solución: usar {mainHost} para iniciar sesión',
+      sso2: 'La página de inicio de sesión ofrece un botón para iniciar sesión desde {mainHost} que puede usar. También puede usar <a class="text-primary" href="{mainHostLogin}">este enlace.</a>.',
+      solution1: 'Solución: mover la cuenta a {host}',
+      solution2: 'Si elige esta solución, perderá la posibilidad de iniciar sesión en {mainHost}.',
+      confirmMigration: 'mover la cuenta a {host} y perder el acceso a {mainHost}'
     }
   },
   errors: {
