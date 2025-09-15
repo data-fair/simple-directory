@@ -96,7 +96,9 @@ export default {
     adminGlobal: 'Globale Verwaltung',
     adminSite: 'Seitenverwaltung',
     no: 'Nein',
-    redirectSite: 'Website für die Weiterleitung'
+    redirectSite: 'Website für die Weiterleitung',
+    manageOrg: 'Organisationsverwaltung',
+    manageDep: 'Abteilungsverwaltung'
   },
   doc: {
     about: {

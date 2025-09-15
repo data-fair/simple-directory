@@ -129,13 +129,13 @@
           v-if="organization && organization.role === 'admin' && ($uiConfig.depAdminIsOrgAdmin || !organization.department)"
           :to="'/organization/' + organization.id"
         >
-          <v-list-item-title>Gestion de l'organisation</v-list-item-title>
+          <v-list-item-title>{{ $t('common.manageOrg') }}</v-list-item-title>
         </v-list-item>
         <v-list-item
           v-if="organization && organization.role === 'admin' && organization.department"
           :to="'/organization/' + organization.id + '/department/' + organization.department"
         >
-          <v-list-item-title>Gestion du département</v-list-item-title>
+          <v-list-item-title>{{ $t('common.manageDep') }}</v-list-item-title>
         </v-list-item>
         <v-divider />
       </template>
