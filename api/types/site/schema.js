@@ -93,17 +93,33 @@ export default {
         de: 'Website-Titel'
       }
     },
+    isAccountMain: {
+      type: 'boolean',
+      title: 'Site principal du compte',
+      'x-i18n-title': {
+        fr: 'Site principal du compte',
+        en: 'Main site of the account',
+        de: 'Hauptwebsite des Kontos',
+        it: 'Sito principale dell\'account',
+        pt: 'Site principal da conta',
+        es: 'Sitio principal de la cuenta'
+      }
+    },
     theme: { $ref: 'https://github.com/data-fair/lib/theme' },
     authMode: {
+      deprecated: true,
+      layout: {
+        if: '!context.otherSites.some(s => s.isAccountMain) && !parent.data.isAccountMain'
+      },
       default: 'onlyBackOffice',
-      title: "Mode d'authentification",
+      title: "Mode d'authentification (déprécié, utilisez \"Site principal du compte\")",
       'x-i18n-title': {
-        fr: "Mode d'authentification",
-        en: 'Authentication mode',
-        es: 'Modo de autenticación',
-        it: 'Modalità di autenticazione',
-        pt: 'Modo de autenticação',
-        de: 'Authentifizierungsmodus'
+        fr: "Mode d'authentification (déprécié, utilisez \"Site principal du compte\")",
+        en: 'Authentication mode (deprecated, use "Main site of the account")',
+        es: 'Modo de autenticación (obsoleto, use "Sitio principal de la cuenta")',
+        it: 'Modalità di autenticazione (deprecata, usa "Sito principale dell\'account")',
+        pt: 'Modo de autenticação (obsoleto, use "Site principal da conta")',
+        de: 'Authentifizierungsmodus (veraltet, verwenden Sie "Hauptwebsite des Kontos")'
       },
       type: 'string',
       oneOf: [
@@ -158,19 +174,20 @@ export default {
       ]
     },
     authOnlyOtherSite: {
+      deprecated: true,
       layout: {
-        if: 'parent.data.authMode === "onlyOtherSite"',
+        if: 'parent.data.authMode === "onlyOtherSite" && !context.otherSites.some(s => s.isAccountMain) && !parent.data.isAccountMain',
         getItems: 'context.otherSites'
       },
       type: 'string',
-      title: "Autre site pour l'authentification",
+      title: "Autre site pour l'authentification (déprécié, utilisez \"Site principal du compte\")",
       'x-i18n-title': {
-        fr: "Autre site pour l'authentification",
-        en: 'Other site for authentication',
-        es: 'Otro sitio para autenticación',
-        it: 'Altro sito per l\'autenticazione',
-        pt: 'Outro site para autenticação',
-        de: 'Andere Website für die Authentifizierung'
+        fr: "Autre site pour l'authentification (déprécié, utilisez \"Site principal du compte\")",
+        en: 'Other site for authentication (deprecated, use "Main site of the account")',
+        es: 'Otro sitio para autenticación (obsoleto, use "Sitio principal de la cuenta")',
+        it: 'Altro sito per l\'autenticazione (deprecato, usa "Sito principale dell\'account")',
+        pt: 'Outro site para autenticação (obsoleto, use "Site principal da conta")',
+        de: 'Andere Website für die Authentifizierung (veraltet, verwenden Sie "Hauptwebsite des Kontos")'
       }
     },
     reducedPersonalInfoAtCreation: {

@@ -22,6 +22,9 @@
     "title": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/title"
     },
+    "isAccountMain": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/isAccountMain"
+    },
     "theme": {
       "$ref": "https://github.com/data-fair/lib/theme"
     },

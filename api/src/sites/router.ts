@@ -196,6 +196,7 @@ router.get('/_public', async (req, res, next) => {
       main: true,
       host: reqHost(req),
       theme,
+      isAccountMain: true,
       authMode: 'onlyLocal',
     }
     res.send(sitePublic)
@@ -204,6 +205,7 @@ router.get('/_public', async (req, res, next) => {
       host: site.host,
       path: site.path,
       title: site.title,
+      isAccountMain: site.isAccountMain,
       theme: {
         ...theme,
         logo: site.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`

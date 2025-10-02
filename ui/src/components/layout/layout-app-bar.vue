@@ -82,7 +82,7 @@
         </v-menu>
       </template>
       <template
-        v-if="!isMainSite && (user?.adminMode || ($uiConfig.siteAdmin && siteRole === 'admin'))"
+        v-if="!isAccountMainSite && (user?.adminMode || ($uiConfig.siteAdmin && siteRole === 'admin'))"
       >
         <v-menu>
           <template #activator="{ props }">
@@ -151,5 +151,5 @@ import LangSwitcher from '@data-fair/lib-vuetify/lang-switcher.vue'
 import ThemeSwitcher from '@data-fair/lib-vuetify/theme-switcher.vue'
 
 const { user, organization, siteRole } = useSession()
-const { isMainSite } = useStore()
+const { isAccountMainSite } = useStore()
 </script>
