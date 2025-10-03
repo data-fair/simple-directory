@@ -109,3 +109,16 @@ export async function patchSite (patch: Partial<Site> & Pick<Site, '_id'>, creat
 export async function deleteSite (siteId: string) {
   await mongo.sites.deleteOne({ _id: siteId })
 }
+
+export async function toggleMainSite (site: Site) {
+  site.authMode = 'onlyLocal'
+  delete site.authOnlyOtherSite
+  await mongo.sites.updateOne(
+    { _id: site._id },
+    { $set: { authMode: 'onlyLocal' }, $unset: { authOnlyOtherSite: 1 } }
+  )
+  await mongo.sites.updateMany(
+    { 'owner.type': site.owner.type, 'owner.id': site.owner.id, _id: { $ne: site._id } },
+    { $set: { authMode: 'onlyOtherSite', authOnlyOtherSite: site.host }, $unset: { isAccountMain: 1 } }
+  )
+}
