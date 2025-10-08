@@ -30,6 +30,7 @@
         >
           <vjsf-post-req-body
             v-model="site"
+            :locale="locale"
             :options="vjsfOptions"
           />
         </v-form>
@@ -59,6 +60,8 @@
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
 const emit = defineEmits(['created'])
+
+const { locale } = useI18n()
 
 const menu = ref(false)
 const site = ref<any>({})

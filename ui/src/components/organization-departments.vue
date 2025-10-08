@@ -167,7 +167,7 @@ const filteredDeps = computed(() => {
 const currentPage = computed(() => filteredDeps.value?.slice((page.value - 1) * pageSize, page.value * pageSize))
 
 watch(() => orga.departments, () => {
-  if (filteredDeps.value.length <= (page.value - 1) * pageSize) page.value -= 1
+  if (page.value > 1 && filteredDeps.value.length <= (page.value - 1) * pageSize) page.value -= 1
 })
 
 const filterDeps = () => {
