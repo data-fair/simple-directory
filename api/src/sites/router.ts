@@ -124,7 +124,12 @@ router.post('', async (req, res, next) => {
   }
   if (postSite.path?.endsWith('/')) postSite.path = postSite.path.slice(0, -1)
   if (postSite.path === '') delete postSite.path
-  const patchedSite = await patchSite({ ...postSite, _id: postSite._id ?? nanoid() }, true)
+  const patch: Partial<Site> & Pick<Site, '_id'> = { ...postSite, _id: postSite._id ?? nanoid() }
+  if (postSite.contact) {
+    patch.mails = existingSite?.mails ?? {}
+    patch.mails.contact = postSite.contact
+  }
+  const patchedSite = await patchSite(patch, true)
   debugPostSite('patched site', patchedSite._id)
   res.send(patchedSite)
 })
