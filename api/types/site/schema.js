@@ -245,6 +245,18 @@ export default {
         de: 'E-Mails'
       },
       properties: {
+        contact: {
+          type: 'string',
+          title: 'Adresse email de contact',
+          'x-i18n-title': {
+            fr: 'Adresse e-mail de contact',
+            en: 'Contact email address',
+            es: 'Dirección de correo electrónico de contacto',
+            it: 'Indirizzo e-mail di contatto',
+            pt: 'Endereço de e-mail de contato',
+            de: 'E-Mail-Adresse des Kontakts'
+          }
+        },
         from: {
           type: 'string',
           title: 'Adresse email de l\'expéditeur',
