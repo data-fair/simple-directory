@@ -69,6 +69,7 @@ const vjsfOptions = computed(() => {
     density: 'comfortable',
     initialValidation: 'always',
     context: {
+      hasAccountMainSite: otherSites?.some(s => s.isAccountMain),
       otherSites: otherSites?.map(site => site.host),
       otherSitesProviders: otherSites?.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {} as Record<string, string[]>)
     }

@@ -109,7 +109,7 @@ export default {
     authMode: {
       deprecated: true,
       layout: {
-        if: '!context.otherSites.some(s => s.isAccountMain) && !parent.data.isAccountMain'
+        if: '!context.hasAccountMainSite && !parent.data.isAccountMain'
       },
       default: 'onlyBackOffice',
       title: "Mode d'authentification (déprécié, utilisez \"Site principal du compte\")",
@@ -176,7 +176,7 @@ export default {
     authOnlyOtherSite: {
       deprecated: true,
       layout: {
-        if: 'parent.data.authMode === "onlyOtherSite" && !context.otherSites.some(s => s.isAccountMain) && !parent.data.isAccountMain',
+        if: 'parent.data.authMode === "onlyOtherSite" && !context.hasAccountMainSite && !parent.data.isAccountMain',
         getItems: 'context.otherSites'
       },
       type: 'string',
