@@ -3,7 +3,7 @@ import { Router, type Request } from 'express'
 import config from '#config'
 import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost, reqSitePath, type AccountKeys } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
-import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite } from './service.ts'
+import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite, toggleMainSite } from './service.ts'
 import { isOIDCProvider, reqSite } from '#services'
 import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
@@ -175,6 +175,12 @@ router.patch('/:id', async (req, res, next) => {
   }
 
   const patchedSite = await patchSite({ _id: req.params.id, ...patch })
+
+  if (patch.isAccountMain) {
+    // toggle the main site
+    await toggleMainSite(patchedSite)
+  }
+
   res.send(patchedSite)
 })
 
@@ -196,6 +202,7 @@ router.get('/_public', async (req, res, next) => {
       main: true,
       host: reqHost(req),
       theme,
+      isAccountMain: true,
       authMode: 'onlyLocal',
     }
     res.send(sitePublic)
@@ -204,6 +211,7 @@ router.get('/_public', async (req, res, next) => {
       host: site.host,
       path: site.path,
       title: site.title,
+      isAccountMain: site.isAccountMain,
       theme: {
         ...theme,
         logo: site.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
