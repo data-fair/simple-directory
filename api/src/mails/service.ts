@@ -39,6 +39,7 @@ type SendMailI18nParams = {
   host?: string
   path?: string
   origin?: string
+  replyTo?: string
   [key: string]: any
 }
 
@@ -82,7 +83,7 @@ export const sendMailI18n = async (key: string, messages: any, to: string, param
 }
 
 export const sendMail = async (to: string, params: SendMailParams, attachments?: { filename: string, path: string }[]) => {
-  let site = params.link && (await getSiteByUrl(params.link))
+  let site = params.link ? (await getSiteByUrl(params.link)) : undefined
   if (!site && params.host) {
     site = await getSiteByHost(params.host, params.path ?? '')
   }
@@ -90,18 +91,20 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
   const flatTheme: FlatTheme = flatten({ theme: config.theme })
   let logo = config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/v0.12.3/public/assets/logo-150x150.png'
   let from = config.mails.from
+  let contact = config.contact
   let template = params.htmlButton ? mainSiteTemplate : mainSiteNoButtonTemplate
-  if (site && site?.mails?.from) {
+  if (site?.mails?.from) {
     from = site.mails.from
     Object.assign(flatTheme, flatten({ theme: site.theme }))
     logo = site.theme.logo || logo
     template = params.htmlButton ? genericTemplate : genericNoButtonTemplate
   }
+  if (site?.mails?.contact) contact = site.mails.contact
 
   const tmplParams: SendMailTmplParams = {
     ...params,
     ...flatTheme,
-    contact: config.contact,
+    contact,
     logo,
     ...config.mails.extraParams // override with extra params from config, default to {}
   }
@@ -117,6 +120,7 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
   return await mailsTransport.sendMail({
     from,
     to,
+    replyTo: params.replyTo,
     subject: params.subject,
     text: params.text,
     html: mjmlRes.html,

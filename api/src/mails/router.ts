@@ -77,6 +77,7 @@ router.post('/', async (req, res, next) => {
     }
 
     results.push(await sendMail([...to].join(', '), {
+      replyTo: mailBody.replyTo,
       host,
       path,
       subject: mailBody.subject,
@@ -130,13 +131,13 @@ router.post('/contact', async (req, res) => {
   }
 
   const text = `Message transmis par le formulaire de contact de ${reqSiteUrl(req)}
-  Adresse mail renseignée par l'utilisateur : ${req.body.from}
   
   ${req.body.text}`
 
   const site = await reqSite(req)
 
-  await sendMail(config.contact, {
+  await sendMail(site?.mails?.contact ?? config.contact, {
+    replyTo: req.body.from,
     host: site?.host,
     path: site?.path,
     subject: req.body.subject,

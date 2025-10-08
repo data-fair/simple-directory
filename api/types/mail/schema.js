@@ -56,6 +56,9 @@ export default {
         }]
       }
     },
+    replyTo: {
+      type: 'string'
+    },
     subject: {
       type: 'string'
     },
