@@ -29,6 +29,7 @@ module.exports = {
   manageRolesLabels: 'MANAGE_ROLES_LABELS',
   defaultRolesLabels: jsonEnv('DEFAULT_ROLES_LABELS'),
   contact: 'CONTACT',
+  anonymousContactForm: 'ANONYMOUS_CONTACT_FORM',
   anonymousAction: {
     expiresIn: 'ANONYMOUS_ACTION_EXPIRES_IN',
     notBefore: 'ANONYMOUS_ACTION_NOT_BEFORE'
