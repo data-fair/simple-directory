@@ -1,7 +1,5 @@
 ##########################
-FROM node:22.20.0-alpine3.22 AS base
-
-RUN npm install -g npm@11.1.0
+FROM node:24.10.0-alpine3.22 AS base
 
 WORKDIR /app
 ENV NODE_ENV=production
