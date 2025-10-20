@@ -30,7 +30,7 @@ ADD api/package.json api/package.json
 ADD shared/package.json shared/package.json
 # full deps install used for types and ui building
 # also used to fill the npm cache for faster install of api deps
-RUN npm ci --omit=dev --omit=optional --omit=peer --no-audit --no-fund
+RUN npm ci --omit=dev --omit=optional --no-audit --no-fund
 
 ##########################
 FROM installer AS types
@@ -59,7 +59,7 @@ RUN npm -w ui run build
 ##########################
 FROM installer AS api-installer
 
-RUN npm ci -w api --prefer-offline --omit=dev --omit=optional --omit=peer --no-audit --no-fund && \
+RUN npm ci -w api --prefer-offline --omit=dev --omit=optional --no-audit --no-fund && \
     npx clean-modules --yes "!ramda/src/test.js"
 RUN mkdir -p /app/api/node_modules
 
