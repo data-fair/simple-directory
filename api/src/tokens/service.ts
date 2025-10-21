@@ -232,6 +232,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   if (sessionState.user.rememberMe) payload.rememberMe = 1
   if (sessionState.user.asAdmin) {
     payload.asAdmin = sessionState.user.asAdmin
+    payload.asAdminOrg = sessionState.user.asAdminOrg
     payload.name = sessionState.user.name
     delete payload.isAdmin
   } else {

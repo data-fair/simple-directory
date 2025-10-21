@@ -584,6 +584,7 @@ router.post('/asadmin', async (req, res, next) => {
   const payload = getTokenPayload(user, site)
   payload.name += ' (administration)'
   payload.asAdmin = { id: loggedUser.id, name: loggedUser.name }
+  payload.asAdminOrg = session.organization
   delete payload.isAdmin
   debug(`Exchange session token for user ${user.name} from an admin session`)
   await setSessionCookies(req, res, payload, null, getDefaultUserOrg(user))
@@ -604,7 +605,7 @@ router.delete('/asadmin', async (req, res, next) => {
   const payload = getTokenPayload(user, site)
   if (user.isAdmin) payload.adminMode = 1
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
-  await setSessionCookies(req, res, payload, null, getDefaultUserOrg(user))
+  await setSessionCookies(req, res, payload, null, loggedUser.asAdminOrg ?? getDefaultUserOrg(user))
 
   eventsLog.info('sd.auth.asadmin.done', 'a session as a user from an admin session was terminated', logContext)
 
