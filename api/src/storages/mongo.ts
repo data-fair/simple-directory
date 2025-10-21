@@ -14,7 +14,7 @@ import memoize from 'memoizee'
 import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 import type { MatchKeysAndValues, UpdateOptions } from 'mongodb'
 
-const collation = { locale: 'en', strength: 1 }
+const caseInsensitiveCollation = { locale: 'en', strength: 1 }
 
 export type UserInDb = Omit<User, 'id'> & { _id: string }
 export type OrgInDb = Omit<Organization, 'id'> & { _id: string }
@@ -85,7 +85,7 @@ class MongodbStorage implements SdStorage {
     } else {
       filter.host = { $exists: false }
     }
-    const user = (await mongo.users.find(filter).collation(collation).toArray())[0]
+    const user = (await mongo.users.find(filter).collation(caseInsensitiveCollation).toArray())[0]
     if (!user) return
     return await cleanUser(user)
   }
@@ -185,6 +185,9 @@ class MongodbStorage implements SdStorage {
         { email: { $regex: escapeRegExp(params.q), $options: 'i' } },
         { _id: params.q }
       ]
+    }
+    if (params.emails && params.emails.length) {
+      filter.email = { $in: params.emails.map(email => new RegExp(`^${escapeRegExp(email)}$`, 'i')) }
     }
     if (params.host) filter.host = params.host
     if (params.path) filter.path = params.path

@@ -642,6 +642,10 @@ export class LdapStorage implements SdStorage {
     if (ids) {
       results = results.filter(user => ids.find(id => user.id === id))
     }
+    const emails = params.emails?.map(email => email.toLowerCase())
+    if (emails) {
+      results = results.filter(user => emails.includes(user.email.toLowerCase()))
+    }
     if (params.q) {
       const lq = params.q.toLowerCase()
       results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
@@ -687,6 +691,10 @@ export class LdapStorage implements SdStorage {
     const ids = params.ids
     if (ids) {
       results = results.filter(member => ids.find(id => member.id === id))
+    }
+    const emails = params.emails?.map(email => email.toLowerCase())
+    if (emails) {
+      results = results.filter(member => emails.includes(member.email.toLowerCase()))
     }
     if (params.q) {
       const lq = params.q.toLowerCase()

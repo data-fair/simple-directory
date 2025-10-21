@@ -36,7 +36,8 @@ export type FindUsersParams = {
   sort?: any,
   select?: string[],
   host?: string,
-  path?: string
+  path?: string,
+  emails?: string[],
 }
 
 export interface SdStorageFactory {

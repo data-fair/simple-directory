@@ -51,8 +51,9 @@ router.get('', async (req, res, next) => {
 
   if (typeof req.query.host === 'string') params.host = req.query.host
   if (typeof req.query.path === 'string') params.path = req.query.path
-
-  if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
+  if (typeof req.query.id === 'string') params.ids = req.query.id.split(',')
+  else if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
+  if (typeof req.query.email === 'string') params.emails = req.query.email.split(',')
   if (typeof req.query.q === 'string') params.q = req.query.q
 
   const users = await storages.globalStorage.findUsers(params)

@@ -131,6 +131,10 @@ class FileStorage implements SdStorage {
     if (ids?.length) {
       filteredUsers = filteredUsers.filter(user => ids.find(id => user.id === id))
     }
+    const emails = params.emails?.map(email => email.toLowerCase())
+    if (emails?.length) {
+      filteredUsers = filteredUsers.filter(user => emails.includes(user.email.toLowerCase()))
+    }
     if (params.host) {
       filteredUsers = filteredUsers.filter(user => user.host === params.host)
     }
@@ -158,6 +162,10 @@ class FileStorage implements SdStorage {
     const ids = params.ids
     if (ids?.length) {
       members = members.filter(member => ids.includes(member.id))
+    }
+    const emails = params.emails?.map(email => email.toLowerCase())
+    if (emails?.length) {
+      members = members.filter(member => emails.includes(member.email.toLowerCase()))
     }
     const roles = params.roles
     if (roles?.length) {
