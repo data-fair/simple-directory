@@ -14,7 +14,12 @@ import { __all, reqI18n } from '#i18n'
 
 const debugAuthProvider = debugModule('auth-provider')
 
-type AuthProviderMemberInfo = { create: boolean, org?: Organization, readOnly: boolean, role: string, department?: string }
+type AuthProviderMemberInfo = {
+  org: Organization,
+  readOnly: boolean,
+  role: string,
+  department?: string
+}
 
 type AuthProviderCore = {
   id: string,
@@ -36,7 +41,7 @@ type AuthProviderAuthInfo = {
   coreId?: boolean
 }
 
-export const authProviderMemberInfo = async (site: Site | undefined, provider: AuthProviderCore, authInfo: AuthProviderAuthInfo): Promise<AuthProviderMemberInfo> => {
+export const authProviderMemberInfo = async (site: Site | undefined, provider: AuthProviderCore, authInfo: AuthProviderAuthInfo): Promise<AuthProviderMemberInfo[]> => {
   let create = false
   if ((provider.createMember as unknown as boolean) === true) {
     // retro-compatibility for when createMember was a boolean
@@ -46,22 +51,23 @@ export const authProviderMemberInfo = async (site: Site | undefined, provider: A
   } else if (provider.createMember && provider.createMember.type === 'emailDomain' && authInfo.user.email.endsWith(`@${provider.createMember.emailDomain}`)) {
     create = true
   }
+  if (!create) return []
 
-  let org
-  if (create) {
-    const orgId = site ? site.owner.id : config.defaultOrg
-    if (!orgId) throw new Error('createMember option on auth provider requires defaultOrg to be defined')
-    org = await storages.globalStorage.getOrganization(orgId)
+  const orgIds = site ? [site.owner.id] : (config.defaultOrg ? config.defaultOrg.split(',') : [])
+  if (!orgIds.length) throw new Error('createMember option on auth provider requires defaultOrg to be defined')
+
+  const memberInfos: AuthProviderMemberInfo[] = []
+  for (const orgId of orgIds) {
+    const org = await storages.globalStorage.getOrganization(orgId)
     if (!org) throw new Error(`Organization not found ${orgId}`)
-  }
 
-  let role
-  let readOnly = false
-  if (provider.coreIdProvider && ((provider.memberRole && provider.memberRole?.type !== 'none') || (provider.memberDepartment && provider.memberDepartment?.type !== 'none'))) {
-    readOnly = true
-  }
-  let department: string | undefined
-  if (org) {
+    let role
+    let readOnly = false
+    if (provider.coreIdProvider && ((provider.memberRole && provider.memberRole?.type !== 'none') || (provider.memberDepartment && provider.memberDepartment?.type !== 'none'))) {
+      readOnly = true
+    }
+    let department: string | undefined
+
     const roles = org.roles || config.roles.defaults
     if (provider.memberRole?.type === 'static') {
       role = provider.memberRole.role
@@ -103,9 +109,11 @@ export const authProviderMemberInfo = async (site: Site | undefined, provider: A
       }
       department = matchedDepartment.id
     }
+
+    memberInfos.push({ org, readOnly, role, department })
   }
 
-  return { create, org, readOnly, role, department }
+  return memberInfos
 }
 
 export const authProviderLoginCallback = async (
@@ -157,13 +165,13 @@ export const authProviderLoginCallback = async (
     }
   }
 
-  const memberInfo = await authProviderMemberInfo(site, provider, authInfo)
+  const memberInfos = await authProviderMemberInfo(site, provider, authInfo)
 
-  if (!user && !invit && config.onlyCreateInvited && !memberInfo.create) {
+  if (!user && !invit && config.onlyCreateInvited && !memberInfos.length) {
     throw httpError(400, 'onlyCreateInvited')
   }
 
-  if (invit && memberInfo.create) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
+  if (invit && memberInfos.length) throw new Error('Cannot create a member from a identity provider and accept an invitation at the same time')
   if (!user) {
     const newUser: UserWritable = {
       ...authInfo.user,
@@ -185,8 +193,8 @@ export const authProviderLoginCallback = async (
     if (invit && invitOrga) {
       newUser.defaultOrg = invitOrga.id
       newUser.ignorePersonalAccount = true
-    } else if (memberInfo.create && memberInfo.org) {
-      newUser.defaultOrg = memberInfo.org.id
+    } else if (memberInfos[0]) {
+      newUser.defaultOrg = memberInfos[0].org.id
       newUser.ignorePersonalAccount = true
     }
     debugAuthProvider('Create user authenticated through oauth', user)
@@ -195,7 +203,7 @@ export const authProviderLoginCallback = async (
     const redirectSite = await getRedirectSite(req, redirect)
     user = await storage.createUser(newUser, undefined, redirectSite)
 
-    if (memberInfo.create && memberInfo.org) {
+    for (const memberInfo of memberInfos) {
       logContext.account = { type: 'organization', ...memberInfo.org }
       eventsLog.info('sd.auth.provider.create-member', `a user was added as a member in oauth callback ${user.id} / ${memberInfo.role}`, logContext)
       await storage.addMember(memberInfo.org, user, memberInfo.role, memberInfo.department, memberInfo.readOnly)
@@ -206,7 +214,7 @@ export const authProviderLoginCallback = async (
       throw httpError(400, 'Utilisateur déjà lié à un autre fournisseur d\'identité principale')
     }
     debugAuthProvider('Existing user authenticated through oauth', user, authInfo)
-    user = await patchCoreAuthUser(provider, user, authInfo, memberInfo)
+    user = await patchCoreAuthUser(provider, user, authInfo, memberInfos)
   }
 
   if (invit && invitOrga && !config.alwaysAcceptInvitation) {
@@ -243,7 +251,7 @@ export const authProviderLoginCallback = async (
   return [linkUrl.href, user]
 }
 
-export const patchCoreAuthUser = async (provider: AuthProviderCore, user: User, authInfo: AuthProviderAuthInfo, memberInfo: AuthProviderMemberInfo) => {
+export const patchCoreAuthUser = async (provider: AuthProviderCore, user: User, authInfo: AuthProviderAuthInfo, memberInfos: AuthProviderMemberInfo[]) => {
   if (provider.coreIdProvider) {
     authInfo.coreId = true
     authInfo.user.coreIdProvider = { type: provider.type, id: provider.id }
@@ -257,15 +265,11 @@ export const patchCoreAuthUser = async (provider: AuthProviderCore, user: User, 
   userProviders[provider.id] = { ...existingAuthInfo, ...authInfo }
   if (provider.coreIdProvider) {
     Object.assign(patch, authInfo.user)
-    if (memberInfo.readOnly && memberInfo.org) {
-      if (memberInfo.create) {
-        patch.defaultOrg = memberInfo.org.id
-        patch.ignorePersonalAccount = true
+    for (const memberInfo of memberInfos) {
+      if (memberInfo.readOnly) {
         await storages.globalStorage.addMember(memberInfo.org, user, memberInfo.role, memberInfo.department, memberInfo.readOnly)
-      } else {
-        await storages.globalStorage.removeMember(memberInfo.org.id, user.id, '*')
+        await setNbMembersLimit(memberInfo.org.id)
       }
-      await setNbMembersLimit(memberInfo.org.id)
     }
   } else {
     if (authInfo.user.firstName && !user.firstName) patch.firstName = authInfo.user.firstName

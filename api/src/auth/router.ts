@@ -486,8 +486,8 @@ router.post('/keepalive', async (req, res, next) => {
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
         const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token)
-        const memberInfo = await authProviderMemberInfo(await reqSite(req), provider, userInfo)
-        user = await patchCoreAuthUser(provider, user, userInfo, memberInfo)
+        const memberInfos = await authProviderMemberInfo(await reqSite(req), provider, userInfo)
+        user = await patchCoreAuthUser(provider, user, userInfo, memberInfos)
         await writeOAuthToken(user, provider, newToken, offlineRefreshToken)
         eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }
