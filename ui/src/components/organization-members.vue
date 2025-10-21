@@ -79,7 +79,7 @@
         <v-autocomplete
           v-if="$uiConfig.manageDepartments && orga.departments && orga.departments.length && !adminDepartment"
           v-model="department"
-          :items="[{id: '-', name: 'aucun'}].concat(orga.departments)"
+          :items="departmentsList"
           :label="orga.departmentLabel || $t('common.department')"
           item-value="id"
           item-title="name"
@@ -97,7 +97,7 @@
       >
         <v-select
           v-model="emailConfirmedFilter"
-          :items="[{id: 'true', name: $t('common.emailConfirmed')}, {id: 'false', name: $t('common.emailNotConfirmed')}]"
+          :items="creationStepsList"
           :label="$t('common.creationStep')"
           item-value="id"
           item-title="name"
@@ -280,6 +280,13 @@ const notifyTopics = computed(() => {
 const csvUrl = computed(() => $sdUrl + `/api/organizations/${orga.id}/members?size=10000&format=csv`)
 const filterMemberCols = $uiConfig.alwaysAcceptInvitation ? 6 : 4
 
+const departmentsList = computed(() => {
+  return [{ id: '-', name: 'aucun' }].concat(orga.departments ?? [])
+})
+const creationStepsList = computed(() => {
+  return [{ id: 'true', name: t('common.emailConfirmed') }, { id: 'false', name: t('common.emailNotConfirmed') }]
+})
+
 const membersParams = computed(() => {
   const params: QueryObject = {
     page: membersPage.value,
@@ -291,7 +298,7 @@ const membersParams = computed(() => {
   if (department.value) params.department = department.value
   if (q.value) params.q = q.value
   if (emailConfirmedFilter.value !== null) {
-    params.email_confirmed = emailConfirmedFilter
+    params.email_confirmed = emailConfirmedFilter.value
   }
   return params
 })
