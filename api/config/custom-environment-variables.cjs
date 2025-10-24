@@ -105,7 +105,9 @@ module.exports = {
   theme: {
     logo: 'THEME_LOGO',
     favicon: 'THEME_FAVICON',
+    bodyFontFamily: 'THEME_BODY_FONT_FAMILY',
     bodyFontFamilyCss: 'THEME_BODY_FONT_FAMILY_CSS',
+    headingFontFamily: 'THEME_HEADING_FONT_FAMILY',
     headingFontFamilyCss: 'THEME_HEADING_FONT_FAMILY_CSS',
     colors: {
       background: 'THEME_BACKGROUND',

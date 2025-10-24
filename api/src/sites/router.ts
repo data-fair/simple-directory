@@ -243,7 +243,19 @@ router.get('/_theme.css', async (req, res, next) => {
   if (theme.hc && theme.hcColors) css += getTextColorsCss(theme.hcColors, 'hc')
   if (theme.hcDark && theme.hcDarkColors) css += getTextColorsCss(theme.hcDarkColors, 'hc-dark')
   css += '\n' + microTemplate(site?.theme?.bodyFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'BodyFontFamily' })
-  css += '\n' + microTemplate(site?.theme?.headingFontFamilyCss ?? site?.theme?.bodyFontFamilyCss ?? config.theme.headingFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
+  if (theme?.headingFontFamilyCss) {
+    css += '\n' + microTemplate(theme?.headingFontFamilyCss, { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
+  } else if (!site?.theme?.bodyFontFamily && !site?.theme?.headingFontFamily) {
+    // this condition is met on older sites where we used BodyFontFamily and HeadingFontFamily aliases
+    css += '\n' + microTemplate(site?.theme?.bodyFontFamilyCss ?? config.theme.headingFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
+  }
+
+  css += `
+:root {
+  --d-body-font-family: ${theme?.bodyFontFamily || 'BodyFontFamily'} !important;
+  --d-heading-font-family: ${theme?.headingFontFamily || theme?.bodyFontFamily || 'HeadingFontFamily'} !important;
+}
+  `
   res.contentType('css')
   res.send(css)
 })
