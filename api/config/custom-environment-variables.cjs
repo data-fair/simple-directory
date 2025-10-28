@@ -105,13 +105,17 @@ module.exports = {
   theme: {
     logo: 'THEME_LOGO',
     favicon: 'THEME_FAVICON',
+    bodyFontFamily: 'THEME_BODY_FONT_FAMILY',
     bodyFontFamilyCss: 'THEME_BODY_FONT_FAMILY_CSS',
+    headingFontFamily: 'THEME_HEADING_FONT_FAMILY',
     headingFontFamilyCss: 'THEME_HEADING_FONT_FAMILY_CSS',
     colors: {
       background: 'THEME_BACKGROUND',
       'on-background': 'THEME_ON_BACKGROUND',
       surface: 'THEME_SURFACE',
       'on-surface': 'THEME_ON_SURFACE',
+      'surface-inverse': 'THEME_SURFACE_INVERSE',
+      'on-surface-inverse': 'THEME_ON_SURFACE_INVERSE',
       primary: 'THEME_PRIMARY',
       'on-primary': 'THEME_ON_PRIMARY',
       'text-primary': 'THEME_TEXT_PRIMARY',

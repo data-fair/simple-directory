@@ -126,7 +126,11 @@ module.exports = {
   analytics: {}, // a "modules" definition for @koumoul/vue-multianalytics
   theme: {
     logo: undefined,
+    // leave empty to manage retro-compatibility and use BodyFontFamily and HeadingFontFamily aliases for now
+    // replace with "Nunito" when the transition is complete
+    bodyFontFamily: undefined,
     bodyFontFamilyCss: "@font-face{font-family:{FONT_FAMILY};font-style:italic;font-weight:200 1000;font-display:swap;src:url({SITE_PATH}/simple-directory/fonts/XRXX3I6Li01BKofIMNaORs71cA-Bm_i0Dk1.woff2) format('woff2');unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F}@font-face{font-family:{FONT_FAMILY};font-style:italic;font-weight:200 1000;font-display:swap;src:url({SITE_PATH}/simple-directory/fonts/XRXX3I6Li01BKofIMNaHRs71cA-Cznx39fA.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}@font-face{font-family:{FONT_FAMILY};font-style:italic;font-weight:200 1000;font-display:swap;src:url({SITE_PATH}/simple-directory/fonts/XRXX3I6Li01BKofIMNaMRs71cA-CuWrHpFO.woff2) format('woff2');unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB}@font-face{font-family:{FONT_FAMILY};font-style:italic;font-weight:200 1000;font-display:swap;src:url({SITE_PATH}/simple-directory/fonts/XRXX3I6Li01BKofIMNaNRs71cA-D1eeM49Z.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}@font-face{font-family:{FONT_FAMILY};font-style:italic;font-weight:200 1000;font-display:swap;src:url({SITE_PATH}/simple-directory/fonts/XRXX3I6Li01BKofIMNaDRs4-BbMn9XSX.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}@font-face{font-family:{FONT_FAMILY};font-style:normal;font-weight:200 1000;font-display:swap;src:url({SITE_PATH}/simple-directory/fonts/XRXV3I6Li01BKofIOOaBXso-BWI5zH9R.woff2) format('woff2');unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F}@font-face{font-family:{FONT_FAMILY};font-style:normal;font-weight:200 1000;font-display:swap;src:url({SITE_PATH}/simple-directory/fonts/XRXV3I6Li01BKofIMeaBXso-C3IBG1kp.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}@font-face{font-family:{FONT_FAMILY};font-style:normal;font-weight:200 1000;font-display:swap;src:url({SITE_PATH}/simple-directory/fonts/XRXV3I6Li01BKofIOuaBXso-B55YuedR.woff2) format('woff2');unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB}@font-face{font-family:{FONT_FAMILY};font-style:normal;font-weight:200 1000;font-display:swap;src:url({SITE_PATH}/simple-directory/fonts/XRXV3I6Li01BKofIO-aBXso-DcJfvmGA.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}@font-face{font-family:{FONT_FAMILY};font-style:normal;font-weight:200 1000;font-display:swap;src:url({SITE_PATH}/simple-directory/fonts/XRXV3I6Li01BKofINeaB-BaTF6Vo7.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}",
+    headingFontFamily: undefined,
     headingFontFamilyCss: undefined,
     colors: {
       // standard vuetify colors, see https://vuetifyjs.com/en/styles/colors/#material-colors
@@ -134,6 +138,8 @@ module.exports = {
       'on-background': '#424242', // grey-darken-3
       surface: '#FFFFFF',
       'on-surface': '#424242', // grey-darken-3
+      'surface-inverse': '#424242', // grey-darken-3
+      'on-surface-inverse': '#FFFFFF',
       primary: '#1976D2', // blue-darken-2
       'on-primary': '#FFFFFF',
       'text-primary': '#1565C0',
@@ -165,6 +171,8 @@ module.exports = {
       'on-background': '#FFFFFF', // white
       surface: '#212121',
       'on-surface': '#FFFFFF', // white
+      'surface-inverse': '#FAFAFA', // grey-lighten-5
+      'on-surface-inverse': '#424242', // grey-darken-3
       primary: '#1976D2', // blue-darken-2
       'on-primary': '#FFFFFF', // white
       'text-primary': '#2196F3', // blue
@@ -197,6 +205,8 @@ module.exports = {
       'on-background': '#000000',
       surface: '#FFFFFF',
       'on-surface': '#000000',
+      'surface-inverse': '#212121', // grey-darken-4
+      'on-surface-inverse': '#FFFFFF',
       primary: '#0D47A1', // blue-darken-4
       'on-primary': '#FFFFFF',
       'text-primary': undefined,
@@ -228,6 +238,8 @@ module.exports = {
       'on-background': '#FFFFFF', // white
       surface: '#121212',
       'on-surface': '#FFFFFF', // white
+      'surface-inverse': '#FFFFFF', // white
+      'on-surface-inverse': '#000000',
       primary: '#0D47A1', // blue-darken-4
       'on-primary': '#FFFFFF', // white
       'text-primary': '#42A5F5', // blue-lighten-1

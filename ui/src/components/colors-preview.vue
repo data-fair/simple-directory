@@ -20,14 +20,6 @@
     </component>
     <v-container fluid>
       <h2>{{ $t('pages.colorsPreview.title') }}</h2>
-      <v-card
-        :title="$t('pages.colorsPreview.cardTitle')"
-        class="my-2"
-      >
-        <v-card-text>
-          {{ $t('pages.colorsPreview.cardText') }}
-        </v-card-text>
-      </v-card>
       <template
         v-for="color of colorKeys"
         :key="color"
@@ -52,6 +44,23 @@
           />
         </v-row>
       </template>
+      <v-card
+        :title="$t('pages.colorsPreview.cardTitle')"
+        class="my-2"
+      >
+        <v-card-text>
+          {{ $t('pages.colorsPreview.cardText') }}
+        </v-card-text>
+      </v-card>
+      <v-card
+        :title="$t('pages.colorsPreview.cardInverseTitle')"
+        class="my-2"
+        color="surface-inverse"
+      >
+        <v-card-text>
+          {{ $t('pages.colorsPreview.cardInverseText') }}
+        </v-card-text>
+      </v-card>
     </v-container>
   </v-theme-provider>
 </template>
