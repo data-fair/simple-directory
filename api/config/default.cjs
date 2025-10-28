@@ -138,6 +138,8 @@ module.exports = {
       'on-background': '#424242', // grey-darken-3
       surface: '#FFFFFF',
       'on-surface': '#424242', // grey-darken-3
+      'surface-inverse': '#424242', // grey-darken-3
+      'on-surface-inverse': '#FFFFFF',
       primary: '#1976D2', // blue-darken-2
       'on-primary': '#FFFFFF',
       'text-primary': '#1565C0',
@@ -169,6 +171,8 @@ module.exports = {
       'on-background': '#FFFFFF', // white
       surface: '#212121',
       'on-surface': '#FFFFFF', // white
+      'surface-inverse': '#FAFAFA', // grey-lighten-5
+      'on-surface-inverse': '#424242', // grey-darken-3
       primary: '#1976D2', // blue-darken-2
       'on-primary': '#FFFFFF', // white
       'text-primary': '#2196F3', // blue
@@ -201,6 +205,8 @@ module.exports = {
       'on-background': '#000000',
       surface: '#FFFFFF',
       'on-surface': '#000000',
+      'surface-inverse': '#212121', // grey-darken-4
+      'on-surface-inverse': '#FFFFFF',
       primary: '#0D47A1', // blue-darken-4
       'on-primary': '#FFFFFF',
       'text-primary': undefined,
@@ -232,6 +238,8 @@ module.exports = {
       'on-background': '#FFFFFF', // white
       surface: '#121212',
       'on-surface': '#FFFFFF', // white
+      'surface-inverse': '#FFFFFF', // white
+      'on-surface-inverse': '#000000',
       primary: '#0D47A1', // blue-darken-4
       'on-primary': '#FFFFFF', // white
       'text-primary': '#42A5F5', // blue-lighten-1

@@ -245,7 +245,7 @@ router.get('/_theme.css', async (req, res, next) => {
   css += '\n' + microTemplate(site?.theme?.bodyFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'BodyFontFamily' })
   if (theme?.headingFontFamilyCss) {
     css += '\n' + microTemplate(theme?.headingFontFamilyCss, { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
-  } else if (!site?.theme?.bodyFontFamily && !site?.theme?.headingFontFamily) {
+  } else if (!theme?.bodyFontFamily && !theme?.headingFontFamily) {
     // this condition is met on older sites where we used BodyFontFamily and HeadingFontFamily aliases
     css += '\n' + microTemplate(site?.theme?.bodyFontFamilyCss ?? config.theme.headingFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
   }

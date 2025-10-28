@@ -114,6 +114,8 @@ module.exports = {
       'on-background': 'THEME_ON_BACKGROUND',
       surface: 'THEME_SURFACE',
       'on-surface': 'THEME_ON_SURFACE',
+      'surface-inverse': 'THEME_SURFACE_INVERSE',
+      'on-surface-inverse': 'THEME_ON_SURFACE_INVERSE',
       primary: 'THEME_PRIMARY',
       'on-primary': 'THEME_ON_PRIMARY',
       'text-primary': 'THEME_TEXT_PRIMARY',

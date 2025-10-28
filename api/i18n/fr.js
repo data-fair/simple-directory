@@ -292,7 +292,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       cardTitle: 'Un exemple de carte',
       cardText: 'Elle utilise la couleur des "surfaces".',
       cardInverseTitle: 'Un exemple de carte',
-      cardInverseText: 'Elle utilise la couleur des "surfaces avec contrast inversé".'
+      cardInverseText: 'Elle utilise la couleur des "surfaces avec contraste inversé".'
     },
     partnerInvitation: {
       msg1: 'L\'organisation {name} souhaite ajouter {partnerName} comme partenaire avec {email} comme adresse de contact.',
