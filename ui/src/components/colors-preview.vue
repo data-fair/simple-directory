@@ -15,6 +15,7 @@
     <component
       :is="'style'"
       v-if="colors"
+      :nonce="$cspNonce"
     >
       {{ getTextColorsCss(colors, 'preview-' + colorsKey) }}
     </component>
