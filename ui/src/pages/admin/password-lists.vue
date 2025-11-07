@@ -11,7 +11,13 @@
       Vous pouvez charger des listes de mots de passe à partir de fichiers CSV. Ces mots de passe trop connus seront alors rejetés si des utilisateurs tentent de les utiliser.
     </p>
     <p class="my-3">
-      Vous pouvez trouver des fichiers de listes de mots de passe sur internet, par exemple sur le <a href="https://github.com/danielmiessler/SecLists/tree/master/Passwords/Common-Credentials">projet SecLists</a> ou le <a href="https://github.com/tarraschk/richelieu">projet Richelieu</a> pour une liste française.
+      Vous pouvez trouver des fichiers de listes de mots de passe sur internet, par exemple sur le <a
+        href="https://github.com/danielmiessler/SecLists/tree/master/Passwords/Common-Credentials"
+        class="simple-link"
+      >projet SecLists</a> ou le <a
+        href="https://github.com/tarraschk/richelieu"
+        class="simple-link"
+      >projet Richelieu</a> pour une liste française.
     </p>
     <v-file-input
       v-model="file"

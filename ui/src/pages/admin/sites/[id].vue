@@ -16,7 +16,10 @@
       <h1 class="text-h3 mb-3">
         {{ $t('pages.admin.site.title') }}
       </h1>
-      <a :href="siteHref">{{ siteHref }}</a> - {{ site.data.value?._id }}
+      <a
+        :href="siteHref"
+        class="simple-link"
+      >{{ siteHref }}</a> - {{ site.data.value?._id }}
       <vjsf-patch-req-body
         v-model="patch"
         :locale="locale"
