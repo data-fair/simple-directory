@@ -10,7 +10,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
-import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword } from '#services'
+import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl } from '#services'
 
 const router = Router()
 
@@ -187,13 +187,15 @@ router.post('', async (req, res, next) => {
     // no need to confirm email if the user already comes from an invitation link
     // we already created the user with emailConfirmed=true
     const payload = getTokenPayload(createdUser, site)
-    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, invit && invit.id, invit && invit.department, invit && invit.role))
+    const redirectSite = query.redirect ? (await getSiteByUrl(query.redirect)) : site
+    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, redirectSite, invit && invit.id, invit && invit.department, invit && invit.role))
     return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication
     // the user will be validated and authenticated at the same time by the token_callback route
     const payload = { ...getTokenPayload(createdUser, site), emailConfirmed: true }
-    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, query.org, query.dep))
+    const redirectSite = query.redirect ? (await getSiteByUrl(query.redirect)) : site
+    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, redirectSite, query.org, query.dep))
     await sendMailI18n('creation', reqI18n(req).messages, body.email, { link: linkUrl.href })
     // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
     return res.status(204).send()

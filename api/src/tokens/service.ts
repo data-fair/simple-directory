@@ -50,8 +50,9 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site: S
   return payload
 }
 
-export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: string, reqRole?: string) => {
+export const getDefaultUserOrg = (user: User, site: Site | undefined, reqOrgId?: string, reqDepId?: string, reqRole?: string) => {
   if (!user.organizations || !user.organizations.length) return
+  // explicit orgId chosen on login
   if (reqOrgId) {
     const reqOrg = user.organizations.find(o => {
       if (o.id !== reqOrgId) return false
@@ -61,6 +62,17 @@ export const getDefaultUserOrg = (user: User, reqOrgId?: string, reqDepId?: stri
     })
     if (reqOrg) return reqOrg
   }
+  // if on an organization site auto-switch to the owner account
+  if (site) {
+    const siteOrg = site.owner.type === 'organization' && user.organizations.find(o => {
+      if (o.id !== site.owner.id) return false
+      if (!o.department) return true
+      if (o.department === site.owner.department) return true
+      return false
+    })
+    if (siteOrg) return siteOrg
+  }
+  // apply defaultOrg user settings
   if (user.defaultOrg) {
     const defaultOrg = user.organizations.find(o => o.id === user.defaultOrg && (o.department || null) === (user.defaultDep || null))
     if (defaultOrg) return defaultOrg

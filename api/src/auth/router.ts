@@ -227,11 +227,12 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     const serverSession = initServerSession(req)
     await storage.addUserSession(user.id, serverSession)
     await confirmLog(storage, user, serverSession)
-    await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, orgId, depId))
+    await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, site, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
     res.redirect(query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me')
   } else {
-    const callbackUrl = (await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, orgId, depId), body.orgStorage)).href
+    const redirectSite = query.redirect ? (await getSiteByUrl(query.redirect)) : site
+    const callbackUrl = (await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, redirectSite, orgId, depId), body.orgStorage)).href
     debug(`Password based authentication of user ${user.name}, ajax mode`, callbackUrl)
     res.send(callbackUrl)
   }
@@ -296,7 +297,9 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
     return res.status(400).send(reqI18n(req).messages.errors.passwordless2FA)
   }
 
-  const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, body.org, body.dep), body.orgStorage)
+  const redirectSite = query.redirect ? (await getSiteByUrl(query.redirect)) : site
+  const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, redirectSite, body.org, body.dep), body.orgStorage)
+
   debug(`Passwordless authentication of user ${user.name}`)
   await sendMailI18n('login', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
   eventsLog.info('sd.auth.passwordless.ok', 'a user successfully sent a authentication email', logContext)
@@ -315,7 +318,7 @@ router.post('/site_redirect', async (req, res, next) => {
   if (!site) return res.status(404).send('site not found')
   const payload = getTokenPayload(user, site)
   if (loggedUser.adminMode) payload.adminMode = 1
-  const callbackUrl = (await prepareCallbackUrl(req, payload, req.body.redirect, getDefaultUserOrg(user, req.body.org, req.body.dep))).href
+  const callbackUrl = (await prepareCallbackUrl(req, payload, req.body.redirect, getDefaultUserOrg(user, site, req.body.org, req.body.dep))).href
   debug(`Redirect auth of user ${user.name} to site ${site.host}`, callbackUrl)
 
   eventsLog.info('sd.auth.redirect-site', 'a authenticated user is redirected to secondary site with session', logContext)
@@ -367,7 +370,7 @@ router.get('/token_callback', async (req, res, next) => {
   await storage.addUserSession(user.id, serverSession)
 
   await confirmLog(storage, user, serverSession)
-  await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, query.id_token_org, query.id_token_dep, query.id_token_role))
+  await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, site, query.id_token_org, query.id_token_dep, query.id_token_role))
 
   eventsLog.info('sd.auth.callback.ok', 'a session was initialized after successful auth', logContext)
 
@@ -587,7 +590,7 @@ router.post('/asadmin', async (req, res, next) => {
   payload.asAdminOrg = session.organization
   delete payload.isAdmin
   debug(`Exchange session token for user ${user.name} from an admin session`)
-  await setSessionCookies(req, res, payload, null, getDefaultUserOrg(user))
+  await setSessionCookies(req, res, payload, null, getDefaultUserOrg(user, site))
 
   eventsLog.info('sd.auth.asadmin.ok', 'a session was created as a user from an admin session', logContext)
 
@@ -605,7 +608,7 @@ router.delete('/asadmin', async (req, res, next) => {
   const payload = getTokenPayload(user, site)
   if (user.isAdmin) payload.adminMode = 1
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
-  await setSessionCookies(req, res, payload, null, loggedUser.asAdminOrg ?? getDefaultUserOrg(user))
+  await setSessionCookies(req, res, payload, null, loggedUser.asAdminOrg ?? getDefaultUserOrg(user, site))
 
   eventsLog.info('sd.auth.asadmin.done', 'a session as a user from an admin session was terminated', logContext)
 
