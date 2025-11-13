@@ -54,7 +54,7 @@ describe('sites api', () => {
       const redirectUrl = new URL(err.headers.location)
       const redirectError = redirectUrl.searchParams.get('error')
       if (redirectError) throw new Error(redirectError)
-      assert.equal(err.headers['set-cookie']?.length, 3)
+      assert.equal(err.headers['set-cookie']?.length, 4)
     }
 
     // cannot create a user on a site in onlyBackOffice mode

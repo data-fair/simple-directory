@@ -26,7 +26,7 @@
           <td v-if="props.item.theme.logo">
             <img
               style="max-height: 100%"
-              :src="props.item.theme.logo"
+              :src="props.item.theme.logo.startsWith('/') ? `${protocol}/${props.item.host}${props.item.theme.logo}` : props.item.theme.logo"
             >
           </td>
           <td
@@ -35,7 +35,7 @@
           />
           <td>
             <a
-              :href="`http://${props.item.host}${props.item.path ?? ''}`"
+              :href="`${protocol}/${props.item.host}${props.item.path ?? ''}`"
               target="blank"
               class="text-primary"
             >{{ `${props.item.host}${props.item.path ?? ''}` }}</a>
@@ -146,6 +146,7 @@ type SiteWithColorWarnings = Site & { colorWarnings: string[] }
 
 const { t } = useI18n()
 const sites = useFetch<{ count: number, results: SiteWithColorWarnings[] }>($apiPath + '/sites', { query: { showAll: true } })
+const protocol = window.location.protocol
 
 const deleteSite = withUiNotif(async (site: Site) => {
   await $fetch(`sites/${site._id}`, { method: 'DELETE' })
