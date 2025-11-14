@@ -90,10 +90,8 @@ app.use('/api/', (req, res) => {
 })
 app.use(tokens)
 
-if (config.serveUi) {
-  app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig, {
-    csp: { nonce: true, header: true }
-  }))
-}
+app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig, {
+  csp: { nonce: true, header: true }
+}))
 
 app.use(errorHandler)

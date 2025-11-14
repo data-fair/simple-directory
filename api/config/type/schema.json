@@ -501,9 +501,6 @@
     "singleMembership": {
       "type": "boolean"
     },
-    "serveUi": {
-      "type": "boolean"
-    },
     "tosUrl": {
       "type": "string"
     },

@@ -399,7 +399,6 @@ module.exports = {
   managePartners: false,
   manageSessions: true,
   defaultOrg: undefined,
-  serveUi: true,
   passwordValidation: {
     entropy: 50,
     minLength: 9,
