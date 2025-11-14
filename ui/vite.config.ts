@@ -117,8 +117,9 @@ export default defineConfig({
         if (process.env.NODE_ENV !== 'development') return html
         const { prepareUiConfig } = await import('@data-fair/lib-express')
         const { uiConfig } = await import('../api/src/ui-config.ts')
+        const { defaultThemeCssHash } = await import('../api/src/utils/theme.ts')
         const { uiConfigPath } = prepareUiConfig(uiConfig)
-        return microTemplate(html, { SITE_PATH: devSitePath, UI_CONFIG_PATH: uiConfigPath })
+        return microTemplate(html, { SITE_PATH: devSitePath, UI_CONFIG_PATH: uiConfigPath, THEME_CSS_HASH: defaultThemeCssHash })
       }
     }
   ],

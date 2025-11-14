@@ -22,6 +22,8 @@ import tokens from './tokens/router.ts'
 import sites from './sites/router.ts'
 import accounts from './accounts/router.ts'
 import passwordLists from './password-lists/router.ts'
+import { getSiteByUrl } from '#services'
+import { defaultThemeCssHash, getThemeCssHash } from './utils/theme.ts'
 
 const app = express()
 export default app
@@ -91,7 +93,11 @@ app.use('/api/', (req, res) => {
 app.use(tokens)
 
 app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig, {
-  csp: { nonce: true, header: true }
+  csp: { nonce: true, header: true },
+  getSiteExtraParams: async (siteUrl: string) => {
+    const site = await getSiteByUrl(siteUrl)
+    return { THEME_CSS_HASH: site ? getThemeCssHash(site) : defaultThemeCssHash }
+  }
 }))
 
 app.use(errorHandler)

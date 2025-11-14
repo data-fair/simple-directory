@@ -1,14 +1,14 @@
 import { type Site, type SitePublic } from '#types'
 import { Router, type Request } from 'express'
 import config from '#config'
-import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost, reqSitePath, type AccountKeys } from '@data-fair/lib-express'
+import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost, type AccountKeys } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
 import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite, toggleMainSite } from './service.ts'
+import { getThemeCss, getThemeCssHash, defaultThemeCssHash, defaultThemeCss } from '../utils/theme.ts'
 import { isOIDCProvider, reqSite } from '#services'
 import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
-import { getSiteColorsWarnings, fillTheme, getTextColorsCss } from '@data-fair/lib-common-types/theme/index.js'
-import microTemplate from '@data-fair/lib-utils/micro-template.js'
+import { getSiteColorsWarnings, fillTheme } from '@data-fair/lib-common-types/theme/index.js'
 import clone from '@data-fair/lib-utils/clone.js'
 import Debug from 'debug'
 import { cipher } from '../utils/cipher.ts'
@@ -129,6 +129,7 @@ router.post('', async (req, res, next) => {
     patch.mails = existingSite?.mails ?? {}
     patch.mails.contact = postSite.contact
   }
+  patch.updatedAt = new Date().toISOString()
   const patchedSite = await patchSite(patch, true)
   debugPostSite('patched site', patchedSite._id)
   res.send(patchedSite)
@@ -179,7 +180,7 @@ router.patch('/:id', async (req, res, next) => {
     }
   }
 
-  const patchedSite = await patchSite({ _id: req.params.id, ...patch })
+  const patchedSite = await patchSite({ _id: req.params.id, updatedAt: new Date().toISOString(), ...patch })
 
   if (patch.isAccountMain) {
     // toggle the main site
@@ -235,29 +236,22 @@ router.get('/_default_theme', async (req, res, next) => {
 router.get('/_theme.css', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
   const site = await reqSite(req)
-  const sitePath = reqSitePath(req)
-  let css = '@media print { .v-application { background-color: transparent; } }'
-  const theme = site?.theme ?? config.theme
-  css += getTextColorsCss(theme.colors, 'default')
-  if (theme.dark && theme.darkColors) css += getTextColorsCss(theme.darkColors, 'dark')
-  if (theme.hc && theme.hcColors) css += getTextColorsCss(theme.hcColors, 'hc')
-  if (theme.hcDark && theme.hcDarkColors) css += getTextColorsCss(theme.hcDarkColors, 'hc-dark')
-  css += '\n' + microTemplate(site?.theme?.bodyFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'BodyFontFamily' })
-  if (theme?.headingFontFamilyCss) {
-    css += '\n' + microTemplate(theme?.headingFontFamilyCss, { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
-  } else if (!theme?.bodyFontFamily && !theme?.headingFontFamily) {
-    // this condition is met on older sites where we used BodyFontFamily and HeadingFontFamily aliases
-    css += '\n' + microTemplate(site?.theme?.bodyFontFamilyCss ?? config.theme.headingFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
-  }
-
-  css += `
-:root {
-  --d-body-font-family: ${theme?.bodyFontFamily || 'BodyFontFamily'} !important;
-  --d-heading-font-family: ${theme?.headingFontFamily || theme?.bodyFontFamily || 'HeadingFontFamily'} !important;
-}
-  `
+  const css = site ? getThemeCss(site.theme, site.path ?? '') : defaultThemeCss
   res.contentType('css')
   res.send(css)
+})
+const hashedMaxAge = 60 * 60 * 24 * 10 // 10 days
+router.get('/:hash/_theme.css', async (req, res, next) => {
+  res.setHeader('Cache-Control', `public, max-age=${hashedMaxAge}, immutable`)
+  const site = await reqSite(req)
+  // TODO: fail if hash doesn't match ?
+  const css = site ? getThemeCss(site.theme, site.path ?? '') : defaultThemeCss
+  res.contentType('css')
+  res.send(css)
+})
+router.get('_theme_hash', async (req, res, next) => {
+  const site = await reqSite(req)
+  res.send(site ? getThemeCssHash(site) : defaultThemeCssHash)
 })
 
 router.get('/:id/_theme_warnings', async (req, res, next) => {
