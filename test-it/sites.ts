@@ -33,7 +33,7 @@ describe('sites api', () => {
     const publicSite = (await anonymousAx.get(`${siteDirectoryUrl}/api/sites/_public`)).data
     assert.equal(publicSite.authMode, 'onlyBackOffice')
     assert.ok(publicSite.theme.colors.primary)
-    assert.ok(publicSite.theme.logo.startsWith('http://127.0.0.1:5989/'))
+    assert.ok(publicSite.theme.logo.startsWith('/simple-directory/api/avatars'))
     const themeCss = (await anonymousAx.get<string>(`${siteDirectoryUrl}/api/sites/_theme.css`)).data
     assert.ok(themeCss.includes('@font-face{font-family:BodyFontFamily'))
 

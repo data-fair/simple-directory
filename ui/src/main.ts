@@ -27,7 +27,7 @@ const debug = debugModule('sd:main');
   const router = createRouter({ history: createWebHistory($sitePath + '/simple-directory/'), routes })
   dFrameContent(router)
   const reactiveSearchParams = createReactiveSearchParams(router)
-  const session = await createSession({ directoryUrl: $sitePath + '/simple-directory', siteInfo: true })
+  const session = await createSession({ directoryUrl: $sitePath + '/simple-directory' })
   debug('Session created', session.state)
   const localeDayjs = createLocaleDayjs(session.state.lang)
   const uiNotif = createUiNotif()

@@ -1,7 +1,7 @@
-import { type Site, type SitePublic } from '#types'
+import { type Site } from '#types'
 import { Router, type Request } from 'express'
 import config from '#config'
-import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost, type AccountKeys } from '@data-fair/lib-express'
+import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, type AccountKeys } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
 import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite, toggleMainSite } from './service.ts'
 import { getThemeCss, getThemeCssHash, defaultThemeCssHash, defaultThemeCss } from '../utils/theme.ts'
@@ -13,6 +13,8 @@ import clone from '@data-fair/lib-utils/clone.js'
 import Debug from 'debug'
 import { cipher } from '../utils/cipher.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
+import { defaultPublicSiteInfo, defaultPublicSiteInfoHash, getPublicSiteInfo, getPublicSiteInfoHash } from '../utils/public-site-info.ts'
+import serialize from 'serialize-javascript'
 
 const debugPostSite = Debug('post-site')
 
@@ -196,37 +198,21 @@ router.delete('/:id', async (req, res, next) => {
   res.status(204).send()
 })
 
+const hashedMaxAge = 60 * 60 * 24 * 10 // 10 days
+
 router.get('/_public', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
-
   const site = await reqSite(req)
-  const theme = { ...site?.theme ?? config.theme }
-  if (!theme.dark) delete theme.darkColors
-  if (!theme.hc) delete theme.hcColors
-  if (!site) {
-    const sitePublic: SitePublic = {
-      main: true,
-      host: reqHost(req),
-      theme,
-      isAccountMain: true,
-      authMode: 'onlyLocal',
-    }
-    res.send(sitePublic)
-  } else {
-    const sitePublic: SitePublic = {
-      host: site.host,
-      path: site.path,
-      title: site.title,
-      isAccountMain: site.isAccountMain,
-      theme: {
-        ...theme,
-        logo: site.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
-      },
-      authMode: site.authMode ?? 'onlyBackOffice',
-      authOnlyOtherSite: site.authOnlyOtherSite
-    }
-    res.send(sitePublic)
-  }
+  const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
+  res.send(publicSiteInfo)
+})
+router.get('/:hash/_public.js', async (req, res, next) => {
+  res.setHeader('Cache-Control', `public, max-age=${hashedMaxAge}, immutable`)
+  const site = await reqSite(req)
+  const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
+  // TODO: fail if hash doesn't match ?
+  res.contentType('application/javascript')
+  res.send(`window.__PUBLIC_SITE_INFO=${serialize(publicSiteInfo)}`)
 })
 
 router.get('/_default_theme', async (req, res, next) => {
@@ -240,7 +226,6 @@ router.get('/_theme.css', async (req, res, next) => {
   res.contentType('css')
   res.send(css)
 })
-const hashedMaxAge = 60 * 60 * 24 * 10 // 10 days
 router.get('/:hash/_theme.css', async (req, res, next) => {
   res.setHeader('Cache-Control', `public, max-age=${hashedMaxAge}, immutable`)
   const site = await reqSite(req)
@@ -249,9 +234,12 @@ router.get('/:hash/_theme.css', async (req, res, next) => {
   res.contentType('css')
   res.send(css)
 })
-router.get('_theme_hash', async (req, res, next) => {
+router.get('/_hashes', async (req, res, next) => {
   const site = await reqSite(req)
-  res.send(site ? getThemeCssHash(site) : defaultThemeCssHash)
+  res.send({
+    publicInfo: site ? getPublicSiteInfoHash(site) : defaultPublicSiteInfoHash,
+    themeCss: site ? getThemeCssHash(site) : defaultThemeCssHash
+  })
 })
 
 router.get('/:id/_theme_warnings', async (req, res, next) => {

@@ -1,5 +1,6 @@
 import config from '../config.ts'
 import crypto from 'node:crypto'
+import { type Site } from '../../types/index.ts'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import { getTextColorsCss, type Theme } from '@data-fair/lib-common-types/theme/index.js'
 
