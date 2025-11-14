@@ -1,18 +1,20 @@
-import { type Site, type SitePublic } from '#types'
+import { type Site } from '#types'
 import { Router, type Request } from 'express'
 import config from '#config'
-import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, reqHost, reqSitePath, type AccountKeys } from '@data-fair/lib-express'
+import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, type AccountKeys } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
 import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite, toggleMainSite } from './service.ts'
+import { getThemeCss, getThemeCssHash, defaultThemeCssHash, defaultThemeCss } from '../utils/theme.ts'
 import { isOIDCProvider, reqSite } from '#services'
 import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
-import { getSiteColorsWarnings, fillTheme, getTextColorsCss } from '@data-fair/lib-common-types/theme/index.js'
-import microTemplate from '@data-fair/lib-utils/micro-template.js'
+import { getSiteColorsWarnings, fillTheme } from '@data-fair/lib-common-types/theme/index.js'
 import clone from '@data-fair/lib-utils/clone.js'
 import Debug from 'debug'
 import { cipher } from '../utils/cipher.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
+import { defaultPublicSiteInfo, defaultPublicSiteInfoHash, getPublicSiteInfo, getPublicSiteInfoHash } from '../utils/public-site-info.ts'
+import serialize from 'serialize-javascript'
 
 const debugPostSite = Debug('post-site')
 
@@ -129,6 +131,7 @@ router.post('', async (req, res, next) => {
     patch.mails = existingSite?.mails ?? {}
     patch.mails.contact = postSite.contact
   }
+  patch.updatedAt = new Date().toISOString()
   const patchedSite = await patchSite(patch, true)
   debugPostSite('patched site', patchedSite._id)
   res.send(patchedSite)
@@ -179,7 +182,7 @@ router.patch('/:id', async (req, res, next) => {
     }
   }
 
-  const patchedSite = await patchSite({ _id: req.params.id, ...patch })
+  const patchedSite = await patchSite({ _id: req.params.id, updatedAt: new Date().toISOString(), ...patch })
 
   if (patch.isAccountMain) {
     // toggle the main site
@@ -195,37 +198,21 @@ router.delete('/:id', async (req, res, next) => {
   res.status(204).send()
 })
 
+const hashedMaxAge = 60 * 60 * 24 * 10 // 10 days
+
 router.get('/_public', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
-
   const site = await reqSite(req)
-  const theme = { ...site?.theme ?? config.theme }
-  if (!theme.dark) delete theme.darkColors
-  if (!theme.hc) delete theme.hcColors
-  if (!site) {
-    const sitePublic: SitePublic = {
-      main: true,
-      host: reqHost(req),
-      theme,
-      isAccountMain: true,
-      authMode: 'onlyLocal',
-    }
-    res.send(sitePublic)
-  } else {
-    const sitePublic: SitePublic = {
-      host: site.host,
-      path: site.path,
-      title: site.title,
-      isAccountMain: site.isAccountMain,
-      theme: {
-        ...theme,
-        logo: site.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
-      },
-      authMode: site.authMode ?? 'onlyBackOffice',
-      authOnlyOtherSite: site.authOnlyOtherSite
-    }
-    res.send(sitePublic)
-  }
+  const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
+  res.send(publicSiteInfo)
+})
+router.get('/:hash/_public.js', async (req, res, next) => {
+  res.setHeader('Cache-Control', `public, max-age=${hashedMaxAge}, immutable`)
+  const site = await reqSite(req)
+  const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
+  // TODO: fail if hash doesn't match ?
+  res.contentType('application/javascript')
+  res.send(`window.__PUBLIC_SITE_INFO=${serialize(publicSiteInfo)}`)
 })
 
 router.get('/_default_theme', async (req, res, next) => {
@@ -235,29 +222,24 @@ router.get('/_default_theme', async (req, res, next) => {
 router.get('/_theme.css', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
   const site = await reqSite(req)
-  const sitePath = reqSitePath(req)
-  let css = '@media print { .v-application { background-color: transparent; } }'
-  const theme = site?.theme ?? config.theme
-  css += getTextColorsCss(theme.colors, 'default')
-  if (theme.dark && theme.darkColors) css += getTextColorsCss(theme.darkColors, 'dark')
-  if (theme.hc && theme.hcColors) css += getTextColorsCss(theme.hcColors, 'hc')
-  if (theme.hcDark && theme.hcDarkColors) css += getTextColorsCss(theme.hcDarkColors, 'hc-dark')
-  css += '\n' + microTemplate(site?.theme?.bodyFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'BodyFontFamily' })
-  if (theme?.headingFontFamilyCss) {
-    css += '\n' + microTemplate(theme?.headingFontFamilyCss, { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
-  } else if (!theme?.bodyFontFamily && !theme?.headingFontFamily) {
-    // this condition is met on older sites where we used BodyFontFamily and HeadingFontFamily aliases
-    css += '\n' + microTemplate(site?.theme?.bodyFontFamilyCss ?? config.theme.headingFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
-  }
-
-  css += `
-:root {
-  --d-body-font-family: ${theme?.bodyFontFamily || 'BodyFontFamily'} !important;
-  --d-heading-font-family: ${theme?.headingFontFamily || theme?.bodyFontFamily || 'HeadingFontFamily'} !important;
-}
-  `
+  const css = site ? getThemeCss(site.theme, site.path ?? '') : defaultThemeCss
   res.contentType('css')
   res.send(css)
+})
+router.get('/:hash/_theme.css', async (req, res, next) => {
+  res.setHeader('Cache-Control', `public, max-age=${hashedMaxAge}, immutable`)
+  const site = await reqSite(req)
+  // TODO: fail if hash doesn't match ?
+  const css = site ? getThemeCss(site.theme, site.path ?? '') : defaultThemeCss
+  res.contentType('css')
+  res.send(css)
+})
+router.get('/_hashes', async (req, res, next) => {
+  const site = await reqSite(req)
+  res.send({
+    publicInfo: site ? getPublicSiteInfoHash(site) : defaultPublicSiteInfoHash,
+    themeCss: site ? getThemeCssHash(site) : defaultThemeCssHash
+  })
 })
 
 router.get('/:id/_theme_warnings', async (req, res, next) => {

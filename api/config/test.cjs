@@ -73,7 +73,6 @@ module.exports = {
   manageSites: true,
   managePartners: true,
   cipherPassword: 'test',
-  serveUi: false,
   observer: {
     active: false
   },

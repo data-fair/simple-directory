@@ -31,6 +31,10 @@ export default {
       type: 'string',
       layout: 'none'
     },
+    updatedAt: {
+      type: 'string',
+      format: 'date-time'
+    },
     owner: {
       $ref: 'https://github.com/data-fair/lib/session-state#/$defs/account',
       layout: {

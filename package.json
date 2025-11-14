@@ -57,6 +57,7 @@
     "@types/nodemailer": "^6.4.16",
     "@types/qrcode": "^1.5.5",
     "@types/seedrandom": "^3.0.8",
+    "@types/serialize-javascript": "^5.0.4",
     "@types/simple-oauth2": "^5.0.7",
     "@types/tinycolor2": "^1.4.6",
     "@types/useragent": "^2.3.4",

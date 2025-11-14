@@ -115,8 +115,17 @@ export default defineConfig({
       async transformIndexHtml (html) {
         // in production this injection will be performed by an express middleware
         if (process.env.NODE_ENV !== 'development') return html
+        const { prepareUiConfig } = await import('@data-fair/lib-express')
         const { uiConfig } = await import('../api/src/ui-config.ts')
-        return microTemplate(html, { SITE_PATH: devSitePath, UI_CONFIG: JSON.stringify(uiConfig) })
+        const { defaultThemeCssHash } = await import('../api/src/utils/theme.ts')
+        const { defaultPublicSiteInfoHash } = await import('../api/src/utils/public-site-info.ts')
+        const { uiConfigPath } = prepareUiConfig(uiConfig)
+        return microTemplate(html, {
+          SITE_PATH: devSitePath,
+          UI_CONFIG_PATH: uiConfigPath,
+          THEME_CSS_HASH: defaultThemeCssHash,
+          PUBLIC_SITE_INFO_HASH: defaultPublicSiteInfoHash
+        })
       }
     }
   ],
