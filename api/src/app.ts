@@ -93,15 +93,17 @@ app.use('/api/', (req, res) => {
 })
 app.use(tokens)
 
-app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig, {
-  csp: { nonce: true, header: true },
-  getSiteExtraParams: async (siteUrl: string) => {
-    const site = await getSiteByUrl(siteUrl)
-    return {
-      THEME_CSS_HASH: site ? getThemeCssHash(site) : defaultThemeCssHash,
-      PUBLIC_SITE_INFO_HASH: site ? getPublicSiteInfoHash(site) : defaultPublicSiteInfoHash
+if (process.env.NODE_ENV !== 'test') {
+  app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig, {
+    csp: { nonce: true, header: true },
+    getSiteExtraParams: async (siteUrl: string) => {
+      const site = await getSiteByUrl(siteUrl)
+      return {
+        THEME_CSS_HASH: site ? getThemeCssHash(site) : defaultThemeCssHash,
+        PUBLIC_SITE_INFO_HASH: site ? getPublicSiteInfoHash(site) : defaultPublicSiteInfoHash
+      }
     }
-  }
-}))
+  }))
+}
 
 app.use(errorHandler)
