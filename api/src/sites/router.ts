@@ -206,6 +206,13 @@ router.get('/_public', async (req, res, next) => {
   const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
   res.send(publicSiteInfo)
 })
+router.get('/_public.js', async (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=60')
+  const site = await reqSite(req)
+  const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
+  res.contentType('application/javascript')
+  res.send(`window.__PUBLIC_SITE_INFO=${serialize(publicSiteInfo)}`)
+})
 router.get('/:hash/_public.js', async (req, res, next) => {
   res.setHeader('Cache-Control', `public, max-age=${hashedMaxAge}, immutable`)
   const site = await reqSite(req)
