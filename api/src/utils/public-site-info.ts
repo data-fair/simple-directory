@@ -24,10 +24,11 @@ const lighterTheme = (fullTheme: Theme) => {
   return theme
 }
 
+const publicHost = new URL(config.publicUrl).host
 export const getPublicSiteInfo = (site: Site): SitePublic => {
   const authMode = site.authMode ?? 'onlyBackOffice'
   let authOnlyOtherSite = site.authOnlyOtherSite
-  if (authMode === 'onlyBackOffice') authOnlyOtherSite = config.publicUrl
+  if (authMode === 'onlyBackOffice') authOnlyOtherSite = publicHost
   return {
     host: site.host,
     path: site.path,
@@ -52,7 +53,7 @@ export const getPublicSiteInfoHash = (site: Site) => {
 
 export const defaultPublicSiteInfo = {
   main: true,
-  host: new URL(config.publicUrl).host,
+  host: publicHost,
   theme: lighterTheme(config.theme),
   isAccountMain: true,
   authMode: 'onlyLocal',
