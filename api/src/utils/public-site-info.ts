@@ -25,6 +25,9 @@ const lighterTheme = (fullTheme: Theme) => {
 }
 
 export const getPublicSiteInfo = (site: Site): SitePublic => {
+  const authMode = site.authMode ?? 'onlyBackOffice'
+  let authOnlyOtherSite = site.authOnlyOtherSite
+  if (authMode === 'onlyBackOffice') authOnlyOtherSite = config.publicUrl
   return {
     host: site.host,
     path: site.path,
@@ -34,8 +37,8 @@ export const getPublicSiteInfo = (site: Site): SitePublic => {
       ...lighterTheme(site.theme ?? config.theme),
       logo: site.theme.logo || `/simple-directory/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
     },
-    authMode: site.authMode ?? 'onlyBackOffice',
-    authOnlyOtherSite: site.authOnlyOtherSite
+    authMode,
+    authOnlyOtherSite
   }
 }
 
