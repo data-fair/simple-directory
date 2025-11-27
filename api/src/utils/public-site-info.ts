@@ -35,6 +35,7 @@ export const getPublicSiteInfo = (site: Site): SitePublic => {
     owner: site.owner,
     title: site.title,
     isAccountMain: site.isAccountMain,
+    tosMessage: site.tosMessage,
     theme: {
       ...lighterTheme(site.theme ?? config.theme),
       logo: site.theme.logo || `/simple-directory/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
