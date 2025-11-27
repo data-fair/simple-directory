@@ -19,6 +19,9 @@
     "path": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/path"
     },
+    "owner": {
+      "$ref": "https://github.com/data-fair/simple-directory/site#/properties/owner"
+    },
     "title": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/title"
     },

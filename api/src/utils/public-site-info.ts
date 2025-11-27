@@ -32,6 +32,7 @@ export const getPublicSiteInfo = (site: Site): SitePublic => {
   return {
     host: site.host,
     path: site.path,
+    owner: site.owner,
     title: site.title,
     isAccountMain: site.isAccountMain,
     theme: {
