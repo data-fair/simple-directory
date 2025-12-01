@@ -92,20 +92,15 @@ router.post('/', async (req, res, next) => {
 // protect contact route with rate limiting to prevent spam
 let _contactLimiter: RateLimiterMongo | undefined
 router.post('/contact', async (req, res) => {
-  if (!reqUser(req) && !config.anonymousContactForm) return res.status(401).send()
+  if (!reqUser(req) && !config.anonymousContactForm) return res.status(401).send('anonymous contact form functionality is not activated')
 
   if (!emailValidator.validate(req.body.from)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
 
   if (!reqUser(req)) {
     if (!req.body.token) return res.status(401).send()
 
-    // 1rst level of anti-spam prevention, no cross origin requests on this route
-    if (req.headers.origin && !reqSiteUrl(req).startsWith(req.headers.origin)) {
-      return res.status(405).send('Appel depuis un domaine extérieur non supporté')
-    }
-
     try {
-      // 2nd level of anti-spam protection, validate that the user was present on the page for a few seconds before sending
+      // 1rst level of anti-spam protection, validate that the user was present on the page for a few seconds before sending
       await session.verifyToken(req.body.token)
     } catch (err: any) {
       if (err.name === 'NotBeforeError') {
@@ -116,7 +111,7 @@ router.post('/contact', async (req, res) => {
     }
   }
   try {
-    // 3rd level of anti-spam protection, simple rate limiting based on ip
+    // 2nd level of anti-spam protection, simple rate limiting based on ip
     _contactLimiter = _contactLimiter ?? new RateLimiterMongo({
       storeClient: mongo.client,
       dbName: mongo.db.databaseName,

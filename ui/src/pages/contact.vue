@@ -66,7 +66,7 @@ const send = withUiNotif(async () => {
   await form.value?.validate()
   if (form.value?.isValid) {
     if (!token.data) return
-    await $fetch('mails/contact', { method: 'POST', body: { ...message.value, token: token.data } })
+    await $fetch('mails/contact', { method: 'POST', body: { ...message.value, token: token.data.value } })
     message.value = { ...newMessage }
     form.value?.resetValidation()
   }
