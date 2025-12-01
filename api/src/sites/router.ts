@@ -28,7 +28,7 @@ const checkSecret = async (req: Request) => {
 }
 
 const prepareFullSite = (req: Request, site: Site) => {
-  site.theme.logo = site.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
+  site.theme.logo = site.theme.logo || `/simple-directory/api/avatars/${site.owner.type}/${site.owner.id}/avatar.png`
   if (site.authProviders) {
     for (const p of site.authProviders) {
       if (isOIDCProvider(p)) {
