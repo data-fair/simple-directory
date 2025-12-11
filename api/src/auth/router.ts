@@ -447,6 +447,7 @@ router.get('/token_callback', async (req, res, next) => {
 }) */
 
 router.post('/keepalive', async (req, res, next) => {
+  // session.init was configured so that on this route we only decode the token not validate it
   const session = reqSessionAuthenticated(req)
   const loggedUser = session.user
   const storage = await storages.getSessionStorage(session)

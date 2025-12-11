@@ -27,7 +27,7 @@ describe('Session management', () => {
 
   it('Refresh token', async () => {
     const ax = await axiosAuth('dmeadus0@answers.com')
-    const res = await ax.post('/api/auth/keepalive')
+    let res = await ax.post('/api/auth/keepalive')
     assert.equal(res.status, 204)
     assert.ok(res.headers['set-cookie']?.[0].startsWith('id_token='))
     assert.ok(res.headers['set-cookie']?.[1].startsWith('id_token_sign='))
@@ -37,6 +37,15 @@ describe('Session management', () => {
     assert.equal(res.status, 204)
     assert.ok(res.headers['set-cookie']?.[0].startsWith('id_token='))
     assert.ok(res.headers['set-cookie']?.[1].startsWith('id_token_sign=')) */
+
+    // if the main token is finished, exchange should still work
+    ax.cookieJar.setCookie('id_token_sign=; Path=/', 'http://localhost')
+    await assert.rejects(ax.get('/api/auth/me'), { status: 404 })
+    res = await ax.post('/api/auth/keepalive')
+    assert.equal(res.status, 204)
+    assert.ok(res.headers['set-cookie']?.[0].startsWith('id_token='))
+    assert.ok(res.headers['set-cookie']?.[1].startsWith('id_token_sign='))
+    res = await ax.get('/api/auth/me')
   })
 
   it('Store a user sessions info', async () => {
