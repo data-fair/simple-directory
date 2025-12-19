@@ -35,7 +35,7 @@ const createRedirects = (account: AccountKeys) => {
   // for any other account, only propose the current site
   const shouldFetchSites = $uiConfig.manageSites && (session.user.value?.adminMode || isBackoffice || isSiteOwnerAccount)
 
-  const sitesFetch = shouldFetchSites && useFetch<{ count: number, results: SitePublic[] }>(`${$apiPath}/sites`, { query: { owner: `${account.type}:${account.id}` } })
+  const sitesFetch = shouldFetchSites && useFetch<{ count: number, results: SitePublic[] }>(`${$apiPath}/sites`, { query: { owner: `${account.type}:${account.id}`, tmp: false } })
   const loadingRedirects = computed(() => sitesFetch && sitesFetch?.loading.value)
 
   const redirects = computed(() => {

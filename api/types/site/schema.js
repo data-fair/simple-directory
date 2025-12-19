@@ -85,6 +85,18 @@ export default {
         de: 'Pfadpräfix'
       }
     },
+    tmp: {
+      type: 'boolean',
+      title: 'Temporaire / brouillon',
+      'x-i18n-title': {
+        fr: 'Temporaire / brouillon',
+        en: 'Temporary / draft',
+        es: 'Temporal / borrador',
+        it: 'Temporaneo / bozza',
+        pt: 'Temporário / rascunho',
+        de: 'Temporär / Entwurf'
+      }
+    },
     title: {
       type: 'string',
       title: 'Titre du site',
