@@ -198,7 +198,7 @@ router.delete('/:id', async (req, res, next) => {
   res.status(204).send()
 })
 
-const hashedMaxAge = 60 * 60 * 24 * 10 // 10 days
+const hashedMaxAge = 60 * 60 * 24 * 365 // 365 days
 
 router.get('/_public', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
