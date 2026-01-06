@@ -50,7 +50,7 @@ const startOAuthServer = async (port: number, oidcUserInfo: any) => {
   return oauthServer
 }
 
-describe('global OIDC configuration', () => {
+describe.only('global OIDC configuration', () => {
   let oauthServer1: OAuth2Server
   let oauthServer2: OAuth2Server
   before(async () => {

@@ -602,6 +602,78 @@ export default {
             }
           }
         },
+        credentialsEncodingMode: {
+          type: 'string',
+          title: 'Encodage des crédentiels du client',
+          description: 'Paramètre technique à ignorer la plupart du temps. Si le secret fourni contient des caractères spéciaux il peut être utile de tester le mode non-strict.',
+          default: 'strict',
+          oneOf: [
+            {
+              const: 'strict',
+              title: 'Strict',
+              'x-i18n-title': {
+                fr: 'Strict',
+                en: 'Strict',
+                de: 'Streng',
+                it: 'Rigido',
+                pt: 'Rígido',
+                es: 'Estricto'
+              }
+            },
+            {
+              const: 'loose',
+              title: 'Non-strict',
+              'x-i18n-title': {
+                fr: 'Non-strict',
+                en: 'Non-strict',
+                de: 'Nicht streng',
+                it: 'Non rigido',
+                pt: 'Não rígido',
+                es: 'No estricto'
+              }
+            }
+          ],
+          layout: { cols: 4 }
+        },
+        authorizationMethod: {
+          type: 'string',
+          title: 'Méthode d\'envoi des crédentiels du client',
+          default: 'header',
+          oneOf: [
+            {
+              const: 'header',
+              title: 'Entête "Authorization"',
+              'x-i18n-title': {
+                fr: 'Entête "Authorization"',
+                en: 'Authorization header',
+                es: 'Encabezado "Authorization"',
+                it: 'Intestazione "Authorization"',
+                pt: 'Cabeçalho "Authorization"',
+                de: 'Kopfzeile "Authorization"'
+              }
+            },
+            {
+              const: 'body',
+              title: 'Corps de la requête',
+              'x-i18n-title': {
+                fr: 'Corps de la requête',
+                en: 'Request body',
+                es: 'Cuerpo de la solicitud',
+                it: 'Corpo della richiesta',
+                pt: 'Corpo da solicitação',
+                de: 'Anfragekörper'
+              }
+            }
+          ],
+          layout: { cols: 4 }
+        },
+        bodyFormat: {
+          type: 'string',
+          title: 'Format du corps de la requête',
+          default: 'form',
+          enum: ['form', 'json'],
+          layout: { cols: 4 }
+        },
         createMember: {
           $ref: '#/$defs/createMember'
         },
