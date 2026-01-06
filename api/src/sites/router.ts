@@ -202,12 +202,16 @@ const hashedMaxAge = 60 * 60 * 24 * 365 // 365 days
 
 router.get('/_public', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
+  // force buffering (necessary for caching) of this response in the reverse proxy
+  res.setHeader('X-Accel-Buffering', 'yes')
   const site = await reqSite(req)
   const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
   res.send(publicSiteInfo)
 })
 router.get('/_public.js', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
+  // force buffering (necessary for caching) of this response in the reverse proxy
+  res.setHeader('X-Accel-Buffering', 'yes')
   const site = await reqSite(req)
   const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
   res.contentType('application/javascript')
@@ -215,6 +219,8 @@ router.get('/_public.js', async (req, res, next) => {
 })
 router.get('/:hash/_public.js', async (req, res, next) => {
   res.setHeader('Cache-Control', `public, max-age=${hashedMaxAge}, immutable`)
+  // force buffering (necessary for caching) of this response in the reverse proxy
+  res.setHeader('X-Accel-Buffering', 'yes')
   const site = await reqSite(req)
   const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
   // TODO: fail if hash doesn't match ?
@@ -228,6 +234,8 @@ router.get('/_default_theme', async (req, res, next) => {
 
 router.get('/_theme.css', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
+  // force buffering (necessary for caching) of this response in the reverse proxy
+  res.setHeader('X-Accel-Buffering', 'yes')
   const site = await reqSite(req)
   const css = site ? getThemeCss(site.theme, site.path ?? '') : defaultThemeCss
   res.contentType('css')
@@ -235,6 +243,8 @@ router.get('/_theme.css', async (req, res, next) => {
 })
 router.get('/:hash/_theme.css', async (req, res, next) => {
   res.setHeader('Cache-Control', `public, max-age=${hashedMaxAge}, immutable`)
+  // force buffering (necessary for caching) of this response in the reverse proxy
+  res.setHeader('X-Accel-Buffering', 'yes')
   const site = await reqSite(req)
   // TODO: fail if hash doesn't match ?
   const css = site ? getThemeCss(site.theme, site.path ?? '') : defaultThemeCss
