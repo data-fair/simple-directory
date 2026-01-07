@@ -44,7 +44,7 @@ const prepareFullSite = (req: Request, site: Site) => {
 
 router.get('', async (req, res, next) => {
   const sessionState = reqSessionAuthenticated(req)
-  const { query } = (await import('#doc/sites/list-req/index.ts')).returnValid(req, { name: 'req' })
+  const { query } = (await import('#doc/sites/list-req/index.ts')).returnValid({ query: { ...req.query } }, { name: 'req' })
   if (query.showAll && !reqUser(req)?.adminMode) throw httpError(403)
   if (query.showAll) {
     const response = await findAllSites()
