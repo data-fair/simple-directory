@@ -311,7 +311,7 @@ router.post('/site_redirect', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const loggedUser = reqUserAuthenticated(req)
   const storage = storages.globalStorage
-  const user = await storage.getUserByEmail(loggedUser.email)
+  const user = await storage.getUserByEmail(loggedUser.email, await reqSite(req))
   if (!user) return res.status(404).send('user not found')
   if (!req.body.redirect) return res.status(400).send()
   const site = await getSiteByUrl(req.body.redirect)
