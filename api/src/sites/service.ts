@@ -78,11 +78,12 @@ export const reqSite = async (req: Request): Promise<Site | undefined> => {
   }
 }
 
-export async function findOwnerSites (owner: AccountKeys) {
+export async function findOwnerSites (owner: AccountKeys, excludeTmp?: boolean) {
   const filter: any = { 'owner.type': owner.type, 'owner.id': owner.id }
   if (owner.department) filter['owner.department'] = owner.department
+  if (excludeTmp) filter['tmp'] = { $ne: true }
   const sites = await mongo.sites.find(filter).limit(10000)
-    .project({ host: 1, theme: 1, logo: 1, reducedPersonalInfoAtCreation: 1, tosMessage: 1, authMode: 1, authOnlyOtherSite: 1 })
+    .project({ host: 1, theme: 1, logo: 1, reducedPersonalInfoAtCreation: 1, tosMessage: 1, authMode: 1, authOnlyOtherSite: 1, tmp: 1 })
     .toArray()
   return {
     count: sites.length,

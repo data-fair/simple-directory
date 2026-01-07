@@ -61,7 +61,7 @@ router.get('', async (req, res, next) => {
         account = { type: type as 'organization' | 'user', id }
       }
     }
-    const response = await findOwnerSites(account)
+    const response = await findOwnerSites(account, query.tmp === false)
     for (const result of response.results) {
       result.theme.logo = result.theme.logo || `${reqSiteUrl(req) + '/simple-directory'}/api/avatars/${account.type}/${account.id}/avatar.png`
     }

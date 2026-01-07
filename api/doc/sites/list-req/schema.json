@@ -21,6 +21,9 @@
         },
         "owner": {
           "type": "string"
+        },
+        "tmp": {
+          "type": "boolean"
         }
       }
     }
