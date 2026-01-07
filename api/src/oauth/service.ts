@@ -132,14 +132,9 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
 
   // get an access token from code sent as callback to login redirect
   const getToken = async (code: string, offlineAccess = false) => {
-    const scope = p.scope
-    /* if (offlineAccess) {
-      scope += ' offline_access'
-    } */
     const tokenWrap = await oauthClient.getToken({
       code,
-      redirect_uri: callbackUri,
-      scope
+      redirect_uri: callbackUri
     })
     const token = tokenWrap.token
     const decodedRefreshToken = decodeToken(token.refresh_token as string)
@@ -150,7 +145,7 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
   const refreshToken = async (tokenObj: any) => {
     const token = oauthClient.createToken(tokenObj)
     // if (onlyIfExpired && !token.expired()) return null
-    const newToken = (await token.refresh({ scope: p.scope })).token
+    const newToken = (await token.refresh()).token
     const decodedRefreshToken = decodeToken(newToken.refresh_token as string)
     const offlineRefreshToken = decodedRefreshToken?.typ === 'Offline'
     return { newToken, offlineRefreshToken }
