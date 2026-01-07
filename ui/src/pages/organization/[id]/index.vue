@@ -51,7 +51,7 @@
         autocomplete="off"
       />
       <v-text-field
-        v-if="$uiConfig.manageDepartments && $uiConfig.manageDepartmentLabel"
+        v-if="$uiConfig.manageDepartments && $uiConfig.manageDepartmentLabel && showDetailedManagement"
         v-model="orga.departmentLabel"
         :label="$t('pages.organization.departmentLabelTitle')"
         :disabled="orgRole !== 'admin' || $uiConfig.readonly"
@@ -114,7 +114,7 @@
     </v-form>
 
     <organization-departments
-      v-if="$uiConfig.manageDepartments"
+      v-if="$uiConfig.manageDepartments && showDetailedManagement"
       :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
       @change="fetchOrga.refresh()"
@@ -142,7 +142,7 @@
     />
 
     <organization-partners
-      v-if="$uiConfig.managePartners && mainPublicUrl.host === host"
+      v-if="$uiConfig.managePartners && showDetailedManagement"
       :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
       @change="fetchOrga.refresh()"
@@ -205,6 +205,14 @@ const set2FARoles = (roles: string[]) => {
   orga.value['2FA'] = orga.value['2FA'] ?? {}
   orga.value['2FA'].roles = roles
 }
+
+const showDetailedManagement = computed(() => {
+  // on the main back-office everybody can manage all parts of the org
+  if (mainPublicUrl.host === host) return true
+  // on account's site only the owner can manage all
+  if (session.user.value?.siteOwner?.type === 'organization' && session.user.value?.siteOwner?.id === orgId) return true
+  return false
+})
 </script>
 
 <style lang="css">

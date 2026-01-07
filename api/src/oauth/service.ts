@@ -89,7 +89,12 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
   const client = { id: p.client.id, secret: decipher(p.client.secret as CipheredContent) }
   const oauthClient = new oauth2.AuthorizationCode({
     client,
-    auth: p.auth
+    auth: p.auth,
+    options: {
+      credentialsEncodingMode: p.credentialsEncodingMode ?? 'strict', // strict or loose
+      authorizationMethod: p.authorizationMethod ?? 'header', // header or body
+      bodyFormat: p.bodyFormat ?? 'form'
+    }
   })
 
   let state = (await mongo.secrets.findOne({ _id: 'oauth-state-' + p.id }))?.data as string | undefined
