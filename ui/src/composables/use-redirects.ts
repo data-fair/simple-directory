@@ -61,8 +61,9 @@ const createRedirects = (account: AccountKeys) => {
     debug('redirects', redirects)
     return redirects
   })
+  const defaultRedirect = computed(() => redirects.value?.[0])
 
-  return { redirects, loadingRedirects }
+  return { redirects, loadingRedirects, defaultRedirect }
 }
 
 // module level singleton is ok as we are not in SSR context

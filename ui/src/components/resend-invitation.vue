@@ -14,7 +14,7 @@
       />
     </template>
     <v-card
-      v-if="menu"
+      v-if="menu && !loadingRedirects"
       data-iframe-height
       width="500px"
     >
@@ -52,6 +52,18 @@
             disabled
             variant="outlined"
             density="compact"
+          />
+          <v-select
+            v-if="redirects && redirects.length > 1"
+            v-model="invitationRedirect"
+            label="Site de redirection"
+            :items="redirects"
+            item-value="value"
+            item-title="title"
+            name="host"
+            disabled
+            density="compact"
+            variant="outlined"
           />
         </template>
         <v-alert
@@ -96,7 +108,11 @@ const emit = defineEmits({ sent: (_invit: Invitation) => true })
 
 const { sendUiNotif } = useUiNotif()
 const { t } = useI18n()
-const redirect = useStringSearchParam('redirect')
+const { redirects, loadingRedirects, defaultRedirect } = useRedirects({ type: 'organization', id: orga.id })
+const invitationRedirect = computed(() => {
+  if (!member.host) return defaultRedirect.value?.value
+  return redirects.value.find(r => r.title === member.host)?.value
+})
 
 const menu = ref(false)
 const link = ref<string | null>(null)
@@ -105,8 +121,7 @@ const newInvitation = () => {
     id: orga.id,
     name: orga.name,
     email: member.email,
-    role: member.role,
-    redirect: redirect.value
+    role: member.role
   }
   if (member.department) invit.department = member.department
   return invit
@@ -125,6 +140,7 @@ const confirmInvitation = withUiNotif(async () => {
     return
   }
   if (!invitation.value) return
+  invitation.value.redirect = invitationRedirect.value
   const res = await $fetch('invitations', { method: 'POST', body: invitation.value, params: { force_mail: true } })
   if (res && res.link) {
     link.value = res.link

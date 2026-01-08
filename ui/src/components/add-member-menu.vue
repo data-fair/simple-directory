@@ -136,8 +136,7 @@ const { orga, department } = defineProps({
   department: { type: String, default: null }
 })
 
-const { redirects, loadingRedirects } = useRedirects({ type: 'organization', id: orga.id })
-const defaultRedirect = computed(() => redirects.value?.[0])
+const { redirects, loadingRedirects, defaultRedirect } = useRedirects({ type: 'organization', id: orga.id })
 
 const emit = defineEmits({
   sent: (_invit: Invitation) => true
