@@ -36,8 +36,11 @@ export const getRedirectSite = async (req: Request, redirect: string) => {
   debugRedirectSite('redirectSite', currentSiteUrl, currentSite, redirectSite)
   if (!redirectSite) throw httpError(400, `impossible to redirect to ${redirect} from ${currentSiteUrl}, no matching site found`)
   if (!currentSite && ['onlyBackOffice', 'ssoBackOffice', undefined].includes(redirectSite.authMode)) {
-    // redirect from back-office is accepted for this site
     debugRedirectSite('redirect from back-affice is accepted', redirectSite.authMode)
+    return redirectSite
+  }
+  if (!currentSite && redirectSite.authMode === 'onlyOtherSite' && redirectSite.authOnlyOtherSite === publicUrl.host) {
+    debugRedirectSite('redirect from back-affice is accepted in onlyOtherSite mode', redirectSite.authMode)
     return redirectSite
   }
   if (!currentSite && redirectSite.authMode === 'onlyOtherSite' && redirectSite.authOnlyOtherSite) {
