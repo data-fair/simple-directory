@@ -19,6 +19,7 @@ import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
 import { randomUUID } from 'node:crypto'
+import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 
 const debug = Debug('auth')
@@ -844,3 +845,85 @@ router.post('/saml2-logout', (req, res) => {
     res.redirect(logout_url);async
   });
 }) */
+
+// OAuth2-like authorize endpoint
+router.get('/authorize', async (req, res) => {
+  const { client_id: clientId, redirect_uri: redirectUri, response_type: responseType, state } = req.query
+  if (responseType !== 'code') return res.status(400).send('Only response_type=code is supported')
+  if (!redirectUri || typeof redirectUri !== 'string') return res.status(400).send('Missing redirect_uri')
+  if (!clientId || typeof clientId !== 'string') return res.status(400).send('Missing client_id')
+
+  const clients = config.oauth2Server?.clients ?? []
+  const client = clients.find(c => c.id === clientId)
+  if (!client) return res.status(400).send('Unknown client_id')
+
+  if (!client.redirectUris.some(uri => redirectUri.startsWith(uri))) {
+    return res.status(400).send('Invalid redirect_uri')
+  }
+
+  const user = reqUser(req)
+  if (!user) {
+    const loginUrl = new URL(config.publicUrl + '/login')
+    const authorizeUrl = new URL(req.originalUrl, config.publicUrl + '/')
+    loginUrl.searchParams.set('redirect', authorizeUrl.href)
+    return res.redirect(loginUrl.href)
+  }
+
+  const code = nanoid()
+  await mongo.oauthCodes.insertOne({
+    _id: code,
+    userId: user.id,
+    clientId: client.id,
+    redirectUri,
+    createdAt: new Date()
+  })
+
+  const callbackUrl = new URL(redirectUri)
+  callbackUrl.searchParams.set('code', code)
+  if (state && typeof state === 'string') callbackUrl.searchParams.set('state', state)
+
+  for (const [key, value] of Object.entries(req.query)) {
+    if (!['code', 'state', 'redirect_uri', 'response_type', 'client_id'].includes(key) && typeof value === 'string') {
+      callbackUrl.searchParams.set(key, value)
+    }
+  }
+
+  res.redirect(callbackUrl.href)
+})
+
+// OAuth2-like token endpoint
+router.post('/token', async (req, res) => {
+  const { code, grant_type: grantType, client_id: clientId } = req.body
+  if (grantType !== 'authorization_code') return res.status(400).send('Only grant_type=authorization_code is supported')
+  if (!code) return res.status(400).send('Missing code')
+
+  const oauthCode = await mongo.oauthCodes.findOneAndDelete({ _id: code })
+  if (!oauthCode) return res.status(400).send('Invalid or expired code')
+
+  if (clientId && oauthCode.clientId !== clientId) {
+    return res.status(400).send('Client ID mismatch')
+  }
+
+  const storage = storages.globalStorage
+  const user = oauthCode.userId === '_superadmin' ? superadmin : await storage.getUser(oauthCode.userId)
+  if (!user) return res.status(400).send('User not found')
+
+  const site = await reqSite(req)
+  const serverSession = initServerSession(req)
+  await storage.addUserSession(user.id, serverSession)
+
+  const payload = getTokenPayload(user, site)
+
+  const token = await signToken(payload, config.jwtDurations.idToken)
+
+  const exchangeExp = Math.floor(Date.now() / 1000) + config.jwtDurations.exchangeToken
+  const sessionInfo = { user: user.id, session: serverSession.id, adminMode: payload.adminMode }
+  const exchangeToken = await signToken(sessionInfo, exchangeExp)
+
+  res.send({
+    access_token: token,
+    id_token_ex: exchangeToken,
+    token_type: 'Bearer',
+    expires_in: config.jwtDurations.idToken
+  })
+})

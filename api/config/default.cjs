@@ -362,6 +362,9 @@ module.exports = {
       secret: ''
     }
   },
+  oauth2Server: {
+    clients: []
+  },
   saml2: {
     // certsDirectory: './security/saml2',
     // Accepts all samlify options for service providers https://samlify.js.org/#/sp-configuration

@@ -24,6 +24,14 @@ export type OAuthToken = {
   loggedOut?: Date
 }
 
+export type OAuthCode = {
+  _id: string
+  userId: string
+  redirectUri: string
+  clientId: string
+  createdAt: Date
+}
+
 export type PublicAuthProvider = {
   type: string,
   id: string,
