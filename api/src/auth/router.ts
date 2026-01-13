@@ -863,8 +863,8 @@ router.get('/authorize', async (req, res) => {
 
   const user = reqUser(req)
   if (!user) {
-    const loginUrl = new URL(config.publicUrl + '/login')
-    const authorizeUrl = new URL(req.originalUrl, config.publicUrl + '/')
+    const loginUrl = new URL(reqSiteUrl(req) + '/simple-directory/login')
+    const authorizeUrl = new URL(req.originalUrl, reqSiteUrl(req))
     loginUrl.searchParams.set('redirect', authorizeUrl.href)
     return res.redirect(loginUrl.href)
   }

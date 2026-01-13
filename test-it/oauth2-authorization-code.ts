@@ -79,6 +79,40 @@ describe('OAuth2 Authorization Code Flow', () => {
     }
   })
 
+  it('should redirect to site-specific login page when accessing via site URL', async () => {
+    const config = (await import('../api/src/config.ts')).default
+
+    // Create a site
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const org = (await adminAx.post('/api/organizations', { name: 'Site Org' })).data
+
+    // Determine port from adminAx defaults or process
+    const port = new URL(adminAx.defaults.baseURL || '').port
+    const siteHost = `127.0.0.1:${port}`
+
+    const anonymousAx = await axios()
+    await anonymousAx.post('/api/sites',
+      { _id: 'test-site', owner: { type: 'organization', id: org.id, name: org.name }, host: siteHost, theme: { primaryColor: '#000000' } },
+      { params: { key: config.secretKeys.sites } }
+    )
+
+    // Access authorize endpoint via site host
+    const siteAx = await axios({ baseURL: `http://${siteHost}/simple-directory` })
+
+    const authorizeUrl = '/api/auth/authorize?response_type=code&client_id=native-app-client&redirect_uri=native-app://auth-callback'
+
+    const res = await siteAx.get(authorizeUrl, {
+      maxRedirects: 0,
+      validateStatus: (status) => status === 302
+    })
+
+    const redirectUrl = new URL(res.headers.location)
+
+    // Verify that the login redirect targets the site host (127.0.0.1) and not the default (localhost)
+    assert.equal(redirectUrl.hostname, '127.0.0.1')
+    assert.ok(redirectUrl.pathname.includes('/login'))
+  })
+
   it('should preserve state parameter for CSRF protection', async () => {
     const { ax } = await createUser('native-test-state@test.com')
     const state = 'random-csrf-token-123'
