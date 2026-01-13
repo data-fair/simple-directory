@@ -845,21 +845,19 @@ router.post('/saml2-logout', (req, res) => {
   });
 }) */
 
-// OAuth2-like authorize endpoint for external apps
+// Authorize endpoint for external apps
 router.get('/apps/authorize', async (req, res) => {
   const { client_id: clientId, redirect_uri: redirectUri, state } = req.query
   if (!redirectUri || typeof redirectUri !== 'string') return res.status(400).send('Missing redirect_uri')
   if (!clientId || typeof clientId !== 'string') return res.status(400).send('Missing client_id')
 
   const site = await reqSite(req)
-  // @ts-ignore
   let client = (site?.applications || []).find(c => c.id === clientId)
   if (!client && !site) {
     client = (config.applications || []).find(c => c.id === clientId)
   }
   if (!client) return res.status(400).send('Unknown client_id')
 
-  // @ts-ignore
   if (!client.redirectUris.some(uri => redirectUri.startsWith(uri))) {
     return res.status(400).send('Invalid redirect_uri')
   }
@@ -894,7 +892,7 @@ router.get('/apps/authorize', async (req, res) => {
   res.redirect(callbackUrl.href)
 })
 
-// OAuth2-like login endpoint for external apps (exchanges code for session cookies)
+// Login endpoint for external apps (exchanges code for session cookies)
 router.post('/apps/login', async (req, res) => {
   const { code } = req.body
   if (!code) return res.status(400).send('Missing code')
