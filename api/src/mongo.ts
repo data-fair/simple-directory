@@ -1,4 +1,4 @@
-import type { Site, Limits, OAuthToken, MemberOverwrite, OrganizationOverwrite, ServerSession, PasswordList, OAuthCode } from '#types'
+import type { Site, Limits, OAuthToken, MemberOverwrite, OrganizationOverwrite, ServerSession, PasswordList } from '#types'
 import type { Avatar } from '#services'
 import type { OrgInDb, UserInDb } from './storages/mongo.ts'
 
@@ -44,10 +44,6 @@ export class SdMongo {
 
   get oauthTokens () {
     return mongo.db.collection<OAuthToken>('oauth-tokens')
-  }
-
-  get oauthCodes () {
-    return mongo.db.collection<OAuthCode>('oauth-codes')
   }
 
   get oauthRelayStates () {
@@ -135,9 +131,6 @@ export class SdMongo {
         'oauth-tokens-provider': { 'provider.id': 1 },
         'oauth-tokens-offline': { offlineRefreshToken: 1 },
         'oauth-tokens-sid': { 'token.session_state': 1 }
-      },
-      'oauth-codes': {
-        ttl: [{ createdAt: 1 }, { expireAfterSeconds: 60 * 5 }]
       },
       'oauth-relay-states': {
         ttl: [{ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 }]

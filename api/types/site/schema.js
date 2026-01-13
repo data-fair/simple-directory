@@ -311,9 +311,49 @@ export default {
         de: 'Identitätsanbieter (SSO)'
       },
       items: { $ref: '#/$defs/authProvider' }
+    },
+    applications: {
+      type: 'array',
+      title: 'Applications externes',
+      'x-i18n-title': {
+        fr: 'Applications externes',
+        en: 'External applications'
+      },
+      items: { $ref: '#/$defs/application' }
     }
   },
   $defs: {
+    application: {
+      type: 'object',
+      required: ['name', 'redirectUris'],
+      properties: {
+        id: {
+          type: 'string',
+          title: 'Client ID',
+          readOnly: true,
+          layout: { cols: 12 }
+        },
+        name: {
+          type: 'string',
+          title: 'Nom',
+          'x-i18n-title': {
+            fr: 'Nom',
+            en: 'Name'
+          },
+          layout: { cols: 6 }
+        },
+        redirectUris: {
+          type: 'array',
+          title: 'URLs de redirection',
+          'x-i18n-title': {
+            fr: 'URLs de redirection',
+            en: 'Redirect URLs'
+          },
+          items: { type: 'string' },
+          layout: { cols: 12 }
+        }
+      }
+    },
     authProvider: {
       type: 'object',
       layout: {

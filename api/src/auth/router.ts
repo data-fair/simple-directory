@@ -19,7 +19,6 @@ import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
 import { randomUUID } from 'node:crypto'
-import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 
 const debug = Debug('auth')
@@ -846,17 +845,21 @@ router.post('/saml2-logout', (req, res) => {
   });
 }) */
 
-// OAuth2-like authorize endpoint
-router.get('/authorize', async (req, res) => {
-  const { client_id: clientId, redirect_uri: redirectUri, response_type: responseType, state } = req.query
-  if (responseType !== 'code') return res.status(400).send('Only response_type=code is supported')
+// OAuth2-like authorize endpoint for external apps
+router.get('/apps/authorize', async (req, res) => {
+  const { client_id: clientId, redirect_uri: redirectUri, state } = req.query
   if (!redirectUri || typeof redirectUri !== 'string') return res.status(400).send('Missing redirect_uri')
   if (!clientId || typeof clientId !== 'string') return res.status(400).send('Missing client_id')
 
-  const clients = config.oauth2Server?.clients ?? []
-  const client = clients.find(c => c.id === clientId)
+  const site = await reqSite(req)
+  // @ts-ignore
+  let client = (site?.applications || []).find(c => c.id === clientId)
+  if (!client && !site) {
+    client = (config.applications || []).find(c => c.id === clientId)
+  }
   if (!client) return res.status(400).send('Unknown client_id')
 
+  // @ts-ignore
   if (!client.redirectUris.some(uri => redirectUri.startsWith(uri))) {
     return res.status(400).send('Invalid redirect_uri')
   }
@@ -869,19 +872,19 @@ router.get('/authorize', async (req, res) => {
     return res.redirect(loginUrl.href)
   }
 
-  const code = nanoid()
-  await mongo.oauthCodes.insertOne({
-    _id: code,
+  const codePayload = {
     userId: user.id,
     clientId: client.id,
     redirectUri,
-    createdAt: new Date()
-  })
+    type: 'auth_code'
+  }
+  const code = await signToken(codePayload, '5m')
 
   const callbackUrl = new URL(redirectUri)
   callbackUrl.searchParams.set('code', code)
   if (state && typeof state === 'string') callbackUrl.searchParams.set('state', state)
 
+  // preserve other query params if needed? (e.g. for desktop app context)
   for (const [key, value] of Object.entries(req.query)) {
     if (!['code', 'state', 'redirect_uri', 'response_type', 'client_id'].includes(key) && typeof value === 'string') {
       callbackUrl.searchParams.set(key, value)
@@ -891,21 +894,22 @@ router.get('/authorize', async (req, res) => {
   res.redirect(callbackUrl.href)
 })
 
-// OAuth2-like token endpoint
-router.post('/token', async (req, res) => {
-  const { code, grant_type: grantType, client_id: clientId } = req.body
-  if (grantType !== 'authorization_code') return res.status(400).send('Only grant_type=authorization_code is supported')
+// OAuth2-like login endpoint for external apps (exchanges code for session cookies)
+router.post('/apps/login', async (req, res) => {
+  const { code } = req.body
   if (!code) return res.status(400).send('Missing code')
 
-  const oauthCode = await mongo.oauthCodes.findOneAndDelete({ _id: code })
-  if (!oauthCode) return res.status(400).send('Invalid or expired code')
-
-  if (clientId && oauthCode.clientId !== clientId) {
-    return res.status(400).send('Client ID mismatch')
+  let decoded
+  try {
+    decoded = await session.verifyToken(code)
+  } catch (err) {
+    return res.status(400).send('Invalid or expired code')
   }
 
+  if (decoded.type !== 'auth_code') return res.status(400).send('Invalid token type')
+
   const storage = storages.globalStorage
-  const user = oauthCode.userId === '_superadmin' ? superadmin : await storage.getUser(oauthCode.userId)
+  const user = decoded.userId === '_superadmin' ? superadmin : await storage.getUser(decoded.userId)
   if (!user) return res.status(400).send('User not found')
 
   const site = await reqSite(req)
@@ -914,16 +918,8 @@ router.post('/token', async (req, res) => {
 
   const payload = getTokenPayload(user, site)
 
-  const token = await signToken(payload, config.jwtDurations.idToken)
+  await confirmLog(storage, user, serverSession)
+  await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, site))
 
-  const exchangeExp = Math.floor(Date.now() / 1000) + config.jwtDurations.exchangeToken
-  const sessionInfo = { user: user.id, session: serverSession.id, adminMode: payload.adminMode }
-  const exchangeToken = await signToken(sessionInfo, exchangeExp)
-
-  res.send({
-    access_token: token,
-    id_token_ex: exchangeToken,
-    token_type: 'Bearer',
-    expires_in: config.jwtDurations.idToken
-  })
+  res.send(user)
 })

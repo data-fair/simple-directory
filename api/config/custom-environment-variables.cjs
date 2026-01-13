@@ -285,13 +285,11 @@ module.exports = {
       secret: 'OAUTH_LINKEDIN_SECRET'
     }
   },
-  oauth2Server: {
-    clients: jsonEnv('OAUTH2_SERVER_CLIENTS')
-  },
   saml2: {
     sp: jsonEnv('SAML2_SP'),
     providers: jsonEnv('SAML2_PROVIDERS')
   },
+  applications: jsonEnv('APPLICATIONS'),
   oidc: {
     providers: jsonEnv('OIDC_PROVIDERS')
   },

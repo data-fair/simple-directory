@@ -362,9 +362,6 @@ module.exports = {
       secret: ''
     }
   },
-  oauth2Server: {
-    clients: []
-  },
   saml2: {
     // certsDirectory: './security/saml2',
     // Accepts all samlify options for service providers https://samlify.js.org/#/sp-configuration
@@ -373,6 +370,7 @@ module.exports = {
     // for identify provider https://samlify.js.org/#/idp-configuration
     providers: []
   },
+  applications: [],
   oidc: {
     providers: []
   },

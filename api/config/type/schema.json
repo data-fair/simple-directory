@@ -431,17 +431,12 @@
         }
       }
     },
-    "oauth2Server": {
-      "type": "object",
-      "properties": {
-        "clients": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/oauth2ServerClient"
-          },
-          "default": []
-        }
-      }
+    "applications": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/application"
+      },
+      "default": []
     },
     "webhooks": {
       "type": "object",
@@ -633,7 +628,7 @@
         "organizations": { "type": "string" }
       }
     },
-    "oauth2ServerClient": {
+    "application": {
       "type": "object",
       "required": ["id", "name", "redirectUris"],
       "properties": {

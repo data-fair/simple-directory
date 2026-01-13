@@ -16,20 +16,18 @@ export type UserWritable = Omit<User, 'created' | 'updated' | 'name' | 'sessions
 
 export type Member = Pick<User, 'id' | 'name' | 'email' | 'emailConfirmed' | 'host' | 'plannedDeletion'> & Pick<FullOrganizationMembership, 'createdAt' | 'role' | 'department' | 'departmentName' | 'readOnly'>
 
+export type Application = {
+  id: string
+  name: string
+  redirectUris: string[]
+}
+
 export type OAuthToken = {
   token: any,
   provider: { type: string, id: string, title: string },
   user: { id: string, name: string, email: string },
   offlineRefreshToken?: boolean,
   loggedOut?: Date
-}
-
-export type OAuthCode = {
-  _id: string
-  userId: string
-  redirectUri: string
-  clientId: string
-  createdAt: Date
 }
 
 export type PublicAuthProvider = {
