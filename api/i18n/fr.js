@@ -229,7 +229,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       changeHost: 'Compte associé au back-office',
       authorizeApp: 'Autoriser l\'application',
       authorizeAppMsg: 'L\'application {appName} souhaite accéder à votre compte. Voulez-vous l\'autoriser ?',
-      authorizeAppConfirm: 'Autoriser'
+      authorizeAppConfirm: 'Autoriser',
+      appRedirected: 'Redirection effectuée',
+      appRedirectedMsg: 'Vous pouvez fermer cet onglet.'
     },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',

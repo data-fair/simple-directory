@@ -19,7 +19,7 @@
       cols="12"
       style="max-width: 500px;"
     >
-      <v-row class="justify-center">
+      <v-row class="justify-center mb-4">
         <v-col cols="auto">
           <img
             v-if="logoUrl"
@@ -775,11 +775,23 @@
               <v-spacer />
             </v-card-actions>
           </v-window-item>
+
+          <v-window-item value="appRedirected">
+            <v-card-text class="text-center">
+              <v-icon
+                :icon="mdiCheckCircle"
+                size="64"
+                color="success"
+                class="mb-4"
+              />
+              <p>{{ $t('pages.login.appRedirectedMsg') }}</p>
+            </v-card-text>
+          </v-window-item>
         </v-window>
       </v-card>
       <p
         v-if="$uiConfig.maildev.active"
-        class="mt-2"
+        class="mt-4"
       >
         <a
           class="text-primary"
@@ -893,7 +905,8 @@ const stepsTitles: Record<string, string> = {
   plannedDeletion: t('pages.login.plannedDeletion'),
   partnerInvitation: t('pages.login.partnerInvitation'),
   changeHost: t('pages.login.changeHost'),
-  authorizeApp: t('pages.login.authorizeApp')
+  authorizeApp: t('pages.login.authorizeApp'),
+  appRedirected: t('pages.login.appRedirected')
 }
 const createUserStep = () => {
   step.value = $uiConfig.tosUrl ? 'tos' : 'createUser'
@@ -1171,7 +1184,12 @@ const authorizeApp = useAsyncAction(async () => {
       state: appState
     }
   })
+  // Redirect to app and then show close message
   window.location.href = res.redirectUrl
+  setTimeout(() => {
+    step.value = 'appRedirected'
+    tryCloseWindow()
+  }, 100)
 }, { catch: 'all' })
 
 function cancelAuthorizeApp () {
@@ -1181,8 +1199,23 @@ function cancelAuthorizeApp () {
     callbackUrl.searchParams.set('error', 'access_denied')
     if (appState) callbackUrl.searchParams.set('state', appState)
     window.location.href = callbackUrl.href
+    setTimeout(() => {
+      step.value = 'appRedirected'
+      tryCloseWindow()
+    }, 100)
   } else {
     step.value = 'login'
+  }
+}
+
+function tryCloseWindow () {
+  // Try to close the window/tab
+  // This only works if the window was opened by JavaScript (window.open)
+  // For tabs opened directly by the user, browsers block window.close()
+  try {
+    window.close()
+  } catch (e) {
+    // Ignore - user will see the message to close manually
   }
 }
 </script>
