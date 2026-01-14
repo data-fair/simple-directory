@@ -724,6 +724,36 @@
             </v-card-text>
           </v-window-item>
 
+          <v-window-item value="authorizeApp">
+            <v-card-text>
+              <p class="mb-4">
+                {{ $t('pages.login.authorizeAppMsg', { appName: appClientName }) }}
+              </p>
+              <ui-notif-alert
+                :notif="authorizeApp.notif.value"
+                :alert-props="{variant: 'text'}"
+              />
+            </v-card-text>
+
+            <v-card-actions>
+              <v-btn
+                variant="text"
+                @click="cancelAuthorizeApp"
+              >
+                {{ $t('common.confirmCancel') }}
+              </v-btn>
+              <v-spacer />
+              <v-btn
+                color="primary"
+                variant="flat"
+                :disabled="authorizeApp.loading.value"
+                @click="authorizeApp.execute()"
+              >
+                {{ $t('pages.login.authorizeAppConfirm') }}
+              </v-btn>
+            </v-card-actions>
+          </v-window-item>
+
           <v-window-item value="error">
             <v-card-text v-if="error">
               <v-alert
@@ -862,7 +892,8 @@ const stepsTitles: Record<string, string> = {
   createOrga: t('common.createOrganization'),
   plannedDeletion: t('pages.login.plannedDeletion'),
   partnerInvitation: t('pages.login.partnerInvitation'),
-  changeHost: t('pages.login.changeHost')
+  changeHost: t('pages.login.changeHost'),
+  authorizeApp: t('pages.login.authorizeApp')
 }
 const createUserStep = () => {
   step.value = $uiConfig.tosUrl ? 'tos' : 'createUser'
@@ -1113,6 +1144,46 @@ function clearError () {
 
 function goToRedirect () {
   window.location.href = redirect
+}
+
+// External app authorization
+const appClientId = reactiveSearchParams.client_id
+const appClientName = reactiveSearchParams.client_name
+const appRedirectUri = reactiveSearchParams.redirect_uri
+const appState = reactiveSearchParams.state
+
+// Handle authorizeApp step - redirect to login first if not authenticated
+if (step.value === 'authorizeApp' && !user.value) {
+  const loginUrl = new URL(window.location.href)
+  loginUrl.searchParams.set('step', 'login')
+  const authorizeUrl = new URL(window.location.href)
+  authorizeUrl.searchParams.set('step', 'authorizeApp')
+  loginUrl.searchParams.set('redirect', authorizeUrl.href)
+  window.location.replace(loginUrl.href)
+}
+
+const authorizeApp = useAsyncAction(async () => {
+  const res = await $fetch<{ redirectUrl: string }>('auth/apps/authorize', {
+    method: 'POST',
+    body: {
+      client_id: appClientId,
+      redirect_uri: appRedirectUri,
+      state: appState
+    }
+  })
+  window.location.href = res.redirectUrl
+}, { catch: 'all' })
+
+function cancelAuthorizeApp () {
+  // Redirect back to app with error
+  if (appRedirectUri) {
+    const callbackUrl = new URL(appRedirectUri)
+    callbackUrl.searchParams.set('error', 'access_denied')
+    if (appState) callbackUrl.searchParams.set('state', appState)
+    window.location.href = callbackUrl.href
+  } else {
+    step.value = 'login'
+  }
 }
 </script>
 

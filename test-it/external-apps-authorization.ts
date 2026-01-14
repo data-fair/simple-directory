@@ -44,24 +44,41 @@ describe('External Apps Authorization Flow', () => {
     // 2. Create a user on the site
     const { ax: userSiteAx } = await createUser('native-test@test.com', false, 'TestPasswd01', `http://${siteHost}/simple-directory`)
 
-    // 3. Call /authorize endpoint (simulating browser request with active session)
-    const authorizeUrl = '/api/auth/apps/authorize?client_id=native-app-client&redirect_uri=native-app://auth-callback'
+    // 3. Call GET /authorize endpoint - should redirect to login UI
+    const authorizeGetUrl = '/api/auth/apps/authorize?client_id=native-app-client&redirect_uri=native-app://auth-callback'
 
-    const authorizeRes = await userSiteAx.get(authorizeUrl, {
+    const authorizeGetRes = await userSiteAx.get(authorizeGetUrl, {
       maxRedirects: 0,
       validateStatus: (status) => status === 302
     })
-    console.log('Redirect location:', authorizeRes.headers.location)
+    console.log('GET Redirect location:', authorizeGetRes.headers.location)
 
-    // 4. Verify redirect to custom scheme with code
-    const redirectUrl = new URL(authorizeRes.headers.location)
+    // Verify redirect to login UI with authorizeApp step
+    const loginRedirectUrl = new URL(authorizeGetRes.headers.location)
+    assert.equal(loginRedirectUrl.pathname, '/simple-directory/login')
+    assert.equal(loginRedirectUrl.searchParams.get('step'), 'authorizeApp')
+    assert.equal(loginRedirectUrl.searchParams.get('client_id'), 'native-app-client')
+    assert.equal(loginRedirectUrl.searchParams.get('client_name'), 'Native App')
+    assert.equal(loginRedirectUrl.searchParams.get('redirect_uri'), 'native-app://auth-callback')
+
+    // 4. Call POST /authorize to confirm authorization (simulating user clicking "Authorize")
+    const authorizePostRes = await userSiteAx.post('/api/auth/apps/authorize', {
+      client_id: 'native-app-client',
+      redirect_uri: 'native-app://auth-callback'
+    })
+
+    assert.equal(authorizePostRes.status, 200)
+    assert.ok(authorizePostRes.data.redirectUrl, 'Should return redirect URL')
+
+    // 5. Verify redirect URL contains code
+    const redirectUrl = new URL(authorizePostRes.data.redirectUrl)
     assert.equal(redirectUrl.protocol, 'native-app:')
     assert.equal(redirectUrl.host, 'auth-callback')
 
     const code = redirectUrl.searchParams.get('code')
     assert.ok(code, 'Authorization code should be present')
 
-    // 5. Exchange code for session (simulating native app request)
+    // 6. Exchange code for session (simulating native app request)
     const appAx = await axios({ baseURL: `http://${siteHost}/simple-directory` })
 
     const loginRes2 = await appAx.post('/api/auth/apps/login', {
@@ -77,7 +94,7 @@ describe('External Apps Authorization Flow', () => {
     assert.ok(appCookies, 'Session cookies should be set')
     assert.ok(appCookies.some(c => c.startsWith('id_token')), 'id_token should be present')
 
-    // 6. Verify session works
+    // 7. Verify session works
     const appSessionAx = await axios({
       baseURL: `http://${siteHost}/simple-directory`,
       headers: { Cookie: appCookies }
@@ -86,13 +103,48 @@ describe('External Apps Authorization Flow', () => {
     assert.equal(meRes.status, 200)
     assert.equal(meRes.data.email, 'native-test@test.com')
 
-    // 7. Replay Check: Code reuse (stateless JWT)
+    // 8. Replay Check: Code reuse (stateless JWT)
     // Since it's stateless, it CAN be reused within validity period.
-    // The previous test asserted failure. Here we acknowledge it succeeds (logging in again).
     const replayRes = await appAx.post('/api/auth/apps/login', {
       code
     })
     assert.equal(replayRes.status, 200)
+  })
+
+  it('should reject POST authorize without authentication', async () => {
+    const config = (await import('../api/src/config.ts')).default
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const org = (await adminAx.post('/api/organizations', { name: 'Site Org Auth' })).data
+    const port = new URL(adminAx.defaults.baseURL || '').port
+    const siteHost = `127.0.0.1:${port}`
+
+    const anonymousAx = await axios()
+    await anonymousAx.post('/api/sites',
+      {
+        _id: 'test-site-auth',
+        owner: { type: 'organization', id: org.id, name: org.name },
+        host: siteHost,
+        theme: { primaryColor: '#000000' },
+        applications: [{
+          id: 'native-app-client',
+          name: 'Native App',
+          redirectUris: ['native-app://auth-callback']
+        }]
+      },
+      { params: { key: config.secretKeys.sites } }
+    )
+
+    const siteAx = await axios({ baseURL: `http://${siteHost}/simple-directory` })
+
+    // POST without authentication should fail
+    const authorizeRes = await siteAx.post('/api/auth/apps/authorize', {
+      client_id: 'native-app-client',
+      redirect_uri: 'native-app://auth-callback'
+    }, {
+      validateStatus: (status) => status === 401
+    })
+
+    assert.match(authorizeRes.data, /Not authenticated/)
   })
 
   it('should reject invalid client_id', async () => {

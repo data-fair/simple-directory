@@ -845,7 +845,7 @@ router.post('/saml2-logout', (req, res) => {
   });
 }) */
 
-// Authorize endpoint for external apps
+// Authorize endpoint for external apps - redirects to UI for user confirmation
 router.get('/apps/authorize', async (req, res) => {
   const { client_id: clientId, redirect_uri: redirectUri, state } = req.query
   if (!redirectUri || typeof redirectUri !== 'string') return res.status(400).send('Missing redirect_uri')
@@ -862,13 +862,36 @@ router.get('/apps/authorize', async (req, res) => {
     return res.status(400).send('Invalid redirect_uri')
   }
 
-  const user = reqUser(req)
-  if (!user) {
-    const loginUrl = new URL(reqSiteUrl(req) + '/simple-directory/login')
-    const authorizeUrl = new URL(req.originalUrl, reqSiteUrl(req))
-    loginUrl.searchParams.set('redirect', authorizeUrl.href)
-    return res.redirect(loginUrl.href)
+  // Redirect to UI for user confirmation (login first if not authenticated)
+  const loginUrl = new URL(reqSiteUrl(req) + '/simple-directory/login')
+  loginUrl.searchParams.set('step', 'authorizeApp')
+  loginUrl.searchParams.set('client_id', clientId)
+  loginUrl.searchParams.set('client_name', client.name)
+  loginUrl.searchParams.set('redirect_uri', redirectUri)
+  if (state && typeof state === 'string') loginUrl.searchParams.set('state', state)
+
+  res.redirect(loginUrl.href)
+})
+
+// Authorize confirmation endpoint - generates code after user confirms
+router.post('/apps/authorize', async (req, res) => {
+  const { client_id: clientId, redirect_uri: redirectUri, state } = req.body
+  if (!redirectUri || typeof redirectUri !== 'string') return res.status(400).send('Missing redirect_uri')
+  if (!clientId || typeof clientId !== 'string') return res.status(400).send('Missing client_id')
+
+  const site = await reqSite(req)
+  let client = (site?.applications || []).find(c => c.id === clientId)
+  if (!client && !site) {
+    client = (config.applications || []).find(c => c.id === clientId)
   }
+  if (!client) return res.status(400).send('Unknown client_id')
+
+  if (!client.redirectUris.some(uri => redirectUri.startsWith(uri))) {
+    return res.status(400).send('Invalid redirect_uri')
+  }
+
+  const user = reqUser(req)
+  if (!user) return res.status(401).send('Not authenticated')
 
   const codePayload = {
     userId: user.id,
@@ -882,14 +905,7 @@ router.get('/apps/authorize', async (req, res) => {
   callbackUrl.searchParams.set('code', code)
   if (state && typeof state === 'string') callbackUrl.searchParams.set('state', state)
 
-  // preserve other query params if needed? (e.g. for desktop app context)
-  for (const [key, value] of Object.entries(req.query)) {
-    if (!['code', 'state', 'redirect_uri', 'response_type', 'client_id'].includes(key) && typeof value === 'string') {
-      callbackUrl.searchParams.set(key, value)
-    }
-  }
-
-  res.redirect(callbackUrl.href)
+  res.send({ redirectUrl: callbackUrl.href })
 })
 
 // Login endpoint for external apps (exchanges code for session cookies)
