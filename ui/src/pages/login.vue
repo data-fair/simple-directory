@@ -1184,11 +1184,13 @@ const authorizeApp = useAsyncAction(async () => {
       state: appState
     }
   })
-  // Redirect to app and then show close message
+  // Redirect to app and show success message
+  // Note: we don't try to close the window automatically because:
+  // 1. For custom protocol URLs (my-app://), there's no way to detect if user clicked "Open"
+  // 2. window.close() only works for windows opened via window.open()
   window.location.href = res.redirectUrl
   setTimeout(() => {
     step.value = 'appRedirected'
-    tryCloseWindow()
   }, 100)
 }, { catch: 'all' })
 
@@ -1201,21 +1203,9 @@ function cancelAuthorizeApp () {
     window.location.href = callbackUrl.href
     setTimeout(() => {
       step.value = 'appRedirected'
-      tryCloseWindow()
     }, 100)
   } else {
     step.value = 'login'
-  }
-}
-
-function tryCloseWindow () {
-  // Try to close the window/tab
-  // This only works if the window was opened by JavaScript (window.open)
-  // For tabs opened directly by the user, browsers block window.close()
-  try {
-    window.close()
-  } catch (e) {
-    // Ignore - user will see the message to close manually
   }
 }
 </script>
