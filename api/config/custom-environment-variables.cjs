@@ -289,6 +289,7 @@ module.exports = {
     sp: jsonEnv('SAML2_SP'),
     providers: jsonEnv('SAML2_PROVIDERS')
   },
+  applications: jsonEnv('APPLICATIONS'),
   oidc: {
     providers: jsonEnv('OIDC_PROVIDERS')
   },
