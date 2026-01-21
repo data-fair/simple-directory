@@ -370,6 +370,7 @@ module.exports = {
     // for identify provider https://samlify.js.org/#/idp-configuration
     providers: []
   },
+  applications: [],
   oidc: {
     providers: []
   },
