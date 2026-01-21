@@ -117,6 +117,7 @@
                   class="mb-3 hide-autofill"
                   hide-details="auto"
                   autocomplete="email"
+                  :disabled="separateEmailPasswordSteps"
                 />
                 <p
                   v-if="$uiConfig.passwordless && !adminMode"
