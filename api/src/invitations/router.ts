@@ -1,14 +1,14 @@
 import { type UserWritable, type Invitation, type ActionPayload, type ShortenedInvitation } from '#types'
 import { Router } from 'express'
 import config from '#config'
-import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError, reqSessionAuthenticated, reqOrigin } from '@data-fair/lib-express'
+import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError, reqSessionAuthenticated } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 import { reqI18n, __all, __ } from '#i18n'
 import storages from '#storages'
-import { getOrgLimits, setNbMembersLimit, reqSite, getSiteByUrl, shortenInvit, unshortenInvit, sendMailI18n, decodeToken, signToken, postUserIdentityWebhook } from '#services'
+import { getOrgLimits, setNbMembersLimit, reqSite, getSiteByUrl, shortenInvit, unshortenInvit, sendMailI18n, decodeToken, signToken, postUserIdentityWebhook, getInvitationRedirect } from '#services'
 import emailValidator from 'email-validator'
 import Debug from 'debug'
 
@@ -119,8 +119,7 @@ router.post('', async (req, res, next) => {
       }
       if (invitation.department) newUserDraft.defaultDep = invitation.department
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUserDraft)
-      const defaultInvitationRedirect = config.invitationRedirect?.startsWith('/') ? (reqOrigin(req) + config.invitationRedirect) : config.invitationRedirect
-      const reboundRedirect = new URL(invitation.redirect || defaultInvitationRedirect || `${reqSiteUrl(req)}/simple-directory/invitation`)
+      const reboundRedirect = new URL(getInvitationRedirect(reqSiteUrl(req), invitation.redirect))
       const newUser = await storage.createUser(newUserDraft, user)
       await storage.addMember(orga, newUser, invitation.role, invitation.department)
       await setNbMembersLimit(orga.id)
@@ -232,8 +231,7 @@ router.get('/_accept', async (req, res, next) => {
   }
   logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invit.department }
 
-  const defaultInvitationRedirect = config.invitationRedirect?.startsWith('/') ? (reqOrigin(req) + config.invitationRedirect) : config.invitationRedirect
-  let redirectUrl = new URL(invit.redirect || defaultInvitationRedirect || `${reqSiteUrl(req)}/simple-directory/invitation`)
+  let redirectUrl = new URL(getInvitationRedirect(reqSiteUrl(req), invit.redirect))
 
   // case where the invitation was already accepted, but we still want the user to proceed
   if (existingUser && existingUser.organizations && existingUser.organizations.find(o => o.id === invit.id && (o.department || null) === (invit.department || null))) {

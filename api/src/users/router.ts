@@ -10,7 +10,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
-import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, defaultLoginRedirect } from '#services'
+import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getDefaultLoginRedirect } from '#services'
 
 const router = Router()
 
@@ -130,7 +130,7 @@ router.post('', async (req, res, next) => {
   const user = await storages.globalStorage.getUserByEmail(body.email, await reqSite(req))
 
   // email is already taken, send a conflict email
-  const link = defaultLoginRedirect(reqSiteUrl(req), query.redirect)
+  const link = getDefaultLoginRedirect(reqSiteUrl(req), query.redirect)
   if (user && user.emailConfirmed !== false) {
     const linkUrl = new URL(link)
     await sendMailI18n('conflict', reqI18n(req).messages, body.email, { host: linkUrl.host, origin: linkUrl.origin })

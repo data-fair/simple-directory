@@ -5,7 +5,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, r
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, defaultLoginRedirect } from '#services'
+import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -165,6 +165,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     const token = await signToken(payload, config.jwtDurations.initialToken)
     const changeHostUrl = new URL((site.host.startsWith('localhost') ? 'http://' : 'https://') + site.host + '/simple-directory/login')
     changeHostUrl.searchParams.set('action_token', token)
+    if (query.redirect) changeHostUrl.searchParams.set('redirect', query.redirect)
     eventsLog.info('sd.auth.password.change-host', 'a user is suggested to switch to secondary host', logContext)
     if (req.is('application/x-www-form-urlencoded')) {
       return res.redirect(changeHostUrl.href)
@@ -229,7 +230,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     await confirmLog(storage, user, serverSession)
     await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, site, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
-    res.redirect(defaultLoginRedirect(reqSiteUrl(req), query.redirect))
+    res.redirect(getDefaultLoginRedirect(reqSiteUrl(req), query.redirect))
   } else {
     const redirectSite = query.redirect ? (await getSiteByUrl(query.redirect)) : site
     const callbackUrl = (await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, redirectSite, orgId, depId), body.orgStorage)).href
@@ -271,7 +272,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   const user = await storage.getUserByEmail(body.email, site)
   logContext.user = user
 
-  const redirect = defaultLoginRedirect(reqSiteUrl(req), query.redirect)
+  const redirect = getDefaultLoginRedirect(reqSiteUrl(req), query.redirect)
   const redirectUrl = new URL(redirect)
 
   // No 404 here so we don't disclose information about existence of the user
@@ -359,7 +360,7 @@ router.get('/token_callback', async (req, res, next) => {
     return redirectError('badCredentials')
   }
 
-  const reboundRedirect = defaultLoginRedirect(reqSiteUrl(req), query.redirect)
+  const reboundRedirect = getDefaultLoginRedirect(reqSiteUrl(req), query.redirect)
 
   const site = await reqSite(req)
   const payload = getTokenPayload(user, site)
@@ -643,7 +644,7 @@ const oauthLogin: RequestHandler = async (req, res, next) => {
     createdAt: new Date(),
     providerState: provider.state,
     loginReferer: req.headers.referer,
-    redirect: defaultLoginRedirect(reqSiteUrl(req), req.query.redirect as string).replace('?id_token=', ''),
+    redirect: getDefaultLoginRedirect(reqSiteUrl(req), req.query.redirect as string).replace('?id_token=', ''),
     org: req.query.org as string,
     dep: req.query.dep as string,
     invitToken: req.query.invit_token as string,
@@ -755,7 +756,7 @@ router.get('/saml2/:providerId/login', async (req, res) => {
     _id: randomUUID(),
     createdAt: new Date(),
     loginReferer: req.headers.referer,
-    redirect: defaultLoginRedirect(reqSiteUrl(req), req.query.redirect as string).replace('?id_token=', ''),
+    redirect: getDefaultLoginRedirect(reqSiteUrl(req), req.query.redirect as string).replace('?id_token=', ''),
     org: req.query.org as string,
     dep: req.query.dep as string,
     invitToken: (req.query.invit_token || '') as string,

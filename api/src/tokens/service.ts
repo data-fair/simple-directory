@@ -9,7 +9,7 @@ import jwt, { type SignOptions, type JwtPayload } from 'jsonwebtoken'
 import Cookies from 'cookies'
 import storages from '#storages'
 import { getSignatureKeys } from './keys-manager.ts'
-import { defaultLoginRedirect, getRedirectSite, reqSite } from '#services'
+import { getDefaultLoginRedirect, getRedirectSite, reqSite } from '#services'
 
 export const signToken = async (payload: any, exp: string | number, notBefore?: string) => {
   const signatureKeys = await getSignatureKeys()
@@ -271,7 +271,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
 // this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
 export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:(Pick<OrganizationMembership, 'id' | 'department'> & { role?: string }), orgStorage?: boolean) => {
-  redirect = defaultLoginRedirect(reqSiteUrl(req), redirect)
+  redirect = getDefaultLoginRedirect(reqSiteUrl(req), redirect)
   const redirectUrl = new URL(redirect)
   const redirectSite = await getRedirectSite(req, redirect)
   const token = await signToken({ ...payload, temporary: true }, config.jwtDurations.initialToken)

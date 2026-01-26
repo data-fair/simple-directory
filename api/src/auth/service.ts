@@ -292,11 +292,21 @@ export const isOIDCProvider = (provider: AuthProvider): provider is OpenIDConnec
   return provider.type === 'oidc'
 }
 
-export const defaultLoginRedirect = (siteUrl: string, queryRedirect?: string) => {
+const publicUrlOrigin = new URL(config.publicUrl).origin
+export const getDefaultLoginRedirect = (siteUrl: string, queryRedirect?: string) => {
   if (queryRedirect) return queryRedirect
   if (config.defaultLoginRedirect) {
     if (config.defaultLoginRedirect.startsWith('/')) return siteUrl + config.defaultLoginRedirect
-    if (config.defaultLoginRedirect.startsWith(config.publicUrl)) return config.defaultLoginRedirect.replace(config.publicUrl, siteUrl)
+    if (config.defaultLoginRedirect.startsWith(publicUrlOrigin)) return config.defaultLoginRedirect.replace(publicUrlOrigin, siteUrl)
   }
   return siteUrl + '/simple-directory/me'
+}
+
+export const getInvitationRedirect = (siteUrl: string, explicitRedirect?: string) => {
+  if (explicitRedirect) return explicitRedirect
+  if (config.invitationRedirect) {
+    if (config.invitationRedirect.startsWith('/')) return siteUrl + config.invitationRedirect
+    if (config.invitationRedirect.startsWith(publicUrlOrigin)) return config.invitationRedirect.replace(publicUrlOrigin, siteUrl)
+  }
+  return siteUrl + '/simple-directory/invitation'
 }
