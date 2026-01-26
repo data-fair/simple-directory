@@ -291,3 +291,12 @@ export const initServerSession = (req: Request): ServerSession => {
 export const isOIDCProvider = (provider: AuthProvider): provider is OpenIDConnect => {
   return provider.type === 'oidc'
 }
+
+export const defaultLoginRedirect = (siteUrl: string, queryRedirect?: string) => {
+  if (queryRedirect) return queryRedirect
+  if (config.defaultLoginRedirect) {
+    if (config.defaultLoginRedirect.startsWith('/')) return siteUrl + config.defaultLoginRedirect
+    if (config.defaultLoginRedirect.startsWith(config.publicUrl)) return config.defaultLoginRedirect.replace(config.publicUrl, siteUrl)
+  }
+  return siteUrl + '/simple-directory/me'
+}

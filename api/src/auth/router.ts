@@ -5,7 +5,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, r
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback } from '#services'
+import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, defaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -229,7 +229,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     await confirmLog(storage, user, serverSession)
     await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, site, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
-    res.redirect(query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me')
+    res.redirect(defaultLoginRedirect(reqSiteUrl(req), query.redirect))
   } else {
     const redirectSite = query.redirect ? (await getSiteByUrl(query.redirect)) : site
     const callbackUrl = (await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, redirectSite, orgId, depId), body.orgStorage)).href
@@ -271,7 +271,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   const user = await storage.getUserByEmail(body.email, site)
   logContext.user = user
 
-  const redirect = query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory'
+  const redirect = defaultLoginRedirect(reqSiteUrl(req), query.redirect)
   const redirectUrl = new URL(redirect)
 
   // No 404 here so we don't disclose information about existence of the user
@@ -359,7 +359,7 @@ router.get('/token_callback', async (req, res, next) => {
     return redirectError('badCredentials')
   }
 
-  const reboundRedirect = query.redirect || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory/me'
+  const reboundRedirect = defaultLoginRedirect(reqSiteUrl(req), query.redirect)
 
   const site = await reqSite(req)
   const payload = getTokenPayload(user, site)
@@ -642,7 +642,7 @@ const oauthLogin: RequestHandler = async (req, res, next) => {
     createdAt: new Date(),
     providerState: provider.state,
     loginReferer: req.headers.referer,
-    redirect: (req.query.redirect as string || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
+    redirect: defaultLoginRedirect(reqSiteUrl(req), req.query.redirect as string).replace('?id_token=', ''),
     org: req.query.org as string,
     dep: req.query.dep as string,
     invitToken: req.query.invit_token as string,
@@ -754,7 +754,7 @@ router.get('/saml2/:providerId/login', async (req, res) => {
     _id: randomUUID(),
     createdAt: new Date(),
     loginReferer: req.headers.referer,
-    redirect: (req.query.redirect as string || config.defaultLoginRedirect || reqSiteUrl(req) + '/simple-directory').replace('?id_token=', ''),
+    redirect: defaultLoginRedirect(reqSiteUrl(req), req.query.redirect as string).replace('?id_token=', ''),
     org: req.query.org as string,
     dep: req.query.dep as string,
     invitToken: (req.query.invit_token || '') as string,
