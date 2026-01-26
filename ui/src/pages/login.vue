@@ -988,7 +988,7 @@ const delayedRendering = computed(() => {
 
 function preLogin () {
   if (!authProvidersFetch.data.value) return
-  const authProvider = authProvidersFetch.data.value.find(p => p.redirectMode?.type === 'emailDomain' && p.redirectMode.emailDomain === email.value.trim().split('@')[1])
+  const authProvider = authProvidersFetch.data.value.find(p => p.redirectMode?.type === 'emailDomain' && p.redirectMode.emailDomain?.toLowerCase() === email.value.trim().toLowerCase().split('@')[1])
   if (authProvider) {
     const url = new URL(`${$sdUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
     if (redirect) url.searchParams.append('redirect', redirect)
