@@ -496,6 +496,7 @@ router.post('/keepalive', async (req, res, next) => {
         eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }
     } catch (err: any) {
+      console.warn('failed to refresh offline token', err)
       await logout(req, res)
       eventsLog.info('sd.auth.keepalive.oauth-refresh-ko', `a user failed to refresh their info from their core identity provider ${provider.id} (${err.message})`, { req })
       // TODO: can we be confident enough in this to actually delete the user ? or maybe flag it as disabled so that it is removed from listings ?
