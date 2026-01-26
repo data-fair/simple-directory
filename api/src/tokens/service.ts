@@ -66,7 +66,7 @@ export const getDefaultUserOrg = (user: User, site: Site | undefined, reqOrgId?:
   if (site) {
     const siteOrg = site.owner.type === 'organization' && user.organizations.find(o => {
       if (o.id !== site.owner.id) return false
-      if (!o.department) return true
+      if (!o.department || !site.owner.department) return true
       if (o.department === site.owner.department) return true
       return false
     })
