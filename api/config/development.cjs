@@ -46,6 +46,7 @@ module.exports = {
       url: 'ldap://localhost:389',
       searchUserDN: 'cn=admin,dc=example,dc=org',
       searchUserPassword: 'admin',
+      cacheMS: 1000,
       members: {
         // organizations arr the parent DC of their users
         organizationAsDC: true,

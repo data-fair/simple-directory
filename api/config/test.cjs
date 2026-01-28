@@ -30,7 +30,7 @@ module.exports = {
       searchUserDN: 'cn=admin,dc=example,dc=org',
       searchUserPassword: 'admin',
       members: {
-        // organizations arr the parent DC of their users
+        // organizations are the parent DC of their users
         organizationAsDC: true,
         // only list users/members with a known role
         onlyWithRole: false,

@@ -142,7 +142,7 @@ const sortItems = [
   { title: t('pages.organization.depSortAlpha'), value: 'alpha' }
 ]
 
-const writableDepartments = computed(() => isAdminOrga && !$uiConfig.readonly)
+const writableDepartments = computed(() => isAdminOrga && (!$uiConfig.readonly || $uiConfig.orgStorageOverwrite?.includes('departments')))
 const departmentLabel = computed(() => orga.departmentLabel || t('common.department'))
 const searchableDepartments = computed(() => {
   const searchableDepartments = (orga.departments || [])
