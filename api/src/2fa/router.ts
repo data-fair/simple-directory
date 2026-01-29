@@ -15,6 +15,7 @@ export default router
 
 router.post('/', async (req, res, next) => {
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  req.body.email = req.body.email.trim()
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!req.body.password) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
 

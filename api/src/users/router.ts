@@ -68,6 +68,7 @@ router.post('', async (req, res, next) => {
   const logContext: EventLogContext = { req }
 
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  req.body.email = req.body.email.trim()
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
 
   const { body, query } = (await import('#doc/users/post-req/index.ts')).returnValid(req, { name: 'req' })

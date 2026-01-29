@@ -50,6 +50,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   const logContext: EventLogContext = { req }
 
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  req.body.email = req.body.email.trim()
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   if (!req.body.password) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
 
@@ -246,6 +247,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
 
   if (!config.passwordless) return res.status(400).send(reqI18n(req).messages.errors.noPasswordless)
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  req.body.email = req.body.email.trim()
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
 
   const { body, query } = (await import('#doc/auth/post-passwordless-req/index.ts')).returnValid(req, { name: 'req' })
@@ -523,6 +525,7 @@ router.post('/action', async (req, res, next) => {
   const logContext: EventLogContext = { req }
 
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
+  req.body.email = req.body.email.trim()
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
 
   const { body } = (await import('#doc/auth/post-action-req/index.ts')).returnValid(req, { name: 'req' })

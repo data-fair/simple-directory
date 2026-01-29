@@ -94,6 +94,7 @@ let _contactLimiter: RateLimiterMongo | undefined
 router.post('/contact', async (req, res) => {
   if (!reqUser(req) && !config.anonymousContactForm) return res.status(401).send('anonymous contact form functionality is not activated')
 
+  if (req.body.from) req.body.from = req.body.from.trim()
   if (!emailValidator.validate(req.body.from)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
 
   if (!reqUser(req)) {

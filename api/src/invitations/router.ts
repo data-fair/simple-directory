@@ -26,6 +26,7 @@ router.post('', async (req, res, next) => {
 
   const logContext: EventLogContext = { req }
 
+  if (body.email) body.email = body.email.trim()
   if (!emailValidator.validate(body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   debug('new invitation', body)
   const storage = storages.globalStorage
