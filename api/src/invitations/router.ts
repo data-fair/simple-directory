@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 import { reqI18n, __all, __ } from '#i18n'
 import storages from '#storages'
-import { getOrgLimits, setNbMembersLimit, reqSite, getSiteByUrl, shortenInvit, unshortenInvit, sendMailI18n, decodeToken, signToken, postUserIdentityWebhook, getInvitationRedirect } from '#services'
+import { getOrgLimits, setNbMembersLimit, reqSite, shortenInvit, unshortenInvit, sendMailI18n, decodeToken, signToken, postUserIdentityWebhook, getInvitationRedirect, getSiteBaseUrl, getInvitSite } from '#services'
 import emailValidator from 'email-validator'
 import Debug from 'debug'
 
@@ -33,37 +33,8 @@ router.post('', async (req, res, next) => {
 
   debug('create invitation route', reqSiteUrl(req) + req.originalUrl)
 
-  let invitSite = await reqSite(req)
-  if (invitation.redirect) {
-    invitSite = (await getSiteByUrl(invitation.redirect)) ?? undefined
-    debug('site referenced in invitation', invitation.redirect, invitSite)
-  }
-
-  if (invitSite?.authMode === 'onlyBackOffice' || !invitSite?.authMode) {
-    debug('invit site is in onlyBackOffice, ignore it in invitation process and redirect to it at the end')
-    invitSite = undefined
-  }
-
-  if (invitSite?.authMode === 'onlyOtherSite' && invitSite.authOnlyOtherSite) {
-    // invite on the site that serves as auth source
-    invitSite = await getSiteByUrl('https://' + invitSite.authOnlyOtherSite)
-    debug('invit site in in onlyOtherSite mode, replace it with target site in invitation process and redirect to it at then end', invitSite)
-    if (invitSite?.authMode === 'onlyBackOffice' || !invitSite?.authMode) {
-      debug('rebound invit site is in onlyBackOffice, ignore it in invitation process')
-      invitSite = undefined
-    }
-    if (invitSite?.authMode === 'onlyOtherSite' && invitSite.authOnlyOtherSite) return res.status(400).send(`Impossible d'utiliser le site ${invitSite.host} comme référence pour l'authentification, il est lui aussi configuré comme "uniquement sur un autre de vos sites".`)
-  }
-
-  let invitPublicBaseUrl
-  if (invitSite) {
-    const url = new URL(config.publicUrl)
-    invitPublicBaseUrl = url.protocol + '//' + invitSite.host + (invitSite.path ?? '') + '/simple-directory'
-    debug('invit base target url is on a site', invitPublicBaseUrl)
-  } else {
-    invitPublicBaseUrl = config.publicUrl
-    debug('invit base target url is on backoffice', invitPublicBaseUrl)
-  }
+  const invitSite = await getInvitSite(req, invitation.redirect)
+  const invitPublicBaseUrl = invitSite ? (getSiteBaseUrl(invitSite) + '/simple-directory') : config.publicUrl
 
   const orga = await storage.getOrganization(invitation.id)
   if (!orga) return res.status(404).send('unknown organization')
