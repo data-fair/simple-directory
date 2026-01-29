@@ -299,7 +299,7 @@ export class LdapStorage implements SdStorage {
       for (const org of results) {
         org.id = slugify.default(org.id, { lower: true, strict: true })
         let overwrite
-        if ((this.ldapParams.overwrite || []).includes('organizations')) {
+        if ((this.ldapParams.overwrite || []).includes('organizations') || (this.ldapParams.overwrite || []).includes('departments')) {
           overwrite = await mongo.ldapOrganizationsOverwrite.findOne({ id: org.id })
         }
         overwrite = overwrite || (this.ldapParams.organizations.overwrite || []).find(o => (o.id === org.id))
@@ -752,9 +752,16 @@ export class LdapStorage implements SdStorage {
 
   async _getOrganization (client: ldap.Client, id: string) {
     let org: Organization | undefined
-    if (this.ldapParams.organizations.staticSingleOrg) {
-      if (this.ldapParams.organizations.staticSingleOrg.id === id) {
-        org = this.ldapParams.organizations.staticSingleOrg
+    const staticSingleOrg = this.ldapParams.organizations.staticSingleOrg
+    if (staticSingleOrg) {
+      if (staticSingleOrg.id === id) {
+        org = staticSingleOrg
+        let overwrite
+        if ((this.ldapParams.overwrite || []).includes('organizations') || (this.ldapParams.overwrite || []).includes('departments')) {
+          overwrite = await mongo.ldapOrganizationsOverwrite.findOne({ id: org.id })
+        }
+        overwrite = overwrite || (this.ldapParams.organizations.overwrite || []).find(o => (o.id === staticSingleOrg.id))
+        if (overwrite) org = { ...org, ...overwrite }
       }
     } else {
       if (!this.org && config.adminsOrg && config.adminsOrg.id === id) {
@@ -824,6 +831,8 @@ export class LdapStorage implements SdStorage {
       { $set: patch },
       { upsert: true }
     )
+    this.allOrgsCache = {}
+    this.getOrganization.clear()
     return await this.getOrganization(id)
   }
 
