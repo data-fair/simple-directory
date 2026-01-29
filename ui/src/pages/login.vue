@@ -73,6 +73,7 @@
                 class="mb-3 hide-autofill"
                 hide-details="auto"
                 autocomplete="email"
+                @keyup.enter="preLogin"
               />
             </v-card-text>
             <v-card-actions>
@@ -988,6 +989,7 @@ const delayedRendering = computed(() => {
 
 function preLogin () {
   if (!authProvidersFetch.data.value) return
+  if (!email.value.trim()) return
   const authProvider = authProvidersFetch.data.value.find(p => p.redirectMode?.type === 'emailDomain' && p.redirectMode.emailDomain?.toLowerCase() === email.value.trim().toLowerCase().split('@')[1])
   if (authProvider) {
     const url = new URL(`${$sdUrl}/api/auth/${authProvider.type}/${authProvider.id}/login`)
