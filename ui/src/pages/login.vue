@@ -955,7 +955,7 @@ if (sitePublic.value?.authMode === 'onlyOtherSite' && sitePublic.value?.authOnly
   otherSiteLoginUrl.host = sitePublic.value?.authOnlyOtherSite
   window.location.replace(otherSiteLoginUrl.href)
 }
-if (user.value && redirect && !redirect.startsWith($siteUrl)) {
+if (user.value && redirect && !redirect.startsWith($siteUrl) && ['login', 'preLogin'].includes(step.value)) {
   redirectToOtherSite = true
   // we must be in "otherSite" auth mode
   $fetch<string>('auth/site_redirect', { method: 'POST', body: { redirect } })

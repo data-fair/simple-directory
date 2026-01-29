@@ -9,7 +9,7 @@ import { reqI18n } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
 import type { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
-import { setNbMembersLimit, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite } from '#services'
+import { setNbMembersLimit, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteBaseUrl, getInvitationRedirect } from '#services'
 import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
@@ -416,10 +416,13 @@ if (config.managePartners) {
     await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
     eventsLog.info('sd.org.partner.invite', `a user invited an organization to be a partner ${partnerPost.name} ${partnerPost.contactEmail} ${orga.name} ${orga.id}`, logContext)
 
-    const linkUrl = new URL(reqSiteUrl(req) + '/simple-directory/login')
+    const invitSite = await getInvitSite(req, partnerPost.redirect)
+    const invitPublicBaseUrl = invitSite ? (getSiteBaseUrl(invitSite) + '/simple-directory') : config.publicUrl
+    const reboundRedirect = getInvitationRedirect(reqSiteUrl(req), partnerPost.redirect)
+    const linkUrl = new URL(invitPublicBaseUrl + '/login')
     linkUrl.searchParams.set('step', 'partnerInvitation')
     linkUrl.searchParams.set('partner_invit_token', token)
-    linkUrl.searchParams.set('redirect', partnerPost.redirect || reqSiteUrl(req) + '/simple-directory')
+    linkUrl.searchParams.set('redirect', reboundRedirect)
     const params = {
       link: linkUrl.href,
       organization: orga.name,
