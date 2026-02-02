@@ -461,15 +461,21 @@ router.post('/keepalive', async (req, res, next) => {
   let user = loggedUser.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.id)
   if (!user) throw httpError(404)
 
+  // in coreIdProvider mode always refresh the token on keepalive to ensure that we are synced
+  // with the provider (user exists, has role, etc)
   const coreIdProvider = user.coreIdProvider
   if (coreIdProvider?.type === 'oauth' || coreIdProvider?.type === 'oidc') {
     let provider
     const site = await reqSite(req)
-    if (!site) {
+    if (site?.authMode === 'onlyBackOffice' || !site?.authMode) {
       provider = oauthGlobalProviders().find(p => p.id === coreIdProvider.id)
     } else {
-      const providerInfo = site.authProviders?.find(p => p.type === 'oidc' && getOidcProviderId(p.discovery) === coreIdProvider.id) as OpenIDConnect
-      provider = await initOidcProvider(providerInfo, reqSiteUrl(req) + '/simple-directory')
+      let authSite = site
+      if (site.authMode === 'onlyOtherSite' && site.authOnlyOtherSite) {
+        authSite = await getSiteByUrl('https://' + site.authOnlyOtherSite) ?? site
+      }
+      const providerInfo = authSite.authProviders?.find(p => p.type === 'oidc' && getOidcProviderId(p.discovery) === coreIdProvider.id) as OpenIDConnect | undefined
+      provider = providerInfo && await initOidcProvider(providerInfo, `https://${authSite.host}${authSite.path ?? ''}/simple-directory`)
     }
     if (!provider) {
       await logout(req, res)
