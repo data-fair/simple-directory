@@ -209,7 +209,10 @@ router.get('/_accept', async (req, res, next) => {
   if (existingUser && existingUser.organizations && existingUser.organizations.find(o => o.id === invit.id && (o.department || null) === (invit.department || null))) {
     debug('invitation was already accepted, redirect', redirectUrl.href)
     // missing password, invitation must have been accepted without completing account creation
-    if (storage.getPassword && !await storage.getPassword(existingUser.id) && !config.passwordless) {
+    if (!config.passwordless && config.alwaysAcceptInvitation && storage.getPassword &&
+      !await storage.getPassword(existingUser.id) && !Object.keys(existingUser.oauth ?? {}).length &&
+      !Object.keys(existingUser.oidc ?? {}).length && !Object.keys(existingUser.saml2 ?? {}).length
+    ) {
       const payload: ActionPayload = { id: existingUser.id, email: existingUser.email, action: 'changePassword' }
       const token = await signToken(payload, config.jwtDurations.initialToken)
       const reboundRedirect = redirectUrl.href
