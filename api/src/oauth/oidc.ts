@@ -5,6 +5,7 @@ import mongo from '#mongo'
 import Debug from 'debug'
 import _slug from 'slugify'
 import jwt from 'jsonwebtoken'
+import { httpError } from '@data-fair/lib-express'
 
 const slug = _slug.default
 const debug = Debug('oauth')
@@ -67,10 +68,10 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     }
     debug('found claims', claims)
     if (!claims?.email) {
-      throw new Error('Authentification refusée depuis le fournisseur. Pas d\'adresse email trouvée dans les informations utilisateur.')
+      throw httpError(400, 'Authentification refusée depuis le fournisseur. Pas d\'adresse email trouvée dans les informations utilisateur.')
     }
     if (claims.email_verified === false && !p.ignoreEmailVerified) {
-      throw new Error('Authentification refusée depuis le fournisseur. L\'adresse mail est indiquée comme non validée.')
+      throw httpError(400, 'Authentification refusée depuis le fournisseur. L\'adresse mail est indiquée comme non validée.')
     }
     const userInfo: OAuthUserInfo = {
       data: claims,
