@@ -78,7 +78,7 @@ describe('global OIDC configuration in coredIdProvider mode', () => {
     assert.equal(callbackRedirect.pathname, '/simple-directory/api/auth/token_callback')
     // finally the token_callback url will set cookies and redirect to our final destination
     const tokenCallback = await anonymousAx(callbackRedirect.href, { validateStatus: (status) => status === 302 })
-    assert.equal(tokenCallback.headers['set-cookie']?.length, 3)
+    assert.equal(tokenCallback.headers['set-cookie']?.length, 6)
     const cookieJar = new CookieJar()
     for (const cookie of tokenCallback.headers['set-cookie']) {
       cookieJar.setCookie(cookie, callbackRedirect.origin)
@@ -92,7 +92,7 @@ describe('global OIDC configuration in coredIdProvider mode', () => {
 
     await new Promise(resolve => setTimeout(resolve, 1100))
     const keepalive = await anonymousAx.post('/api/auth/keepalive', undefined, { headers: { Cookie: await cookieJar.getCookieString(callbackRedirect.origin + '/simple-directory/') } })
-    assert.equal(keepalive.headers['set-cookie']?.length, 3)
+    assert.equal(keepalive.headers['set-cookie']?.length, 6)
     for (const cookie of keepalive.headers['set-cookie']) {
       cookieJar.setCookie(cookie, callbackRedirect.origin)
     }

@@ -90,6 +90,43 @@ describe('invitations', () => {
     assert.equal(newMember.role, 'user')
   })
 
+  it('should invite a logged in user in an organization', async () => {
+    const config = (await import('../api/src/config.ts')).default
+    const { ax } = await createUser('test-invit3@test.com')
+    const { ax: axInvited } = await createUser('test-invit4@test.com')
+
+    const org = (await ax.post('/api/organizations', { name: 'test' })).data
+    ax.setOrg(org.id)
+    const mailPromise = waitForMail()
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit4@test.com', role: 'user' })
+    const mail = await mailPromise
+    assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
+
+    // when clicking on the link the person is redirected to a page to login
+    let redirect
+    await assert.rejects(axInvited.get(mail.link), (res: any) => {
+      assert.equal(res.status, 302)
+      redirect = res.headers.location
+      assert.ok(redirect.startsWith(config.publicUrl + '/invitation?email=test-invit4'))
+      return true
+    })
+
+    const { data: mySession } = await axInvited.get('/api/auth/my-session')
+    // session was updated
+    assert.equal(mySession.user.organizations.length, 1)
+    // org was switched to
+    assert.equal(mySession.organization.id, org.id)
+    // org was marked as default
+    assert.equal(mySession.organization.dflt, 1)
+
+    // after accepting the user is a member
+    const members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 2)
+    const newMember = members.find(m => m.email === 'test-invit4@test.com')
+    assert.ok(newMember)
+    assert.equal(newMember.role, 'user')
+  })
+
   it('should invite a new user in an organization in alwaysAcceptInvitation mode', async () => {
     const config = (await import('../api/src/config.ts')).default
     config.alwaysAcceptInvitation = true

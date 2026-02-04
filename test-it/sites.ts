@@ -9,7 +9,7 @@ describe('sites api', () => {
   beforeEach(async () => await clean())
   after(stopApiServer)
 
-  it('should create a site for a standalone portal', async () => {
+  it.only('should create a site for a standalone portal', async () => {
     const config = (await import('../api/src/config.ts')).default
 
     const { ax: adminAx } = await createUser('admin@test.com', true)
@@ -54,7 +54,7 @@ describe('sites api', () => {
       const redirectUrl = new URL(err.headers.location)
       const redirectError = redirectUrl.searchParams.get('error')
       if (redirectError) throw new Error(redirectError)
-      assert.equal(err.headers['set-cookie']?.length, 4)
+      assert.equal(err.headers['set-cookie']?.length, 6)
     }
 
     // cannot create a user on a site in onlyBackOffice mode

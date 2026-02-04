@@ -29,7 +29,6 @@
 
 <script setup lang="ts">
 const email = useStringSearchParam('email')
-const { user, keepalive } = useSession()
+const { user } = useSession()
 const sameUser = user.value && user.value.email === email.value
-if (sameUser) await keepalive
 </script>

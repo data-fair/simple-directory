@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 import { reqI18n, __all, __ } from '#i18n'
 import storages from '#storages'
-import { getOrgLimits, setNbMembersLimit, reqSite, shortenInvit, unshortenInvit, sendMailI18n, decodeToken, signToken, postUserIdentityWebhook, getInvitationRedirect, getSiteBaseUrl, getInvitSite } from '#services'
+import { getOrgLimits, setNbMembersLimit, reqSite, shortenInvit, unshortenInvit, sendMailI18n, decodeToken, signToken, postUserIdentityWebhook, getInvitationRedirect, getSiteBaseUrl, getInvitSite, keepalive, switchOrganization } from '#services'
 import emailValidator from 'email-validator'
 import Debug from 'debug'
 
@@ -262,7 +262,20 @@ router.get('/_accept', async (req, res, next) => {
     return res.redirect(redirectUrl.href)
   }
 
+  const isFirstOrg = !existingUser.organizations.length
   await storage.addMember(orga, existingUser, invit.role, invit.department)
+
+  // if this is the first invitation of the user in an org
+  // set this org as their default account, matches most use cases
+  // user created individually but invited afterwards
+  if (isFirstOrg) {
+    const userPatch: any = {
+      ignorePersonalAccount: true,
+      defaultOrg: orga.id,
+    }
+    if (invit.department) userPatch.defaultDep = invit.department
+    await storage.patchUser(existingUser.id, userPatch)
+  }
 
   eventsLog.info('sd.invite.accepted', `invitation accepted ${invit.email}, ${orga.id} ${orga.name} ${invit.department} ${invit.role}`, logContext)
 
@@ -285,7 +298,14 @@ router.get('/_accept', async (req, res, next) => {
 
   await setNbMembersLimit(orga.id)
 
-  if (!loggedUser || loggedUser.email !== invit.email) {
+  if (loggedUser && loggedUser.email === invit.email) {
+    await keepalive(req, res)
+    switchOrganization(req, res, loggedUser, invit.id, invit.department, invit.role)
+    redirectUrl.searchParams.set('email', invit.email)
+    redirectUrl.searchParams.set('id_token_org', invit.id)
+    if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
+    res.redirect(redirectUrl.href)
+  } else {
     const reboundRedirect = redirectUrl.href
     redirectUrl = new URL(`${reqSiteUrl(req)}/simple-directory/login`)
     redirectUrl.searchParams.set('email', invit.email)
@@ -293,11 +313,6 @@ router.get('/_accept', async (req, res, next) => {
     if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
     redirectUrl.searchParams.set('redirect', reboundRedirect)
     debug('redirect to login', redirectUrl.href)
-    return res.redirect(redirectUrl.href)
+    res.redirect(redirectUrl.href)
   }
-
-  redirectUrl.searchParams.set('email', invit.email)
-  redirectUrl.searchParams.set('id_token_org', invit.id)
-  if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
-  res.redirect(redirectUrl.href)
 })

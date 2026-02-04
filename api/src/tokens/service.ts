@@ -116,6 +116,7 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
   const parts = token.split('.')
   const sitePath = reqSitePath(req)
   const opts: Cookies.SetOption = { sameSite: 'lax', path: sitePath + '/' }
+  const deleteOpts = { path: sitePath + '/', expires: new Date(0) }
   if (payload.rememberMe) opts.expires = new Date(exchangeExp * 1000)
   cookies.set('id_token', parts[0] + '.' + parts[1], { ...opts, httpOnly: false })
   cookies.set('id_token_sign', parts[2], { ...opts, expires: new Date(exp * 1000), httpOnly: true })
@@ -123,7 +124,13 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
   if (userOrg) {
     cookies.set('id_token_org', userOrg.id, { ...opts, httpOnly: false })
     if (userOrg.department) cookies.set('id_token_dep', userOrg.department, { ...opts, httpOnly: false })
+    else cookies.set('id_token_dep', '', deleteOpts)
     if (config.multiRoles) cookies.set('id_token_role', userOrg.role, { ...opts, httpOnly: false })
+    else cookies.set('id_token_role', '', deleteOpts)
+  } else {
+    cookies.set('id_token_org', '', deleteOpts)
+    cookies.set('id_token_dep', '', deleteOpts)
+    cookies.set('id_token_role', '', deleteOpts)
   }
 
   const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
@@ -151,6 +158,26 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
     }
     const exchangeToken = await signToken(sessionInfo, exchangeExp)
     cookies.set('id_token_ex', exchangeToken, exchangeCookieOpts)
+  }
+}
+
+export const switchOrganization = (req: Request, res: Response, user: SessionUser, orgId?: string, depId?: string, role?: string) => {
+  const cookies = new Cookies(req, res, { secure })
+  const sitePath = reqSitePath(req)
+  const opts: Cookies.SetOption = { sameSite: 'lax', path: sitePath + '/' }
+  const exchangeExp = Math.floor(Date.now() / 1000) + jwtDurations.exchangeToken
+  const deleteOpts = { path: sitePath + '/', expires: new Date(0) }
+  if (user.rememberMe) opts.expires = new Date(exchangeExp * 1000)
+  if (orgId) {
+    cookies.set('id_token_org', orgId, { ...opts, httpOnly: false })
+    if (depId) cookies.set('id_token_dep', depId, { ...opts, httpOnly: false })
+    else cookies.set('id_token_dep', '', deleteOpts)
+    if (config.multiRoles && role) cookies.set('id_token_role', role, { ...opts, httpOnly: false })
+    else cookies.set('id_token_role', '', deleteOpts)
+  } else {
+    cookies.set('id_token_org', '', deleteOpts)
+    cookies.set('id_token_dep', '', deleteOpts)
+    cookies.set('id_token_role', '', deleteOpts)
   }
 }
 

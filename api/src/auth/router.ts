@@ -632,6 +632,10 @@ router.get('/me', (req, res) => {
   else res.send(reqUser(req))
 })
 
+router.get('/my-session', (req, res) => {
+  res.send(reqSession(req))
+})
+
 router.get('/providers', async (req, res) => {
   const site = await reqSite(req)
   res.send(site ? await publicSiteProviders(site) : await publicGlobalProviders())
