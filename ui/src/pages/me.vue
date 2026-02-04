@@ -30,7 +30,7 @@
       <load-avatar
         v-if="userDetailsFetch.data.value && $uiConfig.avatars.users"
         :owner="{type: 'user', id: user.id}"
-        :disabled="readonly"
+        :disabled="readonlyPersonalInfo"
       />
 
       <v-row dense>
@@ -38,7 +38,7 @@
           <v-text-field
             v-model="patch.firstName"
             :label="$t('common.firstName')"
-            :disabled="!userDetailsFetch.data.value || readonly"
+            :disabled="!userDetailsFetch.data.value || readonlyPersonalInfo"
             name="firstName"
             :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
             variant="outlined"
@@ -50,7 +50,7 @@
           <v-text-field
             v-model="patch.lastName"
             :label="$t('common.lastName')"
-            :disabled="!userDetailsFetch.data.value || readonly"
+            :disabled="!userDetailsFetch.data.value || readonlyPersonalInfo"
             name="lastName"
             :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
             variant="outlined"
@@ -73,7 +73,7 @@
               <v-text-field
                 :model-value="patch.birthday && $d(new Date(patch.birthday))"
                 :label="$t('common.birthday')"
-                :disabled="!userDetailsFetch.data.value || readonly"
+                :disabled="!userDetailsFetch.data.value || readonlyPersonalInfo"
                 :append-icon="mdiCalendar"
                 readonly
                 clearable
@@ -93,7 +93,7 @@
             />
           </v-menu>
         </v-col>
-        <v-col v-if="!readonly">
+        <v-col v-if="!readonlyPersonalInfo">
           <v-btn
             color="primary"
             variant="text"
@@ -305,7 +305,7 @@ const userOrgsFetch = useFetch<{ count: number }>($apiPath + '/organizations', {
 const newPatch = () => ({
   firstName: userDetailsFetch.data.value?.firstName,
   lastName: userDetailsFetch.data.value?.lastName,
-  birthday: userDetailsFetch.data.value?.birthday,
+  birthday: userDetailsFetch.data.value?.birthday || null,
   ignorePersonalAccount: userDetailsFetch.data.value?.ignorePersonalAccount || false,
   defaultOrg: userDetailsFetch.data.value?.defaultOrg || '',
   defaultDep: userDetailsFetch.data.value?.defaultDep || ''
@@ -324,7 +324,8 @@ const setBirthDay = (birthday: Date) => {
   save()
 }
 
-const readonly = computed(() => $uiConfig.readonly || !!user.value?.os || !!user.value?.idp)
+const readonly = computed(() => $uiConfig.readonly || !!user.value?.os)
+const readonlyPersonalInfo = computed(() => readonly.value || !!user.value?.idp)
 const nbCreatedOrgs = computed(() => userOrgsFetch.data.value?.count)
 const maxCreatedOrgs = computed(() => {
   if (!userDetailsFetch.data.value) return 0
