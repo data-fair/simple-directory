@@ -388,7 +388,13 @@ const save = withUiNotif(async (e?: Event) => {
   await form.value?.validate()
   if (!form.value?.isValid) return
   if (!user.value) return
-  await $fetch(`users/${user.value.id}`, { method: 'PATCH', body: patch.value })
+  const body: any = { ...patch.value }
+  if (user.value?.idp) {
+    delete body.firstName
+    delete body.lastName
+    delete body.birthday
+  }
+  await $fetch(`users/${user.value.id}`, { method: 'PATCH', body })
   await keepalive()
   await userDetailsFetch.refresh()
 }, undefined, t('common.modificationOk'))
