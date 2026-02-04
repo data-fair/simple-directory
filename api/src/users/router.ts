@@ -218,7 +218,8 @@ router.get('/:userId', async (req, res, next) => {
 
 // Update some parts of a user as himself
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
-router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
+const coreIDPKeys = ['defaultOrg', 'defaultDep', 'ignorePersonalAccount', 'plannedDeletion']
+router.patch('/:userId', async (req, res, next) => {
   const logContext: EventLogContext = { req }
 
   const session = reqSessionAuthenticated(req)
@@ -228,6 +229,10 @@ router.patch('/:userId', rejectCoreIdUser, async (req, res, next) => {
 
   const adminKey = Object.keys(req.body).find(key => adminKeys.includes(key))
   if (adminKey && !session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+
+  if (session.user?.idp && Object.keys(req.body).find(key => !coreIDPKeys.includes(key))) {
+    throw httpError(403, 'Invalid patch for user with a core identity provider')
+  }
 
   if (patch.plannedDeletion) {
     if (config.userSelfDelete) {
