@@ -221,16 +221,9 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     }
   }
   if (!serverSessionInfo) {
-    // accept tokens signed by a key before the introduction of the exchange token (kid=simple-directory)
-    // const payload = decodeToken(cookies.get('id_token'))
-    const completeTokenInfo = jwt.decode(cookies.get('id_token') + '.' + cookies.get('id_token_sign'), { complete: true })
-    if (completeTokenInfo?.header.kid === 'simple-directory') {
-      console.log('accept tokens signed by a key before the introduction of the exchange token')
-    } else {
-      await logout(req, res)
-      eventsLog.info('sd.auth.keepalive.fail', 'a user without a valid echange token tried to prolongate a session', logContext)
-      throw httpError(401, 'Informations de session manquantes')
-    }
+    await logout(req, res)
+    eventsLog.info('sd.auth.keepalive.fail', 'a user without a valid echange token tried to prolongate a session', logContext)
+    throw httpError(401, 'Informations de session manquantes')
   }
   if (sessionState.user.asAdmin) {
     const adminUser = await storage.getUser(sessionState.user.asAdmin.id)

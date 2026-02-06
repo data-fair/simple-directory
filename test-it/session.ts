@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { it, describe, before, beforeEach, after } from 'node:test'
 import { axiosAuth, clean, startApiServer, stopApiServer, passwordLogin } from './utils/index.ts'
+import jwt from 'jsonwebtoken'
 
 describe('Session management', () => {
   before(startApiServer)
@@ -46,6 +47,11 @@ describe('Session management', () => {
     assert.ok(res.headers['set-cookie']?.[0].startsWith('id_token='))
     assert.ok(res.headers['set-cookie']?.[1].startsWith('id_token_sign='))
     res = await ax.get('/api/auth/me')
+
+    ax.cookieJar.setCookie('id_token_sign=; Path=/', 'http://localhost')
+    ax.cookieJar.setCookie('id_token_ex=; Path=/simple-directory/', 'http://localhost')
+    ax.cookieJar.setCookie(`id_token=${jwt.sign({ id: '_superadmin', isAdmin: true, adminMode: true, organizations: [] }, 'secret', { keyid: 'simple-directory' }).split('.').slice(0, 2).join('.')}; Path=/`, 'http://localhost')
+    await assert.rejects(ax.post('/api/auth/keepalive'), { status: 401 })
   })
 
   it('Store a user sessions info', async () => {
