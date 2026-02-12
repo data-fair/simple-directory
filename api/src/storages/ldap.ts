@@ -578,7 +578,7 @@ export class LdapStorage implements SdStorage {
       if (this.org) user.orgStorage = true
       if (withSession) user.sessions = (await mongo.ldapUserSessions.findOne({ _id: user.id }))?.sessions
       if (!this.org) {
-        user.isAdmin = config.admins.includes(user.email.toLowerCase())
+        user.isAdmin = config.admins.includes(user.email.toLowerCase()) || user.id === '_superadmin'
         if (!user.isAdmin && this.ldapParams.isAdmin?.attr && this.ldapParams.isAdmin?.values?.length) {
           debug('check if user is admin', user.email, res.fullResults[0].attrs)
           const values = res.fullResults[0].attrs[this.ldapParams.isAdmin.attr] ?? []

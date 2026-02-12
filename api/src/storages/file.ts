@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
 import type { FileParams } from '../../config/type/index.ts'
-import config from '#config'
+import config, { superadmin } from '#config'
 import userName from '../utils/user-name.ts'
 import type { Member, Organization, Partner, User, UserWritable, ServerSession, Site } from '#types'
 import { readFileSync, existsSync } from 'node:fs'
@@ -86,7 +86,7 @@ class FileStorage implements SdStorage {
   cleanUser (user: any): User {
     const res = { ...user, organizations: getUserOrgas(this.organizations, user) }
     delete res.password
-    res.isAdmin = config.admins.includes(res.email.toLowerCase())
+    res.isAdmin = config.admins.includes(res.email.toLowerCase()) || user.id === '_superadmin'
     if (config.onlyCreateInvited) res.ignorePersonalAccount = true
     return res
   }
@@ -97,7 +97,7 @@ class FileStorage implements SdStorage {
 
   async getUser (id: string) {
     // Find user by strict equality of properties passed in filter
-    const user = this.users.find(u => u.id === id) as User | undefined
+    const user = id === '_superadmin' ? superadmin : this.users.find(u => u.id === id) as User | undefined
     if (!user) return
     user.sessions = (await mongo.fileUserSessions.findOne({ _id: user.id }))?.sessions
     return this.cleanUser(user)

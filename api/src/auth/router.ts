@@ -355,7 +355,7 @@ router.get('/token_callback', async (req, res, next) => {
   if (query.org_storage && org) {
     storage = await storages.createOrgStorage(org) ?? storage
   }
-  const user = decoded.id === '_superadmin' ? superadmin : await storage.getUser(decoded.id)
+  const user = await storage.getUser(decoded.id)
   logContext.user = user
 
   if (!user || (decoded.emailConfirmed !== true && user.emailConfirmed === false)) {
@@ -414,7 +414,7 @@ router.get('/token_callback', async (req, res, next) => {
 
   // User may have new organizations since last renew
   const storage = storages.globalStorage
-  const user = decoded.id === '_superadmin' ? superadmin : await storage.getUser(decoded.id)
+  const user = await storage.getUser(decoded.id)
   logContext.user = user
 
   if (!user) {
@@ -458,7 +458,7 @@ router.post('/keepalive', async (req, res, next) => {
   // prevent breaking sessions when ldap storage cache is filling up
   if (storage.initializing) return res.status(204).send()
 
-  let user = loggedUser.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.id)
+  let user = await storage.getUser(loggedUser.id)
   if (!user) throw httpError(404)
 
   // in coreIdProvider mode always refresh the token on keepalive to ensure that we are synced
@@ -614,7 +614,7 @@ router.delete('/asadmin', async (req, res, next) => {
   const loggedUser = reqUserAuthenticated(req)
   if (!loggedUser.asAdmin) throw httpError(403, 'This functionality is for admins only')
   const storage = storages.globalStorage
-  const user = loggedUser.asAdmin.id === '_superadmin' ? superadmin : await storage.getUser(loggedUser.asAdmin.id)
+  const user = await storage.getUser(loggedUser.asAdmin.id)
   if (!user) return res.status(401).send('User does not exist anymore')
   const site = await reqSite(req)
   const payload = getTokenPayload(user, site)
@@ -938,7 +938,7 @@ router.post('/apps/login', async (req, res) => {
   if (decoded.type !== 'auth_code') return res.status(400).send('Invalid token type')
 
   const storage = storages.globalStorage
-  const user = decoded.userId === '_superadmin' ? superadmin : await storage.getUser(decoded.userId)
+  const user = await storage.getUser(decoded.userId)
   if (!user) return res.status(400).send('User not found')
 
   const site = await reqSite(req)

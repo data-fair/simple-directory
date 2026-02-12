@@ -4,7 +4,7 @@ import { axiosAuth, clean, startApiServer, stopApiServer } from './utils/index.t
 
 process.env.STORAGE_TYPE = 'mongo'
 
-describe('users api', () => {
+describe('admin credentials', () => {
   before(startApiServer)
   beforeEach(async () => await clean())
   after(stopApiServer)

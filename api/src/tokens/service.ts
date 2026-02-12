@@ -4,7 +4,7 @@ import type { OrganizationMembership, SessionState, User as SessionUser } from '
 import { reqSession, reqSiteUrl, session, reqSitePath, reqSessionAuthenticated, httpError } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { internalError } from '@data-fair/lib-node/observer.js'
-import config, { jwtDurations, superadmin } from '#config'
+import config, { jwtDurations } from '#config'
 import jwt, { type SignOptions, type JwtPayload } from 'jsonwebtoken'
 import Cookies from 'cookies'
 import storages from '#storages'
@@ -33,7 +33,7 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site: S
     name: user.name,
     organizations: (user.organizations || []).map(o => ({ ...o }))
   }
-  if (user.isAdmin || config.admins.includes(user.email.toLowerCase()) || user.id === '_superadmin') {
+  if (user.isAdmin) {
     payload.isAdmin = 1
   }
   if (user.defaultOrg) {
@@ -199,7 +199,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     logContext.account = { type: 'organization', id: org.id, name: org.name, department: sessionState.organization.department, departmentName: sessionState.organization.departmentName }
   }
   const storage = await storages.getSessionStorage(sessionState)
-  const user = _user || (sessionState.user.id === '_superadmin' ? superadmin : await storage.getUser(sessionState.user.id))
+  const user = _user || (await storage.getUser(sessionState.user.id))
   if (!user) {
     await logout(req, res)
     eventsLog.info('sd.auth.keepalive.fail', 'a deleted user tried to prolongate a session', logContext)

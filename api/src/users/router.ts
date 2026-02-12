@@ -1,6 +1,6 @@
 import { type Organization, type UserWritable } from '#types'
 import { Router, type RequestHandler } from 'express'
-import config, { superadmin } from '#config'
+import config from '#config'
 import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession, httpError } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
@@ -206,7 +206,6 @@ router.post('', async (req, res, next) => {
 router.get('/:userId', async (req, res, next) => {
   const session = reqSessionAuthenticated(req)
   if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
-  if (session.user.id === '_superadmin') return res.send(superadmin)
   let storage = storages.globalStorage
   if (session.user.id === req.params.userId) {
     storage = await storages.getSessionStorage(session)

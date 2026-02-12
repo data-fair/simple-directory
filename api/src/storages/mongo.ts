@@ -2,7 +2,7 @@ import type { UserWritable, User, Organization, Member, Partner, Site, ServerSes
 import type { SdStorage, FindMembersParams, FindOrganizationsParams, FindUsersParams } from './interface.ts'
 import type { PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import userName from '../utils/user-name.ts'
-import config from '#config'
+import config, { superadmin } from '#config'
 import type { TwoFA } from '#services'
 import { httpError, type UserRef } from '@data-fair/lib-express'
 import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
@@ -27,7 +27,7 @@ async function cleanUser (resource: any): Promise<User> {
     delete resource['2FA'].secret
     delete resource['2FA'].recovery
   }
-  resource.isAdmin = config.admins.includes(resource.email?.toLowerCase())
+  resource.isAdmin = config.admins.includes(resource.email?.toLowerCase()) || resource.id === '_superadmin'
   if (resource.onlyCreateInvited) resource.ignorePersonalAccount = true
   if (resource.organizations) {
     for (const org of resource.organizations) {
@@ -72,7 +72,10 @@ class MongodbStorage implements SdStorage {
   }
 
   async getUser (userId: string) {
-    const user = await mongo.users.findOne({ _id: userId })
+    let user = await mongo.users.findOne({ _id: userId })
+    if (userId === '_superadmin') {
+      user = { ...user, _id: '_superadmin', ...superadmin }
+    }
     if (!user) return
     return await cleanUser(user)
   }
@@ -167,7 +170,11 @@ class MongodbStorage implements SdStorage {
   }
 
   async addUserSession (userId: string, serverSession: ServerSession) {
-    await mongo.users.updateOne({ _id: userId }, { $push: { sessions: serverSession } })
+    if (userId === '_superadmin') {
+      await mongo.users.updateOne({ _id: userId }, { $push: { sessions: serverSession } }, { upsert: true })
+    } else {
+      await mongo.users.updateOne({ _id: userId }, { $push: { sessions: serverSession } })
+    }
   }
 
   async deleteUserSession (userId: string, serverSessionId: string) {
