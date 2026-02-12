@@ -146,7 +146,7 @@ module.exports = {
       secondary: '#81D4FA', // light-blue-lighten-3
       'on-secondary': '#000000',
       'text-secondary': '#0277BD', // light-blue-darken-3
-      accent: '#2962FF', // blue-accent-4
+      accent: '#AA00FF', // purple-accent-4
       'on-accent': '#FFFFFF',
       'text-accent': undefined,
       info: '#FFE0B2', // orange-lighten-4
@@ -179,9 +179,9 @@ module.exports = {
       secondary: '#BBDEFB', // blue-lighten-4
       'on-secondary': '#000000',
       'text-secondary': undefined,
-      accent: '#2962FF', // blue-accent-1
+      accent: '#AA00FF', // purple-accent-4
       'on-accent': '#FFFFFF',
-      'text-accent': '#82B1FF',
+      'text-accent': '#C44EFF',
       error: '#D50000', // red-accent-4
       'on-error': '#FFFFFF',
       'text-error': '#FF5252', // red-accent-2
@@ -213,7 +213,7 @@ module.exports = {
       secondary: '#81D4FA', // light-blue-lighten-3
       'on-secondary': '#000000',
       'text-secondary': '#01579B', // light-blue-darken-3
-      accent: '#1d44b3', // blue-accent-4
+      accent: '#8404C3',
       'on-accent': '#FFFFFF',
       'text-accent': undefined,
       info: '#FFE0B2', // orange-lighten-4
@@ -246,9 +246,9 @@ module.exports = {
       secondary: '#BBDEFB', // blue-lighten-4
       'on-secondary': '#000000',
       'text-secondary': undefined,
-      accent: '#1d44b3', // blue-accent-1
+      accent: '#8404C3',
       'on-accent': '#FFFFFF',
-      'text-accent': '#82B1FF',
+      'text-accent': '#CD84F1',
       error: '#b30000',
       'on-error': '#FFFFFF',
       'text-error': '#FF8A80', // red-accent-1
