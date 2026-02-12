@@ -4,7 +4,7 @@ import type { OrganizationMembership, SessionState, User as SessionUser } from '
 import { reqSession, reqSiteUrl, session, reqSitePath, reqSessionAuthenticated, httpError } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { internalError } from '@data-fair/lib-node/observer.js'
-import config, { jwtDurations } from '#config'
+import config, { jwtDurations, superadmin } from '#config'
 import jwt, { type SignOptions, type JwtPayload } from 'jsonwebtoken'
 import Cookies from 'cookies'
 import storages from '#storages'
@@ -134,31 +134,33 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
   }
 
   const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
-  if (serverSessionId !== null) {
-    const existingExchangeToken = cookies.get('id_token_ex')
-    let existingServerSessionInfo: SessionInfoPayload | undefined
-    if (existingExchangeToken) {
-      try {
-        existingServerSessionInfo = (await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined
-      } catch (err) {
-        // ignore an old invalid exchange token
-      }
+  const existingExchangeToken = cookies.get('id_token_ex')
+  let existingServerSessionInfo: SessionInfoPayload | undefined
+  if (existingExchangeToken) {
+    try {
+      existingServerSessionInfo = (await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined
+    } catch (err) {
+      // ignore an old invalid exchange token
     }
-    if (existingServerSessionInfo && existingServerSessionInfo.session !== serverSessionId) {
-      // case of a session where id_token was cleared but id_token_ex persisted, this server sessions is deprecated and can be cleared
-      await storages.deleteSessionById(existingServerSessionInfo.session)
-    }
-    // const exchangeCookieOpts = { ...opts, httpOnly: true }
-    const exchangeExp = Math.floor(date / 1000) + jwtDurations.exchangeToken
-    const sessionInfo: SessionInfoPayload = { user: payload.id, session: serverSessionId, adminMode: payload.adminMode }
-    // case of asAdmin
-    if (existingServerSessionInfo && existingServerSessionInfo.adminMode && payload.id !== existingServerSessionInfo.user) {
-      sessionInfo.adminMode = 1
-      sessionInfo.user = existingServerSessionInfo.user
-    }
-    const exchangeToken = await signToken(sessionInfo, exchangeExp)
-    cookies.set('id_token_ex', exchangeToken, exchangeCookieOpts)
   }
+  if (!serverSessionId) {
+    if (!existingServerSessionInfo) throw httpError(400, 'missing exchange token')
+    serverSessionId = existingServerSessionInfo.session
+  }
+
+  if (existingServerSessionInfo && existingServerSessionInfo.session !== serverSessionId) {
+    // case of a session where id_token was cleared but id_token_ex persisted, this server sessions is deprecated and can be cleared
+    await storages.deleteSessionById(existingServerSessionInfo.session)
+  }
+  // const exchangeCookieOpts = { ...opts, httpOnly: true }
+  const sessionInfo: SessionInfoPayload = { user: payload.id, session: serverSessionId, adminMode: payload.adminMode }
+  // case of asAdmin
+  if (existingServerSessionInfo && existingServerSessionInfo.adminMode && payload.id !== existingServerSessionInfo.user) {
+    sessionInfo.adminMode = 1
+    sessionInfo.user = existingServerSessionInfo.user
+  }
+  const exchangeToken = await signToken(sessionInfo, exchangeExp)
+  cookies.set('id_token_ex', exchangeToken, exchangeCookieOpts)
 }
 
 export const switchOrganization = (req: Request, res: Response, user: SessionUser, orgId?: string, depId?: string, role?: string) => {
@@ -197,7 +199,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     logContext.account = { type: 'organization', id: org.id, name: org.name, department: sessionState.organization.department, departmentName: sessionState.organization.departmentName }
   }
   const storage = await storages.getSessionStorage(sessionState)
-  const user = _user || await storage.getUser(sessionState.user.id)
+  const user = _user || (sessionState.user.id === '_superadmin' ? superadmin : await storage.getUser(sessionState.user.id))
   if (!user) {
     await logout(req, res)
     eventsLog.info('sd.auth.keepalive.fail', 'a deleted user tried to prolongate a session', logContext)
@@ -210,53 +212,48 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   const idTokenRole = cookies.get('id_token_role')
 
   const exchangeToken = cookies.get('id_token_ex')
-  let serverSessionInfo: SessionInfoPayload | undefined
-  if (exchangeToken) {
-    try {
-      serverSessionInfo = await session.verifyToken(exchangeToken) as SessionInfoPayload | undefined
-    } catch (err) {
-      await logout(req, res)
-      eventsLog.info('sd.auth.keepalive.fail', 'a user with a broken echange token tried to prolongate a session', logContext)
-      throw httpError(401, 'Informations de session erronées')
-    }
-  }
-  if (!serverSessionInfo) {
+
+  if (!exchangeToken) {
     await logout(req, res)
     eventsLog.info('sd.auth.keepalive.fail', 'a user without a valid echange token tried to prolongate a session', logContext)
     throw httpError(401, 'Informations de session manquantes')
   }
+  let serverSessionInfo: SessionInfoPayload
+  try {
+    serverSessionInfo = await session.verifyToken(exchangeToken) as SessionInfoPayload
+  } catch (err) {
+    await logout(req, res)
+    eventsLog.info('sd.auth.keepalive.fail', 'a user with a broken echange token tried to prolongate a session', logContext)
+    throw httpError(401, 'Informations de session erronées')
+  }
   if (sessionState.user.asAdmin) {
     const adminUser = await storage.getUser(sessionState.user.asAdmin.id)
     if (!adminUser) throw httpError(401, 'Utilisateur inexistant')
-    if (serverSessionInfo) {
-      if (serverSessionInfo.user !== adminUser.id) {
-        await logout(req, res)
-        eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with another user\'s exchange token tried to prolongate a session', logContext)
-        throw httpError(401, 'Informations de session manquantes')
-      }
-      const serverSession = adminUser.sessions?.find(s => s.id === serverSessionInfo.session)
-      if (!serverSession) {
-        await logout(req, res)
-        eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with a deleted session reference tried to prolongate a session', logContext)
-        throw httpError(401, 'Session interrompue')
-      }
+    if (!adminUser.isAdmin) throw httpError(401, 'Utilisateur "asAdmin" n\'est pas un superutilisateur')
+    if (serverSessionInfo.user !== adminUser.id) {
+      await logout(req, res)
+      eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with another user\'s exchange token tried to prolongate a session', logContext)
+      throw httpError(401, 'Informations de session manquantes')
+    }
+    const serverSession = adminUser.sessions?.find(s => s.id === serverSessionInfo.session)
+    if (!serverSession) {
+      await logout(req, res)
+      eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with a deleted session reference tried to prolongate a session', logContext)
+      throw httpError(401, 'Session interrompue')
     }
   } else {
-    if (serverSessionInfo && user.id !== '_superadmin') {
-      if (serverSessionInfo.user !== user.id) {
-        await logout(req, res)
-        eventsLog.info('sd.auth.keepalive.fail', 'a user with another user\'s exchange token tried to prolongate a session', logContext)
-        throw httpError(401, 'Informations de session manquantes')
-      }
-      const serverSession = user.sessions?.find(s => s.id === serverSessionInfo.session)
-      if (!serverSession) {
-        await logout(req, res)
-        eventsLog.info('sd.auth.keepalive.fail', 'a user with a deleted session reference tried to prolongate a session', logContext)
-        throw httpError(401, 'Session interrompue')
-      }
+    if (serverSessionInfo.user !== user.id) {
+      await logout(req, res)
+      eventsLog.info('sd.auth.keepalive.fail', 'a user with another user\'s exchange token tried to prolongate a session', logContext)
+      throw httpError(401, 'Informations de session manquantes')
+    }
+    const serverSession = user.sessions?.find(s => s.id === serverSessionInfo.session)
+    if (!serverSession) {
+      await logout(req, res)
+      eventsLog.info('sd.auth.keepalive.fail', 'a user with a deleted session reference tried to prolongate a session', logContext)
+      throw httpError(401, 'Session interrompue')
     }
   }
-  const serverSessionId = serverSessionInfo ? serverSessionInfo.session : null
 
   const site = await reqSite(req)
   const payload = getTokenPayload(user, site)
@@ -269,7 +266,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     delete payload.isAdmin
   } else {
     if (!storage.readonly) {
-      storage.updateLogged(sessionState.user.id, serverSessionId).catch(async (err: any) => {
+      storage.updateLogged(sessionState.user.id, serverSessionInfo.session).catch(async (err: any) => {
         internalError('update-logged', 'error while updating logged date', err)
       })
     }
@@ -283,7 +280,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
       return true
     })
   }
-  await setSessionCookies(req, res, payload, serverSessionId, userOrg)
+  await setSessionCookies(req, res, payload, serverSessionInfo.session, userOrg)
 
   eventsLog.info('sd.auth.keepalive.ok', 'a session was successfully prolongated', logContext)
 }

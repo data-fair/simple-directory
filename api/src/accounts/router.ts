@@ -14,7 +14,7 @@ export type FindAccountsParams = {
 
 const router = Router()
 
-// Get the list of users
+// Get the list of accounts, both users and organizations
 router.get('', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const session = reqSession(req)
