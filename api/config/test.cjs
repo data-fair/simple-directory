@@ -60,7 +60,8 @@ module.exports = {
     readAll: 'testkey',
     metrics: 'testkey',
     events: 'testkey',
-    sites: 'testkey'
+    sites: 'testkey',
+    pseudoSession: 'testkey'
   },
   authRateLimit: {
     attempts: 100,
