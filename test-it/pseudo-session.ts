@@ -143,4 +143,21 @@ describe('Pseudo session', () => {
     }
     assert.equal(caughtError.status, 401)
   })
+
+  it('Fail without internal request validation (external request)', async () => {
+    const originalValue = process.env.IGNORE_ASSERT_REQ_INTERNAL
+    delete process.env.IGNORE_ASSERT_REQ_INTERNAL
+
+    const ax = await axios()
+    let caughtError: any = null
+    try {
+      await ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'dmeadus0' })
+    } catch (err: any) {
+      caughtError = err
+    }
+
+    process.env.IGNORE_ASSERT_REQ_INTERNAL = originalValue
+
+    assert.equal(caughtError.status, 421)
+  })
 })
