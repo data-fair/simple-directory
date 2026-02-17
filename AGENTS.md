@@ -136,6 +136,7 @@ Test files are located in `test-it/` and test the following:
 - `i18n.ts`: Internationalization
 - `file-storage.ts`: File-based storage
 - `password-lists.ts`: Password validation
+- `pseudo-session.ts`: Pseudo-session authentication
 
 ## API Endpoints
 
@@ -179,6 +180,7 @@ Simple JSON file storage. Configured under `storage.file`.
 5. **SAML2**: SAML2 identity providers
 6. **LDAP**: Direct LDAP authentication
 7. **2FA**: TOTP-based two-factor authentication
+8. **Pseudo-session**: Backend-to-backend session simulation
 
 ## Key Services
 
@@ -220,4 +222,51 @@ Key environment variables:
 - `PORT`: Server port (default 8080)
 - `STORAGE_TYPE`: Override storage type for tests
 - `NODE_CONFIG_DIR`: Config directory path
-- `SECRET_KEYS_*`: Various secret keys for webhooks, etc.
+- `IGNORE_ASSERT_REQ_INTERNAL`: Set to `'true'` to bypass internal request validation in tests
+
+## Secret Keys Configuration
+
+The `secretKeys` config option provides secrets for internal service-to-service communication:
+- `identities`: For identity webhook events
+- `events`: For event webhooks
+- `sendMails`: For mail sending service
+- `limits`: For rate limiting
+- `readAll`: For admin read operations
+- `sites`: For site management
+- `pseudoSession`: For pseudo-session authentication (see below)
+
+## Pseudo-Sessions
+
+Pseudo-sessions allow backend-to-backend calls to simulate a user session (e.g., for search engine indexing or screenshot capture with Puppeteer).
+
+### Configuration
+Add `pseudoSession` to `secretKeys` in your config, or set the `SECRET_PSEUDO_SESSION` environment variable:
+```javascript
+secretKeys: {
+  pseudoSession: 'your-secret-key'
+}
+```
+
+### Usage
+Call the endpoint with internal secret validation:
+```bash
+curl -X POST http://localhost:5689/api/auth/pseudo?key=your-secret-key \
+  -H "Content-Type: application/json" \
+  -d '{"type": "user", "id": "user-id"}'
+```
+
+Or for an organization:
+```bash
+curl -X POST http://localhost:5689/api/auth/pseudo?key=your-secret-key \
+  -H "Content-Type: application/json" \
+  -d '{"type": "organization", "id": "org-id", "role": "admin"}'
+```
+
+### Response
+Returns session cookies (`id_token`, `id_token_sign`) but NOT `id_token_ex` (exchange token), which prevents keepalive. The session includes a `pseudoSession: true` flag in the payload.
+
+### Testing Internal Routes
+When testing routes that use `assertReqInternalSecret`, set the environment variable at the top of your test file:
+```typescript
+process.env.IGNORE_ASSERT_REQ_INTERNAL = 'true'
+```

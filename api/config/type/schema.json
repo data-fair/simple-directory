@@ -94,7 +94,8 @@
         "sendMails": { "type": "string" },
         "limits": { "type": "string" },
         "readAll": { "type": "string" },
-        "sites": { "type": "string" }
+        "sites": { "type": "string" },
+        "pseudoSession": { "type": "string" }
       }
     },
     "observer": {

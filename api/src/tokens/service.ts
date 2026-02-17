@@ -106,7 +106,7 @@ export const logout = async (req: Request, res: Response) => {
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
 // the header and payload are not httpOnly to be readable by client
 // all cookies use sameSite for CSRF prevention
-export const setSessionCookies = async (req: Request, res: Response, payload: SessionUser, serverSessionId: string | null, userOrg?: OrganizationMembership) => {
+export const setSessionCookies = async (req: Request, res: Response, payload: SessionUser, serverSessionId: string | null, userOrg?: OrganizationMembership, options?: { skipExchangeToken?: boolean }) => {
   const cookies = new Cookies(req, res, { secure })
   // cf https://www.npmjs.com/package/jsonwebtoken#token-expiration-exp-claim
   const date = Date.now()
@@ -159,8 +159,12 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
     sessionInfo.adminMode = 1
     sessionInfo.user = existingServerSessionInfo.user
   }
-  const exchangeToken = await signToken(sessionInfo, exchangeExp)
-  cookies.set('id_token_ex', exchangeToken, exchangeCookieOpts)
+  if (options?.skipExchangeToken) {
+    cookies.set('id_token_ex', '', { ...deleteOpts, path: sitePath + '/simple-directory/', httpOnly: true })
+  } else {
+    const exchangeToken = await signToken(sessionInfo, exchangeExp)
+    cookies.set('id_token_ex', exchangeToken, exchangeCookieOpts)
+  }
 }
 
 export const switchOrganization = (req: Request, res: Response, user: SessionUser, orgId?: string, depId?: string, role?: string) => {

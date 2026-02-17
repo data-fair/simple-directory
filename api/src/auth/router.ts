@@ -1,7 +1,7 @@
 import config, { superadmin } from '#config'
 import mongo from '#mongo'
 import { Router, type RequestHandler } from 'express'
-import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, reqSession, reqSessionAuthenticated } from '@data-fair/lib-express'
+import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, reqSession, reqSessionAuthenticated, assertReqInternalSecret } from '@data-fair/lib-express'
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
@@ -951,4 +951,59 @@ router.post('/apps/login', async (req, res) => {
   await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, site))
 
   res.send(user)
+})
+
+router.post('/pseudo', async (req, res) => {
+  if (!config.secretKeys.pseudoSession) throw httpError(400, 'pseudoSession functionality is disabled')
+  assertReqInternalSecret(req, config.secretKeys.pseudoSession)
+
+  const { type, id, role } = req.body
+  if (!type || !id) return res.status(400).send('Missing type or id in request body')
+
+  const storage = storages.globalStorage
+
+  if (type === 'user') {
+    const user = await storage.getUser(id)
+    if (!user) return res.status(404).send('User not found')
+
+    const site = await reqSite(req)
+    const payload = getTokenPayload(user, site)
+    ;(payload as any).pseudoSession = true
+
+    const serverSession = initServerSession(req)
+    await storage.addUserSession(user.id, serverSession)
+
+    await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, site), { skipExchangeToken: true })
+
+    res.send({ user: { id: user.id, email: user.email, name: user.name }, pseudoSession: true })
+  } else if (type === 'organization') {
+    const org = await storage.getOrganization(id)
+    if (!org) return res.status(404).send('Organization not found')
+
+    const pseudoUser = {
+      id: `pseudo:org:${id}`,
+      email: `org+${id}@pseudo.local`,
+      name: `Organization: ${org.name}`,
+      organizations: [{
+        id: org.id,
+        name: org.name,
+        role: role || 'admin',
+        department: undefined,
+        departmentName: undefined
+      }]
+    }
+
+    const site = await reqSite(req)
+    const payload = getTokenPayload(pseudoUser as any, site)
+    ;(payload as any).pseudoSession = true
+
+    const serverSession = initServerSession(req)
+    await storage.addUserSession(pseudoUser.id, serverSession)
+
+    await setSessionCookies(req, res, payload, serverSession.id, pseudoUser.organizations[0], { skipExchangeToken: true })
+
+    res.send({ organization: { id: org.id, name: org.name, role: role || 'admin' }, pseudoSession: true })
+  } else {
+    return res.status(400).send('Invalid type, must be "user" or "organization"')
+  }
 })
