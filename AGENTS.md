@@ -240,7 +240,7 @@ The `secretKeys` config option provides secrets for internal service-to-service 
 Pseudo-sessions allow backend-to-backend calls to simulate a user session (e.g., for search engine indexing or screenshot capture with Puppeteer).
 
 ### Configuration
-Add `pseudoSession` to `secretKeys` in your config:
+Add `pseudoSession` to `secretKeys` in your config, or set the `SECRET_PSEUDO_SESSION` environment variable:
 ```javascript
 secretKeys: {
   pseudoSession: 'your-secret-key'

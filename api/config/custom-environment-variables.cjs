@@ -254,7 +254,8 @@ module.exports = {
     readAll: 'SECRET_READ_ALL',
     metrics: 'SECRET_METRICS',
     events: 'SECRET_EVENTS',
-    sites: 'SECRET_SITES'
+    sites: 'SECRET_SITES',
+    pseudoSession: 'SECRET_PSEUDO_SESSION'
   },
   listenWhenReady: 'LISTEN_WHEN_READY',
   tosUrl: 'TOS_URL',
