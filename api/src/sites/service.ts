@@ -73,10 +73,10 @@ export const getRedirectSite = async (req: Request, redirect: string) => {
 
 export const reqSite = async (req: Request): Promise<Site | undefined> => {
   const siteUrl = reqSiteUrl(req)
-  if (siteUrl && !config.publicUrl.startsWith(siteUrl) && siteUrl !== `http://simple-directory:${config.port}` && !(process.env.NODE_ENV === 'production' && siteUrl === `http://localhost:${config.port}`)) {
+  if (siteUrl && !config.publicUrl.startsWith(siteUrl) && siteUrl !== `http://simple-directory:${config.port}`) {
     if (!config.manageSites) throw httpError(400, `multi-sites not supported by this install of simple-directory, url=${siteUrl}, declared url=${config.publicUrl}`)
     const site = await getSiteByUrl(siteUrl)
-    if (!site) throw httpError(404, 'unknown site')
+    if (!site && !config.acceptUnknownSite) throw httpError(404, 'unknown site')
     return site
   }
 }

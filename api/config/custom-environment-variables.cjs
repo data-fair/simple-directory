@@ -315,6 +315,7 @@ module.exports = {
   },
   depAdminIsOrgAdmin: 'DEP_ADMIN_IS_ORG_ADMIN',
   manageSites: 'MANAGE_SITES',
+  acceptUnknownSite: 'ACCEPT_UNKNOWN_SITE',
   managePartners: 'MANAGE_PARTNERS',
   manageSessions: 'MANAGE_SESSIONS',
   defaultOrg: 'DEFAULT_ORG',

@@ -208,6 +208,9 @@
     "manageSites": {
       "type": "boolean"
     },
+    "acceptUnknownSite": {
+      "type": "boolean"
+    },
     "managePartners": {
       "type": "boolean"
     },
