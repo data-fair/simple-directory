@@ -274,7 +274,12 @@ module.exports = {
     // from: 'no-reply@test.com'
     // transport is a full configuration object for createTransport of nodemailer
     // cf https://nodemailer.com/smtp/
-    transport: {}
+    transport: {
+      port: 1025,
+      ignoreTLS: true,
+      host: 'localhost'
+    },
+    extraParams: {}
   },
   maildev: {
     active: false
