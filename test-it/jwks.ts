@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { it, describe, before, beforeEach, after } from 'node:test'
-import { axios, axiosAuth, clean, startApiServer, stopApiServer } from './utils/index.ts'
+import { axios, axiosAuth, clean, startApiServer, stopApiServer, devApiUrl } from './utils/index.ts'
 import jwt from 'jsonwebtoken'
 
 describe('JWKS router and keys management', () => {
@@ -30,7 +30,7 @@ describe('JWKS router and keys management', () => {
     // force keys rotation (normally it is base on a delay)
     await keysManager.rotateKeys()
     await keysManager.getSignatureKeys.clear()
-    session.init('http://localhost:5690')
+    session.init(devApiUrl)
     res = await ax.get('/.well-known/jwks.json')
     assert.equal(res.data.keys?.length, 2)
     assert.equal(key1.kid, res.data.keys[1].kid)
@@ -53,7 +53,7 @@ describe('JWKS router and keys management', () => {
     // force a second keys rotation
     await keysManager.rotateKeys()
     await keysManager.getSignatureKeys.clear()
-    session.init('http://localhost:5690')
+    session.init(devApiUrl)
     res = await ax.get('/.well-known/jwks.json')
     assert.equal(res.data.keys?.length, 2)
     assert.equal(key2.kid, res.data.keys[1].kid)

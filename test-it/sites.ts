@@ -14,8 +14,8 @@ describe('sites api', () => {
 
     const { ax: adminAx } = await createUser('admin@test.com', true)
     const anonymousAx = await axios()
-    await assert.rejects(anonymousAx.post('/api/sites', { host: '127.0.0.1:5989' }), { status: 401 })
-    await assert.rejects(anonymousAx.post('/api/sites', { host: '127.0.0.1:5989' }, { params: { key: config.secretKeys.sites } }), { status: 400 })
+    await assert.rejects(anonymousAx.post('/api/sites', { host: '127.0.0.1:' + process.env.NGINX_PORT2 }), { status: 401 })
+    await assert.rejects(anonymousAx.post('/api/sites', { host: '127.0.0.1:' + process.env.NGINX_PORT2 }, { params: { key: config.secretKeys.sites } }), { status: 400 })
 
     const { ax } = await createUser('test-site@test.com')
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
@@ -23,13 +23,13 @@ describe('sites api', () => {
     const owner = { type: 'organization', id: org.id, name: org.name }
 
     await anonymousAx.post('/api/sites',
-      { _id: 'test', owner, host: '127.0.0.1:5989', theme: { primaryColor: '#FF00FF' } },
+      { _id: 'test', owner, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
 
     await assert.rejects(anonymousAx.get('/api/sites'), { status: 401 })
 
     // anonymous user can access the public info (host, theme and later auth providers) so that we can display custom login page
-    const siteDirectoryUrl = 'http://127.0.0.1:5989/simple-directory'
+    const siteDirectoryUrl = `http://127.0.0.1:${process.env.NGINX_PORT2}/simple-directory`
     const publicSite = (await anonymousAx.get(`${siteDirectoryUrl}/api/sites/_public`)).data
     assert.equal(publicSite.authMode, 'onlyBackOffice')
     assert.ok(publicSite.theme.colors.primary)

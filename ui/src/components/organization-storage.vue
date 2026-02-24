@@ -59,7 +59,7 @@ const orgStorage = ref(orga.orgStorage
       type: 'ldap',
       readonly: true,
       config: {
-        url: 'ldap://ldap:389',
+        url: 'ldap://ldap:' + process.env.LDAP_STORAGE,
         searchUserDN: 'cn=admin,dc=example,dc=org',
         searchUserPassword: '',
         baseDN: 'dc=example,dc=org',

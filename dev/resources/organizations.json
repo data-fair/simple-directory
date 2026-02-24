@@ -100,7 +100,7 @@
       "type": "ldap",
       "active": true,
       "config": {
-        "url": "ldap://localhost:389",
+        "url": "ldap://localhost:{LDAP_PORT}",
         "baseDN": "dc=example,dc=org",
         "searchUserDN": "cn=admin,dc=example,dc=org",
         "searchUserPassword": "admin",

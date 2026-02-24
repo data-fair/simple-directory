@@ -24,14 +24,6 @@ Run the 2 development servers with these commands et separate shells:
     npm run dev-server
     npm run dev-client
 
-When both servers are ready, go to [http://localhost:5689](http://localhost:5689).
-
-Test the multi-site mode:
-
-curl -H "Content-Type: application/json" -XPOST "http://localhost:5689/simple-directory/api/sites?key=secret-sites" -d '{"_id":"devsite","owner":{"type":"organization","id":"admins-org","name":"Admins organization"},"host":"localhost:5989","theme":{"primaryColor":"#004D40"}}'
-curl -H "Content-Type: application/json" -XPOST "http://localhost:5689/simple-directory/api/sites?key=secret-sites" -d '
-{"_id":"devsite2","owner":{"type":"organization","id":"admins-org","name":"Admins organization"},"host":"localhost:5999","theme":{"primaryColor":"#FF4D40"}}'
-
 ## Docker image
 
 Test building the docker image:
@@ -43,6 +35,10 @@ docker build --progress=plain -t sd-dev .
 // don't expect the following line to work fully, it will be missing service dependencies, etc.
 docker run --network=host --env PORT=8081 sd-dev
 ```
+
+## Working with Git Worktrees
+
+This project supports git worktrees with fully isolated port allocations, allowing multiple branches to run concurrently (useful for AI agents or parallel development). Run `./dev/worktree.sh <branch-name>` to create a new worktree with its own `.env`, Docker Compose project, and randomized port range. When setting up for the first time, not in a worktree, you can run `./dev/init-env.sh`.
 
 ## Git quality checks
 

@@ -1,9 +1,13 @@
+require('dotenv').config({ quiet: true })
+
+if (!process.env.DEV_API_PORT) throw new Error('missing DEV_API_PORT env variable, use "source dev/init-env.sh" to init .env file')
+
 module.exports = {
   mongo: {
-    url: 'mongodb://localhost:27017/simple-directory-' + (process.env.NODE_ENV || 'development')
+    url: 'mongodb://localhost:' + process.env.MONGO_PORT + '/simple-directory-' + (process.env.NODE_ENV || 'development')
   },
-  port: 5690,
-  publicUrl: 'http://localhost:5689/simple-directory',
+  port: process.env.DEV_API_PORT,
+  publicUrl: 'http://localhost:' + process.env.NGINX_PORT1 + '/simple-directory',
   // use this host when debugging a data-fair inside a virtualbox vm
   // publicUrl: 'http://10.0.2.2:5689',
   admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com', 'admin@test.com'],
@@ -32,8 +36,18 @@ module.exports = {
   i18n: {
     // defaultLocale: 'en'
   },
+  mails: {
+    from: 'no-reply@test.com',
+    transport: {
+      port: parseInt(process.env.MAILDEV_SMTP_PORT || '1025'),
+      ignoreTLS: true,
+      host: 'localhost'
+    },
+    extraParams: {}
+  },
   maildev: {
-    active: true
+    active: true,
+    url: 'http://localhost:' + (process.env.MAILDEV_UI_PORT),
   },
   storage: {
     type: 'mongo',
@@ -43,7 +57,7 @@ module.exports = {
       organizations: './dev/resources/organizations.json'
     },
     ldap: {
-      url: 'ldap://localhost:389',
+      url: 'ldap://localhost:' + process.env.LDAP_PORT,
       searchUserDN: 'cn=admin,dc=example,dc=org',
       searchUserPassword: 'admin',
       cacheMS: 1000,
@@ -104,8 +118,8 @@ module.exports = {
     sites: 'secret-sites'
   },
   perOrgStorageTypes: ['ldap'],
-  cipherPassword: 'SiK7LwFcuYnktJuxcNaF/Q==',
-  privateEventsUrl: 'http://localhost:8088',
+  cipherPassword: 'test',
+  privateEventsUrl: 'http://localhost:' + process.env.EVENTS_PORT,
   plannedDeletionDelay: 1,
   cleanup: {
     cron: '*/1 * * * *',
@@ -159,7 +173,7 @@ module.exports = {
       title: 'Test OIDC IDP',
       color: '#D92929',
       img: 'https://cdn-icons-png.flaticon.com/512/25/25231.png',
-      discovery: 'http://localhost:9009/.well-known/openid-configuration',
+      discovery: 'http://localhost:' + process.env.OIDC_PROVIDER_PORT + '/.well-known/openid-configuration',
       client: {
         id: 'foo',
         secret: 'bar'
@@ -193,7 +207,7 @@ module.exports = {
       title: 'Test OIDC Keycloak',
       color: '#D92929',
       img: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Keycloak_Logo.png',
-      discovery: 'http://localhost:8888/realms/master/.well-known/openid-configuration',
+      discovery: 'http://localhost:' + process.env.KEYCLOAK_PORT + '/realms/master/.well-known/openid-configuration',
       client: {
         id: 'test-sd',
         secret: 'x17YcfoJRPPrZoiXFTBwhWxSJGwTa5bi'
@@ -224,5 +238,8 @@ module.exports = {
   },
   siteOrgs: true,
   siteAdmin: true,
-  multiRoles: true
+  multiRoles: true,
+  observer: {
+    port: process.env.DEV_OBSERVER_PORT
+  }
 }

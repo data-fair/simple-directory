@@ -125,6 +125,9 @@ export class LdapStorage implements SdStorage {
   private organizationCaptureRegex: RegExp | undefined
 
   constructor (params: LdapParams, org?: Organization) {
+    if (process.env.NODE_ENV === 'test') {
+      params.url = params.url.replace('{LDAP_PORT}', process.env.LDAP_PORT!)
+    }
     this.ldapParams = params
     this.org = org
     console.log('Connecting to ldap ' + params.url)
