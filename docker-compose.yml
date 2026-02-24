@@ -9,8 +9,17 @@ services:
       - dev
       - test
     network_mode: host
+    environment:
+      - NGINX_PORT1=${NGINX_PORT1}
+      - NGINX_PORT2=${NGINX_PORT2}
+      - NGINX_PORT3=${NGINX_PORT3}
+      - NGINX_PORT4=${NGINX_PORT4}
+      - DEV_API_PORT=${DEV_API_PORT}
+      - DEV_UI_PORT=${DEV_UI_PORT}
+      - MAILDEV_UI_PORT=${MAILDEV_UI_PORT}
+      - EVENTS_PORT=${EVENTS_PORT}
     volumes:
-      - ./dev/resources/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./dev/resources/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
 
   #####
   # mail server mock
@@ -22,8 +31,8 @@ services:
       - test
     image: maildev/maildev:2.1.0
     ports:
-      - 1080:1080
-      - 1025:1025
+      - ${MAILDEV_UI_PORT}:1080
+      - ${MAILDEV_SMTP_PORT}:1025
     # https://github.com/maildev/maildev/issues/484
     healthcheck:
       test: 'wget -O - http://127.0.0.1:$${MAILDEV_WEB_PORT}$${MAILDEV_BASE_PATHNAME}/healthz || exit 1'
@@ -42,8 +51,7 @@ services:
       - ./dev/data/slapd.d:/etc/ldap/slapd.d
       - ./dev/resources:/test-resources
     ports:
-      - 389:389
-      - 636:636
+      - ${LDAP_PORT}:389
   ldap-admin:
     profiles:
       - dev
@@ -51,7 +59,7 @@ services:
     ports:
       # open over HTTPS https://localhost:6443/
       # log with cn=admin,dc=example,dc=org / admin
-      - 6443:443
+      - ${LDAP_ADMIN_PORT}:443
     environment:
       - PHPLDAPADMIN_LDAP_HOSTS=ldap
 
@@ -66,9 +74,9 @@ services:
     image: kristophjunge/test-saml-idp:1.15
     network_mode: host
     environment:
-      - SIMPLESAMLPHP_SP_ENTITY_ID=http://localhost:5689/simple-directory/api/auth/saml2-metadata.xml
-      - SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE=http://localhost:5689/simple-directory/api/auth/saml2-assert
-      - SIMPLESAMLPHP_SP_SINGLE_LOGOUT_SERVICE=http://localhost:5689/simple-directory/api/auth/saml2-logout
+      - SIMPLESAMLPHP_SP_ENTITY_ID=http://localhost:${NGINX_PORT1}/simple-directory/api/auth/saml2-metadata.xml
+      - SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE=http://localhost:${NGINX_PORT1}/simple-directory/api/auth/saml2-assert
+      - SIMPLESAMLPHP_SP_SINGLE_LOGOUT_SERVICE=http://localhost:${NGINX_PORT1}/simple-directory/api/auth/saml2-logout
   
   # WARNING: does not work on a recent chrome, this provider tries to use a cookie with samesite=none option and this is not permitted without https
   # list of users : harley@qlik.example
@@ -80,9 +88,9 @@ services:
     image: qlik/simple-oidc-provider:0.2.5
     network_mode: host
     environment:
-      - REDIRECTS=http://localhost:5689/simple-directory/api/auth/oauth-callback
-      - PORT=9009
-      - IDP_NAME=http://localhost:9009
+      - REDIRECTS=http://localhost:${NGINX_PORT1}/simple-directory/api/auth/oauth-callback
+      - PORT=${OIDC_PROVIDER_PORT}
+      - IDP_NAME=http://localhost:${OIDC_PROVIDER_PORT}
 
   keycloak:
     profiles:
@@ -96,7 +104,7 @@ services:
     network_mode: host
     volumes:
       - ./dev/data/keycloak:/opt/keycloak/data/
-    command: ["start-dev", "--http-port=8888"]
+    command: ["start-dev", "--http-port=${KEYCLOAK_PORT}"]
   
   #####
   # related services from the data-fair stack
@@ -108,10 +116,10 @@ services:
     image: ghcr.io/data-fair/events:main
     network_mode: host
     environment:
-      - PORT=8088
-      - PUBLIC_URL=http://localhost:5689/notify
-      - WS_PUBLIC_URL=ws://localhost:5689/notify
-      - PRIVATE_DIRECTORY_URL=http://localhost:5689/simple-directory
+      - PORT=${EVENTS_PORT}
+      - PUBLIC_URL=http://localhost:${NGINX_PORT1}/notify
+      - WS_PUBLIC_URL=ws://localhost:${NGINX_PORT1}/notify
+      - PRIVATE_DIRECTORY_URL=http://localhost:${NGINX_PORT1}/simple-directory
       - SECRET_EVENTS=secret-events
       - SECRET_IDENTITIES=secret-identities
       - SECRET_SENDMAILS=secret-sendmails
@@ -127,7 +135,7 @@ services:
       - test
     image: mongo:4.2
     ports:
-      - 27017:27017
+      - ${MONGO_PORT}:27017
     volumes:
       - mongo-data:/data/db
 

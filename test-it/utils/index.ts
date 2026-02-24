@@ -5,7 +5,9 @@ import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
 import eventPromise from '@data-fair/lib-utils/event-promise.js'
 import { CookieJar } from 'tough-cookie'
 
-const directoryUrl = 'http://localhost:5689/simple-directory'
+export const directoryUrl = `http://localhost:${process.env.NGINX_PORT1}/simple-directory`
+
+export const devApiUrl = `http://localhost:${process.env.DEV_API_PORT}`
 
 const axiosOpts = { baseURL: directoryUrl }
 
@@ -89,14 +91,14 @@ export const waitForMail = async () => {
 
 export const getAllEmails = async () => {
   const ax = await axios()
-  return (await ax.get('http://localhost:1080/email')).data
+  return (await ax.get(`http://localhost:${process.env.MAILDEV_UI_PORT}/email`)).data
 }
 
 export const deleteAllEmails = async () => {
   const ax = await axios()
-  const emails = (await ax.get('http://localhost:1080/email')).data
+  const emails = (await ax.get(`http://localhost:${process.env.MAILDEV_UI_PORT}/email`)).data
   for (const email of emails) {
-    await ax.delete('http://localhost:1080/email/' + email.id)
+    await ax.delete(`http://localhost:${process.env.MAILDEV_UI_PORT}/email/` + email.id)
   }
 }
 
@@ -114,6 +116,7 @@ export const passwordLogin = async (ax: AxiosAuthInstance, email: string, passwo
 
 export const loginWithOIDC = async (port: number) => {
   const anonymousAx = await axios()
+  const nginxPort = process.env.NGINX_PORT1
 
   // request a login from the provider
   const loginInitial = await anonymousAx.get(`/api/auth/oauth/localhost${port}/login`, { validateStatus: (status) => status === 302 })
@@ -121,16 +124,16 @@ export const loginWithOIDC = async (port: number) => {
   // redirect to the provider with proper params
   assert.equal(providerAuthUrl.host, 'localhost:' + port)
   assert.equal(providerAuthUrl.pathname, '/authorize')
-  assert.equal(providerAuthUrl.searchParams.get('redirect_uri'), 'http://localhost:5689/simple-directory/api/auth/oauth-callback')
+  assert.equal(providerAuthUrl.searchParams.get('redirect_uri'), 'http://localhost:' + nginxPort + '/simple-directory/api/auth/oauth-callback')
   // successful login on the provider followed by redirect to our callback url
   const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (status) => status === 302 })
   const providerAuthRedirect = new URL(loginProvider.headers.location)
-  assert.equal(providerAuthRedirect.host, 'localhost:5689')
+  assert.equal(providerAuthRedirect.host, 'localhost:' + nginxPort)
   assert.equal(providerAuthRedirect.pathname, '/simple-directory/api/auth/oauth-callback')
   // open our callback url that produces a temporary token to be transformed in a session token by a token_callback url
   const oauthCallback = await anonymousAx(providerAuthRedirect.href, { validateStatus: (status) => status === 302 })
   const callbackRedirect = new URL(oauthCallback.headers.location)
-  assert.equal(callbackRedirect.host, 'localhost:5689')
+  assert.equal(callbackRedirect.host, 'localhost:' + nginxPort)
   assert.equal(callbackRedirect.pathname, '/simple-directory/api/auth/token_callback')
   // finally the token_callback url will set cookies and redirect to our final destination
   const tokenCallback = await anonymousAx(callbackRedirect.href, { validateStatus: (status) => status === 302 })

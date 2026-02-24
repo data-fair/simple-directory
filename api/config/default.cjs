@@ -271,18 +271,12 @@ module.exports = {
     locales: ['fr', 'en', 'es', 'pt', 'it', 'de']
   },
   mails: {
-    from: 'no-reply@test.com',
+    // from: 'no-reply@test.com'
     // transport is a full configuration object for createTransport of nodemailer
     // cf https://nodemailer.com/smtp/
-    transport: {
-      port: 1025,
-      ignoreTLS: true,
-      host: 'localhost'
-    },
-    extraParams: {}
+    transport: {}
   },
   maildev: {
-    url: 'http://localhost:1080',
     active: false
   },
   quotas: {

@@ -1,9 +1,13 @@
+require('dotenv').config({ quiet: true })
+
+if (!process.env.DEV_API_PORT) throw new Error('missing DEV_API_PORT env variable, use "source dev/init-env.sh" to init .env file')
+
 module.exports = {
   mongo: {
-    url: 'mongodb://localhost:27017/data-fair-' + (process.env.NODE_ENV || 'test')
+    url: 'mongodb://localhost:' + process.env.MONGO_PORT + '/simple-directory-' + (process.env.NODE_ENV || 'development')
   },
-  port: 5690,
-  publicUrl: 'http://localhost:5689/simple-directory',
+  port: process.env.DEV_API_PORT,
+  publicUrl: 'http://localhost:' + process.env.NGINX_PORT1 + '/simple-directory',
   admins: ['admin@test.com'],
   adminCredentials: {
     email: '_superadmin@test.com',
@@ -25,7 +29,7 @@ module.exports = {
     },
     mongo: {},
     ldap: {
-      url: 'ldap://localhost:389',
+      url: 'ldap://localhost:' + process.env.LDAP_PORT,
       cacheMS: 0,
       searchUserDN: 'cn=admin,dc=example,dc=org',
       searchUserPassword: 'admin',
@@ -68,14 +72,25 @@ module.exports = {
     duration: 60
   },
   perOrgStorageTypes: ['ldap'],
+  mails: {
+    from: 'no-reply@test.com',
+    transport: {
+      port: parseInt(process.env.MAILDEV_SMTP_PORT || '1025'),
+      ignoreTLS: true,
+      host: 'localhost'
+    },
+    extraParams: {}
+  },
   maildev: {
-    active: true
+    active: true,
+    url: 'http://localhost:' + (process.env.MAILDEV_UI_PORT),
   },
   manageSites: true,
   managePartners: true,
   cipherPassword: 'test',
   observer: {
-    active: false
+    active: false,
+    port: process.env.DEV_OBSERVER_PORT
   },
   passwordValidation: {
     entropy: 40,

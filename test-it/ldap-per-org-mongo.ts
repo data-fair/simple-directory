@@ -9,7 +9,7 @@ const config = (await import('../api/src/config.ts')).default
 const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
 
 const orgLdapConfig = {
-  url: 'ldap://localhost:389',
+  url: 'ldap://localhost:' + process.env.LDAP_PORT,
   baseDN: 'dc=example,dc=org',
   searchUserDN: 'cn=admin,dc=example,dc=org',
   searchUserPassword: 'admin',

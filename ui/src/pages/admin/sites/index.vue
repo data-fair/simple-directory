@@ -166,7 +166,6 @@ const headers: { title: string, value?: string, sortable?: boolean }[] = [
 const siteRedirect = (site: Site) => {
   $fetch<string>('auth/site_redirect', { method: 'POST', body: { redirect: `${window.location.protocol}//${site.host}` } })
     .then((res) => {
-      console.log('RES', res)
       window.location.replace(res)
     })
 }

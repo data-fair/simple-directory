@@ -79,11 +79,11 @@ describe('users api', () => {
     const owner = { type: 'organization', id: org.id, name: org.name }
 
     await anonymousAx.post('/api/sites',
-      { _id: 'test', owner, host: '127.0.0.1:5989', theme: { primaryColor: '#FF00FF' } },
+      { _id: 'test', owner, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
     const mailPromise = waitForMail()
 
-    await anonymousAx.post('http://127.0.0.1:5989/simple-directory/api/auth/action', { email: 'user3@test.com', action: 'changePassword', target: config.publicUrl + '/login' })
+    await anonymousAx.post(`http://127.0.0.1:${process.env.NGINX_PORT2}/simple-directory/api/auth/action`, { email: 'user3@test.com', action: 'changePassword', target: config.publicUrl + '/login' })
     const mail = await mailPromise
     assert.ok(mail.link.includes('action_token'))
     const actionToken = (new URL(mail.link)).searchParams.get('action_token')
@@ -95,7 +95,7 @@ describe('users api', () => {
 
     await ax.post(
       `/api/users/${user.id}/host`,
-      { host: '127.0.0.1:5989' },
+      { host: '127.0.0.1:' + process.env.NGINX_PORT2 },
       { params: { action_token: actionToken } }
     )
   })
