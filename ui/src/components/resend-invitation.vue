@@ -43,8 +43,8 @@
             density="compact"
           />
           <v-select
-            v-if="invitation.department"
-            v-model="invitation.department"
+            v-if="invitation.departments?.length"
+            v-model="invitation.departments[0]"
             :items="orga.departments"
             :label="orga.departmentLabel || $t('common.department')"
             item-value="id"
@@ -123,7 +123,7 @@ const newInvitation = () => {
     email: member.email,
     role: member.role
   }
-  if (member.department) invit.department = member.department
+  if (member.department) invit.departments = [member.department]
   return invit
 }
 const invitation = ref(newInvitation())

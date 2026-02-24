@@ -40,10 +40,24 @@ router.post('', async (req, res, next) => {
   const orga = await storage.getOrganization(invitation.id)
   if (!orga) return res.status(404).send('unknown organization')
 
+  const departments = invitation.departments ?? (invitation.department ? [invitation.department] : [])
+  const departmentNames: string[] = []
+
   if (session.siteRole === 'admin' && invitSite && invitSite.host === orga.host) {
     // ok for site admins
   } else {
-    assertAccountRole(reqSession(req), { type: 'organization', id: invitation.id, department: invitation.department }, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
+    if (departments.length > 0) {
+      invitation.departments = departments
+      for (const department of departments) {
+        const dept = orga.departments && orga.departments.find(d => d.id === department)
+        if (!dept) return res.status(404).send('unknown department: ' + department)
+        departmentNames.push(dept.name || dept.id)
+        assertAccountRole(reqSession(req), { type: 'organization', id: invitation.id, department }, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
+      }
+    } else {
+      delete invitation.departments
+      assertAccountRole(reqSession(req), { type: 'organization', id: invitation.id }, 'admin')
+    }
   }
 
   const limits = await getOrgLimits(orga)
@@ -52,30 +66,38 @@ router.post('', async (req, res, next) => {
     return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
   }
 
-  let dep
-  if (invitation.department) {
-    dep = orga.departments && orga.departments.find(d => d.id === invitation.department)
-    if (!dep) return res.status(404).send('unknown department')
-  }
-  logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invitation.department, departmentName: dep?.name }
+  logContext.account = { type: 'organization', id: orga.id, name: orga.name }
+
+  const invitTargetLabel = orga.name + (departmentNames.length ? ` / ${departmentNames.join(', ')}` : '')
 
   const token = await signToken(shortenInvit(invitation), config.jwtDurations.invitationToken)
 
   if (config.alwaysAcceptInvitation) {
     debug('in alwaysAcceptInvitation mode')
-    eventsLog.info('sd.invite.user-creation', `invitation sent in always accept mode immediately creates a user or adds it as member ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
+    eventsLog.info('sd.invite.user-creation', `invitation sent in always accept mode immediately creates a user or adds it as member ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.departments?.join('|')}`, logContext)
     // in 'always accept invitation' mode the user is not sent an email to accept the invitation
     // he is simple added to the list of members and created if needed
     const existingUser = await storage.getUserByEmail(invitation.email, invitSite)
     if (existingUser && existingUser.emailConfirmed) {
       debug('in alwaysAcceptInvitation and the user already exists, immediately add it as member', invitation.email)
-      await storage.addMember(orga, existingUser, invitation.role, invitation.department)
+      if (departments.length > 0) {
+        for (const deptId of departments) {
+          await storage.addMember(orga, existingUser, invitation.role, deptId)
+          eventsQueue?.pushEvent({
+            sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: deptId },
+            topic: { key: 'simple-directory:invitation-sent' },
+            title: __all('notifications.sentInvitation', { email: body.email, orgName: invitTargetLabel })
+          })
+        }
+      } else {
+        await storage.addMember(orga, existingUser, invitation.role, undefined)
+        eventsQueue?.pushEvent({
+          sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
+          topic: { key: 'simple-directory:invitation-sent' },
+          title: __all('notifications.sentInvitation', { email: body.email, orgName: invitTargetLabel })
+        })
+      }
       await setNbMembersLimit(orga.id)
-      eventsQueue?.pushEvent({
-        sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
-        topic: { key: 'simple-directory:invitation-sent' },
-        title: __all('notifications.sentInvitation', { email: body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
-      })
     } else {
       const newUserDraft: UserWritable = {
         email: invitation.email,
@@ -89,11 +111,27 @@ router.post('', async (req, res, next) => {
         newUserDraft.host = invitSite.host
         if (invitSite.path) newUserDraft.path = invitSite.path
       }
-      if (invitation.department) newUserDraft.defaultDep = invitation.department
+      if (invitation.departments?.length) newUserDraft.defaultDep = invitation.departments[0]
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUserDraft)
       const reboundRedirect = new URL(getInvitationRedirect(reqSiteUrl(req), invitation.redirect))
       const newUser = await storage.createUser(newUserDraft, user)
-      await storage.addMember(orga, newUser, invitation.role, invitation.department)
+      if (departments.length > 0) {
+        for (const deptId of departments) {
+          await storage.addMember(orga, newUser, invitation.role, deptId)
+          eventsQueue?.pushEvent({
+            sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin', department: deptId },
+            topic: { key: 'simple-directory:add-member' },
+            title: __all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: invitTargetLabel })
+          })
+        }
+      } else {
+        await storage.addMember(orga, newUser, invitation.role, undefined)
+        eventsQueue?.pushEvent({
+          sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin' },
+          topic: { key: 'simple-directory:add-member' },
+          title: __all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: invitTargetLabel })
+        })
+      }
       await setNbMembersLimit(orga.id)
       const linkUrl = new URL(`${invitPublicBaseUrl}/login`)
       linkUrl.searchParams.set('step', 'createUser')
@@ -102,26 +140,19 @@ router.post('', async (req, res, next) => {
       debug('send email with link to createUser step', linkUrl.href)
       const params = {
         link: linkUrl.href,
-        organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '')
+        organization: invitTargetLabel
       }
       // send the mail either if the user does not exist or it was created more that 24 hours ago
       if (!query.skip_mail && (!existingUser || query.force_mail || (existingUser.created && dayjs().diff(dayjs(existingUser.created.date), 'day', true) > 1))) {
         await sendMailI18n('invitation', reqI18n(req).messages, body.email, params)
-        eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
+        eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${departments.join(',')}`, logContext)
       }
 
-      const event = {
-        sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
-        topic: { key: 'simple-directory:add-member' },
-        title: __all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
-      }
-      // send notif to all admins subscribed to the topic
-      eventsQueue?.pushEvent(event)
       // send same notif to user himself
       eventsQueue?.pushNotification({
-        sender: event.sender,
-        topic: event.topic,
-        title: __(req, 'notifications.addMember', { name: newUser.name, email: newUser.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') }),
+        sender: { type: 'organization' as const, id: orga.id, name: orga.name },
+        topic: { key: 'simple-directory:add-member' },
+        title: __(req, 'notifications.addMember', { name: newUser.name, email: newUser.email, orgName: invitTargetLabel }),
         recipient: { id: newUser.id, name: newUser.name }
       })
 
@@ -136,18 +167,18 @@ router.post('', async (req, res, next) => {
     linkUrl.searchParams.set('invit_token', token)
     const params = {
       link: linkUrl.href,
-      organization: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '')
+      organization: invitTargetLabel
     }
     if (!query.skip_mail) {
       debug('send invitation email', body.email, params)
       await sendMailI18n('invitation', reqI18n(req).messages, body.email, params)
-      eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.department}`, logContext)
+      eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${departments.join(',')}`, logContext)
     }
 
     eventsQueue?.pushEvent({
-      sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitation.department },
+      sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: departments[0] },
       topic: { key: 'simple-directory:invitation-sent' },
-      title: __all('notifications.sentInvitation', { email: body.email, orgName: orga.name + (dep ? ' / ' + (dep.name || dep.id) : '') })
+      title: __all('notifications.sentInvitation', { email: body.email, orgName: invitTargetLabel })
     })
 
     if (user.adminMode || user.asAdmin) {
@@ -201,13 +232,20 @@ router.get('/_accept', async (req, res, next) => {
     errorUrl.searchParams.set('error', 'orgaUnknown')
     return res.redirect(errorUrl.href)
   }
-  logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invit.department }
+  logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invit.departments?.[0] }
 
   let redirectUrl = new URL(getInvitationRedirect(reqSiteUrl(req), invit.redirect))
 
-  // case where the invitation was already accepted, but we still want the user to proceed
-  if (existingUser && existingUser.organizations && existingUser.organizations.find(o => o.id === invit.id && (o.department || null) === (invit.department || null))) {
-    debug('invitation was already accepted, redirect', redirectUrl.href)
+  // Get departments array from invitation
+  const invitDepartments = invit.departments ?? []
+
+  // case where the invitation was already accepted for all departments, but we still want the user to proceed
+  const existingMemberDepts = existingUser?.organizations?.filter(o => o.id === invit.id).map(o => o.department) || []
+  const alreadyAcceptedAll = invitDepartments.length > 0 && invitDepartments.every(deptId => existingMemberDepts.includes(deptId))
+  const someAlreadyMember = invitDepartments.length > 0 && invitDepartments.some(deptId => existingMemberDepts.includes(deptId))
+
+  if (alreadyAcceptedAll && existingUser) {
+    debug('invitation was already accepted for all departments, redirect', redirectUrl.href)
     // missing password, invitation must have been accepted without completing account creation
     if (!config.passwordless && config.alwaysAcceptInvitation && storage.getPassword &&
       !await storage.getPassword(existingUser.id) && !Object.keys(existingUser.oauth ?? {}).length &&
@@ -220,7 +258,7 @@ router.get('/_accept', async (req, res, next) => {
       redirectUrl.searchParams.set('step', 'changePassword')
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
-      if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
+      if (invitDepartments[0]) redirectUrl.searchParams.set('id_token_dep', invitDepartments[0])
       redirectUrl.searchParams.set('action_token', token)
       redirectUrl.searchParams.set('redirect', reboundRedirect)
       debug('redirect existing user/member to changePassword step', redirectUrl.href)
@@ -232,18 +270,31 @@ router.get('/_accept', async (req, res, next) => {
       redirectUrl = new URL(`${reqSiteUrl(req)}/simple-directory/login`)
       redirectUrl.searchParams.set('email', invit.email)
       redirectUrl.searchParams.set('id_token_org', invit.id)
-      if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
+      if (invitDepartments[0]) redirectUrl.searchParams.set('id_token_dep', invitDepartments[0])
       redirectUrl.searchParams.set('redirect', reboundRedirect)
       debug('redirect existing user/member to login', redirectUrl.href)
       return res.redirect(redirectUrl.href)
     }
     return res.redirect(redirectUrl.href)
   }
+
   if (!verified) {
     debug('reject invitation where token was expired')
     errorUrl.searchParams.set('error', 'expiredInvitationToken')
     return res.redirect(errorUrl.href)
   }
+
+  // If some departments are already accepted, filter them out
+  const newDepartments = someAlreadyMember
+    ? invitDepartments.filter(deptId => !existingMemberDepts.includes(deptId))
+    : invitDepartments
+  const newDepartmentsNames: string[] = []
+  for (const deptId of newDepartments) {
+    const dept = orga.departments && orga.departments.find(d => d.id === deptId)
+    if (!dept) return res.status(404).send('unknown department: ' + deptId)
+    newDepartmentsNames.push(dept.name || dept.id)
+  }
+  const invitTargetLabel = orga.name + (newDepartmentsNames.length ? ` / ${newDepartmentsNames.join(', ')}` : '')
 
   const limits = await getOrgLimits(orga)
   if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
@@ -263,7 +314,13 @@ router.get('/_accept', async (req, res, next) => {
   }
 
   const isFirstOrg = !existingUser.organizations.length
-  await storage.addMember(orga, existingUser, invit.role, invit.department)
+  if (newDepartments.length > 0) {
+    for (const deptId of newDepartments) {
+      await storage.addMember(orga, existingUser, invit.role, deptId)
+    }
+  } else if (invitDepartments.length === 0) {
+    await storage.addMember(orga, existingUser, invit.role, undefined)
+  }
 
   // if this is the first invitation of the user in an org
   // set this org as their default account, matches most use cases
@@ -273,16 +330,16 @@ router.get('/_accept', async (req, res, next) => {
       ignorePersonalAccount: true,
       defaultOrg: orga.id,
     }
-    if (invit.department) userPatch.defaultDep = invit.department
+    if (invitDepartments[0]) userPatch.defaultDep = invitDepartments[0]
     await storage.patchUser(existingUser.id, userPatch)
   }
 
-  eventsLog.info('sd.invite.accepted', `invitation accepted ${invit.email}, ${orga.id} ${orga.name} ${invit.department} ${invit.role}`, logContext)
+  eventsLog.info('sd.invite.accepted', `invitation accepted ${invit.email}, ${orga.id} ${orga.name} ${invitDepartments.join(',')} ${invit.role}`, logContext)
 
   const event = {
-    sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin', department: invit.department },
+    sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin', department: invitDepartments[0] },
     topic: { key: 'simple-directory:invitation-accepted' },
-    title: __all('notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
+    title: __all('notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: invitTargetLabel })
   }
   // send notif to all admins subscribed to the topic
   eventsQueue?.pushEvent(event)
@@ -290,7 +347,7 @@ router.get('/_accept', async (req, res, next) => {
   eventsQueue?.pushNotification({
     sender: event.sender,
     topic: event.topic,
-    title: __(req, 'notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') }),
+    title: __(req, 'notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: invitTargetLabel }),
     recipient: { id: existingUser.id, name: existingUser.name }
   })
 
@@ -300,17 +357,17 @@ router.get('/_accept', async (req, res, next) => {
 
   if (loggedUser && loggedUser.email === invit.email) {
     await keepalive(req, res)
-    switchOrganization(req, res, loggedUser, invit.id, invit.department, invit.role)
+    switchOrganization(req, res, loggedUser, invit.id, invitDepartments[0], invit.role)
     redirectUrl.searchParams.set('email', invit.email)
     redirectUrl.searchParams.set('id_token_org', invit.id)
-    if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
+    if (invitDepartments[0]) redirectUrl.searchParams.set('id_token_dep', invitDepartments[0])
     res.redirect(redirectUrl.href)
   } else {
     const reboundRedirect = redirectUrl.href
     redirectUrl = new URL(`${reqSiteUrl(req)}/simple-directory/login`)
     redirectUrl.searchParams.set('email', invit.email)
     redirectUrl.searchParams.set('id_token_org', invit.id)
-    if (invit.department) redirectUrl.searchParams.set('id_token_dep', invit.department)
+    if (invitDepartments[0]) redirectUrl.searchParams.set('id_token_dep', invitDepartments[0])
     redirectUrl.searchParams.set('redirect', reboundRedirect)
     debug('redirect to login', redirectUrl.href)
     res.redirect(redirectUrl.href)

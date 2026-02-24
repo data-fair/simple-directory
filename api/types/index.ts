@@ -46,9 +46,9 @@ export type ShortenedInvitation = {
   n: Invitation['name'],
   e: Invitation['email'],
   r: Invitation['role'],
-  d: Invitation['department'],
-  dn: Invitation['departmentName'],
   rd: Invitation['redirect'],
+  d?: Invitation['department'],
+  ds?: Invitation['departments']
 }
 
 export type ActionPayload = {

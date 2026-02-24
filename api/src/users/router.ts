@@ -87,7 +87,7 @@ router.post('', async (req, res, next) => {
     }
     orga = await storage.getOrganization(invit.id)
     if (!orga) return res.status(400).send(reqI18n(req).messages.errors.orgaUnknown)
-    logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invit.department, departmentName: invit.departmentName }
+    logContext.account = { type: 'organization', id: orga.id, name: orga.name }
     if (invit.email !== body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   } else if (config.onlyCreateInvited) {
     return res.status(400).send('users can only be created from an invitation')
@@ -114,7 +114,8 @@ router.post('', async (req, res, next) => {
   if (invit) {
     newUser.emailConfirmed = true
     newUser.defaultOrg = invit.id
-    if (invit.department) newUser.defaultDep = invit.department
+    const dep = invit.departments?.length ? invit.departments[0] : invit.department
+    if (dep) newUser.defaultDep = dep
     newUser.ignorePersonalAccount = true
   }
 
@@ -164,7 +165,7 @@ router.post('', async (req, res, next) => {
       sender: { ...site.owner, role: 'admin' },
       topic: { key: 'simple-directory:user-created:' + site._id },
       title: (invit && !config.alwaysAcceptInvitation && orga)
-        ? __all('notifications.userCreatedOrg', { host: site.host, name: createdUser.name, email: createdUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
+        ? __all('notifications.userCreatedOrg', { host: site.host, name: createdUser.name, email: createdUser.email, orgName: orga.name })
         : __all('notifications.userCreated', { host: site.host, name: createdUser.name, email: createdUser.email })
     })
   }
@@ -175,11 +176,23 @@ router.post('', async (req, res, next) => {
       return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }
     eventsLog.info('sd.user.accept-invite', 'user accepted an invitation', logContext)
-    await storage.addMember(orga, createdUser, invit.role, invit.department)
+    const invitDepartments = invit.departments || (invit.department ? [invit.department] : [])
+    const invitDepartmentNames = []
+    if (invitDepartments.length > 0) {
+      for (const deptId of invitDepartments) {
+        const dept = orga.departments?.find(d => d.id === deptId)
+        if (!dept) return res.status(404).send('unknown department: ' + deptId)
+        invitDepartmentNames.push(dept?.name)
+        await storage.addMember(orga, createdUser, invit.role, deptId)
+      }
+    } else {
+      await storage.addMember(orga, createdUser, invit.role, undefined)
+    }
+    const invitTargetLabel = orga.name + (invitDepartmentNames.length ? ` / ${invitDepartmentNames.join(', ')}` : '')
     eventsQueue?.pushEvent({
-      sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invit.department },
+      sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitDepartments[0] },
       topic: { key: 'simple-directory:invitation-accepted' },
-      title: __all('notifications.acceptedInvitation', { name: createdUser.name, email: createdUser.email, orgName: orga.name + (invit.department ? ' / ' + invit.department : '') })
+      title: __all('notifications.acceptedInvitation', { name: createdUser.name, email: createdUser.email, orgName: invitTargetLabel })
     })
     await setNbMembersLimit(orga.id)
   }
@@ -189,7 +202,7 @@ router.post('', async (req, res, next) => {
     // we already created the user with emailConfirmed=true
     const payload = getTokenPayload(createdUser, site)
     const redirectSite = query.redirect ? (await getSiteByUrl(query.redirect)) : site
-    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, redirectSite, invit && invit.id, invit && invit.department, invit && invit.role))
+    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, redirectSite, invit && invit.id, invit && (invit.departments?.length ? invit.departments[0] : invit.department), invit && invit.role))
     return res.send(linkUrl)
   } else {
     // prepare same link and payload as for a passwordless authentication
