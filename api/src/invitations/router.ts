@@ -71,6 +71,7 @@ router.post('', async (req, res, next) => {
   const invitTargetLabel = orga.name + (departmentNames.length ? ` (${departmentNames.join(', ')})` : '')
 
   const token = await signToken(shortenInvit(invitation), config.jwtDurations.invitationToken)
+  const reboundRedirect = new URL(getInvitationRedirect(reqSiteUrl(req), invitation.redirect))
 
   if (config.alwaysAcceptInvitation) {
     debug('in alwaysAcceptInvitation mode')
@@ -113,7 +114,6 @@ router.post('', async (req, res, next) => {
       }
       if (invitation.departments?.length) newUserDraft.defaultDep = invitation.departments[0]
       debug('in alwaysAcceptInvitation and the user does not exist, create it', newUserDraft)
-      const reboundRedirect = new URL(getInvitationRedirect(reqSiteUrl(req), invitation.redirect))
       const newUser = await storage.createUser(newUserDraft, user)
       if (departments.length > 0) {
         for (const deptId of departments) {
@@ -140,11 +140,13 @@ router.post('', async (req, res, next) => {
       debug('send email with link to createUser step', linkUrl.href)
       const params = {
         link: linkUrl.href,
-        organization: invitTargetLabel
+        organization: invitTargetLabel,
+        secondaryHost: new URL(reboundRedirect.href).host
       }
+      const mailKey = params.secondaryHost !== new URL(linkUrl.href).host ? 'invitationSecondary' : 'invitation'
       // send the mail either if the user does not exist or it was created more that 24 hours ago
       if (!query.skip_mail && (!existingUser || query.force_mail || (existingUser.created && dayjs().diff(dayjs(existingUser.created.date), 'day', true) > 1))) {
-        await sendMailI18n('invitation', reqI18n(req).messages, body.email, params)
+        await sendMailI18n(mailKey, reqI18n(req).messages, body.email, params)
         eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${departments.join(',')}`, logContext)
       }
 
@@ -167,11 +169,13 @@ router.post('', async (req, res, next) => {
     linkUrl.searchParams.set('invit_token', token)
     const params = {
       link: linkUrl.href,
-      organization: invitTargetLabel
+      organization: invitTargetLabel,
+      secondaryHost: reboundRedirect.host
     }
+    const mailKey = params.secondaryHost !== new URL(linkUrl.href).host ? 'invitationSecondary' : 'invitation'
     if (!query.skip_mail) {
       debug('send invitation email', body.email, params)
-      await sendMailI18n('invitation', reqI18n(req).messages, body.email, params)
+      await sendMailI18n(mailKey, reqI18n(req).messages, body.email, params)
       eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${departments.join(',')}`, logContext)
     }
 
