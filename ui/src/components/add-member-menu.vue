@@ -66,7 +66,7 @@
               v-if="$uiConfig.manageDepartments && orga.departments && orga.departments.length && !department"
               v-model="invitation.departments"
               :items="orga.departments"
-              :label="orga.departmentLabel || $t('common.department')"
+              :label="orga.departmentLabel || $t('common.departments')"
               item-value="id"
               item-title="name"
               name="departments"
