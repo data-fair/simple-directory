@@ -213,7 +213,7 @@ describe('invitations', () => {
     const mailPromise = waitForMail()
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep1', role: 'user' })
     const mail = await mailPromise
-    assert.equal(mail.subject, `Rejoignez l'organisation test / Department 1 sur ${new URL(config.publicUrl).host}`)
+    assert.equal(mail.subject, `Rejoignez l'organisation test (Department 1) sur ${new URL(config.publicUrl).host}`)
     assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
     // before accepting the user is not yet member
@@ -283,7 +283,7 @@ describe('invitations', () => {
     const mailPromise = waitForMail()
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit-multi-dep2@test.com', departments: ['dep1', 'dep3'], role: 'user' })
     const mail = await mailPromise
-    assert.equal(mail.subject, `Rejoignez l'organisation test-multi-dep / Department 1, Department 3 sur ${new URL(config.publicUrl).host}`)
+    assert.equal(mail.subject, `Rejoignez l'organisation test-multi-dep (Department 1, Department 3) sur ${new URL(config.publicUrl).host}`)
     assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
     // before accepting the user is not yet member

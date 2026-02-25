@@ -68,7 +68,7 @@ router.post('', async (req, res, next) => {
 
   logContext.account = { type: 'organization', id: orga.id, name: orga.name }
 
-  const invitTargetLabel = orga.name + (departmentNames.length ? ` / ${departmentNames.join(', ')}` : '')
+  const invitTargetLabel = orga.name + (departmentNames.length ? ` (${departmentNames.join(', ')})` : '')
 
   const token = await signToken(shortenInvit(invitation), config.jwtDurations.invitationToken)
 
@@ -294,7 +294,7 @@ router.get('/_accept', async (req, res, next) => {
     if (!dept) return res.status(404).send('unknown department: ' + deptId)
     newDepartmentsNames.push(dept.name || dept.id)
   }
-  const invitTargetLabel = orga.name + (newDepartmentsNames.length ? ` / ${newDepartmentsNames.join(', ')}` : '')
+  const invitTargetLabel = orga.name + (newDepartmentsNames.length ? ` (${newDepartmentsNames.join(', ')})` : '')
 
   const limits = await getOrgLimits(orga)
   if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {

@@ -188,7 +188,7 @@ router.post('', async (req, res, next) => {
     } else {
       await storage.addMember(orga, createdUser, invit.role, undefined)
     }
-    const invitTargetLabel = orga.name + (invitDepartmentNames.length ? ` / ${invitDepartmentNames.join(', ')}` : '')
+    const invitTargetLabel = orga.name + (invitDepartmentNames.length ? ` (${invitDepartmentNames.join(', ')})` : '')
     eventsQueue?.pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitDepartments[0] },
       topic: { key: 'simple-directory:invitation-accepted' },

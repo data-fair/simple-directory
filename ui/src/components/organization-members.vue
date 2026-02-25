@@ -142,7 +142,7 @@
                   <resend-invitation
                     :member="member"
                     :orga="orga"
-                    :department="adminDepartment"
+                    :invit-departments="members.results.filter(m => m.id === member.id).map(m => m.department).filter(Boolean)"
                   />
                 </span>
               </template>
