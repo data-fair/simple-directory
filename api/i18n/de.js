@@ -420,6 +420,24 @@ Wenn Sie noch kein Konto haben, wird es automatisch erstellt.
       htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
       htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.'
     },
+    invitationSecondary: {
+      subject: 'Treten Sie der {organization} am {host} bei.',
+      text: `
+Sie wurden von einem Administrator der {organization} eingeladen, ihr beizutreten auf {host} um auf {secondaryHost} zuzugreifen. Um diese Einladung anzunehmen, kopieren Sie die untenstehende URL in einen Browser. Diese URL ist 10 Tage lang gültig.
+Wenn Sie noch kein Konto haben, wird es automatisch erstellt.
+
+{link}
+
+Falls Sie Probleme mit Ihrem Konto haben oder diese Einladung verdächtig finden, zögern Sie bitte nicht, uns unter {contact} zu kontaktieren.
+      `,
+      htmlMsg: `
+Sie wurden von einem Administrator der {organization} eingeladen, ihr beizutreten auf <b>{host}</b> um auf {secondaryHost} zuzugreifen. Um diese Einladung anzunehmen, klicken Sie auf die Schaltfläche unten. Der Link ist 10 Tage lang gültig.
+Wenn Sie noch kein Konto haben, wird es automatisch erstellt.
+      `,
+      htmlButton: 'Nehmen Sie die Einladung an',
+      htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
+      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.'
+    },
     partnerInvitation: {
       subject: 'Die Organisation {organization} auf {host} möchte {partner} als Partner hinzufügen',
       text: `

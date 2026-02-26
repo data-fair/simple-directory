@@ -14,8 +14,8 @@ const createRedirects = (account: AccountKeys) => {
 
   const invitationPath = $uiConfig.invitationRedirect?.startsWith('/') ? $uiConfig.invitationRedirect : '/me/account'
   const getFullRedirect = (host: string) => {
-    if (redirect.value?.startsWith('https://' + host)) return redirect.value
-    return 'https://' + host + invitationPath
+    if (redirect.value?.startsWith(window.location.protocol + '//' + host)) return redirect.value
+    return window.location.protocol + '//' + host + invitationPath
   }
 
   const mainRedirect = computed(() => {

@@ -422,6 +422,24 @@ Se non si dispone ancora di un account, questo verrà creato automaticamente.
       htmlAlternativeLink: 'Se il pulsante di cui sopra non funziona, è possibile copiare questo link nella barra degli indirizzi del browser:',
       htmlCaption: 'Se incontrate un problema con il vostro conto o trovate questo invito sospettoso, contattateci a <a href="mailto:{contact}">{contact}</a>.'
     },
+    invitationSecondary: {
+      subject: 'Unisciti alla {organization} su {host}.',
+      text: `
+Siete stati invitati da un amministratore di {organization} a partecipare su {host} per accedere a {secondaryHost}. Per accettare questo invito, copiare l'URL sottostante in un browser. Questo URL è valido per 10 giorni.
+Se non si dispone ancora di un account, questo verrà creato automaticamente.
+
+{link}
+
+Se incontrate problemi con il vostro account o trovate questo invito sospettoso, non esitate a contattarci a {contact}.
+      `,
+      htmlMsg: `
+Siete stati invitati da un amministratore di {organization} a partecipare su <b>{host}</b> per accedere a {secondaryHost}. Per accettare questo invito clicca il pulsante qui sotto. Il link è valido per 10 giorni.
+Se non si dispone ancora di un account, questo verrà creato automaticamente.
+      `,
+      htmlButton: 'Accetta l\'invito',
+      htmlAlternativeLink: 'Se il pulsante di cui sopra non funziona, è possibile copiare questo link nella barra degli indirizzi del browser:',
+      htmlCaption: 'Se incontrate un problema con il vostro conto o trovate questo invito sospettoso, contattateci a <a href="mailto:{contact}">{contact}</a>.'
+    },
     partnerInvitation: {
       subject: 'L\'organizzazione {organization} su {host} vuole aggiungere {partner} come partner',
       text: `

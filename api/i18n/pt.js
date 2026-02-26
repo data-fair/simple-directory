@@ -419,7 +419,25 @@ Se ainda não tiver uma conta, esta será criada automaticamente.
       `,
       htmlButton: 'Aceitar o convite',
       htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
-      htmlCaption: 'Se encontrar um problema com a sua conta ou achar este convite suspeito, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'Se encontrar um problema com a sua conta ou se achou este convite suspeito, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.'
+    },
+    invitationSecondary: {
+      subject: 'Junte-se à {organization} em {host}.',
+      text: `
+Foi convidado por um administrador da {organization} a juntar-se a ela em {host} para aceder a {secondaryHost}. Para aceitar este convite, copie o URL abaixo para um browser. Este URL é válido por 10 dias.
+Se ainda não tiver uma conta, esta será criada automaticamente.
+
+{link}
+
+Se encontrar algum problema com a sua conta ou se achou este convite suspeito, não hesite em contactar-nos em {contact}.
+      `,
+      htmlMsg: `
+Foi convidado por um administrador da {organization} a juntar-se a ela em <b>{host}</b> para aceder a {secondaryHost}. Para aceitar este convite, clique no botão abaixo. A ligação é válida por 10 dias.
+Se ainda não tiver uma conta, esta será criada automaticamente.
+      `,
+      htmlButton: 'Aceitar o convite',
+      htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
+      htmlCaption: 'Se encontrar um problema com a sua conta ou se achou este convite suspeito, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.'
     },
     partnerInvitation: {
       subject: 'A organização {organization} em {host} quer adicionar {partner} como parceiro',

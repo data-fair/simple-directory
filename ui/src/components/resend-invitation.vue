@@ -43,10 +43,10 @@
             density="compact"
           />
           <v-select
-            v-if="invitation.department"
-            v-model="invitation.department"
+            v-if="invitation.departments?.length"
+            v-model="invitation.departments"
             :items="orga.departments"
-            :label="orga.departmentLabel || $t('common.department')"
+            :label="orga.departmentLabel || $t('common.departments')"
             item-value="id"
             item-title="name"
             disabled
@@ -100,9 +100,10 @@
 </template>
 
 <script setup lang="ts">
-const { orga, member } = defineProps({
+const { orga, member, invitDepartments } = defineProps({
   orga: { type: Object as () => Organization, required: true },
-  member: { type: Object as () => Member, required: true }
+  member: { type: Object as () => Member, required: true },
+  invitDepartments: { type: Array as () => string[], required: true }
 })
 const emit = defineEmits({ sent: (_invit: Invitation) => true })
 
@@ -123,7 +124,7 @@ const newInvitation = () => {
     email: member.email,
     role: member.role
   }
-  if (member.department) invit.department = member.department
+  if (invitDepartments.length) invit.departments = invitDepartments
   return invit
 }
 const invitation = ref(newInvitation())

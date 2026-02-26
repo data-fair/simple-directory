@@ -15,10 +15,14 @@
       "type": "string"
     },
     "department": {
-      "type": "string"
+      "type": "string",
+      "description": "Department ID to add the user to",
+      "deprecated": true
     },
-    "departmentName": {
-      "type": "string"
+    "departments": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Array of department IDs to add the user to"
     },
     "redirect": {
       "type": "string"

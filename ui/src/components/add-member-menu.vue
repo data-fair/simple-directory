@@ -64,12 +64,13 @@
             />
             <v-autocomplete
               v-if="$uiConfig.manageDepartments && orga.departments && orga.departments.length && !department"
-              v-model="invitation.department"
+              v-model="invitation.departments"
               :items="orga.departments"
-              :label="orga.departmentLabel || $t('common.department')"
+              :label="orga.departmentLabel || $t('common.departments')"
               item-value="id"
               item-title="name"
-              name="department"
+              name="departments"
+              multiple
               clearable
               variant="outlined"
               density="compact"
@@ -148,7 +149,7 @@ const createInvitation = () => ({
   name: orga.name,
   email: '',
   role: null,
-  department,
+  departments: department ? [department] : [],
   redirect: defaultRedirect.value?.value
 })
 const invitation = ref<ReturnType<typeof createInvitation>>()

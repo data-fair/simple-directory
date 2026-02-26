@@ -923,7 +923,7 @@ if (actionPayload && actionPayload.action === 'changePassword') {
 } else if (invitPayload) {
   createUserStep()
   orgId = invitPayload.id
-  depId = invitPayload.d
+  depId = invitPayload.ds?.length ? invitPayload.ds[0] : invitPayload.d
   email.value = invitPayload.e
 } else if (plannedDeletion) {
   step.value = 'plannedDeletion'

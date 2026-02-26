@@ -425,6 +425,22 @@ If you encounter a problem with your account or if you find this invitation susp
       htmlAlternativeLink: 'If the button doesn\'t work, you can copy/paste this link in the address bar of your browser:',
       htmlCaption: 'If you encounter a problem with your account or if you find this invitation suspicious feel free to contact us at <a href="mailto:{contact}">{contact}</a>.'
     },
+    invitationSecondary: {
+      subject: 'Join the organization {organization} on {host}',
+      text: `
+An administrator from the organization {organization} invited you to join on {host} to access {secondaryHost}. To accept this invitation copy the URL below in the address bar of your Web browser.
+
+{link}
+
+If you encounter a problem with your account or if you find this invitation suspicious feel free to contact us at {contact}.
+      `,
+      htmlMsg: `
+      An administrator from the organization {organization} invited you to join on <b>{host}</b> to access {secondaryHost}. To accept this invitation click on the button below.
+      `,
+      htmlButton: 'Accept the invitation',
+      htmlAlternativeLink: 'If the button doesn\'t work, you can copy/paste this link in the address bar of your browser:',
+      htmlCaption: 'If you encounter a problem with your account or if you find this invitation suspicious feel free to contact us at <a href="mailto:{contact}">{contact}</a>.'
+    },
     partnerInvitation: {
       subject: 'The organization {organization} on {host} wants to add {partner} as a partner',
       text: `

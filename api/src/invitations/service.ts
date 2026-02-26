@@ -11,8 +11,8 @@ const mapping = [
   ['e', 'email'],
   ['r', 'role'],
   ['d', 'department'],
-  ['dn', 'departmentName'],
-  ['rd', 'redirect']
+  ['rd', 'redirect'],
+  ['ds', 'departments']
 ]
 
 // prepare a smaller version of the invitation object to minimize token size

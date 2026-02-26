@@ -213,7 +213,7 @@ describe('invitations', () => {
     const mailPromise = waitForMail()
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep1', role: 'user' })
     const mail = await mailPromise
-    assert.equal(mail.subject, `Rejoignez l'organisation test / Department 1 sur ${new URL(config.publicUrl).host}`)
+    assert.equal(mail.subject, `Rejoignez l'organisation test (Department 1) sur ${new URL(config.publicUrl).host}`)
     assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
     // before accepting the user is not yet member
@@ -271,6 +271,51 @@ describe('invitations', () => {
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
     assert.equal(members.length, 3)
     assert.equal(members.filter(m => m.email === 'test-invit10@test.com').length, 2)
+  })
+
+  it('should invite a new user in multiple departments with single email', async () => {
+    const config = (await import('../api/src/config.ts')).default
+    const { ax } = await createUser('test-invit-multi-dep1@test.com')
+    const anonymousAx = await axios()
+
+    const org = (await ax.post('/api/organizations', { name: 'test-multi-dep', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }, { id: 'dep3', name: 'Department 3' }] })).data
+    ax.setOrg(org.id)
+    const mailPromise = waitForMail()
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit-multi-dep2@test.com', departments: ['dep1', 'dep3'], role: 'user' })
+    const mail = await mailPromise
+    assert.equal(mail.subject, `Rejoignez l'organisation test-multi-dep (Department 1, Department 3) sur ${new URL(config.publicUrl).host}`)
+    assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
+
+    // before accepting the user is not yet member
+    let members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.equal(members.length, 1)
+
+    // when clicking on the link the person is redirected to a page to create their user
+    let redirect: string | undefined
+    await assert.rejects(anonymousAx.get(mail.link), (res: any) => {
+      assert.equal(res.status, 302)
+      redirect = res.headers.location
+      return true
+    })
+    const invitToken = new URL(redirect ?? '').searchParams.get('invit_token')
+
+    // create user and accept invitation
+    await anonymousAx.post('/api/users', { email: 'test-invit-multi-dep2@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    console.log('members', members)
+    assert.equal(members.length, 3)
+    const newMember = members.find(m => m.email === 'test-invit-multi-dep2@test.com')
+    assert.ok(newMember)
+    assert.ok(newMember.emailConfirmed)
+    assert.equal(newMember.role, 'user')
+
+    // user should be member of both departments
+    const memberDepts = members.filter(m => m.email === 'test-invit-multi-dep2@test.com')
+    assert.equal(memberDepts.length, 2)
+    const deptIds = memberDepts.map(m => m.department).sort()
+    assert.deepEqual(deptIds, ['dep1', 'dep3'])
+    const deptNames = memberDepts.map(m => m.departmentName).sort()
+    assert.deepEqual(deptNames, ['Department 1', 'Department 3'])
   })
 
   it('should invite an existing user on another site', async () => {
