@@ -282,7 +282,8 @@ module.exports = {
     extraParams: {}
   },
   maildev: {
-    active: false
+    active: false,
+    url: 'http://localhost:1080'
   },
   quotas: {
     defaultMaxCreatedOrgs: -1,
