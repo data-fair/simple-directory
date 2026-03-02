@@ -106,7 +106,7 @@ export const logout = async (req: Request, res: Response) => {
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
 // the header and payload are not httpOnly to be readable by client
 // all cookies use sameSite for CSRF prevention
-export const setSessionCookies = async (req: Request, res: Response, payload: SessionUser, serverSessionId: string | null, userOrg?: OrganizationMembership, options?: { skipExchangeToken?: boolean }) => {
+export const setSessionCookies = async (req: Request, res: Response, sitePath: string, payload: SessionUser, serverSessionId: string | null, userOrg?: OrganizationMembership, options?: { skipExchangeToken?: boolean }) => {
   const cookies = new Cookies(req, res, { secure })
   // cf https://www.npmjs.com/package/jsonwebtoken#token-expiration-exp-claim
   const date = Date.now()
@@ -114,7 +114,6 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
   const exchangeExp = Math.floor(date / 1000) + jwtDurations.exchangeToken
   const token = await signToken(payload, exp)
   const parts = token.split('.')
-  const sitePath = reqSitePath(req)
   const opts: Cookies.SetOption = { sameSite: 'lax', path: sitePath + '/' }
   const deleteOpts = { path: sitePath + '/', expires: new Date(0) }
   if (payload.rememberMe) opts.expires = new Date(exchangeExp * 1000)
@@ -133,7 +132,6 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
     cookies.set('id_token_role', '', deleteOpts)
   }
 
-  const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
   const existingExchangeToken = cookies.get('id_token_ex')
   let existingServerSessionInfo: SessionInfoPayload | undefined
   if (existingExchangeToken) {
@@ -162,6 +160,7 @@ export const setSessionCookies = async (req: Request, res: Response, payload: Se
   if (options?.skipExchangeToken) {
     cookies.set('id_token_ex', '', { ...deleteOpts, path: sitePath + '/simple-directory/', httpOnly: true })
   } else {
+    const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
     const exchangeToken = await signToken(sessionInfo, exchangeExp)
     cookies.set('id_token_ex', exchangeToken, exchangeCookieOpts)
   }
@@ -284,7 +283,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
       return true
     })
   }
-  await setSessionCookies(req, res, payload, serverSessionInfo.session, userOrg)
+  await setSessionCookies(req, res, reqSitePath(req), payload, serverSessionInfo.session, userOrg)
 
   eventsLog.info('sd.auth.keepalive.ok', 'a session was successfully prolongated', logContext)
 }

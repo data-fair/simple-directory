@@ -2,8 +2,10 @@ process.env.IGNORE_ASSERT_REQ_INTERNAL = 'true'
 
 import { strict as assert } from 'node:assert'
 import { it, describe, before, beforeEach, after } from 'node:test'
-import { axios, clean, startApiServer, stopApiServer } from './utils/index.ts'
+import { axios, clean, devApiUrl, startApiServer, stopApiServer } from './utils/index.ts'
 import { CookieJar } from 'tough-cookie'
+
+const ax = await axios({ baseURL: devApiUrl })
 
 describe('Pseudo session', () => {
   before(startApiServer)
@@ -11,7 +13,6 @@ describe('Pseudo session', () => {
   after(stopApiServer)
 
   it('Create pseudo session for a user', async () => {
-    const ax = await axios()
     const res = await ax.post('/api/auth/pseudo?key=testkey', {
       type: 'user',
       id: 'dmeadus0'
@@ -42,8 +43,6 @@ describe('Pseudo session', () => {
   })
 
   it('Create pseudo session for an organization', async () => {
-    const ax = await axios()
-
     const res = await ax.post('/api/auth/pseudo?key=testkey', {
       type: 'organization',
       id: 'KWqAGZ4mG',
@@ -75,51 +74,22 @@ describe('Pseudo session', () => {
   })
 
   it('Fail without secret key', async () => {
-    const ax = await axios()
-    let caughtError: any = null
-    try {
-      await ax.post('/api/auth/pseudo', { type: 'user', id: 'test' })
-    } catch (err: any) {
-      caughtError = err
-    }
-    assert.equal(caughtError.status, 401)
+    await assert.rejects(ax.post('/api/auth/pseudo', { type: 'user', id: 'test' }), { status: 401 })
   })
 
   it('Fail with wrong secret key', async () => {
-    const ax = await axios()
-    let caughtError: any = null
-    try {
-      await ax.post('/api/auth/pseudo?key=wrongkey', { type: 'user', id: 'test' })
-    } catch (err: any) {
-      caughtError = err
-    }
-    assert.equal(caughtError.status, 401)
+    await assert.rejects(ax.post('/api/auth/pseudo?key=wrongkey', { type: 'user', id: 'test' }), { status: 401 })
   })
 
   it('Fail with non-existent user', async () => {
-    const ax = await axios()
-    let caughtError: any = null
-    try {
-      await ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'nonexistent' })
-    } catch (err: any) {
-      caughtError = err
-    }
-    assert.equal(caughtError.status, 404)
+    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'nonexistent' }), { status: 404 })
   })
 
   it('Fail with non-existent organization', async () => {
-    const ax = await axios()
-    let caughtError: any = null
-    try {
-      await ax.post('/api/auth/pseudo?key=testkey', { type: 'organization', id: 'nonexistent' })
-    } catch (err: any) {
-      caughtError = err
-    }
-    assert.equal(caughtError.status, 404)
+    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'organization', id: 'nonexistent' }), { status: 404 })
   })
 
   it('Pseudo session cannot keepalive', async () => {
-    const ax = await axios()
     const res = await ax.post('/api/auth/pseudo?key=testkey', {
       type: 'user',
       id: 'dmeadus0'
@@ -147,17 +117,7 @@ describe('Pseudo session', () => {
   it('Fail without internal request validation (external request)', async () => {
     const originalValue = process.env.IGNORE_ASSERT_REQ_INTERNAL
     delete process.env.IGNORE_ASSERT_REQ_INTERNAL
-
-    const ax = await axios()
-    let caughtError: any = null
-    try {
-      await ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'dmeadus0' })
-    } catch (err: any) {
-      caughtError = err
-    }
-
+    await assert.rejects(axios().post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'dmeadus0' }), { status: 421 })
     process.env.IGNORE_ASSERT_REQ_INTERNAL = originalValue
-
-    assert.equal(caughtError.status, 421)
   })
 })

@@ -1,7 +1,7 @@
 import config, { superadmin } from '#config'
 import mongo from '#mongo'
 import { Router, type RequestHandler } from 'express'
-import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, reqSession, reqSessionAuthenticated, assertReqInternalSecret } from '@data-fair/lib-express'
+import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, reqSession, reqSessionAuthenticated, assertReqInternalSecret, reqSitePath } from '@data-fair/lib-express'
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
@@ -229,7 +229,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     const serverSession = initServerSession(req)
     await storage.addUserSession(user.id, serverSession)
     await confirmLog(storage, user, serverSession)
-    await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, site, orgId, depId))
+    await setSessionCookies(req, res, reqSitePath(req), payload, serverSession.id, getDefaultUserOrg(user, site, orgId, depId))
     debug(`Password based authentication of user ${user.name}, form mode`)
     res.redirect(getDefaultLoginRedirect(reqSiteUrl(req), query.redirect))
   } else {
@@ -373,7 +373,7 @@ router.get('/token_callback', async (req, res, next) => {
   await storage.addUserSession(user.id, serverSession)
 
   await confirmLog(storage, user, serverSession)
-  await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, site, query.id_token_org, query.id_token_dep, query.id_token_role))
+  await setSessionCookies(req, res, reqSitePath(req), payload, serverSession.id, getDefaultUserOrg(user, site, query.id_token_org, query.id_token_dep, query.id_token_role))
 
   eventsLog.info('sd.auth.callback.ok', 'a session was initialized after successful auth', logContext)
 
@@ -602,7 +602,7 @@ router.post('/asadmin', async (req, res, next) => {
   payload.asAdminOrg = session.organization
   delete payload.isAdmin
   debug(`Exchange session token for user ${user.name} from an admin session`)
-  await setSessionCookies(req, res, payload, null, getDefaultUserOrg(user, site))
+  await setSessionCookies(req, res, reqSitePath(req), payload, null, getDefaultUserOrg(user, site))
 
   eventsLog.info('sd.auth.asadmin.ok', 'a session was created as a user from an admin session', logContext)
 
@@ -620,7 +620,7 @@ router.delete('/asadmin', async (req, res, next) => {
   const payload = getTokenPayload(user, site)
   if (user.isAdmin) payload.adminMode = 1
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
-  await setSessionCookies(req, res, payload, null, loggedUser.asAdminOrg ?? getDefaultUserOrg(user, site))
+  await setSessionCookies(req, res, reqSitePath(req), payload, null, loggedUser.asAdminOrg ?? getDefaultUserOrg(user, site))
 
   eventsLog.info('sd.auth.asadmin.done', 'a session as a user from an admin session was terminated', logContext)
 
@@ -948,7 +948,7 @@ router.post('/apps/login', async (req, res) => {
   const payload = getTokenPayload(user, site)
 
   await confirmLog(storage, user, serverSession)
-  await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, site))
+  await setSessionCookies(req, res, reqSitePath(req), payload, serverSession.id, getDefaultUserOrg(user, site))
 
   res.send(user)
 })
@@ -972,7 +972,7 @@ router.post('/pseudo', async (req, res) => {
     const serverSession = initServerSession(req)
     await storage.addUserSession(user.id, serverSession)
 
-    await setSessionCookies(req, res, payload, serverSession.id, undefined, { skipExchangeToken: true })
+    await setSessionCookies(req, res, '', payload, serverSession.id, undefined, { skipExchangeToken: true })
 
     res.send({ user: { id: user.id, email: user.email, name: user.name }, pseudoSession: true })
   } else if (type === 'organization') {
@@ -992,14 +992,13 @@ router.post('/pseudo', async (req, res) => {
       }]
     }
 
-    const site = await reqSite(req)
-    const payload = getTokenPayload(pseudoUser as any, site)
-    ;(payload as any).pseudoSession = true
+    const payload = getTokenPayload(pseudoUser) as any
+    payload.pseudoSession = true
 
     const serverSession = initServerSession(req)
     await storage.addUserSession(pseudoUser.id, serverSession)
 
-    await setSessionCookies(req, res, payload, serverSession.id, pseudoUser.organizations[0], { skipExchangeToken: true })
+    await setSessionCookies(req, res, '', payload, serverSession.id, pseudoUser.organizations[0], { skipExchangeToken: true })
 
     res.send({ organization: { id: org.id, name: org.name, role: role || 'admin' }, pseudoSession: true })
   } else {
