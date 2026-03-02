@@ -966,14 +966,13 @@ router.post('/pseudo', async (req, res) => {
     const user = await storage.getUser(id)
     if (!user) return res.status(404).send('User not found')
 
-    const site = await reqSite(req)
-    const payload = getTokenPayload(user, site)
-    ;(payload as any).pseudoSession = true
+    const payload = getTokenPayload(user) as any
+    payload.pseudoSession = true
 
     const serverSession = initServerSession(req)
     await storage.addUserSession(user.id, serverSession)
 
-    await setSessionCookies(req, res, payload, serverSession.id, getDefaultUserOrg(user, site), { skipExchangeToken: true })
+    await setSessionCookies(req, res, payload, serverSession.id, undefined, { skipExchangeToken: true })
 
     res.send({ user: { id: user.id, email: user.email, name: user.name }, pseudoSession: true })
   } else if (type === 'organization') {
