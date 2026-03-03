@@ -438,7 +438,7 @@ Un administrateur de l'organisation {organization} vous a invité à la rejoindr
 Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à {contact}.
       `,
       htmlMsg: `
-Un administrateur de l'organisation {organization} vous a invité à la rejoindre sur <b>{host}</b> pour accéder à {secondaryHost}. Pour accepter cette invitation cliquez sur le bouton ci-dessous. Le lien est valide 10 jours.
+Un administrateur de l'organisation {organization} vous a invité à la rejoindre sur {host} pour accéder à <b>{secondaryHost}</b>. Pour accepter cette invitation cliquez sur le bouton ci-dessous. Le lien est valide 10 jours.
       `,
       htmlButton: 'Accepter l\'invitation',
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',

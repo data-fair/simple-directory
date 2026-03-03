@@ -431,7 +431,7 @@ Wenn Sie noch kein Konto haben, wird es automatisch erstellt.
 Falls Sie Probleme mit Ihrem Konto haben oder diese Einladung verdächtig finden, zögern Sie bitte nicht, uns unter {contact} zu kontaktieren.
       `,
       htmlMsg: `
-Sie wurden von einem Administrator der {organization} eingeladen, ihr beizutreten auf <b>{host}</b> um auf {secondaryHost} zuzugreifen. Um diese Einladung anzunehmen, klicken Sie auf die Schaltfläche unten. Der Link ist 10 Tage lang gültig.
+Sie wurden von einem Administrator der {organization} eingeladen, ihr beizutreten auf {host} um auf <b>{secondaryHost}</b> zuzugreifen. Um diese Einladung anzunehmen, klicken Sie auf die Schaltfläche unten. Der Link ist 10 Tage lang gültig.
 Wenn Sie noch kein Konto haben, wird es automatisch erstellt.
       `,
       htmlButton: 'Nehmen Sie die Einladung an',

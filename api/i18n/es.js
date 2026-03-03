@@ -432,7 +432,7 @@ Si aún no tiene una cuenta, se creará automáticamente.
 Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no dude en contactarnos en {contact}.
       `,
       htmlMsg: `
-Un administrador de la organización {organization} lo ha invitado a unirse en <b>{host}</b> para acceder a {secondaryHost}. Para aceptar esta invitación, haga clic en el botón de abajo. El enlace es válido por 10 días.
+Un administrador de la organización {organization} lo ha invitado a unirse en {host} para acceder a <b>{secondaryHost}</b>. Para aceptar esta invitación, haga clic en el botón de abajo. El enlace es válido por 10 días.
 Si aún no tiene una cuenta, se creará automáticamente.
       `,
       htmlButton: 'Aceptar la invitacion',

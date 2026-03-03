@@ -432,7 +432,7 @@ Se ainda não tiver uma conta, esta será criada automaticamente.
 Se encontrar algum problema com a sua conta ou se achou este convite suspeito, não hesite em contactar-nos em {contact}.
       `,
       htmlMsg: `
-Foi convidado por um administrador da {organization} a juntar-se a ela em <b>{host}</b> para aceder a {secondaryHost}. Para aceitar este convite, clique no botão abaixo. A ligação é válida por 10 dias.
+Foi convidado por um administrador da {organization} a juntar-se a ela em {host} para aceder a <b>{secondaryHost}</b>. Para aceitar este convite, clique no botão abaixo. A ligação é válida por 10 dias.
 Se ainda não tiver uma conta, esta será criada automaticamente.
       `,
       htmlButton: 'Aceitar o convite',

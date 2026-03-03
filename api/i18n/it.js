@@ -433,7 +433,7 @@ Se non si dispone ancora di un account, questo verrà creato automaticamente.
 Se incontrate problemi con il vostro account o trovate questo invito sospettoso, non esitate a contattarci a {contact}.
       `,
       htmlMsg: `
-Siete stati invitati da un amministratore di {organization} a partecipare su <b>{host}</b> per accedere a {secondaryHost}. Per accettare questo invito clicca il pulsante qui sotto. Il link è valido per 10 giorni.
+Siete stati invitati da un amministratore di {organization} a partecipare su {host} per accedere a <b>{secondaryHost}</b>. Per accettare questo invito clicca il pulsante qui sotto. Il link è valido per 10 giorni.
 Se non si dispone ancora di un account, questo verrà creato automaticamente.
       `,
       htmlButton: 'Accetta l\'invito',

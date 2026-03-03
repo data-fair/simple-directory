@@ -435,7 +435,7 @@ An administrator from the organization {organization} invited you to join on {ho
 If you encounter a problem with your account or if you find this invitation suspicious feel free to contact us at {contact}.
       `,
       htmlMsg: `
-      An administrator from the organization {organization} invited you to join on <b>{host}</b> to access {secondaryHost}. To accept this invitation click on the button below.
+      An administrator from the organization {organization} invited you to join on {host} to access <b>{secondaryHost}</b>. To accept this invitation click on the button below.
       `,
       htmlButton: 'Accept the invitation',
       htmlAlternativeLink: 'If the button doesn\'t work, you can copy/paste this link in the address bar of your browser:',
