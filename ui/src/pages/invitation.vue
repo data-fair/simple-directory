@@ -6,7 +6,7 @@
   >
     <v-row align="center">
       <v-col class="text-center">
-        <h3 class="text-h2">
+        <h3 class="text-display-small">
           {{ $t('pages.invitation.title') }}
         </h3>
 

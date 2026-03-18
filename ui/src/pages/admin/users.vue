@@ -4,7 +4,7 @@
     data-iframe-height
   >
     <v-row class="mt-3 mx-0">
-      <h2 class="text-h6 mb-3">
+      <h2 class="text-title-large mb-3">
         {{ $t('common.users') }} <span v-if="users.data.value">({{ $n(users.data.value.count) }})</span>
       </h2>
     </v-row>

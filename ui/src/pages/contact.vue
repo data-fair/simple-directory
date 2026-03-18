@@ -4,7 +4,7 @@
     :fluid="$route.query.fluid === 'true'"
     :class="{'pa-0': $route.query.fluid === 'true'}"
   >
-    <h2 class="text-h5 mb-3">
+    <h2 class="text-headline-small mb-3">
       {{ $t('common.createOrganization') }}
     </h2>
     <v-form

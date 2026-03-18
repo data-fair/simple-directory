@@ -1,6 +1,6 @@
 <template lang="html">
   <v-container data-iframe-height>
-    <h2 class="text-h5 mb-3">
+    <h2 class="text-headline-small mb-3">
       {{ $t('common.createOrganization') }}
     </h2>
     <v-form
@@ -32,6 +32,7 @@
         <v-btn
           :disabled="!valid"
           color="primary"
+          style="text-transform: uppercase"
           @click="create"
         >
           {{ $t('common.save') }}

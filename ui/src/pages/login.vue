@@ -37,10 +37,10 @@
         class="pa-2"
         border="sm"
         rounded="xl"
-        elevation="16"
+        elevation="5"
       >
         <v-card-title
-          class="text-subtitle-2"
+          class="text-label-large"
           style="white-space: normal;"
         >
           <h1 :class="{'mb-0': true, 'text-admin': adminMode}">
@@ -82,6 +82,7 @@
                 :disabled="!email"
                 color="primary"
                 variant="flat"
+                style="text-transform: uppercase"
                 @click="preLogin"
               >
                 {{ $t('common.next') }}
@@ -122,7 +123,7 @@
                 />
                 <p
                   v-if="$uiConfig.passwordless && !adminMode"
-                  class="mb-2 text-caption"
+                  class="mb-2 text-body-small"
                 >
                   {{ $t('pages.login.passwordlessMsg1') }} <a
                     tabindex="0"
@@ -241,6 +242,7 @@
                 :disabled="!email || !password || passwordAuth.loading.value"
                 :color="adminMode ? 'admin' : 'primary'"
                 variant="flat"
+                style="text-transform: uppercase"
                 @click="passwordAuth.execute()"
               >
                 {{ $t('common.login') }}
@@ -274,6 +276,7 @@
                 :disabled="!tosAccepted"
                 color="primary"
                 variant="flat"
+                style="text-transform: uppercase"
                 @click="step='createUser'"
               >
                 {{ $t('common.next') }}
@@ -413,7 +416,7 @@
               <p class="mb-2">
                 {{ $t('pages.login.createUserConfirmed', {email}) }}
               </p>
-              <p class="mb-2 text-caption">
+              <p class="mb-2 text-body-small">
                 {{ $t('common.spamWarning', {email}) }}
               </p>
             </v-card-text>
@@ -432,7 +435,7 @@
               <p class="mb-2">
                 {{ $t('pages.login.passwordlessConfirmed', {email}) }}
               </p>
-              <p class="mb-2 text-caption">
+              <p class="mb-2 text-body-small">
                 {{ $t('common.spamWarning', {email}) }}
               </p>
             </v-card-text>
@@ -451,7 +454,7 @@
               <p class="mb-2">
                 {{ $t('pages.login.changePasswordSent', {email}) }}
               </p>
-              <p class="mb-2 text-caption">
+              <p class="mb-2 text-body-small">
                 {{ $t('common.spamWarning', {email}) }}
               </p>
             </v-card-text>

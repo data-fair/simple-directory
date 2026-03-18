@@ -5,7 +5,7 @@
     :class="{'pa-0': $route.query.fluid === 'true'}"
     :style="$route.query.fluid === 'true' ? '' : 'max-width:600px;'"
   >
-    <h2 class="text-h4 mb-4">
+    <h2 class="text-headline-medium mb-4">
       <v-icon
         size="large"
         color="primary"
@@ -142,7 +142,7 @@
         </v-btn>
       </v-row>
 
-      <h2 class="text-h4 mt-10 mb-4">
+      <h2 class="text-headline-medium mt-10 mb-4">
         <v-icon
           size="small"
           color="primary"
@@ -184,7 +184,7 @@
       />
 
       <template v-if="$uiConfig.manageSessions">
-        <h2 class="text-h4 mt-10 mb-4">
+        <h2 class="text-headline-medium mt-10 mb-4">
           <v-icon
             size="small"
             color="primary"
@@ -229,7 +229,7 @@
         </v-list>
       </template>
 
-      <h2 class="text-h4 mt-10 mb-4">
+      <h2 class="text-headline-medium mt-10 mb-4">
         <v-icon
           size="small"
           color="primary"
@@ -240,7 +240,7 @@
       </h2>
 
       <template v-if="userDetailsFetch.data.value && (showIgnorePersonalAccount || defaultOrgItems.length > 1)">
-        <h2 class="text-h5 mt-8 mb-4">
+        <h2 class="text-headline-small mt-8 mb-4">
           {{ $t('pages.me.accountChanges') }}
         </h2>
         <v-checkbox
@@ -266,7 +266,7 @@
       </template>
 
       <template v-if="$uiConfig.userSelfDelete && !readonly && userDetailsFetch.data.value">
-        <h2 class="text-h5 mt-8 mb-4">
+        <h2 class="text-headline-small mt-8 mb-4">
           {{ $t('pages.me.operations') }}
         </h2>
         <confirm-menu

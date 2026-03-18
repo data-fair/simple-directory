@@ -4,7 +4,7 @@
     data-iframe-height
   >
     <v-row class="mt-3 mx-0">
-      <h2 class="text-h6 mb-3">
+      <h2 class="text-title-large mb-3">
         {{ $t('common.organizations') }} <span v-if="organizations.data.value">({{ $n(organizations.data.value.count) }})</span>
       </h2>
       <add-organization-menu

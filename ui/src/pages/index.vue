@@ -3,7 +3,7 @@
     class="index"
     data-iframe-height
   >
-    <v-container class="fill-height">
+    <v-container class="fill-height d-flex align-center flex-wrap">
       <v-row align="center">
         <v-col class="text-center">
           <img
@@ -16,7 +16,7 @@
             class="logo"
           />
 
-          <h3 class="text-h2">
+          <h3 class="text-display-small">
             {{ $t('root.title') }}
           </h3>
 

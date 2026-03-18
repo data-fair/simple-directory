@@ -30,7 +30,7 @@
         </router-link>
       </div>
       <v-toolbar-title>
-        <h1 class="text-h5 hidden-xs">
+        <h1 class="text-headline-small hidden-xs">
           {{ $t('root.title') }}
         </h1>
       </v-toolbar-title>

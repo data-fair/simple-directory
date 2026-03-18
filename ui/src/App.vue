@@ -42,7 +42,7 @@ const isLoginPage = computed(() => route.name === '/login')
 
 // const showToolbar = computed(() => !embed.value || showToolbarParam.value)
 const appClass = computed(() => {
-  if (!route.name) return ''
+  if (!route.name || typeof route.name !== 'string') return ''
   return 'page' + route.name.replace(/\//g, '')
 })
 
@@ -89,6 +89,18 @@ const appClass = computed(() => {
 </script>
 
 <style>
+@layer vuetify-core.reset {
+  h1, h2, h3, h4, h5, h6 {
+    padding: 0;
+    margin: 0;
+  }
+}
+
+/* Restore button text casing after Vuetify 4 removed default uppercase */
+.v-btn {
+  text-transform: capitalize;
+}
+
 body .v-application .logo-container {
   height: 100%;
   padding: 4px;
