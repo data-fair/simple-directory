@@ -22,7 +22,7 @@
 
           <v-divider class="my-3" />
 
-          <span class="subheading">{{ $t('root.description') }}</span>
+          <span class="text-subtitle-1">{{ $t('root.description') }}</span>
         </v-col>
       </v-row>
     </v-container>
