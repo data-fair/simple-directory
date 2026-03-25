@@ -147,6 +147,50 @@ describe('External Apps Authorization Flow', () => {
     assert.match(authorizeRes.data, /Not authenticated/)
   })
 
+  it('should fall back to global applications when site has no applications', async () => {
+    const config = (await import('../api/src/config.ts')).default
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const org = (await adminAx.post('/api/organizations', { name: 'Site Org Fallback' })).data
+    const port = new URL(adminAx.defaults.baseURL || '').port
+    const siteHost = `127.0.0.1:${port}`
+
+    const originalApps = config.applications
+    config.applications = [{
+      id: 'global-app',
+      name: 'Global App',
+      redirectUris: ['native-app://global-callback']
+    }]
+
+    try {
+      const anonymousAx = await axios()
+      await anonymousAx.post('/api/sites',
+        {
+          _id: 'test-site-fallback',
+          owner: { type: 'organization', id: org.id, name: org.name },
+          host: siteHost,
+          theme: { primaryColor: '#000000' }
+        },
+        { params: { key: config.secretKeys.sites } }
+      )
+
+      await adminAx.patch('/api/sites/test-site-fallback', { authMode: 'onlyLocal' });
+      (await import('../api/src/sites/service.ts')).getSiteByHost.clear()
+
+      const siteAx = await axios({ baseURL: `http://${siteHost}/simple-directory` })
+
+      // Should find global-app via fallback
+      const authorizeRes = await siteAx.get(
+        '/api/auth/apps/authorize?client_id=global-app&redirect_uri=native-app://global-callback',
+        { maxRedirects: 0, validateStatus: (status) => status === 302 }
+      )
+      const loginRedirectUrl = new URL(authorizeRes.headers.location)
+      assert.equal(loginRedirectUrl.searchParams.get('client_id'), 'global-app')
+      assert.equal(loginRedirectUrl.searchParams.get('client_name'), 'Global App')
+    } finally {
+      config.applications = originalApps
+    }
+  })
+
   it('should reject invalid client_id', async () => {
     const config = (await import('../api/src/config.ts')).default
     const { ax: adminAx } = await createUser('admin@test.com', true)

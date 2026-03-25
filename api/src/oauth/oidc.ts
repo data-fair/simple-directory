@@ -11,13 +11,16 @@ const slug = _slug.default
 const debug = Debug('oauth')
 
 export const getOidcProviderId = (url: string) => {
-  let host = url
+  let base = url
   try {
-    host = new URL(url).host
+    const u = new URL(url)
+    let path = u.pathname.replace(/\/\.well-known\/openid-configuration\/?$/, '')
+    path = path.replace(/\/$/, '')
+    base = u.host + path
   } catch (err) {
-    console.warn('invalide oauth provider url', url)
+    console.warn('invalid oauth provider url', url)
   }
-  return slug(host, { lower: true, strict: true })
+  return slug(base, { lower: true, strict: true })
 }
 
 export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProvider> {

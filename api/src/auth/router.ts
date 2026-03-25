@@ -868,7 +868,7 @@ router.get('/apps/authorize', async (req, res) => {
 
   const site = await reqSite(req)
   let client = (site?.applications || []).find(c => c.id === clientId)
-  if (!client && !site) {
+  if (!client && (!site || !site.applications?.length)) {
     client = (config.applications || []).find(c => c.id === clientId)
   }
   if (!client) return res.status(400).send('Unknown client_id')
@@ -896,7 +896,7 @@ router.post('/apps/authorize', async (req, res) => {
 
   const site = await reqSite(req)
   let client = (site?.applications || []).find(c => c.id === clientId)
-  if (!client && !site) {
+  if (!client && (!site || !site.applications?.length)) {
     client = (config.applications || []).find(c => c.id === clientId)
   }
   if (!client) return res.status(400).send('Unknown client_id')
