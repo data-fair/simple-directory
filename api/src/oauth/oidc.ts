@@ -23,6 +23,17 @@ export const getOidcProviderId = (url: string) => {
   return slug(base, { lower: true, strict: true })
 }
 
+// old ID format (hostname only) for backward compatibility with stored coreIdProvider references
+export const getOidcProviderIdCompat = (url: string) => {
+  let host = url
+  try {
+    host = new URL(url).host
+  } catch (err) {
+    // ignore
+  }
+  return slug(host, { lower: true, strict: true })
+}
+
 export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProvider> {
   const id = getOidcProviderId(p.discovery)
   let discoveryContent = (await mongo.oidcDiscovery.findOne({ _id: id }))?.content
@@ -96,9 +107,11 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     return userInfo
   }
 
+  const compatId = getOidcProviderIdCompat(p.discovery)
   return {
     ...p,
     id,
+    compatId: compatId !== id ? compatId : undefined,
     type: 'oidc',
     oidc: true,
     scope: 'openid email profile',
