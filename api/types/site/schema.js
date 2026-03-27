@@ -807,6 +807,57 @@ export default {
             de: 'Standardmäßig wird die Authentifizierung abgelehnt, wenn der Identitätsanbieter email_verified=false zurückgibt. Aktivieren Sie diese Option, um dieses Verhalten zu ändern.'
           }
         },
+        loginHintMode: {
+          type: 'string',
+          title: 'Mode d\'envoi du login_hint',
+          'x-i18n-title': {
+            fr: 'Mode d\'envoi du login_hint',
+            en: 'login_hint sending mode',
+            es: 'Modo de envío del login_hint',
+            it: 'Modalità di invio del login_hint',
+            pt: 'Modo de envio do login_hint',
+            de: 'Sendemodus des login_hint'
+          },
+          default: 'email',
+          oneOf: [
+            {
+              const: 'email',
+              title: 'Email complet',
+              'x-i18n-title': {
+                fr: 'Email complet',
+                en: 'Full email',
+                es: 'Email completo',
+                it: 'Email completa',
+                pt: 'Email completo',
+                de: 'Vollständige E-Mail'
+              }
+            },
+            {
+              const: 'username',
+              title: 'Partie avant le @',
+              'x-i18n-title': {
+                fr: 'Partie avant le @',
+                en: 'Part before @',
+                es: 'Parte antes del @',
+                it: 'Parte prima della @',
+                pt: 'Parte antes do @',
+                de: 'Teil vor dem @'
+              }
+            },
+            {
+              const: 'none',
+              title: 'Ne pas envoyer',
+              'x-i18n-title': {
+                fr: 'Ne pas envoyer',
+                en: 'Do not send',
+                es: 'No enviar',
+                it: 'Non inviare',
+                pt: 'Não enviar',
+                de: 'Nicht senden'
+              }
+            }
+          ]
+        },
         coreIdProvider: {
           $ref: '#/$defs/coreIdProvider'
         },
