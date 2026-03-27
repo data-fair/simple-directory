@@ -5,7 +5,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, r
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
+import { sendMailI18n, postUserIdentityWebhook, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, deleteOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect, resolveCoreIdProvider } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -14,7 +14,6 @@ import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
 import { checkPassword, validatePassword, type Password } from '../utils/passwords.ts'
-import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
@@ -465,18 +464,7 @@ router.post('/keepalive', async (req, res, next) => {
   // with the provider (user exists, has role, etc)
   const coreIdProvider = user.coreIdProvider
   if (coreIdProvider?.type === 'oauth' || coreIdProvider?.type === 'oidc') {
-    let provider
-    const site = await reqSite(req)
-    if (site?.authMode === 'onlyBackOffice' || !site?.authMode) {
-      provider = oauthGlobalProviders().find(p => p.id === coreIdProvider.id)
-    } else {
-      let authSite = site
-      if (site.authMode === 'onlyOtherSite' && site.authOnlyOtherSite) {
-        authSite = await getSiteByUrl('https://' + site.authOnlyOtherSite) ?? site
-      }
-      const providerInfo = authSite.authProviders?.find(p => p.type === 'oidc' && getOidcProviderId(p.discovery) === coreIdProvider.id) as OpenIDConnect | undefined
-      provider = providerInfo && await initOidcProvider(providerInfo, `https://${authSite.host}${authSite.path ?? ''}/simple-directory`)
-    }
+    const provider = await resolveCoreIdProvider(req, coreIdProvider)
     if (!provider) {
       await logout(req, res)
       return res.status(401).send('Fournisseur d\'identité principal inconnu')
@@ -521,8 +509,40 @@ router.post('/keepalive', async (req, res, next) => {
 
 router.delete('/', async (req, res) => {
   const logContext: EventLogContext = { req }
+  const sessionUser = reqUser(req)
+
+  // gather OIDC logout info before clearing the session
+  let endSessionUrl: string | undefined
+  if (sessionUser) {
+    const storage = await storages.getSessionStorage(reqSession(req))
+    const fullUser = await storage.getUser(sessionUser.id)
+    const coreIdProvider = fullUser?.coreIdProvider
+    if (coreIdProvider?.type === 'oidc' && fullUser) {
+      try {
+        const provider = await resolveCoreIdProvider(req, coreIdProvider)
+        if (provider?.endSessionEndpoint) {
+          const url = new URL(provider.endSessionEndpoint)
+          url.searchParams.set('client_id', provider.client.id)
+          const oauthToken = await readOAuthToken(fullUser, provider)
+          if (oauthToken?.token?.id_token) {
+            url.searchParams.set('id_token_hint', oauthToken.token.id_token)
+          }
+          url.searchParams.set('post_logout_redirect_uri', reqSiteUrl(req) + '/simple-directory/login')
+          endSessionUrl = url.href
+          await deleteOAuthToken(fullUser, provider)
+        }
+      } catch (err) {
+        console.warn('failed to build end_session_endpoint URL', err)
+      }
+    }
+  }
+
   await logout(req, res)
   eventsLog.info('sd.auth.session-delete', 'a session was deleted', logContext)
+
+  if (endSessionUrl) {
+    return res.status(200).json({ endSessionUrl })
+  }
   res.status(204).send()
 })
 
