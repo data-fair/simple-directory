@@ -11,38 +11,27 @@ const slug = _slug.default
 const debug = Debug('oauth')
 
 export const getOidcProviderId = (url: string) => {
-  let base = url
-  try {
-    const u = new URL(url)
-    let path = u.pathname.replace(/\/\.well-known\/openid-configuration\/?$/, '')
-    path = path.replace(/\/$/, '')
-    base = u.host + path
-  } catch (err) {
-    console.warn('invalid oauth provider url', url)
-  }
-  return slug(base, { lower: true, strict: true })
-}
-
-// old ID format (hostname only) for backward compatibility with stored coreIdProvider references
-export const getOidcProviderIdCompat = (url: string) => {
   let host = url
   try {
     host = new URL(url).host
   } catch (err) {
-    // ignore
+    console.warn('invalide oauth provider url', url)
   }
   return slug(host, { lower: true, strict: true })
 }
 
 export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProvider> {
   const id = getOidcProviderId(p.discovery)
-  let discoveryContent = (await mongo.oidcDiscovery.findOne({ _id: id }))?.content
+  // use full discovery URL as cache key to avoid collision between providers
+  // on the same host but different paths (e.g. Azure AD multi-tenant)
+  const cacheKey = slug(p.discovery, { lower: true, strict: true })
+  let discoveryContent = (await mongo.oidcDiscovery.findOne({ _id: cacheKey }))?.content
   if (discoveryContent) {
     debug(`Read pre-fetched OIDC discovery info from db for provider ${id}`, discoveryContent)
   } else {
     discoveryContent = (await axios.get(p.discovery)).data
     debug(`Fetched OIDC discovery info from ${p.discovery}`, discoveryContent)
-    await mongo.oidcDiscovery.insertOne({ _id: id, content: discoveryContent })
+    await mongo.oidcDiscovery.insertOne({ _id: cacheKey, content: discoveryContent })
   }
   const tokenURL = new URL(discoveryContent.token_endpoint)
   const authURL = new URL(discoveryContent.authorization_endpoint)
@@ -107,11 +96,9 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     return userInfo
   }
 
-  const compatId = getOidcProviderIdCompat(p.discovery)
   return {
     ...p,
     id,
-    compatId: compatId !== id ? compatId : undefined,
     type: 'oidc',
     oidc: true,
     scope: 'openid email profile',

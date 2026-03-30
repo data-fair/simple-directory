@@ -11,7 +11,7 @@ import { reqSite, decodeToken } from '#services'
 import { type OpenIDConnect1 } from '../../config/type/index.ts'
 import { type CipheredContent, decipher } from '../utils/cipher.ts'
 
-export { getOidcProviderId, getOidcProviderIdCompat } from './oidc.ts'
+export { getOidcProviderId } from './oidc.ts'
 
 export type OAuthUserInfo = {
   data: any,
@@ -28,7 +28,6 @@ export type OAuthUserInfo = {
 
 export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
   id: string,
-  compatId?: string,
   type: 'oauth' | 'oidc',
   oidc?: boolean,
   title?: string,

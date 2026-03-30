@@ -5,7 +5,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, r
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, getOidcProviderIdCompat, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
+import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -468,13 +468,13 @@ router.post('/keepalive', async (req, res, next) => {
     let provider
     const site = await reqSite(req)
     if (site?.authMode === 'onlyBackOffice' || !site?.authMode) {
-      provider = oauthGlobalProviders().find(p => p.id === coreIdProvider.id || p.compatId === coreIdProvider.id)
+      provider = oauthGlobalProviders().find(p => p.id === coreIdProvider.id)
     } else {
       let authSite = site
       if (site.authMode === 'onlyOtherSite' && site.authOnlyOtherSite) {
         authSite = await getSiteByUrl('https://' + site.authOnlyOtherSite) ?? site
       }
-      const providerInfo = authSite.authProviders?.find(p => p.type === 'oidc' && (getOidcProviderId(p.discovery) === coreIdProvider.id || getOidcProviderIdCompat(p.discovery) === coreIdProvider.id)) as OpenIDConnect | undefined
+      const providerInfo = authSite.authProviders?.find(p => p.type === 'oidc' && getOidcProviderId(p.discovery) === coreIdProvider.id) as OpenIDConnect | undefined
       provider = providerInfo && await initOidcProvider(providerInfo, `https://${authSite.host}${authSite.path ?? ''}/simple-directory`)
     }
     if (!provider) {
