@@ -59,7 +59,10 @@ describe('LDAP checkPassword sends unescaped DN to bind', () => {
     await cleanTestData()
   })
 
-  after(stopApiServer)
+  after(async () => {
+    await cleanTestData()
+    await stopApiServer()
+  })
 
   it('bind DN contains raw é, not hex-escaped \\c3\\a9', async () => {
     await storage._createOrganization({ id: 'TestOrg', name: 'Test Org' })
