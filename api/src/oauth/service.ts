@@ -7,7 +7,7 @@ import config from '#config'
 import mongo from '#mongo'
 import standardProviders from './standard-providers.ts'
 import { completeOidcProvider, getOidcProviderId } from './oidc.ts'
-import { reqSite, decodeToken } from '#services'
+import { reqSite, getSiteByUrl, decodeToken } from '#services'
 import { type OpenIDConnect1 } from '../../config/type/index.ts'
 import { type CipheredContent, decipher } from '../utils/cipher.ts'
 
@@ -33,6 +33,7 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
   title?: string,
   icon?: string,
   scope: string,
+  endSessionEndpoint?: string,
   auth: {
     tokenHost: string,
     tokenPath: string,
@@ -83,6 +84,21 @@ export const getOAuthProviderByState = async (req: Request, state: string): Prom
       }
     }
   }
+}
+
+// Resolve an OIDC provider from a user's coreIdProvider reference.
+// Handles onlyOtherSite auth delegation.
+export const resolveCoreIdProvider = async (req: Request, coreIdProvider: { id: string, type: string }): Promise<PreparedOAuthProvider | undefined> => {
+  const site = await reqSite(req)
+  if (site?.authMode === 'onlyBackOffice' || !site?.authMode) {
+    return oauthGlobalProviders().find(p => p.id === coreIdProvider.id)
+  }
+  let authSite = site
+  if (site.authMode === 'onlyOtherSite' && site.authOnlyOtherSite) {
+    authSite = await getSiteByUrl('https://' + site.authOnlyOtherSite) ?? site
+  }
+  const providerInfo = authSite.authProviders?.find(p => p.type === 'oidc' && getOidcProviderId(p.discovery) === coreIdProvider.id) as OpenIDConnect | undefined
+  return providerInfo ? await initOidcProvider(providerInfo, `https://${authSite.host}${authSite.path ?? ''}/simple-directory`) : undefined
 }
 
 async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl): Promise<PreparedOAuthProvider> {

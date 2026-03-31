@@ -99,6 +99,7 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     type: 'oidc',
     oidc: true,
     scope: 'openid email profile',
+    endSessionEndpoint: discoveryContent.end_session_endpoint,
     auth,
     userInfo
   }
