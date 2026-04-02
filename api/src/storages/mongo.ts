@@ -395,8 +395,21 @@ class MongodbStorage implements SdStorage {
       return o.id === orga.id && (o.department || null) === (department || null)
     })
 
-    if (config.singleMembership && !userOrga && user.organizations.find(o => o.id === orga.id)) {
-      throw httpError(400, 'cet utilisateur est déjà membre de cette organisation.')
+    if (config.singleMembership && !userOrga) {
+      const existingOrga = user.organizations.find(o => o.id === orga.id)
+      if (existingOrga) {
+        // update existing membership instead of rejecting
+        userOrga = existingOrga
+        if (department) {
+          const fullDepartment = orga.departments?.find(d => d.id === department)
+          if (!fullDepartment) throw httpError(404, 'department not found')
+          userOrga.department = department
+          userOrga.departmentName = fullDepartment.name
+        } else {
+          delete userOrga.department
+          delete userOrga.departmentName
+        }
+      }
     }
 
     if (!userOrga) {
