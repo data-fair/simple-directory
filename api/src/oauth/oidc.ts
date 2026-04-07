@@ -22,13 +22,16 @@ export const getOidcProviderId = (url: string) => {
 
 export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProvider> {
   const id = getOidcProviderId(p.discovery)
-  let discoveryContent = (await mongo.oidcDiscovery.findOne({ _id: id }))?.content
+  // use full discovery URL as cache key to avoid collision between providers
+  // on the same host but different paths (e.g. Azure AD multi-tenant)
+  const cacheKey = slug(p.discovery, { lower: true, strict: true })
+  let discoveryContent = (await mongo.oidcDiscovery.findOne({ _id: cacheKey }))?.content
   if (discoveryContent) {
     debug(`Read pre-fetched OIDC discovery info from db for provider ${id}`, discoveryContent)
   } else {
     discoveryContent = (await axios.get(p.discovery)).data
     debug(`Fetched OIDC discovery info from ${p.discovery}`, discoveryContent)
-    await mongo.oidcDiscovery.insertOne({ _id: id, content: discoveryContent })
+    await mongo.oidcDiscovery.insertOne({ _id: cacheKey, content: discoveryContent })
   }
   const tokenURL = new URL(discoveryContent.token_endpoint)
   const authURL = new URL(discoveryContent.authorization_endpoint)

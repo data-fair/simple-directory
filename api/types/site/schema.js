@@ -330,7 +330,6 @@ export default {
         id: {
           type: 'string',
           title: 'Client ID',
-          readOnly: true,
           layout: { cols: 12 }
         },
         name: {
