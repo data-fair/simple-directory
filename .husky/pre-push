@@ -1,2 +1,1 @@
-eval "$(fnm env)" && fnm use --silent-if-unchanged
 npm run quality
