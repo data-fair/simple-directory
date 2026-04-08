@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { Router } from 'express'
+import { session } from '@data-fair/lib-express'
 import mongo from '#mongo'
 import config from '#config'
+import { rotateKeys, getSignatureKeys } from './tokens/keys-manager.ts'
 
 const router = Router()
 
@@ -70,6 +72,14 @@ router.post('/seed', async (req, res) => {
   }
 
   res.status(200).json({ users: users.length, organizations: orgs.length })
+})
+
+// POST /api/test-env/rotate-keys — force key rotation for JWKS testing
+router.post('/rotate-keys', async (req, res) => {
+  await rotateKeys()
+  getSignatureKeys.clear()
+  session.init('http://localhost:' + config.port)
+  res.status(200).send('ok')
 })
 
 // GET /api/test-env/ping — simple health check for test readiness
