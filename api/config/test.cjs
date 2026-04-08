@@ -7,7 +7,7 @@ module.exports = {
     url: 'mongodb://localhost:' + process.env.MONGO_PORT + '/simple-directory-' + (process.env.NODE_ENV || 'development')
   },
   port: process.env.DEV_API_PORT,
-  publicUrl: 'http://localhost:' + process.env.NGINX_PORT1 + '/simple-directory',
+  publicUrl: 'http://' + (process.env.DEV_HOST || 'localhost') + ':' + process.env.NGINX_PORT1 + '/simple-directory',
   admins: ['admin@test.com'],
   adminCredentials: {
     email: '_superadmin@test.com',

@@ -7,7 +7,7 @@ module.exports = {
     url: 'mongodb://localhost:' + process.env.MONGO_PORT + '/simple-directory-' + (process.env.NODE_ENV || 'development')
   },
   port: process.env.DEV_API_PORT,
-  publicUrl: 'http://localhost:' + process.env.NGINX_PORT1 + '/simple-directory',
+  publicUrl: 'http://' + process.env.DEV_HOST + ':' + process.env.NGINX_PORT1 + '/simple-directory',
   // use this host when debugging a data-fair inside a virtualbox vm
   // publicUrl: 'http://10.0.2.2:5689',
   admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com', 'admin@test.com'],
