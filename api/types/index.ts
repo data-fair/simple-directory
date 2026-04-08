@@ -26,6 +26,7 @@ export type OAuthToken = {
   token: any,
   provider: { type: string, id: string, title: string },
   user: { id: string, name: string, email: string },
+  site?: string | null,
   offlineRefreshToken?: boolean,
   loggedOut?: Date
 }

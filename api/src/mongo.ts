@@ -127,7 +127,7 @@ export class SdMongo {
         'sites-owner': { 'owner.type': 1, 'owner.id': 1, 'owner.department': 1 }
       },
       'oauth-tokens': {
-        'oauth-tokens-key': [{ 'user.id': 1, 'provider.id': 1 }, { unique: true }],
+        'oauth-tokens-key': [{ 'user.id': 1, 'provider.id': 1, site: 1 }, { unique: true }],
         'oauth-tokens-provider': { 'provider.id': 1 },
         'oauth-tokens-offline': { offlineRefreshToken: 1 },
         'oauth-tokens-sid': { 'token.session_state': 1 }

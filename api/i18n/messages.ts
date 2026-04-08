@@ -6,7 +6,7 @@ const flatOpts = { delimiter: '_' }
 // {fr: {msg1: 'libellé 1'}, en: {msg1: 'label 1'}}
 const _messages: any = {}
 for (const l of config.i18n.locales) {
-  _messages[l] = (await import ('./' + l + '.js')).default
+  _messages[l] = (await import('./' + l + '.js')).default
 }
 export const flatMessages = flatten(_messages, flatOpts) as Record<string, string>
 

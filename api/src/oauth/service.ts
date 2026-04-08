@@ -121,10 +121,10 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     if (forceLogin) {
       params.prompt = 'login'
     }
-    if (email) {
+    if (email && p.loginHintMode !== 'none') {
       // send email in login_hint
       // see https://openid.net/specs/openid-connect-basic-1_0.html
-      params.login_hint = email
+      params.login_hint = p.loginHintMode === 'username' ? email.split('@')[0] : email
     }
     const url = oauthClient.authorizeURL(params)
     return url

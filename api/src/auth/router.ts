@@ -481,7 +481,7 @@ router.post('/keepalive', async (req, res, next) => {
       await logout(req, res)
       return res.status(401).send('Fournisseur d\'identité principal inconnu')
     }
-    const oauthToken = (await readOAuthToken(user, provider))
+    const oauthToken = (await readOAuthToken(user, provider, site?._id))
 
     if (!oauthToken) {
       await logout(req, res)
@@ -501,7 +501,7 @@ router.post('/keepalive', async (req, res, next) => {
         const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token)
         const memberInfos = await authProviderMemberInfo(await reqSite(req), provider, userInfo)
         user = await patchCoreAuthUser(provider, user, userInfo, memberInfos)
-        await writeOAuthToken(user, provider, newToken, offlineRefreshToken)
+        await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, site?._id)
         eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }
     } catch (err: any) {
@@ -719,7 +719,8 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   try {
     const [callbackUrl, user] = await authProviderLoginCallback(req, invitToken, authInfo, logContext, provider, redirect, org, dep, adminMode)
     if (provider.coreIdProvider) {
-      await writeOAuthToken(user, provider, token, offlineRefreshToken)
+      const callbackSite = await reqSite(req)
+      await writeOAuthToken(user, provider, token, offlineRefreshToken, undefined, callbackSite?._id)
     }
     res.redirect(callbackUrl)
   } catch (err : any) {
@@ -868,7 +869,7 @@ router.get('/apps/authorize', async (req, res) => {
 
   const site = await reqSite(req)
   let client = (site?.applications || []).find(c => c.id === clientId)
-  if (!client && !site) {
+  if (!client) {
     client = (config.applications || []).find(c => c.id === clientId)
   }
   if (!client) return res.status(400).send('Unknown client_id')
@@ -896,7 +897,7 @@ router.post('/apps/authorize', async (req, res) => {
 
   const site = await reqSite(req)
   let client = (site?.applications || []).find(c => c.id === clientId)
-  if (!client && !site) {
+  if (!client) {
     client = (config.applications || []).find(c => c.id === clientId)
   }
   if (!client) return res.status(400).send('Unknown client_id')

@@ -14,6 +14,7 @@ import type { TwoFA } from '#services'
 import userName from '../utils/user-name.ts'
 import slugify from 'slugify'
 import { type PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
+import { unescapeNonAsciiInDn } from '../utils/dn.ts'
 
 const debug = Debug('ldap')
 
@@ -611,7 +612,7 @@ export class LdapStorage implements SdStorage {
   async checkPassword (id: string, password: string) {
     const user = await this._getUser({ id }, false)
     if (!user) return false
-    const dn = user.entry.dn.toString()
+    const dn = unescapeNonAsciiInDn(user.entry.dn.toString())
     if (!dn) return false
 
     const client = ldap.createClient({ url: this.ldapParams.url, reconnect: false, timeout: 4000, ...this.ldapParams.clientOptions })
