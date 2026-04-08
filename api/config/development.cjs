@@ -104,7 +104,7 @@ module.exports = {
     admin: 'Administrateur'
   },
   quotas: {
-    defaultMaxCreatedOrgs: 1
+    defaultMaxCreatedOrgs: -1
     // defaultMaxNbMembers: 0
   },
   passwordless: true,
@@ -115,7 +115,8 @@ module.exports = {
     readAll: 'testkey',
     metrics: 'testkey',
     events: 'secret-events',
-    sites: 'secret-sites'
+    sites: 'secret-sites',
+    pseudoSession: 'testkey'
   },
   perOrgStorageTypes: ['ldap'],
   cipherPassword: 'test',
@@ -242,6 +243,7 @@ module.exports = {
     attempts: 100,
     duration: 60
   },
+  passwordUpdateInterval: [1, 'days'],
   observer: {
     port: process.env.DEV_OBSERVER_PORT
   }
