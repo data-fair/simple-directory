@@ -7,7 +7,7 @@ layout {
       }
       pane name="deps" {
         command "bash"
-        args "-ic" "npm run dev-deps && watch -n 4 \"docker compose ps --all --format 'table {{.Name}}\t{{.Status}}'\""
+        args "-ic" "mkdir -p dev/logs && npm run dev-deps && docker compose --profile dev logs -f 2>&1 | tee dev/logs/docker-compose.log"
       }
     }
     pane {

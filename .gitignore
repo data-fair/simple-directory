@@ -2,5 +2,6 @@
 .type
 node_modules
 dev/data
+dev/logs
 *.tsbuildinfo
 ui/src/components/vjsf
