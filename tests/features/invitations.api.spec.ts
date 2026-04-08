@@ -2,15 +2,16 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { axios, axiosAuth, clean, createUser, deleteAllEmails, getAllEmails, directoryUrl, patchConfig } from '../support/axios.ts'
 
-/** Poll maildev for a new mail, extract the first href as mail.link */
+/** Poll maildev for a new mail, extract the action link as mail.link */
 async function waitForMail (predicate?: (m: any) => boolean): Promise<any> {
   for (let i = 0; i < 100; i++) {
     const emails = await getAllEmails()
     const mail = predicate ? emails.find(predicate) : emails[0]
     if (mail) {
       const html: string = mail.html || mail.text || ''
-      const linkMatch = html.match(/href="([^"]*)"/)
-      mail.link = linkMatch ? linkMatch[1].replace(/&amp;/g, '&') : undefined
+      // extract all hrefs and find the action link (token_callback, _accept, action_token, invit_token, login)
+      const allLinks = [...html.matchAll(/href="([^"]*)"/g)].map(m => m[1].replace(/&amp;/g, '&'))
+      mail.link = allLinks.find(l => /token_callback|_accept|action_token|invit_token|login/.test(l)) || allLinks[0]
       return mail
     }
     await new Promise(resolve => setTimeout(resolve, 100))
@@ -21,6 +22,8 @@ async function waitForMail (predicate?: (m: any) => boolean): Promise<any> {
 test.describe('invitations', () => {
   test.beforeEach(async () => {
     await clean()
+    // ensure invitations are not auto-accepted (dev config has alwaysAcceptInvitation: true)
+    await patchConfig({ alwaysAcceptInvitation: false })
   })
 
   test('should invite a new user in an organization', async () => {

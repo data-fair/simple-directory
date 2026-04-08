@@ -10,8 +10,8 @@ async function waitForMail (predicate?: (m: any) => boolean): Promise<any> {
     const mail = predicate ? emails.find(predicate) : emails[0]
     if (mail) {
       const html: string = mail.html || mail.text || ''
-      const linkMatch = html.match(/href="([^"]*)"/)
-      mail.link = linkMatch ? linkMatch[1].replace(/&amp;/g, '&') : undefined
+      const allLinks = [...html.matchAll(/href="([^"]*)"/g)].map(m => m[1].replace(/&amp;/g, '&'))
+      mail.link = allLinks.find(l => /token_callback|_accept|action_token|invit_token|login/.test(l)) || allLinks[0]
       return mail
     }
     await new Promise(resolve => setTimeout(resolve, 100))

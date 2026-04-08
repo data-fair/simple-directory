@@ -231,10 +231,9 @@ module.exports = {
   managePartners: true,
   defaultOrg: 'admins-org',
   passwordValidation: {
-    // entropy: 50,
     entropy: 20,
-    // minLength: 8,
-    // minCharClasses: 3,
+    minLength: 8,
+    minCharClasses: 3,
   },
   siteOrgs: true,
   siteAdmin: true,
