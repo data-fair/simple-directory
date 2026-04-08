@@ -1,13 +1,13 @@
 <template>
   <v-container>
-    <h2 class="text-h4 mb-4">
+    <h2 class="text-headline-medium mb-4">
       Theme
     </h2>
     <template
       v-for="variant of buttonVariants"
       :key="variant"
     >
-      <h3 class="text-h5">
+      <h3 class="text-headline-small">
         {{ variant }}
       </h3>
       <v-card>

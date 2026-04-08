@@ -20,7 +20,7 @@
     >
       <v-card-title
         v-if="!link"
-        class="text-h6"
+        class="text-title-large"
       >
         {{ $t('pages.organization.sendInvitationLink') }}
       </v-card-title>

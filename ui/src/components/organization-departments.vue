@@ -4,7 +4,7 @@
     class="pa-0"
   >
     <v-row class="mt-3 mx-0">
-      <h2 class="text-h4 mt-10 mb-4">
+      <h2 class="text-headline-medium mt-10 mb-4">
         <v-icon
           size="small"
           color="primary"

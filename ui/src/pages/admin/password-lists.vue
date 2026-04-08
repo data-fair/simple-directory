@@ -3,7 +3,7 @@
     data-iframe-height
   >
     <v-row class="mt-3 mb-6 mx-0">
-      <h2 class="text-h6">
+      <h2 class="text-title-large">
         {{ $t('common.passwordLists') }}
       </h2>
     </v-row>

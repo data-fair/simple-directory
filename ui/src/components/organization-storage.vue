@@ -35,6 +35,7 @@
       <v-btn
         v-if="user.adminMode"
         color="admin"
+        style="text-transform: uppercase"
         :disabled="patch.loading.value || !diff"
         @click="patch.execute()"
       >

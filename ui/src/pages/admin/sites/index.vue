@@ -4,7 +4,7 @@
     data-iframe-height
   >
     <v-row class="my-3 mx-0">
-      <h2 class="text-h6 mb-3">
+      <h2 class="text-title-large mb-3">
         {{ $t('common.sites') }} <span v-if="sites.data.value">({{ $n(sites.data.value.count) }})</span>
         <site-post @created="sites.refresh()" />
       </h2>

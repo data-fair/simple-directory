@@ -13,7 +13,7 @@
       v-model="valid"
       @submit.prevent
     >
-      <h1 class="text-h3 mb-3">
+      <h1 class="text-headline-large mb-3">
         {{ $t('pages.admin.site.title') }}
       </h1>
       <a
@@ -45,6 +45,7 @@
       <v-btn
         color="primary"
         variant="flat"
+        style="text-transform: uppercase"
         :disabled="patchSite.loading.value || site.loading.value || sites.loading.value"
         :loading="patchSite.loading.value || site.loading.value"
         @click="confirmEdit"

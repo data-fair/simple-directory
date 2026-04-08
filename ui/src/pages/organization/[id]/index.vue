@@ -5,7 +5,7 @@
     data-iframe-height
     style="max-width:650px;"
   >
-    <h2 class="text-h4 mb-4">
+    <h2 class="text-headline-medium mb-4">
       <v-icon
         size="large"
         color="primary"
@@ -18,7 +18,7 @@
 
     <p
       v-if="orga.created"
-      class="text-subtitle-2"
+      class="text-label-large"
     >
       {{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}
     </p>
@@ -105,6 +105,7 @@
         <v-btn
           color="primary"
           variant="elevated"
+          style="text-transform: uppercase"
           :disabled="patchOrganization.loading.value"
           @click="save"
         >

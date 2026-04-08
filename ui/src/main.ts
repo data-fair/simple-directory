@@ -12,9 +12,6 @@ import { createUiNotif } from '@data-fair/lib-vue/ui-notif.js'
 import { createI18n } from 'vue-i18n'
 import { createHead } from '@unhead/vue'
 import App from './App.vue'
-// TODO: remove v-iframe and iframe-resizer when d-frame is fully integrated
-import '@koumoul/v-iframe/content-window'
-import 'iframe-resizer/js/iframeResizer.contentWindow.js'
 import dFrameContent from '@data-fair/frame/lib/vue-router/d-frame-content.js'
 import debugModule from 'debug'
 

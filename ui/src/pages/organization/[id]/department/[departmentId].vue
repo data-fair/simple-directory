@@ -4,7 +4,7 @@
     data-iframe-height
     style="max-width:650px;"
   >
-    <h2 class="text-h4 mb-4">
+    <h2 class="text-headline-medium mb-4">
       <v-icon
         size="large"
         color="primary"
