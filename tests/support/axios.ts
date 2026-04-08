@@ -22,6 +22,13 @@ export const clean = async () => {
   await ax.delete(`${devApiUrl}/api/test-env`)
 }
 
+// Seed predefined users and organizations from JSON files into mongo
+// Call this after clean() for tests that need the predefined file-storage users
+export const seed = async () => {
+  const ax = axiosBuilder()
+  await ax.post(`${devApiUrl}/api/test-env/seed`)
+}
+
 export const createUser = async (email: string, adminMode = false, password = 'TestPasswd01', _directoryUrl?: string) => {
   const baseUrl = _directoryUrl ?? directoryUrl
   const createAxiosOpts = { baseURL: baseUrl }

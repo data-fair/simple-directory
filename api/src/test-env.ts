@@ -1,5 +1,8 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { Router } from 'express'
 import mongo from '#mongo'
+import config from '#config'
 
 const router = Router()
 
@@ -22,6 +25,51 @@ router.delete('/', async (req, res) => {
   }
   await mongo.passwordLists.deleteMany()
   res.status(204).send()
+})
+
+// POST /api/test-env/seed — seed predefined users and organizations from JSON files into mongo
+// This enables tests that rely on predefined file-storage users to work against the mongo-backed dev server
+router.post('/seed', async (req, res) => {
+  const usersFile = resolve(import.meta.dirname, '../../dev/resources/users.json')
+  const orgsFile = resolve(import.meta.dirname, '../../dev/resources/organizations.json')
+  const users = JSON.parse(readFileSync(usersFile, 'utf-8'))
+  const orgs = JSON.parse(readFileSync(orgsFile, 'utf-8'))
+
+  // build org membership map for users
+  const userOrgs: Record<string, any[]> = {}
+  for (const org of orgs) {
+    for (const member of org.members || []) {
+      if (!userOrgs[member.id]) userOrgs[member.id] = []
+      userOrgs[member.id].push({
+        id: org.id,
+        name: org.name,
+        role: member.role,
+        ...(member.department ? { department: member.department } : {})
+      })
+    }
+  }
+
+  for (const user of users) {
+    const doc = {
+      _id: user.id,
+      ...user,
+      organizations: userOrgs[user.id] || [],
+      emailConfirmed: true
+    }
+    delete doc.id
+    await mongo.users.replaceOne({ _id: doc._id }, doc, { upsert: true })
+  }
+
+  for (const org of orgs) {
+    const doc = {
+      _id: org.id,
+      ...org,
+    }
+    delete doc.id
+    await mongo.organizations.replaceOne({ _id: doc._id }, doc, { upsert: true })
+  }
+
+  res.status(200).json({ users: users.length, organizations: orgs.length })
 })
 
 // GET /api/test-env/ping — simple health check for test readiness
