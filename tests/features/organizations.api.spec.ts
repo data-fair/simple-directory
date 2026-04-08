@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { clean, createUser, axiosAuth, deleteAllEmails, getAllEmails } from '../support/axios.ts'
+import { clean, createUser, axiosAuth, deleteAllEmails, getAllEmails, patchConfig } from '../support/axios.ts'
 import jwt, { type JwtPayload } from 'jsonwebtoken'
 
 /** Poll maildev for a mail matching the predicate, return it */
@@ -94,7 +94,7 @@ test.describe('organizations api', () => {
 
   test('should invite a user in orga and change his role', async () => {
     const config = (await import('../../api/src/config.ts')).default
-    config.alwaysAcceptInvitation = true
+    await patchConfig({ alwaysAcceptInvitation: true })
 
     const { ax } = await createUser('test-owner1@test.com')
     const { ax: axMember, user: memberUser } = await createUser('test-member1@test.com')
@@ -117,12 +117,12 @@ test.describe('organizations api', () => {
     const patchedMember = patchedMembers.find((m: any) => m.email === 'test-member1@test.com')
     assert.equal(patchedMember.role, 'admin')
 
-    config.alwaysAcceptInvitation = false
+    await patchConfig({ alwaysAcceptInvitation: false })
   })
 
   test('should invite a user in orga in multiple departments', async () => {
     const config = (await import('../../api/src/config.ts')).default
-    config.alwaysAcceptInvitation = true
+    await patchConfig({ alwaysAcceptInvitation: true })
 
     const { ax } = await createUser('test-owner2@test.com')
 
@@ -166,12 +166,12 @@ test.describe('organizations api', () => {
     await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'test-owner2@test.com', role: 'user' }), { status: 400 })
     await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, department: 'baddep', email: 'test-member2@test.com', role: 'user' }), { status: 404 })
 
-    config.alwaysAcceptInvitation = false
+    await patchConfig({ alwaysAcceptInvitation: false })
   })
 
   test('should send emails based on roles and departments', async () => {
     const config = (await import('../../api/src/config.ts')).default
-    config.alwaysAcceptInvitation = true
+    await patchConfig({ alwaysAcceptInvitation: true })
 
     const { ax } = await createUser('owner@test3.com')
 

@@ -4,21 +4,20 @@ import { axios, clean, startApiServer, stopApiServer, createUser, getDirectoryUr
 import { OAuth2Server } from 'oauth2-mock-server'
 import { CookieJar } from 'tough-cookie'
 
-process.env.STORAGE_TYPE = 'mongo'
-process.env.OAUTH_PROVIDERS = '["github"]'
-process.env.OIDC_PROVIDERS = JSON.stringify([{
-  title: 'Test provider',
-  discovery: 'http://localhost:8998/.well-known/openid-configuration',
-  client: {
-    id: 'test-client',
-    secret: 'test-secret'
-  },
-  coreIdProvider: true
-}])
-
 test.describe('global OIDC configuration in coreIdProvider mode', () => {
   let oauthServer: OAuth2Server
   test.beforeAll(async () => {
+    process.env.STORAGE_TYPE = 'mongo'
+    process.env.OAUTH_PROVIDERS = '["github"]'
+    process.env.OIDC_PROVIDERS = JSON.stringify([{
+      title: 'Test provider',
+      discovery: 'http://localhost:8998/.well-known/openid-configuration',
+      client: {
+        id: 'test-client',
+        secret: 'test-secret'
+      },
+      coreIdProvider: true
+    }])
     oauthServer = new OAuth2Server()
     await oauthServer.issuer.keys.generate('RS256')
     let i = 0
@@ -43,8 +42,8 @@ test.describe('global OIDC configuration in coreIdProvider mode', () => {
       }
     })
     await oauthServer.start(8998, 'localhost')
+    await startApiServer()
   })
-  test.beforeAll(startApiServer)
   test.beforeEach(async () => await clean())
   test.afterAll(stopApiServer)
   test.afterAll(async () => {

@@ -3,20 +3,6 @@ import { test } from '@playwright/test'
 import { clean, startApiServer, stopApiServer, loginWithOIDC } from '../support/in-process-server.ts'
 import { OAuth2Server } from 'oauth2-mock-server'
 
-process.env.STORAGE_TYPE = 'ldap'
-process.env.OIDC_PROVIDERS = JSON.stringify([{
-  title: 'Test provider',
-  discovery: 'http://localhost:8998/.well-known/openid-configuration',
-  client: {
-    id: 'test-client',
-    secret: 'test-secret'
-  }
-}])
-process.env.DEFAULT_ORG = 'myorg'
-
-const config = (await import('../../api/src/config.ts')).default
-const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
-
 const oidcUserInfo1 = { sub: 'testoidc1', email: 'oidc1@test.com' }
 
 const startOAuthServer = async (port: number, oidcUserInfo: any) => {
@@ -29,12 +15,26 @@ const startOAuthServer = async (port: number, oidcUserInfo: any) => {
   return oauthServer
 }
 
+let ldapConfig: any
+
 test.describe('global OIDC configuration backed with ldap storage', () => {
   let oauthServer1: OAuth2Server
   test.beforeAll(async () => {
+    process.env.STORAGE_TYPE = 'ldap'
+    process.env.OIDC_PROVIDERS = JSON.stringify([{
+      title: 'Test provider',
+      discovery: 'http://localhost:8998/.well-known/openid-configuration',
+      client: {
+        id: 'test-client',
+        secret: 'test-secret'
+      }
+    }])
+    process.env.DEFAULT_ORG = 'myorg'
     oauthServer1 = await startOAuthServer(8998, oidcUserInfo1)
+    await startApiServer()
+    const config = (await import('../../api/src/config.ts')).default
+    ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
   })
-  test.beforeAll(startApiServer)
   test.beforeEach(async () => await clean({ ldapConfig }))
   // prepare ldap directory
   test.beforeEach(async () => {

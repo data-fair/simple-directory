@@ -3,6 +3,9 @@ import type { AxiosAuthInstance, AxiosAuthOptions } from '@data-fair/lib-node/ax
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
 
+// Set NODE_CONFIG_DIR so test files can import api/src/config.ts
+process.env.NODE_CONFIG_DIR = process.env.NODE_CONFIG_DIR || './api/config/'
+
 export const directoryUrl = `http://${process.env.DEV_HOST || 'localhost'}:${process.env.NGINX_PORT1}/simple-directory`
 
 export const devApiUrl = `http://localhost:${process.env.DEV_API_PORT}`
@@ -20,6 +23,12 @@ export const axiosAuth = async (opts: string | Omit<AxiosAuthOptions, 'password'
 export const clean = async () => {
   const ax = axiosBuilder()
   await ax.delete(`${devApiUrl}/api/test-env`)
+}
+
+// Apply config overrides on the running dev server
+export const patchConfig = async (overrides: Record<string, any>) => {
+  const ax = axiosBuilder()
+  await ax.patch(`${devApiUrl}/api/test-env/config`, overrides)
 }
 
 // Seed predefined users and organizations from JSON files into mongo

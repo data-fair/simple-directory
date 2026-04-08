@@ -5,8 +5,7 @@ import { clean } from '../support/axios.ts'
 import { unescapeNonAsciiInDn } from '../../api/src/utils/dn.ts'
 import ldap from 'ldapjs'
 
-const config = (await import('../../api/src/config.ts')).default
-const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+let ldapConfig: any
 
 test.describe('unescapeNonAsciiInDn', () => {
   test('decodes 2-byte UTF-8 (e)', () => {
@@ -47,6 +46,8 @@ test.describe('LDAP checkPassword sends unescaped DN to bind', () => {
   }
 
   test.beforeAll(async () => {
+    const config = (await import('../../api/src/config.ts')).default
+    ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
     const ldapStorage = await import('../../api/src/storages/ldap.ts')
     storage = await ldapStorage.init(ldapConfig)
     await cleanTestData()

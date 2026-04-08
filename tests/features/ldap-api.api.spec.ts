@@ -2,13 +2,15 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { axios, axiosAuth, clean, startApiServer, stopApiServer } from '../support/in-process-server.ts'
 
-process.env.STORAGE_TYPE = 'ldap'
-
-const config = (await import('../../api/src/config.ts')).default
-const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+let ldapConfig: any
 
 test.describe('ldap storage API', () => {
-  test.beforeAll(startApiServer)
+  test.beforeAll(async () => {
+    process.env.STORAGE_TYPE = 'ldap'
+    await startApiServer()
+    const config = (await import('../../api/src/config.ts')).default
+    ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+  })
   test.beforeEach(async () => await clean({ ldapConfig }))
 
   // prepare ldap directory

@@ -3,10 +3,7 @@ import { test } from '@playwright/test'
 import { axiosAuth, clean, startApiServer, stopApiServer, createUser } from '../support/in-process-server.ts'
 import type { LdapStorage } from '../../api/src/storages/ldap.ts'
 
-process.env.STORAGE_TYPE = 'mongo'
-
-const config = (await import('../../api/src/config.ts')).default
-const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+let ldapConfig: any
 
 const orgLdapConfig = {
   url: 'ldap://localhost:' + process.env.LDAP_PORT,
@@ -28,7 +25,12 @@ const orgLdapConfig = {
 }
 
 test.describe('ldap storage per organization in mongodb storage mode', () => {
-  test.beforeAll(startApiServer)
+  test.beforeAll(async () => {
+    process.env.STORAGE_TYPE = 'mongo'
+    await startApiServer()
+    const config = (await import('../../api/src/config.ts')).default
+    ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+  })
   test.beforeEach(async () => await clean({ ldapConfig }))
   test.afterAll(stopApiServer)
 

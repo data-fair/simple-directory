@@ -5,18 +5,19 @@ import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
 import eventPromise from '@data-fair/lib-utils/event-promise.js'
 import { CookieJar } from 'tough-cookie'
 
-// Use a random port to avoid conflict with the running dev server
-const testPort = 10000 + Math.floor(Math.random() * 50000)
-
-// Override DEV_API_PORT before config loading so test.cjs picks it up
-process.env.DEV_API_PORT = String(testPort)
-process.env.NODE_CONFIG_DIR = './api/config/'
-process.env.EVENTS_LOG_LEVEL = 'silent'
-process.env.SUPPRESS_NO_CONFIG_WARNING = '1'
-
+let testPort: number
 let directoryUrl: string
 
 export const startApiServer = async () => {
+  // Use a random port to avoid conflict with the running dev server
+  // Set these env vars INSIDE the function (not at module level) to avoid
+  // polluting the process environment when Playwright merely loads this module
+  testPort = 10000 + Math.floor(Math.random() * 50000)
+  process.env.PORT = String(testPort)
+  process.env.NODE_CONFIG_DIR = './api/config/'
+  process.env.EVENTS_LOG_LEVEL = 'silent'
+  process.env.SUPPRESS_NO_CONFIG_WARNING = '1'
+
   const apiServer = await import('../../api/src/server.ts')
   await apiServer.start()
   const config = (await import('../../api/src/config.ts')).default

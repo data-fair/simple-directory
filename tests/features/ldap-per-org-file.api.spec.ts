@@ -2,14 +2,17 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { axiosAuth, clean, startApiServer, stopApiServer } from '../support/in-process-server.ts'
 
-const config = (await import('../../api/src/config.ts')).default
-const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
-ldapConfig.organizations.staticSingleOrg = { id: 'test-ldap', name: 'Test single org' }
+let ldapConfig: any
 
 // see test/resources/organizations.json to see that the org "test-ldap" has a specific configuration
 
 test.describe('ldap storage per organization in file storage mode', () => {
-  test.beforeAll(startApiServer)
+  test.beforeAll(async () => {
+    await startApiServer()
+    const config = (await import('../../api/src/config.ts')).default
+    ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+    ldapConfig.organizations.staticSingleOrg = { id: 'test-ldap', name: 'Test single org' }
+  })
   test.beforeEach(async () => await clean({ ldapConfig }))
 
   // prepare ldap directory

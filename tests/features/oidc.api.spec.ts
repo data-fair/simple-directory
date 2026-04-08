@@ -3,40 +3,6 @@ import { test } from '@playwright/test'
 import { axios, clean, startApiServer, stopApiServer, createUser, loginWithOIDC } from '../support/in-process-server.ts'
 import { OAuth2Server } from 'oauth2-mock-server'
 
-process.env.STORAGE_TYPE = 'mongo'
-process.env.OAUTH_PROVIDERS = '["github"]'
-process.env.OIDC_PROVIDERS = JSON.stringify([{
-  title: 'Test provider',
-  discovery: 'http://localhost:8998/.well-known/openid-configuration',
-  client: {
-    id: 'test-client',
-    secret: 'test-secret'
-  },
-  createMember: {
-    type: 'always'
-  },
-  memberRole: {
-    type: 'attribute',
-    attribute: 'role',
-  }
-}, {
-  title: 'Test provider core',
-  coreIdProvider: true,
-  discovery: 'http://localhost:8999/.well-known/openid-configuration',
-  client: {
-    id: 'test-client',
-    secret: 'test-secret'
-  },
-  createMember: {
-    type: 'always'
-  },
-  memberRole: {
-    type: 'attribute',
-    attribute: 'role',
-  }
-}])
-process.env.DEFAULT_ORG = 'org1'
-
 const oidcUserInfo1 = { sub: 'testoidc1', email: 'oidc1@test.com', given_name: 'OIDC', family_name: 'Test', role: 'contrib' }
 const oidcUserInfo2 = { sub: 'testoidc2', email: 'oidc2@test.com', given_name: 'OIDC', family_name: 'Test', role: 'contrib' }
 
@@ -54,10 +20,43 @@ test.describe('global OIDC configuration', () => {
   let oauthServer1: OAuth2Server
   let oauthServer2: OAuth2Server
   test.beforeAll(async () => {
+    process.env.STORAGE_TYPE = 'mongo'
+    process.env.OAUTH_PROVIDERS = '["github"]'
+    process.env.OIDC_PROVIDERS = JSON.stringify([{
+      title: 'Test provider',
+      discovery: 'http://localhost:8998/.well-known/openid-configuration',
+      client: {
+        id: 'test-client',
+        secret: 'test-secret'
+      },
+      createMember: {
+        type: 'always'
+      },
+      memberRole: {
+        type: 'attribute',
+        attribute: 'role',
+      }
+    }, {
+      title: 'Test provider core',
+      coreIdProvider: true,
+      discovery: 'http://localhost:8999/.well-known/openid-configuration',
+      client: {
+        id: 'test-client',
+        secret: 'test-secret'
+      },
+      createMember: {
+        type: 'always'
+      },
+      memberRole: {
+        type: 'attribute',
+        attribute: 'role',
+      }
+    }])
+    process.env.DEFAULT_ORG = 'org1'
     oauthServer1 = await startOAuthServer(8998, oidcUserInfo1)
     oauthServer2 = await startOAuthServer(8999, oidcUserInfo2)
+    await startApiServer()
   })
-  test.beforeAll(startApiServer)
   test.beforeEach(async () => await clean())
   test.afterAll(stopApiServer)
   test.afterAll(async () => {

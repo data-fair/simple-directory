@@ -82,6 +82,16 @@ router.post('/rotate-keys', async (req, res) => {
   res.status(200).send('ok')
 })
 
+// PATCH /api/test-env/config — apply temporary config overrides on the running server
+// Body: JSON object with config keys to override (e.g. { "alwaysAcceptInvitation": true })
+import express from 'express'
+router.patch('/config', express.json(), (req, res) => {
+  for (const [key, value] of Object.entries(req.body)) {
+    ;(config as any)[key] = value
+  }
+  res.status(200).send('ok')
+})
+
 // GET /api/test-env/ping — simple health check for test readiness
 router.get('/ping', (req, res) => {
   res.send('ok')

@@ -2,19 +2,23 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { clean, startApiServer, stopApiServer } from '../support/in-process-server.ts'
 
-const config = (await import('../../api/src/config.ts')).default
-const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
-ldapConfig.members.overwrite = [
-  { email: 'alban.mouton@koumoul.com', role: 'overwritten' },
-  { matchAttrs: [{ attr: 'employeeType', values: ['Admin'], captureRegex: '^org1(.*)$' }], orgId: 'org1', orgOnly: true, role: 'admin' }
-]
-ldapConfig.users.overwrite = [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }]
-ldapConfig.organizations.overwrite = [{ id: 'myorg', name: 'Org overwritten' }]
+let config: any
+let ldapConfig: any
 
 // see test/resources/organizations.json to see that the org "test-ldap" has a specific configuration
 
 test.describe('storage ldap', () => {
-  test.beforeAll(startApiServer)
+  test.beforeAll(async () => {
+    await startApiServer()
+    config = (await import('../../api/src/config.ts')).default
+    ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+    ldapConfig.members.overwrite = [
+      { email: 'alban.mouton@koumoul.com', role: 'overwritten' },
+      { matchAttrs: [{ attr: 'employeeType', values: ['Admin'], captureRegex: '^org1(.*)$' }], orgId: 'org1', orgOnly: true, role: 'admin' }
+    ]
+    ldapConfig.users.overwrite = [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }]
+    ldapConfig.organizations.overwrite = [{ id: 'myorg', name: 'Org overwritten' }]
+  })
   test.beforeEach(async () => await clean({ ldapConfig }))
   test.afterAll(stopApiServer)
 

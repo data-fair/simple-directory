@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, axiosAuth, clean, createUser, deleteAllEmails, getAllEmails, directoryUrl } from '../support/axios.ts'
+import { axios, axiosAuth, clean, createUser, deleteAllEmails, getAllEmails, directoryUrl, patchConfig } from '../support/axios.ts'
 
 /** Poll maildev for a new mail, extract the first href as mail.link */
 async function waitForMail (predicate?: (m: any) => boolean): Promise<any> {
@@ -143,7 +143,7 @@ test.describe('invitations', () => {
 
   test('should invite a new user in an organization in alwaysAcceptInvitation mode', async () => {
     const config = (await import('../../api/src/config.ts')).default
-    config.alwaysAcceptInvitation = true
+    await patchConfig({ alwaysAcceptInvitation: true })
 
     const { ax } = await createUser('test-invit5@test.com')
     const anonymousAx = await axios()
@@ -192,12 +192,12 @@ test.describe('invitations', () => {
     assert.equal(newMember.role, 'user')
     assert.equal(newMember.emailConfirmed, true)
 
-    config.alwaysAcceptInvitation = false
+    await patchConfig({ alwaysAcceptInvitation: false })
   })
 
   test('should invite an existing user in an organization in alwaysAcceptInvitation mode', async () => {
     const config = (await import('../../api/src/config.ts')).default
-    config.alwaysAcceptInvitation = true
+    await patchConfig({ alwaysAcceptInvitation: true })
 
     const { ax } = await createUser('test-invit7@test.com')
     await createUser('test-invit8@test.com')
@@ -214,7 +214,7 @@ test.describe('invitations', () => {
     assert.equal(newMember.role, 'user')
     assert.equal(newMember.emailConfirmed, true)
 
-    config.alwaysAcceptInvitation = false
+    await patchConfig({ alwaysAcceptInvitation: false })
   })
 
   test('should invite a new user in multiple organization departments', async () => {
@@ -382,8 +382,7 @@ test.describe('invitations', () => {
   })
 
   test('should reject duplicate invitation', async () => {
-    const config = (await import('../../api/src/config.ts')).default
-    config.alwaysAcceptInvitation = true
+    await patchConfig({ alwaysAcceptInvitation: true })
     const { ax } = await createUser('test-invit12@test.com')
     await createUser('test-invit13@test.com')
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
@@ -406,14 +405,13 @@ test.describe('invitations', () => {
     assert.ok(newMember)
     assert.equal(newMember.role, 'admin')
 
-    config.multiRoles = true
+    await patchConfig({ multiRoles: true })
 
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit13@test.com', role: 'user' })
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
     assert.equal(members.length, 3)
 
-    config.multiRoles = false
-    config.alwaysAcceptInvitation = false
+    await patchConfig({ multiRoles: false, alwaysAcceptInvitation: false })
   })
 
   test('should invite a user on another site in onlyBackOffice mode', async () => {

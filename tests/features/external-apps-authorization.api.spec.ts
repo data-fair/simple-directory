@@ -1,8 +1,13 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, clean, createUser } from '../support/axios.ts'
+import { axios, clean, createUser, startApiServer, stopApiServer } from '../support/in-process-server.ts'
 
 test.describe('External Apps Authorization Flow', () => {
+  test.beforeAll(async () => {
+    process.env.STORAGE_TYPE = 'mongo'
+    await startApiServer()
+  })
+  test.afterAll(stopApiServer)
   test.beforeEach(async () => {
     await clean()
   })

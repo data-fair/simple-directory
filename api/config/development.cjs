@@ -239,6 +239,10 @@ module.exports = {
   siteOrgs: true,
   siteAdmin: true,
   multiRoles: true,
+  authRateLimit: {
+    attempts: 100,
+    duration: 60
+  },
   observer: {
     port: process.env.DEV_OBSERVER_PORT
   }

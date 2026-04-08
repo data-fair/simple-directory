@@ -2,14 +2,17 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { clean, startApiServer, stopApiServer } from '../support/in-process-server.ts'
 
-const config = (await import('../../api/src/config.ts')).default
-const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
-ldapConfig.organizations.staticSingleOrg = { id: 'test-single-org', name: 'Test single org' }
-ldapConfig.members.role.values = { admin: ['administrator'], user: [] }
-delete ldapConfig.members.role.captureRegex
+let ldapConfig: any
 
 test.describe('ldap single org', () => {
-  test.beforeAll(startApiServer)
+  test.beforeAll(async () => {
+    await startApiServer()
+    const config = (await import('../../api/src/config.ts')).default
+    ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+    ldapConfig.organizations.staticSingleOrg = { id: 'test-single-org', name: 'Test single org' }
+    ldapConfig.members.role.values = { admin: ['administrator'], user: [] }
+    delete ldapConfig.members.role.captureRegex
+  })
   test.beforeEach(async () => await clean({ ldapConfig }))
   test.afterAll(stopApiServer)
 
