@@ -4,8 +4,7 @@
   "description": "Easy users and organizations management for modern Web-oriented architectures.",
   "type": "module",
   "scripts": {
-    "test-base": "dotenv -v NODE_ENV=test -v EVENTS_LOG_LEVEL=alert -- node --disable-warning=ExperimentalWarning --test-force-exit --test-concurrency=1 --test",
-    "test-old": "npm run test-base test-it/*.ts",
+    "test-old": "dotenv -v NODE_ENV=test -v EVENTS_LOG_LEVEL=alert -- node --disable-warning=ExperimentalWarning --test-force-exit --test-concurrency=1 --test test-it/*.ts",
     "test": "playwright test --max-failures=1",
     "test-api": "playwright test --project api --max-failures=1",
     "test-e2e": "playwright test --project e2e --max-failures=1",
