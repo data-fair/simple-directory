@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, clean, createUser, deleteAllEmails, getAllEmails } from '../support/axios.ts'
+import { axios, clean, createUser, deleteAllEmails, getAllEmails, patchUser } from '../support/axios.ts'
 
 test.describe('users api', () => {
   test.beforeEach(async () => {
@@ -156,14 +156,13 @@ test.describe('users api', () => {
     let loginRes = (await ax.post('/api/auth/password', { email: 'user4@test.com', password: 'TestPasswd01' })).data
     assert.ok(loginRes.includes('token_callback'))
 
-    const mongo = (await (import('../../api/src/mongo.ts'))).default
     // half a day later, still ok
-    await mongo.db.collection('users').updateOne({ email: 'user4@test.com' }, { $set: { 'passwordUpdate.last': new Date(Date.now() - 1000 * 60 * 60 * 24 * 0.5).toISOString() } })
+    await patchUser('user4@test.com', { 'passwordUpdate.last': new Date(Date.now() - 1000 * 60 * 60 * 24 * 0.5).toISOString() })
     loginRes = (await ax.post('/api/auth/password', { email: 'user4@test.com', password: 'TestPasswd01' })).data
     assert.ok(loginRes.includes('token_callback'))
 
     // 2 days later, need to change password
-    await mongo.db.collection('users').updateOne({ email: 'user4@test.com' }, { $set: { 'passwordUpdate.last': new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString() } })
+    await patchUser('user4@test.com', { 'passwordUpdate.last': new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString() })
     await assert.rejects(ax.post('/api/auth/password', { email: 'user4@test.com', password: 'TestPasswd01' }), { status: 400 })
   })
 })

@@ -10,7 +10,7 @@ const router = Router()
 
 // DELETE /api/test-env — clean all test data
 router.delete('/', async (req, res) => {
-  await mongo.organizations.deleteMany({ _id: { $ne: 'admins-org' } })
+  await mongo.organizations.deleteMany({})
   await mongo.users.deleteMany({})
   await mongo.sites.deleteMany({})
   await mongo.oauthTokens.deleteMany()
@@ -84,11 +84,26 @@ router.post('/rotate-keys', async (req, res) => {
 
 // PATCH /api/test-env/config — apply temporary config overrides on the running server
 // Body: JSON object with config keys to override (e.g. { "alwaysAcceptInvitation": true })
+// Uses Object.defineProperty to bypass node-config immutability
 import express from 'express'
 router.patch('/config', express.json(), (req, res) => {
   for (const [key, value] of Object.entries(req.body)) {
-    ;(config as any)[key] = value
+    Object.defineProperty(config, key, { value, writable: true, configurable: true })
   }
+  res.status(200).send('ok')
+})
+
+// PATCH /api/test-env/user/:email — update arbitrary fields on a user document
+router.patch('/user/:email', express.json(), async (req, res) => {
+  const result = await mongo.users.updateOne({ email: req.params.email }, { $set: req.body })
+  if (result.matchedCount === 0) return res.status(404).send('user not found')
+  res.status(200).send('ok')
+})
+
+// POST /api/test-env/clear-site-cache — clear the getSiteByHost memoized cache
+router.post('/clear-site-cache', async (req, res) => {
+  const { getSiteByHost } = await import('./sites/service.ts')
+  getSiteByHost.clear()
   res.status(200).send('ok')
 })
 

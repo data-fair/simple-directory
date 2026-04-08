@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, axiosAuth, clean, createUser } from '../support/axios.ts'
+import { axios, axiosAuth, clean, clearSiteCache, createUser } from '../support/axios.ts'
 
 test.describe('sites api', () => {
   test.beforeEach(async () => {
@@ -60,6 +60,7 @@ test.describe('sites api', () => {
 
     // switch auth mode to ssoBackOffice
     await adminAx.patch('/api/sites/test', { authMode: 'ssoBackOffice' })
+    await clearSiteCache()
 
     // a user can be created directly on the second site
     const { ax: siteAx1 } = await createUser('test-site2@test.com', false, 'TestPasswd01', siteDirectoryUrl)
@@ -67,6 +68,7 @@ test.describe('sites api', () => {
 
     // switch auth mode to onlyLocal
     await adminAx.patch('/api/sites/test', { authMode: 'onlyLocal' })
+    await clearSiteCache()
 
     // using site_redirect is no longer possible
     await assert.rejects(ax.post<string>('/api/auth/site_redirect', { redirect: siteDirectoryUrl }), { status: 400 })

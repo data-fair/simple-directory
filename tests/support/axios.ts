@@ -53,7 +53,11 @@ export const createUser = async (email: string, adminMode = false, password = 'T
     const emails = res.data
     mail = emails.find((m: any) => {
       const to = m.to?.[0]?.address || m.headers?.to
-      return to === email || (typeof to === 'string' && to.includes(email))
+      const matchesEmail = to === email || (typeof to === 'string' && to.includes(email))
+      // filter for confirmation mails only (not invitation mails)
+      const html = m.html || m.text || ''
+      const isConfirmation = html.includes('token_callback')
+      return matchesEmail && isConfirmation
     })
     if (mail) break
     await new Promise(resolve => setTimeout(resolve, 100))
@@ -75,6 +79,18 @@ export const createUser = async (email: string, adminMode = false, password = 'T
   const ax = await axiosAuth({ email, adminMode, password, axiosOpts: createAxiosOpts, directoryUrl: baseUrl }) as AxiosAuthInstance
   const user = (await ax.get('/api/auth/me')).data
   return { ax, user }
+}
+
+// Update arbitrary fields on a user document via the test-env API
+export const patchUser = async (email: string, fields: Record<string, any>) => {
+  const ax = axiosBuilder()
+  await ax.patch(`${devApiUrl}/api/test-env/user/${encodeURIComponent(email)}`, fields)
+}
+
+// Clear the getSiteByHost memoized cache on the running server
+export const clearSiteCache = async () => {
+  const ax = axiosBuilder()
+  await ax.post(`${devApiUrl}/api/test-env/clear-site-cache`)
 }
 
 export const getAllEmails = async () => {

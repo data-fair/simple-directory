@@ -23,6 +23,7 @@ test.describe('organizations api', () => {
   test.beforeEach(async () => {
     await deleteAllEmails()
     await clean()
+    await patchConfig({ multiRoles: false })
   })
 
   test('should create an organization', async () => {
