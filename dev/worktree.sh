@@ -26,11 +26,8 @@ npm ci
 echo "npm run build-types"
 npm run build-types
 
-echo "npm -w embed-ui run build"
-npm -w embed-ui run build
-
-echo "npm run test-deps"
-npm run test-deps
+echo "npm -w ui run build"
+npm -w ui run build
 
 echo "-----------------------------------------------"
 echo "✅ Setup Complete!"

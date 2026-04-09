@@ -9,20 +9,17 @@
     "test-api": "playwright test --project api --max-failures=1",
     "test-inproc": "playwright test --project api-inproc --max-failures=1",
     "test-e2e": "playwright test --project e2e --max-failures=1",
-    "test-deps": "docker compose --profile test up -d --wait",
     "report": "nyc report --reporter=html",
     "lint": "eslint . && npm -w ui run lint",
     "lint-fix": "eslint --fix . && npm -w ui run lint-fix",
     "dev-api": "npm -w api run dev",
     "dev-mock-oidc": "node --experimental-strip-types dev/mock-oidc-server.ts",
     "dev-ui": "npm -w ui run dev",
-    "dev-deps": "docker compose --profile dev up -d",
-    "stop-dev-deps": "docker compose --profile dev stop",
     "dev-zellij": "dotenv -- zellij --layout .zellij.kdl",
     "build-types": "mkdir -p ui/src/components/vjsf && rm -f ui/src/components/vjsf/* && df-build-types . --vjsf-dir ui/src/components/vjsf",
     "prepare": "husky || true",
     "check-types": "tsc && npm -w ui run check-types",
-    "quality": "npm run test-deps && npm run lint && npm run build-types && npm run check-types && npm run test"
+    "quality": "npm run lint && npm run build-types && npm run check-types && npm run test"
   },
   "repository": {
     "type": "git",
