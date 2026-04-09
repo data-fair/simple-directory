@@ -330,9 +330,9 @@ test.describe('invitations', () => {
     ax.setOrg(org.id)
 
     await anonymousAx.post('/api/sites',
-      { _id: 'test', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
+      { _id: 'test_site', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
-    await adminAx.patch('/api/sites/test', { authMode: 'ssoBackOffice' })
+    await adminAx.patch('/api/sites/test_site', { authMode: 'ssoBackOffice' })
     const mail = await waitForMail(
       () => ax.post('/api/invitations', {
         id: org.id,
@@ -412,9 +412,9 @@ test.describe('invitations', () => {
     ax.setOrg(org.id)
 
     await anonymousAx.post('/api/sites',
-      { _id: 'test', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
+      { _id: 'test_site', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
-    await adminAx.patch('/api/sites/test', { authMode: 'onlyBackOffice' })
+    await adminAx.patch('/api/sites/test_site', { authMode: 'onlyBackOffice' })
     const mail = await waitForMail(
       () => ax.post('/api/invitations', {
         id: org.id,

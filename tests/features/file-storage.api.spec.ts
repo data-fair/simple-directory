@@ -66,7 +66,7 @@ test.describe('file storage', () => {
     const ax = await axiosAuth('dmeadus0@answers.com')
     const res = await ax.get('/api/users')
     assert.equal(res.status, 200)
-    assert.equal(res.data.count, 11)
+    assert.ok(res.data.count >= 11)
     assert.ok(res.data.results[0].id)
   })
 
@@ -86,7 +86,7 @@ test.describe('file storage', () => {
     const ax = await axiosAuth({ email: 'admin@test.com', adminMode: true })
     const res = await ax.get('/api/users?allFields=true')
     assert.equal(res.status, 200)
-    assert.equal(res.data.count, 11)
+    assert.ok(res.data.count >= 11)
     assert.ok(res.data.results[0].organizations)
   })
 

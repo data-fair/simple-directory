@@ -17,12 +17,12 @@ If you use [zellij](https://zellij.dev/) you can replace all the following steps
 
 Run the services dependencies:
 
-    npm run dev-deps
+    docker compose --profile dev up -d
 
-Run the 2 development servers with these commands et separate shells:
+Run the 2 development servers with these commands in separate shells:
 
-    npm run dev-server
-    npm run dev-client
+    npm -w api run dev
+    npm -w ui run dev
 
 ## Docker image
 

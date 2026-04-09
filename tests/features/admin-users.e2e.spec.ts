@@ -25,7 +25,7 @@ test.describe('Admin users page', () => {
     await searchField.press('Enter')
 
     await page.waitForTimeout(500)
-    await expect(page.locator('.users-table').getByText('test_dmeadus0@answers.com')).toBeVisible()
+    await expect(page.locator('.users-table').getByText('dmeadus0@answers.com')).toBeVisible()
   })
 
   test('non-admin user is redirected from admin page', async ({ page, appUrl, loginAs }) => {

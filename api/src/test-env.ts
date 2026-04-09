@@ -18,7 +18,7 @@ router.delete('/', async (req, res) => {
   const legacyOrgIds = ['KWqAGZ4mG', 'ihMQiGTaY', '3sSi7xDIK', 'uakapD5tu', 'Yty0BxuZG', 'EnTgB2UbH', 'test-ldap']
   await mongo.organizations.deleteMany({ $or: [testIdFilter, { _id: { $in: legacyOrgIds } }] })
   await mongo.users.deleteMany({ $or: [testIdFilter, testEmailFilter, { _id: { $in: legacyIds } }] })
-  await mongo.sites.deleteMany(testIdFilter)
+  await mongo.sites.deleteMany({})
   await mongo.oauthTokens.deleteMany()
   await mongo.ldapUserSessions.deleteMany()
   await mongo.fileUserSessions.deleteMany()
@@ -32,6 +32,7 @@ router.delete('/', async (req, res) => {
     }
   }
   await mongo.passwordLists.deleteMany()
+  await mongo.db.collection('sd-rate-limiter-auth').deleteMany()
   const { getSiteByHost } = await import('./sites/service.ts')
   getSiteByHost.clear()
   res.status(204).send()

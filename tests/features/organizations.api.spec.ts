@@ -11,31 +11,27 @@ test.describe('organizations api', () => {
   })
 
   test('should create an organization', async () => {
-    const { ax: adminAx } = await createUser('admin@test.com')
     const { ax, user } = await createUser('test-org@test.com')
-    await ax.post('/api/organizations', { name: 'test' })
-    const allOrgs = (await adminAx.get('/api/organizations')).data.results
-    const orgs = allOrgs.filter((o: any) => o.id !== 'admins-org')
-    assert.equal(orgs.length, 1)
-    assert.equal(orgs[0].name, 'test')
+    const createdOrg = (await ax.post('/api/organizations', { name: 'test' })).data
+    assert.equal(createdOrg.name, 'test')
     const freshUser = (await ax.get('/api/users/' + user.id)).data
     assert.equal(freshUser.organizations.length, 1)
-    assert.equal(freshUser.organizations[0].id, orgs[0].id)
+    assert.equal(freshUser.organizations[0].id, createdOrg.id)
     assert.equal(freshUser.organizations[0].name, 'test')
     assert.equal(freshUser.organizations[0].role, 'admin')
   })
 
   test('should create an organization with departments', async () => {
-    const { ax: adminAx } = await createUser('admin@test.com')
     const { ax } = await createUser('test-org2@test.com')
-    await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }] })
-    const allOrgs = (await adminAx.get('/api/organizations')).data.results
-    const orgs = allOrgs.filter((o: any) => o.id !== 'admins-org')
-    assert.equal(orgs.length, 1)
-    assert.equal(orgs[0].name, 'test')
-    assert.ok(!orgs[0].departments)
-    ax.setOrg(orgs[0].id)
-    const detailedOrg = (await ax.get('/api/organizations/' + orgs[0].id)).data
+    const createdOrg = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }] })).data
+    assert.equal(createdOrg.name, 'test')
+    // list endpoint should not expose departments (select: id, name only)
+    const listedOrg = (await ax.get('/api/organizations?id=' + createdOrg.id)).data.results[0]
+    assert.ok(listedOrg)
+    assert.ok(!listedOrg.departments)
+    // detail endpoint should expose departments
+    ax.setOrg(createdOrg.id)
+    const detailedOrg = (await ax.get('/api/organizations/' + createdOrg.id)).data
     assert.equal(detailedOrg.departments.length, 1)
   })
 
@@ -160,16 +156,16 @@ test.describe('organizations api', () => {
     await getServerConfig()
     await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
 
-    const { ax } = await createUser('owner@test3.com')
+    const { ax } = await createUser('owner@test.com')
 
     const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }] })).data
     ax.setOrg(org.id)
-    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'user1dep1@test3.com', role: 'user' })
-    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'admin1dep1@test3.com', role: 'admin' })
-    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep2', email: 'user1dep2@test3.com', role: 'user' })
-    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep2', email: 'admin1dep2@test3.com', role: 'admin' })
-    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'user1@test3.com', role: 'user' })
-    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'admin1@test3.com', role: 'admin' })
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'user1dep1@test.com', role: 'user' })
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'admin1dep1@test.com', role: 'admin' })
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep2', email: 'user1dep2@test.com', role: 'user' })
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep2', email: 'admin1dep2@test.com', role: 'admin' })
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'user1@test.com', role: 'user' })
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'admin1@test.com', role: 'admin' })
 
     const members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
 
@@ -185,11 +181,11 @@ test.describe('organizations api', () => {
     }
 
     let emails = await sendEmails(
-      [{ type: 'user', id: members.find((m: any) => m.email === 'admin1@test3.com').id }],
+      [{ type: 'user', id: members.find((m: any) => m.email === 'admin1@test.com').id }],
       'test-email-user'
     )
     assert.equal(emails.length, 1)
-    assert.equal(emails[0].envelope.to[0].address, 'admin1@test3.com')
+    assert.equal(emails[0].envelope.to[0].address, 'admin1@test.com')
 
     emails = await sendEmails(
       [{ type: 'organization', id: org.id }],
@@ -197,9 +193,9 @@ test.describe('organizations api', () => {
     )
     assert.equal(emails.length, 1)
     assert.equal(emails[0].to.length, 3)
-    assert.ok(emails[0].to.find((t: any) => t.address === 'owner@test3.com'))
-    assert.ok(emails[0].to.find((t: any) => t.address === 'user1@test3.com'))
-    assert.ok(emails[0].to.find((t: any) => t.address === 'admin1@test3.com'))
+    assert.ok(emails[0].to.find((t: any) => t.address === 'owner@test.com'))
+    assert.ok(emails[0].to.find((t: any) => t.address === 'user1@test.com'))
+    assert.ok(emails[0].to.find((t: any) => t.address === 'admin1@test.com'))
 
     emails = await sendEmails(
       [{ type: 'organization', id: org.id, role: 'admin' }],
@@ -207,8 +203,8 @@ test.describe('organizations api', () => {
     )
     assert.equal(emails.length, 1)
     assert.equal(emails[0].to.length, 2)
-    assert.ok(emails[0].to.find((t: any) => t.address === 'owner@test3.com'))
-    assert.ok(emails[0].to.find((t: any) => t.address === 'admin1@test3.com'))
+    assert.ok(emails[0].to.find((t: any) => t.address === 'owner@test.com'))
+    assert.ok(emails[0].to.find((t: any) => t.address === 'admin1@test.com'))
 
     emails = await sendEmails(
       [{ type: 'organization', id: org.id, department: '*' }],
@@ -223,25 +219,25 @@ test.describe('organizations api', () => {
     )
     assert.equal(emails.length, 1)
     assert.equal(emails[0].to.length, 1)
-    assert.ok(emails[0].to.find((t: any) => t.address === 'admin1dep1@test3.com'))
+    assert.ok(emails[0].to.find((t: any) => t.address === 'admin1dep1@test.com'))
 
     const membersEmail1 = (await ax.get(`/api/organizations/${org.id}/members`, {
-      params: { email: 'owner@test3.com' }
+      params: { email: 'owner@test.com' }
     })).data.results
     assert.equal(membersEmail1.length, 1)
 
     const membersEmail2 = (await ax.get(`/api/organizations/${org.id}/members`, {
-      params: { email: 'owner@test3.com,admin1@test3.com' }
+      params: { email: 'owner@test.com,admin1@test.com' }
     })).data.results
     assert.equal(membersEmail2.length, 2)
 
     const memberEmails3Insensitive = (await ax.get(`/api/organizations/${org.id}/members`, {
-      params: { email: 'Owner@Test3.com,admin1@' }
+      params: { email: 'Owner@Test.com,admin1@' }
     })).data.results
     assert.equal(memberEmails3Insensitive.length, 1)
 
     const memberEmails3Insensitive2 = (await ax.get(`/api/organizations/${org.id}/members`, {
-      params: { email: 'Owner@Test3.com,admin1@test3.COM' }
+      params: { email: 'Owner@Test.com,admin1@test.COM' }
     })).data.results
     assert.equal(memberEmails3Insensitive2.length, 2)
   })

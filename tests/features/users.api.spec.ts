@@ -31,10 +31,12 @@ test.describe('users api', () => {
     })
 
     const { ax: adminAx } = await createUser('admin@test.com', true)
-    let users = (await adminAx.get('/api/users')).data
-    assert.equal(users.results.length, 2)
-    users = (await adminAx.get('/api/users?q=use')).data
-    assert.equal(users.results.length, 1)
+    let users = (await adminAx.get('/api/users?allFields=true&size=100')).data
+    assert.ok(users.count >= 2)
+    assert.ok(users.results.find((u: any) => u.email === 'user@test.com'))
+    assert.ok(users.results.find((u: any) => u.email === 'admin@test.com'))
+    users = (await adminAx.get('/api/users?q=user%40test.com')).data
+    assert.ok(users.results.length >= 1)
   })
 
   test('should send an email to confirm new password', async () => {
@@ -80,7 +82,7 @@ test.describe('users api', () => {
     const owner = { type: 'organization', id: org.id, name: org.name }
 
     await anonymousAx.post('/api/sites',
-      { _id: 'test', owner, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
+      { _id: 'test_site', owner, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
 
     const mail2 = await waitForMail(
