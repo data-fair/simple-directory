@@ -1,36 +1,21 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { clean, createUser, axiosAuth, deleteAllEmails, getAllEmails, patchConfig } from '../support/axios.ts'
+import { testEnvAx, maildevAx, createUser, axiosAuth, deleteAllEmails, waitForMail, getServerConfig } from '../support/axios.ts'
 import jwt, { type JwtPayload } from 'jsonwebtoken'
-
-/** Poll maildev for a mail matching the predicate, return it */
-async function waitForMail (predicate?: (m: any) => boolean): Promise<any> {
-  for (let i = 0; i < 100; i++) {
-    const emails = await getAllEmails()
-    const mail = predicate ? emails.find(predicate) : emails[0]
-    if (mail) {
-      const html: string = mail.html || mail.text || ''
-      const allLinks = [...html.matchAll(/href="([^"]*)"/g)].map(m => m[1].replace(/&amp;/g, '&'))
-      mail.link = allLinks.find(l => /token_callback|_accept|action_token|invit_token|login/.test(l)) || allLinks[0]
-      return mail
-    }
-    await new Promise(resolve => setTimeout(resolve, 100))
-  }
-  throw new Error('no mail received')
-}
 
 test.describe('organizations api', () => {
   test.beforeEach(async () => {
     await deleteAllEmails()
-    await clean()
-    await patchConfig({ multiRoles: false })
+    await testEnvAx.delete('/')
+    await testEnvAx.patch('/config', { multiRoles: false })
   })
 
   test('should create an organization', async () => {
     const { ax: adminAx } = await createUser('admin@test.com')
     const { ax, user } = await createUser('test-org@test.com')
     await ax.post('/api/organizations', { name: 'test' })
-    const orgs = (await adminAx.get('/api/organizations')).data.results
+    const allOrgs = (await adminAx.get('/api/organizations')).data.results
+    const orgs = allOrgs.filter((o: any) => o.id !== 'admins-org')
     assert.equal(orgs.length, 1)
     assert.equal(orgs[0].name, 'test')
     const freshUser = (await ax.get('/api/users/' + user.id)).data
@@ -44,7 +29,8 @@ test.describe('organizations api', () => {
     const { ax: adminAx } = await createUser('admin@test.com')
     const { ax } = await createUser('test-org2@test.com')
     await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }] })
-    const orgs = (await adminAx.get('/api/organizations')).data.results
+    const allOrgs = (await adminAx.get('/api/organizations')).data.results
+    const orgs = allOrgs.filter((o: any) => o.id !== 'admins-org')
     assert.equal(orgs.length, 1)
     assert.equal(orgs[0].name, 'test')
     assert.ok(!orgs[0].departments)
@@ -54,15 +40,15 @@ test.describe('organizations api', () => {
   })
 
   test('should invite a new partner in an organization', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
 
     const { ax } = await createUser('test-partners1@test.com')
     const org = (await ax.post('/api/organizations', { name: 'Org 1' })).data
     ax.setOrg(org.id)
 
-    await deleteAllEmails()
-    await ax.post(`/api/organizations/${org.id}/partners`, { name: 'Org 2', contactEmail: 'test-partners2@test.com' })
-    const mail = await waitForMail()
+    const mail = await waitForMail(
+      () => ax.post(`/api/organizations/${org.id}/partners`, { name: 'Org 2', contactEmail: 'test-partners2@test.com' })
+    )
     assert.ok(mail.link.startsWith(config.publicUrl + '/login?step=partnerInvitation&partner_invit_token='))
     const token = new URL(mail.link).searchParams.get('partner_invit_token')
     assert.ok(token)
@@ -94,8 +80,8 @@ test.describe('organizations api', () => {
   })
 
   test('should invite a user in orga and change his role', async () => {
-    const config = (await import('../../api/src/config.ts')).default
-    await patchConfig({ alwaysAcceptInvitation: true })
+    await getServerConfig()
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
 
     const { ax } = await createUser('test-owner1@test.com')
     const { ax: axMember, user: memberUser } = await createUser('test-member1@test.com')
@@ -118,12 +104,12 @@ test.describe('organizations api', () => {
     const patchedMember = patchedMembers.find((m: any) => m.email === 'test-member1@test.com')
     assert.equal(patchedMember.role, 'admin')
 
-    await patchConfig({ alwaysAcceptInvitation: false })
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: false })
   })
 
   test('should invite a user in orga in multiple departments', async () => {
-    const config = (await import('../../api/src/config.ts')).default
-    await patchConfig({ alwaysAcceptInvitation: true })
+    await getServerConfig()
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
 
     const { ax } = await createUser('test-owner2@test.com')
 
@@ -167,12 +153,12 @@ test.describe('organizations api', () => {
     await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'test-owner2@test.com', role: 'user' }), { status: 400 })
     await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, department: 'baddep', email: 'test-member2@test.com', role: 'user' }), { status: 404 })
 
-    await patchConfig({ alwaysAcceptInvitation: false })
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: false })
   })
 
   test('should send emails based on roles and departments', async () => {
-    const config = (await import('../../api/src/config.ts')).default
-    await patchConfig({ alwaysAcceptInvitation: true })
+    await getServerConfig()
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
 
     const { ax } = await createUser('owner@test3.com')
 
@@ -195,7 +181,7 @@ test.describe('organizations api', () => {
       )
       assert.equal(res.status, 200)
       await new Promise(resolve => setTimeout(resolve, 50))
-      return (await getAllEmails()).filter((m: any) => m.subject === subject)
+      return ((await maildevAx.get('/email')).data).filter((m: any) => m.subject === subject)
     }
 
     let emails = await sendEmails(

@@ -1,67 +1,25 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, clean, startApiServer, stopApiServer, createUser, loginWithOIDC } from '../support/in-process-server.ts'
-import { OAuth2Server } from 'oauth2-mock-server'
+import { axios, testEnvAx, createUser, loginWithOIDC, mockOidcControlUrl1, mockOidcControlUrl2 } from '../support/axios.ts'
+import { axiosBuilder } from '@data-fair/lib-node/axios.js'
+
+const mockOidcPort1 = parseInt(process.env.MOCK_OIDC_PORT1 || '8998')
+const mockOidcPort2 = parseInt(process.env.MOCK_OIDC_PORT2 || '8999')
 
 const oidcUserInfo1 = { sub: 'testoidc1', email: 'oidc1@test.com', given_name: 'OIDC', family_name: 'Test', role: 'contrib' }
 const oidcUserInfo2 = { sub: 'testoidc2', email: 'oidc2@test.com', given_name: 'OIDC', family_name: 'Test', role: 'contrib' }
 
-const startOAuthServer = async (port: number, oidcUserInfo: any) => {
-  const oauthServer = new OAuth2Server()
-  await oauthServer.issuer.keys.generate('RS256')
-  oauthServer.service.on('beforeUserinfo', (userInfoResponse, req) => {
-    userInfoResponse.body = { ...oidcUserInfo }
-  })
-  await oauthServer.start(port, 'localhost')
-  return oauthServer
-}
-
 test.describe('global OIDC configuration', () => {
-  let oauthServer1: OAuth2Server
-  let oauthServer2: OAuth2Server
-  test.beforeAll(async () => {
-    process.env.STORAGE_TYPE = 'mongo'
-    process.env.OAUTH_PROVIDERS = '["github"]'
-    process.env.OIDC_PROVIDERS = JSON.stringify([{
-      title: 'Test provider',
-      discovery: 'http://localhost:8998/.well-known/openid-configuration',
-      client: {
-        id: 'test-client',
-        secret: 'test-secret'
-      },
-      createMember: {
-        type: 'always'
-      },
-      memberRole: {
-        type: 'attribute',
-        attribute: 'role',
-      }
-    }, {
-      title: 'Test provider core',
-      coreIdProvider: true,
-      discovery: 'http://localhost:8999/.well-known/openid-configuration',
-      client: {
-        id: 'test-client',
-        secret: 'test-secret'
-      },
-      createMember: {
-        type: 'always'
-      },
-      memberRole: {
-        type: 'attribute',
-        attribute: 'role',
-      }
-    }])
-    process.env.DEFAULT_ORG = 'org1'
-    oauthServer1 = await startOAuthServer(8998, oidcUserInfo1)
-    oauthServer2 = await startOAuthServer(8999, oidcUserInfo2)
-    await startApiServer()
+  test.beforeEach(async () => {
+    await testEnvAx.delete('/')
+    await axiosBuilder().patch(mockOidcControlUrl1 + '/_test/userinfo', oidcUserInfo1)
+    await axiosBuilder().patch(mockOidcControlUrl2 + '/_test/userinfo', oidcUserInfo2)
+    await testEnvAx.patch('/config', { defaultOrg: 'org1', defaultRolesLabels: {} })
   })
-  test.beforeEach(async () => await clean())
-  test.afterAll(stopApiServer)
-  test.afterAll(async () => {
-    await oauthServer1.stop()
-    await oauthServer2.stop()
+  test.afterEach(async () => {
+    await axiosBuilder().delete(mockOidcControlUrl1 + '/_test')
+    await axiosBuilder().delete(mockOidcControlUrl2 + '/_test')
+    await testEnvAx.patch('/config', { defaultOrg: 'admins-org', defaultRolesLabels: { admin: 'Administrateur' } })
   })
 
   test('should implement a standard login workflow', async () => {
@@ -71,9 +29,9 @@ test.describe('global OIDC configuration', () => {
     const anonymousAx = await axios()
     const providers = (await anonymousAx.get('/api/auth/providers')).data
     assert.ok(providers.find((p: any) => p.id === 'github'))
-    assert.ok(providers.find((p: any) => p.id === 'localhost8998'))
+    assert.ok(providers.find((p: any) => p.id === 'localhost' + mockOidcPort1))
 
-    const ax1 = await loginWithOIDC(8998)
+    const ax1 = await loginWithOIDC(mockOidcPort1)
     const me = (await ax1.get('/api/auth/me')).data
     assert.equal(me.email, 'oidc1@test.com')
     assert.equal(me.name, 'OIDC Test')
@@ -81,9 +39,8 @@ test.describe('global OIDC configuration', () => {
     assert.deepEqual(me.organizations, [{ id: 'org1', name: 'test', role: 'contrib', dflt: 1 }])
 
     // by default the info is not synced on next login
-    oidcUserInfo1.family_name = 'Test2'
-    oidcUserInfo1.role = 'admin'
-    const ax2 = await loginWithOIDC(8998)
+    await axiosBuilder().patch(mockOidcControlUrl1 + '/_test/userinfo', { ...oidcUserInfo1, family_name: 'Test2', role: 'admin' })
+    const ax2 = await loginWithOIDC(mockOidcPort1)
     const me2 = (await ax2.get('/api/auth/me')).data
     assert.equal(me2.email, 'oidc1@test.com')
     assert.equal(me2.name, 'OIDC Test')
@@ -97,18 +54,17 @@ test.describe('global OIDC configuration', () => {
     const anonymousAx = await axios()
     const providers = (await anonymousAx.get('/api/auth/providers')).data
     assert.ok(providers.find((p: any) => p.id === 'github'))
-    assert.ok(providers.find((p: any) => p.id === 'localhost8998'))
+    assert.ok(providers.find((p: any) => p.id === 'localhost' + mockOidcPort1))
 
-    const ax1 = await loginWithOIDC(8999)
+    const ax1 = await loginWithOIDC(mockOidcPort2)
     const me = (await ax1.get('/api/auth/me')).data
     assert.equal(me.email, 'oidc2@test.com')
     assert.equal(me.name, 'OIDC Test')
     assert.deepEqual(me.organizations, [{ id: 'org1', name: 'test', role: 'contrib', dflt: 1, readOnly: true }])
 
     // the info is synced on next login
-    oidcUserInfo2.family_name = 'Test2'
-    oidcUserInfo2.role = 'admin'
-    const ax2 = await loginWithOIDC(8999)
+    await axiosBuilder().patch(mockOidcControlUrl2 + '/_test/userinfo', { ...oidcUserInfo2, family_name: 'Test2', role: 'admin' })
+    const ax2 = await loginWithOIDC(mockOidcPort2)
     const me2 = (await ax2.get('/api/auth/me')).data
     assert.equal(me2.email, 'oidc2@test.com')
     assert.equal(me2.name, 'OIDC Test2')

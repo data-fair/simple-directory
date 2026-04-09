@@ -10,6 +10,8 @@ test.describe('ldap storage API', () => {
     await startApiServer()
     const config = (await import('../../api/src/config.ts')).default
     ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+    delete ldapConfig.organizations?.staticSingleOrg
+    ldapConfig.cacheMS = 0
   })
   test.beforeEach(async () => await clean({ ldapConfig }))
 

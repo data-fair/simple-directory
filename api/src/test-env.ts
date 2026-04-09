@@ -10,7 +10,7 @@ const router = Router()
 
 // DELETE /api/test-env — clean all test data
 router.delete('/', async (req, res) => {
-  await mongo.organizations.deleteMany({})
+  await mongo.organizations.deleteMany({ _id: { $ne: 'admins-org' } })
   await mongo.users.deleteMany({})
   await mongo.sites.deleteMany({})
   await mongo.oauthTokens.deleteMany()
@@ -26,6 +26,8 @@ router.delete('/', async (req, res) => {
     }
   }
   await mongo.passwordLists.deleteMany()
+  const { getSiteByHost } = await import('./sites/service.ts')
+  getSiteByHost.clear()
   res.status(204).send()
 })
 
@@ -35,7 +37,12 @@ router.post('/seed', async (req, res) => {
   const usersFile = resolve(import.meta.dirname, '../../dev/resources/users.json')
   const orgsFile = resolve(import.meta.dirname, '../../dev/resources/organizations.json')
   const users = JSON.parse(readFileSync(usersFile, 'utf-8'))
-  const orgs = JSON.parse(readFileSync(orgsFile, 'utf-8'))
+  // replace port placeholders in org configs (e.g. {LDAP_PORT})
+  let orgsRaw = readFileSync(orgsFile, 'utf-8')
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value) orgsRaw = orgsRaw.replaceAll(`{${key}}`, value)
+  }
+  const orgs = JSON.parse(orgsRaw)
 
   // build org membership map for users
   const userOrgs: Record<string, any[]> = {}
@@ -55,6 +62,7 @@ router.post('/seed', async (req, res) => {
     const doc = {
       _id: user.id,
       ...user,
+      name: [user.firstName, user.lastName].filter(Boolean).join(' '),
       organizations: userOrgs[user.id] || [],
       emailConfirmed: true
     }
@@ -107,9 +115,105 @@ router.post('/clear-site-cache', async (req, res) => {
   res.status(200).send('ok')
 })
 
+// GET /api/test-env/config — expose relevant config values to tests
+// This prevents tests from importing config.ts locally (which loads test.cjs instead of development.cjs)
+router.get('/config', (req, res) => {
+  res.json({
+    publicUrl: config.publicUrl,
+    secretKeys: config.secretKeys
+  })
+})
+
 // GET /api/test-env/ping — simple health check for test readiness
 router.get('/ping', (req, res) => {
   res.send('ok')
+})
+
+// GET /api/test-env/events — SSE stream of mail events for tests
+router.get('/events', async (req, res) => {
+  const { events } = await import('./mails/service.ts')
+  req.socket.setNoDelay(true)
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive'
+  })
+  res.flushHeaders()
+
+  const onSend = (data: any) => {
+    res.write(`event: mail\ndata: ${JSON.stringify(data)}\n\n`)
+  }
+  events.on('send', onSend)
+  req.on('close', () => {
+    events.off('send', onSend)
+  })
+})
+
+// --- LDAP test helpers ---
+
+// POST /api/test-env/ldap/users — create a user in LDAP using a given config
+// Body: { config: LdapParams, user: UserWritable, extraAttrs?: Record<string, string | string[]> }
+router.post('/ldap/users', express.json(), async (req, res) => {
+  const ldapStorage = await import('./storages/ldap.ts')
+  const storage = await ldapStorage.init(req.body.config)
+  await storage._createUser(req.body.user, req.body.extraAttrs || {})
+  res.status(201).send('ok')
+})
+
+// DELETE /api/test-env/ldap/users/:id — delete a user from LDAP
+// Body: { config: LdapParams }
+router.delete('/ldap/users/:id', express.json(), async (req, res) => {
+  const ldapStorage = await import('./storages/ldap.ts')
+  const storage = await ldapStorage.init(req.body.config)
+  await storage._deleteUser(req.params.id)
+  res.status(204).send()
+})
+
+// POST /api/test-env/ldap/organizations — create an organization in LDAP
+// Body: { config: LdapParams, organization: Organization }
+router.post('/ldap/organizations', express.json(), async (req, res) => {
+  const ldapStorage = await import('./storages/ldap.ts')
+  const storage = await ldapStorage.init(req.body.config)
+  await storage._createOrganization(req.body.organization)
+  res.status(201).send('ok')
+})
+
+// DELETE /api/test-env/ldap/organizations/:id — delete an organization from LDAP
+// Body: { config: LdapParams }
+router.delete('/ldap/organizations/:id', express.json(), async (req, res) => {
+  const ldapStorage = await import('./storages/ldap.ts')
+  const storage = await ldapStorage.init(req.body.config)
+  await storage._deleteOrganization(req.params.id)
+  res.status(204).send()
+})
+
+// POST /api/test-env/ldap/clean — clean test LDAP data (users + orgs)
+// Body: { config: LdapParams, emails?: string[], orgIds?: string[] }
+router.post('/ldap/clean', express.json(), async (req, res) => {
+  const ldapStorage = await import('./storages/ldap.ts')
+  const storage = await ldapStorage.init(req.body.config)
+  for (const email of (req.body.emails || [])) {
+    const user = await storage.getUserByEmail(email)
+    if (user) await storage._deleteUser(user.id)
+  }
+  for (const id of (req.body.orgIds || [])) {
+    const org = await storage.getOrganization(id)
+    if (org) await storage._deleteOrganization(org.id)
+  }
+  storage.clearCache()
+  res.status(204).send()
+})
+
+// POST /api/test-env/ldap/org-storage-users — create a user using an org's configured LDAP storage
+// Body: { orgId: string, user: UserWritable, extraAttrs?: Record<string, string | string[]> }
+router.post('/ldap/org-storage-users', express.json(), async (req, res) => {
+  const storages = (await import('./storages/index.ts')).default
+  const org = await storages.globalStorage.getOrganization(req.body.orgId)
+  if (!org) return res.status(404).send('organization not found')
+  const storage = await storages.createOrgStorage(org) as any
+  if (!storage) return res.status(400).send('organization has no LDAP storage configured')
+  await storage._createUser(req.body.user, req.body.extraAttrs || {})
+  res.status(201).send('ok')
 })
 
 export default router

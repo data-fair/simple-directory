@@ -1,14 +1,14 @@
 import fs from 'node:fs'
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, clean, seed, getAllEmails, deleteAllEmails } from '../support/axios.ts'
+import { axios, testEnvAx, maildevAx, deleteAllEmails } from '../support/axios.ts'
 import FormData from 'form-data'
 
 test.describe('mails', () => {
   test.beforeEach(async () => {
     await deleteAllEmails()
-    await clean()
-    await seed()
+    await testEnvAx.delete('/')
+    await testEnvAx.post('/seed')
   })
 
   test('Try to send mail whithout the secret', async () => {
@@ -25,7 +25,7 @@ test.describe('mails', () => {
     }, { params: { key: 'testkey' } })
     assert.equal(res.status, 200)
     await new Promise(resolve => setTimeout(resolve, 50))
-    const emails: any[] = await getAllEmails()
+    const emails: any[] = (await maildevAx.get('/email')).data
     const email = emails.find((m: any) => m.subject === 'test')
     assert.ok(email)
     assert.equal(email.envelope.to[0].address, 'dmeadus0@answers.com')
@@ -43,7 +43,7 @@ test.describe('mails', () => {
     }, { params: { key: 'testkey' } })
     assert.equal(res.status, 200)
     await new Promise(resolve => setTimeout(resolve, 50))
-    const emails: any[] = await getAllEmails()
+    const emails: any[] = (await maildevAx.get('/email')).data
     const email = emails.find((m: any) => m.subject === 'test2')
     assert.ok(email)
     assert.equal(email.envelope.to.length, 3)
@@ -58,7 +58,7 @@ test.describe('mails', () => {
     }, { params: { key: 'testkey' } })
     assert.equal(res.status, 200)
     await new Promise(resolve => setTimeout(resolve, 50))
-    const emails: any[] = await getAllEmails()
+    const emails: any[] = (await maildevAx.get('/email')).data
     const email = emails.find((m: any) => m.subject === 'test3')
     assert.ok(email)
     assert.equal(email.envelope.to.length, 2)
@@ -78,7 +78,7 @@ test.describe('mails', () => {
     const res = await ax.post('/api/mails', form, { params: { key: 'testkey' } })
     assert.equal(res.status, 200)
     await new Promise(resolve => setTimeout(resolve, 50))
-    const emails: any[] = await getAllEmails()
+    const emails: any[] = (await maildevAx.get('/email')).data
     const email = emails.find((m: any) => m.subject === 'test4')
     assert.ok(email)
     assert.equal(email.envelope.to.length, 1)

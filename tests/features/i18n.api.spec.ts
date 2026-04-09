@@ -1,11 +1,11 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axiosAuth, clean, seed } from '../support/axios.ts'
+import { axiosAuth, testEnvAx } from '../support/axios.ts'
 
 test.describe('i18n', () => {
   test.beforeEach(async () => {
-    await clean()
-    await seed()
+    await testEnvAx.delete('/')
+    await testEnvAx.post('/seed')
   })
 
   test('Error message with default lang if not specified', async () => {

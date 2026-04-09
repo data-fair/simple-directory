@@ -20,90 +20,138 @@ export const axiosAuth = async (opts: string | Omit<AxiosAuthOptions, 'password'
   return _axiosAuth({ password, directoryUrl, ...opts, axiosOpts: { ...axiosOpts, ...opts.axiosOpts } })
 }
 
-export const clean = async () => {
-  const ax = axiosBuilder()
-  await ax.delete(`${devApiUrl}/api/test-env`)
+// Axios instances for test infrastructure endpoints
+export const testEnvAx = axiosBuilder({ baseURL: `${devApiUrl}/api/test-env` })
+export const maildevAx = axiosBuilder({ baseURL: `http://localhost:${process.env.MAILDEV_UI_PORT}` })
+
+const mockOidcPort1 = parseInt(process.env.MOCK_OIDC_PORT1 || '8998')
+const mockOidcPort2 = parseInt(process.env.MOCK_OIDC_PORT2 || '8999')
+export const mockOidcControlUrl1 = `http://localhost:${mockOidcPort1 + 100}`
+export const mockOidcControlUrl2 = `http://localhost:${mockOidcPort2 + 100}`
+
+// Fetch config from the running dev server (avoids importing config.ts locally which loads test.cjs)
+let _serverConfig: any
+export const getServerConfig = async () => {
+  if (!_serverConfig) {
+    _serverConfig = (await testEnvAx.get('/config')).data
+  }
+  return _serverConfig
 }
 
-// Apply config overrides on the running dev server
-export const patchConfig = async (overrides: Record<string, any>) => {
-  const ax = axiosBuilder()
-  await ax.patch(`${devApiUrl}/api/test-env/config`, overrides)
+// Start an SSE listener for mail events. Returns { ready, promise }.
+// Await `ready` before triggering the action that sends the mail, then await `promise` for the result.
+export const startMailListener = (filter?: (data: any) => boolean, timeout = 10000) => {
+  const controller = new AbortController()
+  let resolveReady: () => void
+  const ready = new Promise<void>(resolve => { resolveReady = resolve })
+
+  const promise = new Promise<any>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      controller.abort()
+      reject(new Error(`waitForMail timeout after ${timeout}ms`))
+    }, timeout)
+
+    fetch(`${devApiUrl}/api/test-env/events`, {
+      signal: controller.signal,
+      headers: { Accept: 'text/event-stream' }
+    }).then(async (res) => {
+      resolveReady()
+      const reader = res.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const parts = buffer.split('\n\n')
+        buffer = parts.pop()!
+        for (const part of parts) {
+          let eventType = ''
+          let data = ''
+          for (const line of part.split('\n')) {
+            if (line.startsWith('event: ')) eventType = line.slice(7)
+            else if (line.startsWith('data: ')) data = line.slice(6)
+          }
+          if (eventType === 'mail' && data) {
+            const parsed = JSON.parse(data)
+            if (!filter || filter(parsed)) {
+              clearTimeout(timer)
+              controller.abort()
+              resolve(parsed)
+              return
+            }
+          }
+        }
+      }
+    }).catch((err: any) => {
+      if (err.name !== 'AbortError') {
+        clearTimeout(timer)
+        reject(err)
+      }
+    })
+  })
+
+  return { ready, promise }
 }
 
-// Seed predefined users and organizations from JSON files into mongo
-// Call this after clean() for tests that need the predefined file-storage users
-export const seed = async () => {
-  const ax = axiosBuilder()
-  await ax.post(`${devApiUrl}/api/test-env/seed`)
+// Convenience: run an action and wait for the mail it sends.
+export const waitForMail = async (action: () => Promise<any>, filter?: (data: any) => boolean, timeout = 10000) => {
+  const listener = startMailListener(filter, timeout)
+  await listener.ready
+  await action()
+  return listener.promise
 }
 
 export const createUser = async (email: string, adminMode = false, password = 'TestPasswd01', _directoryUrl?: string) => {
   const baseUrl = _directoryUrl ?? directoryUrl
   const createAxiosOpts = { baseURL: baseUrl }
   const anonymAx = await axios(createAxiosOpts)
-  await anonymAx.post('/api/users', { email, password })
 
-  // poll maildev REST API for the confirmation mail
-  const maildevUrl = `http://localhost:${process.env.MAILDEV_UI_PORT}`
-  const mailAx = axiosBuilder()
-  let mail: any
-  for (let i = 0; i < 100; i++) {
-    const res = await mailAx.get(`${maildevUrl}/email`)
-    const emails = res.data
-    mail = emails.find((m: any) => {
-      const to = m.to?.[0]?.address || m.headers?.to
-      const matchesEmail = to === email || (typeof to === 'string' && to.includes(email))
-      // filter for confirmation mails only (not invitation mails)
-      const html = m.html || m.text || ''
-      const isConfirmation = html.includes('token_callback')
-      return matchesEmail && isConfirmation
-    })
-    if (mail) break
-    await new Promise(resolve => setTimeout(resolve, 100))
-  }
-  assert.ok(mail, `no confirmation mail received for ${email}`)
+  const mail = await waitForMail(
+    () => anonymAx.post('/api/users', { email, password }),
+    (m) => m.to === email && m.link?.includes('token_callback')
+  )
 
-  // extract token_callback link from mail HTML
-  const html: string = mail.html || mail.text
-  const linkMatch = html.match(/href="([^"]*token_callback[^"]*)"/)
-  assert.ok(linkMatch, 'no token_callback link found in mail')
-  const link = linkMatch[1].replace(/&amp;/g, '&')
-
-  // follow the link to confirm the user
-  await anonymAx(link).catch((err: any) => { if (err.status !== 302) throw err })
-
-  // delete the processed mail from maildev
-  await mailAx.delete(`${maildevUrl}/email/${mail.id}`)
+  // follow the token_callback link to confirm the user
+  await anonymAx(mail.link).catch((err: any) => { if (err.status !== 302) throw err })
 
   const ax = await axiosAuth({ email, adminMode, password, axiosOpts: createAxiosOpts, directoryUrl: baseUrl }) as AxiosAuthInstance
   const user = (await ax.get('/api/auth/me')).data
   return { ax, user }
 }
 
-// Update arbitrary fields on a user document via the test-env API
-export const patchUser = async (email: string, fields: Record<string, any>) => {
-  const ax = axiosBuilder()
-  await ax.patch(`${devApiUrl}/api/test-env/user/${encodeURIComponent(email)}`, fields)
-}
-
-// Clear the getSiteByHost memoized cache on the running server
-export const clearSiteCache = async () => {
-  const ax = axiosBuilder()
-  await ax.post(`${devApiUrl}/api/test-env/clear-site-cache`)
-}
-
-export const getAllEmails = async () => {
-  const ax = axiosBuilder()
-  return (await ax.get(`http://localhost:${process.env.MAILDEV_UI_PORT}/email`)).data
-}
-
 export const deleteAllEmails = async () => {
-  const ax = axiosBuilder()
-  const emails = (await ax.get(`http://localhost:${process.env.MAILDEV_UI_PORT}/email`)).data
+  const emails = (await maildevAx.get('/email')).data
   for (const email of emails) {
-    await ax.delete(`http://localhost:${process.env.MAILDEV_UI_PORT}/email/${email.id}`)
+    await maildevAx.delete(`/email/${email.id}`)
   }
+}
+
+export const loginWithOIDC = async (port: number) => {
+  const anonymousAx = await axios()
+
+  // request a login from the provider
+  const loginInitial = await anonymousAx.get(`/api/auth/oauth/localhost${port}/login`, { validateStatus: (status: number) => status === 302 })
+  const providerAuthUrl = new URL(loginInitial.headers.location)
+  // successful login on the provider followed by redirect to our callback url
+  const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (status: number) => status === 302 })
+  const providerAuthRedirect = new URL(loginProvider.headers.location)
+  // open our callback url that produces a temporary token to be transformed in a session token by a token_callback url
+  const oauthCallback = await anonymousAx(providerAuthRedirect.href, { validateStatus: (status: number) => status === 302 })
+  const callbackRedirect = new URL(oauthCallback.headers.location)
+  // finally the token_callback url will set cookies and redirect to our final destination
+  const tokenCallback = await anonymousAx(callbackRedirect.href, { validateStatus: (status: number) => status === 302 })
+  const setCookies = tokenCallback.headers['set-cookie']
+  assert.ok(setCookies && setCookies.length >= 3)
+  const { CookieJar } = await import('tough-cookie')
+  const cookieJar = new CookieJar()
+  for (const cookie of setCookies) {
+    cookieJar.setCookie(cookie, callbackRedirect.origin)
+  }
+
+  anonymousAx.defaults.headers.Cookie = await cookieJar.getCookieString(callbackRedirect.origin)
+
+  return anonymousAx
 }
 
 export const passwordLogin = async (ax: AxiosAuthInstance, email: string, password: string) => {

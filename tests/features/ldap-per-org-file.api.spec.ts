@@ -1,42 +1,46 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axiosAuth, clean, startApiServer, stopApiServer } from '../support/in-process-server.ts'
+import { axiosAuth, testEnvAx } from '../support/axios.ts'
+import config from '../../api/src/config.ts'
 
-let ldapConfig: any
+const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+ldapConfig.organizations.staticSingleOrg = { id: 'test-ldap', name: 'Test single org' }
+
+const ldapEmails = ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com']
 
 // see test/resources/organizations.json to see that the org "test-ldap" has a specific configuration
 
 test.describe('ldap storage per organization in file storage mode', () => {
-  test.beforeAll(async () => {
-    await startApiServer()
-    const config = (await import('../../api/src/config.ts')).default
-    ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
-    ldapConfig.organizations.staticSingleOrg = { id: 'test-ldap', name: 'Test single org' }
+  test.beforeEach(async () => {
+    await testEnvAx.delete('/')
+    await testEnvAx.post('/seed')
+    await testEnvAx.post('/ldap/clean', { config: ldapConfig, emails: ldapEmails, orgIds: [] })
   })
-  test.beforeEach(async () => await clean({ ldapConfig }))
 
   // prepare ldap directory
   test.beforeEach(async () => {
-    const ldapStorage = await import('../../api/src/storages/ldap.ts')
-    const storage = await ldapStorage.init(ldapConfig)
-
-    await storage._createUser({
-      id: 'alban',
-      firstName: 'Alban',
-      lastName: 'Mouton',
-      email: 'alban.mouton@koumoul.com',
-      organizations: []
-    }, { employeeType: 'administrator', departmentNumber: '/prefix/2/dep1' })
-    await storage._createUser({
-      id: 'alban2',
-      firstName: 'Alban',
-      lastName: '',
-      email: 'alban.mouton@gmail.com',
-      organizations: []
+    await testEnvAx.post('/ldap/users', {
+      config: ldapConfig,
+      user: {
+        id: 'alban',
+        firstName: 'Alban',
+        lastName: 'Mouton',
+        email: 'alban.mouton@koumoul.com',
+        organizations: []
+      },
+      extraAttrs: { employeeType: 'administrator', departmentNumber: '/prefix/2/dep1' }
+    })
+    await testEnvAx.post('/ldap/users', {
+      config: ldapConfig,
+      user: {
+        id: 'alban2',
+        firstName: 'Alban',
+        lastName: '',
+        email: 'alban.mouton@gmail.com',
+        organizations: []
+      }
     })
   })
-
-  test.afterAll(stopApiServer)
 
   test('find org members from secondary ldap storage', async () => {
     const ax = await axiosAuth({ email: 'dmeadus0@answers.com', org: 'test-ldap' })

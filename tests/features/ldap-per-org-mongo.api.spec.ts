@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axiosAuth, clean, startApiServer, stopApiServer, createUser } from '../support/in-process-server.ts'
-import type { LdapStorage } from '../../api/src/storages/ldap.ts'
+import { axiosAuth, testEnvAx, createUser } from '../support/axios.ts'
+import config from '../../api/src/config.ts'
 
-let ldapConfig: any
+const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
 
 const orgLdapConfig = {
   url: 'ldap://localhost:' + process.env.LDAP_PORT,
@@ -25,36 +25,34 @@ const orgLdapConfig = {
 }
 
 test.describe('ldap storage per organization in mongodb storage mode', () => {
-  test.beforeAll(async () => {
-    process.env.STORAGE_TYPE = 'mongo'
-    await startApiServer()
-    const config = (await import('../../api/src/config.ts')).default
-    ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+  test.beforeEach(async () => {
+    await testEnvAx.delete('/')
+    await testEnvAx.post('/ldap/clean', { config: ldapConfig, emails: ['alban.mouton@koumoul.com'], orgIds: [] })
   })
-  test.beforeEach(async () => await clean({ ldapConfig }))
-  test.afterAll(stopApiServer)
 
   test('create a user and organization and configure orgStorage with ldap config', async () => {
     const { ax: axAdmin, user } = await createUser('admin@test.com', true)
     assert.ok(user.id)
     const org = (await axAdmin.post('/api/organizations', { name: 'Org 1' })).data
     assert.ok(org.id)
-    const patchedOrg = (await axAdmin.patch(`/api/organizations/${org.id}`, {
+    await axAdmin.patch(`/api/organizations/${org.id}`, {
       orgStorage: {
         type: 'ldap',
         active: true,
         config: orgLdapConfig
       }
-    })).data
+    })
 
-    const storage = (await (await import('../../api/src/storages/index.ts')).default.createOrgStorage(patchedOrg)) as LdapStorage
-    await storage._createUser({
-      id: 'alban',
-      firstName: 'Alban',
-      lastName: 'Mouton',
-      email: 'alban.mouton@koumoul.com',
-      organizations: [{ id: org.id, role: 'user', name: 'Org 1' }],
-      password: 'TestPasswd01'
+    await testEnvAx.post('/ldap/org-storage-users', {
+      orgId: org.id,
+      user: {
+        id: 'alban',
+        firstName: 'Alban',
+        lastName: 'Mouton',
+        email: 'alban.mouton@koumoul.com',
+        organizations: [{ id: org.id, role: 'user', name: 'Org 1' }],
+        password: 'TestPasswd01'
+      }
     })
 
     const ax = await axiosAuth({ email: 'alban.mouton@koumoul.com', org: org.id, orgStorage: true })

@@ -1,7 +1,8 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { mock } from 'node:test'
-import { clean } from '../support/axios.ts'
+import { testEnvAx } from '../support/axios.ts'
+import { initMongo, closeMongo } from '../support/unit.ts'
 import { unescapeNonAsciiInDn } from '../../api/src/utils/dn.ts'
 import ldap from 'ldapjs'
 
@@ -46,6 +47,7 @@ test.describe('LDAP checkPassword sends unescaped DN to bind', () => {
   }
 
   test.beforeAll(async () => {
+    await initMongo()
     const config = (await import('../../api/src/config.ts')).default
     ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
     const ldapStorage = await import('../../api/src/storages/ldap.ts')
@@ -54,12 +56,13 @@ test.describe('LDAP checkPassword sends unescaped DN to bind', () => {
   })
 
   test.beforeEach(async () => {
-    await clean()
+    await testEnvAx.delete('/')
     await cleanTestData()
   })
 
   test.afterAll(async () => {
     await cleanTestData()
+    await closeMongo()
   })
 
   test('bind DN contains raw e, not hex-escaped \\c3\\a9', async () => {

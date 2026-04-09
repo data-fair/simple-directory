@@ -1,12 +1,12 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { clean, createUser } from '../support/axios.ts'
+import { testEnvAx, createUser } from '../support/axios.ts'
 import FormData from 'form-data'
 import type { PasswordList } from '../../api/types/index.ts'
 
 test.describe('password lists api', () => {
   test.beforeEach(async () => {
-    await clean()
+    await testEnvAx.delete('/')
   })
 
   test('should manage password lists', async () => {

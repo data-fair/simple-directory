@@ -9,6 +9,10 @@ layout {
         command "bash"
         args "-ic" "mkdir -p dev/logs && npm run dev-deps && docker compose --profile dev logs -f 2>&1 | tee dev/logs/docker-compose.log"
       }
+      pane name="mock-oidc" {
+        command "bash"
+        args "-ic" "nvm use > /dev/null 2>&1 && npm run dev-mock-oidc"
+      }
     }
     pane {
       split_direction "vertical"

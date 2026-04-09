@@ -1,21 +1,34 @@
 import { strict as assert } from 'node:assert'
-import { it, describe, before, beforeEach, after } from 'node:test'
-import { clean, startApiServer, stopApiServer } from './utils/index.ts'
+import { test } from '@playwright/test'
+import { initMongo, clean } from '../support/unit.ts'
 
-process.env.NODE_CONFIG_DIR = './api/config/'
-const config = (await import('../api/src/config.ts')).default
-const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
-ldapConfig.organizations.staticSingleOrg = { id: 'test-single-org', name: 'Test single org' }
-ldapConfig.members.role.values = { admin: ['administrator'], user: [] }
-delete ldapConfig.members.role.captureRegex
+let ldapConfig: any
 
-describe('ldap single org', () => {
-  before(startApiServer)
-  beforeEach(async () => await clean({ ldapConfig }))
-  after(stopApiServer)
+test.describe('ldap single org', () => {
+  test.beforeAll(async () => {
+    await initMongo()
+    const config = (await import('../../api/src/config.ts')).default
+    ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+    ldapConfig.cacheMS = 0
+    ldapConfig.organizations.staticSingleOrg = { id: 'test-single-org', name: 'Test single org' }
+    ldapConfig.members.role.values = { admin: ['administrator'], user: [] }
+    delete ldapConfig.members.role.captureRegex
+  })
+  test.beforeEach(async () => {
+    await clean()
+    const ldapStorage = await import('../../api/src/storages/ldap.ts')
+    const storage = await ldapStorage.init(ldapConfig)
+    // Delete all users visible in single-org mode
+    const allUsers = await storage.findUsers({ skip: 0, size: 1000 })
+    for (const user of allUsers.results) {
+      try { await storage._deleteUser(user.id) } catch (_e) { /* ignore */ }
+    }
+    storage.clearCache()
+  })
+  // Don't close mongo here — other unit test files share the same worker
 
-  it('create and find users in static single org', async () => {
-    const ldapStorage = await import('../api/src/storages/ldap.ts')
+  test('create and find users in static single org', async () => {
+    const ldapStorage = await import('../../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(ldapConfig)
 
     await storage._createUser({

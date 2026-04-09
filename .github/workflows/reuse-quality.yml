@@ -37,6 +37,9 @@ jobs:
     - name: Start test services
       run: docker compose --profile test up -d --wait
 
+    - name: Start mock OIDC servers
+      run: dotenv -- npm run dev-mock-oidc &
+
     - name: Start dev API
       run: dotenv -- npm run dev-api &
 
@@ -47,8 +50,22 @@ jobs:
           sleep 2
         done
 
-    - name: Run tests
+    - name: Wait for mock OIDC to be ready
+      run: |
+        MOCK_PORT1=$(grep MOCK_OIDC_PORT1 .env | cut -d= -f2)
+        for i in $(seq 1 15); do
+          curl -s http://localhost:$((MOCK_PORT1 + 100))/_test/ping && break
+          sleep 1
+        done
+
+    - name: Run unit tests
+      run: npm run test-unit
+
+    - name: Run API tests
       run: npm run test-api
+
+    - name: Run in-process tests
+      run: npm run test-inproc
 
     - name: Audit
       run: npm audit --omit=dev --audit-level=critical

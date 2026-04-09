@@ -1,16 +1,16 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, clean, createUser, patchConfig } from '../support/axios.ts'
+import { axios, testEnvAx, createUser, getServerConfig } from '../support/axios.ts'
 
 test.describe('External Apps Authorization Flow', () => {
   test.beforeEach(async () => {
-    await clean()
+    await testEnvAx.delete('/')
     // reset applications config to empty
-    await patchConfig({ applications: undefined })
+    await testEnvAx.patch('/config', { applications: undefined })
   })
 
   test('should implement Authorization flow for external apps', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
 
     // 1. Create a site with application configuration
     const { ax: adminAx } = await createUser('admin@test.com', true)
@@ -110,7 +110,7 @@ test.describe('External Apps Authorization Flow', () => {
   })
 
   test('should reject POST authorize without authentication', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
     const { ax: adminAx } = await createUser('admin@test.com', true)
     const org = (await adminAx.post('/api/organizations', { name: 'Site Org Auth' })).data
     const port = new URL(adminAx.defaults.baseURL || '').port
@@ -146,17 +146,19 @@ test.describe('External Apps Authorization Flow', () => {
   })
 
   test('should fall back to global applications when site has no applications', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
     const { ax: adminAx } = await createUser('admin@test.com', true)
     const org = (await adminAx.post('/api/organizations', { name: 'Site Org Fallback' })).data
     const port = new URL(adminAx.defaults.baseURL || '').port
     const siteHost = `127.0.0.1:${port}`
 
-    await patchConfig({ applications: [{
-      id: 'global-app',
-      name: 'Global App',
-      redirectUris: ['native-app://global-callback']
-    }] })
+    await testEnvAx.patch('/config', {
+      applications: [{
+        id: 'global-app',
+        name: 'Global App',
+        redirectUris: ['native-app://global-callback']
+      }]
+    })
 
     const anonymousAx = await axios()
     await anonymousAx.post('/api/sites',
@@ -184,16 +186,18 @@ test.describe('External Apps Authorization Flow', () => {
   })
 
   test('should merge global and site applications, site takes priority', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
     const { ax: adminAx } = await createUser('admin@test.com', true)
     const org = (await adminAx.post('/api/organizations', { name: 'Site Org Merge' })).data
     const port = new URL(adminAx.defaults.baseURL || '').port
     const siteHost = `127.0.0.1:${port}`
 
-    await patchConfig({ applications: [
-      { id: 'global-only', name: 'Global Only', redirectUris: ['native-app://global-only'] },
-      { id: 'shared-id', name: 'Global Shared', redirectUris: ['native-app://global-shared'] }
-    ] })
+    await testEnvAx.patch('/config', {
+      applications: [
+        { id: 'global-only', name: 'Global Only', redirectUris: ['native-app://global-only'] },
+        { id: 'shared-id', name: 'Global Shared', redirectUris: ['native-app://global-shared'] }
+      ]
+    })
 
     const anonymousAx = await axios()
     await anonymousAx.post('/api/sites',
@@ -244,7 +248,7 @@ test.describe('External Apps Authorization Flow', () => {
   })
 
   test('should reject invalid client_id', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
     const { ax: adminAx } = await createUser('admin@test.com', true)
     const org = (await adminAx.post('/api/organizations', { name: 'Site Org 2' })).data
     const port = new URL(adminAx.defaults.baseURL || '').port

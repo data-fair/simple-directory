@@ -1,14 +1,14 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, axiosAuth, clean, clearSiteCache, createUser } from '../support/axios.ts'
+import { axios, axiosAuth, testEnvAx, createUser, getServerConfig } from '../support/axios.ts'
 
 test.describe('sites api', () => {
   test.beforeEach(async () => {
-    await clean()
+    await testEnvAx.delete('/')
   })
 
   test('should create a site for a standalone portal', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
 
     const { ax: adminAx } = await createUser('admin@test.com', true)
     const anonymousAx = await axios()
@@ -60,7 +60,7 @@ test.describe('sites api', () => {
 
     // switch auth mode to ssoBackOffice
     await adminAx.patch('/api/sites/test', { authMode: 'ssoBackOffice' })
-    await clearSiteCache()
+    await testEnvAx.post('/clear-site-cache')
 
     // a user can be created directly on the second site
     const { ax: siteAx1 } = await createUser('test-site2@test.com', false, 'TestPasswd01', siteDirectoryUrl)
@@ -68,7 +68,7 @@ test.describe('sites api', () => {
 
     // switch auth mode to onlyLocal
     await adminAx.patch('/api/sites/test', { authMode: 'onlyLocal' })
-    await clearSiteCache()
+    await testEnvAx.post('/clear-site-cache')
 
     // using site_redirect is no longer possible
     await assert.rejects(ax.post<string>('/api/auth/site_redirect', { redirect: siteDirectoryUrl }), { status: 400 })

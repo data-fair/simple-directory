@@ -1,26 +1,49 @@
 import { strict as assert } from 'node:assert'
-import { it, describe, before, beforeEach, after } from 'node:test'
-import { clean, startApiServer, stopApiServer } from './utils/index.ts'
+import { test } from '@playwright/test'
+import { initMongo, clean } from '../support/unit.ts'
 
-process.env.NODE_CONFIG_DIR = './api/config/'
-const config = (await import('../api/src/config.ts')).default
-const ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
-ldapConfig.members.overwrite = [
-  { email: 'alban.mouton@koumoul.com', role: 'overwritten' },
-  { matchAttrs: [{ attr: 'employeeType', values: ['Admin'], captureRegex: '^org1(.*)$' }], orgId: 'org1', orgOnly: true, role: 'admin' }
-]
-ldapConfig.users.overwrite = [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }]
-ldapConfig.organizations.overwrite = [{ id: 'myorg', name: 'Org overwritten' }]
+let config: any
+let ldapConfig: any
 
 // see test/resources/organizations.json to see that the org "test-ldap" has a specific configuration
 
-describe('storage ldap', () => {
-  before(startApiServer)
-  beforeEach(async () => await clean({ ldapConfig }))
-  after(stopApiServer)
+test.describe('storage ldap', () => {
+  test.beforeAll(async () => {
+    await initMongo()
+    config = (await import('../../api/src/config.ts')).default
+    ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+    ldapConfig.cacheMS = 0
+    ldapConfig.members.overwrite = [
+      { email: 'alban.mouton@koumoul.com', role: 'overwritten' },
+      { matchAttrs: [{ attr: 'employeeType', values: ['Admin'], captureRegex: '^org1(.*)$' }], orgId: 'org1', orgOnly: true, role: 'admin' }
+    ]
+    ldapConfig.users.overwrite = [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }]
+    ldapConfig.organizations.overwrite = [{ id: 'myorg', name: 'Org overwritten' }]
+  })
+  test.beforeEach(async () => {
+    await clean()
+    // Clean LDAP using config WITHOUT overwrites so we see real entry IDs
+    const cleanLdapConfig = JSON.parse(JSON.stringify(ldapConfig))
+    delete cleanLdapConfig.members.overwrite
+    delete cleanLdapConfig.users.overwrite
+    delete cleanLdapConfig.organizations.overwrite
+    const ldapStorage = await import('../../api/src/storages/ldap.ts')
+    const storage = await ldapStorage.init(cleanLdapConfig)
+    // Delete known test users by email
+    for (const email of ['alban.mouton@koumoul.com', 'test@test.com', 'test2@test.com']) {
+      const user = await storage.getUserByEmail(email)
+      if (user) try { await storage._deleteUser(user.id) } catch (_e) { /* ignore */ }
+    }
+    // Delete known test orgs
+    for (const id of ['MyOrg', 'org1']) {
+      try { await storage._deleteOrganization(id) } catch (_e) { /* ignore */ }
+    }
+    storage.clearCache()
+  })
+  // Don't close mongo here — other unit test files share the same worker
 
-  it('create and find users', async () => {
-    const ldapStorage = await import('../api/src/storages/ldap.ts')
+  test('create and find users', async () => {
+    const ldapStorage = await import('../../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(ldapConfig)
     await storage._createOrganization({ id: 'MyOrg', name: 'My Org' })
     await storage._createOrganization({ id: 'org1', name: 'Org 1' })

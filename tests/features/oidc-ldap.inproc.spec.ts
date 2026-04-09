@@ -23,17 +23,19 @@ test.describe('global OIDC configuration backed with ldap storage', () => {
     process.env.STORAGE_TYPE = 'ldap'
     process.env.OIDC_PROVIDERS = JSON.stringify([{
       title: 'Test provider',
-      discovery: 'http://localhost:8998/.well-known/openid-configuration',
+      discovery: 'http://localhost:9998/.well-known/openid-configuration',
       client: {
         id: 'test-client',
         secret: 'test-secret'
       }
     }])
     process.env.DEFAULT_ORG = 'myorg'
-    oauthServer1 = await startOAuthServer(8998, oidcUserInfo1)
+    oauthServer1 = await startOAuthServer(9998, oidcUserInfo1)
     await startApiServer()
     const config = (await import('../../api/src/config.ts')).default
     ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
+    delete ldapConfig.organizations?.staticSingleOrg
+    ldapConfig.cacheMS = 0
   })
   test.beforeEach(async () => await clean({ ldapConfig }))
   // prepare ldap directory
@@ -56,7 +58,7 @@ test.describe('global OIDC configuration backed with ldap storage', () => {
   })
 
   test('should implement a standard login workflow', async () => {
-    const ax1 = await loginWithOIDC(8998)
+    const ax1 = await loginWithOIDC(9998)
     const me = (await ax1.get('/api/auth/me')).data
     assert.equal(me.email, 'oidc1@test.com')
     await ax1.post('/api/auth/keepalive')

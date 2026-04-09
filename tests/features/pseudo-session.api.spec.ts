@@ -1,14 +1,14 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, clean, seed, devApiUrl } from '../support/axios.ts'
+import { axios, testEnvAx, devApiUrl } from '../support/axios.ts'
 import { CookieJar } from 'tough-cookie'
 
 const ax = await axios({ baseURL: devApiUrl })
 
 test.describe('Pseudo session', () => {
   test.beforeEach(async () => {
-    await clean()
-    await seed()
+    await testEnvAx.delete('/')
+    await testEnvAx.post('/seed')
   })
 
   test('Create pseudo session for a user', async () => {

@@ -1,13 +1,13 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axiosAuth, clean, seed, passwordLogin, directoryUrl } from '../support/axios.ts'
+import { axiosAuth, testEnvAx, passwordLogin, directoryUrl } from '../support/axios.ts'
 
 const cookieUrl = new URL(directoryUrl).origin
 
 test.describe('Session management', () => {
   test.beforeEach(async () => {
-    await clean()
-    await seed()
+    await testEnvAx.delete('/')
+    await testEnvAx.post('/seed')
   })
 
   test('Create session for known user', async () => {

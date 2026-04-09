@@ -1,14 +1,14 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { clean, createUser, patchConfig } from '../support/axios.ts'
+import { testEnvAx, createUser } from '../support/axios.ts'
 
 test.describe('singleMembership addMember', () => {
   test.beforeEach(async () => {
-    await clean()
+    await testEnvAx.delete('/')
   })
 
   test('should update department when user already belongs to org', async () => {
-    await patchConfig({ singleMembership: true, alwaysAcceptInvitation: true })
+    await testEnvAx.patch('/config', { singleMembership: true, alwaysAcceptInvitation: true })
 
     try {
       const { ax } = await createUser('owner-sm@test.com')
@@ -39,12 +39,12 @@ test.describe('singleMembership addMember', () => {
       assert.equal(memberEntries[0].department, 'dep2')
       assert.equal(memberEntries[0].departmentName, 'Department 2')
     } finally {
-      await patchConfig({ singleMembership: false, alwaysAcceptInvitation: false })
+      await testEnvAx.patch('/config', { singleMembership: false, alwaysAcceptInvitation: false })
     }
   })
 
   test('should update role when user already belongs to org', async () => {
-    await patchConfig({ singleMembership: true, alwaysAcceptInvitation: true })
+    await testEnvAx.patch('/config', { singleMembership: true, alwaysAcceptInvitation: true })
 
     try {
       const { ax } = await createUser('owner-sm2@test.com')
@@ -66,12 +66,12 @@ test.describe('singleMembership addMember', () => {
       assert.equal(memberEntries.length, 1)
       assert.equal(memberEntries[0].role, 'admin')
     } finally {
-      await patchConfig({ singleMembership: false, alwaysAcceptInvitation: false })
+      await testEnvAx.patch('/config', { singleMembership: false, alwaysAcceptInvitation: false })
     }
   })
 
   test('should remove department when re-added without one', async () => {
-    await patchConfig({ singleMembership: true, alwaysAcceptInvitation: true })
+    await testEnvAx.patch('/config', { singleMembership: true, alwaysAcceptInvitation: true })
 
     try {
       const { ax } = await createUser('owner-sm3@test.com')
@@ -97,7 +97,7 @@ test.describe('singleMembership addMember', () => {
       assert.equal(memberEntries[0].department, undefined)
       assert.equal(memberEntries[0].departmentName, undefined)
     } finally {
-      await patchConfig({ singleMembership: false, alwaysAcceptInvitation: false })
+      await testEnvAx.patch('/config', { singleMembership: false, alwaysAcceptInvitation: false })
     }
   })
 })

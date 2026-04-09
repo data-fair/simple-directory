@@ -33,6 +33,21 @@ export default defineConfig({
       dependencies: ['state-setup'],
     },
     {
+      name: 'unit',
+      testMatch: /.*\.unit\.spec\.ts/,
+      dependencies: ['api'],
+    },
+    {
+      name: 'api-inproc-ldap',
+      testMatch: /ldap-api\.inproc\.spec\.ts/,
+      dependencies: ['unit'],
+    },
+    {
+      name: 'api-inproc-oidc',
+      testMatch: /oidc-ldap\.inproc\.spec\.ts/,
+      dependencies: ['api-inproc-ldap'],
+    },
+    {
       name: 'e2e',
       testMatch: /.*\.e2e\.spec\.ts/,
       dependencies: ['state-setup'],

@@ -1,11 +1,11 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, axiosAuth, clean, seed, devApiUrl } from '../support/axios.ts'
+import { axios, axiosAuth, testEnvAx, devApiUrl } from '../support/axios.ts'
 
 test.describe('JWKS router and keys management', () => {
   test.beforeEach(async () => {
-    await clean()
-    await seed()
+    await testEnvAx.delete('/')
+    await testEnvAx.post('/seed')
   })
 
   test('Get, use and rotate signature keys', async () => {

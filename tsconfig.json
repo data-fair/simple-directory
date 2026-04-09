@@ -10,5 +10,5 @@
     "checkJs": true,
     "skipLibCheck": true
   },
-  "exclude": ["node_modules", ".type", "ui", "dev", "test-it"]
+  "exclude": ["node_modules", ".type", "ui", "dev"]
 }

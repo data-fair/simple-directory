@@ -1,43 +1,26 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, axiosAuth, clean, createUser, deleteAllEmails, getAllEmails, directoryUrl, patchConfig } from '../support/axios.ts'
-
-/** Poll maildev for a new mail, extract the action link as mail.link */
-async function waitForMail (predicate?: (m: any) => boolean): Promise<any> {
-  for (let i = 0; i < 100; i++) {
-    const emails = await getAllEmails()
-    const mail = predicate ? emails.find(predicate) : emails[0]
-    if (mail) {
-      const html: string = mail.html || mail.text || ''
-      // extract all hrefs and find the action link (token_callback, _accept, action_token, invit_token, login)
-      const allLinks = [...html.matchAll(/href="([^"]*)"/g)].map(m => m[1].replace(/&amp;/g, '&'))
-      mail.link = allLinks.find(l => /token_callback|_accept|action_token|invit_token|login/.test(l)) || allLinks[0]
-      return mail
-    }
-    await new Promise(resolve => setTimeout(resolve, 100))
-  }
-  throw new Error('no mail received')
-}
+import { axios, axiosAuth, testEnvAx, createUser, deleteAllEmails, waitForMail, directoryUrl, getServerConfig } from '../support/axios.ts'
 
 test.describe('invitations', () => {
   test.beforeEach(async () => {
-    await clean()
+    await testEnvAx.delete('/')
     await deleteAllEmails()
     // ensure invitations are not auto-accepted (dev config has alwaysAcceptInvitation: true)
-    await patchConfig({ alwaysAcceptInvitation: false, multiRoles: false })
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: false, multiRoles: false })
   })
 
   test('should invite a new user in an organization', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
     const { ax } = await createUser('test-invit1@test.com')
     const anonymousAx = await axios()
 
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
     ax.setOrg(org.id)
 
-    await deleteAllEmails()
-    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit2@test.com', role: 'user' })
-    const mail = await waitForMail()
+    const mail = await waitForMail(
+      () => ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit2@test.com', role: 'user' })
+    )
     assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
     // before accepting the user is not yet member
@@ -76,16 +59,16 @@ test.describe('invitations', () => {
   })
 
   test('should invite an existing user in an organization', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
     const { ax } = await createUser('test-invit3@test.com')
     await createUser('test-invit4@test.com')
     const anonymousAx = await axios()
 
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
     ax.setOrg(org.id)
-    await deleteAllEmails()
-    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit4@test.com', role: 'user' })
-    const mail = await waitForMail()
+    const mail = await waitForMail(
+      () => ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit4@test.com', role: 'user' })
+    )
     assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
     // when clicking on the link the person is redirected to a page to login
@@ -109,15 +92,15 @@ test.describe('invitations', () => {
   })
 
   test('should invite a logged in user in an organization', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
     const { ax } = await createUser('test-invit3@test.com')
     const { ax: axInvited } = await createUser('test-invit4@test.com')
 
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
     ax.setOrg(org.id)
-    await deleteAllEmails()
-    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit4@test.com', role: 'user' })
-    const mail = await waitForMail()
+    const mail = await waitForMail(
+      () => ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit4@test.com', role: 'user' })
+    )
     assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
     // when clicking on the link the person is redirected to a page to login
@@ -146,17 +129,17 @@ test.describe('invitations', () => {
   })
 
   test('should invite a new user in an organization in alwaysAcceptInvitation mode', async () => {
-    const config = (await import('../../api/src/config.ts')).default
-    await patchConfig({ alwaysAcceptInvitation: true })
+    const config = await getServerConfig()
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
 
     const { ax } = await createUser('test-invit5@test.com')
     const anonymousAx = await axios()
 
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
     ax.setOrg(org.id)
-    await deleteAllEmails()
-    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit6@test.com', role: 'user' })
-    const mail = await waitForMail()
+    const mail = await waitForMail(
+      () => ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit6@test.com', role: 'user' })
+    )
 
     // the person is redirected by mail to a page to create their user
     assert.ok(mail.link.startsWith(config.publicUrl + '/login?step=createUser&invit_token='))
@@ -196,12 +179,12 @@ test.describe('invitations', () => {
     assert.equal(newMember.role, 'user')
     assert.equal(newMember.emailConfirmed, true)
 
-    await patchConfig({ alwaysAcceptInvitation: false })
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: false })
   })
 
   test('should invite an existing user in an organization in alwaysAcceptInvitation mode', async () => {
-    const config = (await import('../../api/src/config.ts')).default
-    await patchConfig({ alwaysAcceptInvitation: true })
+    await getServerConfig()
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
 
     const { ax } = await createUser('test-invit7@test.com')
     await createUser('test-invit8@test.com')
@@ -218,19 +201,19 @@ test.describe('invitations', () => {
     assert.equal(newMember.role, 'user')
     assert.equal(newMember.emailConfirmed, true)
 
-    await patchConfig({ alwaysAcceptInvitation: false })
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: false })
   })
 
   test('should invite a new user in multiple organization departments', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
     const { ax } = await createUser('test-invit9@test.com')
     const anonymousAx = await axios()
 
     const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }] })).data
     ax.setOrg(org.id)
-    await deleteAllEmails()
-    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep1', role: 'user' })
-    const mail = await waitForMail()
+    const mail = await waitForMail(
+      () => ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep1', role: 'user' })
+    )
     assert.equal(mail.subject, `Rejoignez l'organisation test (Department 1) sur ${new URL(config.publicUrl).host}`)
     assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
@@ -268,9 +251,9 @@ test.describe('invitations', () => {
     assert.equal(newUser.organizations[0].role, 'user')
 
     // send a second invitation
-    await deleteAllEmails()
-    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep2', role: 'admin' })
-    const mail2 = await waitForMail()
+    const mail2 = await waitForMail(
+      () => ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit10@test.com', department: 'dep2', role: 'admin' })
+    )
     assert.ok(mail2.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
     // before accepting the user is not yet member of the second department
@@ -292,15 +275,15 @@ test.describe('invitations', () => {
   })
 
   test('should invite a new user in multiple departments with single email', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
     const { ax } = await createUser('test-invit-multi-dep1@test.com')
     const anonymousAx = await axios()
 
     const org = (await ax.post('/api/organizations', { name: 'test-multi-dep', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }, { id: 'dep3', name: 'Department 3' }] })).data
     ax.setOrg(org.id)
-    await deleteAllEmails()
-    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit-multi-dep2@test.com', departments: ['dep1', 'dep3'], role: 'user' })
-    const mail = await waitForMail()
+    const mail = await waitForMail(
+      () => ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit-multi-dep2@test.com', departments: ['dep1', 'dep3'], role: 'user' })
+    )
     assert.equal(mail.subject, `Rejoignez l'organisation test-multi-dep (Department 1, Department 3) sur ${new URL(config.publicUrl).host}`)
     assert.ok(mail.link.startsWith(config.publicUrl + '/api/invitations/_accept'))
 
@@ -337,7 +320,7 @@ test.describe('invitations', () => {
   })
 
   test('should invite an existing user on another site', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
     const { ax: adminAx } = await createUser('admin@test.com', true)
     const { ax } = await createUser('test-invit12@test.com')
     await createUser('test-invit11@test.com')
@@ -350,15 +333,15 @@ test.describe('invitations', () => {
       { _id: 'test', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
     await adminAx.patch('/api/sites/test', { authMode: 'ssoBackOffice' })
-    await deleteAllEmails()
-    await ax.post('/api/invitations', {
-      id: org.id,
-      name: org.name,
-      email: 'test-invit11@test.com',
-      role: 'user',
-      redirect: 'http://127.0.0.1:' + process.env.NGINX_PORT2
-    })
-    const mail = await waitForMail()
+    const mail = await waitForMail(
+      () => ax.post('/api/invitations', {
+        id: org.id,
+        name: org.name,
+        email: 'test-invit11@test.com',
+        role: 'user',
+        redirect: 'http://127.0.0.1:' + process.env.NGINX_PORT2
+      })
+    )
     assert.ok(mail.link.startsWith(`http://127.0.0.1:${process.env.NGINX_PORT2}/simple-directory/api/invitations/_accept`))
 
     // when clicking on the link the person is redirected to a page to create their user
@@ -386,7 +369,7 @@ test.describe('invitations', () => {
   })
 
   test('should reject duplicate invitation', async () => {
-    await patchConfig({ alwaysAcceptInvitation: true })
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
     const { ax } = await createUser('test-invit12@test.com')
     await createUser('test-invit13@test.com')
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
@@ -409,18 +392,18 @@ test.describe('invitations', () => {
     assert.ok(newMember)
     assert.equal(newMember.role, 'admin')
 
-    await patchConfig({ multiRoles: true })
+    await testEnvAx.patch('/config', { multiRoles: true })
 
     await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-invit13@test.com', role: 'user' })
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
     assert.equal(members.length, 3)
 
-    await patchConfig({ multiRoles: false, alwaysAcceptInvitation: false })
+    await testEnvAx.patch('/config', { multiRoles: false, alwaysAcceptInvitation: false })
   })
 
   // TODO: depends on events service and multi-site flow through nginx
   test.skip('should invite a user on another site in onlyBackOffice mode', async () => {
-    const config = (await import('../../api/src/config.ts')).default
+    const config = await getServerConfig()
     const { ax: adminAx } = await createUser('admin@test.com', true)
     const { ax } = await createUser('test-invit13@test.com')
     const anonymousAx = await axios()
@@ -432,15 +415,15 @@ test.describe('invitations', () => {
       { _id: 'test', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
     await adminAx.patch('/api/sites/test', { authMode: 'onlyBackOffice' })
-    await deleteAllEmails()
-    await ax.post('/api/invitations', {
-      id: org.id,
-      name: org.name,
-      email: 'test-invit14@test.com',
-      role: 'user',
-      redirect: 'http://127.0.0.1:' + process.env.NGINX_PORT2
-    })
-    const mail = await waitForMail()
+    const mail = await waitForMail(
+      () => ax.post('/api/invitations', {
+        id: org.id,
+        name: org.name,
+        email: 'test-invit14@test.com',
+        role: 'user',
+        redirect: 'http://127.0.0.1:' + process.env.NGINX_PORT2
+      })
+    )
     assert.ok(mail.link.startsWith(directoryUrl + '/api/invitations/_accept'))
 
     // when clicking on the link the person is redirected to a page to create their user
@@ -473,15 +456,15 @@ test.describe('invitations', () => {
     const org2 = (await ax.post('/api/organizations', { name: 'test2' })).data
     ax.setOrg(org2.id)
 
-    await deleteAllEmails()
-    await ax.post('/api/invitations', {
-      id: org2.id,
-      name: org2.name,
-      email: 'test-invit14@test.com',
-      role: 'contrib',
-      redirect: 'http://127.0.0.1:' + process.env.NGINX_PORT2
-    })
-    const mail2 = await waitForMail()
+    const mail2 = await waitForMail(
+      () => ax.post('/api/invitations', {
+        id: org2.id,
+        name: org2.name,
+        email: 'test-invit14@test.com',
+        role: 'contrib',
+        redirect: 'http://127.0.0.1:' + process.env.NGINX_PORT2
+      })
+    )
     assert.ok(mail2.link.startsWith(directoryUrl + '/api/invitations/_accept'))
 
     // when clicking on the link the person is redirected to a page to accept the invitation (not create the user as it already exists)
