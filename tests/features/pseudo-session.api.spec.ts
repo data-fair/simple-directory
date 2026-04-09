@@ -14,11 +14,11 @@ test.describe('Pseudo session', () => {
   test('Create pseudo session for a user', async () => {
     const res = await ax.post('/api/auth/pseudo?key=testkey', {
       type: 'user',
-      id: 'dmeadus0'
+      id: 'test_dmeadus0'
     })
     assert.equal(res.status, 200)
     assert.equal(res.data.pseudoSession, true)
-    assert.equal(res.data.user.id, 'dmeadus0')
+    assert.equal(res.data.user.id, 'test_dmeadus0')
 
     const cookies = res.headers['set-cookie'] as string[]
     assert.ok(cookies)
@@ -37,19 +37,19 @@ test.describe('Pseudo session', () => {
 
     const meRes = await authenticatedAx.get('/api/auth/me')
     assert.equal(meRes.status, 200)
-    assert.equal(meRes.data.id, 'dmeadus0')
+    assert.equal(meRes.data.id, 'test_dmeadus0')
     assert.equal(meRes.data.email, 'dmeadus0@answers.com')
   })
 
   test('Create pseudo session for an organization', async () => {
     const res = await ax.post('/api/auth/pseudo?key=testkey', {
       type: 'organization',
-      id: 'KWqAGZ4mG',
+      id: 'test_KWqAGZ4mG',
       role: 'admin'
     })
     assert.equal(res.status, 200)
     assert.equal(res.data.pseudoSession, true)
-    assert.equal(res.data.organization.id, 'KWqAGZ4mG')
+    assert.equal(res.data.organization.id, 'test_KWqAGZ4mG')
     assert.equal(res.data.organization.role, 'admin')
 
     const cookies = res.headers['set-cookie'] as string[]
@@ -67,7 +67,7 @@ test.describe('Pseudo session', () => {
     const authenticatedAx = await axios()
     authenticatedAx.defaults.headers.Cookie = cookieString
 
-    const membersRes = await authenticatedAx.get('/api/organizations/KWqAGZ4mG/members')
+    const membersRes = await authenticatedAx.get('/api/organizations/test_KWqAGZ4mG/members')
     assert.equal(membersRes.status, 200)
     assert.ok(membersRes.data.results.length > 0)
   })
@@ -91,7 +91,7 @@ test.describe('Pseudo session', () => {
   test('Pseudo session cannot keepalive', async () => {
     const res = await ax.post('/api/auth/pseudo?key=testkey', {
       type: 'user',
-      id: 'dmeadus0'
+      id: 'test_dmeadus0'
     })
 
     const cookies = res.headers['set-cookie'] as string[]

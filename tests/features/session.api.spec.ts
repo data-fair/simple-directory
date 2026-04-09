@@ -59,14 +59,14 @@ test.describe('Session management', () => {
   // TODO: same as above — cookie manipulation doesn't work through nginx
   test.skip('Store a user sessions info', async () => {
     const ax = await axiosAuth('dmeadus0@answers.com')
-    let user = (await ax.get('/api/users/dmeadus0')).data
+    let user = (await ax.get('/api/users/test_dmeadus0')).data
     assert.equal(user.email, 'dmeadus0@answers.com')
     assert.equal(user.sessions.length, 1)
     const session1 = user.sessions[0]
 
     // another connection with same user should create a second session
     await axiosAuth('dmeadus0@answers.com')
-    user = (await ax.get('/api/users/dmeadus0')).data
+    user = (await ax.get('/api/users/test_dmeadus0')).data
     assert.equal(user.sessions.length, 2)
     const sessionAlt = user.sessions[1]
     assert.ok(session1.id === user.sessions[0].id)
@@ -74,7 +74,7 @@ test.describe('Session management', () => {
 
     // reconnecting should automatically close previous sessions
     await passwordLogin(ax, 'dmeadus0@answers.com', 'TestPasswd01')
-    user = (await ax.get('/api/users/dmeadus0')).data
+    user = (await ax.get('/api/users/test_dmeadus0')).data
     assert.equal(user.sessions.length, 2)
     const session2 = user.sessions[1]
     assert.ok(session1.id !== session2.id)
@@ -83,15 +83,15 @@ test.describe('Session management', () => {
 
     // deleting session should make it unusable
     const adminAx = await axiosAuth({ email: 'admin@test.com', adminMode: true })
-    await adminAx.delete('/api/users/dmeadus0/sessions/' + session2.id)
-    user = (await ax.get('/api/users/dmeadus0')).data
+    await adminAx.delete('/api/users/test_dmeadus0/sessions/' + session2.id)
+    user = (await ax.get('/api/users/test_dmeadus0')).data
     assert.equal(user.sessions.length, 1)
     await assert.rejects(ax.post('/api/auth/keepalive'), { status: 401 })
-    await assert.rejects(ax.get('/api/users/dmeadus0'), { status: 401 })
+    await assert.rejects(ax.get('/api/users/test_dmeadus0'), { status: 401 })
 
     // failing to send exchange token should be a 401
     await passwordLogin(ax, 'dmeadus0@answers.com', 'TestPasswd01')
-    user = (await ax.get('/api/users/dmeadus0')).data
+    user = (await ax.get('/api/users/test_dmeadus0')).data
     assert.equal(user.sessions.length, 2)
     await ax.post('/api/auth/keepalive')
     ax.cookieJar.setCookie('id_token_ex=; Path=/simple-directory/', cookieUrl)
@@ -112,18 +112,18 @@ test.describe('Session management', () => {
 
   test('Toggle asAdmin mode', async () => {
     const ax = await axiosAuth({ email: 'admin@test.com', adminMode: true })
-    await ax.post('/api/auth/asadmin', { id: 'dmeadus0' })
+    await ax.post('/api/auth/asadmin', { id: 'test_dmeadus0' })
     let me = (await ax.get('/api/auth/me')).data
-    assert.equal(me.id, 'dmeadus0')
-    assert.equal(me.asAdmin?.id, 'superadmin')
+    assert.equal(me.id, 'test_dmeadus0')
+    assert.equal(me.asAdmin?.id, 'test_superadmin')
     assert.ok(!me.adminMode)
     await ax.post('/api/auth/keepalive')
     await ax.post('/api/auth/keepalive')
     me = (await ax.get('/api/auth/me')).data
-    assert.equal(me.id, 'dmeadus0')
+    assert.equal(me.id, 'test_dmeadus0')
     await ax.delete('/api/auth/asadmin')
     me = (await ax.get('/api/auth/me')).data
-    assert.equal(me.id, 'superadmin')
+    assert.equal(me.id, 'test_superadmin')
     assert.ok(me.adminMode)
   })
 })

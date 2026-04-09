@@ -31,12 +31,12 @@ test.describe('file storage interface', () => {
   })
 
   test('Find members from storage', async () => {
-    const res = await storage.findMembers('KWqAGZ4mG', { skip: 0, size: 10 })
+    const res = await storage.findMembers('test_KWqAGZ4mG', { skip: 0, size: 10 })
     assert.equal(res.count, 2)
   })
 
   test('Get user from storage', async () => {
-    const res = await storage.getUser('dmeadus0')
+    const res = await storage.getUser('test_dmeadus0')
     assert.ok(res)
     assert.ok(res.email)
     assert.ok(res.organizations)

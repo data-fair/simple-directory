@@ -84,7 +84,7 @@ test.describe('LDAP checkPassword sends unescaped DN to bind', () => {
       const origBind = client.bind.bind(client)
       client.bind = (dn: any, ...rest: any[]) => {
         bindDn = typeof dn === 'string' ? dn : dn.toString()
-        return origBind(dn, ...rest)
+        return (origBind as any)(dn, ...rest)
       }
       return client
     })

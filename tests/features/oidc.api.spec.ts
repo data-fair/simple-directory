@@ -14,7 +14,7 @@ test.describe('global OIDC configuration', () => {
     await testEnvAx.delete('/')
     await axiosBuilder().patch(mockOidcControlUrl1 + '/_test/userinfo', oidcUserInfo1)
     await axiosBuilder().patch(mockOidcControlUrl2 + '/_test/userinfo', oidcUserInfo2)
-    await testEnvAx.patch('/config', { defaultOrg: 'org1', defaultRolesLabels: {} })
+    await testEnvAx.patch('/config', { defaultOrg: 'test_org1', defaultRolesLabels: {} })
   })
   test.afterEach(async () => {
     await axiosBuilder().delete(mockOidcControlUrl1 + '/_test')
@@ -24,7 +24,7 @@ test.describe('global OIDC configuration', () => {
 
   test('should implement a standard login workflow', async () => {
     const { ax } = await createUser('test-org@test.com')
-    await ax.post('/api/organizations', { name: 'test', id: 'org1', roles: ['admin', 'user', 'contrib'] })
+    await ax.post('/api/organizations', { name: 'test', id: 'test_org1', roles: ['admin', 'user', 'contrib'] })
 
     const anonymousAx = await axios()
     const providers = (await anonymousAx.get('/api/auth/providers')).data
@@ -36,7 +36,7 @@ test.describe('global OIDC configuration', () => {
     assert.equal(me.email, 'oidc1@test.com')
     assert.equal(me.name, 'OIDC Test')
     assert.equal(me.readOnly, undefined)
-    assert.deepEqual(me.organizations, [{ id: 'org1', name: 'test', role: 'contrib', dflt: 1 }])
+    assert.deepEqual(me.organizations, [{ id: 'test_org1', name: 'test', role: 'contrib', dflt: 1 }])
 
     // by default the info is not synced on next login
     await axiosBuilder().patch(mockOidcControlUrl1 + '/_test/userinfo', { ...oidcUserInfo1, family_name: 'Test2', role: 'admin' })
@@ -44,12 +44,12 @@ test.describe('global OIDC configuration', () => {
     const me2 = (await ax2.get('/api/auth/me')).data
     assert.equal(me2.email, 'oidc1@test.com')
     assert.equal(me2.name, 'OIDC Test')
-    assert.deepEqual(me2.organizations, [{ id: 'org1', name: 'test', role: 'contrib', dflt: 1 }])
+    assert.deepEqual(me2.organizations, [{ id: 'test_org1', name: 'test', role: 'contrib', dflt: 1 }])
   })
 
   test('should implement a standard login workflow on a core id provider', async () => {
     const { ax } = await createUser('test-org@test.com')
-    await ax.post('/api/organizations', { name: 'test', id: 'org1', roles: ['admin', 'user', 'contrib'] })
+    await ax.post('/api/organizations', { name: 'test', id: 'test_org1', roles: ['admin', 'user', 'contrib'] })
 
     const anonymousAx = await axios()
     const providers = (await anonymousAx.get('/api/auth/providers')).data
@@ -60,7 +60,7 @@ test.describe('global OIDC configuration', () => {
     const me = (await ax1.get('/api/auth/me')).data
     assert.equal(me.email, 'oidc2@test.com')
     assert.equal(me.name, 'OIDC Test')
-    assert.deepEqual(me.organizations, [{ id: 'org1', name: 'test', role: 'contrib', dflt: 1, readOnly: true }])
+    assert.deepEqual(me.organizations, [{ id: 'test_org1', name: 'test', role: 'contrib', dflt: 1, readOnly: true }])
 
     // the info is synced on next login
     await axiosBuilder().patch(mockOidcControlUrl2 + '/_test/userinfo', { ...oidcUserInfo2, family_name: 'Test2', role: 'admin' })
@@ -68,6 +68,6 @@ test.describe('global OIDC configuration', () => {
     const me2 = (await ax2.get('/api/auth/me')).data
     assert.equal(me2.email, 'oidc2@test.com')
     assert.equal(me2.name, 'OIDC Test2')
-    assert.deepEqual(me2.organizations, [{ id: 'org1', name: 'test', role: 'admin', dflt: 1, readOnly: true }])
+    assert.deepEqual(me2.organizations, [{ id: 'test_org1', name: 'test', role: 'admin', dflt: 1, readOnly: true }])
   })
 })

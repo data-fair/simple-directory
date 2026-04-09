@@ -23,21 +23,23 @@ test.describe('External Apps Authorization Flow', () => {
     const anonymousAx = await axios()
     await anonymousAx.post('/api/sites',
       {
-        _id: 'test-site',
+        _id: 'test_site',
         owner: { type: 'organization', id: org.id, name: org.name },
         host: siteHost,
-        theme: { primaryColor: '#000000' },
-        applications: [{
-          id: 'native-app-client',
-          name: 'Native App',
-          redirectUris: ['native-app://auth-callback']
-        }]
+        theme: { primaryColor: '#000000' }
       },
       { params: { key: config.secretKeys.sites } }
     )
 
-    // Enable local auth to allow user creation
-    await adminAx.patch('/api/sites/test-site', { authMode: 'onlyLocal' })
+    // Enable local auth and configure applications
+    await adminAx.patch('/api/sites/test_site', {
+      authMode: 'onlyLocal',
+      applications: [{
+        id: 'native-app-client',
+        name: 'Native App',
+        redirectUris: ['native-app://auth-callback']
+      }]
+    })
 
     // 2. Create a user on the site
     const { ax: userSiteAx } = await createUser('native-test@test.com', false, 'TestPasswd01', `http://${siteHost}/simple-directory`)
@@ -119,18 +121,21 @@ test.describe('External Apps Authorization Flow', () => {
     const anonymousAx = await axios()
     await anonymousAx.post('/api/sites',
       {
-        _id: 'test-site-auth',
+        _id: 'test_site-auth',
         owner: { type: 'organization', id: org.id, name: org.name },
         host: siteHost,
-        theme: { primaryColor: '#000000' },
-        applications: [{
-          id: 'native-app-client',
-          name: 'Native App',
-          redirectUris: ['native-app://auth-callback']
-        }]
+        theme: { primaryColor: '#000000' }
       },
       { params: { key: config.secretKeys.sites } }
     )
+
+    await adminAx.patch('/api/sites/test_site-auth', {
+      applications: [{
+        id: 'native-app-client',
+        name: 'Native App',
+        redirectUris: ['native-app://auth-callback']
+      }]
+    })
 
     const siteAx = await axios({ baseURL: `http://${siteHost}/simple-directory` })
 
@@ -163,7 +168,7 @@ test.describe('External Apps Authorization Flow', () => {
     const anonymousAx = await axios()
     await anonymousAx.post('/api/sites',
       {
-        _id: 'test-site-fallback',
+        _id: 'test_site-fallback',
         owner: { type: 'organization', id: org.id, name: org.name },
         host: siteHost,
         theme: { primaryColor: '#000000' }
@@ -171,7 +176,7 @@ test.describe('External Apps Authorization Flow', () => {
       { params: { key: config.secretKeys.sites } }
     )
 
-    await adminAx.patch('/api/sites/test-site-fallback', { authMode: 'onlyLocal' })
+    await adminAx.patch('/api/sites/test_site-fallback', { authMode: 'onlyLocal' })
 
     const siteAx = await axios({ baseURL: `http://${siteHost}/simple-directory` })
 
@@ -202,19 +207,21 @@ test.describe('External Apps Authorization Flow', () => {
     const anonymousAx = await axios()
     await anonymousAx.post('/api/sites',
       {
-        _id: 'test-site-merge',
+        _id: 'test_site-merge',
         owner: { type: 'organization', id: org.id, name: org.name },
         host: siteHost,
-        theme: { primaryColor: '#000000' },
-        applications: [
-          { id: 'site-only', name: 'Site Only', redirectUris: ['native-app://site-only'] },
-          { id: 'shared-id', name: 'Site Shared', redirectUris: ['native-app://site-shared'] }
-        ]
+        theme: { primaryColor: '#000000' }
       },
       { params: { key: config.secretKeys.sites } }
     )
 
-    await adminAx.patch('/api/sites/test-site-merge', { authMode: 'onlyLocal' })
+    await adminAx.patch('/api/sites/test_site-merge', {
+      authMode: 'onlyLocal',
+      applications: [
+        { id: 'site-only', name: 'Site Only', redirectUris: ['native-app://site-only'] },
+        { id: 'shared-id', name: 'Site Shared', redirectUris: ['native-app://site-shared'] }
+      ]
+    })
 
     const siteAx = await axios({ baseURL: `http://${siteHost}/simple-directory` })
 
@@ -257,11 +264,10 @@ test.describe('External Apps Authorization Flow', () => {
     const anonymousAx = await axios()
     await anonymousAx.post('/api/sites',
       {
-        _id: 'test-site-2',
+        _id: 'test_site-2',
         owner: { type: 'organization', id: org.id, name: org.name },
         host: siteHost,
-        theme: { primaryColor: '#000000' },
-        applications: []
+        theme: { primaryColor: '#000000' }
       },
       { params: { key: config.secretKeys.sites } }
     )

@@ -16,12 +16,12 @@ test.describe('sites api', () => {
     await assert.rejects(anonymousAx.post('/api/sites', { host: '127.0.0.1:' + process.env.NGINX_PORT2 }, { params: { key: config.secretKeys.sites } }), { status: 400 })
 
     const { ax } = await createUser('test-site@test.com')
-    const org = (await ax.post('/api/organizations', { name: 'test' })).data
+    const org = (await ax.post('/api/organizations', { name: 'test_sites' })).data
     const orgAx = await axiosAuth({ email: 'test-site@test.com', org: org.id })
     const owner = { type: 'organization', id: org.id, name: org.name }
 
     await anonymousAx.post('/api/sites',
-      { _id: 'test', owner, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
+      { _id: 'test_sites', owner, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
 
     await assert.rejects(anonymousAx.get('/api/sites'), { status: 401 })
@@ -59,7 +59,7 @@ test.describe('sites api', () => {
     await assert.rejects(createUser('test-site2@test.com', false, 'TestPasswd01', siteDirectoryUrl), { status: 400 })
 
     // switch auth mode to ssoBackOffice
-    await adminAx.patch('/api/sites/test', { authMode: 'ssoBackOffice' })
+    await adminAx.patch('/api/sites/test_sites', { authMode: 'ssoBackOffice' })
     await testEnvAx.post('/clear-site-cache')
 
     // a user can be created directly on the second site
@@ -67,7 +67,7 @@ test.describe('sites api', () => {
     await siteAx1.get('/api/auth/me')
 
     // switch auth mode to onlyLocal
-    await adminAx.patch('/api/sites/test', { authMode: 'onlyLocal' })
+    await adminAx.patch('/api/sites/test_sites', { authMode: 'onlyLocal' })
     await testEnvAx.post('/clear-site-cache')
 
     // using site_redirect is no longer possible

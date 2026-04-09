@@ -8,11 +8,17 @@ import { rotateKeys, getSignatureKeys } from './tokens/keys-manager.ts'
 
 const router = Router()
 
-// DELETE /api/test-env — clean all test data
+// DELETE /api/test-env — clean test data
+// Seeded data uses test_* prefixed IDs, dynamically-created test users use @test.com emails
 router.delete('/', async (req, res) => {
-  await mongo.organizations.deleteMany({ _id: { $ne: 'admins-org' } })
-  await mongo.users.deleteMany({})
-  await mongo.sites.deleteMany({})
+  const testIdFilter = { _id: { $regex: /^test_/ } }
+  const testEmailFilter = { email: { $regex: /@test\.com$/i } }
+  // also clean legacy non-prefixed seed data (from before test_ prefix migration)
+  const legacyIds = ['dmeadus0', 'ccherryholme1', 'cdurning2', 'hlalonde3', 'ngernier4', 'ddecruce5', 'vdulany6', 'bhazeldean7', 'dhannan8', 'icarlens9', 'superadmin']
+  const legacyOrgIds = ['KWqAGZ4mG', 'ihMQiGTaY', '3sSi7xDIK', 'uakapD5tu', 'Yty0BxuZG', 'EnTgB2UbH', 'test-ldap']
+  await mongo.organizations.deleteMany({ $or: [testIdFilter, { _id: { $in: legacyOrgIds } }] })
+  await mongo.users.deleteMany({ $or: [testIdFilter, testEmailFilter, { _id: { $in: legacyIds } }] })
+  await mongo.sites.deleteMany(testIdFilter)
   await mongo.oauthTokens.deleteMany()
   await mongo.ldapUserSessions.deleteMany()
   await mongo.fileUserSessions.deleteMany()
@@ -59,6 +65,7 @@ router.post('/seed', async (req, res) => {
   }
 
   for (const user of users) {
+    if (!user.id.startsWith('test_')) continue
     const doc = {
       _id: user.id,
       ...user,
@@ -71,6 +78,7 @@ router.post('/seed', async (req, res) => {
   }
 
   for (const org of orgs) {
+    if (!org.id.startsWith('test_')) continue
     const doc = {
       _id: org.id,
       ...org,

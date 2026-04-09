@@ -19,7 +19,7 @@ test.describe('mails', () => {
   test('Send email to a user', async () => {
     const ax = await axios()
     const res = await ax.post('/api/mails', {
-      to: [{ type: 'user', id: 'dmeadus0' }],
+      to: [{ type: 'user', id: 'test_dmeadus0' }],
       subject: 'test',
       text: 'test mail content'
     }, { params: { key: 'testkey' } })
@@ -37,7 +37,7 @@ test.describe('mails', () => {
   test('Send email to members of an organization', async () => {
     const ax = await axios()
     const res = await ax.post('/api/mails', {
-      to: [{ type: 'organization', id: 'ihMQiGTaY' }],
+      to: [{ type: 'organization', id: 'test_ihMQiGTaY' }],
       subject: 'test2',
       text: 'test mail content 2'
     }, { params: { key: 'testkey' } })
@@ -52,7 +52,7 @@ test.describe('mails', () => {
   test('Send email to members of an organization with a certain role', async () => {
     const ax = await axios()
     const res = await ax.post('/api/mails', {
-      to: [{ type: 'organization', id: 'ihMQiGTaY', role: 'user' }],
+      to: [{ type: 'organization', id: 'test_ihMQiGTaY', role: 'user' }],
       subject: 'test3',
       text: 'test mail content 2'
     }, { params: { key: 'testkey' } })

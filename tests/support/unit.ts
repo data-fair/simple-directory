@@ -22,9 +22,11 @@ export const closeMongo = async () => {
 
 export const clean = async (options?: { ldapConfig?: any }) => {
   const mongo = (await import('../../api/src/mongo.ts')).default
-  await mongo.organizations.deleteMany({ _id: { $ne: 'admins-org' } })
-  await mongo.users.deleteMany({})
-  await mongo.sites.deleteMany({})
+  const testIdFilter = { _id: { $regex: /^test_/ } }
+  const testEmailFilter = { email: { $regex: /@test\.com$/i } }
+  await mongo.organizations.deleteMany(testIdFilter)
+  await mongo.users.deleteMany({ $or: [testIdFilter, testEmailFilter] })
+  await mongo.sites.deleteMany(testIdFilter)
   await mongo.oauthTokens.deleteMany()
   await mongo.ldapUserSessions.deleteMany()
   await mongo.fileUserSessions.deleteMany()
