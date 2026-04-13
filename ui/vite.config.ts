@@ -136,7 +136,7 @@ export default defineConfig({
     }
   },
   server: {
-    hmr: { port: 7200 },
+    hmr: { port: parseInt(process.env.DEV_UI_HMR_PORT!) },
     headers: {
       // 'content-security-policy': "default-src 'self' 'unsafe-inline' https:;connect-src ws: http:",
     }
