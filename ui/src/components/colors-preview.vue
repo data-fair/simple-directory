@@ -99,8 +99,8 @@ watch(fullTheme, () => {
   }
 }, { immediate: true })
 
-const buttonVariants: VBtn['variant'][] = ['flat', 'text']
-const colorKeys = ['primary', 'secondary', 'accent', 'info', 'success', 'error', 'warning']
+const buttonVariants: VBtn['variant'][] = ['flat', 'tonal', 'text']
+const colorKeys = ['primary', 'secondary', 'accent', 'info', 'warning', 'error', 'success']
 
 const themeNames = {
   colors: 'default',

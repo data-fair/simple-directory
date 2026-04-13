@@ -7,3 +7,4 @@ test-results
 *.tsbuildinfo
 ui/src/components/vjsf
 .env
+.playwright-mcp
