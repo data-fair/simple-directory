@@ -6,3 +6,4 @@ dev/logs
 test-results
 *.tsbuildinfo
 ui/src/components/vjsf
+.env
