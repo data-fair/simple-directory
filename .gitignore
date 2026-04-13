@@ -2,5 +2,8 @@
 .type
 node_modules
 dev/data
+dev/logs
+test-results
 *.tsbuildinfo
 ui/src/components/vjsf
+.env

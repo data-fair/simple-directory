@@ -58,6 +58,7 @@
 
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
+import { defaultTheme, fillTheme } from '@data-fair/lib-common-types/theme/index.js'
 
 const patch = ref()
 const valid = ref(false)
@@ -99,6 +100,37 @@ watch(site.data, () => {
   delete siteClone.host
   delete siteClone.path
   patch.value = siteClone
+})
+
+// When switching between assisted and manual mode, preserve colors by running fillTheme
+// Replace patch.value entirely (new object reference) so VJSF detects the external change
+// (VJSF uses reference equality: statefulLayout.data !== rawData)
+watch(() => patch.value?.theme?.assistedMode, (newVal, oldVal) => {
+  if (oldVal == null || newVal == null || !patch.value?.theme) return
+  if (oldVal === newVal) return
+  const filled = fillTheme({ ...patch.value.theme, assistedMode: oldVal }, defaultTheme)
+  if (oldVal === true && newVal === false) {
+    // assisted → manual: expand assisted colors into the full palette
+    patch.value = {
+      ...patch.value,
+      theme: {
+        ...patch.value.theme,
+        colors: filled.colors,
+        darkColors: filled.darkColors,
+        hcColors: filled.hcColors,
+        hcDarkColors: filled.hcDarkColors,
+      }
+    }
+  } else if (oldVal === false && newVal === true) {
+    // manual → assisted: extract primary/secondary/accent into assistedModeColors
+    patch.value = {
+      ...patch.value,
+      theme: {
+        ...patch.value.theme,
+        assistedModeColors: filled.assistedModeColors,
+      }
+    }
+  }
 })
 
 const confirmEdit = async () => {

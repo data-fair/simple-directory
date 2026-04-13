@@ -1,0 +1,244 @@
+import { strict as assert } from 'node:assert'
+import { test } from '@playwright/test'
+import { testEnvAx, maildevAx, createUser, axiosAuth, deleteAllEmails, waitForMail, getServerConfig } from '../support/axios.ts'
+import jwt, { type JwtPayload } from 'jsonwebtoken'
+
+test.describe('organizations api', () => {
+  test.beforeEach(async () => {
+    await deleteAllEmails()
+    await testEnvAx.delete('/')
+    await testEnvAx.patch('/config', { multiRoles: false })
+  })
+
+  test('should create an organization', async () => {
+    const { ax, user } = await createUser('test-org@test.com')
+    const createdOrg = (await ax.post('/api/organizations', { name: 'test' })).data
+    assert.equal(createdOrg.name, 'test')
+    const freshUser = (await ax.get('/api/users/' + user.id)).data
+    assert.equal(freshUser.organizations.length, 1)
+    assert.equal(freshUser.organizations[0].id, createdOrg.id)
+    assert.equal(freshUser.organizations[0].name, 'test')
+    assert.equal(freshUser.organizations[0].role, 'admin')
+  })
+
+  test('should create an organization with departments', async () => {
+    const { ax } = await createUser('test-org2@test.com')
+    const createdOrg = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }] })).data
+    assert.equal(createdOrg.name, 'test')
+    // list endpoint should not expose departments (select: id, name only)
+    const listedOrg = (await ax.get('/api/organizations?id=' + createdOrg.id)).data.results[0]
+    assert.ok(listedOrg)
+    assert.ok(!listedOrg.departments)
+    // detail endpoint should expose departments
+    ax.setOrg(createdOrg.id)
+    const detailedOrg = (await ax.get('/api/organizations/' + createdOrg.id)).data
+    assert.equal(detailedOrg.departments.length, 1)
+  })
+
+  test('should invite a new partner in an organization', async () => {
+    const config = await getServerConfig()
+
+    const { ax } = await createUser('test-partners1@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'Org 1' })).data
+    ax.setOrg(org.id)
+
+    const mail = await waitForMail(
+      () => ax.post(`/api/organizations/${org.id}/partners`, { name: 'Org 2', contactEmail: 'test-partners2@test.com' })
+    )
+    assert.ok(mail.link.startsWith(config.publicUrl + '/login?step=partnerInvitation&partner_invit_token='))
+    const token = new URL(mail.link).searchParams.get('partner_invit_token')
+    assert.ok(token)
+    const tokenPayload = jwt.decode(token) as JwtPayload
+    assert.equal(tokenPayload.o, org.id)
+    assert.equal(tokenPayload.n, 'Org 2')
+    assert.equal(tokenPayload.e, 'test-partners2@test.com')
+
+    let orgInfo = (await ax.get('/api/organizations/' + org.id)).data
+    assert.equal(orgInfo.partners.length, 1)
+    assert.ok(orgInfo.partners[0].partnerId)
+    assert.ok(!orgInfo.partners[0].id)
+
+    const { ax: ax2 } = await createUser('test-partners2@test.com')
+    const org2 = (await ax2.post('/api/organizations', { name: 'Org 2' })).data
+    const axOrg2 = await axiosAuth({ email: 'test-partners2@test.com', org: org2.id })
+
+    await axOrg2.post(`/api/organizations/${org.id}/partners/_accept`, { id: org2.id, contactEmail: 'test-partners2@test.com', token })
+
+    orgInfo = (await ax.get('/api/organizations/' + org.id)).data
+    assert.equal(orgInfo.partners.length, 1)
+    assert.equal(orgInfo.partners[0].id, org2.id)
+    assert.ok(orgInfo.partners[0].partnerId)
+
+    const userPartners = (await axOrg2.get(`/api/organizations/${org.id}/partners/_user-partners`)).data
+    assert.equal(userPartners.length, 1)
+    assert.equal(userPartners[0].id, org2.id)
+    assert.equal(userPartners[0].name, org2.name)
+  })
+
+  test('should invite a user in orga and change his role', async () => {
+    await getServerConfig()
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
+
+    const { ax } = await createUser('test-owner1@test.com')
+    const { ax: axMember, user: memberUser } = await createUser('test-member1@test.com')
+
+    const org = (await ax.post('/api/organizations', { name: 'test' })).data
+    ax.setOrg(org.id)
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-member1@test.com', role: 'user' })
+
+    const members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    const newMember = members.find((m: any) => m.email === 'test-member1@test.com')
+    assert.equal(newMember.role, 'user')
+
+    // the member cannot change his own role as a simple user
+    await assert.rejects(
+      axMember.patch(`/api/organizations/${org.id}/members/${memberUser.id}`, { role: 'admin' }),
+      { status: 403 })
+    // the admin can
+    await ax.patch(`/api/organizations/${org.id}/members/${memberUser.id}`, { role: 'admin' })
+    const patchedMembers = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    const patchedMember = patchedMembers.find((m: any) => m.email === 'test-member1@test.com')
+    assert.equal(patchedMember.role, 'admin')
+
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: false })
+  })
+
+  test('should invite a user in orga in multiple departments', async () => {
+    await getServerConfig()
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
+
+    const { ax } = await createUser('test-owner2@test.com')
+
+    const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }] })).data
+    ax.setOrg(org.id)
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'test-member2@test.com', role: 'user' })
+
+    let members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    const newMember = members.find((m: any) => m.email === 'test-member2@test.com')
+    assert.equal(newMember.department, 'dep1')
+    assert.equal(newMember.departmentName, 'Department 1')
+    assert.equal(newMember.role, 'user')
+
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep2', email: 'test-member2@test.com', role: 'admin' })
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    let newMembers = members.filter((m: any) => m.email === 'test-member2@test.com')
+    assert.equal(newMembers.length, 2)
+    assert.equal(newMembers[0].department, 'dep1')
+    assert.equal(newMembers[0].departmentName, 'Department 1')
+    assert.equal(newMembers[0].role, 'user')
+    assert.equal(newMembers[1].department, 'dep2')
+    assert.equal(newMembers[1].departmentName, 'Department 2')
+    assert.equal(newMembers[1].role, 'admin')
+
+    await ax.delete(`/api/organizations/${org.id}/members/${newMembers[0].id}?department=dep2`)
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    newMembers = members.filter((m: any) => m.email === 'test-member2@test.com')
+    assert.equal(newMembers.length, 1)
+    assert.equal(newMembers[0].department, 'dep1')
+    assert.equal(newMembers[0].role, 'user')
+
+    await assert.rejects(ax.patch(`/api/organizations/${org.id}/members/${newMembers[0].id}?dep=dep2`, { role: 'config', department: 'dep2' }), { status: 400 })
+    await ax.patch(`/api/organizations/${org.id}/members/${newMembers[0].id}?department=dep1`, { role: 'admin', department: 'dep1' })
+    members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+    newMembers = members.filter((m: any) => m.email === 'test-member2@test.com')
+    assert.equal(newMembers.length, 1)
+    assert.equal(newMembers[0].department, 'dep1')
+    assert.equal(newMembers[0].role, 'admin')
+
+    await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-member2@test.com', role: 'user' }), { status: 400 })
+    await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'test-owner2@test.com', role: 'user' }), { status: 400 })
+    await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, department: 'baddep', email: 'test-member2@test.com', role: 'user' }), { status: 404 })
+
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: false })
+  })
+
+  test('should send emails based on roles and departments', async () => {
+    await getServerConfig()
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
+
+    const { ax } = await createUser('owner@test.com')
+
+    const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }] })).data
+    ax.setOrg(org.id)
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'user1dep1@test.com', role: 'user' })
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'admin1dep1@test.com', role: 'admin' })
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep2', email: 'user1dep2@test.com', role: 'user' })
+    await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep2', email: 'admin1dep2@test.com', role: 'admin' })
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'user1@test.com', role: 'user' })
+    await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'admin1@test.com', role: 'admin' })
+
+    const members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
+
+    const sendEmails = async (to: any, subject: string) => {
+      await deleteAllEmails()
+      const res = await ax.post('/api/mails',
+        { to, subject, text: '' },
+        { params: { key: 'testkey' } }
+      )
+      assert.equal(res.status, 200)
+      await new Promise(resolve => setTimeout(resolve, 50))
+      return ((await maildevAx.get('/email')).data).filter((m: any) => m.subject === subject)
+    }
+
+    let emails = await sendEmails(
+      [{ type: 'user', id: members.find((m: any) => m.email === 'admin1@test.com').id }],
+      'test-email-user'
+    )
+    assert.equal(emails.length, 1)
+    assert.equal(emails[0].envelope.to[0].address, 'admin1@test.com')
+
+    emails = await sendEmails(
+      [{ type: 'organization', id: org.id }],
+      'test-email-root-users'
+    )
+    assert.equal(emails.length, 1)
+    assert.equal(emails[0].to.length, 3)
+    assert.ok(emails[0].to.find((t: any) => t.address === 'owner@test.com'))
+    assert.ok(emails[0].to.find((t: any) => t.address === 'user1@test.com'))
+    assert.ok(emails[0].to.find((t: any) => t.address === 'admin1@test.com'))
+
+    emails = await sendEmails(
+      [{ type: 'organization', id: org.id, role: 'admin' }],
+      'test-email-root-admin'
+    )
+    assert.equal(emails.length, 1)
+    assert.equal(emails[0].to.length, 2)
+    assert.ok(emails[0].to.find((t: any) => t.address === 'owner@test.com'))
+    assert.ok(emails[0].to.find((t: any) => t.address === 'admin1@test.com'))
+
+    emails = await sendEmails(
+      [{ type: 'organization', id: org.id, department: '*' }],
+      'test-email-all-deps'
+    )
+    assert.equal(emails.length, 1)
+    assert.equal(emails[0].to.length, 7)
+
+    emails = await sendEmails(
+      [{ type: 'organization', id: org.id, department: 'dep1', role: 'admin' }],
+      'test-email-admin-dep1'
+    )
+    assert.equal(emails.length, 1)
+    assert.equal(emails[0].to.length, 1)
+    assert.ok(emails[0].to.find((t: any) => t.address === 'admin1dep1@test.com'))
+
+    const membersEmail1 = (await ax.get(`/api/organizations/${org.id}/members`, {
+      params: { email: 'owner@test.com' }
+    })).data.results
+    assert.equal(membersEmail1.length, 1)
+
+    const membersEmail2 = (await ax.get(`/api/organizations/${org.id}/members`, {
+      params: { email: 'owner@test.com,admin1@test.com' }
+    })).data.results
+    assert.equal(membersEmail2.length, 2)
+
+    const memberEmails3Insensitive = (await ax.get(`/api/organizations/${org.id}/members`, {
+      params: { email: 'Owner@Test.com,admin1@' }
+    })).data.results
+    assert.equal(memberEmails3Insensitive.length, 1)
+
+    const memberEmails3Insensitive2 = (await ax.get(`/api/organizations/${org.id}/members`, {
+      params: { email: 'Owner@Test.com,admin1@test.COM' }
+    })).data.results
+    assert.equal(memberEmails3Insensitive2.length, 2)
+  })
+})

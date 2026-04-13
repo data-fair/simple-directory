@@ -17,23 +17,20 @@ If you use [zellij](https://zellij.dev/) you can replace all the following steps
 
 Run the services dependencies:
 
-    npm run dev-deps
+    docker compose --profile dev up -d
 
-Run the 2 development servers with these commands et separate shells:
+Run the 2 development servers with these commands in separate shells:
 
-    npm run dev-server
-    npm run dev-client
+    npm -w api run dev
+    npm -w ui run dev
 
 ## Docker image
 
 Test building the docker image:
 
 ```
-docker compose stop
-npm run test-deps
 docker build --progress=plain -t sd-dev .
 // don't expect the following line to work fully, it will be missing service dependencies, etc.
-docker run --network=host --env PORT=8081 sd-dev
 ```
 
 ## Working with Git Worktrees

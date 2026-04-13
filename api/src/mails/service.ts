@@ -109,7 +109,7 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
     ...config.mails.extraParams // override with extra params from config, default to {}
   }
 
-  events.emit('send', tmplParams)
+  events.emit('send', { to, ...tmplParams })
 
   const mjmlRes = mjml2html(microTemplate(template, tmplParams))
   if (mjmlRes.errors && mjmlRes.errors.length) {

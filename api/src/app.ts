@@ -88,6 +88,11 @@ app.use('/api/accounts', accounts)
 app.use('/api/sites', sites)
 app.use('/api/password-lists', passwordLists)
 
+if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+  const testEnv = (await import('./test-env.ts')).default
+  app.use('/api/test-env', testEnv)
+}
+
 app.use('/api/', (req, res) => {
   res.status(404).send('unknown api endpoint')
 })

@@ -7,7 +7,7 @@ module.exports = {
     url: 'mongodb://localhost:' + process.env.MONGO_PORT + '/simple-directory-' + (process.env.NODE_ENV || 'development')
   },
   port: process.env.DEV_API_PORT,
-  publicUrl: 'http://localhost:' + process.env.NGINX_PORT1 + '/simple-directory',
+  publicUrl: 'http://' + process.env.DEV_HOST + ':' + process.env.NGINX_PORT1 + '/simple-directory',
   // use this host when debugging a data-fair inside a virtualbox vm
   // publicUrl: 'http://10.0.2.2:5689',
   admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com', 'admin@test.com'],
@@ -104,7 +104,7 @@ module.exports = {
     admin: 'Administrateur'
   },
   quotas: {
-    defaultMaxCreatedOrgs: 1
+    defaultMaxCreatedOrgs: -1
     // defaultMaxNbMembers: 0
   },
   passwordless: true,
@@ -115,7 +115,8 @@ module.exports = {
     readAll: 'testkey',
     metrics: 'testkey',
     events: 'secret-events',
-    sites: 'secret-sites'
+    sites: 'secret-sites',
+    pseudoSession: 'testkey'
   },
   perOrgStorageTypes: ['ldap'],
   cipherPassword: 'test',
@@ -166,20 +167,56 @@ module.exports = {
       // certificates: ['MIIDXTCCAkWgAwIBAgIJALmVVuDWu4NYMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwHhcNMTYxMjMxMTQzNDQ3WhcNNDgwNjI1MTQzNDQ3WjBFMQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzUCFozgNb1h1M0jzNRSCjhOBnR+uVbVpaWfXYIR+AhWDdEe5ryY+CgavOg8bfLybyzFdehlYdDRgkedEB/GjG8aJw06l0qF4jDOAw0kEygWCu2mcH7XOxRt+YAH3TVHa/Hu1W3WjzkobqqqLQ8gkKWWM27fOgAZ6GieaJBN6VBSMMcPey3HWLBmc+TYJmv1dbaO2jHhKh8pfKw0W12VM8P1PIO8gv4Phu/uuJYieBWKixBEyy0lHjyixYFCR12xdh4CA47q958ZRGnnDUGFVE1QhgRacJCOZ9bd5t9mr8KLaVBYTCJo5ERE8jymab5dPqe5qKfJsCZiqWglbjUo9twIDAQABo1AwTjAdBgNVHQ4EFgQUxpuwcs/CYQOyui+r1G+3KxBNhxkwHwYDVR0jBBgwFoAUxpuwcs/CYQOyui+r1G+3KxBNhxkwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAAiWUKs/2x/viNCKi3Y6blEuCtAGhzOOZ9EjrvJ8+COH3Rag3tVBWrcBZ3/uhhPq5gy9lqw4OkvEws99/5jFsX1FJ6MKBgqfuy7yh5s1YfM0ANHYczMmYpZeAcQf2CGAaVfwTTfSlzNLsF2lW/ly7yapFzlYSJLGoVE+OHEu8g5SlNACUEfkXw+5Eghh+KzlIN7R6Q7r2ixWNFBC/jWf7NKUfJyX8qIG5md1YUeT6GBW9Bm2/1/RiO24JTaYlfLdKK9TYb8sG5B+OLab2DImG99CJ25RkAcSobWNF5zD0O6lgOo3cEdB/ksCq3hmtlC/DlLZ/D8CJ+7VuZnS1rR2naQ==']
     }]
   },
+  oauth: {
+    providers: ['github']
+  },
   oidc: {
     // WARNING: does not work on a recent chrome
     // this provider tries to use a cookie with samesite=none option and this is not permitted without https
-    providers: [{
-      title: 'Test OIDC IDP',
-      color: '#D92929',
-      img: 'https://cdn-icons-png.flaticon.com/512/25/25231.png',
-      discovery: 'http://localhost:' + process.env.OIDC_PROVIDER_PORT + '/.well-known/openid-configuration',
-      client: {
-        id: 'foo',
-        secret: 'bar'
-      }
-    },
-    {
+    providers: [
+    // Mock OIDC providers for automated testing (mock-oidc-server.ts)
+      {
+        title: 'Test provider',
+        discovery: 'http://localhost:' + (process.env.MOCK_OIDC_PORT1 || 8998) + '/.well-known/openid-configuration',
+        client: {
+          id: 'test-client',
+          secret: 'test-secret'
+        },
+        createMember: {
+          type: 'always'
+        },
+        memberRole: {
+          type: 'attribute',
+          attribute: 'role',
+        }
+      },
+      {
+        title: 'Test provider core',
+        coreIdProvider: true,
+        discovery: 'http://localhost:' + (process.env.MOCK_OIDC_PORT2 || 8999) + '/.well-known/openid-configuration',
+        client: {
+          id: 'test-client',
+          secret: 'test-secret'
+        },
+        createMember: {
+          type: 'always'
+        },
+        memberRole: {
+          type: 'attribute',
+          attribute: 'role',
+        }
+      },
+      {
+        title: 'Test OIDC IDP',
+        color: '#D92929',
+        img: 'https://cdn-icons-png.flaticon.com/512/25/25231.png',
+        discovery: 'http://localhost:' + process.env.OIDC_PROVIDER_PORT + '/.well-known/openid-configuration',
+        client: {
+          id: 'foo',
+          secret: 'bar'
+        }
+      },
+      {
       /* Instructions to create the keycloak test client
         - login to keycloak (localhost:8888, admin/admin)
         - section "Clients" > "Create"
@@ -204,41 +241,45 @@ module.exports = {
         - section "Users" > "Add user" then "Credentials"
 
       */
-      title: 'Test OIDC Keycloak',
-      color: '#D92929',
-      img: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Keycloak_Logo.png',
-      discovery: 'http://localhost:' + process.env.KEYCLOAK_PORT + '/realms/master/.well-known/openid-configuration',
-      client: {
-        id: 'test-sd',
-        secret: 'x17YcfoJRPPrZoiXFTBwhWxSJGwTa5bi'
-      },
-      coreIdProvider: true,
-      ignoreEmailVerified: true,
-      /* redirectMode: {
+        title: 'Test OIDC Keycloak',
+        color: '#D92929',
+        img: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Keycloak_Logo.png',
+        discovery: 'http://localhost:' + process.env.KEYCLOAK_PORT + '/realms/master/.well-known/openid-configuration',
+        client: {
+          id: 'test-sd',
+          secret: 'x17YcfoJRPPrZoiXFTBwhWxSJGwTa5bi'
+        },
+        coreIdProvider: true,
+        ignoreEmailVerified: true,
+        /* redirectMode: {
         type: 'always'
       }, */
-      createMember: {
-        type: 'always'
-      },
-      memberRole: {
-        type: 'static',
-        role: 'admin'
+        createMember: {
+          type: 'always'
+        },
+        memberRole: {
+          type: 'static',
+          role: 'admin'
+        }
       }
-    }
     ]
   },
   manageSites: true,
   managePartners: true,
   defaultOrg: 'admins-org',
   passwordValidation: {
-    // entropy: 50,
     entropy: 20,
-    // minLength: 8,
-    // minCharClasses: 3,
+    minLength: 8,
+    minCharClasses: 3,
   },
   siteOrgs: true,
   siteAdmin: true,
   multiRoles: true,
+  authRateLimit: {
+    attempts: 100,
+    duration: 60
+  },
+  passwordUpdateInterval: [1, 'days'],
   observer: {
     port: process.env.DEV_OBSERVER_PORT
   }

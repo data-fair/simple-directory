@@ -10,14 +10,66 @@ jobs:
     steps:
     - name: Checkout git repository
       uses: actions/checkout@v4
-    
+
     - uses: actions/setup-node@v3
       with:
         node-version: 24
         cache: 'npm'
-    
+
     - name: Install dependencies
       run: npm ci
 
-    - name: Run quality checks
-      run: npm run quality
+    - name: Lint
+      run: npm run lint
+
+    - name: Build types
+      run: npm run build-types
+
+    - name: Type check
+      run: npm run check-types
+
+    - name: Init .env
+      run: ./dev/init-env.sh
+
+    - name: Use localhost as DEV_HOST in CI
+      run: sed -i 's/^DEV_HOST=.*/DEV_HOST=localhost/' .env
+
+    - name: Start test services
+      run: docker compose --profile test up -d --wait
+
+    - name: Start mock OIDC servers
+      run: dotenv -- npm run dev-mock-oidc &
+
+    - name: Start dev API
+      run: dotenv -- npm run dev-api &
+
+    - name: Wait for API to be ready
+      run: |
+        for i in $(seq 1 30); do
+          curl -s http://localhost:$(grep DEV_API_PORT .env | cut -d= -f2)/api/test-env/ping && break
+          sleep 2
+        done
+
+    - name: Wait for mock OIDC to be ready
+      run: |
+        MOCK_PORT1=$(grep MOCK_OIDC_PORT1 .env | cut -d= -f2)
+        for i in $(seq 1 15); do
+          curl -s http://localhost:$((MOCK_PORT1 + 100))/_test/ping && break
+          sleep 1
+        done
+
+    - name: Run unit tests
+      run: npm run test-unit
+
+    - name: Run API tests
+      run: npm run test-api
+
+    - name: Run in-process tests
+      run: npm run test-inproc
+
+    - name: Audit
+      run: npm audit --omit=dev --audit-level=critical
+
+    - name: Stop test services
+      if: always()
+      run: docker compose --profile test down
