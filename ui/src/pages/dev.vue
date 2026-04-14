@@ -3,39 +3,34 @@
     <h2 class="text-headline-medium mb-4">
       Theme
     </h2>
-    <template
-      v-for="variant of buttonVariants"
-      :key="variant"
-    >
-      <h3 class="text-headline-small">
-        {{ variant }}
-      </h3>
-      <v-card>
-        <v-row>
-          <template
-            v-for="color of colors"
-            :key="color"
-          >
-            <v-btn
-              :color="color"
-              :variant="variant"
-              class="ma-4"
-            >
-              {{ color }}
-            </v-btn>
-          </template>
-        </v-row>
-      </v-card>
-    </template>
+    <v-row v-if="defaultTheme.data.value">
+      <v-col
+        v-for="variant of variants"
+        :key="variant.key"
+        cols="12"
+        md="6"
+      >
+        <h3 class="text-title-medium mb-2">
+          {{ variant.title }}
+        </h3>
+        <colors-preview
+          :colors-key="variant.key"
+          :theme="defaultTheme.data.value"
+          :dark="variant.dark"
+        />
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import type { VBtn } from 'vuetify/components/VBtn'
+import type { Theme } from '../../../api/config/type'
+const defaultTheme = useFetch<Theme>(`${$apiPath}/sites/_default_theme`)
 
-const buttonVariants: VBtn['variant'][] = ['flat', 'outlined', 'text']
-const colors = ['primary', 'secondary', 'accent', 'info', 'success', 'error', 'warning']
+const variants: { key: 'colors' | 'darkColors' | 'hcColors' | 'hcDarkColors', dark: boolean, title: string }[] = [
+  { key: 'colors', dark: false, title: 'Light' },
+  { key: 'darkColors', dark: true, title: 'Dark' },
+  { key: 'hcColors', dark: false, title: 'High contrast light' },
+  { key: 'hcDarkColors', dark: true, title: 'High contrast dark' }
+]
 </script>
-
-<style>
-</style>

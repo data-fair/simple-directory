@@ -3,6 +3,7 @@ import type { ApiConfig } from '../config/type/index.ts'
 import { assertValid } from '../config/type/index.ts'
 import config from 'config'
 import ms from 'ms'
+import { defaultTheme } from '@data-fair/lib-common-types/theme/index.js'
 
 export type { ApiConfig } from '../config/type/index.ts'
 
@@ -18,6 +19,13 @@ for (const envAlias of envAliases) {
 // we reload the config instead of using the singleton from the config module for testing purposes
 // @ts-ignore
 const apiConfig = process.env.NODE_ENV === 'test' ? config.util.loadFileConfigs(process.env.NODE_CONFIG_DIR, { skipConfigSources: true }) : config
+
+// merge theme defaults from @data-fair/lib-common-types/theme under any values
+// provided by api/config/*.cjs or THEME_* environment variables
+// @ts-ignore
+const themeOverrides = config.util.cloneDeep(apiConfig.theme ?? {})
+// @ts-ignore
+config.util.extendDeep(apiConfig.theme, defaultTheme, themeOverrides)
 
 assertValid(apiConfig, { lang: 'en', name: 'config', internal: true })
 

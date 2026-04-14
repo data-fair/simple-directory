@@ -84,6 +84,7 @@
   },
   "relativeDependencies": {
     "@data-fair/lib-vuetify": "../lib/packages/vuetify",
-    "@data-fair/lib-vue": "../lib/packages/vue"
+    "@data-fair/lib-vue": "../lib/packages/vue",
+    "@data-fair/lib-common-types": "../lib/packages/common-types"
   }
 }
