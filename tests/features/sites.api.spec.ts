@@ -33,7 +33,7 @@ test.describe('sites api', () => {
     assert.ok(publicSite.theme.colors.primary)
     assert.ok(publicSite.theme.logo.startsWith('/simple-directory/api/avatars'))
     const themeCss = (await anonymousAx.get<string>(`${siteDirectoryUrl}/api/sites/_theme.css`)).data
-    assert.ok(themeCss.includes('@font-face{font-family:BodyFontFamily'))
+    assert.ok(themeCss.includes('@font-face{font-family:Nunito'))
 
     let sites = (await ax.get('/api/sites')).data
     assert.equal(sites.count, 0)
