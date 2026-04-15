@@ -10,18 +10,19 @@ export const getThemeCss = (theme: Theme, sitePath: string = '') => {
   if (theme.dark && theme.darkColors) css += getTextColorsCss(theme.darkColors, 'dark')
   if (theme.hc && theme.hcColors) css += getTextColorsCss(theme.hcColors, 'hc')
   if (theme.hcDark && theme.hcDarkColors) css += getTextColorsCss(theme.hcDarkColors, 'hc-dark')
-  css += '\n' + microTemplate(theme?.bodyFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'BodyFontFamily' })
-  if (theme?.headingFontFamilyCss) {
-    css += '\n' + microTemplate(theme?.headingFontFamilyCss, { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
-  } else if (!theme?.bodyFontFamily && !theme?.headingFontFamily) {
-    // this condition is met on older sites where we used BodyFontFamily and HeadingFontFamily aliases
-    css += '\n' + microTemplate(theme?.bodyFontFamilyCss ?? config.theme.headingFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? '', { SITE_PATH: sitePath, FONT_FAMILY: 'HeadingFontFamily' })
+  const bodyFontFamilyCss = theme?.bodyFontFamilyCss ?? config.theme.bodyFontFamilyCss ?? ''
+  css += '\n' + microTemplate(bodyFontFamilyCss, { SITE_PATH: sitePath })
+  const headingFontFamilyCss = theme?.headingFontFamilyCss ?? config.theme.headingFontFamilyCss
+  if (headingFontFamilyCss) {
+    css += '\n' + microTemplate(headingFontFamilyCss, { SITE_PATH: sitePath })
   }
 
+  const bodyFontFamily = theme?.bodyFontFamily || config.theme.bodyFontFamily
+  const headingFontFamily = theme?.headingFontFamily || config.theme.headingFontFamily || bodyFontFamily
   css += `
 :root {
-  --d-body-font-family: ${theme?.bodyFontFamily || 'BodyFontFamily'} !important;
-  --d-heading-font-family: ${theme?.headingFontFamily || theme?.bodyFontFamily || 'HeadingFontFamily'} !important;
+  --d-body-font-family: ${bodyFontFamily} !important;
+  --d-heading-font-family: ${headingFontFamily} !important;
 }
   `
   return css

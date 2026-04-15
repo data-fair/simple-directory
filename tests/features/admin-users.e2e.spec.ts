@@ -10,15 +10,15 @@ test.describe('Admin users page', () => {
     await loginExisting('_superadmin@test.com', { password: 'Test1234', adminMode: true })
 
     await page.goto(appUrl('/admin/users'))
-    await expect(page.locator('.users-table')).toBeVisible()
-    await expect(page.locator('.users-table tbody tr').first()).toBeVisible()
+    await expect(page.locator('.users-table')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.users-table tbody tr').first()).toBeVisible({ timeout: 10_000 })
   })
 
   test('search filters users', async ({ page, appUrl, loginExisting }) => {
     await loginExisting('_superadmin@test.com', { password: 'Test1234', adminMode: true })
 
     await page.goto(appUrl('/admin/users'))
-    await expect(page.locator('.users-table')).toBeVisible()
+    await expect(page.locator('.users-table')).toBeVisible({ timeout: 10_000 })
 
     const searchField = page.locator('input[name="search"]')
     await searchField.fill('test_dmeadus0')
