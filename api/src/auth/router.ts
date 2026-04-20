@@ -560,10 +560,11 @@ router.post('/action', async (req, res, next) => {
   }
 
   const storage = storages.globalStorage
-  let user = await storage.getUserByEmail(body.email, await reqSite(req))
+  const site = await reqSite(req)
+  let user = await storage.getUserByEmail(body.email, site)
   logContext.user = user
   let action = body.action as ActionPayload['action']
-  if (!user && await reqSite(req)) {
+  if (!user && site) {
     user = await storage.getUserByEmail(body.email)
     action = 'changeHost'
   }
@@ -579,6 +580,10 @@ router.post('/action', async (req, res, next) => {
     id: user.id,
     email: user.email,
     action
+  }
+  if (action === 'changeHost' && site) {
+    payload.host = site.host
+    payload.path = site.path
   }
   const token = await signToken(payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(target)

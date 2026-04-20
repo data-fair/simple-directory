@@ -3,7 +3,7 @@ import { test } from '@playwright/test'
 import { clean, startApiServer, stopApiServer, loginWithOIDC } from '../support/in-process-server.ts'
 import { OAuth2Server } from 'oauth2-mock-server'
 
-const oidcUserInfo1 = { sub: 'testoidc1', email: 'oidc1@test.com' }
+const oidcUserInfo1 = { sub: 'testoidc1', email: 'oidc1@test.com', email_verified: true }
 
 const startOAuthServer = async (port: number, oidcUserInfo: any) => {
   const oauthServer = new OAuth2Server()

@@ -13,6 +13,7 @@ test.describe('global OIDC configuration in coreIdProvider mode', () => {
     await axiosBuilder().patch(mockOidcControlUrl2 + '/_test/userinfo', {
       sub: 'testoidc1',
       email: 'oidc1@test.com',
+      email_verified: true,
       given_name: 'Test',
       family_name: 'Oidc1'
     })
@@ -65,6 +66,7 @@ test.describe('global OIDC configuration in coreIdProvider mode', () => {
     await axiosBuilder().patch(mockOidcControlUrl2 + '/_test/userinfo', {
       sub: 'testoidc1',
       email: 'oidc1@test.com',
+      email_verified: true,
       given_name: 'Test',
       family_name: 'Oidc2'
     })
