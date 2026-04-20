@@ -1,7 +1,7 @@
 import { type Organization, type UserWritable } from '#types'
 import { Router, type RequestHandler } from 'express'
 import config from '#config'
-import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession, httpError } from '@data-fair/lib-express'
+import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession, reqUser, httpError } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
 import eventsQueue from '#events-queue'
@@ -73,6 +73,26 @@ router.post('', async (req, res, next) => {
 
   const { body, query } = (await import('#doc/users/post-req/index.ts')).returnValid(req, { name: 'req' })
 
+  // anonymous-action token gate: anonymous callers must hold a /auth/anonymous-action token
+  // (notBefore delay traps instant-POST bots; per-IP limiter on the issuing endpoint caps abuse rate).
+  // Authenticated callers are exempt — they're already rate-gated elsewhere and have an audit trail.
+  if (!reqUser(req)) {
+    if (!body.token) {
+      eventsLog.warn('sd.user.create.missing-token', 'anonymous POST /api/users without anonymous-action token', logContext)
+      return res.status(401).send(reqI18n(req).messages.errors.missingToken)
+    }
+    try {
+      await session.verifyToken(body.token)
+    } catch (err: any) {
+      if (err.name === 'NotBeforeError') {
+        eventsLog.alert('sd.user.create.bot-suspected', 'POST /api/users with premature anonymous-action token', logContext)
+        return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
+      }
+      eventsLog.warn('sd.user.create.invalid-token', `POST /api/users with invalid anonymous-action token: ${err.name}`, logContext)
+      return res.status(401).send(reqI18n(req).messages.errors.invalidToken)
+    }
+  }
+
   const storage = storages.globalStorage
 
   // used to create a user and accept a member invitation at the same time
@@ -132,7 +152,13 @@ router.post('', async (req, res, next) => {
   const user = await storages.globalStorage.getUserByEmail(body.email, await reqSite(req))
 
   // email is already taken, send a conflict email
-  const link = getDefaultLoginRedirect(reqSiteUrl(req), query.redirect)
+  let link = getDefaultLoginRedirect(reqSiteUrl(req), query.redirect)
+  try {
+    await getRedirectSite(req, link)
+  } catch (err) {
+    eventsLog.alert('sd.user.create.redirect-rejected', `a user creation redirect to ${link} was rejected as off-site`, logContext)
+    link = getDefaultLoginRedirect(reqSiteUrl(req))
+  }
   if (user && user.emailConfirmed !== false) {
     const linkUrl = new URL(link)
     await sendMailI18n('conflict', reqI18n(req).messages, body.email, { host: linkUrl.host, origin: linkUrl.origin })

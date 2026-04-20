@@ -8,3 +8,4 @@ test-results
 ui/src/components/vjsf
 .env
 .playwright-mcp
+docs/local

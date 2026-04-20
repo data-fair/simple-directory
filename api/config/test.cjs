@@ -71,6 +71,11 @@ module.exports = {
     attempts: 100,
     duration: 60
   },
+  anonymousAction: {
+    // short notBefore keeps tests fast — in prod this is 8s to trip bots
+    expiresIn: '1d',
+    notBefore: '0s'
+  },
   perOrgStorageTypes: ['ldap'],
   mails: {
     from: 'no-reply@test.com',

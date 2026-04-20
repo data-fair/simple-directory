@@ -12,9 +12,11 @@ test.describe('users api', () => {
     const config = await getServerConfig()
     const ax = await axios()
 
+    const token = (await ax.get('/api/auth/anonymous-action')).data
+
     // create user via API and wait for confirmation mail via SSE
     const mail = await waitForMail(
-      () => ax.post('/api/users', { email: 'user@test.com', password: 'Test1234' }),
+      () => ax.post('/api/users', { email: 'user@test.com', password: 'Test1234', token }),
       (m) => m.to === 'user@test.com' && m.link?.includes('token_callback')
     )
 

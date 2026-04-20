@@ -63,7 +63,6 @@
     "@types/serialize-javascript": "^5.0.4",
     "@types/simple-oauth2": "^5.0.8",
     "@types/tinycolor2": "^1.4.6",
-    "@types/useragent": "^2.3.4",
     "commitlint": "^19.8.1",
     "dotenv": "^17.3.1",
     "dotenv-cli": "^11.0.0",

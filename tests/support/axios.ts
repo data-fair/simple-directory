@@ -107,8 +107,10 @@ export const createUser = async (email: string, adminMode = false, password = 'T
   const createAxiosOpts = { baseURL: baseUrl }
   const anonymAx = await axios(createAxiosOpts)
 
+  const token = (await anonymAx.get('/api/auth/anonymous-action')).data
+
   const mail = await waitForMail(
-    () => anonymAx.post('/api/users', { email, password }),
+    () => anonymAx.post('/api/users', { email, password, token }),
     (m) => m.to === email && m.link?.includes('token_callback')
   )
 

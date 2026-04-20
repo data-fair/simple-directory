@@ -45,7 +45,8 @@ test.describe('invitations', () => {
     assert.equal(members.length, 1)
 
     // create user and accept invitation
-    await anonymousAx.post('/api/users', { email: 'test-invit2@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
+    const token2 = (await anonymousAx.get('/api/auth/anonymous-action')).data
+    await anonymousAx.post('/api/users', { email: 'test-invit2@test.com', password: 'Test1234', token: token2 }, { params: { invit_token: invitToken } })
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
     assert.equal(members.length, 2)
     const newMember = members.find((m: any) => m.email === 'test-invit2@test.com')
@@ -171,7 +172,8 @@ test.describe('invitations', () => {
     assert.equal(newMember.emailConfirmed, false)
 
     // finalize user creation and invitation
-    await anonymousAx.post('/api/users', { email: 'test-invit6@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
+    const token6 = (await anonymousAx.get('/api/auth/anonymous-action')).data
+    await anonymousAx.post('/api/users', { email: 'test-invit6@test.com', password: 'Test1234', token: token6 }, { params: { invit_token: invitToken } })
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
     assert.equal(members.length, 2)
     newMember = members.find((m: any) => m.email === 'test-invit6@test.com')
@@ -233,7 +235,8 @@ test.describe('invitations', () => {
     const invitToken = new URL(redirect ?? '').searchParams.get('invit_token')
 
     // create user and accept invitation
-    await anonymousAx.post('/api/users', { email: 'test-invit10@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
+    const token10 = (await anonymousAx.get('/api/auth/anonymous-action')).data
+    await anonymousAx.post('/api/users', { email: 'test-invit10@test.com', password: 'Test1234', token: token10 }, { params: { invit_token: invitToken } })
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
     assert.equal(members.length, 2)
     const newMember = members.find((m: any) => m.email === 'test-invit10@test.com')
@@ -301,7 +304,8 @@ test.describe('invitations', () => {
     const invitToken = new URL(redirect ?? '').searchParams.get('invit_token')
 
     // create user and accept invitation
-    await anonymousAx.post('/api/users', { email: 'test-invit-multi-dep2@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
+    const tokenMd2 = (await anonymousAx.get('/api/auth/anonymous-action')).data
+    await anonymousAx.post('/api/users', { email: 'test-invit-multi-dep2@test.com', password: 'Test1234', token: tokenMd2 }, { params: { invit_token: invitToken } })
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
     console.log('members', members)
     assert.equal(members.length, 3)
@@ -357,7 +361,8 @@ test.describe('invitations', () => {
     const invitToken = new URL(mail.link).searchParams.get('invit_token')
 
     // finalize user creation and invitation
-    await anonymousAx.post(`http://127.0.0.1:${process.env.NGINX_PORT2}/simple-directory/api/users`, { email: 'test-invit11@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
+    const token11 = (await anonymousAx.get(`http://127.0.0.1:${process.env.NGINX_PORT2}/simple-directory/api/auth/anonymous-action`)).data
+    await anonymousAx.post(`http://127.0.0.1:${process.env.NGINX_PORT2}/simple-directory/api/users`, { email: 'test-invit11@test.com', password: 'Test1234', token: token11 }, { params: { invit_token: invitToken } })
 
     // after accepting the user is a member
     const members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
@@ -442,7 +447,8 @@ test.describe('invitations', () => {
     const invitToken = new URL(mail.link).searchParams.get('invit_token')
 
     // finalize user creation and invitation
-    await anonymousAx.post('/api/users', { email: 'test-invit14@test.com', password: 'Test1234' }, { params: { invit_token: invitToken } })
+    const token14 = (await anonymousAx.get('/api/auth/anonymous-action')).data
+    await anonymousAx.post('/api/users', { email: 'test-invit14@test.com', password: 'Test1234', token: token14 }, { params: { invit_token: invitToken } })
 
     // after accepting the user is a member
     const members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results

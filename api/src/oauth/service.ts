@@ -57,7 +57,6 @@ export type OAuthRelayState = {
   _id: string,
   createdAt: Date,
   providerState: string,
-  loginReferer?: string,
   redirect: string,
   org?: string,
   dep?: string,

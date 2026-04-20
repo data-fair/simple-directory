@@ -9,6 +9,8 @@ const body = jsonSchema(UserSchema)
   .schema
 
 body.properties.password = { type: 'string' }
+// anonymous-action token required for unauthenticated callers (bot / email-amplifier gate)
+body.properties.token = { type: 'string' }
 
 export default {
   $id: 'https://github.com/data-fair/simple-directory/users/post-req',

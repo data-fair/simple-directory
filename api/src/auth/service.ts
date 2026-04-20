@@ -1,4 +1,4 @@
-import useragent from 'useragent'
+import { UAParser } from 'ua-parser-js'
 import debugModule from 'debug'
 import config from '#config'
 import type { Request } from 'express'
@@ -299,9 +299,17 @@ export const patchCoreAuthUser = async (provider: AuthProviderCore, user: User, 
   return await storages.globalStorage.patchUser(user.id, patch)
 }
 
+const formatDeviceName = (agentHeader: string) => {
+  const { browser, os } = UAParser(agentHeader)
+  const browserPart = [browser.name, browser.version].filter(Boolean).join(' ')
+  const osPart = [os.name, os.version].filter(Boolean).join(' ')
+  const combined = [browserPart, osPart].filter(Boolean).join(' / ')
+  return combined || 'appareil inconnu'
+}
+
 export const initServerSession = (req: Request): ServerSession => {
   const agentHeader = req.get('user-agent')
-  const deviceName = agentHeader ? useragent.parse(agentHeader).toString() : 'appareil inconnu'
+  const deviceName = agentHeader ? formatDeviceName(agentHeader) : 'appareil inconnu'
   return {
     id: nanoid(),
     createdAt: new Date().toISOString(),

@@ -28,7 +28,6 @@ export type Saml2RelayState = {
   _id: string,
   createdAt: Date,
   providerId: string,
-  loginReferer?: string,
   redirect: string,
   org?: string,
   dep?: string,

@@ -4,7 +4,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "mkdir -p ../dev/logs && NODE_ENV=development DEBUG=upgrade* node --watch --experimental-strip-types index.ts 2>&1 | tee ../dev/logs/dev-api.log"
+    "dev": "mkdir -p ../dev/logs && NODE_ENV=development ENABLE_TEST_API=1 DEBUG=upgrade* node --watch --experimental-strip-types index.ts 2>&1 | tee ../dev/logs/dev-api.log"
   },
   "imports": {
     "#config": "./src/config.ts",
@@ -59,6 +59,6 @@
     "simple-oauth2": "^5.1.0",
     "slugify": "^1.6.8",
     "tinycolor2": "^1.6.0",
-    "useragent": "^2.3.0"
+    "ua-parser-js": "^2.0.9"
   }
 }
