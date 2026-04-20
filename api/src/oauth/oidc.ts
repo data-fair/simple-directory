@@ -73,8 +73,8 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     if (!claims?.email) {
       throw httpError(400, 'Authentification refusée depuis le fournisseur. Pas d\'adresse email trouvée dans les informations utilisateur.')
     }
-    if (claims.email_verified === false && !p.ignoreEmailVerified) {
-      throw httpError(400, 'Authentification refusée depuis le fournisseur. L\'adresse mail est indiquée comme non validée.')
+    if (claims.email_verified !== true && !p.ignoreEmailVerified) {
+      throw httpError(400, 'Authentification refusée depuis le fournisseur. L\'adresse mail n\'est pas indiquée comme validée.')
     }
     const userInfo: OAuthUserInfo = {
       data: claims,

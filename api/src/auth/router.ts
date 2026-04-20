@@ -158,10 +158,22 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   }
 
   if (userFromMainHost && site) {
+    // A main-site user password-logged into a secondary site is offered to transfer their
+    // account. This is a sensitive state change: it permanently detaches them from the main
+    // site. Refuse the transfer for any user listed as an admin — otherwise a phishing link
+    // pointing at an attacker-controlled secondary site could trick a superadmin into
+    // locking themselves out of their admin status (cleanUser's `!host` guard would then
+    // drop isAdmin on the transferred record).
+    if (user.isAdmin) {
+      eventsLog.alert('sd.auth.password.admin-change-host-blocked', `admin ${user.email} attempted to change host to ${site.host} — refused`, logContext)
+      return returnError('adminChangeHostBlocked', 403)
+    }
     const payload: ActionPayload = {
       id: user.id,
       email: user.email,
-      action: 'changeHost'
+      action: 'changeHost',
+      host: site.host,
+      path: site.path
     }
     const token = await signToken(payload, config.jwtDurations.initialToken)
     const changeHostUrl = new URL((site.host.startsWith('localhost') ? 'http://' : 'https://') + site.host + '/simple-directory/login')
@@ -177,6 +189,12 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
 
   const payload = getTokenPayload(user, site)
   if (body.adminMode) {
+    // adminMode is only allowed on a main-site session (see auth/service.ts for the SSO
+    // equivalent of this check).
+    if (site) {
+      eventsLog.alert('sd.auth.password.not-admin', 'admin mode activation refused on non-main site session', logContext)
+      return returnError('adminModeOnly', 403)
+    }
     if (payload.isAdmin) payload.adminMode = 1
     else {
       eventsLog.alert('sd.auth.password.not-admin', 'a unauthorized user tried to activate admin mode', logContext)

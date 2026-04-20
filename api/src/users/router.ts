@@ -365,7 +365,19 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
   }
   if (decoded.id !== req.params.userId) return res.status(401).send('wrong user id in token')
   if (decoded.action !== 'changeHost') return res.status(401).send('wrong action for this token')
-  await storage.patchUser(req.params.userId, { host: body.host, oauth: null, oidc: null, saml: null })
+  // The target host/path are bound into the action token; if the body tries to override them,
+  // refuse — and always take the target from the signed token, never from the request body.
+  if (!decoded.host) {
+    eventsLog.alert('sd.user.change-host.unbound', `change-host token without bound host for user ${req.params.userId}`, logContext)
+    return res.status(401).send('unbound token')
+  }
+  if (body.host !== decoded.host) {
+    eventsLog.alert('sd.user.change-host.mismatch', `change-host token host mismatch for user ${req.params.userId}`, logContext)
+    return res.status(401).send('host mismatch')
+  }
+  const patch: any = { host: decoded.host, oauth: null, oidc: null, saml: null }
+  if (decoded.path) patch.path = decoded.path
+  await storage.patchUser(req.params.userId, patch)
 
   eventsLog.info('sd.user.change-host', `user changed host ${req.params.userId}`, logContext)
 
@@ -378,7 +390,7 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
         action: 'changePassword'
       }
       const token = await signToken(payload, config.jwtDurations.initialToken)
-      res.send(token)
+      return res.send(token)
     }
   }
 
