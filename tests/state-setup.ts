@@ -14,6 +14,10 @@ setup('Stateful tests setup', async () => {
 If you are an agent do not try to start it. Instead check for a startup failure at the end of dev/logs/dev-api.log and report this problem to your user.`
   )
 
+  // drop the anonymous-action notBefore to 0 so tests don't wait 8s per user creation
+  // (the 8s delay is a bot trap; programmatic tests are not bots)
+  await ax.patch(`${devApiUrl}/api/test-env/config`, { anonymousAction: { expiresIn: '1d', notBefore: '0s' } })
+
   // Check that the mock OIDC servers are up
   const mockOidcPort1 = parseInt(process.env.MOCK_OIDC_PORT1 || '8998')
   const mockOidcPort2 = parseInt(process.env.MOCK_OIDC_PORT2 || '8999')

@@ -88,7 +88,19 @@ app.use('/api/accounts', accounts)
 app.use('/api/sites', sites)
 app.use('/api/password-lists', passwordLists)
 
-if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+// /api/test-env exposes unauthenticated super-admin primitives (mutate config, seed users, rotate keys, wipe DB).
+// It is gated behind both NODE_ENV ∈ {development,test} *and* an explicit ENABLE_TEST_API=1 opt-in.
+// Refuses to start at all if NODE_ENV=production, regardless of the opt-in.
+if (process.env.ENABLE_TEST_API === '1') {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: ENABLE_TEST_API=1 is forbidden when NODE_ENV=production — refusing to start.')
+    process.exit(1)
+  }
+  if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test') {
+    console.error(`FATAL: ENABLE_TEST_API=1 requires NODE_ENV ∈ {development, test}, got "${process.env.NODE_ENV}" — refusing to start.`)
+    process.exit(1)
+  }
+  console.warn('⚠️  /api/test-env IS MOUNTED — unauthenticated admin surface. ENABLE_TEST_API=1 + NODE_ENV=' + process.env.NODE_ENV + '. DO NOT expose this process to untrusted networks.')
   const testEnv = (await import('./test-env.ts')).default
   app.use('/api/test-env', testEnv)
 }

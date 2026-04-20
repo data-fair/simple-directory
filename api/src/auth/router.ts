@@ -5,7 +5,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, r
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
+import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, getRedirectSite, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -59,11 +59,8 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   const returnError = async (error: string, errorCode: number) => {
     // prevent attacker from analyzing response time
     await new Promise(resolve => setTimeout(resolve, Math.round(Math.random() * 1000)))
-    const referer = req.headers.referer || req.headers.referrer
-    if (req.is('application/x-www-form-urlencoded') && typeof referer === 'string') {
-      const refererUrl = new URL(referer)
-      refererUrl.searchParams.set('error', error)
-      res.redirect(refererUrl.href)
+    if (req.is('application/x-www-form-urlencoded')) {
+      res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=${encodeURIComponent(error)}`)
     } else {
       res.status(errorCode).send(reqI18n(req).messages.errors[error] || error)
     }
@@ -380,7 +377,13 @@ router.get('/token_callback', async (req, res, next) => {
     return redirectError('badCredentials')
   }
 
-  const reboundRedirect = getDefaultLoginRedirect(reqSiteUrl(req), query.redirect)
+  let reboundRedirect = getDefaultLoginRedirect(reqSiteUrl(req), query.redirect)
+  try {
+    await getRedirectSite(req, reboundRedirect)
+  } catch (err) {
+    eventsLog.alert('sd.auth.callback.redirect-rejected', `a token_callback redirect to ${reboundRedirect} was rejected as off-site`, logContext)
+    reboundRedirect = getDefaultLoginRedirect(reqSiteUrl(req))
+  }
 
   const site = await reqSite(req)
   const payload = getTokenPayload(user, site)
@@ -679,7 +682,6 @@ const oauthLogin: RequestHandler = async (req, res, next) => {
     _id: randomUUID(),
     createdAt: new Date(),
     providerState: provider.state,
-    loginReferer: req.headers.referer,
     redirect: getDefaultLoginRedirect(reqSiteUrl(req), req.query.redirect as string).replace('?id_token=', ''),
     org: req.query.org as string,
     dep: req.query.dep as string,
@@ -707,17 +709,11 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   }
   const relayState = await mongo.oauthRelayStates.findOne({ _id: req.query.state as string })
   if (!relayState) return res.status(404).send('Unknown relay state')
-  const { providerState, loginReferer, redirect, org, dep, invitToken, adminMode } = relayState
+  const { providerState, redirect, org, dep, invitToken, adminMode } = relayState
   const returnError = (error: string, errorCode: number) => {
     eventsLog.info('sd.auth.oauth.fail', `a user failed to authenticate with oauth due to ${error}`, logContext)
     debugOAuth('login return error', error, errorCode)
-    if (loginReferer) {
-      const refererUrl = new URL(loginReferer)
-      refererUrl.searchParams.set('error', error)
-      res.redirect(refererUrl.href)
-    } else {
-      res.status(errorCode).send(reqI18n(req).messages.errors[error] || error)
-    }
+    res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=${encodeURIComponent(error)}`)
   }
 
   const provider = await getOAuthProviderByState(req, providerState)
@@ -792,7 +788,6 @@ router.get('/saml2/:providerId/login', async (req, res) => {
   const relayState: Saml2RelayState = {
     _id: randomUUID(),
     createdAt: new Date(),
-    loginReferer: req.headers.referer,
     redirect: getDefaultLoginRedirect(reqSiteUrl(req), req.query.redirect as string).replace('?id_token=', ''),
     org: req.query.org as string,
     dep: req.query.dep as string,
@@ -823,7 +818,7 @@ router.post('/saml2-assert', async (req, res) => {
   if (!req.body.RelayState) throw httpError(400, 'missing body.RelayState')
   const relayState = await mongo.saml2RelayStates.findOne({ _id: req.body.RelayState })
   if (!relayState) return res.status(404).send('unknown relay state')
-  const { loginReferer, redirect, org, dep, invitToken, adminMode, providerId } = relayState
+  const { redirect, org, dep, invitToken, adminMode, providerId } = relayState
 
   const provider = await getSamlProviderById(req, providerId)
   if (!provider) return res.status(404).send('unknown saml2 provider ' + providerId)
@@ -837,13 +832,7 @@ router.post('/saml2-assert', async (req, res) => {
   const returnError = (error: string, errorCode: number) => {
     eventsLog.info('sd.auth.saml.fail', `a user failed to authenticate with saml due to ${error}`, logContext)
     debugSAML('login return error', error, errorCode)
-    if (loginReferer) {
-      const refererUrl = new URL(loginReferer)
-      refererUrl.searchParams.set('error', error)
-      res.redirect(refererUrl.href)
-    } else {
-      res.status(errorCode).send(reqI18n(req).messages.errors[error] || error)
-    }
+    res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=${encodeURIComponent(error)}`)
   }
 
   const userAttrs = getSamlUserAttrs(samlResponse.extract.attributes, logContext)

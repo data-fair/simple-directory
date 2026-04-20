@@ -34,10 +34,12 @@ export const test = base.extend<E2eFixtures>({
       const adminMode = opts?.adminMode || false
       const anonymAx = await axios()
 
+      const token = (await anonymAx.get('/api/auth/anonymous-action')).data
+
       // Create user and wait for confirmation email
       const mail = await waitForMail(
         async () => {
-          await anonymAx.post('/api/users', { email, password })
+          await anonymAx.post('/api/users', { email, password, token })
         },
         (m) => m.to === email && m.link?.includes('token_callback')
       )

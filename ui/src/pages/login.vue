@@ -1005,11 +1005,15 @@ function preLogin () {
   }
 }
 
+// fetched at mount so the notBefore (8s) is almost certainly elapsed by the time the user submits
+const createUserToken = useFetch<string>($apiPath + '/auth/anonymous-action')
+
 const createUserForm = ref<InstanceType<typeof VForm>>()
 const createUser = useAsyncAction(async () => {
   await createUserForm.value?.validate()
   if (!createUserForm.value?.isValid) return
-  const body: PostUserReq['body'] = { email: email.value, ...newUser.value }
+  if (!createUserToken.data.value) return
+  const body: PostUserReq['body'] = { email: email.value, ...newUser.value, token: createUserToken.data.value }
   const link = await $fetch('users', {
     method: 'POST',
     body,
