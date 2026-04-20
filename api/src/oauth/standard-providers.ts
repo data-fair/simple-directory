@@ -2,6 +2,7 @@ import axios from '@data-fair/lib-node/axios.js'
 import config from '#config'
 import Debug from 'debug'
 import { httpError } from '@data-fair/lib-express'
+import eventsLog from '@data-fair/lib-express/events-log.js'
 import { type OAuthProvider, type OAuthUserInfo } from './service.ts'
 
 const debug = Debug('oauth')
@@ -23,7 +24,7 @@ for (const provider of config.oauth.providers) {
         tokenPath: '/login/oauth/access_token',
         authorizePath: '/login/oauth/authorize'
       },
-      userInfo: async (accessToken: string) => {
+      userInfo: async (accessToken, _idToken, logContext) => {
         const res = await Promise.all([
           axios.get('https://api.github.com/user', { headers: { Authorization: `token ${accessToken}` } }),
           axios.get('https://api.github.com/user/emails', { headers: { Authorization: `token ${accessToken}` } })
@@ -31,6 +32,13 @@ for (const provider of config.oauth.providers) {
         debug('user info from github', res[0].data, res[1].data)
         const email = res[1].data.find((e: any) => e.primary && e.verified)
         if (!email) {
+          if (logContext) {
+            eventsLog.alert(
+              'sd.oauth.email-not-verified',
+              `GitHub login refused: no primary+verified email (addressesCount=${Array.isArray(res[1].data) ? res[1].data.length : 0})`,
+              logContext
+            )
+          }
           throw httpError(400, 'Authentification refusée depuis le fournisseur. Aucune adresse email principale validée trouvée sur le compte GitHub.')
         }
         return {
@@ -62,12 +70,14 @@ for (const provider of config.oauth.providers) {
         authorizeHost: 'https://www.facebook.com',
         authorizePath: '/v6.0/dialog/oauth'
       },
-      userInfo: async (_accessToken: string) => {
+      userInfo: async (_accessToken, _idToken, logContext) => {
         // Facebook's Graph API does not expose an email-verification flag, so the email claim
         // cannot be trusted as an identity binding. Refuse the login to avoid account-takeover
         // via an unverified address; reach out to us if you need this provider re-enabled with
         // a dedicated email-confirmation flow.
-        debug('facebook login refused: no email verification available')
+        if (logContext) {
+          eventsLog.alert('sd.oauth.email-not-verified', 'Facebook login refused: provider does not deliver a verified email flag', logContext)
+        }
         throw httpError(400, 'Authentification via Facebook désactivée : Facebook ne fournit pas d\'information de validation de l\'adresse email.')
       },
       client: config.oauth.facebook
@@ -88,10 +98,18 @@ for (const provider of config.oauth.providers) {
         authorizeHost: 'https://accounts.google.com',
         authorizePath: '/o/oauth2/v2/auth'
       },
-      userInfo: async (accessToken: string) => {
+      userInfo: async (accessToken, _idToken, logContext) => {
         const res = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', { params: { alt: 'json', access_token: accessToken } })
         debug('user info from google', res.data)
         if (res.data.verified_email !== true) {
+          if (logContext) {
+            const emailDomain = typeof res.data.email === 'string' ? res.data.email.split('@')[1] : null
+            eventsLog.alert(
+              'sd.oauth.email-not-verified',
+              `Google login refused: verifiedEmail=${JSON.stringify(res.data.verified_email ?? null)} emailDomain=${emailDomain}`,
+              logContext
+            )
+          }
           throw httpError(400, 'Authentification refusée depuis le fournisseur. L\'adresse email Google n\'est pas indiquée comme validée.')
         }
         return {

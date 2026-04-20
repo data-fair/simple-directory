@@ -516,7 +516,7 @@ router.post('/keepalive', async (req, res, next) => {
 
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
-        const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token)
+        const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token, { req })
         const memberInfos = await authProviderMemberInfo(await reqSite(req), provider, userInfo)
         user = await patchCoreAuthUser(provider, user, userInfo, memberInfos)
         await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, site?._id)
@@ -726,7 +726,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
 
   const { token, offlineRefreshToken } = await provider.getToken(req.query.code as string, provider.coreIdProvider)
   debugOAuthTokens('full oauth token', token)
-  const authInfo = await provider.userInfo(token.access_token, token.id_token)
+  const authInfo = await provider.userInfo(token.access_token, token.id_token, logContext)
 
   if (!authInfo.user.email) {
     console.error('Email attribute not fetched from OAuth', provider.id, authInfo)
