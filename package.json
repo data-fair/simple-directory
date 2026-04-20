@@ -16,6 +16,7 @@
     "dev-mock-oidc": "node --experimental-strip-types dev/mock-oidc-server.ts",
     "dev-ui": "npm -w ui run dev",
     "dev-zellij": "dotenv -- zellij --layout .zellij.kdl",
+    "stop-dev-deps": "docker compose --profile dev stop",
     "build-types": "mkdir -p ui/src/components/vjsf && rm -f ui/src/components/vjsf/* && df-build-types . --vjsf-dir ui/src/components/vjsf",
     "prepare": "husky || true",
     "check-types": "tsc && npm -w ui run check-types",
