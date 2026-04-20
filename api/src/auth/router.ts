@@ -158,10 +158,22 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   }
 
   if (userFromMainHost && site) {
+    // A main-site user password-logged into a secondary site is offered to transfer their
+    // account. This is a sensitive state change: it permanently detaches them from the main
+    // site. Refuse the transfer for any user listed as an admin — otherwise a phishing link
+    // pointing at an attacker-controlled secondary site could trick a superadmin into
+    // locking themselves out of their admin status (cleanUser's `!host` guard would then
+    // drop isAdmin on the transferred record).
+    if (user.isAdmin) {
+      eventsLog.alert('sd.auth.password.admin-change-host-blocked', `admin ${user.email} attempted to change host to ${site.host} — refused`, logContext)
+      return returnError('adminChangeHostBlocked', 403)
+    }
     const payload: ActionPayload = {
       id: user.id,
       email: user.email,
-      action: 'changeHost'
+      action: 'changeHost',
+      host: site.host,
+      path: site.path
     }
     const token = await signToken(payload, config.jwtDurations.initialToken)
     const changeHostUrl = new URL((site.host.startsWith('localhost') ? 'http://' : 'https://') + site.host + '/simple-directory/login')
@@ -177,6 +189,12 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
 
   const payload = getTokenPayload(user, site)
   if (body.adminMode) {
+    // adminMode is only allowed on a main-site session (see auth/service.ts for the SSO
+    // equivalent of this check).
+    if (site) {
+      eventsLog.alert('sd.auth.password.not-admin', 'admin mode activation refused on non-main site session', logContext)
+      return returnError('adminModeOnly', 403)
+    }
     if (payload.isAdmin) payload.adminMode = 1
     else {
       eventsLog.alert('sd.auth.password.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
@@ -498,7 +516,7 @@ router.post('/keepalive', async (req, res, next) => {
 
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
-        const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token)
+        const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token, { req })
         const memberInfos = await authProviderMemberInfo(await reqSite(req), provider, userInfo)
         user = await patchCoreAuthUser(provider, user, userInfo, memberInfos)
         await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, site?._id)
@@ -542,10 +560,11 @@ router.post('/action', async (req, res, next) => {
   }
 
   const storage = storages.globalStorage
-  let user = await storage.getUserByEmail(body.email, await reqSite(req))
+  const site = await reqSite(req)
+  let user = await storage.getUserByEmail(body.email, site)
   logContext.user = user
   let action = body.action as ActionPayload['action']
-  if (!user && await reqSite(req)) {
+  if (!user && site) {
     user = await storage.getUserByEmail(body.email)
     action = 'changeHost'
   }
@@ -561,6 +580,10 @@ router.post('/action', async (req, res, next) => {
     id: user.id,
     email: user.email,
     action
+  }
+  if (action === 'changeHost' && site) {
+    payload.host = site.host
+    payload.path = site.path
   }
   const token = await signToken(payload, config.jwtDurations.initialToken)
   const linkUrl = new URL(target)
@@ -708,7 +731,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
 
   const { token, offlineRefreshToken } = await provider.getToken(req.query.code as string, provider.coreIdProvider)
   debugOAuthTokens('full oauth token', token)
-  const authInfo = await provider.userInfo(token.access_token, token.id_token)
+  const authInfo = await provider.userInfo(token.access_token, token.id_token, logContext)
 
   if (!authInfo.user.email) {
     console.error('Email attribute not fetched from OAuth', provider.id, authInfo)

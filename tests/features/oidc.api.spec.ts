@@ -6,8 +6,8 @@ import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 const mockOidcPort1 = parseInt(process.env.MOCK_OIDC_PORT1 || '8998')
 const mockOidcPort2 = parseInt(process.env.MOCK_OIDC_PORT2 || '8999')
 
-const oidcUserInfo1 = { sub: 'testoidc1', email: 'oidc1@test.com', given_name: 'OIDC', family_name: 'Test', role: 'contrib' }
-const oidcUserInfo2 = { sub: 'testoidc2', email: 'oidc2@test.com', given_name: 'OIDC', family_name: 'Test', role: 'contrib' }
+const oidcUserInfo1 = { sub: 'testoidc1', email: 'oidc1@test.com', email_verified: true, given_name: 'OIDC', family_name: 'Test', role: 'contrib' }
+const oidcUserInfo2 = { sub: 'testoidc2', email: 'oidc2@test.com', email_verified: true, given_name: 'OIDC', family_name: 'Test', role: 'contrib' }
 
 test.describe('global OIDC configuration', () => {
   test.beforeEach(async () => {

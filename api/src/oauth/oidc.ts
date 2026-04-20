@@ -6,6 +6,7 @@ import Debug from 'debug'
 import _slug from 'slugify'
 import jwt from 'jsonwebtoken'
 import { httpError } from '@data-fair/lib-express'
+import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 
 const slug = _slug.default
 const debug = Debug('oauth')
@@ -41,7 +42,7 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     authorizeHost: authURL.origin,
     authorizePath: authURL.pathname
   }
-  const userInfo = async (accessToken: string, idToken?:string) => {
+  const userInfo = async (accessToken: string, idToken?:string, logContext?: EventLogContext) => {
     let claims
     if (!p.userInfoSource || p.userInfoSource === 'auto') {
       if (discoveryContent.userinfo_endpoint) {
@@ -73,8 +74,19 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     if (!claims?.email) {
       throw httpError(400, 'Authentification refusée depuis le fournisseur. Pas d\'adresse email trouvée dans les informations utilisateur.')
     }
-    if (claims.email_verified === false && !p.ignoreEmailVerified) {
-      throw httpError(400, 'Authentification refusée depuis le fournisseur. L\'adresse mail est indiquée comme non validée.')
+    if (claims.email_verified !== true && !p.ignoreEmailVerified) {
+      // The `email_verified !== true` check (tightened from the previous `=== false`) is
+      // the canonical place where a previously-accepted IdP configuration now fails.
+      // Emit a structured alert so operators can monitor the post-deployment impact.
+      if (logContext) {
+        const emailDomain = typeof claims.email === 'string' ? claims.email.split('@')[1] : null
+        eventsLog.alert(
+          'sd.oidc.email-not-verified',
+          `OIDC login refused: provider=${id} emailVerified=${JSON.stringify(claims.email_verified ?? null)} emailDomain=${emailDomain}`,
+          logContext
+        )
+      }
+      throw httpError(400, 'Authentification refusée depuis le fournisseur. L\'adresse mail n\'est pas indiquée comme validée.')
     }
     const userInfo: OAuthUserInfo = {
       data: claims,

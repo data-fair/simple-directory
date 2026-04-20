@@ -27,7 +27,11 @@ type AuthProviderCore = {
   createMember?: CreateMember,
   memberRole?: MemberRole,
   memberDepartment?: MemberDepartment,
-  coreIdProvider?: boolean
+  coreIdProvider?: boolean,
+  // Opt-in: when true, the main-site provider is allowed to authenticate a user that
+  // matches an entry in config.admins. Default false — SSO cannot produce a superadmin
+  // session unless the deployment has explicitly acknowledged the risk.
+  allowSuperadmin?: boolean
 }
 
 type AuthProviderRef = Pick<AuthProviderCore, 'id' | 'type'>
@@ -150,6 +154,15 @@ export const authProviderLoginCallback = async (
   let user = await storage.getUserByEmail(authInfo.user.email, site)
   logContext.user = user
 
+  // Refuse to authenticate a superadmin through an SSO provider unless the provider was
+  // explicitly flagged `allowSuperadmin: true`. With cleanUser gating isAdmin on `!host`,
+  // this check only affects main-site SSO (site === undefined); it is a defense-in-depth
+  // layer against a compromised/misconfigured IdP asserting an admin email.
+  if (!site && user?.isAdmin && !provider.allowSuperadmin) {
+    eventsLog.alert('sd.auth.provider.superadmin-blocked', `SSO provider ${provider.type}/${provider.id} refused to authenticate superadmin ${user.email}`, logContext)
+    throw httpError(403, 'superadminProviderBlocked')
+  }
+
   if (!user && storage.readonly) {
     throw httpError(403, 'userUnknown')
   }
@@ -236,6 +249,14 @@ export const authProviderLoginCallback = async (
   const payload = getTokenPayload(user, site)
   if (adminMode) {
     // TODO: also check that the user actually inputted the password on this redirect
+    // adminMode can only be activated on a session bound to the main site (site === undefined).
+    // With the cleanUser `!host` guard this is already implied (isAdmin requires !user.host and
+    // secondary-site users always have host), but we assert it explicitly here so any future
+    // relaxation of isAdmin does not silently re-open adminMode on a site session.
+    if (site) {
+      eventsLog.alert('sd.auth.oauth.not-admin', 'admin mode activation refused on non-main site session', logContext)
+      throw httpError(403, 'adminModeOnly')
+    }
     if (payload.isAdmin) payload.adminMode = 1
     else {
       eventsLog.alert('sd.auth.oauth.not-admin', 'a unauthorized user tried to activate admin mode', logContext)

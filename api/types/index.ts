@@ -55,7 +55,11 @@ export type ShortenedInvitation = {
 export type ActionPayload = {
   id: string,
   email: string,
-  action: 'changePassword' | 'changeHost'
+  action: 'changePassword' | 'changeHost',
+  // For `action: 'changeHost'` the target host/path are bound into the token so that the
+  // bearer cannot redirect the user record to an arbitrary site.
+  host?: string,
+  path?: string
 }
 
 export type ShortenedPartnerInvitation = {

@@ -1,6 +1,7 @@
 import type { Request } from 'express'
 import type { OpenIDConnect } from '../../config/type/index.ts'
 import { reqSiteUrl } from '@data-fair/lib-express'
+import type { EventLogContext } from '@data-fair/lib-express/events-log.js'
 import oauth2 from 'simple-oauth2'
 import { nanoid } from 'nanoid'
 import config from '#config'
@@ -39,7 +40,10 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
     authorizeHost?: string,
     authorizePath: string
   },
-  userInfo: (accessToken: string, id_token?: string) => Promise<OAuthUserInfo>
+  // logContext is passed so that email-verification refusals can emit structured eventsLog
+  // entries (sd.oidc.email-not-verified / sd.oauth.email-not-verified) with full request
+  // context. Omit it in background paths that have no request (e.g. the token-refresh worker).
+  userInfo: (accessToken: string, id_token?: string, logContext?: EventLogContext) => Promise<OAuthUserInfo>
 }
 
 export type PreparedOAuthProvider = OAuthProvider & {

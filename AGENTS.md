@@ -54,3 +54,9 @@ npm run quality          # Full quality check (lint + types + tests)
 - **Storage abstraction**: `api/src/storages/interface.ts` defines the storage interface, implemented for MongoDB, LDAP, and file backends
 - **Auth**: `api/src/auth/service.ts` -- multi-provider support (OAuth2, SAML2, LDAP, local passwords)
 - **Test utilities**: `tests/support/` -- axios helpers, fixtures, in-process server setup
+
+### Architecture references
+
+Read before changing anything in the corresponding area:
+
+- [`docs/architecture/email-trust-and-site-isolation.md`](docs/architecture/email-trust-and-site-isolation.md) -- how SSO email claims are verified and how site-level SSO trust is confined so a compromised site config cannot escalate to superadmin or cross-site takeover. Required reading for changes to auth providers, `cleanUser`, `authProviderLoginCallback`, `adminMode`, or the change-host flow.

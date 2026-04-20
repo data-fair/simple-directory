@@ -27,7 +27,11 @@ async function cleanUser (resource: any): Promise<User> {
     delete resource['2FA'].secret
     delete resource['2FA'].recovery
   }
-  resource.isAdmin = config.admins.includes(resource.email?.toLowerCase()) || resource.id === '_superadmin'
+  // Admin rights are only granted to a user record that belongs to the main site (no host).
+  // A user record tied to a secondary site can never inherit admin status even if its email
+  // matches config.admins — this neutralizes cross-site admin takeover via a compromised or
+  // misconfigured site-level SSO.
+  resource.isAdmin = !resource.host && (config.admins.includes(resource.email?.toLowerCase()) || resource.id === '_superadmin')
   if (resource.onlyCreateInvited) resource.ignorePersonalAccount = true
   if (resource.organizations) {
     for (const org of resource.organizations) {
