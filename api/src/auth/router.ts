@@ -7,7 +7,7 @@ import Cookies from 'cookies'
 import Debug from 'debug'
 import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, getRedirectSite, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
-import type { ActionPayload, ServerSession, User } from '#types'
+import type { ActionPayload, ServerSession, Site, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import emailValidator from 'email-validator'
 import { reqI18n } from '#i18n'
@@ -487,11 +487,16 @@ router.post('/keepalive', async (req, res, next) => {
   const coreIdProvider = user.coreIdProvider
   if (coreIdProvider?.type === 'oauth' || coreIdProvider?.type === 'oidc') {
     let provider
+    // authSite is the site that actually hosts the core-id provider (and therefore
+    // the site key under which the oauth token was stored at login). It equals the
+    // current site for same-site sessions, but on a secondary `onlyOtherSite` it
+    // resolves to the backing site. For global providers it stays undefined (site: null).
+    let authSite: Site | undefined
     const site = await reqSite(req)
     if (site?.authMode === 'onlyBackOffice' || !site?.authMode) {
       provider = oauthGlobalProviders().find(p => p.id === coreIdProvider.id)
     } else {
-      let authSite = site
+      authSite = site
       if (site.authMode === 'onlyOtherSite' && site.authOnlyOtherSite) {
         authSite = await getSiteByUrl('https://' + site.authOnlyOtherSite) ?? site
       }
@@ -500,16 +505,19 @@ router.post('/keepalive', async (req, res, next) => {
     }
     if (!provider) {
       await logout(req, res)
+      eventsLog.info('sd.auth.keepalive.no-provider', `a user failed to prolongate a session because the core identity provider ${coreIdProvider.id} is not exposed by the current site`, { req })
       return res.status(401).send('Fournisseur d\'identité principal inconnu')
     }
-    const oauthToken = (await readOAuthToken(user, provider, site?._id))
+    const oauthToken = (await readOAuthToken(user, provider, authSite?._id))
 
     if (!oauthToken) {
       await logout(req, res)
+      eventsLog.info('sd.auth.keepalive.no-token', `a user failed to prolongate a session because no oauth token is stored for core identity provider ${provider.id} on site ${authSite?._id ?? 'main'}`, { req })
       return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
     }
     if (oauthToken.loggedOut) {
       await logout(req, res)
+      eventsLog.info('sd.auth.keepalive.logged-out', `a user failed to prolongate a session because the oauth token for core identity provider ${provider.id} is flagged as logged out`, { req })
       return res.status(401).send('Utilisateur déconnecté depuis le fournisseur d\'identité principal')
     }
     const tokenJson = oauthToken.token
@@ -522,7 +530,7 @@ router.post('/keepalive', async (req, res, next) => {
         const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token, { req })
         const memberInfos = await authProviderMemberInfo(await reqSite(req), provider, userInfo)
         user = await patchCoreAuthUser(provider, user, userInfo, memberInfos)
-        await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, site?._id)
+        await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, authSite?._id)
         eventsLog.info('sd.auth.keepalive.oauth-refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { req })
       }
     } catch (err: any) {
