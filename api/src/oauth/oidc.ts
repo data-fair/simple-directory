@@ -74,15 +74,24 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     if (!claims?.email) {
       throw httpError(400, 'Authentification refusée depuis le fournisseur. Pas d\'adresse email trouvée dans les informations utilisateur.')
     }
-    if (claims.email_verified !== true && !p.ignoreEmailVerified) {
-      // The `email_verified !== true` check (tightened from the previous `=== false`) is
-      // the canonical place where a previously-accepted IdP configuration now fails.
-      // Emit a structured alert so operators can monitor the post-deployment impact.
+    if (claims.email_verified === false && !p.ignoreEmailVerified) {
+      // Reject only when the IdP explicitly asserts the email is not verified.
+      // Absent / null / non-boolean values are accepted because enterprise
+      // directory-backed IdPs (Azure AD / Entra ID, corporate Keycloak fronting
+      // LDAP/AD, ADFS) routinely omit the claim while treating the email as
+      // verified by directory authority — a strict `=== true` check breaks
+      // those integrations out of the box for a narrow residual win.
+      // The residual risk (multi-tenant IdP emitting arbitrary emails, buggy
+      // provider omitting an intended `false`) is contained by the structural
+      // defenses in docs/architecture/email-trust-and-site-isolation.md:
+      // site-scoped user records, `allowSuperadmin` opt-in, main-site-only
+      // `adminMode`, and `config.admins` change-host protection. If any of
+      // those guarantees is weakened, revisit this check before relaxing them.
       if (logContext) {
         const emailDomain = typeof claims.email === 'string' ? claims.email.split('@')[1] : null
         eventsLog.alert(
           'sd.oidc.email-not-verified',
-          `OIDC login refused: provider=${id} emailVerified=${JSON.stringify(claims.email_verified ?? null)} emailDomain=${emailDomain}`,
+          `OIDC login refused: provider=${id} emailVerified=${JSON.stringify(claims.email_verified)} emailDomain=${emailDomain}`,
           logContext
         )
       }

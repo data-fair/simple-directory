@@ -41,29 +41,45 @@ a compromised site A cannot inherit memberships from another site.
 
 ## Email verification
 
-Opt-in, fail-closed: absent a positive verification signal, login is refused.
+Per-provider, reject on an explicit negative signal. Providers that omit a
+verification claim are accepted because enterprise directory-backed IdPs
+(Azure AD / Entra ID, ADFS, corporate Keycloak fronting LDAP/AD) routinely
+omit it while treating the directory-provisioned email as verified. A strict
+opt-in check would break those integrations for a narrow residual win,
+because the structural defenses below already contain the impact of a
+looser IdP.
 
-- **OIDC** (`api/src/oauth/oidc.ts`) — requires `claims.email_verified === true`.
+- **OIDC** (`api/src/oauth/oidc.ts`) — rejects only when
+  `claims.email_verified === false`. Absent / null / non-boolean passes.
   Per-provider `ignoreEmailVerified: true` escape hatch, gated behind
-  superadmin-level site-config editing.
-- **Google** — requires `verified_email === true` on the v1 userinfo.
+  superadmin-level site-config editing, suppresses even the explicit-false
+  rejection.
+- **Google** — requires `verified_email === true` on the v1 userinfo
+  (Google always emits this reliably, so strict opt-in is correct here).
 - **GitHub** — requires the address to be both `primary` and `verified`.
 - **Facebook** — refused (no verification flag exposed).
 - **LinkedIn** — primary email is considered verified upstream.
 - **SAML 2** — no standard verified flag; adding a SAML IdP is an explicit
   trust statement. Site-level IdPs remain confined by user scoping.
 
+### Why OIDC is looser than the OAuth providers
+
+The spec (OIDC Core §5.1) makes `email_verified` OPTIONAL for providers to
+emit. In practice the population of providers that omit it is dominated by
+enterprise directory-backed IdPs where the email is admin-provisioned and
+implicitly verified, not self-asserted. The population that emits
+`false` is dominated by self-registration IdPs before confirmation — those
+we still reject. The thin slice in between (buggy provider that should
+emit `false` but omits) is left to the structural defenses.
+
 ### Monitoring
 
 Rejections emit `eventsLog.alert` entries to monitor post-deployment:
 
-- `sd.oidc.email-not-verified` — provider, raw `emailVerifiedClaim`, domain.
+- `sd.oidc.email-not-verified` — provider, raw `email_verified` value, domain.
+  Fires only on explicit `false`; fix upstream, or set
+  `ignoreEmailVerified: true` on the provider (superadmin-level decision).
 - `sd.oauth.email-not-verified` — provider, reason / claim value.
-
-A non-zero rate on a previously working provider means the tightened check
-(`!== true`, previously `=== false`) caught an IdP that used to pass
-silently. Fix upstream, or set `ignoreEmailVerified: true` (OIDC only, as a
-deliberate superadmin-level decision).
 
 Implementation: `userInfo(accessToken, idToken?, logContext?)` takes an
 optional log context; call sites with a request pass it, background paths
