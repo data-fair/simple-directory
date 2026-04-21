@@ -81,6 +81,28 @@ export const reqSite = async (req: Request): Promise<Site | undefined> => {
   }
 }
 
+// Resolves the site where user records for `site` actually live:
+//   - onlyBackOffice / undefined → undefined (operator-level back-office)
+//   - onlyOtherSite              → the backing site (folded once)
+//   - onlyLocal / ssoBackOffice / anything else → the site itself
+// ssoBackOffice is intentionally not folded — kept consistent with getInvitSite.
+export const resolveAccountMainSite = async (site: Site | undefined): Promise<Site | undefined> => {
+  if (!site?.authMode || site.authMode === 'onlyBackOffice') return undefined
+  if (site.authMode === 'onlyOtherSite' && site.authOnlyOtherSite) {
+    const backing = await getSiteByUrl('https://' + site.authOnlyOtherSite)
+    if (!backing?.authMode || backing.authMode === 'onlyBackOffice') return undefined
+    if (backing.authMode === 'onlyOtherSite' && backing.authOnlyOtherSite) {
+      throw httpError(400, `Impossible d'utiliser le site ${backing.host} comme référence pour l'authentification, il est lui aussi configuré comme "uniquement sur un autre de vos sites".`)
+    }
+    return backing
+  }
+  return site
+}
+
+export const reqAccountMainSite = async (req: Request): Promise<Site | undefined> => {
+  return resolveAccountMainSite(await reqSite(req))
+}
+
 export async function findOwnerSites (owner: AccountKeys, excludeTmp?: boolean) {
   const filter: any = { 'owner.type': owner.type, 'owner.id': owner.id }
   if (owner.department) filter['owner.department'] = owner.department

@@ -59,7 +59,13 @@ export type ActionPayload = {
   // For `action: 'changeHost'` the target host/path are bound into the token so that the
   // bearer cannot redirect the user record to an arbitrary site.
   host?: string,
-  path?: string
+  path?: string,
+  // For `action: 'changePassword'`: optional URL to send the user back to after the
+  // renewal. Used when a user of a non-standalone secondary site has their renewal
+  // email retargeted to their account-main site — the redirect brings them back to
+  // the original site. Bound into the token so the post-renewal redirect cannot be
+  // swapped by a crafted URL.
+  redirect?: string
 }
 
 export type ShortenedPartnerInvitation = {

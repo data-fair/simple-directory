@@ -1115,6 +1115,12 @@ const changePassword = useAsyncAction(async () => {
     params: { action_token: actionToken.value }
   })
   password.value = newPassword.value
+  if (actionPayload.redirect) {
+    // renewal was performed on the account-main site after being redirected from a
+    // non-standalone secondary site — send the user back to complete login there.
+    window.location.href = actionPayload.redirect
+    return
+  }
   step.value = 'login'
   actionToken.value = ''
 }, { catch: 'all' })

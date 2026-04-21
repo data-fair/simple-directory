@@ -76,25 +76,79 @@ test.describe('users api', () => {
     assert.ok(loginRes.includes('token_callback'))
   })
 
-  test('should send an email to confirm new host if user exists on main host', async () => {
+  test('should retarget password renewal to the account-main when requested from a non-standalone secondary site', async () => {
     const config = await getServerConfig()
     const anonymousAx = await axios()
     const { user, ax } = await createUser('user3@test.com')
     const org = (await ax.post('/api/organizations', { name: 'test' })).data
     const owner = { type: 'organization', id: org.id, name: org.name }
 
+    // default authMode is onlyBackOffice → non-standalone secondary site
+    const secondaryUrl = `http://127.0.0.1:${process.env.NGINX_PORT2}`
     await anonymousAx.post('/api/sites',
       { _id: 'test_site', owner, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
       { params: { key: config.secretKeys.sites } })
 
-    const mail2 = await waitForMail(
-      () => anonymousAx.post(`http://127.0.0.1:${process.env.NGINX_PORT2}/simple-directory/api/auth/action`, { email: 'user3@test.com', action: 'changePassword', target: config.publicUrl + '/login' }),
+    const mail = await waitForMail(
+      () => anonymousAx.post(`${secondaryUrl}/simple-directory/api/auth/action`, { email: 'user3@test.com', action: 'changePassword', target: `${secondaryUrl}/simple-directory/login` }),
       (m) => m.to === 'user3@test.com' && m.link?.includes('action_token')
     )
-    const actionToken = (new URL(mail2.link)).searchParams.get('action_token')
+
+    // link in the email must point at the account-main (operator back-office), not the secondary site
+    assert.ok(mail.link.startsWith(config.publicUrl + '/simple-directory/login'), `expected link to start with ${config.publicUrl}/simple-directory/login, got ${mail.link}`)
+
+    const actionToken = (new URL(mail.link)).searchParams.get('action_token')
+    assert.ok(actionToken)
+
+    // token must not be a changeHost token: /host must reject it
+    await assert.rejects(ax.post(
+      `/api/users/${user.id}/host`,
+      { host: '127.0.0.1:' + process.env.NGINX_PORT2 },
+      { params: { action_token: actionToken } }
+    ), { status: 401 })
+
+    // token carries action=changePassword and a redirect back to the secondary site
+    const payload = JSON.parse(Buffer.from(actionToken.split('.')[1], 'base64url').toString())
+    assert.equal(payload.action, 'changePassword')
+    assert.equal(payload.redirect, `${secondaryUrl}/simple-directory/login`)
+
+    // renewal itself succeeds on the account-main
+    await ax.post(
+      `/api/users/${user.id}/password`,
+      { password: 'TestPassword01' },
+      { params: { action_token: actionToken } }
+    )
+    const loginRes = (await ax.post('/api/auth/password', { email: 'user3@test.com', password: 'TestPassword01' })).data
+    assert.ok(loginRes.includes('token_callback'))
+  })
+
+  test('should still offer changeHost when renewing from a standalone secondary site', async () => {
+    const config = await getServerConfig()
+    const anonymousAx = await axios()
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const { user, ax } = await createUser('user3c@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test-standalone' })).data
+    const owner = { type: 'organization', id: org.id, name: org.name }
+
+    await anonymousAx.post('/api/sites',
+      { _id: 'test_site_standalone', owner, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
+      { params: { key: config.secretKeys.sites } })
+
+    // flip the site to standalone (onlyLocal) so its users live there
+    await adminAx.patch('/api/sites/test_site_standalone', { authMode: 'onlyLocal' })
+    await testEnvAx.post('/clear-site-cache')
+
+    const mail = await waitForMail(
+      () => anonymousAx.post(`http://127.0.0.1:${process.env.NGINX_PORT2}/simple-directory/api/auth/action`, { email: 'user3c@test.com', action: 'changePassword', target: config.publicUrl + '/login' }),
+      (m) => m.to === 'user3c@test.com' && m.link?.includes('action_token')
+    )
+    const actionToken = (new URL(mail.link)).searchParams.get('action_token')
+    assert.ok(actionToken)
+
+    // token must be a changeHost one: /password rejects it and /host accepts it
     await assert.rejects(ax.post(
       `/api/users/${user.id}/password`,
-      { password: 'test.com' },
+      { password: 'TestPassword01' },
       { params: { action_token: actionToken } }
     ), { status: 401 })
 

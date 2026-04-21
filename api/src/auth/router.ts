@@ -5,7 +5,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, r
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, getSiteByUrl, getRedirectSite, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
+import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, Site, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -572,18 +572,35 @@ router.post('/action', async (req, res, next) => {
 
   const storage = storages.globalStorage
   const site = await reqSite(req)
-  let user = await storage.getUserByEmail(body.email, site)
+  // Account-main is where user records actually live for this request's site
+  // (operator back-office, an `isAccountMain` sibling, or the site itself for standalone).
+  const accountMainSite = await reqAccountMainSite(req)
+  let user = await storage.getUserByEmail(body.email, accountMainSite)
   logContext.user = user
   let action = body.action as ActionPayload['action']
-  if (!user && site) {
+  const requestedTarget = body.target || `${reqSiteUrl(req)}/simple-directory/login`
+  let linkTarget = requestedTarget
+  let redirectAfter: string | undefined
+
+  if (user && site && accountMainSite?._id !== site._id) {
+    // User is renewing their password from a non-standalone secondary site: their record
+    // lives at the account-main, not on the current site. Retarget the email link to the
+    // account-main login so the token is consumed there, and carry a redirect back to the
+    // original site for after the renewal.
+    const accountMainUrl = accountMainSite ? getSiteBaseUrl(accountMainSite) : config.publicUrl
+    linkTarget = `${accountMainUrl}/simple-directory/login`
+    redirectAfter = requestedTarget
+  } else if (!user && site && (site.isAccountMain || site.authMode === 'onlyLocal')) {
+    // Standalone secondary site: user isn't there but has a main-site record → offer a
+    // changeHost so the record can be transferred onto this now-standalone site.
     user = await storage.getUserByEmail(body.email)
-    action = 'changeHost'
+    if (user) action = 'changeHost'
   }
-  const target = body.target || `${reqSiteUrl(req)}/simple-directory/login`
+
   // No 404 here so we don't disclose information about existence of the user
   if (!user || user.emailConfirmed === false) {
-    const linkUrl = new URL(target)
-    await sendMailI18n('noCreation', reqI18n(req).messages, body.email, { link: target, host: linkUrl.host, origin: linkUrl.origin })
+    const linkUrl = new URL(requestedTarget)
+    await sendMailI18n('noCreation', reqI18n(req).messages, body.email, { link: requestedTarget, host: linkUrl.host, origin: linkUrl.origin })
     eventsLog.info('sd.auth.action.fail', `an action ${action} failed because of missing user and a warning mail was sent ${body.email}`, logContext)
     return res.status(204).send()
   }
@@ -596,8 +613,11 @@ router.post('/action', async (req, res, next) => {
     payload.host = site.host
     payload.path = site.path
   }
+  if (action === 'changePassword' && redirectAfter) {
+    payload.redirect = redirectAfter
+  }
   const token = await signToken(payload, config.jwtDurations.initialToken)
-  const linkUrl = new URL(target)
+  const linkUrl = new URL(linkTarget)
   linkUrl.searchParams.set('action_token', token)
 
   await sendMailI18n('action', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })

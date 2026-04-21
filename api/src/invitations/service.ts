@@ -1,8 +1,7 @@
-import { getSiteByUrl, reqSite } from '#services'
+import { getSiteByUrl, reqSite, resolveAccountMainSite } from '#services'
 import { type ShortenedInvitation, type Invitation } from '#types'
 import { type Request } from 'express'
 import Debug from 'debug'
-import { httpError } from '@data-fair/lib-express'
 
 const debug = Debug('invitations')
 
@@ -47,23 +46,7 @@ export const getInvitSite = async (req: Request, redirect?: string) => {
     invitSite = (await getSiteByUrl(redirect)) ?? undefined
     debug('site referenced in invitation', redirect, invitSite)
   }
-
-  if (invitSite?.authMode === 'onlyBackOffice' || !invitSite?.authMode) {
-    debug('invit site is in onlyBackOffice, ignore it in invitation process and redirect to it at the end')
-    invitSite = undefined
-  }
-
-  if (invitSite?.authMode === 'onlyOtherSite' && invitSite.authOnlyOtherSite) {
-    // invite on the site that serves as auth source
-    invitSite = await getSiteByUrl('https://' + invitSite.authOnlyOtherSite)
-    debug('invit site in in onlyOtherSite mode, replace it with target site in invitation process and redirect to it at then end', invitSite)
-    if (invitSite?.authMode === 'onlyBackOffice' || !invitSite?.authMode) {
-      debug('rebound invit site is in onlyBackOffice, ignore it in invitation process')
-      invitSite = undefined
-    }
-    if (invitSite?.authMode === 'onlyOtherSite' && invitSite.authOnlyOtherSite) {
-      throw httpError(400, `Impossible d'utiliser le site ${invitSite.host} comme référence pour l'authentification, il est lui aussi configuré comme "uniquement sur un autre de vos sites".`)
-    }
-  }
-  return invitSite
+  const resolved = await resolveAccountMainSite(invitSite)
+  debug('invit site resolved to account-main', resolved)
+  return resolved
 }
