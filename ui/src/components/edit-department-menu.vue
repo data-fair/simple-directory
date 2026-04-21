@@ -51,7 +51,7 @@
           color="primary"
           variant="flat"
           :disabled="loading"
-          @click="confirmEdit"
+          @click="confirmEdit.execute()"
         >
           {{ $t('common.confirmOk') }}
         </v-btn>
@@ -88,7 +88,7 @@ watch(menu, () => {
 
 const loading = ref(false)
 
-const confirmEdit = withUiNotif(async () => {
+const confirmEdit = useAsyncAction(async () => {
   loading.value = true
   const departments = (orga.departments ?? []).map(d => d.id === editDepartment.value?.id ? editDepartment.value : d)
   await patchOrganization.execute(orga.id, { departments }, t('common.modificationOk'))

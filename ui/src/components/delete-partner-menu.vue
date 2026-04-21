@@ -41,7 +41,7 @@
         <v-btn
           color="warning"
           variant="flat"
-          @click="confirmDelete"
+          @click="confirmDelete.execute()"
         >
           {{ $t('common.confirmOk') }}
         </v-btn>
@@ -59,7 +59,7 @@ const emit = defineEmits(['change'])
 
 const menu = ref(false)
 
-const confirmDelete = withUiNotif(async () => {
+const confirmDelete = useAsyncAction(async () => {
   menu.value = false
   await $fetch(`organizations/${orga.id}/partners/${partner.partnerId}`, { method: 'DELETE' })
   emit('change')

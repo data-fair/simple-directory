@@ -68,7 +68,7 @@
         <v-btn
           color="primary"
           variant="flat"
-          @click="confirmCreate"
+          @click="confirmCreate.execute()"
         >
           {{ $t('common.confirmOk') }}
         </v-btn>
@@ -99,7 +99,7 @@ watch(menu, () => {
   createForm.value?.reset()
 })
 
-const confirmCreate = withUiNotif(async () => {
+const confirmCreate = useAsyncAction(async () => {
   await createForm.value?.validate()
   if (createForm.value?.isValid) {
     menu.value = false

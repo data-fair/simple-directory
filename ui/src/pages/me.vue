@@ -18,7 +18,7 @@
       v-if="user"
       ref="form"
       data-iframe-height
-      @submit="save"
+      @submit="save.execute"
     >
       <v-text-field
         v-model="user.email"
@@ -43,7 +43,7 @@
             :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
             variant="outlined"
             density="compact"
-            @change="save"
+            @change="save.execute"
           />
         </v-col>
         <v-col cols="6">
@@ -55,7 +55,7 @@
             :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
             variant="outlined"
             density="compact"
-            @change="save"
+            @change="save.execute"
           />
         </v-col>
         <v-col
@@ -81,7 +81,7 @@
                 density="compact"
                 hide-details
                 v-bind="props"
-                @click:clear="patch.birthday = null; save()"
+                @click:clear="patch.birthday = null; save.execute()"
               />
             </template>
             <v-date-picker
@@ -98,7 +98,7 @@
             color="primary"
             variant="text"
             :title="$t('pages.login.changePasswordTooltip')"
-            @click="changePasswordAction"
+            @click="changePasswordAction.execute()"
           >
             {{ $t('pages.login.changePassword') }}
           </v-btn>
@@ -208,7 +208,7 @@
                   :title="$t('pages.me.deleteSession', session)"
                   :alert="$t('pages.me.deleteSessionWarning', {duration: duration($uiConfig.jwtDurations.idToken * 1000).humanize()})"
                   location="top end"
-                  @confirm="deleteSession(session.id)"
+                  @confirm="deleteSession.execute(session.id)"
                 >
                   <template #activator="{props}">
                     <v-btn
@@ -249,7 +249,7 @@
           :label="$t('pages.me.ignorePersonalAccount')"
           :disabled="readonly"
           name="ignorePersonalAccount"
-          @update:model-value="() => save()"
+          @update:model-value="() => save.execute()"
         />
         <v-select
           v-if="defaultOrgItems.length > 1"
@@ -261,7 +261,7 @@
           clearable
           variant="outlined"
           density="compact"
-          @update:model-value="() => save()"
+          @update:model-value="() => save.execute()"
         />
       </template>
 
@@ -276,7 +276,7 @@
           :alert="$t('pages.me.deleteMyselfAlert', {plannedDeletionDelay: $uiConfig.plannedDeletionDelay})"
           :check-text="$t('pages.me.deleteMyselfCheck', {name: user.name})"
           yes-color="warning"
-          @confirm="deleteMyself"
+          @confirm="deleteMyself.execute()"
         />
         <cancel-deletion
           v-else
@@ -321,7 +321,7 @@ const activeBirthDayPicker = ref()
 const setBirthDay = (birthday: Date) => {
   patch.value.birthday = birthday.toISOString().slice(0, 10)
   birthdayMenu.value = false
-  save()
+  save.execute()
 }
 
 const readonly = computed(() => $uiConfig.readonly || !!user.value?.os)
@@ -383,7 +383,7 @@ watch(birthdayMenu, (val) => {
 })
 
 const form = ref<InstanceType<typeof VForm>>()
-const save = withUiNotif(async (e?: Event) => {
+const save = useAsyncAction(async (e?: Event) => {
   if (e?.preventDefault) e.preventDefault()
   await form.value?.validate()
   if (!form.value?.isValid) return
@@ -397,9 +397,9 @@ const save = withUiNotif(async (e?: Event) => {
   await $fetch(`users/${user.value.id}`, { method: 'PATCH', body })
   await keepalive()
   await userDetailsFetch.refresh()
-}, undefined, t('common.modificationOk'))
+}, { success: t('common.modificationOk') })
 
-const changePasswordAction = withUiNotif(async () => {
+const changePasswordAction = useAsyncAction(async () => {
   if (!user.value) return
   let target = $sdUrl + '/login'
   try {
@@ -408,16 +408,16 @@ const changePasswordAction = withUiNotif(async () => {
     // no problem, we simply are not in an iframe context
   }
   await $fetch('auth/action', { method: 'POST', body: { email: user.value.email, action: 'changePassword', target } })
-}, undefined, t('pages.login.changePasswordSent', { email: user.value?.email }))
+}, { success: t('pages.login.changePasswordSent', { email: user.value?.email }) })
 
-const deleteMyself = withUiNotif(async () => {
+const deleteMyself = useAsyncAction(async () => {
   if (!user.value) return
   $fetch(`users/${user.value.id}`, { method: 'PATCH', body: { plannedDeletion: dayjs().add($uiConfig.plannedDeletionDelay, 'days').format('YYYY-MM-DD') } })
   await keepalive()
   await userDetailsFetch.refresh()
 })
 
-const deleteSession = withUiNotif(async (sessionId: string) => {
+const deleteSession = useAsyncAction(async (sessionId: string) => {
   if (!user.value) return
   try {
     $fetch(`users/${user.value.id}/sessions/${sessionId}`, { method: 'DELETE' })

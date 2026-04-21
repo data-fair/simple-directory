@@ -42,7 +42,7 @@
         <v-btn
           :disabled="!valid"
           color="primary"
-          @click="send"
+          @click="send.execute()"
         >
           Envoyer
         </v-btn>
@@ -62,7 +62,7 @@ const valid = ref(false)
 const token = useFetch<string>($apiPath + '/auth/anonymous-action')
 
 const form = ref<InstanceType<typeof VForm>>()
-const send = withUiNotif(async () => {
+const send = useAsyncAction(async () => {
   await form.value?.validate()
   if (form.value?.isValid) {
     if (!token.data) return
@@ -70,7 +70,7 @@ const send = withUiNotif(async () => {
     message.value = { ...newMessage }
     form.value?.resetValidation()
   }
-}, undefined, 'Votre demande a été envoyée')
+}, { success: 'Votre demande a été envoyée' })
 </script>
 
 <style lang="css">

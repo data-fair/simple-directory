@@ -91,7 +91,7 @@
             />
             <confirm-menu
               yes-color="warning"
-              @confirm="deleteSite(props.item)"
+              @confirm="deleteSite.execute(props.item)"
             >
               <template #activator="{props: activatorProps}">
                 <v-btn
@@ -148,7 +148,7 @@ const { t } = useI18n()
 const sites = useFetch<{ count: number, results: SiteWithColorWarnings[] }>($apiPath + '/sites', { query: { showAll: true } })
 const protocol = window.location.protocol
 
-const deleteSite = withUiNotif(async (site: Site) => {
+const deleteSite = useAsyncAction(async (site: Site) => {
   await $fetch(`sites/${site._id}`, { method: 'DELETE' })
   sites.refresh()
 })

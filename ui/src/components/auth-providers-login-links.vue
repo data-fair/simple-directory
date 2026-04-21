@@ -1,16 +1,13 @@
 <template>
-  <v-row
+  <div
     v-if="authProvidersFetch.data.value"
-    class="mb-6 mx-0"
+    class="mb-6 mx-0 d-flex flex-wrap"
   >
     <v-btn
       v-if="sitePublic && sitePublic.authMode === 'ssoBackOffice'"
       :color="$uiConfig.theme.colors.primary"
       :href="mainSiteLoginUrl"
-      size="small"
-      rounded
-      variant="flat"
-      class="pl-0 pr-3 mr-2 mb-1 text-none text-white"
+      v-bind="btnProps"
     >
       <v-avatar
         size="29"
@@ -30,10 +27,7 @@
       :key="authProvider.type + ':' + authProvider.id"
       :color="authProvider.color"
       :href="providerLoginUrl(authProvider)"
-      size="small"
-      rounded
-      variant="flat"
-      class="pl-0 pr-3 mr-2 mb-1 text-none text-white"
+      v-bind="btnProps"
     >
       <v-avatar
         size="29"
@@ -55,7 +49,7 @@
       </v-avatar>
       &nbsp;{{ authProvider.title }}
     </v-btn>
-  </v-row>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -102,6 +96,13 @@ function siteLoginUrl (host: string) {
   if (invitToken) url.searchParams.append('invit_token', invitToken)
   if (adminMode) url.searchParams.append('adminMode', 'true')
   return url.href
+}
+
+const btnProps = {
+  size: 'small' as const,
+  rounded: true,
+  variant: 'flat' as const,
+  class: 'pl-0 pr-3 mr-3 mb-2 text-none text-white'
 }
 </script>
 

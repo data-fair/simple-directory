@@ -32,7 +32,7 @@
         color="warning"
         variant="flat"
         :disabled="!confirmMigration"
-        @click="confirmChangeHost"
+        @click="confirmChangeHost.execute()"
       >
         {{ $t('common.validate') }}
       </v-btn>
@@ -64,7 +64,7 @@ const mainHostLogin = computed(() => {
   return url.href
 })
 
-const confirmChangeHost = withUiNotif(async () => {
+const confirmChangeHost = useAsyncAction(async () => {
   const changeHostToken = await $fetch(`users/${user.id}/host`, { method: 'POST', body: { host }, params: { action_token: actionToken } })
   if (changeHostToken) {
     emit('goTo', 'changePassword')

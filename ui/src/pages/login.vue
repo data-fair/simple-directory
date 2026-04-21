@@ -579,7 +579,7 @@
                   rounded
                   style="max-width: 210px;"
                   :autofocus="true"
-                  @keyup.enter="validate2FA"
+                  @keyup.enter="validate2FA.execute()"
                 />
               </template>
             </v-card-text>
@@ -596,7 +596,7 @@
                 :disabled="!configure2FACode"
                 color="primary"
                 variant="flat"
-                @click="validate2FA"
+                @click="validate2FA.execute()"
               >
                 {{ $t('common.validate') }}
               </v-btn>
@@ -935,9 +935,15 @@ if (error.value) {
   step.value = 'error'
 }
 
+// fetched lazily so the notBefore (8s) is almost certainly elapsed by the time the user submits
+const createUserToken = useFetch<string>($apiPath + '/auth/anonymous-action', { immediate: false })
+
 watch(step, () => {
   if (step.value === 'login' && !authProvidersFetch.data.value) {
     authProvidersFetch.refresh()
+  }
+  if ((step.value === 'createUser' || step.value === 'tos') && !createUserToken.data.value) {
+    createUserToken.refresh()
   }
 }, { immediate: true })
 const separateEmailPasswordSteps = computed(() => {
@@ -1005,9 +1011,6 @@ function preLogin () {
   }
 }
 
-// fetched at mount so the notBefore (8s) is almost certainly elapsed by the time the user submits
-const createUserToken = useFetch<string>($apiPath + '/auth/anonymous-action')
-
 const createUserForm = ref<InstanceType<typeof VForm>>()
 const createUser = useAsyncAction(async () => {
   await createUserForm.value?.validate()
@@ -1073,7 +1076,7 @@ const passwordAuth = useAsyncAction(async () => {
     if (error.status && error.status < 500) {
       if (error.data === '2fa-missing') {
         step.value = 'configure2FA'
-        init2FA()
+        init2FA.execute()
       } else if (error.data === '2fa-required') {
         twoFARequired.value = true
         twoFAError.value = null
@@ -1117,7 +1120,7 @@ const changePassword = useAsyncAction(async () => {
 }, { catch: 'all' })
 watch(newPassword, () => { changePassword.notif.value = undefined })
 
-const init2FA = withUiNotif(async () => {
+const init2FA = useAsyncAction(async () => {
   // initialize secret
   const res = await $fetch('2fa', {
     method: 'POST',
@@ -1130,7 +1133,7 @@ const init2FA = withUiNotif(async () => {
   configure2FACode.value = ''
 })
 
-const validate2FA = withUiNotif(async () => {
+const validate2FA = useAsyncAction(async () => {
   // validate secret with initial token
   const res = await $fetch('2fa', {
     method: 'POST',

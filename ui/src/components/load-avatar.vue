@@ -40,7 +40,7 @@
             :title="$t('common.validate')"
             style="position: relative;"
             :icon="mdiCheck"
-            @click="validate"
+            @click="validate.execute()"
           />
         </template>
       </v-file-input>
@@ -112,7 +112,7 @@ const change = () => {
   reader.readAsDataURL(file.value)
 }
 
-const validate = withUiNotif(async () => {
+const validate = useAsyncAction(async () => {
   debug('validate', file.value)
   if (!file.value) return
   loading.value = true
@@ -125,7 +125,7 @@ const validate = withUiNotif(async () => {
   file.value = null
 })
 
-defineExpose({ validate })
+defineExpose({ validate: () => validate.execute() })
 
 const getTimestamp = () => new Date().getTime()
 </script>

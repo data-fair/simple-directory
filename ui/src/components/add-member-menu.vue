@@ -112,7 +112,7 @@
             :disabled="disableInvite || !invitation.email || !invitation.role"
             color="primary"
             variant="flat"
-            @click="confirmInvitation()"
+            @click="confirmInvitation.execute()"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -164,7 +164,7 @@ watch(menu, async () => {
   inviteForm.value?.reset()
 })
 
-const confirmInvitation = withUiNotif(async () => {
+const confirmInvitation = useAsyncAction(async () => {
   if (link.value) {
     menu.value = false
     return

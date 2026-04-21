@@ -145,7 +145,7 @@
           </v-btn>
           <v-btn
             color="warning"
-            @click="deleteOrganizationDialog = false;deleteOrganization(currentOrganization)"
+            @click="deleteOrganizationDialog = false;deleteOrganization.execute(currentOrganization)"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -178,7 +178,7 @@
           </v-btn>
           <v-btn
             color="warning"
-            @click="limitOrganizationDialog = false;saveLimits(currentOrganization, currentLimits)"
+            @click="limitOrganizationDialog = false;saveLimits.execute(currentOrganization, currentLimits)"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -209,13 +209,13 @@ const currentOrganization = ref<Organization | null>(null)
 const limitOrganizationDialog = ref(false)
 const currentLimits = ref<Limits | null>(null)
 
-const deleteOrganization = withUiNotif(async (org) => {
+const deleteOrganization = useAsyncAction(async (org) => {
   await $fetch(`organizations/${org.id}`, { method: 'DELETE' })
   organizations.refresh()
 })
 
 const limits = reactive<Record<string, Limits>>({})
-const fetchLimits = withUiNotif(async () => {
+const fetchLimits = useAsyncAction(async () => {
   if (!organizations.data.value) return
   for (const org of organizations.data.value.results) {
     if (!limits[org.id]) {
@@ -223,9 +223,9 @@ const fetchLimits = withUiNotif(async () => {
     }
   }
 })
-if (!$uiConfig.readonly) watch(organizations.data, fetchLimits)
+if (!$uiConfig.readonly) watch(organizations.data, () => fetchLimits.execute())
 
-const saveLimits = withUiNotif(async (org: Organization, limits: Limits) => {
+const saveLimits = useAsyncAction(async (org: Organization, limits: Limits) => {
   if (!limits.store_nb_members.limit) limits.store_nb_members.limit = 0
   await $fetch(`limits/organization/${org.id}`, { body: limits, method: 'POST' })
   delete limits[org.id]

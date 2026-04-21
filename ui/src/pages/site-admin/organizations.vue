@@ -115,7 +115,7 @@
           </v-btn>
           <v-btn
             color="warning"
-            @click="deleteOrganizationDialog = false;deleteOrganization(currentOrganization)"
+            @click="deleteOrganizationDialog = false;deleteOrganization.execute(currentOrganization)"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -149,7 +149,7 @@ const organizations = useFetch<{ count: number, results: Organization[] }>($apiP
 const deleteOrganizationDialog = ref(false)
 const currentOrganization = ref<Organization | null>(null)
 
-const deleteOrganization = withUiNotif(async (org) => {
+const deleteOrganization = useAsyncAction(async (org) => {
   await $fetch(`organizations/${org.id}`, { method: 'DELETE' })
   organizations.refresh()
 })

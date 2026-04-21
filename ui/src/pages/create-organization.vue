@@ -33,7 +33,7 @@
           :disabled="!valid"
           color="primary"
           style="text-transform: uppercase"
-          @click="create"
+          @click="create.execute()"
         >
           {{ $t('common.save') }}
         </v-btn>
@@ -54,7 +54,7 @@ const valid = ref(false)
 const autoAdmin = ref(true)
 
 const form = ref<InstanceType<typeof VForm>>()
-const create = withUiNotif(async () => {
+const create = useAsyncAction(async () => {
   const createdOrga = await $fetch<Organization>('organizations', { method: 'POST', body: newOrga.value, params: { autoAdmin: autoAdmin.value } })
   await keepalive()
   router.push(`/organizations/${createdOrga.id}`)

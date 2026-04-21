@@ -66,7 +66,7 @@
           <v-btn
             color="warning"
             variant="flat"
-            @click="confirmInvitation()"
+            @click="confirmInvitation.execute()"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -90,7 +90,7 @@ const { t } = useI18n()
 const menu = ref(false)
 const editPartner = ref({ ...partner, redirect: redirects.value?.[0]?.value })
 
-const confirmInvitation = withUiNotif(async () => {
+const confirmInvitation = useAsyncAction(async () => {
   menu.value = false
   await $fetch(`organizations/${orga.id}/partners`, { method: 'POST', body: { name: editPartner.value.name, contactEmail: editPartner.value.contactEmail, redirect: editPartner.value.redirect } })
   sendUiNotif({ type: 'success', msg: t('pages.organization.invitePartnerSuccess', { email: partner.contactEmail }) })

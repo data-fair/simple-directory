@@ -12,7 +12,7 @@
     <v-btn
       color="warning"
       variant="text"
-      @click="cancelDeletion"
+      @click="cancelDeletion.execute()"
     >
       {{ $t('pages.login.cancelDeletion') }}
     </v-btn>
@@ -25,7 +25,7 @@ const emit = defineEmits(['cancelled'])
 const { userDetailsFetch } = useStore()
 
 if (!userDetailsFetch.initialized.value) userDetailsFetch.refresh()
-const cancelDeletion = withUiNotif(async () => {
+const cancelDeletion = useAsyncAction(async () => {
   if (!userDetailsFetch.data.value) return
   await $fetch('users/' + userDetailsFetch.data.value.id + '/plannedDeletion', { method: 'DELETE' })
   emit('cancelled')

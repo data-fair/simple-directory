@@ -192,7 +192,7 @@
           <v-btn
             color="warning"
             variant="flat"
-            @click="deleteUserDialog = false;deleteUser(currentUser)"
+            @click="deleteUserDialog = false;deleteUser.execute(currentUser)"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -229,7 +229,7 @@
           <v-btn
             color="warning"
             variant="flat"
-            @click="editUserEmailDialog = false;saveCurrentUserEmail()"
+            @click="editUserEmailDialog = false;saveCurrentUserEmail.execute()"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -274,7 +274,7 @@
           <v-btn
             color="warning"
             variant="flat"
-            @click="editMaxCreatedOrgsDialog = false;saveCurrentUserMaxCreatedOrgs()"
+            @click="editMaxCreatedOrgsDialog = false;saveCurrentUserMaxCreatedOrgs.execute()"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -309,7 +309,7 @@
           <v-btn
             color="warning"
             variant="flat"
-            @click="drop2FADialog = false;drop2FACurrentUser()"
+            @click="drop2FADialog = false;drop2FACurrentUser.execute()"
           >
             {{ $t('common.confirmOk') }}
           </v-btn>
@@ -337,7 +337,7 @@ const usersQuery = computed(() => ({ q: validQ.value, allFields: true, page: pag
 const users = useFetch<{ count: number, results: User[], fromCache?: string }>($apiPath + '/users', { query: usersQuery })
 
 const deleteUserDialog = ref(false)
-const deleteUser = withUiNotif(async (user: User) => {
+const deleteUser = useAsyncAction(async (user: User) => {
   await $fetch(`users/${user.id}`, { method: 'DELETE' })
   users.refresh()
 })
@@ -354,7 +354,7 @@ const showEditMaxCreatedOrgsDialog = async (user: User) => {
   newMaxCreatedOrgs.value = user.maxCreatedOrgs
   editMaxCreatedOrgsDialog.value = true
 }
-const saveCurrentUserMaxCreatedOrgs = withUiNotif(async () => {
+const saveCurrentUserMaxCreatedOrgs = useAsyncAction(async () => {
   if (newMaxCreatedOrgs.value === undefined || currentUser.value === undefined) return
   await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { maxCreatedOrgs: newMaxCreatedOrgs.value } })
   currentUser.value.maxCreatedOrgs = newMaxCreatedOrgs.value
@@ -367,7 +367,7 @@ const showEditUserEmailDialog = (user: User) => {
   email.value = user.email
   editUserEmailDialog.value = true
 }
-const saveCurrentUserEmail = withUiNotif(async () => {
+const saveCurrentUserEmail = useAsyncAction(async () => {
   if (email.value === undefined || currentUser.value === undefined) return
   await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { email: email.value } })
   currentUser.value.email = email.value
@@ -378,7 +378,7 @@ const showDrop2FADialog = (user: User) => {
   currentUser.value = user
   drop2FADialog.value = true
 }
-const drop2FACurrentUser = withUiNotif(async () => {
+const drop2FACurrentUser = useAsyncAction(async () => {
   if (currentUser.value === undefined) return
   await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { '2FA': { active: false } } })
 })

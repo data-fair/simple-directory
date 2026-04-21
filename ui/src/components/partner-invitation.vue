@@ -98,7 +98,7 @@
       <p v-if="selectedUserOrg">
         <v-btn
           color="primary"
-          @click="acceptPartnerInvitation(selectedUserOrg)"
+          @click="acceptPartnerInvitation.execute(selectedUserOrg)"
         >
           {{ $t('pages.partnerInvitation.acceptAs', {name: selectedUserOrg.name}) }}
         </v-btn>
@@ -115,7 +115,7 @@
             <v-btn
               variant="flat"
               color="primary"
-              @click="createOrga"
+              @click="createOrga.execute()"
             >
               {{ $t('pages.partnerInvitation.create') }}
             </v-btn>
@@ -150,19 +150,19 @@ if (invit) {
   if (otherUserOrgs.value?.length === 0) createNewOrg.value = true
 }
 
-const createOrga = withUiNotif(async () => {
+const createOrga = useAsyncAction(async () => {
   if (!createOrganizationName.value) return
   const orga = await $fetch<Organization>('organizations', { method: 'POST', body: { name: createOrganizationName.value } })
   if (!user.value?.organizations.length) {
     await $fetch('users/' + user.value?.id, { method: 'PATCH', body: { defaultOrg: orga.id, ignorePersonalAccount: true } })
   }
-  acceptPartnerInvitation(orga)
+  acceptPartnerInvitation.execute(orga)
 })
 
-const acceptPartnerInvitation = withUiNotif(async (org: Organization) => {
+const acceptPartnerInvitation = useAsyncAction(async (org: Organization) => {
   if (!invit) return
   await $fetch(`organizations/${invit.o}/partners/_accept`, { method: 'POST', body: { id: org.id, contactEmail: invit.e, token } })
-  goToRedirect(org.id)
+  goToRedirect.execute(org.id)
 })
 
 const toggleSelectedUserOrg = (userOrg: OrganizationMembership, toggle: boolean) => {
@@ -171,7 +171,7 @@ const toggleSelectedUserOrg = (userOrg: OrganizationMembership, toggle: boolean)
   createNewOrg.value = false
 }
 
-const goToRedirect = withUiNotif(async (org: string) => {
+const goToRedirect = useAsyncAction(async (org: string) => {
   let redirect = reactiveSearchParams.redirect
   if (mainPublicUrl.host !== new URL(redirect).host) {
     redirect = await $fetch('auth/site_redirect', { method: 'POST', body: { redirect, org } })
