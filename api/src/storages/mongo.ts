@@ -186,7 +186,9 @@ class MongodbStorage implements SdStorage {
   }
 
   async findUsers (params: FindUsersParams) {
-    const filter: any = {}
+    // _superadmin is a virtual system user whose data lives in config; the mongo doc
+    // is only a stub for session tracking and lacks email/name/organizations, so exclude it.
+    const filter: any = { _id: { $ne: '_superadmin' } }
     if (params.ids) {
       filter._id = { $in: params.ids }
     }
