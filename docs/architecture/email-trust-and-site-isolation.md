@@ -61,6 +61,13 @@ looser IdP.
 - **LinkedIn** — primary email is considered verified upstream.
 - **SAML 2** — no standard verified flag; adding a SAML IdP is an explicit
   trust statement. Site-level IdPs remain confined by user scoping.
+  `api/src/saml2/service.ts` installs `@authenio/samlify-node-xmllint` as the
+  samlify schema validator, which is required to mitigate XML
+  signature-wrapping attacks. The SP also advertises
+  `wantAssertionsSigned: true` in its metadata, and the
+  `config.saml2.sp` operator-config spread cannot override SP cert material,
+  `entityID`, `assertionConsumerService`, or the wantAssertionsSigned flag
+  (the spread is applied first, the trusted fields last).
 
 ### Why OIDC is looser than the OAuth providers
 

@@ -53,6 +53,7 @@
     "prom-client": "^15.1.3",
     "qrcode": "^1.5.4",
     "rate-limiter-flexible": "^5.0.5",
+    "@authenio/samlify-node-xmllint": "^2.0.0",
     "samlify": "^2.11.0",
     "seedrandom": "^3.0.5",
     "serialize-javascript": "^7.0.4",
