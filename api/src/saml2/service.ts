@@ -7,16 +7,22 @@ import type { SAML2 } from '../../config/type/index.ts'
 import config from '#config'
 import _slug from 'slugify'
 import samlify from 'samlify'
+// @ts-ignore -- no ambient types; see node_modules/@authenio/samlify-node-xmllint/build/index.d.ts
+import * as xsdValidator from '@authenio/samlify-node-xmllint'
 import Debug from 'debug'
 import mongo from '#mongo'
 import { decipher, cipher } from '../utils/cipher.ts'
-import { exec } from 'node:child_process'
+import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { generateKeyPairSync } from 'node:crypto'
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { getSiteBaseUrl, reqSite } from '#services'
 import { type Site } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
 const debug = Debug('saml')
 const slug = _slug.default
 
@@ -35,14 +41,11 @@ export type Saml2RelayState = {
   adminMode?: boolean
 }
 
-// const validator = require('@authenio/samlify-xsd-schema-validator')
-// samlify.setSchemaValidator(validator)
-// TODO: apply an actual validator cf https://github.com/tngan/samlify#installation
-samlify.setSchemaValidator({
-  validate: (response) => {
-    return Promise.resolve('skipped')
-  }
-})
+// Schema validation is REQUIRED — samlify relies on it to mitigate XML signature-wrapping
+// attacks (e.g. CVE-2025-47949, CVE-2024-45231 / -45239). Do not replace with a pass-through
+// shim under any circumstances: a `validate: () => Promise.resolve('skipped')` reintroduces
+// every known samlify assertion-injection CVE. See security review C-2.
+samlify.setSchemaValidator(xsdValidator)
 
 export const getSamlProviderById = async (req: Request, id: string): Promise<PreparedSaml2Provider | undefined> => {
   const site = await reqSite(req)
@@ -168,6 +171,19 @@ export const init = async () => {
   }
 }
 
+// For test-env DELETE / cleanup: drop the cached SAML cert from mongo, reset the in-memory
+// SP singleton, and re-run init so the next request mints a fresh cert via createCert.
+// Without this, dev/CI cycles reuse whatever cert was minted at first server startup and
+// the createCert path stays untested in the live env even after code changes. Site-level
+// certs share the `saml-certificates*` _id prefix so they're cleaned up too.
+export const resetForTests = async () => {
+  await mongo.saml2RelayStates.deleteMany({})
+  await mongo.secrets.deleteMany({ _id: { $regex: /^saml-certificates/ } })
+  _sp = undefined
+  _globalProviders.length = 0
+  await init()
+}
+
 export const initServiceProvider = async (site?: Site) => {
   const certificates = await initCertificates(site)
   const url = site ? `${getSiteBaseUrl(site)}/simple-directory` : config.publicUrl
@@ -176,27 +192,55 @@ export const initServiceProvider = async (site?: Site) => {
     Location: `${url}/api/auth/saml2-assert`
   }]
   debug('config service provider')
+  // config.saml2.sp is spread FIRST so it can only tune tangential options (NameIDFormat,
+  // signing algorithm hints, etc.) — it cannot override our cert material, entityID,
+  // assertionConsumerService, or flip wantAssertionsSigned off. Order matters (see C-2).
   return samlify.ServiceProvider({
+    ...config.saml2.sp,
     entityID: `${url}/api/auth/saml2-metadata.xml`,
     assertionConsumerService,
     signingCert: certificates.signing.cert,
     privateKey: certificates.signing.privateKey,
     encryptCert: certificates.encrypt.cert,
     encPrivateKey: certificates.encrypt.privateKey,
+    wantAssertionsSigned: true,
     // @ts-ignore if we use a boolean the attribute is set as empty in the xml output, and some IDP don't like that
-    allowCreate: 'false',
-    ...config.saml2.sp
+    allowCreate: 'false'
   })
 }
 
-const createCert = async () => {
-  const subject = `/C=FR/CN=${new URL(config.publicUrl).hostname}`
-  const privateKey = (await execAsync('openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048')).stdout
-  const certPromise = execAsync(`echo "${privateKey}" | openssl req -key /dev/stdin -x509 -sha256 -nodes -days 1095 -subj "${subject}"`)
-  certPromise.child.stdin?.write(privateKey)
-  certPromise.child.stdin?.end()
-  const cert = (await certPromise).stdout
-  return { privateKey, cert }
+// Exported for the C-2 regression test in tests/features/saml2-create-cert.unit.spec.ts —
+// the live dev env almost always reads a cached cert from the `secrets` collection, so
+// without a direct call this path would be entirely untested.
+export const createCert = async () => {
+  const hostname = new URL(config.publicUrl).hostname
+  // Reject hostnames that would be parsed as shell metacharacters by openssl's -subj
+  // arg or that contain CR/LF (defense-in-depth; execFile already prevents shell parsing).
+  if (!/^[A-Za-z0-9.\-_:[\]]+$/.test(hostname)) {
+    throw new Error(`refusing to mint SAML certificate for suspicious hostname: ${hostname}`)
+  }
+  const subject = `/C=FR/CN=${hostname}`
+  // Generate the RSA key in-process (no shell, no string interpolation, no stdin race).
+  const { privateKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    publicKeyEncoding: { type: 'spki', format: 'pem' }
+  })
+  // OpenSSL 3.x's STORE subsystem refuses to read `-key /dev/stdin` from a Node-spawned
+  // pipe (fopen() on a non-seekable fd fails). Stage the key in a 0700 temp directory
+  // so it's owner-only readable for the brief openssl invocation, then unlink in finally.
+  const tmpDir = mkdtempSync(join(tmpdir(), 'sd-saml-'))
+  const keyPath = join(tmpDir, 'key.pem')
+  try {
+    writeFileSync(keyPath, privateKey, { mode: 0o600 })
+    // execFile with argv array — `subject` and `keyPath` never reach a shell.
+    const { stdout: cert } = await execFileAsync('openssl', [
+      'req', '-key', keyPath, '-x509', '-sha256', '-nodes', '-days', '1095', '-subj', subject
+    ])
+    return { privateKey, cert }
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true })
+  }
 }
 
 // attributes for microsoft entra https://learn.microsoft.com/en-us/entra/identity-platform/reference-saml-tokens
