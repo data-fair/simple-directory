@@ -27,11 +27,7 @@ type AuthProviderCore = {
   createMember?: CreateMember,
   memberRole?: MemberRole,
   memberDepartment?: MemberDepartment,
-  coreIdProvider?: boolean,
-  // Opt-in: when true, the main-site provider is allowed to authenticate a user that
-  // matches an entry in config.admins. Default false — SSO cannot produce a superadmin
-  // session unless the deployment has explicitly acknowledged the risk.
-  allowSuperadmin?: boolean
+  coreIdProvider?: boolean
 }
 
 type AuthProviderRef = Pick<AuthProviderCore, 'id' | 'type'>
@@ -154,12 +150,14 @@ export const authProviderLoginCallback = async (
   let user = await storage.getUserByEmail(authInfo.user.email, site)
   logContext.user = user
 
-  // Refuse to authenticate a superadmin through an SSO provider unless the provider was
-  // explicitly flagged `allowSuperadmin: true`. With cleanUser gating isAdmin on `!host`,
-  // this check only affects main-site SSO (site === undefined); it is a defense-in-depth
-  // layer against a compromised/misconfigured IdP asserting an admin email.
-  if (!site && user?.isAdmin && !provider.allowSuperadmin) {
-    eventsLog.alert('sd.auth.provider.superadmin-blocked', `SSO provider ${provider.type}/${provider.id} refused to authenticate superadmin ${user.email}`, logContext)
+  // Standard OAuth providers (github/google/facebook/linkedin from config.oauth.providers)
+  // are user-registration IdPs: anyone can create an account with an arbitrary email, so a
+  // match against config.admins cannot be trusted as an identity binding. Root-level OIDC/SAML
+  // (config.oidc.providers / config.saml2.providers) are operator-configured and may
+  // authenticate superadmins by deployment decision. Site-level providers can never reach
+  // this branch with an admin user since site-scoped records cannot be admin.
+  if (provider.type === 'oauth' && user?.isAdmin) {
+    eventsLog.alert('sd.auth.provider.superadmin-blocked', `standard OAuth provider ${provider.id} refused to authenticate superadmin ${user.email}`, logContext)
     throw httpError(403, 'superadminProviderBlocked')
   }
 

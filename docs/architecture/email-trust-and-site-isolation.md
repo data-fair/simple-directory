@@ -87,12 +87,22 @@ optional log context; call sites with a request pass it, background paths
 
 ## Preventing SSO superadmin escalation
 
-A main-site IdP is structurally capable of asserting an admin email. Two
-defenses:
+A main-site IdP is structurally capable of asserting an admin email. Defenses:
 
-- **`allowSuperadmin` provider flag** — `authProviderLoginCallback` refuses
-  the login when the session is on the main site, the matched user is admin,
-  and the provider has not set `allowSuperadmin: true`. Default off.
+- **Standard OAuth providers cannot authenticate superadmins** —
+  `authProviderLoginCallback` refuses when `provider.type === 'oauth'` and
+  the matched user is admin. These providers (github / google / facebook /
+  linkedin, from `config.oauth.providers`) are user-registration IdPs:
+  anyone can create an account under an arbitrary email, so a collision
+  with `config.admins` cannot be trusted as identity proof.
+- **Root-level OIDC / SAML providers may authenticate superadmins.**
+  Configured in `config.oidc.providers` / `config.saml2.providers` — these
+  are operator-declared IdPs (corporate directory, SSO broker) where the
+  email binding is trusted by deployment decision. Needed for on-premise
+  deployments where the superadmin logs in via the company SSO.
+- **Site-level providers are structurally incapable** of producing a
+  superadmin session: user records on a secondary site carry `host`, and
+  `isAdmin` requires `!host`.
 - **`adminMode` is main-site only** — password and SSO login paths both
   refuse `adminMode=1` on any non-main-site session (redundant with the
   `!host` guard, kept as defense in depth).
@@ -112,8 +122,9 @@ admin status permanently. Two safeguards:
 
 1. A secondary-site user record never carries admin status.
 2. `adminMode=1` is only ever set on a main-site session.
-3. An SSO provider never produces a superadmin session unless
-   `allowSuperadmin: true`.
+3. A standard OAuth provider (`provider.type === 'oauth'`) never produces a
+   superadmin session. Root-level OIDC / SAML providers may, by deployment
+   decision.
 4. No SSO provider accepts an unverified email; the per-provider opt-out
    (OIDC only) requires a superadmin-level config edit.
 5. A `changeHost` token's effect is bounded to the `(host, path)` it signs.

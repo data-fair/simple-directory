@@ -84,7 +84,7 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
       // The residual risk (multi-tenant IdP emitting arbitrary emails, buggy
       // provider omitting an intended `false`) is contained by the structural
       // defenses in docs/architecture/email-trust-and-site-isolation.md:
-      // site-scoped user records, `allowSuperadmin` opt-in, main-site-only
+      // site-scoped user records, standard-OAuth superadmin block, main-site-only
       // `adminMode`, and `config.admins` change-host protection. If any of
       // those guarantees is weakened, revisit this check before relaxing them.
       if (logContext) {
