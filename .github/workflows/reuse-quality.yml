@@ -28,6 +28,9 @@ jobs:
     - name: Type check
       run: npm run check-types
 
+    - name: Build UI
+      run: npm -w ui run build
+
     - name: Init .env
       run: ./dev/init-env.sh
 
