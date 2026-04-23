@@ -167,12 +167,13 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
         editUserEmailTitle: 'Cambia l\'indirizzo email dell\'utente {name}',
         editUserEmailText: 'Attenzione! La posta elettronica è una chiave utente importante, modificando queste informazioni si corre il rischio di inserire un indirizzo errato, non funzionante o incoerente con altre voci. Questa funzione viene presentata solo agli amministratori per sbloccare un utente la cui casella di posta diventa inaccessibile.',
         drop2FATitle: 'Disattivare l\'autenticazione a due fattori',
-        drop2FAText: 'Attenzione! Questa operazione disattiverà l\'autenticazione a due fattori per questo utente.'
+        drop2FAExplain: 'Attenzione! Questa operazione è riservata allo sblocco di un utente che ha perso sia il dispositivo sia il codice di recupero per l\'autenticazione a due fattori. Prima di continuare si raccomanda vivamente di verificare in qualche modo l\'identità della persona che effettua la richiesta (ad esempio contattando un collega della stessa organizzazione).'
       },
       organizations: {
         limitOrganizationTitle: "Cambiare i confini dell'organizzazione.",
         members: 'membro(i)',
-        nbMembers: 'Numero massimo di soci (0 per nessun limite)'
+        nbMembers: 'Numero massimo di soci (0 per nessun limite)',
+        fromCache: 'Ultima sincronizzazione di questo elenco con il provider di identità: '
       },
       sites: {
         createSite: 'Definire un nuovo sito',
@@ -201,7 +202,7 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       createUserMsg2: 'Crea un account',
       createUserInvit: 'Crea un account per accettare l\'invito nell\'organizzazione {name}',
       createUserOrganization: 'Vuoi creare un\'organizzazione?',
-      createuserOrganizationHelp: 'Se crei un\'organizzazione potrai invitare altri utenti a unirsi e condividere risorse.',
+      createUserOrganizationHelp: 'Se crei un\'organizzazione potrai invitare altri utenti a unirsi e condividere risorse.',
       tosMsg: 'Prima di creare il tuo account leggi <a href="{tosUrl}" target="_blank">le nostre condizioni generali di utilizzo</a>.',
       tosConfirm: "Confermo di aver letto i termini e le condizioni d'uso di questo sito.",
       createUserConfirm: 'Crea un account',
@@ -225,7 +226,12 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       cancelDeletion: 'Annulla la cancellazione dell\'utente',
       siteLogo: 'Logo del sito',
       partnerInvitation: 'Invito partner',
-      changeHost: 'Account associato al back-office'
+      changeHost: 'Account associato al back-office',
+      authorizeApp: 'Autorizza applicazione',
+      authorizeAppMsg: 'L\'applicazione {appName} vuole accedere al tuo account. Vuoi autorizzarla?',
+      authorizeAppConfirm: 'Autorizza',
+      appRedirected: 'Reindirizzato',
+      appRedirectedMsg: 'Puoi chiudere questa scheda.'
     },
     organization: {
       addMember: "Invitare un utente ad aderire all'organizzazione...",

@@ -167,12 +167,13 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
         editUserEmailTitle: 'Ändere die E-Mail-Adresse des Benutzers {name}',
         editUserEmailText: 'Warnung! E-Mail ist ein wichtiger Benutzerschlüssel. Durch das Ändern dieser Informationen laufen Sie Gefahr, eine falsche, nicht funktionierende oder inkonsistente Adresse mit anderen Einträgen einzufügen. Diese Funktion wird nur Administratoren angeboten, um die Blockierung eines Benutzers aufzuheben, auf dessen Postfach nicht mehr zugegriffen werden kann.',
         drop2FATitle: 'Zwei-Faktor-Authentifizierung deaktivieren',
-        drop2FAText: 'Warnung! Diese Operation deaktiviert die Zwei-Faktor-Authentifizierung für diesen Benutzer.'
+        drop2FAExplain: 'Warnung! Dieser Vorgang ist dafür vorgesehen, einen Benutzer zu entsperren, der sowohl sein Gerät als auch seinen Wiederherstellungscode für die Zwei-Faktor-Authentifizierung verloren hat. Bevor Sie fortfahren, wird dringend empfohlen, die Identität der anfragenden Person auf irgendeine Weise zu überprüfen (zum Beispiel durch Kontaktaufnahme mit einem Kollegen in derselben Organisation).'
       },
       organizations: {
         limitOrganizationTitle: 'Organisatorische Grenzen ändern',
         members: 'mitglied(er)',
-        nbMembers: 'Maximale Anzahl von Mitgliedern (0 für keine Begrenzung)'
+        nbMembers: 'Maximale Anzahl von Mitgliedern (0 für keine Begrenzung)',
+        fromCache: 'Letzte Synchronisierung dieser Liste mit dem Identitätsanbieter: '
       },
       sites: {
         createSite: 'Eine neue Website definieren',
@@ -201,7 +202,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       createUserMsg2: 'Ein Konto erstellen',
       createUserInvit: 'Erstellen Sie ein Konto, um die Einladung in der Organisation {name} anzunehmen',
       createUserOrganization: 'Möchten Sie eine Organisation erstellen?',
-      createuserOrganizationHelp: 'Wenn Sie eine Organisation erstellen, können Sie andere Benutzer einladen, Ihnen beizutreten und Ressourcen zu teilen.',
+      createUserOrganizationHelp: 'Wenn Sie eine Organisation erstellen, können Sie andere Benutzer einladen, Ihnen beizutreten und Ressourcen zu teilen.',
       tosMsg: 'Bevor Sie Ihr Konto erstellen, lesen Sie bitte <a href="{tosUrl}" target="_blank">unsere allgemeinen Nutzungsbedingungenn</a>.',
       tosConfirm: 'Ich bestätige, dass ich die allgemeinen Nutzungsbedingungen für diese Website gelesen habe.',
       createUserConfirm: 'Konto erstellen',
@@ -225,7 +226,12 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       cancelDeletion: 'Löschen des Benutzers abbrechen',
       siteLogo: 'Website-Logo',
       partnerInvitation: 'Partner-Einladung',
-      changeHost: 'Konto mit Back-Office verknüpft'
+      changeHost: 'Konto mit Back-Office verknüpft',
+      authorizeApp: 'Anwendung autorisieren',
+      authorizeAppMsg: 'Die Anwendung {appName} möchte auf Ihr Konto zugreifen. Möchten Sie dies zulassen?',
+      authorizeAppConfirm: 'Autorisieren',
+      appRedirected: 'Weitergeleitet',
+      appRedirectedMsg: 'Sie können diesen Tab schließen.'
     },
     organization: {
       addMember: 'Laden Sie einen Benutzer zum Beitritt zur Organisation ein',
@@ -242,6 +248,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       invitePartnerSuccess: 'Eine Einladung wurde an {email} geschickt',
       memberConflict: 'Dieser Benutzer ist bereits Mitglied',
       departmentLabelTitle: 'Bezeichnung für das Konzept "Abteilung"',
+      departmentLabelHelp: 'Leer lassen, um "{defaultDepartmentLabel}" anzuzeigen. Füllen Sie es aus, um eine andere Bezeichnung wie "Abteilung", "Agentur" usw. zu verwenden.',
       addDepartment: '{departmentLabel} erstellen',
       editDepartment: 'Bearbeiten {departmentLabel}',
       deleteDepartment: 'Löschen {departmentLabel}',

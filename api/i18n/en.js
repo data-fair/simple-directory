@@ -167,12 +167,13 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
         editUserEmailTitle: 'Change the email address of the user {name}',
         editUserEmailText: 'Warning! Email is an important user key, by modifying this information you run the risk of inserting an incorrect, non-functional or inconsistent address with other entries. This feature is only presented to administrators to unblock a user whose mailbox becomes inaccessible.',
         drop2FATitle: 'Disable two factor authentication',
-        drop2FAText: 'Warning! This operation will disable the two factor authentication for this user.'
+        drop2FAExplain: 'Warning! This operation is reserved for unlocking a user who has lost both their device and recovery code for two-factor authentication. Before continuing, it is strongly recommended to verify the identity of the person making the request in some way (for example, by contacting a colleague in the same organization).'
       },
       organizations: {
         limitOrganizationTitle: 'Edit the limits of the organization',
         members: 'member(s)',
-        nbMembers: 'maximum number of members (0 for no limit)'
+        nbMembers: 'maximum number of members (0 for no limit)',
+        fromCache: 'Last synchronization of this list with the identity provider: '
       },
       sites: {
         createSite: 'Define a new site',
@@ -201,7 +202,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       createUserMsg2: 'Create an account.',
       createUserInvit: 'Create an account to accept the invitation in organization {name}',
       createUserOrganization: 'Do you want to create and organization ?',
-      createuserOrganizationHelp: 'If you create an organization you will be able to invite other users to join you and share resources.',
+      createUserOrganizationHelp: 'If you create an organization you will be able to invite other users to join you and share resources.',
       tosMsg: 'Before creating an account please read <a href="{tosUrl}" target="_blank">our terms of services</a>.',
       tosConfirm: 'I confirm that I have read the terms of services for this site.',
       createUserConfirm: 'Create the account',

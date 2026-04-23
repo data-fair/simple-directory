@@ -167,12 +167,13 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
         editUserEmailTitle: 'Altere o endereço de e-mail do usuário {name}',
         editUserEmailText: 'Aviso! O e-mail é uma chave de usuário importante, ao modificar essas informações você corre o risco de inserir um endereço incorreto, não funcional ou inconsistente com outras entradas. Este recurso é apresentado apenas aos administradores para desbloquear um usuário cuja caixa de correio se torna inacessível.',
         drop2FATitle: 'Desactivar a autenticação de dois fatores',
-        drop2FAText: 'Atenção! Esta operação irá desactivar a autenticação de dois fatores para este utilizador.'
+        drop2FAExplain: 'Atenção! Esta operação está reservada para desbloquear um utilizador que perdeu tanto o dispositivo como o código de recuperação para a autenticação de dois fatores. Antes de continuar, recomenda-se vivamente verificar de algum modo a identidade da pessoa que faz o pedido (por exemplo, contactando um colega da mesma organização).'
       },
       organizations: {
         limitOrganizationTitle: 'Mudar os limites organizacionais',
         members: 'membro(s)',
-        nbMembers: 'Número máximo de membros (0 para sem limite)'
+        nbMembers: 'Número máximo de membros (0 para sem limite)',
+        fromCache: 'Última sincronização desta lista com o provedor de identidade: '
       },
       sites: {
         createSite: 'Definir um novo site',
@@ -201,7 +202,7 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       createUserMsg2: 'Crie uma conta',
       createUserInvit: 'Create an account to accept the invitation in organization {name}',
       createUserOrganization: 'Do you want to create and organization ?',
-      createuserOrganizationHelp: 'If you create an organization you will be able to invite other users to join you and share resources.',
+      createUserOrganizationHelp: 'Se criar uma organização, poderá convidar outros utilizadores para se juntarem a si e partilharem recursos.',
       tosMsg: 'Antes de criar a sua conta leia por favor <a href="{tosUrl}" target="_blank">os nossos termos e condições de utilização</a>.',
       tosConfirm: 'Eu confirmo que li os termos e condições de utilização deste site.',
       createUserConfirm: 'Criar uma conta',
@@ -225,7 +226,12 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       cancelDeletion: 'Cancelar a eliminação do utilizador',
       siteLogo: 'Logótipo do site',
       partnerInvitation: 'Convite de parceiro',
-      changeHost: 'Conta associada ao back-office'
+      changeHost: 'Conta associada ao back-office',
+      authorizeApp: 'Autorizar aplicação',
+      authorizeAppMsg: 'A aplicação {appName} pretende aceder à sua conta. Deseja autorizá-la?',
+      authorizeAppConfirm: 'Autorizar',
+      appRedirected: 'Redirecionado',
+      appRedirectedMsg: 'Pode fechar este separador.'
     },
     organization: {
       addMember: 'Convidar um utilizador para se juntar à organização...',
@@ -242,6 +248,7 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       invitePartnerSuccess: 'Foi enviado um convite para {email}',
       memberConflict: 'Este utilizador já é um membro',
       departmentLabelTitle: 'Etiqueta para o conceito "departamento"',
+      departmentLabelHelp: 'Deixe vazio para mostrar "{defaultDepartmentLabel}". Preencha para utilizar outro vocabulário como "serviço", "agência", etc.',
       addDepartment: 'Criar {departmentLabel}',
       editDepartment: 'Editar {departmentLabel}',
       deleteDepartment: 'Eliminar {departmentLabel}',
