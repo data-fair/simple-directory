@@ -5,6 +5,9 @@ that trust is confined to a single *site*. Required reading before changing
 auth providers, `cleanUser`, `authProviderLoginCallback`, `adminMode`, or the
 change-host flow.
 
+See also [`../core-id-providers.md`](../core-id-providers.md) for the
+orthogonal `coreIdProvider` model (provider-as-authoritative-identity).
+
 ## Why email is high-value
 
 `user.email` drives admin rights (`config.admins`), account linking on SSO

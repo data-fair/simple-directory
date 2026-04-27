@@ -284,12 +284,29 @@ export const patchCoreAuthUser = async (provider: AuthProviderCore, user: User, 
   userProviders[provider.id] = { ...existingAuthInfo, ...authInfo }
   if (provider.coreIdProvider) {
     Object.assign(patch, authInfo.user)
+    // The provider now owns this account's identity. Strip any pre-existing local credentials
+    // so that password / passwordless paths cannot authenticate alongside the provider — the
+    // schema description on `coreIdProvider` is explicit that no other authentication method
+    // may coexist. mongo storage's patchUser translates null → $unset.
+    ;(patch as any).password = null
+    ;(patch as any).passwordUpdate = null
+    ;(patch as any)['2FA'] = null
+    // Drop existing readOnly memberships before re-applying the ones currently asserted by
+    // the core IdP. addMember keys memberships by (org, dep, role) under multiRoles=true and
+    // would otherwise accumulate a duplicate when the role changes between logins; clearing
+    // first also drops memberships the provider no longer asserts. readOnly memberships are
+    // only set via this auto-sync path (authProviderMemberInfo) so dropping them is safe.
+    user.organizations = (user.organizations || []).filter(o => !o.readOnly)
     for (const memberInfo of memberInfos) {
       if (memberInfo.readOnly) {
         await storages.globalStorage.addMember(memberInfo.org, user, memberInfo.role, memberInfo.department, memberInfo.readOnly)
         await setNbMembersLimit(memberInfo.org.id)
       }
     }
+    // Persist the cleared list through the patch — when memberInfos contains no readOnly
+    // entries, addMember is never called and the in-memory mutation above would otherwise
+    // not be persisted.
+    patch.organizations = user.organizations
   } else {
     if (authInfo.user.firstName && !user.firstName) patch.firstName = authInfo.user.firstName
     if (authInfo.user.lastName && !user.lastName) patch.lastName = authInfo.user.lastName

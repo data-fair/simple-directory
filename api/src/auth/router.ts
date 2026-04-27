@@ -121,6 +121,15 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     }
     if (!user) return returnError('badCredentials', 400)
   }
+  // The schema description on `coreIdProvider` forbids any other authentication method for an
+  // account it owns. patchCoreAuthUser strips local credentials at binding time; this guard is
+  // defense-in-depth against residual `user.password` from older data or from a future code path
+  // that forgets to clear it. Use the same `badCredentials` shape to avoid leaking which accounts
+  // are bound to a core IdP.
+  if (user.coreIdProvider) {
+    eventsLog.info('sd.auth.password.core-idp', `password login refused for a user bound to a core identity provider ${user.coreIdProvider.type}/${user.coreIdProvider.id}`, logContext)
+    return returnError('badCredentials', 400)
+  }
   if (storage.getPassword) {
     if (config.passwordUpdateInterval && (
       user.passwordUpdate?.force ||
@@ -296,6 +305,13 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   if (!user || user.emailConfirmed === false) {
     await sendMailI18n('noCreation', reqI18n(req).messages, body.email, { link: redirect, host: redirectUrl.host, origin: redirectUrl.origin })
     eventsLog.info('sd.auth.passwordless.no-user', `a passwordless authentication failed because of missing user and a warning mail was sent ${req.body.email}`, logContext)
+    return res.status(204).send()
+  }
+  // A user bound to a core identity provider may not authenticate via the magic-link path.
+  // Same enumeration-resistant 204 as for missing users — but no email is sent (a "noCreation"
+  // mail to a real account would itself be informative).
+  if (user.coreIdProvider) {
+    eventsLog.info('sd.auth.passwordless.core-idp', `passwordless authentication refused for a user bound to a core identity provider ${user.coreIdProvider.type}/${user.coreIdProvider.id}`, logContext)
     return res.status(204).send()
   }
 
