@@ -86,4 +86,28 @@ test.describe('global OIDC configuration in coreIdProvider mode', () => {
     assert.equal(me.email, 'oidc1@test.com')
     assert.equal(me.name, 'Test Oidc2')
   })
+
+  test('should refuse password login for an existing user adopted by a core id provider', async () => {
+    const password = 'TestPasswd01'
+    // Pre-existing local-password user with the same email the core OIDC provider will return.
+    await createUser('oidc1@test.com', false, password)
+
+    // Sanity check: password login works before the user is adopted by the core provider.
+    const passwordPost = (ax: any) => ax.post('/api/auth/password', { email: 'oidc1@test.com', password })
+    await passwordPost(await axios())
+
+    // Trigger an OIDC core-id login on the same email — this adopts the existing user.
+    const anonymousAx = await axios()
+    const loginInitial = await anonymousAx.get(`/api/auth/oauth/localhost${mockOidcPort}/login`, { validateStatus: (s: number) => s === 302 })
+    const providerAuthUrl = new URL(loginInitial.headers.location)
+    const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (s: number) => s === 302 })
+    const providerAuthRedirect = new URL(loginProvider.headers.location)
+    const oauthCallback = await anonymousAx(providerAuthRedirect.href, { validateStatus: (s: number) => s === 302 })
+    const callbackRedirect = new URL(oauthCallback.headers.location)
+    await anonymousAx(callbackRedirect.href, { validateStatus: (s: number) => s === 302 })
+
+    // After adoption, password login must be refused — the local credential is not a valid
+    // authentication path for an account whose identity is owned by a core id provider.
+    await assert.rejects(passwordPost(await axios()), (err: any) => err.status === 400)
+  })
 })

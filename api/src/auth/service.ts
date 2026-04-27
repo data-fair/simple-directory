@@ -284,6 +284,13 @@ export const patchCoreAuthUser = async (provider: AuthProviderCore, user: User, 
   userProviders[provider.id] = { ...existingAuthInfo, ...authInfo }
   if (provider.coreIdProvider) {
     Object.assign(patch, authInfo.user)
+    // The provider now owns this account's identity. Strip any pre-existing local credentials
+    // so that password / passwordless paths cannot authenticate alongside the provider — the
+    // schema description on `coreIdProvider` is explicit that no other authentication method
+    // may coexist. mongo storage's patchUser translates null → $unset.
+    ;(patch as any).password = null
+    ;(patch as any).passwordUpdate = null
+    ;(patch as any)['2FA'] = null
     for (const memberInfo of memberInfos) {
       if (memberInfo.readOnly) {
         await storages.globalStorage.addMember(memberInfo.org, user, memberInfo.role, memberInfo.department, memberInfo.readOnly)
