@@ -4,7 +4,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "mkdir -p ../dev/logs && NODE_ENV=development ENABLE_TEST_API=1 DEBUG=upgrade* node --watch --experimental-strip-types index.ts 2>&1 | tee ../dev/logs/dev-api.log"
+    "dev": "mkdir -p ../dev/logs && NODE_ENV=development ENABLE_TEST_API=1 IGNORE_ASSERT_REQ_INTERNAL=1 DEBUG=upgrade* node --watch --experimental-strip-types index.ts 2>&1 | tee ../dev/logs/dev-api.log"
   },
   "imports": {
     "#config": "./src/config.ts",
@@ -53,6 +53,7 @@
     "prom-client": "^15.1.3",
     "qrcode": "^1.5.4",
     "rate-limiter-flexible": "^5.0.5",
+    "sanitize-html": "^2.13.0",
     "@authenio/samlify-node-xmllint": "^2.0.0",
     "samlify": "^2.11.0",
     "seedrandom": "^3.0.5",

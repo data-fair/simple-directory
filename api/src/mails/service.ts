@@ -75,6 +75,9 @@ export const getI18NParams = (key: string, messages: any, params: SendMailI18nPa
 export const sendMailI18n = async (key: string, messages: any, to: string, params: SendMailI18nParams) => {
   if (params.link) {
     const linkUrl = new URL(params.link)
+    if (linkUrl.protocol !== 'http:' && linkUrl.protocol !== 'https:') {
+      throw new Error(`refusing to send mail with non-http(s) link: ${linkUrl.protocol}`)
+    }
     params.host = linkUrl.host
     params.origin = linkUrl.origin
     params.path = linkUrl.pathname
