@@ -89,13 +89,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/dev': RouteRecordInfo<
-      '/dev',
-      '/dev',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
     '/invitation': RouteRecordInfo<
       '/invitation',
       '/invitation',
@@ -209,12 +202,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/create-organization.vue': {
       routes:
         | '/create-organization'
-      views:
-        | never
-    }
-    'src/pages/dev.vue': {
-      routes:
-        | '/dev'
       views:
         | never
     }
