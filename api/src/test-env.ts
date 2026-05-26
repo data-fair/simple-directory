@@ -133,7 +133,9 @@ router.post('/clear-site-cache', async (req, res) => {
 router.get('/config', (req, res) => {
   res.json({
     publicUrl: config.publicUrl,
-    secretKeys: config.secretKeys
+    secretKeys: config.secretKeys,
+    mongo: { url: config.mongo.url },
+    mailsRateLimit: config.mailsRateLimit
   })
 })
 
