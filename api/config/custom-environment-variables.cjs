@@ -267,6 +267,10 @@ module.exports = {
     attempts: 'AUTHRATELIMIT_ATTEMPTS',
     duration: 'AUTHRATELIMIT_DURATION'
   },
+  mailsRateLimit: {
+    points: 'MAILSRATELIMIT_POINTS',
+    duration: 'MAILSRATELIMIT_DURATION'
+  },
   oauth: {
     providers: jsonEnv('OAUTH_PROVIDERS'),
     github: {

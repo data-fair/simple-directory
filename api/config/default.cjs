@@ -185,6 +185,12 @@ module.exports = {
     attempts: 5,
     duration: 60
   },
+  // per-recipient mail rate limit, prevents a bug or runaway webhook from spamming a user's mailbox
+  // points = max number of emails per recipient address within the rolling window of `duration` seconds
+  mailsRateLimit: {
+    points: 500,
+    duration: 86400
+  },
   // Example of full oauth provider configuration
   // oauth: {providers: [{
   //   id: 'github',

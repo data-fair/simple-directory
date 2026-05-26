@@ -40,6 +40,7 @@
     "saml2",
     "webhooks",
     "authRateLimit",
+    "mailsRateLimit",
     "plannedDeletionDelay",
     "cleanup",
     "avatars",
@@ -475,6 +476,21 @@
       ],
       "properties": {
         "attempts": {
+          "type": "integer"
+        },
+        "duration": {
+          "type": "integer"
+        }
+      }
+    },
+    "mailsRateLimit": {
+      "type": "object",
+      "required": [
+        "points",
+        "duration"
+      ],
+      "properties": {
+        "points": {
           "type": "integer"
         },
         "duration": {
