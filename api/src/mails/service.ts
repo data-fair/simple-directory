@@ -7,6 +7,8 @@ import { flatten } from 'flat'
 import EventEmitter from 'node:events'
 import mailsTransport from './transport.ts'
 import { getSiteByUrl, getSiteByHost } from '#services'
+import { internalError } from '@data-fair/lib-node/observer.js'
+import { mailLimiter } from '../utils/limiter.ts'
 
 export const events = new EventEmitter()
 
@@ -83,6 +85,22 @@ export const sendMailI18n = async (key: string, messages: any, to: string, param
 }
 
 export const sendMail = async (to: string, params: SendMailParams, attachments?: { filename: string, path: string }[]) => {
+  // per-recipient rate limiting — protects users from a bug or runaway webhook spamming their mailbox
+  const recipients = to.split(',').map(r => r.trim().toLowerCase()).filter(r => r.length > 0)
+  const allowed: string[] = []
+  for (const recipient of recipients) {
+    if (await mailLimiter()(recipient)) {
+      allowed.push(recipient)
+    } else {
+      internalError('mail-rate-limited', `recipient ${recipient} exceeded mail rate limit, dropping (subject: ${params.subject})`)
+    }
+  }
+  if (allowed.length === 0) {
+    internalError('mail-rate-limited', `all recipients dropped, mail not sent (subject: ${params.subject}, original to: ${to})`)
+    return
+  }
+  to = allowed.join(', ')
+
   let site = params.link ? (await getSiteByUrl(params.link)) : undefined
   if (!site && params.host) {
     site = await getSiteByHost(params.host, params.path ?? '')
