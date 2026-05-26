@@ -4,6 +4,7 @@
 // Must be set before config module is loaded
 process.env.NODE_ENV = 'test'
 process.env.ENABLE_TEST_API = '1'
+process.env.IGNORE_ASSERT_REQ_INTERNAL = '1'
 process.env.NODE_CONFIG_DIR = process.env.NODE_CONFIG_DIR || './api/config/'
 
 import { strict as assert } from 'node:assert'

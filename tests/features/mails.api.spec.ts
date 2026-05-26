@@ -4,6 +4,12 @@ import { test } from '@playwright/test'
 import { axios, testEnvAx, maildevAx, deleteAllEmails } from '../support/axios.ts'
 import FormData from 'form-data'
 
+const findEmail = async (subject: string) => {
+  await new Promise(resolve => setTimeout(resolve, 50))
+  const emails: any[] = (await maildevAx.get('/email')).data
+  return emails.find(m => m.subject === subject)
+}
+
 test.describe('mails', () => {
   test.beforeEach(async () => {
     await deleteAllEmails()
@@ -13,7 +19,7 @@ test.describe('mails', () => {
 
   test('Try to send mail whithout the secret', async () => {
     const ax = await axios()
-    await assert.rejects(ax.post('/api/mails', {}), (res: any) => res.status === 403)
+    await assert.rejects(ax.post('/api/mails', {}), (res: any) => res.status === 401)
   })
 
   test('Send email to a user', async () => {
@@ -62,6 +68,80 @@ test.describe('mails', () => {
     const email = emails.find((m: any) => m.subject === 'test3')
     assert.ok(email)
     assert.equal(email.envelope.to.length, 2)
+  })
+
+  test('Plain text body is HTML-escaped in the rendered email', async () => {
+    const ax = await axios()
+    const res = await ax.post('/api/mails', {
+      to: ['injection-text@test.com'],
+      subject: 'injection-text',
+      text: 'hello <script>alert(1)</script>\nnew line'
+    }, { params: { key: 'testkey' } })
+    assert.equal(res.status, 200)
+    const email = await findEmail('injection-text')
+    assert.ok(email)
+    // plain-text part stays as-is so the recipient sees the original text in a text client
+    assert.equal(email.text, 'hello <script>alert(1)</script>\nnew line')
+    // html part has the script escaped and newlines turned into <br>
+    assert.ok(email.html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'),
+      'html should contain the escaped script')
+    assert.ok(!email.html.includes('<script>alert(1)</script>'),
+      'html must not contain a raw <script> tag')
+    assert.ok(email.html.includes('hello &lt;script&gt;alert(1)&lt;/script&gt;<br>new line'),
+      'newlines should become <br>')
+  })
+
+  test('Caller-supplied html is sanitized', async () => {
+    const ax = await axios()
+    const res = await ax.post('/api/mails', {
+      to: ['injection-html@test.com'],
+      subject: 'injection-html',
+      html: '<p>hello</p><script>alert(1)</script><b>kept</b><img src=x onerror=alert(2)>'
+    }, { params: { key: 'testkey' } })
+    assert.equal(res.status, 200)
+    const email = await findEmail('injection-html')
+    assert.ok(email)
+    assert.ok(email.html.includes('<p>hello</p>'), 'safe tags should survive')
+    assert.ok(email.html.includes('<b>kept</b>'), 'safe tags should survive')
+    assert.ok(!email.html.includes('<script'), '<script> should be stripped')
+    assert.ok(!email.html.includes('onerror'), 'event handlers should be stripped')
+    // MJML compiles the template logo to an <img>; the attacker <img src=x onerror=…> should
+    // not appear — check by its unique src
+    assert.ok(!email.html.match(/<img[^>]*src=["']?x["']?/), 'attacker image should be stripped')
+  })
+
+  test('javascript: hrefs are stripped from caller html', async () => {
+    const ax = await axios()
+    const res = await ax.post('/api/mails', {
+      to: ['injection-href@test.com'],
+      subject: 'injection-href',
+      html: '<a href="javascript:alert(1)">click</a> <a href="https://example.com/ok">ok</a>'
+    }, { params: { key: 'testkey' } })
+    assert.equal(res.status, 200)
+    const email = await findEmail('injection-href')
+    assert.ok(email)
+    assert.ok(!email.html.includes('javascript:'), 'javascript: scheme must be dropped')
+    assert.ok(email.html.includes('https://example.com/ok'), 'http(s) href should survive')
+  })
+
+  test('Contact form: user text is HTML-escaped in the html part', async () => {
+    await testEnvAx.patch('/config', { anonymousContactForm: true })
+    const ax = await axios()
+    const token = (await ax.get('/api/auth/anonymous-action')).data
+    const res = await ax.post('/api/mails/contact', {
+      token,
+      from: 'visitor@test.com',
+      subject: 'contact-injection',
+      text: 'hello <script>alert(1)</script>\nsecond line'
+    })
+    assert.equal(res.status, 200)
+    const email = await findEmail('contact-injection')
+    assert.ok(email)
+    assert.ok(email.html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'),
+      'html should contain escaped <script>')
+    assert.ok(!email.html.includes('<script>alert(1)</script>'),
+      'html must not contain a raw <script> tag')
+    assert.ok(email.html.includes('<br>second line'), 'newline should be turned into <br>')
   })
 
   test('Send email to address and with attachments', async () => {

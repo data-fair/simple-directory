@@ -59,6 +59,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.23",
     "@types/qrcode": "^1.5.6",
+    "@types/sanitize-html": "^2.13.0",
     "@types/seedrandom": "^3.0.8",
     "@types/serialize-javascript": "^5.0.4",
     "@types/simple-oauth2": "^5.0.8",
