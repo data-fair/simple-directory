@@ -66,6 +66,7 @@ export default {
     departments: 'Departments',
     autoAdmin: 'Automatically add me as admin',
     asAdmin: 'Log as this user',
+    transfer: 'Transfer to another site',
     delAsAdmin: 'Get back to your normal session',
     avatar: 'Avatar',
     birthday: 'Birthday',
@@ -167,6 +168,10 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
         editUserEmailTitle: 'Change the email address of the user {name}',
         editUserEmailText: 'Warning! Email is an important user key, by modifying this information you run the risk of inserting an incorrect, non-functional or inconsistent address with other entries. This feature is only presented to administrators to unblock a user whose mailbox becomes inaccessible.',
         drop2FATitle: 'Disable two factor authentication',
+        transferTitle: 'Transfer the user {name} to another site',
+        transferText: 'The user will be attached to the selected site. Their SSO identities are reset and they keep their organization memberships. Super administrator accounts cannot be transferred.',
+        transferTargetSite: 'Target site',
+        transferMainSite: 'Main site',
         drop2FAExplain: 'Warning! This operation is reserved for unlocking a user who has lost both their device and recovery code for two-factor authentication. Before continuing, it is strongly recommended to verify the identity of the person making the request in some way (for example, by contacting a colleague in the same organization).'
       },
       organizations: {

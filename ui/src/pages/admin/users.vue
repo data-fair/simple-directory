@@ -127,8 +127,19 @@
           </td>
           <template v-if="!$uiConfig.readonly">
             <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
-            <td v-if="$uiConfig.manageSites">
+            <td
+              v-if="$uiConfig.manageSites"
+              class="text-no-wrap"
+            >
               {{ props.item.host && (props.item.host + (props.item.path ?? '')) }}
+              <v-btn
+                v-if="!props.item.isAdmin"
+                :title="$t('common.transfer')"
+                :icon="mdiSwapHorizontal"
+                size="small"
+                variant="text"
+                @click="showTransferDialog(props.item)"
+              />
             </td>
             <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
             <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
@@ -316,6 +327,51 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog
+      v-model="transferDialog"
+      max-width="500px"
+    >
+      <v-card v-if="currentUser">
+        <v-card-title>
+          {{ $t('pages.admin.users.transferTitle', {name: currentUser.name}) }}
+        </v-card-title>
+        <v-card-text>
+          <v-alert
+            :value="true"
+            type="warning"
+            class="mb-3"
+          >
+            {{ $t('pages.admin.users.transferText') }}
+          </v-alert>
+          <v-select
+            v-model="transferTarget"
+            :items="transferSiteItems"
+            :label="$t('pages.admin.users.transferTargetSite')"
+            item-title="title"
+            return-object
+            density="comfortable"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            variant="text"
+            @click="transferDialog = false"
+          >
+            {{ $t('common.confirmCancel') }}
+          </v-btn>
+          <v-btn
+            color="warning"
+            variant="flat"
+            :disabled="!transferTarget"
+            @click="transferDialog = false;transferUser.execute()"
+          >
+            {{ $t('common.confirmOk') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -381,6 +437,33 @@ const showDrop2FADialog = (user: User) => {
 const drop2FACurrentUser = useAsyncAction(async () => {
   if (currentUser.value === undefined) return
   await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { '2FA': { active: false } } })
+})
+
+type TransferTarget = { title: string, host?: string, path?: string }
+const sites = useFetch<{ results: Site[] }>($apiPath + '/sites', { query: { showAll: true } })
+const transferSiteItems = computed<TransferTarget[]>(() => {
+  const items: TransferTarget[] = [{ title: t('pages.admin.users.transferMainSite'), host: '' }]
+  for (const site of sites.data.value?.results ?? []) {
+    items.push({ title: site.host + (site.path ?? ''), host: site.host, path: site.path })
+  }
+  return items
+})
+const transferDialog = ref(false)
+const transferTarget = ref<TransferTarget>()
+const showTransferDialog = (user: User) => {
+  currentUser.value = user
+  transferTarget.value = undefined
+  transferDialog.value = true
+}
+const transferUser = useAsyncAction(async () => {
+  if (currentUser.value === undefined || transferTarget.value === undefined) return
+  const body: { host?: string, path?: string } = {}
+  if (transferTarget.value.host) {
+    body.host = transferTarget.value.host
+    if (transferTarget.value.path) body.path = transferTarget.value.path
+  }
+  await $fetch(`users/${currentUser.value.id}/transfer`, { method: 'POST', body })
+  users.refresh()
 })
 
 const headers: { title: string, value?: string, sortable?: boolean }[] = []

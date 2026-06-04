@@ -123,6 +123,8 @@ services:
     network_mode: host
     environment:
       - PORT=${EVENTS_PORT}
+      # host-networked, so mongo is reached on its published host port (MONGO_PORT), not 27017
+      - MONGO_URL=mongodb://localhost:${MONGO_PORT}/events
       - PUBLIC_URL=http://localhost:${NGINX_PORT1}/notify
       - WS_PUBLIC_URL=ws://localhost:${NGINX_PORT1}/notify
       - PRIVATE_DIRECTORY_URL=http://localhost:${NGINX_PORT1}/simple-directory

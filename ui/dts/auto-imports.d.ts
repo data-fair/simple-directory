@@ -81,6 +81,7 @@ declare global {
   const mdiSend: typeof import('@mdi/js')['mdiSend']
   const mdiShieldAlert: typeof import('@mdi/js')['mdiShieldAlert']
   const mdiSort: typeof import('@mdi/js')['mdiSort']
+  const mdiSwapHorizontal: typeof import('@mdi/js')['mdiSwapHorizontal']
   const mdiThemeLightDark: typeof import('@mdi/js')['mdiThemeLightDark']
   const mdiWeb: typeof import('@mdi/js')['mdiWeb']
   const nextTick: typeof import('vue')['nextTick']
@@ -232,6 +233,7 @@ declare module 'vue' {
     readonly mdiSend: UnwrapRef<typeof import('@mdi/js')['mdiSend']>
     readonly mdiShieldAlert: UnwrapRef<typeof import('@mdi/js')['mdiShieldAlert']>
     readonly mdiSort: UnwrapRef<typeof import('@mdi/js')['mdiSort']>
+    readonly mdiSwapHorizontal: UnwrapRef<typeof import('@mdi/js')['mdiSwapHorizontal']>
     readonly mdiThemeLightDark: UnwrapRef<typeof import('@mdi/js')['mdiThemeLightDark']>
     readonly mdiWeb: UnwrapRef<typeof import('@mdi/js')['mdiWeb']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
