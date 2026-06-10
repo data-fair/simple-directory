@@ -37,7 +37,13 @@ isAdmin = !resource.host
 ```
 
 A record tied to any secondary site can never be `isAdmin` — this is the core
-guarantee preventing cross-site admin takeover.
+guarantee preventing cross-site admin takeover. This storage-level rule is left
+intact; the `config.adminModeOnSites` opt-in (default `false`) does **not**
+touch it. Instead, when enabled, `getTokenPayload` grants the **session** an
+`isAdmin` claim for a configured superadmin (`config.admins` / `_superadmin`)
+on a site, so a single superadmin can administer several operator-trusted sites
+(e.g. dev/qualif/prod) while internal storage-level admin checks stay confined.
+It must not be enabled when any site is not operator-trusted.
 
 Org membership is not site-scoped, but memberships attach to user records, so
 a compromised site A cannot inherit memberships from another site.
@@ -115,7 +121,15 @@ A main-site IdP is structurally capable of asserting an admin email. Defenses:
   `isAdmin` requires `!host`.
 - **`adminMode` is main-site only** — password and SSO login paths both
   refuse `adminMode=1` on any non-main-site session (redundant with the
-  `!host` guard, kept as defense in depth).
+  `!host` guard, kept as defense in depth). **Opt-out:** `config.adminModeOnSites`
+  (env `ADMIN_MODE_ON_SITES`, default `false`) lets a configured superadmin
+  (`config.admins` / `_superadmin`) obtain a session `isAdmin` claim — and thus
+  `adminMode` — on a secondary-site session. It is implemented at a single
+  chokepoint, `getTokenPayload` (so every token path stays consistent), and
+  leaves the storage `isAdmin = !host` rule untouched. This relaxes invariant #2
+  and re-opens cross-site admin escalation through any non-operator-trusted
+  site, so it must only be enabled when every site belongs to the same trusted
+  operator (e.g. dev/qualif/prod of a single tenant).
 
 ## Change-host hardening
 
@@ -130,8 +144,12 @@ admin status permanently. Two safeguards:
 
 ## Invariants
 
-1. A secondary-site user record never carries admin status.
-2. `adminMode=1` is only ever set on a main-site session.
+1. A secondary-site user **record** never carries admin status (storage rule,
+   unchanged).
+2. `adminMode=1` (and the session `isAdmin` claim) is only ever set on a
+   main-site session, unless `config.adminModeOnSites` is explicitly enabled —
+   in which case `getTokenPayload` grants it to a configured superadmin on a
+   site too.
 3. A standard OAuth provider (`provider.type === 'oauth'`) never produces a
    superadmin session. Root-level OIDC / SAML providers may, by deployment
    decision.

@@ -33,7 +33,12 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site?: 
     name: user.name,
     organizations: (user.organizations || []).map(o => ({ ...o }))
   }
-  if (user.isAdmin) {
+  // config.adminModeOnSites (default false) is an explicit operator opt-in that grants a
+  // configured superadmin the admin role on a secondary-site session too. Gated here at the
+  // single payload chokepoint so every token path (login, keepalive, refresh) stays consistent,
+  // without touching the storage `isAdmin = !host` invariant. Only enable when every site is
+  // operator-trusted — see docs/architecture/email-trust-and-site-isolation.md.
+  if (user.isAdmin || (config.adminModeOnSites && (config.admins.includes(user.email?.toLowerCase() ?? '') || user.id === '_superadmin'))) {
     payload.isAdmin = 1
   }
   if (user.defaultOrg) {
