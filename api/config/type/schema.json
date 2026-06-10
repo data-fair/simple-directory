@@ -525,6 +525,9 @@
     "admins2FA": {
       "type": "boolean"
     },
+    "adminModeOnSites": {
+      "type": "boolean"
+    },
     "singleMembership": {
       "type": "boolean"
     },
