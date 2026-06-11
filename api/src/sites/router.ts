@@ -255,7 +255,8 @@ router.get('/_hashes', async (req, res, next) => {
   const site = await reqSite(req)
   res.send({
     publicInfo: site ? getPublicSiteInfoHash(site) : defaultPublicSiteInfoHash,
-    themeCss: site ? getThemeCssHash(site) : defaultThemeCssHash
+    themeCss: site ? getThemeCssHash(site) : defaultThemeCssHash,
+    preloadLinks: site?.theme.preloadLinks ?? config.theme.preloadLinks ?? []
   })
 })
 

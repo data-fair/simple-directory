@@ -18,7 +18,7 @@
     "#i18n": "./i18n/index.ts"
   },
   "dependencies": {
-    "@data-fair/lib-express": "^1.19.0",
+    "@data-fair/lib-express": "^1.23.0",
     "@data-fair/lib-node": "^2.12.1",
     "@data-fair/lib-utils": "^1.10.1",
     "@sd/shared": "*",

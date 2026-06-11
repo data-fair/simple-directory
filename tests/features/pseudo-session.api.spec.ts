@@ -110,6 +110,6 @@ test.describe('Pseudo session', () => {
     } catch (err: any) {
       caughtError = err
     }
-    assert.equal(caughtError.status, 401)
+    assert.equal(caughtError.status, 403)
   })
 })

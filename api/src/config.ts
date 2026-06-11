@@ -35,6 +35,7 @@ const baseTheme = config.util.cloneDeep(defaultTheme)
 if (themeOverrides.bodyFontFamilyCss || themeOverrides.bodyFontFamily) {
   delete baseTheme.bodyFontFamily
   delete baseTheme.bodyFontFamilyCss
+  delete baseTheme.preloadLinks
 }
 if (themeOverrides.headingFontFamilyCss || themeOverrides.headingFontFamily) {
   delete baseTheme.headingFontFamily
