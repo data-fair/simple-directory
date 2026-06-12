@@ -9,3 +9,4 @@ ui/src/components/vjsf
 .env
 .playwright-mcp
 docs/local
+docs/superpowers
