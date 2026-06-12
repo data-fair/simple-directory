@@ -401,7 +401,7 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
     eventsLog.alert('sd.user.change-host.mismatch', `change-host token host mismatch for user ${req.params.userId}`, logContext)
     return res.status(401).send('host mismatch')
   }
-  const patch: any = { host: decoded.host, oauth: null, oidc: null, saml: null }
+  const patch: any = { host: decoded.host, oauth: null, oidc: null, saml2: null }
   if (decoded.path) patch.path = decoded.path
   await storage.patchUser(req.params.userId, patch)
 
