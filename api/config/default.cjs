@@ -13,6 +13,8 @@ module.exports = {
   jwtDurations: {
     initialToken: '15m',
     exchangeToken: '30d',
+    // hard expiry of adminMode sessions: their exchange token is not renewable (see tokens/service.ts)
+    adminExchangeToken: '12h',
     idToken: '15m',
     invitationToken: '10d',
     partnerInvitationToken: '10d',
