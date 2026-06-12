@@ -66,6 +66,7 @@ export default {
     departments: 'Abteilungen',
     autoAdmin: 'Mich automatisch als Administrator hinzufügen',
     asAdmin: 'Anmeldung als dieser Benutzer',
+    transfer: 'Auf eine andere Website übertragen',
     delAsAdmin: 'Zurück zu meiner Administratorsitzung',
     avatar: 'Avatar',
     birthday: 'Geburtstag',
@@ -167,6 +168,10 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
         editUserEmailTitle: 'Ändere die E-Mail-Adresse des Benutzers {name}',
         editUserEmailText: 'Warnung! E-Mail ist ein wichtiger Benutzerschlüssel. Durch das Ändern dieser Informationen laufen Sie Gefahr, eine falsche, nicht funktionierende oder inkonsistente Adresse mit anderen Einträgen einzufügen. Diese Funktion wird nur Administratoren angeboten, um die Blockierung eines Benutzers aufzuheben, auf dessen Postfach nicht mehr zugegriffen werden kann.',
         drop2FATitle: 'Zwei-Faktor-Authentifizierung deaktivieren',
+        transferTitle: 'Benutzer {name} auf eine andere Website übertragen',
+        transferText: 'Der Benutzer wird der ausgewählten Website zugeordnet. Seine SSO-Identitäten werden zurückgesetzt und seine Organisationsmitgliedschaften bleiben erhalten. Super-Administrator-Konten können nicht übertragen werden.',
+        transferTargetSite: 'Zielwebsite',
+        transferMainSite: 'Hauptwebsite',
         drop2FAExplain: 'Warnung! Dieser Vorgang ist dafür vorgesehen, einen Benutzer zu entsperren, der sowohl sein Gerät als auch seinen Wiederherstellungscode für die Zwei-Faktor-Authentifizierung verloren hat. Bevor Sie fortfahren, wird dringend empfohlen, die Identität der anfragenden Person auf irgendeine Weise zu überprüfen (zum Beispiel durch Kontaktaufnahme mit einem Kollegen in derselben Organisation).'
       },
       organizations: {

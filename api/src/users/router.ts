@@ -1,4 +1,4 @@
-import { type Organization, type UserWritable } from '#types'
+import { type Organization, type UserWritable, type Site } from '#types'
 import { Router, type RequestHandler } from 'express'
 import config from '#config'
 import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession, reqUser, httpError } from '@data-fair/lib-express'
@@ -10,7 +10,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
-import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getDefaultLoginRedirect } from '#services'
+import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
 
 const router = Router()
 
@@ -401,7 +401,7 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
     eventsLog.alert('sd.user.change-host.mismatch', `change-host token host mismatch for user ${req.params.userId}`, logContext)
     return res.status(401).send('host mismatch')
   }
-  const patch: any = { host: decoded.host, oauth: null, oidc: null, saml: null }
+  const patch: any = { host: decoded.host, oauth: null, oidc: null, saml2: null }
   if (decoded.path) patch.path = decoded.path
   await storage.patchUser(req.params.userId, patch)
 
@@ -421,6 +421,57 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
   }
 
   res.status(204).send()
+})
+
+// Transfer a user from one site to another, as a superadmin operation.
+// host drives admin rights and site isolation (see
+// docs/architecture/email-trust-and-site-isolation.md), so this is gated by adminMode, refuses to
+// move a superadmin in any direction, and refuses an email collision on the target site. An empty
+// body (or empty host) moves the user back to the main site.
+router.post('/:userId/transfer', async (req, res, next) => {
+  const logContext: EventLogContext = { req }
+  const session = reqSessionAuthenticated(req)
+  if (!session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+
+  const { body } = (await import('#doc/users/post-transfer-req/index.ts')).returnValid(req, { name: 'req' })
+
+  const storage = storages.globalStorage
+  const user = await storage.getUser(req.params.userId)
+  if (!user) return res.status(404).send()
+
+  // A superadmin record must never be moved: onto a secondary site it would silently lose admin
+  // status (cleanUser's `!host` guard) — a lockout risk — and onto the main site a config.admins
+  // email would gain admin rights. Key the refusal on raw admin-eligibility, not the host-dependent
+  // isAdmin flag (which is already false for a config.admins user sitting on a secondary site).
+  const isSuperadmin = user.id === '_superadmin' || (!!user.email && config.admins.includes(user.email.toLowerCase()))
+  if (isSuperadmin) {
+    eventsLog.alert('sd.user.transfer.superadmin-blocked', `attempt to transfer superadmin ${user.email} refused`, logContext)
+    throw httpError(403, 'super administrator accounts cannot be transferred between sites')
+  }
+
+  // Resolve the target site (empty host → main site, which carries no host).
+  let targetSite: Site | undefined
+  if (body.host) {
+    targetSite = await getSiteByHost(body.host, body.path ?? '')
+    if (!targetSite) throw httpError(400, 'unknown target site')
+  }
+
+  // The email must stay unique within the target site scope.
+  const existing = await storage.getUserByEmail(user.email, targetSite)
+  if (existing && existing.id !== user.id) {
+    throw httpError(409, 'a user with this email already exists on the target site')
+  }
+
+  // Strip SSO identities — they were bound to the source site's providers. Memberships are kept.
+  const patch: any = { oauth: null, oidc: null, saml2: null }
+  patch.host = targetSite ? targetSite.host : null
+  patch.path = targetSite?.path ?? null
+  const patchedUser = await storage.patchUser(req.params.userId, patch, session.user)
+
+  const target = targetSite ? targetSite.host + (targetSite.path ?? '') : 'main site'
+  eventsLog.info('sd.user.transfer', `user ${user.id} (${user.email}) transferred to ${target}`, logContext)
+
+  res.send(patchedUser)
 })
 
 router.delete('/:userId/sessions/:sessionId', async (req, res, next) => {

@@ -66,6 +66,7 @@ export default {
     departments: 'Departamentos',
     autoAdmin: 'Adicionar-me automaticamente como administrador',
     asAdmin: 'Login como este utilizador',
+    transfer: 'Transferir para outro site',
     delAsAdmin: 'Voltar à minha sessão de administrador',
     avatar: 'Avatar',
     birthday: 'Aniversário',
@@ -167,6 +168,10 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
         editUserEmailTitle: 'Altere o endereço de e-mail do usuário {name}',
         editUserEmailText: 'Aviso! O e-mail é uma chave de usuário importante, ao modificar essas informações você corre o risco de inserir um endereço incorreto, não funcional ou inconsistente com outras entradas. Este recurso é apresentado apenas aos administradores para desbloquear um usuário cuja caixa de correio se torna inacessível.',
         drop2FATitle: 'Desactivar a autenticação de dois fatores',
+        transferTitle: 'Transferir o usuário {name} para outro site',
+        transferText: 'O usuário será vinculado ao site selecionado. Suas identidades SSO são redefinidas e ele mantém suas associações a organizações. Contas de superadministrador não podem ser transferidas.',
+        transferTargetSite: 'Site de destino',
+        transferMainSite: 'Site principal',
         drop2FAExplain: 'Atenção! Esta operação está reservada para desbloquear um utilizador que perdeu tanto o dispositivo como o código de recuperação para a autenticação de dois fatores. Antes de continuar, recomenda-se vivamente verificar de algum modo a identidade da pessoa que faz o pedido (por exemplo, contactando um colega da mesma organização).'
       },
       organizations: {

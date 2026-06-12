@@ -159,6 +159,41 @@ test.describe('users api', () => {
     )
   })
 
+  test('should clear SAML identities when changing host', async () => {
+    const config = await getServerConfig()
+    const anonymousAx = await axios()
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const { user, ax } = await createUser('user-saml-host@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test-standalone-saml' })).data
+    const owner = { type: 'organization', id: org.id, name: org.name }
+
+    // the user carries a saml2 identity bound to the source site's providers
+    await testEnvAx.patch('/user/' + encodeURIComponent('user-saml-host@test.com'), { saml2: { 'test-provider': { sub: 'abc' } } })
+
+    await anonymousAx.post('/api/sites',
+      { _id: 'test_site_saml', owner, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#FF00FF' } },
+      { params: { key: config.secretKeys.sites } })
+    await adminAx.patch('/api/sites/test_site_saml', { authMode: 'onlyLocal' })
+    await testEnvAx.post('/clear-site-cache')
+
+    const mail = await waitForMail(
+      () => anonymousAx.post(`http://127.0.0.1:${process.env.NGINX_PORT2}/simple-directory/api/auth/action`, { email: 'user-saml-host@test.com', action: 'changePassword', target: config.publicUrl + '/login' }),
+      (m) => m.to === 'user-saml-host@test.com' && m.link?.includes('action_token')
+    )
+    const actionToken = (new URL(mail.link)).searchParams.get('action_token')
+    assert.ok(actionToken)
+
+    await ax.post(
+      `/api/users/${user.id}/host`,
+      { host: '127.0.0.1:' + process.env.NGINX_PORT2 },
+      { params: { action_token: actionToken } }
+    )
+
+    // the SSO identities were bound to the previous site, they must be gone after the host change
+    const patched = (await adminAx.get(`/api/users/${user.id}`)).data
+    assert.equal(patched.saml2, undefined)
+  })
+
   test('should force a user to change their password after delay', async () => {
     const ax = await axios()
     await createUser('user4@test.com')
