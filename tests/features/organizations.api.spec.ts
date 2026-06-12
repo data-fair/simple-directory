@@ -75,6 +75,48 @@ test.describe('organizations api', () => {
     assert.equal(userPartners[0].name, org2.name)
   })
 
+  test('should let a superadmin manually create and delete a partnership', async () => {
+    // org A owned by a normal user
+    const { ax } = await createUser('test-screate-owner@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'Org A' })).data
+    ax.setOrg(org.id)
+
+    // org B owned by another normal user
+    const { ax: axB } = await createUser('test-screate-partner@test.com')
+    const orgB = (await axB.post('/api/organizations', { name: 'Org B' })).data
+
+    // superadmin client
+    const adminAx = await createUser('admin@test.com', true)
+
+    // a normal org admin must NOT be able to use the superadmin endpoint
+    await assert.rejects(
+      ax.post(`/api/organizations/${org.id}/partners/_create`, { id: orgB.id }),
+      (res: any) => res.status === 403
+    )
+
+    // superadmin creates an already-established partnership, no email sent
+    await deleteAllEmails()
+    await adminAx.ax.post(`/api/organizations/${org.id}/partners/_create`, { id: orgB.id })
+    assert.equal((await maildevAx.get('/email')).data.length, 0)
+
+    let orgInfo = (await ax.get(`/api/organizations/${org.id}`)).data
+    assert.equal(orgInfo.partners.length, 1)
+    assert.equal(orgInfo.partners[0].id, orgB.id)
+    assert.equal(orgInfo.partners[0].name, 'Org B')
+    assert.ok(orgInfo.partners[0].partnerId)
+
+    // creating the same partnership again is rejected
+    await assert.rejects(
+      adminAx.ax.post(`/api/organizations/${org.id}/partners/_create`, { id: orgB.id }),
+      (res: any) => res.status === 400
+    )
+
+    // superadmin deletes it (not a member of org A)
+    await adminAx.ax.delete(`/api/organizations/${org.id}/partners/${orgInfo.partners[0].partnerId}`)
+    orgInfo = (await ax.get(`/api/organizations/${org.id}`)).data
+    assert.equal(orgInfo.partners.length, 0)
+  })
+
   test('should invite a user in orga and change his role', async () => {
     await getServerConfig()
     await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })

@@ -80,4 +80,6 @@ export type SessionInfoPayload = {
   session: string
   user: string
   adminMode?: 1
+  // exp is set by jwt signing; present when the payload comes from a decoded token
+  exp?: number
 }

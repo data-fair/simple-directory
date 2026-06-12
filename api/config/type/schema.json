@@ -40,6 +40,7 @@
     "saml2",
     "webhooks",
     "authRateLimit",
+    "mailsRateLimit",
     "plannedDeletionDelay",
     "cleanup",
     "avatars",
@@ -274,6 +275,7 @@
         "initialToken",
         "idToken",
         "exchangeToken",
+        "adminExchangeToken",
         "invitationToken",
         "partnerInvitationToken",
         "2FAToken"
@@ -282,6 +284,7 @@
         "initialToken": { "type": "string" },
         "idToken": { "type": "string" },
         "exchangeToken": { "type": "string" },
+        "adminExchangeToken": { "type": "string" },
         "invitationToken": { "type": "string" },
         "partnerInvitationToken": { "type": "string" },
         "2FAToken": { "type": "string" }
@@ -482,6 +485,21 @@
         }
       }
     },
+    "mailsRateLimit": {
+      "type": "object",
+      "required": [
+        "points",
+        "duration"
+      ],
+      "properties": {
+        "points": {
+          "type": "integer"
+        },
+        "duration": {
+          "type": "integer"
+        }
+      }
+    },
     "plannedDeletionDelay": {
       "type": "integer"
     },
@@ -507,6 +525,9 @@
       "type": "boolean"
     },
     "admins2FA": {
+      "type": "boolean"
+    },
+    "adminModeOnSites": {
       "type": "boolean"
     },
     "singleMembership": {

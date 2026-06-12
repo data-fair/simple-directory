@@ -33,7 +33,12 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site?: 
     name: user.name,
     organizations: (user.organizations || []).map(o => ({ ...o }))
   }
-  if (user.isAdmin) {
+  // config.adminModeOnSites (default false) is an explicit operator opt-in that grants a
+  // configured superadmin the admin role on a secondary-site session too. Gated here at the
+  // single payload chokepoint so every token path (login, keepalive, refresh) stays consistent,
+  // without touching the storage `isAdmin = !host` invariant. Only enable when every site is
+  // operator-trusted — see docs/architecture/email-trust-and-site-isolation.md.
+  if (user.isAdmin || (config.adminModeOnSites && (config.admins.includes(user.email?.toLowerCase() ?? '') || user.id === '_superadmin'))) {
     payload.isAdmin = 1
   }
   if (user.defaultOrg) {
@@ -111,7 +116,42 @@ export const setSessionCookies = async (req: Request, res: Response, sitePath: s
   // cf https://www.npmjs.com/package/jsonwebtoken#token-expiration-exp-claim
   const date = Date.now()
   const exp = Math.floor(date / 1000) + jwtDurations.idToken
-  const exchangeExp = Math.floor(date / 1000) + jwtDurations.exchangeToken
+
+  const existingExchangeToken = cookies.get('id_token_ex')
+  let existingServerSessionInfo: SessionInfoPayload | undefined
+  if (existingExchangeToken) {
+    try {
+      existingServerSessionInfo = (await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined
+    } catch (err) {
+      // ignore an old invalid exchange token
+    }
+  }
+  if (!serverSessionId) {
+    if (!existingServerSessionInfo) throw httpError(400, 'missing exchange token')
+    serverSessionId = existingServerSessionInfo.session
+  }
+
+  const sessionInfo: SessionInfoPayload = { user: payload.id, session: serverSessionId, adminMode: payload.adminMode }
+  // case of asAdmin
+  if (existingServerSessionInfo && existingServerSessionInfo.adminMode && payload.id !== existingServerSessionInfo.user) {
+    sessionInfo.adminMode = 1
+    sessionInfo.user = existingServerSessionInfo.user
+  }
+
+  // adminMode sessions have a short HARD expiry: the exchange token is signed with
+  // jwtDurations.adminExchangeToken when adminMode is granted and renewals (keepalive,
+  // asAdmin switches) keep the original exp instead of extending it. When it lapses,
+  // keepalive fails and the user must fully re-authenticate. Normal sessions keep the
+  // rolling jwtDurations.exchangeToken window.
+  let exchangeExp = Math.floor(date / 1000) + jwtDurations.exchangeToken
+  if (sessionInfo.adminMode) {
+    if (existingServerSessionInfo?.adminMode && existingServerSessionInfo.session === sessionInfo.session && existingServerSessionInfo.exp) {
+      exchangeExp = existingServerSessionInfo.exp
+    } else {
+      exchangeExp = Math.floor(date / 1000) + jwtDurations.adminExchangeToken
+    }
+  }
+
   const token = await signToken(payload, exp)
   const parts = token.split('.')
   const opts: Cookies.SetOption = { sameSite: 'lax', path: sitePath + '/' }
@@ -132,30 +172,9 @@ export const setSessionCookies = async (req: Request, res: Response, sitePath: s
     cookies.set('id_token_role', '', deleteOpts)
   }
 
-  const existingExchangeToken = cookies.get('id_token_ex')
-  let existingServerSessionInfo: SessionInfoPayload | undefined
-  if (existingExchangeToken) {
-    try {
-      existingServerSessionInfo = (await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined
-    } catch (err) {
-      // ignore an old invalid exchange token
-    }
-  }
-  if (!serverSessionId) {
-    if (!existingServerSessionInfo) throw httpError(400, 'missing exchange token')
-    serverSessionId = existingServerSessionInfo.session
-  }
-
   if (existingServerSessionInfo && existingServerSessionInfo.session !== serverSessionId) {
     // case of a session where id_token was cleared but id_token_ex persisted, this server sessions is deprecated and can be cleared
     await storages.deleteSessionById(existingServerSessionInfo.session)
-  }
-  // const exchangeCookieOpts = { ...opts, httpOnly: true }
-  const sessionInfo: SessionInfoPayload = { user: payload.id, session: serverSessionId, adminMode: payload.adminMode }
-  // case of asAdmin
-  if (existingServerSessionInfo && existingServerSessionInfo.adminMode && payload.id !== existingServerSessionInfo.user) {
-    sessionInfo.adminMode = 1
-    sessionInfo.user = existingServerSessionInfo.user
   }
   if (options?.skipExchangeToken) {
     cookies.set('id_token_ex', '', { ...deleteOpts, path: sitePath + '/simple-directory/', httpOnly: true })

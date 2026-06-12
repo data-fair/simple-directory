@@ -247,11 +247,13 @@ export const authProviderLoginCallback = async (
   const payload = getTokenPayload(user, site)
   if (adminMode) {
     // TODO: also check that the user actually inputted the password on this redirect
-    // adminMode can only be activated on a session bound to the main site (site === undefined).
-    // With the cleanUser `!host` guard this is already implied (isAdmin requires !user.host and
-    // secondary-site users always have host), but we assert it explicitly here so any future
-    // relaxation of isAdmin does not silently re-open adminMode on a site session.
-    if (site) {
+    // adminMode is main-site only: on a site session payload.isAdmin is normally false (the
+    // record carries `host` and isAdmin requires `!host`). config.adminModeOnSites (default
+    // false) is an explicit operator opt-in that lifts the `!host` guard for configured
+    // superadmins in the storages, so payload.isAdmin already reflects it here — every token
+    // path (login, keepalive, exchange) stays consistent. It relaxes invariants #1/#2 of the
+    // site-isolation model, so only enable it when every site is operator-trusted.
+    if (site && !(config.adminModeOnSites && payload.isAdmin)) {
       eventsLog.alert('sd.auth.oauth.not-admin', 'admin mode activation refused on non-main site session', logContext)
       throw httpError(403, 'adminModeOnly')
     }
