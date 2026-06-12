@@ -1,7 +1,6 @@
 import config from '#config'
 import { Router } from 'express'
-import { reqSiteUrl, reqIp, reqUser, session, httpError, reqIsInternal } from '@data-fair/lib-express'
-import { internalError } from '@data-fair/lib-node/observer.js'
+import { reqSiteUrl, reqIp, reqUser, session, httpError, assertReqInternalSecret } from '@data-fair/lib-express'
 import storages from '#storages'
 import mongo from '#mongo'
 import { RateLimiterMongo } from 'rate-limiter-flexible'
@@ -9,6 +8,7 @@ import emailValidator from 'email-validator'
 import multer from 'multer'
 import { reqI18n } from '#i18n'
 import { sendMail } from './service.ts'
+import { textToSafeHtml, sanitizeMailHtml } from './escape.ts'
 import type { FindMembersParams } from '../storages/interface.ts'
 import { reqSite } from '#services'
 
@@ -18,15 +18,8 @@ export default router
 const upload = multer({ storage: multer.diskStorage({}) })
 
 router.post('/', async (req, res, next) => {
-  const key = req.query.key
-  if (!config.secretKeys.sendMails || config.secretKeys.sendMails !== key) {
-    throw httpError(403, 'Bad secret in "key" parameter')
-  }
-  if (!reqIsInternal(req)) {
-    internalError('mails-send', 'Trying to send mails from an external request')
-    // TODO: make this blocking in a coming release
-    // throw httpError(403, 'Forbidden')
-  }
+  if (!config.secretKeys.sendMails) throw httpError(403, 'sendMails secret is not configured')
+  assertReqInternalSecret(req, config.secretKeys.sendMails)
   next()
 }, upload.any(), async (req, res) => {
   const mailBody = (await import('#types/mail/index.ts')).returnValid(typeof req.body.body === 'string' ? JSON.parse(req.body.body) : req.body)
@@ -76,13 +69,17 @@ router.post('/', async (req, res, next) => {
       }
     }
 
+    const htmlMsg = mailBody.html
+      ? sanitizeMailHtml(mailBody.html)
+      : textToSafeHtml(mailBody.text ?? '')
+
     results.push(await sendMail([...to].join(', '), {
       replyTo: mailBody.replyTo,
       host,
       path,
       subject: mailBody.subject,
       text: mailBody.text ?? '',
-      htmlMsg: mailBody.html ?? mailBody.text ?? '',
+      htmlMsg,
       htmlCaption: ''
     }, attachments))
   }
@@ -138,7 +135,7 @@ router.post('/contact', async (req, res) => {
     path: site?.path,
     subject: req.body.subject,
     text,
-    htmlMsg: text,
+    htmlMsg: textToSafeHtml(text),
     htmlCaption: ''
   })
   res.send(req.body)

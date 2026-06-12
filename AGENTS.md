@@ -62,3 +62,4 @@ npm run quality          # Full quality check (lint + types + tests)
 Read before changing anything in the corresponding area:
 
 - [`docs/architecture/email-trust-and-site-isolation.md`](docs/architecture/email-trust-and-site-isolation.md) -- how SSO email claims are verified and how site-level SSO trust is confined so a compromised site config cannot escalate to superadmin or cross-site takeover. Required reading for changes to auth providers, `cleanUser`, `authProviderLoginCallback`, `adminMode`, or the change-host flow.
+- [`docs/architecture/emails.md`](docs/architecture/emails.md) -- the outbound email pipeline: the two `/api/mails*` endpoints, sanitization/escape at the trust boundary, MJML template substitution, and `sendMailI18n`. Required reading for changes under `api/src/mails/`, the MJML templates, the mail schemas, or any caller that posts to `/api/mails`.

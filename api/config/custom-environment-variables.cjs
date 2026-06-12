@@ -15,6 +15,7 @@ module.exports = {
     initialToken: 'JWT_DURATION_INITIAL',
     idToken: 'JWT_DURATION_ID',
     exchangeToken: 'JWT_DURATION_EXCHANGE',
+    adminExchangeToken: 'JWT_DURATION_ADMIN_EXCHANGE',
     invitationToken: 'JWT_DURATION_INVIT',
     partnerInvitationToken: 'JWT_DURATION_PARTNER_INVIT',
     '2FAToken': 'JWT_DURATION_2FA'
@@ -22,6 +23,7 @@ module.exports = {
   admins: jsonEnv('ADMINS'),
   adminsOrg: jsonEnv('ADMINS_ORG'),
   admins2FA: 'ADMINS_2FA',
+  adminModeOnSites: 'ADMIN_MODE_ON_SITES',
   adminCredentials: jsonEnv('ADMIN_CREDENTIALS'),
   roles: {
     defaults: jsonEnv('ROLES_DEFAULTS')
@@ -266,6 +268,10 @@ module.exports = {
   authRateLimit: {
     attempts: 'AUTHRATELIMIT_ATTEMPTS',
     duration: 'AUTHRATELIMIT_DURATION'
+  },
+  mailsRateLimit: {
+    points: 'MAILSRATELIMIT_POINTS',
+    duration: 'MAILSRATELIMIT_DURATION'
   },
   oauth: {
     providers: jsonEnv('OAUTH_PROVIDERS'),

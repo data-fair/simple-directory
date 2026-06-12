@@ -71,6 +71,11 @@ module.exports = {
     attempts: 100,
     duration: 60
   },
+  mailsRateLimit: {
+    // high enough that no existing test trips it; rate-limit test pre-fills the bucket directly
+    points: 100,
+    duration: 5
+  },
   anonymousAction: {
     // short notBefore keeps tests fast — in prod this is 8s to trip bots
     expiresIn: '1d',

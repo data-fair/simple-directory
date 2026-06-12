@@ -33,6 +33,7 @@ router.delete('/', async (req, res) => {
   }
   await mongo.passwordLists.deleteMany()
   await mongo.db.collection('sd-rate-limiter-auth').deleteMany()
+  await mongo.db.collection('sd-rate-limiter-contact').deleteMany()
   const { getSiteByHost } = await import('./sites/service.ts')
   getSiteByHost.clear()
   // Force a fresh SAML cert mint on the next request — exercises createCert end-to-end
@@ -133,7 +134,9 @@ router.post('/clear-site-cache', async (req, res) => {
 router.get('/config', (req, res) => {
   res.json({
     publicUrl: config.publicUrl,
-    secretKeys: config.secretKeys
+    secretKeys: config.secretKeys,
+    mongo: { url: config.mongo.url },
+    mailsRateLimit: config.mailsRateLimit
   })
 })
 

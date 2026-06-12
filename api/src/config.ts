@@ -24,8 +24,25 @@ const apiConfig = process.env.NODE_ENV === 'test' ? config.util.loadFileConfigs(
 // provided by api/config/*.cjs or THEME_* environment variables
 // @ts-ignore
 const themeOverrides = config.util.cloneDeep(apiConfig.theme ?? {})
+
+// When the operator provides a font configuration (either bodyFontFamily /
+// headingFontFamily or its CSS counterpart) the lib's Nunito defaults
+// would still merge in and the @font-face declarations would shadow the
+// operator's CSS rules. Drop the matching lib defaults in that case so
+// the env-provided values win cleanly.
 // @ts-ignore
-config.util.extendDeep(apiConfig.theme, defaultTheme, themeOverrides)
+const baseTheme = config.util.cloneDeep(defaultTheme)
+if (themeOverrides.bodyFontFamilyCss || themeOverrides.bodyFontFamily) {
+  delete baseTheme.bodyFontFamily
+  delete baseTheme.bodyFontFamilyCss
+}
+if (themeOverrides.headingFontFamilyCss || themeOverrides.headingFontFamily) {
+  delete baseTheme.headingFontFamily
+  delete baseTheme.headingFontFamilyCss
+}
+
+// @ts-ignore
+config.util.extendDeep(apiConfig.theme, baseTheme, themeOverrides)
 
 assertValid(apiConfig, { lang: 'en', name: 'config', internal: true })
 
@@ -46,5 +63,6 @@ export const superadmin: User = {
 
 export const jwtDurations = {
   idToken: ms(apiConfig.jwtDurations.idToken) / 1000,
-  exchangeToken: ms(apiConfig.jwtDurations.exchangeToken) / 1000
+  exchangeToken: ms(apiConfig.jwtDurations.exchangeToken) / 1000,
+  adminExchangeToken: ms(apiConfig.jwtDurations.adminExchangeToken) / 1000
 }
