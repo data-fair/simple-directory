@@ -250,6 +250,31 @@
             </v-card-actions>
           </v-window-item>
 
+          <v-window-item value="adminMode">
+            <v-card-text>
+              <p class="text-warning mb-6">
+                {{ $t('pages.login.adminModePromptMsg') }}
+              </p>
+            </v-card-text>
+            <v-card-actions>
+              <v-btn
+                variant="text"
+                @click="declineAdminMode"
+              >
+                {{ $t('pages.login.adminModePromptDecline') }}
+              </v-btn>
+              <v-spacer />
+              <v-btn
+                color="admin"
+                variant="flat"
+                style="text-transform: uppercase"
+                @click="acceptAdminMode"
+              >
+                {{ $t('pages.login.adminModePromptAccept') }}
+              </v-btn>
+            </v-card-actions>
+          </v-window-item>
+
           <v-window-item value="tos">
             <v-card-text>
               <p
@@ -878,6 +903,7 @@ const createOrganization = ref({ active: false, name: '' })
 const qrcode = ref('')
 const configure2FACode = ref('')
 const twoFARequired = ref(false)
+const adminModeDeclined = ref(false)
 const twoFACode = ref('')
 const recovery = ref('')
 const twoFAError = ref<string | null>(null)
@@ -899,6 +925,7 @@ const logoUrl = computed(() => {
 const stepsTitles: Record<string, string> = {
   preLogin: t('pages.login.title'),
   login: t('pages.login.title'),
+  adminMode: t('pages.login.adminModePromptTitle'),
   emailConfirmed: t('common.checkInbox'),
   createUser: t('pages.login.createUserMsg2'),
   createUserConfirmed: t('pages.login.createUserConfirm'),
@@ -1063,6 +1090,7 @@ const passwordAuth = useAsyncAction(async () => {
       email: email.value,
       password: password.value,
       adminMode: adminMode.value,
+      offerAdminMode: !adminMode.value && !adminModeDeclined.value,
       rememberMe: rememberMe.value && !adminMode.value,
       org: orgId,
       dep: depId,
@@ -1070,8 +1098,12 @@ const passwordAuth = useAsyncAction(async () => {
       membersOnly: membersOnly.value,
       orgStorage: orgStorage.value
     }
-    const link = await $fetch('auth/password', { method: 'POST', body, params: { redirect } })
-    window.location.href = link
+    const res = await $fetch<string | { step: string }>('auth/password', { method: 'POST', body, params: { redirect } })
+    if (typeof res === 'object' && res?.step === 'adminMode') {
+      step.value = 'adminMode'
+      return
+    }
+    window.location.href = res as string
   } catch (error: any) {
     if (error.status && error.status < 500) {
       if (error.data === '2fa-missing') {
@@ -1092,6 +1124,21 @@ const passwordAuth = useAsyncAction(async () => {
   }
 }, { catch: 'all' })
 watch(() => email.value + password.value, () => { passwordAuth.notif.value = undefined })
+
+// in-login admin mode proposal (step 'adminMode', see api/src/auth/router.ts offerAdminMode):
+// both paths resubmit the password held in form state; accept goes through the full
+// adminMode validation including the fresh-TOTP rule (a 2fa-required error brings the
+// user back to the login step with the TOTP field visible)
+const acceptAdminMode = () => {
+  adminMode.value = true
+  step.value = 'login'
+  passwordAuth.execute()
+}
+const declineAdminMode = () => {
+  adminModeDeclined.value = true
+  step.value = 'login'
+  passwordAuth.execute()
+}
 
 const changePasswordAction = useAsyncAction(async () => {
   const body: PostActionAuthReq['body'] = {
