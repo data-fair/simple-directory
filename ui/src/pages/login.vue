@@ -259,6 +259,7 @@
             <v-card-actions>
               <v-btn
                 variant="text"
+                :disabled="passwordAuth.loading.value"
                 @click="declineAdminMode"
               >
                 {{ $t('pages.login.adminModePromptDecline') }}
@@ -268,6 +269,8 @@
                 color="admin"
                 variant="flat"
                 style="text-transform: uppercase"
+                :disabled="passwordAuth.loading.value"
+                :loading="passwordAuth.loading.value"
                 @click="acceptAdminMode"
               >
                 {{ $t('pages.login.adminModePromptAccept') }}
@@ -1123,7 +1126,7 @@ const passwordAuth = useAsyncAction(async () => {
     }
   }
 }, { catch: 'all' })
-watch(() => email.value + password.value, () => { passwordAuth.notif.value = undefined })
+watch(() => email.value + password.value, () => { passwordAuth.notif.value = undefined; adminModeDeclined.value = false })
 
 // in-login admin mode proposal (step 'adminMode', see api/src/auth/router.ts offerAdminMode):
 // both paths resubmit the password held in form state; accept goes through the full
