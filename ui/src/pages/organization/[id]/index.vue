@@ -143,7 +143,7 @@
     />
 
     <organization-partners
-      v-if="$uiConfig.managePartners && showDetailedManagement"
+      v-if="$uiConfig.managePartners && (showDetailedManagement || session.user.value?.adminMode)"
       :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
       @change="fetchOrga.refresh()"

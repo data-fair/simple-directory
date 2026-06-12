@@ -13,7 +13,12 @@
         />
         {{ $t('common.partners') }} <span>({{ $n(orga.partners?.length ?? 0) }})</span>
         <add-partner-menu
-          v-if="writablePartners"
+          v-if="writablePartners && !adminMode"
+          :orga="orga"
+          @change="$emit('change')"
+        />
+        <add-partner-superadmin-menu
+          v-if="adminMode"
           :orga="orga"
           @change="$emit('change')"
         />
@@ -66,7 +71,10 @@
           </template>
 
           <v-list-item-title style="white-space:normal;">
-            {{ partner.name }} ({{ partner.contactEmail }})
+            {{ partner.name }}
+            <template v-if="partner.contactEmail">
+              ({{ partner.contactEmail }})
+            </template>
             <template v-if="!partner.id">
               <span class="text-warning">{{ $t('common.emailNotConfirmed') }}
                 <resend-partner-invitation
@@ -132,7 +140,9 @@ const page = ref(1)
 const q = ref('')
 const validQ = ref('')
 
-const writablePartners = computed(() => isAdminOrga && (!$uiConfig.readonly || $uiConfig.orgStorageOverwrite?.includes('partners')))
+const session = useSession()
+const adminMode = computed(() => !!session.user.value?.adminMode)
+const writablePartners = computed(() => (isAdminOrga && (!$uiConfig.readonly || $uiConfig.orgStorageOverwrite?.includes('partners'))) || adminMode.value)
 const filteredPartners = computed(() => {
   if (!validQ.value) return orga.partners ?? []
   else return (orga.partners ?? []).filter(d => (d.id && d.id.includes(validQ.value)) || (d.id && d.id.includes(validQ.value)))
