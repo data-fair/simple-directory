@@ -74,29 +74,39 @@ export const getSamlProviderId = (url: string) => {
   return slug(new URL(url).host, { lower: true, strict: true })
 }
 
-// samlify's default login request template (libsaml.ts defaultLoginRequestTemplate) with an
+// samlify's default login request template (SamlLib.defaultLoginRequestTemplate) with an
 // added ForceAuthn="true" attribute. Used only for adminMode logins, through
 // createForceAuthnTagReplacement: a SAML adminMode login must not reuse an existing IdP
 // session (the OIDC equivalent is prompt=login in oauth/service.ts).
-export const forceAuthnLoginRequestTemplate = '<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="{ID}" Version="2.0" IssueInstant="{IssueInstant}" Destination="{Destination}" ForceAuthn="true" ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" AssertionConsumerServiceURL="{AssertionConsumerServiceURL}"><saml:Issuer>{Issuer}</saml:Issuer><samlp:NameIDPolicy Format="{NameIDFormat}" AllowCreate="{AllowCreate}"/></samlp:AuthnRequest>'
+// Derived from samlify's own default at module load (rather than hand-copied) so it cannot
+// silently diverge from the library's template if samlify updates it: we just splice in
+// ` ForceAuthn="true"` right after the Destination attribute.
+export const forceAuthnLoginRequestTemplate = samlify.SamlLib.defaultLoginRequestTemplate.context
+  .replace('Destination="{Destination}"', 'Destination="{Destination}" ForceAuthn="true"')
 
 // samlify only takes the custom-template path of createLoginRequest when this callback is
 // passed alongside an sp loginRequestTemplate setting; it must perform the tag replacement
-// itself (mirroring the values of samlify's default path in binding-redirect.ts)
+// itself, mirroring the value map of samlify's default redirect-binding path
+// (binding-redirect.ts loginRequestRedirectURL, the `else` branch). We route every value
+// through samlify's own SamlLib.replaceTagsByValue, which XML-escapes attribute values and
+// uses a function replacement — so values containing `&`, `<`, `"` or `$`-sequences cannot
+// produce malformed XML or be corrupted by String.prototype.replace special patterns.
 export const createForceAuthnTagReplacement = (sp: samlify.ServiceProviderInstance, idp: samlify.IdentityProviderInstance) => {
   return () => {
     const spSetting: any = sp.entitySetting
     const id: string = spSetting.generateID()
     const nameIDFormat = spSetting.nameIDFormat
     const selectedNameIDFormat = Array.isArray(nameIDFormat) ? nameIDFormat[0] : nameIDFormat
-    const context = forceAuthnLoginRequestTemplate
-      .replace('{ID}', id)
-      .replace('{Destination}', idp.entityMeta.getSingleSignOnService(samlify.Constants.wording.binding.redirect) as string)
-      .replace('{Issuer}', sp.entityMeta.getEntityID())
-      .replace('{IssueInstant}', new Date().toISOString())
-      .replace('{NameIDFormat}', selectedNameIDFormat)
-      .replace('{AllowCreate}', spSetting.allowCreate)
-      .replace('{AssertionConsumerServiceURL}', sp.entityMeta.getAssertionConsumerService(samlify.Constants.wording.binding.post) as string)
+    const context = samlify.SamlLib.replaceTagsByValue(forceAuthnLoginRequestTemplate, {
+      ID: id,
+      Destination: idp.entityMeta.getSingleSignOnService(samlify.Constants.wording.binding.redirect) as string,
+      Issuer: sp.entityMeta.getEntityID(),
+      IssueInstant: new Date().toISOString(),
+      NameIDFormat: selectedNameIDFormat,
+      AssertionConsumerServiceURL: sp.entityMeta.getAssertionConsumerService(samlify.Constants.wording.binding.post) as string,
+      EntityID: sp.entityMeta.getEntityID(),
+      AllowCreate: spSetting.allowCreate
+    })
     return { id, context }
   }
 }
