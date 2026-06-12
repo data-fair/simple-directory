@@ -213,8 +213,10 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   // 2FA management
   const user2FA = await storage.get2FA(user.id)
   if ((user2FA && user2FA.active) || await storage.required2FA(user)) {
-    if (await check2FASession(req, user.id)) {
-      // 2FA was already validated earlier and present in a cookie
+    if (!body.adminMode && await check2FASession(req, user.id)) {
+      // 2FA was already validated earlier and present in a cookie.
+      // Entering adminMode always requires a fresh TOTP: the long-lived cookie must not
+      // weaken the superadmin re-authentication (see docs/architecture/email-trust-and-site-isolation.md)
     } else if (body['2fa']) {
       if (!await is2FAValid(user2FA?.secret, body['2fa'].trim())) {
         // a token was sent but it is not an actual 2FA token, instead it is the special recovery token
