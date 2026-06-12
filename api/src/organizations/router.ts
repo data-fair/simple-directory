@@ -46,7 +46,6 @@ async function isOrgAdmin (req: Request) {
 
 // Either a super admin, or a member of the current organization
 async function isMember (req: Request, allAccounts?: boolean) {
-  if (reqUser(req)?.adminMode) return true
   if (getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: true, allAccounts })) {
     return true
   }
@@ -532,7 +531,7 @@ if (config.managePartners) {
     const logContext: EventLogContext = { req }
 
     if (!reqUser(req)) return res.status(401).send()
-    if (!reqUser(req)?.adminMode && !await isOrgAdmin(req)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+    if (!await isOrgAdmin(req)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     const storage = storages.globalStorage
     await storage.deletePartner(req.params.organizationId, req.params.partnerId)
 
