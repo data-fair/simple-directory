@@ -74,6 +74,33 @@ export const getSamlProviderId = (url: string) => {
   return slug(new URL(url).host, { lower: true, strict: true })
 }
 
+// samlify's default login request template (libsaml.ts defaultLoginRequestTemplate) with an
+// added ForceAuthn="true" attribute. Used only for adminMode logins, through
+// createForceAuthnTagReplacement: a SAML adminMode login must not reuse an existing IdP
+// session (the OIDC equivalent is prompt=login in oauth/service.ts).
+export const forceAuthnLoginRequestTemplate = '<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="{ID}" Version="2.0" IssueInstant="{IssueInstant}" Destination="{Destination}" ForceAuthn="true" ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" AssertionConsumerServiceURL="{AssertionConsumerServiceURL}"><saml:Issuer>{Issuer}</saml:Issuer><samlp:NameIDPolicy Format="{NameIDFormat}" AllowCreate="{AllowCreate}"/></samlp:AuthnRequest>'
+
+// samlify only takes the custom-template path of createLoginRequest when this callback is
+// passed alongside an sp loginRequestTemplate setting; it must perform the tag replacement
+// itself (mirroring the values of samlify's default path in binding-redirect.ts)
+export const createForceAuthnTagReplacement = (sp: samlify.ServiceProviderInstance, idp: samlify.IdentityProviderInstance) => {
+  return () => {
+    const spSetting: any = sp.entitySetting
+    const id: string = spSetting.generateID()
+    const nameIDFormat = spSetting.nameIDFormat
+    const selectedNameIDFormat = Array.isArray(nameIDFormat) ? nameIDFormat[0] : nameIDFormat
+    const context = forceAuthnLoginRequestTemplate
+      .replace('{ID}', id)
+      .replace('{Destination}', idp.entityMeta.getSingleSignOnService(samlify.Constants.wording.binding.redirect) as string)
+      .replace('{Issuer}', sp.entityMeta.getEntityID())
+      .replace('{IssueInstant}', new Date().toISOString())
+      .replace('{NameIDFormat}', selectedNameIDFormat)
+      .replace('{AllowCreate}', spSetting.allowCreate)
+      .replace('{AssertionConsumerServiceURL}', sp.entityMeta.getAssertionConsumerService(samlify.Constants.wording.binding.post) as string)
+    return { id, context }
+  }
+}
+
 const readDeprecatedCertificates = async (): Promise<undefined | Certificates> => {
   try {
     await access('/webapp/security/saml2/signing.key', constants.R_OK)
@@ -204,6 +231,10 @@ export const initServiceProvider = async (site?: Site) => {
     encryptCert: certificates.encrypt.cert,
     encPrivateKey: certificates.encrypt.privateKey,
     wantAssertionsSigned: true,
+    // trusted field, set after the config spread: the mere presence of loginRequestTemplate
+    // is inert for normal logins (samlify only uses it when a customTagReplacement is also
+    // passed); adminMode logins pass createForceAuthnTagReplacement to send ForceAuthn
+    loginRequestTemplate: { context: forceAuthnLoginRequestTemplate },
     // @ts-ignore if we use a boolean the attribute is set as empty in the xml output, and some IDP don't like that
     allowCreate: 'false'
   })

@@ -5,7 +5,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, r
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
+import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, createForceAuthnTagReplacement, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, Site, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -733,7 +733,8 @@ const oauthLogin: RequestHandler = async (req, res, next) => {
     org: req.query.org as string,
     dep: req.query.dep as string,
     invitToken: req.query.invit_token as string,
-    adminMode: !!(req.query.adminMode as string) // TODO: force re-submit password in this case ?
+    // adminMode via SSO trusts the IdP's own MFA; prompt=login forces a fresh IdP authentication
+    adminMode: !!(req.query.adminMode as string)
   }
   await mongo.oauthRelayStates.insertOne(relayState)
   const authorizationUri = provider.authorizationUri(relayState._id, req.query.email as string, provider.coreIdProvider, relayState.adminMode)
@@ -839,7 +840,8 @@ router.get('/saml2/:providerId/login', async (req, res) => {
     org: req.query.org as string,
     dep: req.query.dep as string,
     invitToken: (req.query.invit_token || '') as string,
-    adminMode: !!(req.query.adminMode as string), // TODO: force re-submit password in this case ?
+    // adminMode via SSO trusts the IdP's own MFA; ForceAuthn forces a fresh IdP authentication
+    adminMode: !!(req.query.adminMode as string),
     providerId: req.params.providerId
   }
   await mongo.saml2RelayStates.insertOne(relayState)
@@ -849,7 +851,11 @@ router.get('/saml2/:providerId/login', async (req, res) => {
   sp.entitySetting.relayState = relayState._id
 
   // TODO: apply nameid parameter ? { nameid: req.query.email }
-  const { context: loginRequestURL } = sp.createLoginRequest(provider.idp, 'redirect')
+  // adminMode must not reuse an existing IdP session: pass the ForceAuthn tag replacement
+  // (the OIDC equivalent is prompt=login, see oauthLogin above)
+  const { context: loginRequestURL } = relayState.adminMode
+    ? sp.createLoginRequest(provider.idp, 'redirect', createForceAuthnTagReplacement(sp, provider.idp))
+    : sp.createLoginRequest(provider.idp, 'redirect')
 
   const parsedURL = new URL(loginRequestURL)
   if (typeof req.query.email === 'string') parsedURL.searchParams.append('login_hint', req.query.email)
