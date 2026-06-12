@@ -17,6 +17,7 @@ export default {
         '2fa': { type: 'string' },
         membersOnly: { type: 'boolean' },
         adminMode: { type: 'boolean' },
+        offerAdminMode: { type: 'boolean' },
         rememberMe: { type: 'boolean' },
         orgStorage: { type: 'boolean' }
       }

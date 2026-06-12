@@ -38,6 +38,40 @@ test.describe('Login page', () => {
     await expect(page.locator('.v-alert')).toBeVisible({ timeout: 10_000 })
   })
 
+  test('superadmin is offered admin mode at login and can accept', async ({ page, appUrl }) => {
+    await testEnvAx.post('/seed')
+
+    await page.goto(appUrl('/login'))
+    await expect(page.locator('input[name="email"]')).toBeVisible({ timeout: 10_000 })
+    await page.locator('input[name="email"]').fill('admin@test.com')
+    await page.locator('input[name="password"]').fill('TestPasswd01')
+    await page.locator('input[name="password"]').press('Enter')
+
+    // the admin mode proposal step appears (no redirect yet)
+    const acceptBtn = page.getByRole('button', { name: /mode administration|admin mode/i })
+    await expect(acceptBtn).toBeVisible({ timeout: 10_000 })
+    await acceptBtn.click()
+
+    // accepted: logged in (no 2FA configured on the seeded admin in the dev env)
+    await page.waitForURL(/\/simple-directory\/(?!login)/, { timeout: 10_000 })
+  })
+
+  test('superadmin can decline admin mode and get a normal session', async ({ page, appUrl }) => {
+    await testEnvAx.post('/seed')
+
+    await page.goto(appUrl('/login'))
+    await expect(page.locator('input[name="email"]')).toBeVisible({ timeout: 10_000 })
+    await page.locator('input[name="email"]').fill('admin@test.com')
+    await page.locator('input[name="password"]').fill('TestPasswd01')
+    await page.locator('input[name="password"]').press('Enter')
+
+    const declineBtn = page.getByRole('button', { name: /session normale|normal session/i })
+    await expect(declineBtn).toBeVisible({ timeout: 10_000 })
+    await declineBtn.click()
+
+    await page.waitForURL(/\/simple-directory\/(?!login)/, { timeout: 10_000 })
+  })
+
   test('create new user account', async ({ page, appUrl }) => {
     // Navigate directly to the create user step via URL param
     await page.goto(appUrl('/login?step=createUser'))

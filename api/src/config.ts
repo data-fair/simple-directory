@@ -63,5 +63,6 @@ export const superadmin: User = {
 
 export const jwtDurations = {
   idToken: ms(apiConfig.jwtDurations.idToken) / 1000,
-  exchangeToken: ms(apiConfig.jwtDurations.exchangeToken) / 1000
+  exchangeToken: ms(apiConfig.jwtDurations.exchangeToken) / 1000,
+  adminExchangeToken: ms(apiConfig.jwtDurations.adminExchangeToken) / 1000
 }

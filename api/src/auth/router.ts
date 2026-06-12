@@ -5,7 +5,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, r
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
+import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, createForceAuthnTagReplacement, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, Site, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -213,8 +213,10 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   // 2FA management
   const user2FA = await storage.get2FA(user.id)
   if ((user2FA && user2FA.active) || await storage.required2FA(user)) {
-    if (await check2FASession(req, user.id)) {
-      // 2FA was already validated earlier and present in a cookie
+    if (!body.adminMode && await check2FASession(req, user.id)) {
+      // 2FA was already validated earlier and present in a cookie.
+      // Entering adminMode always requires a fresh TOTP: the long-lived cookie must not
+      // weaken the superadmin re-authentication (see docs/architecture/email-trust-and-site-isolation.md)
     } else if (body['2fa']) {
       if (!await is2FAValid(user2FA?.secret, body['2fa'].trim())) {
         // a token was sent but it is not an actual 2FA token, instead it is the special recovery token
@@ -246,6 +248,18 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
         return returnError('2fa-required', 403)
       }
     }
+  }
+
+  // the SD login page sends offerAdminMode on normal logins: when the fully validated user
+  // turns out to be a superadmin (and adminMode is permitted on this site) we propose
+  // switching to adminMode before creating any auth session (no id_token / exchange-token
+  // cookies are issued here — see login.vue step 'adminMode'). A 2FA validation cookie may
+  // already have been set by the 2FA block above, exactly as on any successful 2FA login;
+  // it is harmless because the adminMode accept path ignores it (fresh-TOTP rule). The
+  // accept path is a new POST with adminMode=true that re-validates fully, TOTP included.
+  if (body.offerAdminMode && !body.adminMode && payload.isAdmin && (!site || config.adminModeOnSites)) {
+    eventsLog.info('sd.auth.password.admin-prompt', 'a superadmin was offered admin mode at login', logContext)
+    return res.send({ step: 'adminMode' })
   }
 
   eventsLog.info('sd.auth.password.ok', 'a user successfully authenticated using password', logContext)
@@ -731,7 +745,8 @@ const oauthLogin: RequestHandler = async (req, res, next) => {
     org: req.query.org as string,
     dep: req.query.dep as string,
     invitToken: req.query.invit_token as string,
-    adminMode: !!(req.query.adminMode as string) // TODO: force re-submit password in this case ?
+    // adminMode via SSO trusts the IdP's own MFA; prompt=login forces a fresh IdP authentication
+    adminMode: !!(req.query.adminMode as string)
   }
   await mongo.oauthRelayStates.insertOne(relayState)
   const authorizationUri = provider.authorizationUri(relayState._id, req.query.email as string, provider.coreIdProvider, relayState.adminMode)
@@ -837,7 +852,8 @@ router.get('/saml2/:providerId/login', async (req, res) => {
     org: req.query.org as string,
     dep: req.query.dep as string,
     invitToken: (req.query.invit_token || '') as string,
-    adminMode: !!(req.query.adminMode as string), // TODO: force re-submit password in this case ?
+    // adminMode via SSO trusts the IdP's own MFA; ForceAuthn forces a fresh IdP authentication
+    adminMode: !!(req.query.adminMode as string),
     providerId: req.params.providerId
   }
   await mongo.saml2RelayStates.insertOne(relayState)
@@ -847,7 +863,11 @@ router.get('/saml2/:providerId/login', async (req, res) => {
   sp.entitySetting.relayState = relayState._id
 
   // TODO: apply nameid parameter ? { nameid: req.query.email }
-  const { context: loginRequestURL } = sp.createLoginRequest(provider.idp, 'redirect')
+  // adminMode must not reuse an existing IdP session: pass the ForceAuthn tag replacement
+  // (the OIDC equivalent is prompt=login, see oauthLogin above)
+  const { context: loginRequestURL } = relayState.adminMode
+    ? sp.createLoginRequest(provider.idp, 'redirect', createForceAuthnTagReplacement(sp, provider.idp))
+    : sp.createLoginRequest(provider.idp, 'redirect')
 
   const parsedURL = new URL(loginRequestURL)
   if (typeof req.query.email === 'string') parsedURL.searchParams.append('login_hint', req.query.email)
