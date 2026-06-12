@@ -1,4 +1,4 @@
-import type { Member, Organization } from '#types'
+import type { Member, Organization, Partner } from '#types'
 import { Router, type Request } from 'express'
 import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, session, mongoPagination, mongoSort, type EventLogContext } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
@@ -491,11 +491,47 @@ if (config.managePartners) {
     res.status(201).send()
   })
 
+  // Superadmin-only: directly create an established partnership with an existing organization
+  router.post('/:organizationId/partners/_create', async (req, res, next) => {
+    const logContext: EventLogContext = { req }
+    const user = reqUser(req)
+
+    if (!user) return res.status(401).send()
+    if (!user.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+
+    const { body: partnerCreate } = (await import('#doc/organizations/post-partner-create-req/index.ts')).returnValid(req)
+
+    const storage = storages.globalStorage
+
+    const orga = await storage.getOrganization(req.params.organizationId)
+    if (!orga) return res.status(404).send()
+    logContext.account = { type: 'organization', id: orga.id, name: orga.name }
+
+    const partnerOrga = await storage.getOrganization(partnerCreate.id)
+    if (!partnerOrga) return res.status(404).send('unknown organization')
+
+    const conflict = (orga.partners || []).find(p => p.id === partnerOrga.id)
+    if (conflict) return res.status(400).send('cette organisation est déjà partenaire')
+
+    const partner: Partner = {
+      id: partnerOrga.id,
+      name: partnerCreate.name ?? partnerOrga.name,
+      contactEmail: partnerCreate.contactEmail ?? '',
+      partnerId: nanoid(),
+      createdAt: new Date().toISOString()
+    }
+    await storage.addPartner(orga.id, partner)
+
+    eventsLog.info('sd.org.partner.create', `a superadmin manually created a partnership ${partnerOrga.name} (${partnerOrga.id}) of ${orga.name} (${orga.id})`, logContext)
+
+    res.status(201).send()
+  })
+
   router.delete('/:organizationId/partners/:partnerId', async (req, res, next) => {
     const logContext: EventLogContext = { req }
 
     if (!reqUser(req)) return res.status(401).send()
-    if (!await isOrgAdmin(req)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+    if (!reqUser(req)?.adminMode && !await isOrgAdmin(req)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     const storage = storages.globalStorage
     await storage.deletePartner(req.params.organizationId, req.params.partnerId)
 
