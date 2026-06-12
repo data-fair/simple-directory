@@ -70,6 +70,24 @@ test.describe('Superadmin session hardening', () => {
     assert.ok(me.adminMode)
   })
 
+  test('offerAdminMode proposes adminMode to superadmins only', async () => {
+    // superadmin: the flag yields a step response and no session cookies
+    const adminAx = await axiosAuth({ email: 'admin@test.com' }) as AxiosAuthInstance
+    let res = await adminAx.post('/api/auth/password', { email: 'admin@test.com', password: 'TestPasswd01', offerAdminMode: true })
+    assert.deepEqual(res.data, { step: 'adminMode' })
+
+    // accepting the proposal: resubmit with adminMode (no 2FA configured in this test)
+    await passwordLoginFull(adminAx, { email: 'admin@test.com', password: 'TestPasswd01', adminMode: true })
+    const me = (await adminAx.get('/api/auth/me')).data
+    assert.ok(me.adminMode)
+
+    // normal user: the flag is ignored and a regular callback url is returned
+    const ax = await axiosAuth({ email: 'dmeadus0@answers.com' }) as AxiosAuthInstance
+    res = await ax.post('/api/auth/password', { email: 'dmeadus0@answers.com', password: 'TestPasswd01', offerAdminMode: true })
+    assert.equal(typeof res.data, 'string')
+    assert.ok(res.data.includes('token_callback'))
+  })
+
   test('adminMode session has a short exchange token that keepalive does not extend', async () => {
     const ax = await axiosAuth({ email: 'admin@test.com', adminMode: true })
     let res = await ax.post('/api/auth/keepalive')

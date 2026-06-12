@@ -250,6 +250,16 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     }
   }
 
+  // the SD login page sends offerAdminMode on normal logins: when the fully validated user
+  // turns out to be a superadmin (and adminMode is permitted on this site) we propose
+  // switching to adminMode before creating any session (see login.vue step 'adminMode').
+  // The accept path is a new POST with adminMode=true that goes through the full
+  // re-validation including the fresh-TOTP rule.
+  if (body.offerAdminMode && !body.adminMode && payload.isAdmin && (!site || config.adminModeOnSites)) {
+    eventsLog.info('sd.auth.password.admin-prompt', 'a superadmin was offered admin mode at login', logContext)
+    return res.send({ step: 'adminMode' })
+  }
+
   eventsLog.info('sd.auth.password.ok', 'a user successfully authenticated using password', logContext)
   // this is used by data-fair app integrated login
   if (req.is('application/x-www-form-urlencoded')) {
