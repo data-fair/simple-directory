@@ -252,9 +252,11 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
 
   // the SD login page sends offerAdminMode on normal logins: when the fully validated user
   // turns out to be a superadmin (and adminMode is permitted on this site) we propose
-  // switching to adminMode before creating any session (see login.vue step 'adminMode').
-  // The accept path is a new POST with adminMode=true that goes through the full
-  // re-validation including the fresh-TOTP rule.
+  // switching to adminMode before creating any auth session (no id_token / exchange-token
+  // cookies are issued here — see login.vue step 'adminMode'). A 2FA validation cookie may
+  // already have been set by the 2FA block above, exactly as on any successful 2FA login;
+  // it is harmless because the adminMode accept path ignores it (fresh-TOTP rule). The
+  // accept path is a new POST with adminMode=true that re-validates fully, TOTP included.
   if (body.offerAdminMode && !body.adminMode && payload.isAdmin && (!site || config.adminModeOnSites)) {
     eventsLog.info('sd.auth.password.admin-prompt', 'a superadmin was offered admin mode at login', logContext)
     return res.send({ step: 'adminMode' })

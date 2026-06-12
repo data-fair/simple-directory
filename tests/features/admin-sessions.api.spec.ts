@@ -71,10 +71,15 @@ test.describe('Superadmin session hardening', () => {
   })
 
   test('offerAdminMode proposes adminMode to superadmins only', async () => {
-    // superadmin: the flag yields a step response and no session cookies
+    // superadmin: the flag yields a step response and creates no auth session
     const adminAx = await axiosAuth({ email: 'admin@test.com' }) as AxiosAuthInstance
     let res = await adminAx.post('/api/auth/password', { email: 'admin@test.com', password: 'TestPasswd01', offerAdminMode: true })
     assert.deepEqual(res.data, { step: 'adminMode' })
+    // no auth-session cookie is issued on the offer response (the adminMode session is only
+    // created after the accept resubmit below)
+    const offerSetCookies: string[] = res.headers['set-cookie'] ?? []
+    assert.ok(!offerSetCookies.some((c: string) => c.startsWith('id_token=') || c.startsWith('id_token_ex=')),
+      `offer response must not set auth-session cookies, got: ${offerSetCookies.map(c => c.split('=')[0]).join(', ')}`)
 
     // accepting the proposal: resubmit with adminMode (no 2FA configured in this test)
     await passwordLoginFull(adminAx, { email: 'admin@test.com', password: 'TestPasswd01', adminMode: true })
