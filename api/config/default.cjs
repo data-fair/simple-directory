@@ -21,6 +21,10 @@ module.exports = {
   admins: ['admin@test.com'],
   adminsOrg: undefined,
   admins2FA: false,
+  // Allow a configured superadmin (config.admins / _superadmin) to activate adminMode on a
+  // secondary-site session. Default false (adminMode stays main-site only). Only enable when
+  // every secondary site is operator-trusted — see docs/architecture/email-trust-and-site-isolation.md
+  adminModeOnSites: false,
   // special case where a email/password is defined at config level for a superadmin
   // useful when superadmins cannot be created in the storage (on-premise ldap with heavy constraints ?)
   // or to test stuff while email sending is not working yet, etc
@@ -184,6 +188,12 @@ module.exports = {
   authRateLimit: {
     attempts: 5,
     duration: 60
+  },
+  // per-recipient mail rate limit, prevents a bug or runaway webhook from spamming a user's mailbox
+  // points = max number of emails per recipient address within the rolling window of `duration` seconds
+  mailsRateLimit: {
+    points: 500,
+    duration: 86400
   },
   // Example of full oauth provider configuration
   // oauth: {providers: [{

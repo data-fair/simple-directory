@@ -195,9 +195,10 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
 
   const payload = getTokenPayload(user, site)
   if (body.adminMode) {
-    // adminMode is only allowed on a main-site session (see auth/service.ts for the SSO
-    // equivalent of this check).
-    if (site) {
+    // adminMode is main-site only (see auth/service.ts for the SSO equivalent). With
+    // config.adminModeOnSites (default false) the storages grant isAdmin to a configured
+    // superadmin on a secondary-site record, so payload.isAdmin already reflects the opt-in.
+    if (site && !(config.adminModeOnSites && payload.isAdmin)) {
       eventsLog.alert('sd.auth.password.not-admin', 'admin mode activation refused on non-main site session', logContext)
       return returnError('adminModeOnly', 403)
     }
@@ -688,7 +689,7 @@ router.delete('/asadmin', async (req, res, next) => {
   if (!user) return res.status(401).send('User does not exist anymore')
   const site = await reqSite(req)
   const payload = getTokenPayload(user, site)
-  if (user.isAdmin) payload.adminMode = 1
+  if (payload.isAdmin) payload.adminMode = 1
   debug(`Exchange session token for user ${user.name} from an asAdmin session`)
   await setSessionCookies(req, res, reqSitePath(req), payload, null, loggedUser.asAdminOrg ?? getDefaultUserOrg(user, site))
 

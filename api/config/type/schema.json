@@ -40,6 +40,7 @@
     "saml2",
     "webhooks",
     "authRateLimit",
+    "mailsRateLimit",
     "plannedDeletionDelay",
     "cleanup",
     "avatars",
@@ -482,6 +483,21 @@
         }
       }
     },
+    "mailsRateLimit": {
+      "type": "object",
+      "required": [
+        "points",
+        "duration"
+      ],
+      "properties": {
+        "points": {
+          "type": "integer"
+        },
+        "duration": {
+          "type": "integer"
+        }
+      }
+    },
     "plannedDeletionDelay": {
       "type": "integer"
     },
@@ -507,6 +523,9 @@
       "type": "boolean"
     },
     "admins2FA": {
+      "type": "boolean"
+    },
+    "adminModeOnSites": {
       "type": "boolean"
     },
     "singleMembership": {

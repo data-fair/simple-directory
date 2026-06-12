@@ -22,6 +22,7 @@ module.exports = {
   admins: jsonEnv('ADMINS'),
   adminsOrg: jsonEnv('ADMINS_ORG'),
   admins2FA: 'ADMINS_2FA',
+  adminModeOnSites: 'ADMIN_MODE_ON_SITES',
   adminCredentials: jsonEnv('ADMIN_CREDENTIALS'),
   roles: {
     defaults: jsonEnv('ROLES_DEFAULTS')
@@ -266,6 +267,10 @@ module.exports = {
   authRateLimit: {
     attempts: 'AUTHRATELIMIT_ATTEMPTS',
     duration: 'AUTHRATELIMIT_DURATION'
+  },
+  mailsRateLimit: {
+    points: 'MAILSRATELIMIT_POINTS',
+    duration: 'MAILSRATELIMIT_DURATION'
   },
   oauth: {
     providers: jsonEnv('OAUTH_PROVIDERS'),
