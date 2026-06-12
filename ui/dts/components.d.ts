@@ -11,6 +11,7 @@ declare module 'vue' {
     AddMemberMenu: typeof import('./../src/components/add-member-menu.vue')['default']
     AddOrganizationMenu: typeof import('./../src/components/add-organization-menu.vue')['default']
     AddPartnerMenu: typeof import('./../src/components/add-partner-menu.vue')['default']
+    AddPartnerSuperadminMenu: typeof import('./../src/components/add-partner-superadmin-menu.vue')['default']
     AuthProvidersLoginLinks: typeof import('./../src/components/auth-providers-login-links.vue')['default']
     CancelDeletion: typeof import('./../src/components/cancel-deletion.vue')['default']
     ChangeHost: typeof import('./../src/components/change-host.vue')['default']
