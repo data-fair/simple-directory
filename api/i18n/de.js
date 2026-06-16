@@ -33,6 +33,7 @@ export default {
     orgStorageMembers: 'Mitglieder im sekundären Speicher',
     role: 'Rolle',
     search: 'Suche',
+    noResult: 'Kein Ergebnis',
     confirmOk: 'Ok',
     confirmCancel: 'Abbrechen',
     confirmTitle: 'Möchten Sie diese Operation bestätigen?',
