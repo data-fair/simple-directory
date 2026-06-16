@@ -33,6 +33,7 @@ export default {
     orgStorageMembers: 'Miembros en almacenamiento secundario',
     role: 'Papel',
     search: 'Buscar',
+    noResult: 'Sin resultados',
     confirmOk: 'Ok',
     confirmCancel: 'Anular',
     confirmTitle: '¿Desea confirmar esta operación?',

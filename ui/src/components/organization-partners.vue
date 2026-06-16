@@ -51,8 +51,17 @@
       </v-col>
     </v-row>
 
+    <v-alert
+      v-if="orga.partners?.length && !filteredPartners.length"
+      type="info"
+      variant="tonal"
+      class="mt-1"
+    >
+      {{ $t('common.noResult') }}
+    </v-alert>
+
     <v-list
-      v-if="orga.partners?.length"
+      v-if="filteredPartners.length"
       lines="two"
       class="py-0 mt-1 border-sm"
     >
@@ -145,7 +154,8 @@ const adminMode = computed(() => !!session.user.value?.adminMode)
 const writablePartners = computed(() => (isAdminOrga && (!$uiConfig.readonly || $uiConfig.orgStorageOverwrite?.includes('partners'))) || adminMode.value)
 const filteredPartners = computed(() => {
   if (!validQ.value) return orga.partners ?? []
-  else return (orga.partners ?? []).filter(d => (d.id && d.id.includes(validQ.value)) || (d.id && d.id.includes(validQ.value)))
+  const lowerQ = validQ.value.toLowerCase()
+  return (orga.partners ?? []).filter(d => d.name?.toLowerCase().includes(lowerQ) || d.contactEmail?.toLowerCase().includes(lowerQ))
 })
 const currentPage = computed(() => filteredPartners.value.slice((page.value - 1) * pageSize, page.value * pageSize))
 

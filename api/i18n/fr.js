@@ -33,6 +33,7 @@ export default {
     orgStorageMembers: 'Membres dans le stockage secondaire',
     role: 'Rôle',
     search: 'Rechercher',
+    noResult: 'Aucun résultat',
     confirmOk: 'Ok',
     confirmCancel: 'Annuler',
     confirmTitle: 'Souhaitez-vous confirmer cette opération ?',
