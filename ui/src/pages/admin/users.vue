@@ -344,7 +344,7 @@
           >
             {{ $t('pages.admin.users.transferText') }}
           </v-alert>
-          <v-select
+          <v-autocomplete
             v-model="transferTarget"
             :items="transferSiteItems"
             :label="$t('pages.admin.users.transferTargetSite')"

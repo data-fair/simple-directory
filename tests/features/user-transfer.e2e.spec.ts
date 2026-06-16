@@ -35,7 +35,7 @@ test.describe('Superadmin user transfer', () => {
     await expect(dialog.getByRole('button', { name: 'Ok' })).toBeDisabled()
 
     // pick the secondary site and confirm
-    await dialog.locator('.v-select').click()
+    await dialog.locator('.v-autocomplete').click()
     await page.getByRole('option', { name: host2 }).click()
     await dialog.getByRole('button', { name: 'Ok' }).click()
 
@@ -45,7 +45,7 @@ test.describe('Superadmin user transfer', () => {
     // transfer back to the main site
     await row.getByRole('button', { name: /transférer vers un autre site/i }).click()
     const dialog2 = page.locator('.v-overlay--active .v-card')
-    await dialog2.locator('.v-select').click()
+    await dialog2.locator('.v-autocomplete').click()
     await page.getByRole('option', { name: 'Site principal' }).click()
     await dialog2.getByRole('button', { name: 'Ok' }).click()
 
