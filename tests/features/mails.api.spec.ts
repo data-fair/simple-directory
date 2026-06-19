@@ -124,24 +124,25 @@ test.describe('mails', () => {
     assert.ok(email.html.includes('https://example.com/ok'), 'http(s) href should survive')
   })
 
-  test('Contact form: user text is HTML-escaped in the html part', async () => {
+  test('Contact form: portal-built html structure renders, dangerous tags stripped', async () => {
     await testEnvAx.patch('/config', { anonymousContactForm: true })
     const ax = await axios()
     const token = (await ax.get('/api/auth/anonymous-action')).data
+    // the portal contact form composes an HTML body client-side; reproduce a
+    // representative payload mixing safe structure with an injected script
     const res = await ax.post('/api/mails/contact', {
       token,
       from: 'visitor@test.com',
       subject: 'contact-injection',
-      text: 'hello <script>alert(1)</script>\nsecond line'
+      text: '<ul><li><strong>Subject</strong> : hi</li></ul><p>body<script>alert(1)</script></p>'
     })
     assert.equal(res.status, 200)
     const email = await findEmail('contact-injection')
     assert.ok(email)
-    assert.ok(email.html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'),
-      'html should contain escaped <script>')
-    assert.ok(!email.html.includes('<script>alert(1)</script>'),
-      'html must not contain a raw <script> tag')
-    assert.ok(email.html.includes('<br>second line'), 'newline should be turned into <br>')
+    assert.ok(email.html.includes('<strong>Subject</strong>'), 'safe structural tags should render')
+    assert.ok(email.html.includes('<li>'), 'list structure should survive')
+    assert.ok(!email.html.includes('<script'), '<script> tag must be stripped')
+    assert.ok(!email.html.includes('alert(1)'), 'script content must be stripped')
   })
 
   test('Send email to address and with attachments', async () => {
