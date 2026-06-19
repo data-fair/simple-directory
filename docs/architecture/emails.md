@@ -89,9 +89,17 @@ HTML from reaching the recipient.
   proof) plus IP-based rate limit (1 req / 60s, mongo-backed via
   `RateLimiterMongo`).
 - The `text` is wrapped with a "Message transmitted by the contact form of
-  …" prefix and sent both as plain-text and as
-  `textToSafeHtml(...)` → `htmlMsg`. The schema accepts text only, so the
-  caller never gets to inject HTML.
+  …" prefix and sent both as plain-text and as `sanitizeMailHtml(...)` →
+  `htmlMsg`. The schema names the field `text`, but the portal contact form
+  (the only known caller) composes an **HTML** body client-side — lists,
+  bold labels, line breaks, an optional `bodyTemplate_html` — and posts it
+  in that field. So `sanitizeMailHtml` (the same allow-list sanitizer the
+  `/api/mails` route applies to caller html), not `textToSafeHtml`, is what
+  guards this value: structure renders, scripts and non-http(s)/mailto hrefs
+  are stripped. The body is partly anonymous-visitor-controlled (the portal
+  interpolates the visitor's typed text into the HTML without escaping), so
+  the sanitizer is the trust boundary — raw passthrough would re-open the
+  injection path.
 
 ### Direct `sendMailI18n` (internal, no HTTP)
 
@@ -109,7 +117,7 @@ HTML from reaching the recipient.
 
 | Service | Endpoint | Caller (file:line) | What reaches the template |
 |---------|----------|---------------------|---------------------------|
-| portals | `POST /api/mails/contact` | `portal/app/components/page-element/basic/page-element-contact.vue:354` | `text` (the form body — schema rejects html, server escapes) |
+| portals | `POST /api/mails/contact` | `portal/app/components/page-element/basic/page-element-contact.vue:354` | `text` (an HTML body composed client-side — schema names it `text`, server sanitizes it with `sanitizeMailHtml`) |
 | events  | `POST /api/mails`         | `events/api/src/notifications/service.ts:65` | `html` (notification `htmlBody`, third-party-supplied) — sanitized by `sanitizeMailHtml` |
 | sd internal | `sendMailI18n` direct | auth / users / invitations / organizations routers, users worker | i18n template HTML; substituted params come from validated URLs and trusted config |
 
@@ -156,10 +164,15 @@ posture in [`./email-trust-and-site-isolation.md`](./email-trust-and-site-isolat
 2. Caller-supplied `html` to `POST /api/mails` is run through
    `sanitizeMailHtml` (a strict tag allow-list, `href` schemes restricted
    to `http`/`https`/`mailto`) before reaching the MJML substitution.
-3. Caller-supplied `text` to either endpoint reaches `htmlMsg` only via
-   `textToSafeHtml` (HTML-escape + `\n`→`<br>`).
-4. The contact-form schema (`api/contract/contact-mail.ts`) admits `text`
-   only; the server never reads an html field from the contact-form caller.
+3. Caller-supplied `text` to `POST /api/mails` (the internal route, when no
+   `html` is given) reaches `htmlMsg` only via `textToSafeHtml`
+   (HTML-escape + `\n`→`<br>`).
+4. The contact-form `text` value reaches `htmlMsg` only via
+   `sanitizeMailHtml` (strict tag allow-list, `href` schemes restricted to
+   `http`/`https`/`mailto`). The schema (`api/contract/contact-mail.ts`)
+   admits no separate html field, but the `text` it accepts is itself a
+   client-composed HTML body, so the sanitizer — not raw passthrough — is
+   the boundary that keeps anonymous-controlled markup safe.
 5. `sendMailI18n` rejects a `params.link` whose protocol is not `http:` or
    `https:`, so `{link}` (button `href`) and the derived `{origin}` /
    `{host}` cannot carry a `javascript:` / `data:` payload into an i18n

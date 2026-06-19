@@ -135,7 +135,12 @@ router.post('/contact', async (req, res) => {
     path: site?.path,
     subject: req.body.subject,
     text,
-    htmlMsg: textToSafeHtml(text),
+    // the portal contact form builds an HTML body client-side (lists, bold
+    // labels, line breaks, optional bodyTemplate_html); sanitize rather than
+    // escape so that structure renders while scripts/dangerous hrefs are
+    // stripped. The body is partly anonymous-visitor-controlled, so the
+    // sanitizer (not raw passthrough) stays the trust boundary.
+    htmlMsg: sanitizeMailHtml(text),
     htmlCaption: ''
   })
   res.send(req.body)
