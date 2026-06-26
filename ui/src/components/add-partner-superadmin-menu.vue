@@ -43,14 +43,6 @@
             autocomplete="off"
             @update:search="onSearch"
           />
-          <v-text-field
-            v-model="contactEmail"
-            :label="$t('common.contactEmail')"
-            name="contactEmail"
-            density="compact"
-            variant="outlined"
-            autocomplete="off"
-          />
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -87,13 +79,11 @@ const emit = defineEmits(['change'])
 const menu = ref(false)
 const createForm = ref<InstanceType<typeof VForm>>()
 const selectedOrg = ref<{ id: string, name: string } | null>(null)
-const contactEmail = ref('')
 const orgItems = ref<{ id: string, name: string }[]>([])
 
 watch(menu, () => {
   if (!menu.value) return
   selectedOrg.value = null
-  contactEmail.value = ''
   orgItems.value = []
   createForm.value?.reset()
 })
@@ -113,7 +103,7 @@ const confirmCreate = useAsyncAction(async () => {
     menu.value = false
     await $fetch(`organizations/${orga.id}/partners/_create`, {
       method: 'POST',
-      body: { id: selectedOrg.value.id, contactEmail: contactEmail.value || undefined }
+      body: { id: selectedOrg.value.id }
     })
     sendUiNotif({ type: 'success', msg: t('common.modificationOk') })
     emit('change')

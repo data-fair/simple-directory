@@ -513,10 +513,11 @@ if (config.managePartners) {
     const conflict = (orga.partners || []).find(p => p.id === partnerOrga.id)
     if (conflict) return res.status(400).send('cette organisation est déjà partenaire')
 
+    // this partnership is established immediately, there is no invitation workflow, so we do not
+    // store a contact email (unnecessary personal information)
     const partner: Partner = {
       id: partnerOrga.id,
       name: partnerCreate.name ?? partnerOrga.name,
-      contactEmail: partnerCreate.contactEmail ?? '',
       partnerId: nanoid(),
       createdAt: new Date().toISOString()
     }

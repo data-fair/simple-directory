@@ -19,9 +19,6 @@ export default {
         },
         name: {
           type: 'string'
-        },
-        contactEmail: {
-          type: 'string'
         }
       }
     }

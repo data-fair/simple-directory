@@ -532,9 +532,12 @@ class MongodbStorage implements SdStorage {
   }
 
   async addPartner (orgId: string, partner: Partner) {
-    await mongo.organizations.updateOne({ _id: orgId }, {
-      $pull: { partners: { contactEmail: { $eq: partner.contactEmail }, id: { $exists: false } } }
-    })
+    // remove a previous pending invitation sent to the same contact email (re-invitation)
+    if (partner.contactEmail) {
+      await mongo.organizations.updateOne({ _id: orgId }, {
+        $pull: { partners: { contactEmail: { $eq: partner.contactEmail }, id: { $exists: false } } }
+      })
+    }
     await mongo.organizations.updateOne({ _id: orgId }, {
       $push: { partners: partner }
     })
@@ -545,9 +548,11 @@ class MongodbStorage implements SdStorage {
   }
 
   async validatePartner (orgId: string, partnerId: string, partner: Organization) {
+    // the invitation workflow is finished, the contact email is no longer needed and should
+    // not be kept as unnecessary personal information
     await mongo.organizations.updateOne(
       { _id: orgId, 'partners.partnerId': partnerId },
-      { $set: { 'partners.$.name': partner.name, 'partners.$.id': partner.id } }
+      { $set: { 'partners.$.name': partner.name, 'partners.$.id': partner.id }, $unset: { 'partners.$.contactEmail': '' } }
     )
   }
 }
