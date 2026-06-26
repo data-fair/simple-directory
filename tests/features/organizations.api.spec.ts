@@ -57,6 +57,8 @@ test.describe('organizations api', () => {
     assert.equal(orgInfo.partners.length, 1)
     assert.ok(orgInfo.partners[0].partnerId)
     assert.ok(!orgInfo.partners[0].id)
+    // the contact email is still stored while the invitation is pending
+    assert.equal(orgInfo.partners[0].contactEmail, 'test-partners2@test.com')
 
     const { ax: ax2 } = await createUser('test-partners2@test.com')
     const org2 = (await ax2.post('/api/organizations', { name: 'Org 2' })).data
@@ -68,6 +70,8 @@ test.describe('organizations api', () => {
     assert.equal(orgInfo.partners.length, 1)
     assert.equal(orgInfo.partners[0].id, org2.id)
     assert.ok(orgInfo.partners[0].partnerId)
+    // once the invitation workflow is finished, the contact email is no longer stored
+    assert.ok(!orgInfo.partners[0].contactEmail)
 
     const userPartners = (await axOrg2.get(`/api/organizations/${org.id}/partners/_user-partners`)).data
     assert.equal(userPartners.length, 1)
@@ -104,6 +108,8 @@ test.describe('organizations api', () => {
     assert.equal(orgInfo.partners[0].id, orgB.id)
     assert.equal(orgInfo.partners[0].name, 'Org B')
     assert.ok(orgInfo.partners[0].partnerId)
+    // an established partnership does not store a contact email
+    assert.ok(!orgInfo.partners[0].contactEmail)
 
     // creating the same partnership again is rejected
     await assert.rejects(
