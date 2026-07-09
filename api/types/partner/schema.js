@@ -4,7 +4,7 @@ export default {
   title: 'Partner',
   type: 'object',
   additionalProperties: false,
-  required: ['name', 'contactEmail', 'partnerId', 'createdAt'],
+  required: ['name', 'partnerId', 'createdAt'],
   properties: {
     id: { type: 'string' },
     name: { type: 'string' },
