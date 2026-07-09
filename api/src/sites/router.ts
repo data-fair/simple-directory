@@ -3,7 +3,7 @@ import { Router, type Request } from 'express'
 import config from '#config'
 import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, type AccountKeys } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
-import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite, toggleMainSite } from './service.ts'
+import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite, toggleMainSite, findMainSite } from './service.ts'
 import { getThemeCss, getThemeCssHash, defaultThemeCssHash, defaultThemeCss } from '../utils/theme.ts'
 import { isOIDCProvider, reqSite } from '#services'
 import { reqI18n } from '#i18n'
@@ -130,6 +130,13 @@ router.post('', async (req, res, next) => {
   if (postSite.contact) {
     patch.mails = existingSite?.mails ?? {}
     patch.mails.contact = postSite.contact
+  }
+  if (!existingSite && (patch.authMode === undefined || patch.authMode === 'onlyBackOffice')) {
+    const mainSite = await findMainSite(postSite.owner)
+    if (mainSite) {
+      patch.authMode = 'onlyOtherSite'
+      patch.authOnlyOtherSite = mainSite.host
+    }
   }
   patch.updatedAt = new Date().toISOString()
   const patchedSite = await patchSite(patch, true)

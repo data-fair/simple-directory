@@ -73,4 +73,37 @@ test.describe('sites api', () => {
     // using site_redirect is no longer possible
     await assert.rejects(ax.post<string>('/api/auth/site_redirect', { redirect: siteDirectoryUrl }), { status: 400 })
   })
+
+  test('should default a new site to onlyOtherSite when the owner already has a primary site', async () => {
+    const config = await getServerConfig()
+
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const anonymousAx = await axios()
+    const { ax } = await createUser('test-site-secondary@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test_sites_secondary' })).data
+    const owner = { type: 'organization', id: org.id, name: org.name }
+
+    const mainHost = '127.0.0.1:' + process.env.NGINX_PORT2
+    const secondaryHost = '127.0.0.1:' + process.env.NGINX_PORT3
+
+    // 1. create the primary site and toggle it to isAccountMain
+    await anonymousAx.post('/api/sites',
+      { _id: 'test_sites_main', owner, host: mainHost, theme: { primaryColor: '#FF00FF' } },
+      { params: { key: config.secretKeys.sites } })
+    await adminAx.patch('/api/sites/test_sites_main', { isAccountMain: true })
+    await testEnvAx.post('/clear-site-cache')
+
+    // 2. create a second site for the same owner via the webhook (POST /api/sites)
+    //    it must default to onlyOtherSite pointing to the primary site
+    const newSite = (await anonymousAx.post('/api/sites',
+      { _id: 'test_sites_secondary', owner, host: secondaryHost, theme: { primaryColor: '#FF00FF' } },
+      { params: { key: config.secretKeys.sites } })).data
+    assert.equal(newSite.authMode, 'onlyOtherSite')
+    assert.equal(newSite.authOnlyOtherSite, mainHost)
+
+    // 3. same alignment is visible in the public info
+    const secondaryPublic = (await anonymousAx.get(`http://${secondaryHost}/simple-directory/api/sites/_public`)).data
+    assert.equal(secondaryPublic.authMode, 'onlyOtherSite')
+    assert.equal(secondaryPublic.authOnlyOtherSite, mainHost)
+  })
 })

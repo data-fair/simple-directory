@@ -128,6 +128,14 @@ export async function getSite (siteId: string) {
   return mongo.sites.findOne({ _id: siteId })
 }
 
+export async function findMainSite (owner: AccountKeys) {
+  return mongo.sites.findOne({
+    'owner.type': owner.type,
+    'owner.id': owner.id,
+    isAccountMain: true
+  })
+}
+
 export async function patchSite (patch: Partial<Site> & Pick<Site, '_id'>, createIfMissing = false) {
   return (await mongo.sites.findOneAndUpdate({ _id: patch._id }, { $set: patch }, { upsert: createIfMissing, returnDocument: 'after' })) as Site
 }
