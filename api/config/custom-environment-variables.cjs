@@ -324,8 +324,8 @@ module.exports = {
   manageSites: 'MANAGE_SITES',
   acceptUnknownSite: 'ACCEPT_UNKNOWN_SITE',
   managePartners: 'MANAGE_PARTNERS',
-  manageNhis: jsonEnv('MANAGE_NHIS'),
-  nhisAllowInsecureIssuers: jsonEnv('NHIS_ALLOW_INSECURE_ISSUERS'),
+  manageNhis: 'MANAGE_NHIS',
+  nhisAllowInsecureIssuers: 'NHIS_ALLOW_INSECURE_ISSUERS',
   manageSessions: 'MANAGE_SESSIONS',
   defaultOrg: 'DEFAULT_ORG',
   passwordValidation: {
