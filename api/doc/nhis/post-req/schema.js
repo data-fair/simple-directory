@@ -3,7 +3,6 @@ export default {
   title: 'Post NHI req',
   'x-exports': ['validate', 'types'],
   type: 'object',
-  additionalProperties: false,
   required: ['body'],
   properties: {
     body: {

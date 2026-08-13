@@ -266,6 +266,7 @@ module.exports = {
   },
   manageSites: true,
   managePartners: true,
+  manageNhis: true,
   defaultOrg: 'admins-org',
   passwordValidation: {
     entropy: 20,

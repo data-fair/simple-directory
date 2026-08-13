@@ -3,7 +3,6 @@ export default {
   title: 'Patch NHI req',
   'x-exports': ['validate', 'types'],
   type: 'object',
-  additionalProperties: false,
   required: ['body'],
   properties: {
     body: {
