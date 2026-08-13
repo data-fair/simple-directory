@@ -67,8 +67,25 @@ test('non-admin members cannot manage NHIs, bad role rejected', async () => {
   await assert.rejects(axMember.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { name: 'renamed by member' }), (err: any) => err.status === 403)
   await assert.rejects(axMember.delete(`/api/organizations/${org.id}/nhis/${nhi.id}`), (err: any) => err.status === 403)
 
-  // NHIs have no email, so the test-env cleanup filter (which matches _id/^test_/ and
-  // email@test.com) does not sweep them up -- delete explicitly to avoid leaking an
-  // email:null user document across test runs (collides with the unique email index).
+  // belt-and-suspenders: test-env cleanup also sweeps nhi-* ids now, but delete
+  // explicitly here too rather than relying on it.
   await ax.delete(`/api/organizations/${org.id}/nhis/${nhi.id}`)
+})
+
+test('two NHIs can coexist in the same org (regression: email-less users must not collide on a unique index)', async () => {
+  const { ax } = await createUser('nhi-admin3@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI org 3' })).data
+  ax.setOrg(org.id)
+
+  const nhi1 = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ subject: subject + '-1' }))).data
+  const nhi2 = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ subject: subject + '-2' }))).data
+  assert.notEqual(nhi1.id, nhi2.id)
+
+  const list = (await ax.get(`/api/organizations/${org.id}/nhis`)).data
+  assert.equal(list.count, 2)
+  assert.deepEqual(list.results.map((r: any) => r.id).sort(), [nhi1.id, nhi2.id].sort())
+
+  await ax.delete(`/api/organizations/${org.id}/nhis/${nhi1.id}`)
+  await ax.delete(`/api/organizations/${org.id}/nhis/${nhi2.id}`)
+  assert.equal((await ax.get(`/api/organizations/${org.id}/nhis`)).data.count, 0)
 })

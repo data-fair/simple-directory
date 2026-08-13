@@ -87,7 +87,12 @@ export class SdMongo {
       users: {
         email_1: [
           { email: 1, host: 1 },
-          { unique: true, collation, name: 'email_1' }
+          // sparse alone would not be enough: sparse only excludes docs missing *every*
+          // indexed field, but these docs have host too (or not), so email:null still
+          // collides. A partial index restricted to docs that actually have an email
+          // (NHIs and some LDAP-backed records don't) is what actually prevents two
+          // email-less users from colliding on the unique (null, null) slot.
+          { unique: true, collation, name: 'email_1', partialFilterExpression: { email: { $exists: true } } }
         ],
         logged_1: [ // for metrics
           { logged: -1 },
