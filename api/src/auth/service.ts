@@ -239,7 +239,7 @@ export const authProviderLoginCallback = async (
     eventsQueue?.pushEvent({
       sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
-      title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
+      title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email ?? '', orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })
     })
     await setNbMembersLimit(invitOrga.id)
   }

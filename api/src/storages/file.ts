@@ -105,7 +105,7 @@ class FileStorage implements SdStorage {
 
   async getUserByEmail (email: string) {
     // Case insensitive comparison
-    const user = this.users.find(u => u.email.toLowerCase() === email.toLowerCase()) as User | undefined
+    const user = this.users.find(u => u.email?.toLowerCase() === email.toLowerCase()) as User | undefined
     if (!user) return
     user.sessions = (await mongo.fileUserSessions.findOne({ _id: user.id }))?.sessions
     return this.cleanUser(user)
@@ -133,7 +133,7 @@ class FileStorage implements SdStorage {
     }
     const emails = params.emails?.map(email => email.toLowerCase())
     if (emails?.length) {
-      filteredUsers = filteredUsers.filter(user => emails.includes(user.email.toLowerCase()))
+      filteredUsers = filteredUsers.filter(user => !!user.email && emails.includes(user.email.toLowerCase()))
     }
     if (params.host) {
       filteredUsers = filteredUsers.filter(user => user.host === params.host)
@@ -165,7 +165,7 @@ class FileStorage implements SdStorage {
     }
     const emails = params.emails?.map(email => email.toLowerCase())
     if (emails?.length) {
-      members = members.filter(member => emails.includes(member.email.toLowerCase()))
+      members = members.filter(member => !!member.email && emails.includes(member.email.toLowerCase()))
     }
     const roles = params.roles
     if (roles?.length) {

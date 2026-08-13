@@ -121,7 +121,7 @@ const newInvitation = () => {
   const invit: Invitation = {
     id: orga.id,
     name: orga.name,
-    email: member.email,
+    email: member.email ?? '',
     role: member.role
   }
   if (invitDepartments.length) invit.departments = invitDepartments

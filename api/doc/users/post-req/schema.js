@@ -11,6 +11,10 @@ const body = jsonSchema(UserSchema)
 body.properties.password = { type: 'string' }
 // anonymous-action token required for unauthenticated callers (bot / email-amplifier gate)
 body.properties.token = { type: 'string' }
+// email is optional on the base User schema (to accommodate nhi users, see
+// api/types/user/schema.js) but self-service signup through this endpoint is always for a
+// human user and must keep requiring it
+body.required = [...new Set([...(body.required ?? []), 'email'])]
 
 export default {
   $id: 'https://github.com/data-fair/simple-directory/users/post-req',

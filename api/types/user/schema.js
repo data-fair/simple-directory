@@ -8,7 +8,6 @@ export default {
   additionalProperties: false,
   required: [
     'id',
-    'email',
     'name',
     'organizations'
   ],
@@ -172,6 +171,24 @@ export default {
     sessions: {
       type: 'array',
       items: { $ref: '#/$defs/serverSession' }
+    },
+    nhi: {
+      description: 'Non-human identity: managed by the owning organization admins, authenticates by exchanging a JWT from the bound provider',
+      type: 'object',
+      additionalProperties: false,
+      required: ['provider', 'subject'],
+      properties: {
+        provider: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['issuer'],
+          properties: {
+            issuer: { type: 'string', description: 'Must equal the assertion `iss` claim' },
+            jwks: { type: 'object', description: 'Inline JWKS; if absent, OIDC discovery is performed on the issuer URL' }
+          }
+        },
+        subject: { type: 'string', description: 'Must equal the assertion `sub` claim' }
+      }
     }
   },
   $defs: {

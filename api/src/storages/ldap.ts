@@ -583,7 +583,7 @@ export class LdapStorage implements SdStorage {
       if (withSession) user.sessions = (await mongo.ldapUserSessions.findOne({ _id: user.id }))?.sessions
       if (!this.org) {
         // Admin rights are only granted to a user record that belongs to the main site (no host).
-        user.isAdmin = !user.host && (config.admins.includes(user.email.toLowerCase()) || user.id === '_superadmin')
+        user.isAdmin = !user.host && (config.admins.includes(user.email?.toLowerCase() ?? '') || user.id === '_superadmin')
         if (!user.isAdmin && !user.host && this.ldapParams.isAdmin?.attr && this.ldapParams.isAdmin?.values?.length) {
           debug('check if user is admin', user.email, res.fullResults[0].attrs)
           const values = res.fullResults[0].attrs[this.ldapParams.isAdmin.attr] ?? []
@@ -649,7 +649,7 @@ export class LdapStorage implements SdStorage {
     }
     const emails = params.emails?.map(email => email.toLowerCase())
     if (emails) {
-      results = results.filter(user => emails.includes(user.email.toLowerCase()))
+      results = results.filter(user => !!user.email && emails.includes(user.email.toLowerCase()))
     }
     if (params.q) {
       const lq = params.q.toLowerCase()
@@ -699,7 +699,7 @@ export class LdapStorage implements SdStorage {
     }
     const emails = params.emails?.map(email => email.toLowerCase())
     if (emails) {
-      results = results.filter(member => emails.includes(member.email.toLowerCase()))
+      results = results.filter(member => !!member.email && emails.includes(member.email.toLowerCase()))
     }
     if (params.q) {
       const lq = params.q.toLowerCase()

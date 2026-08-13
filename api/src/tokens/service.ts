@@ -29,7 +29,10 @@ export const decodeToken = (token: string) => jwt.decode(token) as JwtPayload
 export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site?: Site) => {
   const payload: SessionState['user'] = {
     id: user.id,
-    email: user.email,
+    // lib-express's User type still requires email as a non-optional string; NHI users have
+    // no email. The value is preserved as-is (possibly undefined) and dropped by JSON
+    // serialization at signing time — see TODO below for the companion type fix upstream.
+    email: user.email as string,
     name: user.name,
     organizations: (user.organizations || []).map(o => ({ ...o }))
   }
@@ -38,7 +41,7 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site?: 
   // single payload chokepoint so every token path (login, keepalive, refresh) stays consistent,
   // without touching the storage `isAdmin = !host` invariant. Only enable when every site is
   // operator-trusted — see docs/architecture/email-trust-and-site-isolation.md.
-  if (user.isAdmin || (config.adminModeOnSites && (config.admins.includes(user.email?.toLowerCase() ?? '') || user.id === '_superadmin'))) {
+  if (!user.nhi && (user.isAdmin || (config.adminModeOnSites && (config.admins.includes(user.email?.toLowerCase() ?? '') || user.id === '_superadmin')))) {
     payload.isAdmin = 1
   }
   if (user.defaultOrg) {
@@ -52,6 +55,9 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site?: 
   // if (user.readonly) payload.readonly = user.readonly
   if (user.coreIdProvider) payload.idp = 1
   if (site) payload.siteOwner = site.owner
+  // nhi flag lets downstream services adapt (no mail-based actions, no account switching)
+  // TODO companion PR @data-fair/lib-express: add nhi to SessionState['user'], make email optional
+  if (user.nhi) (payload as any).nhi = 1
   return payload
 }
 

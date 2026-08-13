@@ -176,7 +176,8 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     }
     const payload: ActionPayload = {
       id: user.id,
-      email: user.email,
+      // user was resolved by storage.getUserByEmail just above, email is always defined here
+      email: user.email ?? '',
       action: 'changeHost',
       host: site.host,
       path: site.path
@@ -350,7 +351,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, redirectSite, body.org, body.dep), body.orgStorage)
 
   debug(`Passwordless authentication of user ${user.name}`)
-  await sendMailI18n('login', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
+  await sendMailI18n('login', reqI18n(req).messages, user.email ?? '', { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
   eventsLog.info('sd.auth.passwordless.ok', 'a user successfully sent a authentication email', logContext)
   res.status(204).send()
 })
@@ -637,7 +638,8 @@ router.post('/action', async (req, res, next) => {
   }
   const payload: ActionPayload = {
     id: user.id,
-    email: user.email,
+    // user was resolved by storage.getUserByEmail just above, email is always defined here
+    email: user.email ?? '',
     action
   }
   if (action === 'changeHost' && site) {
@@ -651,7 +653,7 @@ router.post('/action', async (req, res, next) => {
   const linkUrl = new URL(linkTarget)
   linkUrl.searchParams.set('action_token', token)
 
-  await sendMailI18n('action', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
+  await sendMailI18n('action', reqI18n(req).messages, user.email ?? '', { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
   eventsLog.info('sd.auth.action.ok', `an action email ${action} was sent`, logContext)
   res.status(204).send()
 })

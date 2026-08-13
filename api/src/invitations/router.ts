@@ -121,7 +121,7 @@ router.post('', async (req, res, next) => {
           eventsQueue?.pushEvent({
             sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin', department: deptId },
             topic: { key: 'simple-directory:add-member' },
-            title: __all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: invitTargetLabel })
+            title: __all('notifications.addMember', { name: newUser.name, email: newUser.email ?? '', orgName: invitTargetLabel })
           })
         }
       } else {
@@ -129,7 +129,7 @@ router.post('', async (req, res, next) => {
         eventsQueue?.pushEvent({
           sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin' },
           topic: { key: 'simple-directory:add-member' },
-          title: __all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: invitTargetLabel })
+          title: __all('notifications.addMember', { name: newUser.name, email: newUser.email ?? '', orgName: invitTargetLabel })
         })
       }
       await setNbMembersLimit(orga.id)
@@ -154,7 +154,7 @@ router.post('', async (req, res, next) => {
       eventsQueue?.pushNotification({
         sender: { type: 'organization' as const, id: orga.id, name: orga.name },
         topic: { key: 'simple-directory:add-member' },
-        title: __(req, 'notifications.addMember', { name: newUser.name, email: newUser.email, orgName: invitTargetLabel }),
+        title: __(req, 'notifications.addMember', { name: newUser.name, email: newUser.email ?? '', orgName: invitTargetLabel }),
         recipient: { id: newUser.id, name: newUser.name }
       })
 
@@ -255,7 +255,7 @@ router.get('/_accept', async (req, res, next) => {
       !await storage.getPassword(existingUser.id) && !Object.keys(existingUser.oauth ?? {}).length &&
       !Object.keys(existingUser.oidc ?? {}).length && !Object.keys(existingUser.saml2 ?? {}).length
     ) {
-      const payload: ActionPayload = { id: existingUser.id, email: existingUser.email, action: 'changePassword' }
+      const payload: ActionPayload = { id: existingUser.id, email: existingUser.email ?? '', action: 'changePassword' }
       const token = await signToken(payload, config.jwtDurations.initialToken)
       const reboundRedirect = redirectUrl.href
       redirectUrl = new URL(`${reqSiteUrl(req) + '/simple-directory'}/login`)
@@ -343,7 +343,7 @@ router.get('/_accept', async (req, res, next) => {
   const event = {
     sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin', department: invitDepartments[0] },
     topic: { key: 'simple-directory:invitation-accepted' },
-    title: __all('notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: invitTargetLabel })
+    title: __all('notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email ?? '', orgName: invitTargetLabel })
   }
   // send notif to all admins subscribed to the topic
   eventsQueue?.pushEvent(event)
@@ -351,7 +351,7 @@ router.get('/_accept', async (req, res, next) => {
   eventsQueue?.pushNotification({
     sender: event.sender,
     topic: event.topic,
-    title: __(req, 'notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: invitTargetLabel }),
+    title: __(req, 'notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email ?? '', orgName: invitTargetLabel }),
     recipient: { id: existingUser.id, name: existingUser.name }
   })
 

@@ -32,6 +32,7 @@ async function cleanUser (resource: any): Promise<User> {
   // matches config.admins — this neutralizes cross-site admin takeover via a compromised or
   // misconfigured site-level SSO.
   resource.isAdmin = !resource.host && (config.admins.includes(resource.email?.toLowerCase()) || resource.id === '_superadmin')
+  if (resource.nhi) resource.isAdmin = false
   if (resource.onlyCreateInvited) resource.ignorePersonalAccount = true
   if (resource.organizations) {
     for (const org of resource.organizations) {
@@ -223,7 +224,7 @@ class MongodbStorage implements SdStorage {
 
   async findUsersToDelete () {
     const users: User[] = []
-    for await (const user of mongo.users.find({ plannedDeletion: { $lt: dayjs().format('YYYY-MM-DD') } })) {
+    for await (const user of mongo.users.find({ plannedDeletion: { $lt: dayjs().format('YYYY-MM-DD') }, nhi: { $exists: false } })) {
       users.push(await cleanUser(user))
     }
     return users
@@ -234,6 +235,7 @@ class MongodbStorage implements SdStorage {
     const cursor = await mongo.users
       .find({
         plannedDeletion: { $exists: false },
+        nhi: { $exists: false },
         $or: [
           { logged: { $lt: inactiveDelayDate } },
           { logged: { $exists: false }, 'created.date': { $lt: inactiveDelayDate } }
@@ -274,6 +276,9 @@ class MongodbStorage implements SdStorage {
     if ('emailConfirmed' in params) {
       filter.emailConfirmed = params.emailConfirmed
     }
+    const types = params.types ?? ['user']
+    if (!types.includes('nhi')) filter.nhi = { $exists: false }
+    else if (!types.includes('user')) filter.nhi = { $exists: true }
     const [count, users] = await Promise.all([
       mongo.users.countDocuments(filter),
       params.size === 0
