@@ -1,10 +1,11 @@
 import { Router } from 'express'
-import { httpError, reqSession, reqSessionAuthenticated, getAccountRole, type EventLogContext } from '@data-fair/lib-express'
+import { httpError, reqSessionAuthenticated, type EventLogContext } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import config from '#config'
 import storages from '#storages'
 import { reqI18n } from '#i18n'
 import { postUserIdentityWebhook, deleteIdentityWebhook } from '#services'
+import { isOrgAdmin } from '../organizations/service.ts'
 import { createNhi, getNhi, listNhis } from './service.ts'
 import type { Request } from 'express'
 
@@ -14,9 +15,10 @@ export default router
 type OrgParams = { organizationId: string }
 type NhiParams = { organizationId: string, nhiId: string }
 
-const assertOrgAdmin = (req: Request<OrgParams>) => {
-  const role = getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: config.depAdminIsOrgAdmin })
-  if (role !== 'admin') throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+// Parity with organizations/router.ts: anyone who can administer the org (including
+// via the siteAdmin fallback) can administer its non-human identities.
+const assertOrgAdmin = async (req: Request<OrgParams>) => {
+  if (!await isOrgAdmin(req)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
 }
 
 const getOrgAndRoles = async (organizationId: string) => {
@@ -27,12 +29,12 @@ const getOrgAndRoles = async (organizationId: string) => {
 }
 
 router.get('', async (req: Request<OrgParams>, res) => {
-  assertOrgAdmin(req)
+  await assertOrgAdmin(req)
   res.send(await listNhis(req.params.organizationId))
 })
 
 router.post('', async (req: Request<OrgParams>, res) => {
-  assertOrgAdmin(req)
+  await assertOrgAdmin(req)
   const { body } = (await import('#doc/nhis/post-req/index.ts')).returnValid(req, { name: 'req' })
   const logContext: EventLogContext = { req }
   const { org, roles } = await getOrgAndRoles(req.params.organizationId)
@@ -46,7 +48,7 @@ router.post('', async (req: Request<OrgParams>, res) => {
 })
 
 router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
-  assertOrgAdmin(req)
+  await assertOrgAdmin(req)
   const { body } = (await import('#doc/nhis/patch-req/index.ts')).returnValid(req, { name: 'req' })
   const logContext: EventLogContext = { req }
   const { org, roles } = await getOrgAndRoles(req.params.organizationId)
@@ -86,7 +88,7 @@ router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
 })
 
 router.delete('/:nhiId', async (req: Request<NhiParams>, res) => {
-  assertOrgAdmin(req)
+  await assertOrgAdmin(req)
   const logContext: EventLogContext = { req }
   const user = await getNhi(req.params.organizationId, req.params.nhiId)
   logContext.account = { type: 'organization', id: req.params.organizationId, name: user.organizations[0]?.name }

@@ -15,6 +15,7 @@ import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
 import { cipher } from '../utils/cipher.ts'
 import nhisRouter from '../nhis/router.ts'
+import { isOrgAdmin } from './service.ts'
 import Debug from 'debug'
 
 const slug = _slug.default
@@ -30,20 +31,6 @@ function getUserOrgDep (req) {
 }
 
 */
-
-// Either a super admin, or an admin of the current organization
-async function isOrgAdmin (req: Request) {
-  const role = getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: config.depAdminIsOrgAdmin })
-  if (role === 'admin') return true
-  if (config.siteAdmin && reqSession(req).siteRole === 'admin') {
-    const site = await reqSite(req)
-    const orga = await storages.globalStorage.getOrganization(req.params.organizationId)
-    if (site && orga?.host === site.host && orga?.path === site.path) {
-      return true
-    }
-  }
-  return false
-}
 
 // Either a super admin, or a member of the current organization
 async function isMember (req: Request, allAccounts?: boolean) {

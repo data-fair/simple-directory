@@ -55,4 +55,20 @@ test('non-admin members cannot manage NHIs, bad role rejected', async () => {
   await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ role: 'nosuchrole' })), (err: any) => err.status === 400)
   const anonymous = axios()
   await assert.rejects(anonymous.post(`/api/organizations/${org.id}/nhis`, nhiBody()), (err: any) => err.status === 401 || err.status === 403)
+
+  // a genuine authenticated non-admin (plain 'user' role) member is also forbidden
+  const { ax: axMember } = await createUser('nhi-member2@test.com')
+  await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
+  await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'nhi-member2@test.com', role: 'user' })
+  await testEnvAx.patch('/config', { alwaysAcceptInvitation: false })
+
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+  await assert.rejects(axMember.post(`/api/organizations/${org.id}/nhis`, nhiBody({ subject: subject + '-member' })), (err: any) => err.status === 403)
+  await assert.rejects(axMember.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { name: 'renamed by member' }), (err: any) => err.status === 403)
+  await assert.rejects(axMember.delete(`/api/organizations/${org.id}/nhis/${nhi.id}`), (err: any) => err.status === 403)
+
+  // NHIs have no email, so the test-env cleanup filter (which matches _id/^test_/ and
+  // email@test.com) does not sweep them up -- delete explicitly to avoid leaking an
+  // email:null user document across test runs (collides with the unique email index).
+  await ax.delete(`/api/organizations/${org.id}/nhis/${nhi.id}`)
 })
