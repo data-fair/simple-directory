@@ -289,6 +289,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       prepare: 'Das Bild vorbereiten'
     },
     me: {
+      emailNotEditable: 'Diese Adresse kann nicht geändert werden.',
       noOrganization: 'Sie sind nicht Mitglied einer Organisation.',
       operations: 'Sensible Operationen',
       deleteMyself: 'Dieses Konto löschen',

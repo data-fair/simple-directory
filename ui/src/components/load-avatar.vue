@@ -19,6 +19,7 @@
         <v-img
           v-if="owner && !loading"
           :src="avatarUrl + '?t=' + getTimestamp()"
+          alt=""
         />
       </v-avatar>
       <v-file-input

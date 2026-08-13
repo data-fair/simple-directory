@@ -289,6 +289,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       prepare: 'Prepara la imagen'
     },
     me: {
+      emailNotEditable: 'Esta dirección no se puede modificar.',
       noOrganization: 'No eres miembro de ninguna organización.',
       operations: 'Operaciones sensibles',
       deleteMyself: 'Eliminar esta cuenta',

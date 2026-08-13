@@ -26,6 +26,9 @@ import { getSiteByUrl } from '#services'
 import { defaultThemeCssHash, getThemeCssHash } from './utils/theme.ts'
 import { defaultPublicSiteInfoHash, getPublicSiteInfoHash } from './utils/public-site-info.ts'
 
+// the site title is injected as text into the served HTML, it must not be able to break out of its tag
+const escapeHtml = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
 const app = express()
 export default app
 
@@ -117,7 +120,10 @@ if (process.env.NODE_ENV !== 'test') {
       const site = await getSiteByUrl(siteUrl)
       return {
         THEME_CSS_HASH: site ? getThemeCssHash(site) : defaultThemeCssHash,
-        PUBLIC_SITE_INFO_HASH: site ? getPublicSiteInfoHash(site) : defaultPublicSiteInfoHash
+        PUBLIC_SITE_INFO_HASH: site ? getPublicSiteInfoHash(site) : defaultPublicSiteInfoHash,
+        // the SPA sets the definitive title, this one fills the <title> of the served
+        // document, which the W3C validator requires (RGAA 8.2)
+        SITE_TITLE: escapeHtml(site?.title ?? 'Simple Directory')
       }
     }
   }))

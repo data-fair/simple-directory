@@ -5,6 +5,7 @@
     :class="{'pa-0': $route.query.fluid === 'true'}"
     :style="$route.query.fluid === 'true' ? '' : 'max-width:600px;'"
   >
+    <!-- h2 and not h1: this page is always embedded in an iframe, the h1 belongs to the host page -->
     <h2 class="text-headline-medium mb-4">
       <v-icon
         size="large"
@@ -20,11 +21,18 @@
       data-iframe-height
       @submit="save.execute"
     >
+      <!--
+        readonly and not disabled: a disabled field is dimmed to 38% opacity, which drops the
+        contrast of the address well below the 4.5:1 required (RGAA 3.2). readonly keeps it
+        readable and focusable, and is restituted as non editable.
+      -->
       <v-text-field
         v-model="user.email"
+        :hint="$t('pages.me.emailNotEditable')"
         :label="$t('common.email')"
-        :disabled="true"
         name="email"
+        persistent-hint
+        readonly
       />
 
       <load-avatar
