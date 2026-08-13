@@ -148,6 +148,12 @@
       :is-admin-orga="orgRole === 'admin'"
       @change="fetchOrga.refresh()"
     />
+
+    <organization-nhis
+      v-if="$uiConfig.manageNhis && orgRole === 'admin'"
+      :orga="orga"
+      :is-admin-orga="true"
+    />
   </v-container>
 </template>
 
