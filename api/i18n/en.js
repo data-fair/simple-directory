@@ -7,6 +7,7 @@ export default {
     description: 'Easy users and organizations management for modern Web-oriented architectures.'
   },
   common: {
+    manageNotifications: 'Manage notifications',
     home: 'Home',
     logLink: 'login / sign up',
     logout: 'logout',

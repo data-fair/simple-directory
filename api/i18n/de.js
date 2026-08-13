@@ -7,6 +7,7 @@ export default {
     description: 'Vereinfachte Verwaltung Ihrer Benutzer und Organisationen in einer modernen weborientierten Architektur.'
   },
   common: {
+    manageNotifications: 'Benachrichtigungen verwalten',
     home: 'Startseite',
     logLink: 'Anmelden / Registrieren',
     logout: 'Abmelden',

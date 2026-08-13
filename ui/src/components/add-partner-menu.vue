@@ -4,7 +4,7 @@
     :close-on-content-click="false"
   >
     <template #activator="{props}">
-      <v-fab
+      <v-btn
         :title="$t('pages.organization.addPartner')"
         size="small"
         color="primary"

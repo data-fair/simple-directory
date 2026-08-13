@@ -126,6 +126,7 @@
             <v-avatar v-if="!members.results[i-1] || members.results[i-1].id !== member.id">
               <v-img
                 :src="`${$sdUrl}/api/avatars/user/${member.id}/avatar.png`"
+                alt=""
               />
             </v-avatar>
             <div

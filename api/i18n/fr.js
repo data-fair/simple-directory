@@ -7,6 +7,7 @@ export default {
     description: 'Gestion simplifiée de vos utilisateurs et vos organisations dans une architecture moderne orientée Web.'
   },
   common: {
+    manageNotifications: 'Gérer les notifications',
     home: 'Accueil',
     logLink: 'Se connecter / s\'inscrire',
     logout: 'Se déconnecter',
