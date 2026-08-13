@@ -319,8 +319,8 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       org: 'Sie können diese Einladung im Namen einer Organisation akzeptieren, für die Sie Administrator sind, oder eine neue Organisation erstellen und die Einladung im Namen der Organisation akzeptieren.',
       createOrg: 'eine neue Organisation erstellen',
       newOrgName: 'Name der neuen Organisation',
-      create: 'erstellen',
-      acceptAs: 'akzeptieren im Namen von {name}'
+      create: 'Erstellen',
+      acceptAs: 'Akzeptieren im Namen von {name}'
     },
     changeHost: {
       msg1: 'Das Konto {email} existiert nicht auf {host}, aber es existiert auf {mainHost}.',

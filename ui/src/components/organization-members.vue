@@ -65,7 +65,7 @@
       <v-col :cols="filterMemberCols">
         <v-select
           v-model="role"
-          :items="orga.roles"
+          :items="roleItems"
           :label="$t('common.role')"
           name="role"
           variant="solo"
@@ -163,7 +163,7 @@
           </template>
           <v-list-item-subtitle style="white-space:normal;">
             <span v-if="member.department">{{ orga.departmentLabel || $t('common.department') }} = {{ member.departmentName || member.department }}, </span>
-            <span>{{ $t('common.role') }} = {{ member.role }}</span>
+            <span>{{ $t('common.role') }} = {{ roleLabel(member.role) }}</span>
           </v-list-item-subtitle>
 
           <template #append>
@@ -257,6 +257,10 @@ const { isAdminOrga, orga, nbMembersLimits, orgStorage, readonly, adminDepartmen
 const { t } = useI18n()
 const { sendUiNotif } = useUiNotif()
 const { user, asAdmin } = useSessionAuthenticated()
+
+// the roles are stored as keys, their readable labels live in rolesLabels
+const roleLabel = (role: string) => orga.rolesLabels?.[role] || $uiConfig.defaultRolesLabels?.[role] || role
+const roleItems = computed(() => (orga.roles ?? []).map(role => ({ value: role, title: roleLabel(role) })))
 
 const q = ref('')
 const role = ref()

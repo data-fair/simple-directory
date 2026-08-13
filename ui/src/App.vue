@@ -96,11 +96,6 @@ const appClass = computed(() => {
   }
 }
 
-/* Restore button text casing after Vuetify 4 removed default uppercase */
-.v-btn {
-  text-transform: capitalize;
-}
-
 body .v-application .logo-container {
   height: 100%;
   padding: 4px;

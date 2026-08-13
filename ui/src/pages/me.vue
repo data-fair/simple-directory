@@ -5,7 +5,6 @@
     :class="{'pa-0': $route.query.fluid === 'true'}"
     :style="$route.query.fluid === 'true' ? '' : 'max-width:600px;'"
   >
-    <!-- h2 and not h1: this page is always embedded in an iframe, the h1 belongs to the host page -->
     <h2 class="text-headline-medium mb-4">
       <v-icon
         size="large"

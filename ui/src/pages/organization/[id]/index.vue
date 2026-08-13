@@ -90,7 +90,7 @@
       </template>
       <v-select
         :model-value="orga['2FA']?.roles"
-        :items="orga.roles"
+        :items="roleItems"
         :messages="[$t('pages.organization.2FARolesMsg')]"
         :placeholder="$t('pages.organization.2FARoles')"
         multiple
@@ -179,6 +179,13 @@ watch(fetchOrga.data, (freshOrga) => {
     orga.value = editOrg
   }
 })
+// the roles are stored as keys, their readable labels live in rolesLabels
+// (blanked above when they match the default, hence the fallbacks)
+const roleItems = computed(() => (orga.value?.roles ?? []).map(role => ({
+  value: role,
+  title: orga.value?.rolesLabels?.[role] || $uiConfig.defaultRolesLabels?.[role] || role
+})))
+
 const orgRole = computed(() => {
   const role = getAccountRole(session.state, { type: 'organization', id: orgId }, { acceptDepAsRoot: $uiConfig.depAdminIsOrgAdmin })
   if (role) return role
