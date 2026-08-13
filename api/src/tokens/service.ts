@@ -1,4 +1,4 @@
-import type { SessionInfoPayload, Site, User } from '#types'
+import type { ServerSession, SessionInfoPayload, Site, User } from '#types'
 import type { Request, Response } from 'express'
 import type { OrganizationMembership, SessionState, User as SessionUser } from '@data-fair/lib-express'
 import { reqSession, reqSiteUrl, session, reqSitePath, reqSessionAuthenticated, reqIp, httpError } from '@data-fair/lib-express'
@@ -7,10 +7,15 @@ import { internalError } from '@data-fair/lib-node/observer.js'
 import config, { jwtDurations } from '#config'
 import jwt, { type SignOptions, type JwtPayload } from 'jsonwebtoken'
 import Cookies from 'cookies'
+import { nanoid } from 'nanoid'
 import storages from '#storages'
 import { getSignatureKeys } from './keys-manager.ts'
 import { getDefaultLoginRedirect, getRedirectSite, reqSite } from '#services'
 import { lastIpInfo } from '../utils/ip-info.ts'
+
+// delay during which the previous exchange token is still accepted, so that concurrent
+// keepalives (multiple tabs) do not look like a stolen token being replayed
+const exchangeTokenGrace = 60000
 
 export const signToken = async (payload: any, exp: string | number, notBefore?: string) => {
   const signatureKeys = await getSignatureKeys()
@@ -112,7 +117,10 @@ export const logout = async (req: Request, res: Response) => {
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
 // the header and payload are not httpOnly to be readable by client
 // all cookies use sameSite for CSRF prevention
-export const setSessionCookies = async (req: Request, res: Response, sitePath: string, payload: SessionUser, serverSessionId: string | null, userOrg?: OrganizationMembership, options?: { skipExchangeToken?: boolean }) => {
+// the exchange token is single use: each one issued gets an id (jti) recorded on the server
+// session, and presenting an id that is no longer valid means the token was copied (cf keepalive).
+// keepExchangeJti is used to re-issue the current token as is, without rotating it
+export const setSessionCookies = async (req: Request, res: Response, sitePath: string, payload: SessionUser, serverSessionId: string | null, userOrg?: OrganizationMembership, options?: { skipExchangeToken?: boolean, keepExchangeJti?: string }) => {
   const cookies = new Cookies(req, res, { secure })
   // cf https://www.npmjs.com/package/jsonwebtoken#token-expiration-exp-claim
   const date = Date.now()
@@ -194,6 +202,18 @@ export const setSessionCookies = async (req: Request, res: Response, sitePath: s
   if (options?.skipExchangeToken) {
     cookies.set('id_token_ex', '', { ...deleteOpts, path: sitePath + '/simple-directory/', httpOnly: true })
   } else {
+    if (options?.keepExchangeJti) {
+      sessionInfo.jti = options.keepExchangeJti
+    } else {
+      sessionInfo.jti = nanoid()
+      // recorded before the cookie is sent: a token whose id was not stored would look
+      // like a stolen one at the next keepalive
+      const sessionPatch: Partial<ServerSession> = { jti: sessionInfo.jti, rotatedAt: new Date().toISOString() }
+      if (existingServerSessionInfo?.jti && existingServerSessionInfo.session === serverSessionId) {
+        sessionPatch.previousJti = existingServerSessionInfo.jti
+      }
+      await storages.updateSessionById(serverSessionId, sessionPatch)
+    }
     const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
     const exchangeToken = await signToken(sessionInfo, exchangeExp)
     cookies.set('id_token_ex', exchangeToken, exchangeCookieOpts)
@@ -270,6 +290,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     eventsLog.alert('sd.auth.keepalive.ip', 'a session bound to another IP tried to prolongate a session', logContext)
     throw httpError(401, 'Session liée à une autre adresse IP')
   }
+  let serverSession: ServerSession | undefined
   if (sessionState.user.asAdmin) {
     const adminUser = await storage.getUser(sessionState.user.asAdmin.id)
     if (!adminUser) throw httpError(401, 'Utilisateur inexistant')
@@ -279,7 +300,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
       eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with another user\'s exchange token tried to prolongate a session', logContext)
       throw httpError(401, 'Informations de session manquantes')
     }
-    const serverSession = adminUser.sessions?.find(s => s.id === serverSessionInfo.session)
+    serverSession = adminUser.sessions?.find(s => s.id === serverSessionInfo.session)
     if (!serverSession) {
       await logout(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with a deleted session reference tried to prolongate a session', logContext)
@@ -291,10 +312,27 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
       eventsLog.info('sd.auth.keepalive.fail', 'a user with another user\'s exchange token tried to prolongate a session', logContext)
       throw httpError(401, 'Informations de session manquantes')
     }
-    const serverSession = user.sessions?.find(s => s.id === serverSessionInfo.session)
+    serverSession = user.sessions?.find(s => s.id === serverSessionInfo.session)
     if (!serverSession) {
       await logout(req, res)
       eventsLog.info('sd.auth.keepalive.fail', 'a user with a deleted session reference tried to prolongate a session', logContext)
+      throw httpError(401, 'Session interrompue')
+    }
+  }
+
+  // single use exchange token: presenting anything else than the last one issued means a copy
+  // of the cookie is in circulation, the session is destroyed and its owner must authenticate again.
+  // the previous token is tolerated for a short delay, the time for concurrent keepalives
+  // (multiple tabs of the same browser) to converge on the new one.
+  // sessions created before this mechanism have no jti yet, they get one at this keepalive
+  let keepExchangeJti: string | undefined
+  if (serverSession.jti && serverSessionInfo.jti !== serverSession.jti) {
+    const inGraceWindow = serverSession.rotatedAt && (Date.now() - new Date(serverSession.rotatedAt).getTime()) < exchangeTokenGrace
+    if (serverSessionInfo.jti && serverSessionInfo.jti === serverSession.previousJti && inGraceWindow) {
+      keepExchangeJti = serverSession.jti
+    } else {
+      await logout(req, res)
+      eventsLog.alert('sd.auth.keepalive.reuse', 'an already used exchange token was presented, the session was destroyed', logContext)
       throw httpError(401, 'Session interrompue')
     }
   }
@@ -330,7 +368,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
       return true
     })
   }
-  await setSessionCookies(req, res, reqSitePath(req), payload, serverSessionInfo.session, userOrg)
+  await setSessionCookies(req, res, reqSitePath(req), payload, serverSessionInfo.session, userOrg, { keepExchangeJti })
 
   eventsLog.info('sd.auth.keepalive.ok', 'a session was successfully prolongated', logContext)
 }

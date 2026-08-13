@@ -82,6 +82,8 @@ export type SessionInfoPayload = {
   adminMode?: 1
   // IP address the session is bound to, cf config.adminSessionIpBinding
   ip?: string
+  // id of this token, rotated at each keepalive to detect the replay of a stolen token
+  jti?: string
   // exp is set by jwt signing; present when the payload comes from a decoded token
   exp?: number
 }

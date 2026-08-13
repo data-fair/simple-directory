@@ -257,6 +257,18 @@ export default {
         },
         lastAsnOrg: {
           type: 'string'
+        },
+        // id of the exchange token currently valid for this session, the previous one is
+        // kept to tolerate concurrent keepalives, cf tokens/service.ts
+        jti: {
+          type: 'string'
+        },
+        previousJti: {
+          type: 'string'
+        },
+        rotatedAt: {
+          type: 'string',
+          format: 'date-time'
         }
       }
     }

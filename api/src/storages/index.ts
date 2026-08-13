@@ -1,4 +1,4 @@
-import type { Organization, UserWritable } from '#types'
+import type { Organization, ServerSession, UserWritable } from '#types'
 import config from '#config'
 import mongo from '#mongo'
 import type { SdStorage, SdStorageFactory } from './interface.ts'
@@ -69,6 +69,17 @@ class StorageManager {
       if (org) storage = await this.createOrgStorage(org) ?? storage
     }
     return storage
+  }
+
+  // the session of an exchange token is updated without knowing which storage its user
+  // belongs to, sessions of all the storages are kept in mongo anyway
+  async updateSessionById (sessionId: string, patch: Partial<ServerSession>) {
+    const mongoSet: Record<string, any> = {}
+    for (const [key, value] of Object.entries(patch)) mongoSet[`sessions.$.${key}`] = value
+    const filter = { 'sessions.id': sessionId }
+    await mongo.users.updateOne(filter, { $set: mongoSet })
+    await mongo.ldapUserSessions.updateOne(filter, { $set: mongoSet })
+    await mongo.fileUserSessions.updateOne(filter, { $set: mongoSet })
   }
 
   async deleteSessionById (sessionId: string) {
