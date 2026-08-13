@@ -147,7 +147,7 @@ const confirmEdit = useAsyncAction(async () => {
   const body: any = {
     name: editNhi.value.name,
     role: editNhi.value.role,
-    department: editNhi.value.department || null,
+    department: editNhi.value.department || '',
     subject: editNhi.value.subject,
     provider: { issuer: editNhi.value.provider.issuer }
   }
