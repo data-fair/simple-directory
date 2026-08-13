@@ -80,6 +80,8 @@ export type SessionInfoPayload = {
   session: string
   user: string
   adminMode?: 1
+  // IP address the session is bound to, cf config.adminSessionIpBinding
+  ip?: string
   // exp is set by jwt signing; present when the payload comes from a decoded token
   exp?: number
 }

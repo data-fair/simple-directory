@@ -230,6 +230,33 @@ export default {
         lastKeepalive: {
           type: 'string',
           format: 'date-time'
+        },
+        // origin of the session at creation, and at the last keepalive (last*).
+        // the geo fields are filled from the enrichment headers of the reverse-proxy,
+        // they are absent when it does not send them
+        ip: {
+          type: 'string'
+        },
+        country: {
+          type: 'string'
+        },
+        asn: {
+          type: 'string'
+        },
+        asnOrg: {
+          type: 'string'
+        },
+        lastIp: {
+          type: 'string'
+        },
+        lastCountry: {
+          type: 'string'
+        },
+        lastAsn: {
+          type: 'string'
+        },
+        lastAsnOrg: {
+          type: 'string'
         }
       }
     }

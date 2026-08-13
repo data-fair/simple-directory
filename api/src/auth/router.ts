@@ -32,7 +32,7 @@ router.use(bodyParser.urlencoded({ limit: '100kb' }))
 
 async function confirmLog (storage: SdStorage, user: User, serverSession: ServerSession) {
   if (!storage.readonly) {
-    await storage.updateLogged(user.id, serverSession.id)
+    await storage.updateLogged(user.id)
     if (user.emailConfirmed === false) {
       await storage.confirmEmail(user.id)
       postUserIdentityWebhook(user)

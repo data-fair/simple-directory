@@ -1,7 +1,7 @@
 import type { SessionInfoPayload, Site, User } from '#types'
 import type { Request, Response } from 'express'
 import type { OrganizationMembership, SessionState, User as SessionUser } from '@data-fair/lib-express'
-import { reqSession, reqSiteUrl, session, reqSitePath, reqSessionAuthenticated, httpError } from '@data-fair/lib-express'
+import { reqSession, reqSiteUrl, session, reqSitePath, reqSessionAuthenticated, reqIp, httpError } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { internalError } from '@data-fair/lib-node/observer.js'
 import config, { jwtDurations } from '#config'
@@ -10,6 +10,7 @@ import Cookies from 'cookies'
 import storages from '#storages'
 import { getSignatureKeys } from './keys-manager.ts'
 import { getDefaultLoginRedirect, getRedirectSite, reqSite } from '#services'
+import { lastIpInfo } from '../utils/ip-info.ts'
 
 export const signToken = async (payload: any, exp: string | number, notBefore?: string) => {
   const signatureKeys = await getSignatureKeys()
@@ -138,6 +139,20 @@ export const setSessionCookies = async (req: Request, res: Response, sitePath: s
     sessionInfo.user = existingServerSessionInfo.user
   }
 
+  // adminMode sessions are bound to the IP they were created from: their tokens carry it and
+  // both the keepalive below and the services reading the id_token (cf lib-express session)
+  // refuse requests coming from another address.
+  // like the hard expiry the binding is decided once, when the session is created: renewals
+  // keep the original IP, otherwise a stolen session could simply be re-bound to the thief.
+  if (sessionInfo.adminMode && config.adminSessionIpBinding) {
+    if (existingServerSessionInfo?.ip && existingServerSessionInfo.session === sessionInfo.session) {
+      sessionInfo.ip = existingServerSessionInfo.ip
+    } else {
+      sessionInfo.ip = reqIp(req)
+    }
+    payload.boundIp = sessionInfo.ip
+  }
+
   // adminMode sessions have a short HARD expiry: the exchange token is signed with
   // jwtDurations.adminExchangeToken when adminMode is granted and renewals (keepalive,
   // asAdmin switches) keep the original exp instead of extending it. When it lapses,
@@ -248,6 +263,13 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     eventsLog.info('sd.auth.keepalive.fail', 'a user with a broken echange token tried to prolongate a session', logContext)
     throw httpError(401, 'Informations de session erronées')
   }
+  // the exchange token is the long lived credential, its IP binding is checked here even if
+  // the id_token was already checked by the session middleware (it may be expired at this point)
+  if (serverSessionInfo.ip && serverSessionInfo.ip !== reqIp(req)) {
+    await logout(req, res)
+    eventsLog.alert('sd.auth.keepalive.ip', 'a session bound to another IP tried to prolongate a session', logContext)
+    throw httpError(401, 'Session liée à une autre adresse IP')
+  }
   if (sessionState.user.asAdmin) {
     const adminUser = await storage.getUser(sessionState.user.asAdmin.id)
     if (!adminUser) throw httpError(401, 'Utilisateur inexistant')
@@ -288,11 +310,17 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     delete payload.isAdmin
   } else {
     if (!storage.readonly) {
-      storage.updateLogged(sessionState.user.id, serverSessionInfo.session).catch(async (err: any) => {
+      storage.updateLogged(sessionState.user.id).catch(async (err: any) => {
         internalError('update-logged', 'error while updating logged date', err)
       })
     }
   }
+  // serverSessionInfo.user, not sessionState.user.id: in asAdmin mode the server session
+  // still belongs to the superadmin who opened it
+  storage.updateUserSession(serverSessionInfo.user, serverSessionInfo.session, { lastKeepalive: new Date().toISOString(), ...lastIpInfo(req) })
+    .catch(async (err: any) => {
+      internalError('update-user-session', 'error while updating session info', err)
+    })
   let userOrg
   if (idTokenOrg) {
     userOrg = user.organizations.find(o => {
