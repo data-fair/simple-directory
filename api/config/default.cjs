@@ -27,6 +27,10 @@ module.exports = {
   // secondary-site session. Default false (adminMode stays main-site only). Only enable when
   // every secondary site is operator-trusted — see docs/architecture/email-trust-and-site-isolation.md
   adminModeOnSites: false,
+  // bind adminMode sessions to the IP address they were created from: their tokens carry it
+  // and any request coming from another address is rejected (see tokens/service.ts).
+  // Disable if superadmins connect from unstable addresses (mobile networks, some VPNs).
+  adminSessionIpBinding: true,
   // special case where a email/password is defined at config level for a superadmin
   // useful when superadmins cannot be created in the storage (on-premise ldap with heavy constraints ?)
   // or to test stuff while email sending is not working yet, etc

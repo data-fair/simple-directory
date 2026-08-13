@@ -530,6 +530,9 @@
     "adminModeOnSites": {
       "type": "boolean"
     },
+    "adminSessionIpBinding": {
+      "type": "boolean"
+    },
     "singleMembership": {
       "type": "boolean"
     },

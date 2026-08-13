@@ -150,18 +150,10 @@ class MongodbStorage implements SdStorage {
     return user
   }
 
-  async updateLogged (id: string, serverSessionId: string | null) {
-    const logged = new Date().toISOString()
-    const mongoSet: MatchKeysAndValues<UserInDb> = { logged }
-    const updateOptions: UpdateOptions = {}
-    if (serverSessionId) {
-      mongoSet['sessions.$[currentSession].lastKeepalive'] = logged
-      updateOptions.arrayFilters = [{ 'currentSession.id': serverSessionId }]
-    }
+  async updateLogged (id: string) {
     await mongo.users.updateOne(
       { _id: id },
-      { $set: mongoSet },
-      updateOptions)
+      { $set: { logged: new Date().toISOString() } })
   }
 
   async confirmEmail (id: string) {
@@ -179,6 +171,13 @@ class MongodbStorage implements SdStorage {
     } else {
       await mongo.users.updateOne({ _id: userId }, { $push: { sessions: serverSession } })
     }
+  }
+
+  async updateUserSession (userId: string, serverSessionId: string, patch: Partial<ServerSession>) {
+    const mongoSet: MatchKeysAndValues<UserInDb> = {}
+    for (const [key, value] of Object.entries(patch)) mongoSet[`sessions.$[currentSession].${key}`] = value
+    const updateOptions: UpdateOptions = { arrayFilters: [{ 'currentSession.id': serverSessionId }] }
+    await mongo.users.updateOne({ _id: userId }, { $set: mongoSet }, updateOptions)
   }
 
   async deleteUserSession (userId: string, serverSessionId: string) {
