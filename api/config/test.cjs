@@ -97,6 +97,8 @@ module.exports = {
   },
   manageSites: true,
   managePartners: true,
+  manageNhis: true,
+  nhisAllowInsecureIssuers: true,
   cipherPassword: 'test',
   observer: {
     active: false,

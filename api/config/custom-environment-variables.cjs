@@ -18,7 +18,8 @@ module.exports = {
     adminExchangeToken: 'JWT_DURATION_ADMIN_EXCHANGE',
     invitationToken: 'JWT_DURATION_INVIT',
     partnerInvitationToken: 'JWT_DURATION_PARTNER_INVIT',
-    '2FAToken': 'JWT_DURATION_2FA'
+    '2FAToken': 'JWT_DURATION_2FA',
+    nhiToken: 'JWT_DURATION_NHI'
   },
   admins: jsonEnv('ADMINS'),
   adminsOrg: jsonEnv('ADMINS_ORG'),
@@ -323,6 +324,8 @@ module.exports = {
   manageSites: 'MANAGE_SITES',
   acceptUnknownSite: 'ACCEPT_UNKNOWN_SITE',
   managePartners: 'MANAGE_PARTNERS',
+  manageNhis: jsonEnv('MANAGE_NHIS'),
+  nhisAllowInsecureIssuers: jsonEnv('NHIS_ALLOW_INSECURE_ISSUERS'),
   manageSessions: 'MANAGE_SESSIONS',
   defaultOrg: 'DEFAULT_ORG',
   passwordValidation: {

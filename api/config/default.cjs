@@ -18,7 +18,8 @@ module.exports = {
     idToken: '15m',
     invitationToken: '10d',
     partnerInvitationToken: '10d',
-    '2FAToken': '30d'
+    '2FAToken': '30d',
+    nhiToken: '30m'
   },
   admins: ['admin@test.com'],
   adminsOrg: undefined,
@@ -270,6 +271,8 @@ module.exports = {
   manageSites: false,
   acceptUnknownSite: false,
   managePartners: false,
+  manageNhis: false,
+  nhisAllowInsecureIssuers: false,
   manageSessions: true,
   defaultOrg: undefined,
   passwordValidation: {
