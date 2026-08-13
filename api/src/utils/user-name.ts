@@ -7,5 +7,8 @@ export default (user: Pick<User, 'email' | 'lastName' | 'firstName' | 'nhi'> & P
   if (user.firstName || lastName) return ((user.firstName || '') + ' ' + (lastName || '')).trim()
   // const oauthWithName = Object.keys(user.oauth || {}).find(p => !!user.oauth[p].name)
   // if (oauthWithName) return user.oauth[oauthWithName].name
-  return (user.email?.split('@').shift() as string).split('.').map(str => str[0].toUpperCase() + str.slice(1)).join(' ')
+  // email is schema-optional even for non-nhi users (e.g. some LDAP-backed records); fall back
+  // to any existing name rather than crashing on a missing local-part
+  if (!user.email) return user.name ?? ''
+  return (user.email.split('@').shift() as string).split('.').map(str => str[0].toUpperCase() + str.slice(1)).join(' ')
 }
