@@ -1,14 +1,16 @@
 import { test, expect } from '../support/e2e-fixtures.ts'
 
 test.describe('Account profile page', () => {
-  test('displays user email (disabled)', async ({ page, appUrl, loginAs }) => {
+  test('displays user email (read-only)', async ({ page, appUrl, loginAs }) => {
     await loginAs('testprofile@test.com')
     await page.goto(appUrl('/me'))
 
     const emailField = page.locator('input[name="email"]')
     await expect(emailField).toBeVisible()
     await expect(emailField).toHaveValue('testprofile@test.com')
-    await expect(emailField).toBeDisabled()
+    // readonly (not disabled) for accessibility: keeps the address readable and focusable
+    await expect(emailField).toHaveAttribute('readonly', '')
+    await expect(emailField).not.toBeEditable()
   })
 
   test('edit first name and last name', async ({ page, appUrl, loginAs }) => {
