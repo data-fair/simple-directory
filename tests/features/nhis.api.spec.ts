@@ -1,13 +1,21 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { generateKeyPairSync } from 'node:crypto'
-import { axios, createUser, deleteAllEmails, testEnvAx } from '../support/axios.ts'
+import jwt from 'jsonwebtoken'
+import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl } from '../support/axios.ts'
 
-const { publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
+const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const publicJwk = { ...publicKey.export({ format: 'jwk' }), kid: 'test-key', alg: 'RS256', use: 'sig' }
 const jwks = { keys: [publicJwk] }
+const privatePem = privateKey.export({ format: 'pem', type: 'pkcs8' }) as string
 const issuer = 'https://test-issuer.example.com'
 const subject = 'system:serviceaccount:agents:my-agent'
+
+// expected audience is the site origin, i.e. directoryUrl without the /simple-directory suffix
+const audience = directoryUrl.replace('/simple-directory', '')
+const signAssertion = (claims: Record<string, any> = {}, opts: jwt.SignOptions = {}) =>
+  jwt.sign({ iss: issuer, sub: subject, aud: audience, ...claims }, privatePem,
+    { algorithm: 'RS256', keyid: 'test-key', expiresIn: '10m', ...opts })
 
 const nhiBody = (overrides: Record<string, any> = {}) => ({
   name: 'My agent', role: 'user', subject, provider: { issuer, jwks }, ...overrides
@@ -88,4 +96,62 @@ test('two NHIs can coexist in the same org (regression: email-less users must no
   await ax.delete(`/api/organizations/${org.id}/nhis/${nhi1.id}`)
   await ax.delete(`/api/organizations/${org.id}/nhis/${nhi2.id}`)
   assert.equal((await ax.get(`/api/organizations/${org.id}/nhis`)).data.count, 0)
+})
+
+test('nhi token exchange issues a short-lived org session', async () => {
+  const { ax } = await createUser('nhi-admin3@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI org 3' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+
+  const agentAx = axios()
+  const res = await agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion() })
+  assert.equal(res.data.token_type, 'Bearer')
+  assert.ok(res.data.expires_in > 0 && res.data.expires_in <= 10 * 60)
+  const payload = jwt.decode(res.data.access_token) as any
+  assert.equal(payload.nhi, 1)
+  assert.equal(payload.id, nhi.id)
+  assert.equal(payload.email, undefined)
+  assert.equal(payload.isAdmin, undefined)
+  assert.equal(payload.organizations.length, 1)
+  assert.equal(payload.organizations[0].id, org.id)
+
+  const cookies = res.headers['set-cookie']!.join(';')
+  assert.ok(cookies.includes('id_token='))
+  assert.ok(cookies.includes('id_token_org=' + org.id))
+  assert.ok(!cookies.includes('id_token_ex='))
+
+  // the session works against the API (cookie flow, same as a browser context would use)
+  const me = await agentAx.get(`/api/organizations/${org.id}`, { headers: { cookie: res.headers['set-cookie']!.map(c => c.split(';')[0]).join('; ') } })
+  assert.equal(me.data.id, org.id)
+
+  // keepalive is structurally rejected: no exchange token
+  await assert.rejects(agentAx.post('/api/auth/keepalive', null, { headers: { cookie: res.headers['set-cookie']!.map(c => c.split(';')[0]).join('; ') } }),
+    (err: any) => err.status === 401)
+})
+
+test('nhi session exp is capped by the assertion exp', async () => {
+  const { ax } = await createUser('nhi-admin4@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI org 4' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+  const agentAx = axios()
+  const res = await agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion({}, { expiresIn: '30s' }) })
+  assert.ok(res.data.expires_in <= 30)
+})
+
+test('nhi token exchange failures are a uniform 401', async () => {
+  const { ax } = await createUser('nhi-admin5@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI org 5' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+  const agentAx = axios()
+  const is401 = (err: any) => err.status === 401
+  await assert.rejects(agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion({ sub: 'system:serviceaccount:agents:other' }) }), is401)
+  await assert.rejects(agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion({ aud: 'https://other.example.com' }) }), is401)
+  await assert.rejects(agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion({}, { expiresIn: '-1m' }) }), is401)
+  await assert.rejects(agentAx.post('/api/auth/nhi-token', { client_id: 'nhi-unknown000', assertion: signAssertion() }), is401)
+  // a human user id is not exchangeable
+  const { user: humanUser } = await createUser('human@test.com')
+  await assert.rejects(agentAx.post('/api/auth/nhi-token', { client_id: humanUser.id, assertion: signAssertion() }), is401)
 })

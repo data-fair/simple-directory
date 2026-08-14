@@ -1,4 +1,4 @@
-import config, { superadmin } from '#config'
+import config, { superadmin, jwtDurations } from '#config'
 import mongo from '#mongo'
 import { Router, type RequestHandler } from 'express'
 import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, reqSession, reqSessionAuthenticated, assertReqInternalSecret, reqSitePath } from '@data-fair/lib-express'
@@ -9,10 +9,13 @@ import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalPr
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, Site, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import { internalError } from '@data-fair/lib-node/observer.js'
 import emailValidator from 'email-validator'
 import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
+import { verifyAssertion } from '../nhis/service.ts'
+
 import { checkPassword, validatePassword, type Password } from '../utils/passwords.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
@@ -278,6 +281,41 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     debug(`Password based authentication of user ${user.name}, ajax mode`, callbackUrl)
     res.send(callbackUrl)
   }
+})
+
+// Exchange a JWT emitted by the provider bound to a non-human identity for a short-lived,
+// non-refreshable session on this site. Loosely follows RFC 7523 (JWT bearer grant).
+router.post('/nhi-token', async (req, res) => {
+  if (!config.manageNhis) throw httpError(404, 'nhi support is not activated')
+  const { body } = (await import('#doc/auth/post-nhi-token-req/index.ts')).returnValid(req, { name: 'req' })
+  const logContext: EventLogContext = { req }
+  if (!await limiter()(reqIp(req)) || !await limiter()(body.client_id)) {
+    eventsLog.warn('sd.auth.nhi.rate-limit', 'rate limit error for /auth/nhi-token route', logContext)
+    throw httpError(429, reqI18n(req).messages.errors.rateLimitAuth)
+  }
+  // uniform failure: same status/body whatever the cause, random delay against timing probes
+  const reject = async (reason: string) => {
+    eventsLog.warn('sd.auth.nhi.fail', `nhi token exchange failed: ${reason}`, logContext)
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000))
+    return httpError(401, 'invalid credentials')
+  }
+  const user = await storages.globalStorage.getUser(body.client_id)
+  if (!user?.nhi || user.organizations.length !== 1) throw await reject('unknown or invalid nhi ' + body.client_id)
+  let assertionPayload
+  try {
+    assertionPayload = await verifyAssertion(body.assertion, user.nhi.provider, user.nhi.subject, reqSiteUrl(req))
+  } catch (err: any) {
+    throw await reject('assertion rejected for ' + user.id + ': ' + err.message)
+  }
+  const site = await reqSite(req)
+  const nowSec = Math.floor(Date.now() / 1000)
+  const exp = Math.min(assertionPayload.exp as number, nowSec + jwtDurations.nhiToken)
+  const payload = getTokenPayload(user, site)
+  const userOrg = user.organizations[0]
+  const token = await setSessionCookies(req, res, reqSitePath(req), payload, 'nhi-session', userOrg, { skipExchangeToken: true, exp })
+  storages.globalStorage.updateLogged(user.id, null).catch((err: any) => internalError('nhi-update-logged', 'error while updating logged date', err))
+  eventsLog.info('sd.auth.nhi.ok', `an NHI session was created for ${user.id}`, logContext)
+  res.send({ access_token: token, token_type: 'Bearer', expires_in: exp - nowSec })
 })
 
 // Either find or create an user based on an email address then send a mail with a link and a token

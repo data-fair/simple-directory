@@ -117,27 +117,35 @@ export const logout = async (req: Request, res: Response) => {
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
 // the header and payload are not httpOnly to be readable by client
 // all cookies use sameSite for CSRF prevention
-export const setSessionCookies = async (req: Request, res: Response, sitePath: string, payload: SessionUser, serverSessionId: string | null, userOrg?: OrganizationMembership, options?: { skipExchangeToken?: boolean }) => {
+export const setSessionCookies = async (req: Request, res: Response, sitePath: string, payload: SessionUser, serverSessionId: string | null, userOrg?: OrganizationMembership, options?: { skipExchangeToken?: boolean, exp?: number }) => {
   const cookies = new Cookies(req, res, { secure })
   // cf https://www.npmjs.com/package/jsonwebtoken#token-expiration-exp-claim
   const date = Date.now()
-  const exp = Math.floor(date / 1000) + jwtDurations.idToken
+  const exp = options?.exp ?? Math.floor(date / 1000) + jwtDurations.idToken
 
-  const existingExchangeToken = cookies.get('id_token_ex')
   let existingServerSessionInfo: SessionInfoPayload | undefined
-  if (existingExchangeToken) {
-    try {
-      existingServerSessionInfo = (await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined
-    } catch (err) {
-      // ignore an old invalid exchange token
+  if (!options?.exp) {
+    // a bounded-exp session (NHI exchange) never has or needs an exchange token: no server
+    // session exists to look up, and the caller always passes a non-null serverSessionId
+    // (a fixed marker string) in that case, so this whole lookup/requirement block is skipped
+    const existingExchangeToken = cookies.get('id_token_ex')
+    if (existingExchangeToken) {
+      try {
+        existingServerSessionInfo = (await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined
+      } catch (err) {
+        // ignore an old invalid exchange token
+      }
+    }
+    if (!serverSessionId) {
+      if (!existingServerSessionInfo) throw httpError(400, 'missing exchange token')
+      serverSessionId = existingServerSessionInfo.session
     }
   }
-  if (!serverSessionId) {
-    if (!existingServerSessionInfo) throw httpError(400, 'missing exchange token')
-    serverSessionId = existingServerSessionInfo.session
-  }
 
-  const sessionInfo: SessionInfoPayload = { user: payload.id, session: serverSessionId, adminMode: payload.adminMode }
+  // serverSessionId is non-null here: either the block above guaranteed it (throwing otherwise),
+  // or options.exp is set, in which case the caller (an NHI exchange) always passes a non-null
+  // marker string — see the route in auth/router.ts.
+  const sessionInfo: SessionInfoPayload = { user: payload.id, session: serverSessionId as string, adminMode: payload.adminMode }
   // case of asAdmin
   if (existingServerSessionInfo && existingServerSessionInfo.adminMode && payload.id !== existingServerSessionInfo.user) {
     sessionInfo.adminMode = 1
@@ -182,13 +190,18 @@ export const setSessionCookies = async (req: Request, res: Response, sitePath: s
     // case of a session where id_token was cleared but id_token_ex persisted, this server sessions is deprecated and can be cleared
     await storages.deleteSessionById(existingServerSessionInfo.session)
   }
-  if (options?.skipExchangeToken) {
+  if (options?.exp) {
+    // a bounded-exp session (NHI exchange) never had and never gets an exchange token: no
+    // server session exists to clear and no id_token_ex cookie should be sent at all, not even
+    // a deletion (there is nothing to delete and no keepalive/asAdmin flow to support)
+  } else if (options?.skipExchangeToken) {
     cookies.set('id_token_ex', '', { ...deleteOpts, path: sitePath + '/simple-directory/', httpOnly: true })
   } else {
     const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
     const exchangeToken = await signToken(sessionInfo, exchangeExp)
     cookies.set('id_token_ex', exchangeToken, exchangeCookieOpts)
   }
+  return token
 }
 
 export const switchOrganization = (req: Request, res: Response, user: SessionUser, orgId?: string, depId?: string, role?: string) => {
