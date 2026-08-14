@@ -330,6 +330,7 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
 
 // Change the role of the user in the organization
 router.patch('/:organizationId/members/:userId', async (req, res, next) => {
+  assertNotNhiSession(req)
   const logContext: EventLogContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -340,6 +341,7 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
   const filter: FindMembersParams = { ids: [req.params.userId], skip: 0, size: 1 }
   if (typeof dep === 'string') filter.departments = [dep]
   const member = (await storage.findMembers(req.params.organizationId, filter)).results[0]
+  if (!member) return res.status(404).send('member not found')
 
   // Only allowed for the organizations that the user is admin of (or admin of the member's department)
   const role = getAccountRole(

@@ -215,6 +215,13 @@ test('nhi sessions are rejected on self-management, invitations, org creation an
   await assert.rejects(nhiAx.post('/api/invitations', { id: org.id, name: org.name, email: 'invited@test.com', role: 'user' }), is403)
   await assert.rejects(nhiAx.post('/api/organizations', { name: 'Escaped org' }), is403)
   await assert.rejects(nhiAx.post('/api/2fa', { email: 'invited@test.com', password: 'TestPasswd01' }), is403)
+  // authenticated callers bypass the anti-bot token on user self-registration, so the guard here
+  // is load-bearing, not just belt-and-suspenders
+  await assert.rejects(nhiAx.post('/api/users', { email: 'nhi-self-register@test.com', password: 'TestPasswd01' }), is403)
+  // the members route is not the sanctioned surface for NHI role changes (the nhis PATCH route is)
+  await assert.rejects(nhiAx.patch(`/api/organizations/${org.id}/members/${nhi.id}`, { role: 'user' }), is403)
+  // guard fires before any plannedDeletion state check, so no superadmin setup is needed here
+  await assert.rejects(nhiAx.delete(`/api/users/${nhi.id}/plannedDeletion`), is403)
 })
 
 test('superadmin flows exclude NHIs', async () => {

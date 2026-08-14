@@ -310,6 +310,7 @@ router.patch('/:userId', async (req, res, next) => {
 })
 
 router.delete('/:userId/plannedDeletion', async (req, res, next) => {
+  assertNotNhiSession(req)
   const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
 
