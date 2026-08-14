@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { generateKeyPairSync } from 'node:crypto'
 import jwt from 'jsonwebtoken'
-import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl } from '../support/axios.ts'
+import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl, getServerConfig } from '../support/axios.ts'
 
 const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const publicJwk = { ...publicKey.export({ format: 'jwk' }), kid: 'test-key', alg: 'RS256', use: 'sig' }
@@ -116,10 +116,15 @@ test('nhi token exchange issues a short-lived org session', async () => {
   assert.equal(payload.organizations.length, 1)
   assert.equal(payload.organizations[0].id, org.id)
 
-  const cookies = res.headers['set-cookie']!.join(';')
+  const setCookieHeaders = res.headers['set-cookie']!
+  const cookies = setCookieHeaders.join(';')
   assert.ok(cookies.includes('id_token='))
   assert.ok(cookies.includes('id_token_org=' + org.id))
-  assert.ok(!cookies.includes('id_token_ex='))
+  // a stale id_token_ex cookie (e.g. left over from a prior human session in the same browser)
+  // is actively cleared (empty deletion cookie), but no new SIGNED exchange token is ever issued
+  const idTokenExHeader = setCookieHeaders.find(c => c.startsWith('id_token_ex='))
+  assert.ok(idTokenExHeader, 'expected an id_token_ex clearing cookie')
+  assert.equal(idTokenExHeader!.split(';')[0], 'id_token_ex=')
 
   // the session works against the API (cookie flow, same as a browser context would use)
   const me = await agentAx.get(`/api/organizations/${org.id}`, { headers: { cookie: res.headers['set-cookie']!.map(c => c.split(';')[0]).join('; ') } })
@@ -138,6 +143,54 @@ test('nhi session exp is capped by the assertion exp', async () => {
   const agentAx = axios()
   const res = await agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion({}, { expiresIn: '30s' }) })
   assert.ok(res.data.expires_in <= 30)
+})
+
+test('nhi session exp is also capped by jwtDurations.nhiToken', async () => {
+  // asserted against the running server's effective config (already in seconds) so the test
+  // stays correct if the dev/test config ever overrides the default 30m nhiToken duration
+  const nhiTokenSeconds = (await getServerConfig()).jwtDurations.nhiToken
+  assert.ok(nhiTokenSeconds > 0)
+  const { ax } = await createUser('nhi-admin4b@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI org 4b' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+  const agentAx = axios()
+  const res = await agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion({}, { expiresIn: '2h' }) })
+  assert.ok(res.data.expires_in <= nhiTokenSeconds)
+})
+
+test('nhi token exchange is scoped to the main site and to sites owned by the nhi org', async () => {
+  const config = await getServerConfig()
+  const { ax } = await createUser('nhi-admin6@test.com')
+  const orgA = (await ax.post('/api/organizations', { name: 'NHI org 6a' })).data
+  const orgB = (await ax.post('/api/organizations', { name: 'NHI org 6b' })).data
+  ax.setOrg(orgA.id)
+  const nhi = (await ax.post(`/api/organizations/${orgA.id}/nhis`, nhiBody())).data
+
+  const siteAHost = `127.0.0.1:${process.env.NGINX_PORT2}`
+  const siteBHost = `127.0.0.1:${process.env.NGINX_PORT3}`
+  const anonymousAx = axios()
+  await anonymousAx.post('/api/sites',
+    { _id: 'test_nhi_site_a', owner: { type: 'organization', id: orgA.id, name: orgA.name }, host: siteAHost },
+    { params: { key: config.secretKeys.sites } })
+  await anonymousAx.post('/api/sites',
+    { _id: 'test_nhi_site_b', owner: { type: 'organization', id: orgB.id, name: orgB.name }, host: siteBHost },
+    { params: { key: config.secretKeys.sites } })
+  await testEnvAx.post('/clear-site-cache')
+
+  const agentAx = axios()
+  // a site owned by another organization cannot mint a session for this NHI (same uniform 401)
+  await assert.rejects(agentAx.post(`http://${siteBHost}/simple-directory/api/auth/nhi-token`,
+    { client_id: nhi.id, assertion: signAssertion({ aud: `http://${siteBHost}` }) }), (err: any) => err.status === 401)
+
+  // a site owned by the NHI's own organization is accepted
+  const res = await agentAx.post(`http://${siteAHost}/simple-directory/api/auth/nhi-token`,
+    { client_id: nhi.id, assertion: signAssertion({ aud: `http://${siteAHost}` }) })
+  assert.equal(res.data.token_type, 'Bearer')
+  const payload = jwt.decode(res.data.access_token) as any
+  assert.equal(payload.id, nhi.id)
+  assert.equal(payload.siteOwner.type, 'organization')
+  assert.equal(payload.siteOwner.id, orgA.id)
 })
 
 test('nhi token exchange failures are a uniform 401', async () => {

@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { Router } from 'express'
 import { session } from '@data-fair/lib-express'
 import mongo from '#mongo'
-import config from '#config'
+import config, { jwtDurations } from '#config'
 import { rotateKeys, getSignatureKeys } from './tokens/keys-manager.ts'
 
 const router = Router()
@@ -139,7 +139,10 @@ router.get('/config', (req, res) => {
     publicUrl: config.publicUrl,
     secretKeys: config.secretKeys,
     mongo: { url: config.mongo.url },
-    mailsRateLimit: config.mailsRateLimit
+    mailsRateLimit: config.mailsRateLimit,
+    // already converted to seconds by config.ts, so tests can assert on token durations
+    // without duplicating the ms() parsing of the raw config strings
+    jwtDurations
   })
 })
 

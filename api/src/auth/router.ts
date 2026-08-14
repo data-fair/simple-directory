@@ -301,17 +301,23 @@ router.post('/nhi-token', async (req, res) => {
   }
   const user = await storages.globalStorage.getUser(body.client_id)
   if (!user?.nhi || user.organizations.length !== 1) throw await reject('unknown or invalid nhi ' + body.client_id)
+  const userOrg = user.organizations[0]
+  // the exchange is only valid on the main site or on a site owned by the NHI's own org — a
+  // compromised or unrelated site config must not be able to mint a session for an NHI it
+  // doesn't own (same department-tolerant ownership comparison as getDefaultUserOrg above)
+  const site = await reqSite(req)
+  if (site && !(site.owner.type === 'organization' && site.owner.id === userOrg.id && (!userOrg.department || !site.owner.department || userOrg.department === site.owner.department))) {
+    throw await reject('site not owned by nhi org ' + user.id)
+  }
   let assertionPayload
   try {
     assertionPayload = await verifyAssertion(body.assertion, user.nhi.provider, user.nhi.subject, reqSiteUrl(req))
   } catch (err: any) {
     throw await reject('assertion rejected for ' + user.id + ': ' + err.message)
   }
-  const site = await reqSite(req)
   const nowSec = Math.floor(Date.now() / 1000)
   const exp = Math.min(assertionPayload.exp as number, nowSec + jwtDurations.nhiToken)
   const payload = getTokenPayload(user, site)
-  const userOrg = user.organizations[0]
   const token = await setSessionCookies(req, res, reqSitePath(req), payload, 'nhi-session', userOrg, { skipExchangeToken: true, exp })
   storages.globalStorage.updateLogged(user.id, null).catch((err: any) => internalError('nhi-update-logged', 'error while updating logged date', err))
   eventsLog.info('sd.auth.nhi.ok', `an NHI session was created for ${user.id}`, logContext)

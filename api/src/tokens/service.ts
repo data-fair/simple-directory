@@ -190,11 +190,11 @@ export const setSessionCookies = async (req: Request, res: Response, sitePath: s
     // case of a session where id_token was cleared but id_token_ex persisted, this server sessions is deprecated and can be cleared
     await storages.deleteSessionById(existingServerSessionInfo.session)
   }
-  if (options?.exp) {
-    // a bounded-exp session (NHI exchange) never had and never gets an exchange token: no
-    // server session exists to clear and no id_token_ex cookie should be sent at all, not even
-    // a deletion (there is nothing to delete and no keepalive/asAdmin flow to support)
-  } else if (options?.skipExchangeToken) {
+  if (options?.skipExchangeToken) {
+    // also covers the NHI exchange case (always passed alongside options.exp): any pre-existing
+    // id_token_ex cookie from an earlier human session on this browser must be cleared, not left
+    // in place, otherwise a later normal setSessionCookies call could pick it back up (including
+    // its adminMode, via the asAdmin-resurrection branch above)
     cookies.set('id_token_ex', '', { ...deleteOpts, path: sitePath + '/simple-directory/', httpOnly: true })
   } else {
     const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
