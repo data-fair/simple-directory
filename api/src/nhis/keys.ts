@@ -43,7 +43,7 @@ export const assertSafeIssuer = (issuer: string) => {
 
 const getJwksUri = memoize(async (issuer: string) => {
   const discoveryUrl = issuer.replace(/\/$/, '') + '/.well-known/openid-configuration'
-  const discovery = (await axios.get(discoveryUrl, { timeout: 5000 })).data
+  const discovery = (await axios.get(discoveryUrl, { timeout: 5000, maxRedirects: 0 })).data
   if (typeof discovery?.jwks_uri !== 'string') throw httpError(400, 'issuer discovery has no jwks_uri')
   return discovery.jwks_uri
 }, { promise: true, maxAge: 10 * 60 * 1000 })
