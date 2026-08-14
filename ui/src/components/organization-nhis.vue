@@ -46,7 +46,7 @@
             {{ nhi.name }}
           </v-list-item-title>
           <v-list-item-subtitle style="white-space:normal;">
-            <span v-if="nhi.department">{{ orga.departmentLabel || $t('common.department') }} = {{ nhi.department }}, </span>
+            <span v-if="nhi.department">{{ orga.departmentLabel || $t('common.department') }} = {{ nhi.departmentName || nhi.department }}, </span>
             <span>{{ $t('common.role') }} = {{ nhi.role }}</span>
           </v-list-item-subtitle>
           <v-list-item-subtitle style="white-space:normal;">
