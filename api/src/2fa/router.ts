@@ -9,11 +9,13 @@ import storages from '#storages'
 import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import { checkPassword, hashPassword, reqSite } from '#services'
+import { assertNotNhiSession } from '../nhis/service.ts'
 
 const router = Router()
 export default router
 
 router.post('/', async (req, res, next) => {
+  assertNotNhiSession(req)
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   req.body.email = req.body.email.trim()
   if (!emailValidator.validate(req.body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)

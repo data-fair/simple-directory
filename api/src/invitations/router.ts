@@ -2,6 +2,7 @@ import { type UserWritable, type Invitation, type ActionPayload, type ShortenedI
 import { Router } from 'express'
 import config from '#config'
 import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError, reqSessionAuthenticated } from '@data-fair/lib-express'
+import { assertNotNhiSession } from '../nhis/service.ts'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
@@ -19,6 +20,7 @@ export default router
 
 // Invitation for a user to join an organization from an admin of this organization
 router.post('', async (req, res, next) => {
+  assertNotNhiSession(req)
   const session = reqSessionAuthenticated(req)
   const user = session.user
 

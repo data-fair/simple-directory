@@ -2,6 +2,7 @@ import { type Organization, type UserWritable, type Site } from '#types'
 import { Router, type RequestHandler } from 'express'
 import config from '#config'
 import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession, reqUser, httpError } from '@data-fair/lib-express'
+import { assertNotNhiSession } from '../nhis/service.ts'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
 import eventsQueue from '#events-queue'
@@ -65,6 +66,7 @@ router.get('', async (req, res, next) => {
 
 // TODO: block when onlyCreateInvited is true ?
 router.post('', async (req, res, next) => {
+  assertNotNhiSession(req)
   const logContext: EventLogContext = { req }
 
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
@@ -258,6 +260,7 @@ router.get('/:userId', async (req, res, next) => {
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 const coreIDPKeys = ['defaultOrg', 'defaultDep', 'ignorePersonalAccount', 'plannedDeletion']
 router.patch('/:userId', async (req, res, next) => {
+  assertNotNhiSession(req)
   const logContext: EventLogContext = { req }
 
   const session = reqSessionAuthenticated(req)
@@ -324,6 +327,7 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
 })
 
 router.delete('/:userId', async (req, res, next) => {
+  assertNotNhiSession(req)
   const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
 

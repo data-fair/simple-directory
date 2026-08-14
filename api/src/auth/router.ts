@@ -727,6 +727,7 @@ router.post('/asadmin', async (req, res, next) => {
     throw httpError(403, 'This functionality is for admins only')
   }
   if (!user) return res.status(404).send('User does not exist')
+  if (user.nhi) throw httpError(403, 'impersonating a non-human identity is not allowed')
   const payload = getTokenPayload(user, site)
   payload.name += ' (administration)'
   payload.asAdmin = { id: loggedUser.id, name: loggedUser.name }

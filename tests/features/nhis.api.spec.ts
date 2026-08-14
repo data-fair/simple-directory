@@ -193,6 +193,36 @@ test('nhi token exchange is scoped to the main site and to sites owned by the nh
   assert.equal(payload.siteOwner.id, orgA.id)
 })
 
+// creates a human org admin, an NHI in that org, and exchanges the NHI a session — returns an
+// axios instance carrying the NHI session cookies alongside the created nhi/org and the admin's ax
+const nhiSession = async (adminEmail: string, orgName: string) => {
+  const { ax } = await createUser(adminEmail)
+  const org = (await ax.post('/api/organizations', { name: orgName })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ role: 'admin' }))).data
+  const agentAx = axios()
+  const res = await agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion() })
+  const cookie = res.headers['set-cookie']!.map((c: string) => c.split(';')[0]).join('; ')
+  const nhiAx = axios({ headers: { cookie } })
+  return { nhiAx, nhi, org, adminAx: ax }
+}
+
+test('nhi sessions are rejected on self-management, invitations, org creation and 2FA', async () => {
+  const { nhiAx, nhi, org } = await nhiSession('nhi-admin6@test.com', 'NHI org 6')
+  const is403 = (err: any) => err.status === 403
+  await assert.rejects(nhiAx.patch(`/api/users/${nhi.id}`, { firstName: 'Hack' }), is403)
+  await assert.rejects(nhiAx.delete(`/api/users/${nhi.id}`), is403)
+  await assert.rejects(nhiAx.post('/api/invitations', { id: org.id, name: org.name, email: 'invited@test.com', role: 'user' }), is403)
+  await assert.rejects(nhiAx.post('/api/organizations', { name: 'Escaped org' }), is403)
+  await assert.rejects(nhiAx.post('/api/2fa', { email: 'invited@test.com', password: 'TestPasswd01' }), is403)
+})
+
+test('superadmin flows exclude NHIs', async () => {
+  const { nhi } = await nhiSession('nhi-admin7@test.com', 'NHI org 7')
+  const { ax: superAx } = await createUser('admin@test.com', true)
+  await assert.rejects(superAx.post('/api/auth/asadmin', { id: nhi.id }), (err: any) => err.status === 403)
+})
+
 test('nhi token exchange failures are a uniform 401', async () => {
   const { ax } = await createUser('nhi-admin5@test.com')
   const org = (await ax.post('/api/organizations', { name: 'NHI org 5' })).data

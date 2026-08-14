@@ -16,6 +16,7 @@ import _slug from 'slugify'
 import { cipher } from '../utils/cipher.ts'
 import nhisRouter from '../nhis/router.ts'
 import { isOrgAdmin } from './service.ts'
+import { assertNotNhiSession } from '../nhis/service.ts'
 import Debug from 'debug'
 
 const slug = _slug.default
@@ -124,6 +125,7 @@ router.get('/:organizationId/roles', async (req, res, next) => {
 
 // Create an organization
 router.post('', async (req, res, next) => {
+  assertNotNhiSession(req)
   const user = reqUser(req)
   const logContext: EventLogContext = { req }
 
