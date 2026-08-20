@@ -167,7 +167,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
         noCreatedOrgsLimit: 'Los usuarios pueden crear cualquier número de organizaciones.',
         createdOrgsLimit: 'Los usuarios pueden crear {defaultMaxCreatedOrgs} organizacione(s) predeterminadas.',
         explainLimit: 'Establezca un valor para limitar la cantidad de organizaciones que este usuario puede crear. -1 para un número no especificado. Vacíe el campo para volver al valor predeterminado ({defaultMaxCreatedOrgs}).',
-        editUserEmailTitle: 'Cambiar la dirección de correo electrónico del usuario {nombre}',
+        editUserEmailTitle: 'Cambiar la dirección de correo electrónico del usuario {name}',
         editUserEmailText: '¡Advertencia! El correo electrónico es una clave de usuario importante, al modificar esta información, corre el riesgo de insertar una dirección incorrecta, no funcional o inconsistente con otras entradas. Esta función solo se presenta a los administradores para desbloquear a un usuario cuyo buzón se vuelve inaccesible.',
         drop2FATitle: 'Desactivar la autenticación de dos factores',
         transferTitle: 'Transferir el usuario {name} a otro sitio',
@@ -296,8 +296,8 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       noOrganization: 'No eres miembro de ninguna organización.',
       operations: 'Operaciones sensibles',
       deleteMyself: 'Eliminar esta cuenta',
-      deleteMyselfAlert: 'Si elimina su cuenta, los datos asociados también serán eliminados y no podrán ser recuperados.',
-      deleteMyselfCheck: 'marque esta casilla y haga clic en OK para confirmar la eliminación.',
+      deleteMyselfAlert: 'Si elimina su cuenta de usuario, dispondrá de un plazo de {plannedDeletionDelay} días para cancelar la operación, tras lo cual todos los datos asociados serán eliminados y no podrán ser recuperados.',
+      deleteMyselfCheck: 'marque esta casilla y haga clic en OK para confirmar la eliminación del usuario {name} y de todos sus datos.',
       accountChanges: 'Gestionar el cambio de cuenta',
       defaultOrg: 'Activar esta cuenta por defecto después de cada inicio de sesión',
       ignorePersonalAccount: 'Marque esta casilla si no desea utilizar esta plataforma fuera de una cuenta de organización',
@@ -401,7 +401,7 @@ Se ha realizado una solicitud de identificación de {host}. Para confirmarlo, co
 Si tiene un problema con su cuenta o si no ha solicitado iniciar sesión en {host}, no dude en contactarnos en {contact}.
       `,
       htmlMsg: 'Se ha realizado una solicitud de identificación desde <a href="{origin}">{host}</a>. Para confirmarlo, haga clic en el botón de abajo. El enlace es válido por 15 minutos.',
-      htmlButton: 'Conectado a {host}',
+      htmlButton: 'Conexión a {host}',
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
       htmlCaption: 'Si tiene un problema con su cuenta o no ha solicitado iniciar sesión en <a href="{origin}">{host}</a>, no dudes en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },
@@ -439,7 +439,7 @@ Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no d
 Un administrador de la organización {organization} lo ha invitado a unirse. Para aceptar esta invitación, haga clic en el botón de abajo. El enlace es válido por 10 días.
 Si aún no tiene una cuenta, se creará automáticamente.
       `,
-      htmlButton: 'Aceptar la invitacion',
+      htmlButton: 'Aceptar la invitación',
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
       htmlCaption: 'Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },
@@ -457,7 +457,7 @@ Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no d
 Un administrador de la organización {organization} lo ha invitado a unirse en {host} para acceder a <b>{secondaryHost}</b>. Para aceptar esta invitación, haga clic en el botón de abajo. El enlace es válido por 10 días.
 Si aún no tiene una cuenta, se creará automáticamente.
       `,
-      htmlButton: 'Aceptar la invitacion',
+      htmlButton: 'Aceptar la invitación',
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
       htmlCaption: 'Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },
