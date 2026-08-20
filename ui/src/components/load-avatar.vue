@@ -27,7 +27,7 @@
         v-model="file"
         class="pt-2"
         accept="image/png, image/jpeg"
-        :label="$t('pages.avatar.load')"
+        :label="loadLabel"
         variant="outlined"
         density="compact"
         prepend-icon=""
@@ -81,10 +81,21 @@ function dataURItoBlob (dataURI: string) {
   return new Blob([ia], { type: mimeString })
 }
 
-const { owner, disabled, hideValidate } = defineProps({
+const { owner, disabled, hideValidate, departmentLabel } = defineProps({
   owner: { type: Object as () => AccountKeys, default: null },
   disabled: { type: Boolean, default: false },
-  hideValidate: { type: Boolean, default: false }
+  hideValidate: { type: Boolean, default: false },
+  departmentLabel: { type: String, default: null }
+})
+
+const { t } = useI18n()
+
+// the label must name the owner explicitly, users used to mistake the organization
+// avatar for their own
+const loadLabel = computed(() => {
+  if (owner?.type === 'user') return t('pages.avatar.loadUser')
+  if (owner?.department) return t('pages.avatar.loadDepartment', { departmentLabel: (departmentLabel || t('common.department')).toLowerCase() })
+  return t('pages.avatar.loadOrganization')
 })
 
 const cropper = ref<any>()

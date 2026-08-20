@@ -26,6 +26,7 @@
           v-if="orga && $uiConfig.avatars.orgs"
           ref="avatar"
           :owner="{type: 'organization', id: orga.id, department: department.id}"
+          :department-label="departmentLabel"
           :disabled="$uiConfig.readonly"
           :hide-validate="true"
         />

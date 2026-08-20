@@ -203,7 +203,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       newPasswordMsg: 'Ingrese la nueva contraseña dos veces.',
       changePasswordSent: 'Se ha enviado un correo electrónico a la dirección {email}. Este correo electrónico contiene un enlace para cambiar la contraseña asociada con su cuenta.',
       passwordlessMsg1: 'Para conectar un correo electrónico es suficiente.',
-      passwordlessMsg2: 'Envíe un correo electrónico de inicio de sesión.',
+      passwordlessMsg2: 'Enviar un correo electrónico de inicio de sesión.',
       passwordlessConfirmed: 'Se ha enviado un correo electrónico a la dirección {email}. Este correo electrónico contiene un enlace para conectarse a nuestra plataforma.',
       createUserMsg1: 'Si aún no ha iniciado sesión en nuestra plataforma, cree una cuenta.',
       createUserMsg2: 'Crear una cuenta',
@@ -286,8 +286,10 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       msgDifferentUser: 'Esta invitación a ser miembro de una organización ha sido aceptada. Usted puede <a href="{loginUrl}">iniciar sesión</a> con la cuenta de invitado.'
     },
     avatar: {
-      load: 'cargar un nuevo avatar',
-      prepare: 'Prepara la imagen'
+      loadUser: 'Cargar su avatar',
+      loadOrganization: 'Cargar un avatar de organización',
+      loadDepartment: 'Cargar un avatar ({departmentLabel})',
+      prepare: 'Preparar la imagen'
     },
     me: {
       emailNotEditable: 'Esta dirección no se puede modificar.',

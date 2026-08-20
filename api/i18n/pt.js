@@ -203,10 +203,10 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       newPasswordMsg: 'Digite a nova senha duas vezes.',
       changePasswordSent: 'Foi-lhe enviado um e-mail para {email}. Este e-mail contém um link para alterar a senha associada à sua conta.',
       passwordlessMsg1: 'Tudo o que você precisa é de um e-mail para fazer o login.',
-      passwordlessMsg2: 'Envie um e-mail de login.',
+      passwordlessMsg2: 'Enviar um e-mail de login.',
       passwordlessConfirmed: 'Foi-lhe enviado um e-mail para {email}. Este e-mail contém um link para fazer login na nossa plataforma.',
       createUserMsg1: 'Se ainda não entrou na nossa plataforma, por favor crie uma conta.',
-      createUserMsg2: 'Crie uma conta',
+      createUserMsg2: 'Criar uma conta',
       createUserInvit: 'Create an account to accept the invitation in organization {name}',
       createUserOrganization: 'Do you want to create and organization ?',
       createUserOrganizationHelp: 'Se criar uma organização, poderá convidar outros utilizadores para se juntarem a si e partilharem recursos.',
@@ -286,7 +286,9 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       msgDifferentUser: 'Este convite para ser membro de uma organização foi bem aceite. Pode <a href="{loginUrl}">login</a> com a conta de convidado.'
     },
     avatar: {
-      load: 'carregar um novo avatar',
+      loadUser: 'Carregar o seu avatar',
+      loadOrganization: 'Carregar um avatar de organização',
+      loadDepartment: 'Carregar um avatar ({departmentLabel})',
       prepare: 'Preparar a imagem'
     },
     me: {
