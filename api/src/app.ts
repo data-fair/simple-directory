@@ -26,8 +26,14 @@ import { getSiteByUrl } from '#services'
 import { defaultThemeCssHash, getThemeCssHash } from './utils/theme.ts'
 import { defaultPublicSiteInfoHash, getPublicSiteInfoHash } from './utils/public-site-info.ts'
 
-// the site title is injected as text into the served HTML, it must not be able to break out of its tag
-const escapeHtml = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+// the site title is injected as text into the served HTML, it must not be able to break out of its tag.
+// it must also survive the micro-template passes that follow: '{' is neutralized so a title cannot
+// smuggle a later placeholder (CSP_NONCE is substituted after us), and '$' is doubled because
+// microTemplate interpolates through String.replace, where $&, $` and $' are replacement patterns.
+const escapeHtml = (value: string) => value
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/\{/g, '&#123;')
+  .replace(/\$/g, '$$$$')
 
 const app = express()
 export default app
