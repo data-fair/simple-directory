@@ -134,7 +134,8 @@ export default defineConfig({
           SITE_PATH: devSitePath,
           UI_CONFIG_PATH: uiConfigPath,
           THEME_CSS_HASH: defaultThemeCssHash,
-          PUBLIC_SITE_INFO_HASH: defaultPublicSiteInfoHash
+          PUBLIC_SITE_INFO_HASH: defaultPublicSiteInfoHash,
+          SITE_TITLE: 'Simple Directory'
         })
       }
     }
