@@ -595,7 +595,7 @@
                 <v-img
                   v-if="qrcode"
                   :src="qrcode"
-                  :title="$t('pages.login.configure2FAQRCode')"
+                  :alt="$t('pages.login.configure2FAQRCode')"
                   max-width="170"
                   class="my-2"
                 />
