@@ -44,4 +44,13 @@ test.describe('file storage interface', () => {
     assert.equal(res.organizations[0].name, 'Fivechat')
     assert.equal(res.organizations[0].role, 'admin')
   })
+
+  test('Resolve departmentName in user organizations', async () => {
+    const res = await storage.getUser('test_dhannan8')
+    assert.ok(res)
+    const ntag = res.organizations.find((o: any) => o.id === 'test_3sSi7xDIK')
+    assert.ok(ntag, 'user should be a member of Ntag')
+    assert.equal(ntag.department, 'dep1')
+    assert.equal(ntag.departmentName, 'Dep 1')
+  })
 })
