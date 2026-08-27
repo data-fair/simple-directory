@@ -471,6 +471,21 @@ Ein Administrator der Organisation {organization} lädt Sie als Kontakt für die
       htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
       htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.'
     },
+    partnerInvitationSecondary: {
+      subject: 'Die Organisation {organization} auf {secondaryHost} möchte {partner} als Partner hinzufügen',
+      text: `
+Ein Administrator der Organisation {organization} lädt Sie als Kontakt für die Organisation {partner} auf {secondaryHost} ein. Um diese Einladung anzunehmen, kopieren Sie die untenstehende URL in einen Browser. Diese URL ist 10 Tage lang gültig.
+{link}
+
+Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns bitte unter {contact}.
+      `,
+      htmlMsg: `
+Ein Administrator der Organisation {organization} lädt Sie als Kontakt für die Organisation {partner} auf {secondaryHost} ein. Um diese Einladung anzunehmen, klicken Sie auf die Schaltfläche unten. Der Link ist 10 Tage lang gültig.
+      `,
+      htmlButton: 'Einladung annehmen',
+      htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
+      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.'
+    },
     action: {
       subject: 'Führen Sie eine Aktion auf Ihrem Konto bei {host} aus.',
       text: `

@@ -469,6 +469,22 @@ Un administrateur de l'organisation {organization} vous invite en tant que conta
       htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
       htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
     },
+    partnerInvitationSecondary: {
+      subject: 'L\'organisation {organization} sur {secondaryHost} souhaite ajouter {partner} comme partenaire',
+      text: `
+Un administrateur de l'organisation {organization} vous invite en tant que contact de l'organisation {partner} à la rejoindre sur {secondaryHost}. Pour accepter cette invitation copiez l'URL ci-dessous dans un navigateur. Cette URL est valide 10 jours.
+
+{link}
+
+Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n'hésitez pas à nous contacter à {contact}.
+      `,
+      htmlMsg: `
+Un administrateur de l'organisation {organization} vous invite en tant que contact de l'organisation {partner} à la rejoindre sur {secondaryHost}. Pour accepter cette invitation cliquez sur le bouton ci-dessous. Le lien est valide 10 jours.
+      `,
+      htmlButton: 'Accepter l\'invitation',
+      htmlAlternativeLink: 'Si le bouton ci-dessus ne fonctionne pas, vous pouvez copier ce lien dans la barre d\'adresse de votre navigateur :',
+      htmlCaption: 'Si vous rencontrez un problème avec votre compte ou que vous trouvez cette invitation suspecte, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
+    },
     action: {
       subject: 'Effectuez une action sur votre compte sur {host}',
       text: `

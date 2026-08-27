@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { testEnvAx, maildevAx, createUser, axiosAuth, deleteAllEmails, waitForMail, getServerConfig } from '../support/axios.ts'
+import { testEnvAx, maildevAx, createUser, axiosAuth, deleteAllEmails, waitForMail, getServerConfig, axios } from '../support/axios.ts'
 import jwt, { type JwtPayload } from 'jsonwebtoken'
 
 test.describe('organizations api', () => {
@@ -77,6 +77,51 @@ test.describe('organizations api', () => {
     assert.equal(userPartners.length, 1)
     assert.equal(userPartners[0].id, org2.id)
     assert.equal(userPartners[0].name, org2.name)
+  })
+
+  test('should invite a partner with a redirect on a secondary site', async () => {
+    const config = await getServerConfig()
+
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const anonymousAx = await axios()
+    const { ax } = await createUser('test-partners3@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'Org 3' })).data
+    ax.setOrg(org.id)
+    const owner = { type: 'organization', id: org.id, name: org.name }
+
+    const mainHost = '127.0.0.1:' + process.env.NGINX_PORT2
+    const secondaryHost = '127.0.0.1:' + process.env.NGINX_PORT3
+
+    await anonymousAx.post('/api/sites',
+      { _id: 'test_partners_main', owner, host: mainHost, theme: { primaryColor: '#FF00FF' } },
+      { params: { key: config.secretKeys.sites } })
+    await adminAx.patch('/api/sites/test_partners_main', { isAccountMain: true })
+    // this second site defaults to onlyOtherSite pointing at the main site
+    await anonymousAx.post('/api/sites',
+      { _id: 'test_partners_secondary', owner, host: secondaryHost, theme: { primaryColor: '#FF00FF' } },
+      { params: { key: config.secretKeys.sites } })
+    await testEnvAx.post('/clear-site-cache')
+
+    const mail = await waitForMail(
+      () => ax.post(`/api/organizations/${org.id}/partners`, { name: 'Org 4', contactEmail: 'test-partners4@test.com', redirect: `http://${secondaryHost}/me/account` })
+    )
+    assert.ok(mail.link.startsWith(`http://${secondaryHost}/simple-directory/login?step=partnerInvitation&partner_invit_token=`))
+    assert.equal(new URL(mail.link).searchParams.get('redirect'), `http://${secondaryHost}/me/account`)
+    assert.ok(mail.subject.includes(secondaryHost))
+    assert.ok(!mail.subject.includes(mainHost))
+    assert.ok(mail.text.includes(secondaryHost))
+    assert.ok(!mail.text.includes(mainHost))
+
+    const token = new URL(mail.link).searchParams.get('partner_invit_token')
+    const { ax: ax2 } = await createUser('test-partners4@test.com')
+    const org2 = (await ax2.post('/api/organizations', { name: 'Org 4' })).data
+    const axOrg2 = await axiosAuth({ email: 'test-partners4@test.com', org: org2.id })
+
+    await axOrg2.post(`/api/organizations/${org.id}/partners/_accept`, { id: org2.id, contactEmail: 'test-partners4@test.com', token })
+
+    const orgInfo = (await ax.get('/api/organizations/' + org.id)).data
+    assert.equal(orgInfo.partners.length, 1)
+    assert.equal(orgInfo.partners[0].id, org2.id)
   })
 
   test('should let a superadmin manually create and delete a partnership', async () => {

@@ -9,7 +9,7 @@ import { reqI18n } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
 import type { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
-import { setNbMembersLimit, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteBaseUrl, getInvitationRedirect } from '#services'
+import { setNbMembersLimit, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, resolveAccountMainSite, getInvitationRedirect } from '#services'
 import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
@@ -416,7 +416,10 @@ if (config.managePartners) {
     await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
     eventsLog.info('sd.org.partner.invite', `a user invited an organization to be a partner ${partnerPost.name} ${partnerPost.contactEmail} ${orga.name} ${orga.id}`, logContext)
 
-    const invitSite = await getInvitSite(req, partnerPost.redirect)
+    const redirectSite = partnerPost.redirect ? await getSiteByUrl(partnerPost.redirect) : undefined
+    const invitSite = redirectSite ?? await getInvitSite(req)
+    const accountMainSite = await resolveAccountMainSite(redirectSite)
+    const delegatesAuth = !!(redirectSite && accountMainSite && getSiteBaseUrl(accountMainSite) !== getSiteBaseUrl(redirectSite))
     const invitPublicBaseUrl = invitSite ? (getSiteBaseUrl(invitSite) + '/simple-directory') : config.publicUrl
     const reboundRedirect = getInvitationRedirect(reqSiteUrl(req), partnerPost.redirect)
     const linkUrl = new URL(invitPublicBaseUrl + '/login')
@@ -426,9 +429,11 @@ if (config.managePartners) {
     const params = {
       link: linkUrl.href,
       organization: orga.name,
-      partner: partnerPost.name
+      partner: partnerPost.name,
+      secondaryHost: new URL(reboundRedirect).host
     }
-    await sendMailI18n('partnerInvitation', reqI18n(req).messages, partnerPost.contactEmail, params)
+    const mailKey = delegatesAuth ? 'partnerInvitationSecondary' : 'partnerInvitation'
+    await sendMailI18n(mailKey, reqI18n(req).messages, partnerPost.contactEmail, params)
 
     eventsQueue?.pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
