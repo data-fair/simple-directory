@@ -245,3 +245,29 @@ test('nhi token exchange failures are a uniform 401', async () => {
   const { user: humanUser } = await createUser('human@test.com')
   await assert.rejects(agentAx.post('/api/auth/nhi-token', { client_id: humanUser.id, assertion: signAssertion() }), is401)
 })
+
+test('nhi provider is validated at create and patch time', async () => {
+  const { ax } = await createUser('nhi-admin-validate@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI validate org' })).data
+  ax.setOrg(org.id)
+  const is400 = (err: any) => err.status === 400
+
+  // malformed issuer url is rejected even where insecure issuers are allowed (dev/test)
+  await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ provider: { issuer: 'not a url', jwks } })), is400)
+  // inline jwks that jose cannot parse as a JWKS
+  await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ provider: { issuer, jwks: { keys: 'garbage' } } })), is400)
+  // no inline jwks and unreachable issuer -> discovery must fail fast at creation
+  await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ provider: { issuer: 'https://issuer-does-not-exist.invalid' } })), is400)
+
+  // discovery happy path against the dev mock OIDC provider
+  const mockIssuer = `http://localhost:${process.env.MOCK_OIDC_PORT1 || '8998'}`
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ provider: { issuer: mockIssuer } }))).data
+  assert.equal(nhi.nhi.provider.issuer, mockIssuer)
+
+  // patch with a broken provider is rejected, and the record is left unchanged
+  await assert.rejects(ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { provider: { issuer, jwks: { keys: 'garbage' } } }), is400)
+  const unchanged = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results.find((r: any) => r.id === nhi.id)
+  assert.equal(unchanged.provider.issuer, mockIssuer)
+  // patch that does not touch the provider performs no provider validation
+  await ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { name: 'Renamed validated agent' })
+})

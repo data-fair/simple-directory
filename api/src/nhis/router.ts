@@ -6,6 +6,7 @@ import storages from '#storages'
 import { reqI18n } from '#i18n'
 import { postUserIdentityWebhook, deleteIdentityWebhook } from '#services'
 import { isOrgAdmin } from '../organizations/service.ts'
+import { checkProvider } from './keys.ts'
 import { createNhi, getNhi, listNhis } from './service.ts'
 import type { Request } from 'express'
 
@@ -39,6 +40,7 @@ router.post('', async (req: Request<OrgParams>, res) => {
   const logContext: EventLogContext = { req }
   const { org, roles } = await getOrgAndRoles(req.params.organizationId)
   if (!roles.includes(body.role)) throw httpError(400, 'unknown role')
+  await checkProvider(body.provider)
   const sessionUser = reqSessionAuthenticated(req).user
   const user = await createNhi(org, body, { id: sessionUser.id, name: sessionUser.name })
   logContext.account = { type: 'organization', id: org.id, name: org.name }
@@ -56,6 +58,7 @@ router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
   logContext.account = { type: 'organization', id: org.id, name: org.name }
   const patch: any = {}
   if (body.name) patch.name = body.name
+  if (body.provider) await checkProvider(body.provider)
   if (body.subject || body.provider) {
     patch.nhi = {
       provider: body.provider ?? user.nhi!.provider,

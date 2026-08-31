@@ -267,6 +267,8 @@ module.exports = {
   manageSites: true,
   managePartners: true,
   manageNhis: true,
+  // the dev mock OIDC providers are plain http on localhost
+  nhisAllowInsecureIssuers: true,
   defaultOrg: 'admins-org',
   passwordValidation: {
     entropy: 20,

@@ -45,8 +45,41 @@ const getJwksUri = memoize(async (issuer: string) => {
   const discoveryUrl = issuer.replace(/\/$/, '') + '/.well-known/openid-configuration'
   const discovery = (await axios.get(discoveryUrl, { timeout: 5000, maxRedirects: 0 })).data
   if (typeof discovery?.jwks_uri !== 'string') throw httpError(400, 'issuer discovery has no jwks_uri')
+  // OIDC discovery requires the document to assert the issuer it was fetched for
+  if (typeof discovery.issuer === 'string' && discovery.issuer.replace(/\/$/, '') !== issuer.replace(/\/$/, '')) {
+    throw httpError(400, 'issuer mismatch in discovery document')
+  }
   return discovery.jwks_uri
 }, { promise: true, maxAge: 10 * 60 * 1000 })
+
+// fail-fast validation of a provider configuration at NHI create/patch time, so org
+// admins get a descriptive 400 instead of their workload later failing with the
+// exchange endpoint's deliberately uniform 401. The exchange-time guards stay
+// authoritative; this is admin feedback, on an admin-only management surface.
+export const checkProvider = async (provider: { issuer: string, jwks?: any }) => {
+  assertSafeIssuer(provider.issuer)
+  let jwksContent = provider.jwks
+  if (!jwksContent) {
+    let jwksUri: string
+    try {
+      jwksUri = await getJwksUri(provider.issuer)
+    } catch (err: any) {
+      if (err.status === 400) throw err
+      throw httpError(400, `issuer discovery failed (${err.message})`)
+    }
+    assertSafeIssuer(jwksUri)
+    try {
+      jwksContent = (await axios.get(jwksUri, { timeout: 5000, maxRedirects: 0 })).data
+    } catch (err: any) {
+      throw httpError(400, `jwks fetch failed (${err.message})`)
+    }
+  }
+  try {
+    createLocalJWKSet(jwksContent)
+  } catch (err: any) {
+    throw httpError(400, `invalid jwks (${err.message})`)
+  }
+}
 
 const remoteJwks: Record<string, JWTVerifyGetKey> = {}
 

@@ -238,7 +238,20 @@ touches one — lifecycle stays an explicit org-admin action (`DELETE
 
 `api/src/nhis/keys.ts`. Discovery (used when an NHI binding has no inline
 `jwks`) fetches `<issuer>/.well-known/openid-configuration` and then the
-`jwks_uri` it returns, both through `assertSafeIssuer`:
+`jwks_uri` it returns, both through `assertSafeIssuer`. The discovery
+document's own `issuer` field, when present, must match the configured
+issuer (trailing-slash tolerant) — the standard OIDC discovery consistency
+rule.
+
+The provider configuration is additionally validated **fail-fast at NHI
+create/patch time** (`checkProvider` in `keys.ts`, called from the CRUD
+routes): the issuer passes `assertSafeIssuer`, an inline `jwks` must parse
+as a JWKS (`createLocalJWKSet`), and a discovery-based issuer must actually
+serve a discovery document and a parseable JWKS. Failures return a
+descriptive 400 on this admin-only management surface — deliberately unlike
+the exchange endpoint's uniform 401, which stays authoritative and
+oracle-free. Admin feedback at configuration time; enforcement at exchange
+time:
 
 - **https-only.** Plain `http://` issuers are rejected outright (dev/test
   escape hatch below).
