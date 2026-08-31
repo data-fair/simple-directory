@@ -26,13 +26,22 @@ export const signToken = async (payload: any, exp: string | number, notBefore?: 
 
 export const decodeToken = (token: string) => jwt.decode(token) as JwtPayload
 
+// Deterministic, non-deliverable email for a non-human identity, derived from its stable id.
+// The `.invalid` TLD (RFC 6761) guarantees the address can never resolve or receive mail.
+export const nhiSyntheticEmail = (nhiId: string) => `${nhiId}@service-account.invalid`
+
 export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site?: Site) => {
   const payload: SessionState['user'] = {
     id: user.id,
-    // lib-express's User type still requires email as a non-optional string; NHI users have
-    // no email. The value is preserved as-is (possibly undefined) and dropped by JSON
-    // serialization at signing time — see TODO below for the companion type fix upstream.
-    email: user.email as string,
+    // NHIs have no stored email. We still emit a deterministic, non-deliverable synthetic
+    // address so the ecosystem-wide invariant "a session always carries a non-empty email"
+    // holds: an absent email silently collapses `ignoreUndefined` mongo permission filters
+    // (e.g. `{ 'access.email': undefined }` -> `{}`) into match-all in downstream services.
+    // The synthetic value is never stored on the user document — storage stays email-less so
+    // getUserByEmail / the unique email index / SSO linking / mail flows all remain
+    // fail-closed — and services detect NHIs via the `nhi` flag. See
+    // docs/architecture/non-human-identities.md.
+    email: user.nhi ? nhiSyntheticEmail(user.id) : (user.email as string),
     name: user.name,
     organizations: (user.organizations || []).map(o => ({ ...o }))
   }

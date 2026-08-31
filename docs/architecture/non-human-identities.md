@@ -150,12 +150,37 @@ Signature, `iss`, `sub`, `aud`, and `exp`/`nbf` are all checked by `jose`'s
 
 `getTokenPayload` (`api/src/tokens/service.ts`) adds `nhi: 1` (int-truthy,
 consistent with the existing `ipa`/`os`/`idp` flags) when `user.nhi` is set,
-and otherwise behaves like a normal payload: no `email` claim (the field is
-`undefined` and dropped at JSON-signing time), the single org membership,
-`ipa: 1` (personal account ignored). `isAdmin` is never set for an NHI — see
-the invariant below. Downstream services are expected to read the `nhi` flag
-to suppress mail-based actions and account-switching UI; this needs a
-companion change upstream (see "out of scope" below).
+the single org membership, and `ipa: 1` (personal account ignored). `isAdmin`
+is never set for an NHI — see the invariant below. Downstream services are
+expected to read the `nhi` flag to suppress mail-based actions and
+account-switching UI.
+
+### Synthetic email in the token (not in storage)
+
+The token carries a **deterministic, non-deliverable synthetic email** for an
+NHI — `<nhi-id>@service-account.invalid` (`nhiSyntheticEmail`, `.invalid` is
+the RFC 6761 reserved TLD, so the address can never resolve or receive mail).
+This is deliberate and load-bearing:
+
+- Every downstream consumer in the data-fair stack was written under the
+  invariant that `session.user.email` is a non-empty string. Emitting an
+  **absent** email would break that invariant silently and dangerously: the
+  mongo driver runs with `ignoreUndefined: true`, so a permission filter like
+  `{ 'access.email': session.user.email }` with an undefined email **drops the
+  key entirely**, leaving `{ 'access.type': 'user' }` — which matches *every*
+  individual-user permission (privilege escalation). Preserving a real string
+  keeps those filters correct without every consumer needing a guard.
+- The synthetic value lives **only in the signed token**. It is never written
+  to the user document, so `getUserByEmail`, the unique email index, SSO
+  identity linking, and all mail flows still see an email-less record and stay
+  fail-closed (see the storage and fail-closed sections). It also means an NHI
+  can be targeted by per-resource permissions either by id or by this stable
+  synthetic email, mirroring how data-fair addresses API-key pseudo-users.
+- `nhi: 1` remains the semantic signal; the synthetic email is a
+  compatibility shim, not an identity claim. Defense-in-depth still applies
+  downstream — `@data-fair/lib`'s `access-ref` guards the absent-email case,
+  and services should not rely on the synthetic value being present — but the
+  source-side invariant is what makes the whole ecosystem safe by default.
 
 ## Superadmin exclusion (defense in depth, not just "no email")
 

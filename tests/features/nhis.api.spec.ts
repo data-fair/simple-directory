@@ -111,7 +111,10 @@ test('nhi token exchange issues a short-lived org session', async () => {
   const payload = jwt.decode(res.data.access_token) as any
   assert.equal(payload.nhi, 1)
   assert.equal(payload.id, nhi.id)
-  assert.equal(payload.email, undefined)
+  // NHIs carry a deterministic, non-deliverable synthetic email (never stored) so that
+  // downstream email-keyed permission filters never see an undefined value — an absent
+  // email would collapse `ignoreUndefined` mongo filters into match-all.
+  assert.equal(payload.email, `${nhi.id}@service-account.invalid`)
   assert.equal(payload.isAdmin, undefined)
   assert.equal(payload.organizations.length, 1)
   assert.equal(payload.organizations[0].id, org.id)
