@@ -65,8 +65,7 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site?: 
   if (user.coreIdProvider) payload.idp = 1
   if (site) payload.siteOwner = site.owner
   // nhi flag lets downstream services adapt (no mail-based actions, no account switching)
-  // TODO companion PR @data-fair/lib-express: add nhi to SessionState['user'], make email optional
-  if (user.nhi) (payload as any).nhi = 1
+  if (user.nhi) payload.nhi = 1
   return payload
 }
 

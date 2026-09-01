@@ -20,8 +20,7 @@ export const verifyAssertion = async (assertion: string, provider: { issuer: str
 
 export const assertNotNhiSession = (req: Request) => {
   const sessionUser = reqSession(req).user
-  // TODO companion PR @data-fair/lib-express: add nhi to SessionState['user']
-  if (sessionUser && (sessionUser as any).nhi) throw httpError(403, 'forbidden for non-human identities')
+  if (sessionUser?.nhi) throw httpError(403, 'forbidden for non-human identities')
 }
 
 export const getNhi = async (organizationId: string, nhiId: string): Promise<User> => {
