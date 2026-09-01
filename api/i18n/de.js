@@ -48,6 +48,7 @@ export default {
     confirmDeleteTitle: 'Löschen {name}',
     confirmDeleteMsg: 'Sind Sie sicher, dass Sie diese Ressource löschen möchten? Seien Sie vorsichtig, die Daten sind nicht wiederherstellbar.',
     editTitle: 'Bearbeiten {name}',
+    seeTitle: '{name} ansehen',
     loggedAt: 'Letzte Anmeldung',
     createdAt: 'Erstellt am',
     createdPhrase: 'Erstellt von {name} am {date}',

@@ -648,6 +648,7 @@
                 {{ recovery }}
                 <v-btn
                   :title="$t('pages.login.recovery2FADownload')"
+                  :aria-label="$t('pages.login.recovery2FADownload')"
                   variant="text"
                   class="mx-0"
                   color="warning"

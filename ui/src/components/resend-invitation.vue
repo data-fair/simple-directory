@@ -10,6 +10,7 @@
         variant="text"
         size="small"
         :title="$t('pages.organization.sendInvitationLink')"
+        :aria-label="$t('pages.organization.sendInvitationLink')"
         v-bind="props"
       />
     </template>

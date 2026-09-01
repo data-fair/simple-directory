@@ -48,6 +48,7 @@ export default {
     confirmDeleteTitle: 'Eliminar {name}',
     confirmDeleteMsg: '¿Estás seguro de que deseas eliminar este recurso? Tenga en cuenta que los datos no se pueden recuperar.',
     editTitle: 'Modificar {name}',
+    seeTitle: 'Ver {name}',
     loggedAt: 'Último acceso',
     createdAt: 'Creó el',
     createdPhrase: 'Creado por {name} el {date}',

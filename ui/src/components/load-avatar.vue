@@ -39,6 +39,7 @@
             size="small"
             color="primary"
             :title="$t('common.validate')"
+            :aria-label="$t('common.validate')"
             style="position: relative;"
             :icon="mdiCheck"
             @click="validate.execute()"

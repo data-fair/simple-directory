@@ -33,6 +33,7 @@
           size="small"
           :href="csvUrl"
           :title="$t('common.downloadCsv')"
+          :aria-label="$t('common.downloadCsv')"
         >
           <v-icon :icon="mdiFileTable" />
         </v-btn>
@@ -181,6 +182,7 @@
             >
               <v-btn
                 :title="$t('common.asAdmin')"
+                :aria-label="$t('common.asAdmin')"
                 :icon="mdiAccountSwitch"
                 color="warning"
                 variant="text"

@@ -68,6 +68,8 @@
             {{ props.item.email }}
             <v-btn
               v-if="!$uiConfig.readonly"
+              :title="$t('pages.admin.users.editUserEmailTitle', {name: props.item.name})"
+              :aria-label="$t('pages.admin.users.editUserEmailTitle', {name: props.item.name})"
               :icon="mdiPencil"
               size="small"
               variant="text"
@@ -90,6 +92,8 @@
             <template v-if="props.item['2FA'] && props.item['2FA'].active">
               oui
               <v-btn
+                :title="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
+                :aria-label="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
                 :icon="mdiDelete"
                 size="small"
                 variant="text"
@@ -118,6 +122,8 @@
               <span class="mt-2">{{ props.item.maxCreatedOrgs }}</span>
               <v-btn
                 v-if="$uiConfig.quotas.defaultMaxCreatedOrgs !== -1"
+                :title="$t('common.editTitle', {name: $t('common.maxCreatedOrgs').toLowerCase()})"
+                :aria-label="$t('common.editTitle', {name: $t('common.maxCreatedOrgs').toLowerCase()})"
                 :icon="mdiPencil"
                 size="small"
                 variant="text"
@@ -135,6 +141,7 @@
               <v-btn
                 v-if="!props.item.isAdmin"
                 :title="$t('common.transfer')"
+                :aria-label="$t('common.transfer')"
                 :icon="mdiSwapHorizontal"
                 size="small"
                 variant="text"
@@ -149,6 +156,7 @@
                 <v-btn
                   v-if="$uiConfig.asAdmin"
                   :title="$t('common.asAdmin')"
+                  :aria-label="$t('common.asAdmin')"
                   color="admin"
                   :icon="mdiAccountSwitch"
                   variant="text"
@@ -156,6 +164,7 @@
                 />
                 <v-btn
                   :title="$t('common.delete')"
+                  :aria-label="$t('common.delete')"
                   color="warning"
                   :icon="mdiDelete"
                   variant="text"
@@ -169,6 +178,7 @@
               <div class="d-flex">
                 <v-btn
                   :title="$t('common.asAdmin')"
+                  :aria-label="$t('common.asAdmin')"
                   color="admin"
                   :icon="mdiAccountSwitch"
                   variant="text"

@@ -9,6 +9,7 @@
       <v-btn
         :icon="mdiBell"
         :title="$t('common.manageNotifications')"
+        :aria-label="$t('common.manageNotifications')"
         size="small"
         color="primary"
         class="mx-2"

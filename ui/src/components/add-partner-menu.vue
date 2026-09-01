@@ -6,6 +6,7 @@
     <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.addPartner')"
+        :aria-label="$t('pages.organization.addPartner')"
         size="small"
         color="primary"
         class="mx-2"

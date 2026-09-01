@@ -48,6 +48,7 @@ export default {
     confirmDeleteTitle: 'Delete {name}',
     confirmDeleteMsg: 'Do you really want to delete this resource ? Data will not be recoverable.',
     editTitle: 'Edit {name}',
+    seeTitle: 'View {name}',
     loggedAt: 'Logged at',
     createdAt: 'Created on',
     createdPhrase: 'Created by {name} on {date}',

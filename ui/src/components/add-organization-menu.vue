@@ -7,6 +7,7 @@
       <v-btn
         v-if="mode === 'icon'"
         :title="$t('common.createOrganization')"
+        :aria-label="$t('common.createOrganization')"
         color="primary"
         v-bind="props"
         :icon="mdiPlus"

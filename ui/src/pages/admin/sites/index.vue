@@ -85,6 +85,7 @@
           <td>
             <v-btn
               :title="$t('common.editTitle', {name: props.item.host})"
+              :aria-label="$t('common.editTitle', {name: props.item.host})"
               variant="text"
               :to="`/admin/sites/${props.item._id}`"
               :icon="mdiPencil"
@@ -96,6 +97,7 @@
               <template #activator="{props: activatorProps}">
                 <v-btn
                   :title="$t('common.delete')"
+                  :aria-label="$t('common.delete')"
                   v-bind="activatorProps"
                   variant="text"
                   icon
@@ -107,6 +109,7 @@
             </confirm-menu>
             <v-btn
               title="Se connecter sur le site"
+              aria-label="Se connecter sur le site"
               variant="text"
               :icon="mdiLoginVariant"
               @click="siteRedirect(props.item)"
@@ -115,6 +118,7 @@
               <template #activator="{props: colorWarningsMenuProps}">
                 <v-btn
                   :title="$t('pages.admin.sites.colorWarnings')"
+                  :aria-label="$t('pages.admin.sites.colorWarnings')"
                   color="warning"
                   class="mx-2"
                   variant="text"

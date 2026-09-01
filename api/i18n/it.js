@@ -48,6 +48,7 @@ export default {
     confirmDeleteTitle: 'Cancellare {name}',
     confirmDeleteMsg: 'È sicuro di voler eliminare questa risorsa? Faccia attenzione, i dati non saranno recuperabili.',
     editTitle: 'Modificare {name}',
+    seeTitle: 'Visualizza {name}',
     loggedAt: 'Ultimo login',
     createdAt: 'Creato su',
     createdPhrase: 'Creato da {name} il {date}',

@@ -220,6 +220,7 @@
                   <template #activator="{props}">
                     <v-btn
                       :title="$t('common.delete')"
+                      :aria-label="$t('common.delete')"
                       v-bind="props"
                       variant="text"
                       icon

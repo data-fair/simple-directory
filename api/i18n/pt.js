@@ -48,6 +48,7 @@ export default {
     confirmDeleteTitle: 'Apagar {name}',
     confirmDeleteMsg: 'Tem a certeza de que quer apagar este recurso? Tenha cuidado, os dados não serão recuperáveis.',
     editTitle: 'Modificar {name}',
+    seeTitle: 'Ver {name}',
     loggedAt: 'Último login',
     createdAt: 'Criado em',
     createdPhrase: 'Criado por {name} em {date}.',
