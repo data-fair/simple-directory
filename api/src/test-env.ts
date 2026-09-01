@@ -19,8 +19,13 @@ router.delete('/', async (req, res) => {
   // also clean legacy non-prefixed seed data (from before test_ prefix migration)
   const legacyIds = ['dmeadus0', 'ccherryholme1', 'cdurning2', 'hlalonde3', 'ngernier4', 'ddecruce5', 'vdulany6', 'bhazeldean7', 'dhannan8', 'icarlens9', 'superadmin']
   const legacyOrgIds = ['KWqAGZ4mG', 'ihMQiGTaY', '3sSi7xDIK', 'uakapD5tu', 'Yty0BxuZG', 'EnTgB2UbH', 'test-ldap']
-  await mongo.organizations.deleteMany({ $or: [testIdFilter, { _id: { $in: legacyOrgIds } }] })
-  await mongo.users.deleteMany({ $or: [testIdFilter, testEmailFilter, nhiIdFilter, { _id: { $in: legacyIds } }] })
+  const userFilter = { $or: [testIdFilter, testEmailFilter, nhiIdFilter, { _id: { $in: legacyIds } }] }
+  // orgs created through POST /api/organizations get a nanoid id (no test_ prefix), so scope
+  // them by their creator instead, otherwise they accumulate across runs and pollute other
+  // suites (e.g. a name-based org search). Collect the creators before the users are deleted.
+  const testUserIds = (await mongo.users.find(userFilter, { projection: { _id: 1 } }).toArray()).map(u => u._id)
+  await mongo.organizations.deleteMany({ $or: [testIdFilter, { _id: { $in: legacyOrgIds } }, { 'created.id': { $in: testUserIds } }] })
+  await mongo.users.deleteMany(userFilter)
   // deliberately unscoped: sites have a unique index on host, so tests must be
   // free to claim any dev host (this is why `npm run dev-fixtures` documents its
   // site as the one fixture a test run removes)
