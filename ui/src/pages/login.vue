@@ -143,12 +143,16 @@
                   :autofocus="!!email"
                   :label="$t('common.password')"
                   name="password"
-                  type="password"
+                  :type="showPassword ? 'text' : 'password'"
                   autocomplete="current-password"
                   class="mt-4 hide-autofill"
                   hide-details="auto"
                   @keyup.enter="passwordAuth.execute()"
-                />
+                >
+                  <template #append-inner>
+                    <password-reveal v-model="showPassword" />
+                  </template>
+                </v-text-field>
                 <template v-if="twoFARequired">
                   <v-text-field
                     id="2fa"
@@ -372,7 +376,7 @@
                 />
 
                 <v-text-field
-                  id="password"
+                  id="newUserPassword"
                   v-model="newUser.password"
                   :label="$t('common.password')"
                   name="newUserPassword"
@@ -386,11 +390,7 @@
                   @keyup.enter="createUser.execute()"
                 >
                   <template #append-inner>
-                    <v-icon
-                      v-if="newUser.password"
-                      :icon="showNewUserPassword ? mdiEyeOffOutline : mdiEyeOutline"
-                      @click="showNewUserPassword = !showNewUserPassword"
-                    />
+                    <password-reveal v-model="showNewUserPassword" />
                   </template>
                 </v-text-field>
 
@@ -399,7 +399,7 @@
                   :label="$t('pages.login.newPassword2')"
                   :rules="newUserPassword2Errors"
                   name="newUserPassword2"
-                  :type="showNewUserPassword ? 'text' : 'password'"
+                  :type="showNewUserPassword2 ? 'text' : 'password'"
                   validate-on="invalid-input"
                   autocomplete="new-password"
                   variant="outlined"
@@ -407,6 +407,9 @@
                   rounded
                   @keyup.enter="createUser.execute()"
                 >
+                  <template #append-inner>
+                    <password-reveal v-model="showNewUserPassword2" />
+                  </template>
                   <template #append>
                     <div>
                       <v-icon
@@ -513,7 +516,7 @@
                   style="display:none;"
                 />
                 <v-text-field
-                  id="password"
+                  id="newPassword"
                   v-model="newPassword"
                   :autofocus="true"
                   :label="$t('pages.login.newPassword')"
@@ -528,11 +531,7 @@
                   class="mb-2"
                 >
                   <template #append-inner>
-                    <v-icon
-                      v-if="newPassword"
-                      :icon="showNewPassword ? mdiEyeOffOutline : mdiEyeOutline"
-                      @click="showNewPassword = !showNewPassword"
-                    />
+                    <password-reveal v-model="showNewPassword" />
                   </template>
                 </v-text-field>
                 <v-text-field
@@ -540,7 +539,7 @@
                   :label="$t('pages.login.newPassword2')"
                   :rules="newPassword2Errors"
                   name="newPassword2"
-                  :type="showNewPassword ? 'text' : 'password'"
+                  :type="showNewPassword2 ? 'text' : 'password'"
                   validate-on="invalid-input"
                   autocomplete="new-password"
                   variant="outlined"
@@ -548,6 +547,9 @@
                   rounded
                   @keyup.enter="changePassword.execute()"
                 >
+                  <template #append-inner>
+                    <password-reveal v-model="showNewPassword2" />
+                  </template>
                   <template #append>
                     <div>
                       <v-icon
@@ -877,12 +879,14 @@ const redirect = reactiveSearchParams.redirect
 const email = ref<string>(reactiveSearchParams.email ?? '')
 const emailError = ref<string | null>(null)
 const password = ref('')
+const showPassword = ref(false)
 
 const orgStorage = useBooleanSearchParam('org_storage')
 const membersOnly = useBooleanSearchParam('members_only')
 const rememberMe = ref(true)
 
 const showNewPassword = ref(false)
+const showNewPassword2 = ref(false)
 const newPassword = ref('')
 const newPasswordErrors = computed(() => {
   if (!newPassword.value) return ['']
@@ -907,6 +911,7 @@ const newUserPassword2Errors = computed(() => {
   return []
 })
 const showNewUserPassword = ref(false)
+const showNewUserPassword2 = ref(false)
 const tosAccepted = ref(false)
 const createOrganization = ref({ active: false, name: '' })
 
@@ -1050,6 +1055,7 @@ function preLogin () {
 
 const createUserForm = ref<InstanceType<typeof VForm>>()
 const createUser = useAsyncAction(async () => {
+  showNewUserPassword.value = showNewUserPassword2.value = false
   await createUserForm.value?.validate()
   if (!createUserForm.value?.isValid) return
   if (!createUserToken.data.value) return
@@ -1095,6 +1101,7 @@ const passwordlessAuth = useAsyncAction(async () => {
 }, { catch: 'all' })
 
 const passwordAuth = useAsyncAction(async () => {
+  showPassword.value = false
   try {
     const body: PostPasswordAuthReq['body'] = {
       email: email.value,
@@ -1163,6 +1170,7 @@ watch(email, () => { changePasswordAction.notif.value = undefined })
 
 const changePasswordForm = ref<InstanceType<typeof VForm>>()
 const changePassword = useAsyncAction(async () => {
+  showNewPassword.value = showNewPassword2.value = false
   if (!actionPayload) return
   await changePasswordForm.value?.validate()
   if (!changePasswordForm.value?.isValid) return
