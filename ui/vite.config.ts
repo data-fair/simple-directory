@@ -35,6 +35,15 @@ export default defineConfig({
     cspNonce: '{CSP_NONCE}'
   },
   plugins: [
+    {
+      // for html.cspNonce vite injects <meta property="csp-nonce" nonce="…">, without the
+      // content attribute that the HTML spec requires next to property: W3C rejects it (RGAA 8.2)
+      name: 'csp-nonce-meta-content',
+      transformIndexHtml: {
+        order: 'post',
+        handler: (html: string) => html.replace(/<meta property="csp-nonce"([^>]*)>/, '<meta property="csp-nonce"$1 content="">')
+      }
+    },
     // we used this once to download fonts and prepare webfonts.css but we moved
     // and slightly transformed the result in public/fonts
     /* webfontDownload([
@@ -125,7 +134,8 @@ export default defineConfig({
           SITE_PATH: devSitePath,
           UI_CONFIG_PATH: uiConfigPath,
           THEME_CSS_HASH: defaultThemeCssHash,
-          PUBLIC_SITE_INFO_HASH: defaultPublicSiteInfoHash
+          PUBLIC_SITE_INFO_HASH: defaultPublicSiteInfoHash,
+          SITE_TITLE: 'Simple Directory'
         })
       }
     }

@@ -6,6 +6,7 @@
     <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.deleteMember')"
+        :aria-label="$t('pages.organization.deleteMember')"
         variant="text"
         :icon="mdiDelete"
         density="compact"

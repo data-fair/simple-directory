@@ -4,8 +4,9 @@
     :close-on-content-click="false"
   >
     <template #activator="{props}">
-      <v-fab
+      <v-btn
         :title="$t('pages.organization.addDepartment', {departmentLabel: departmentLabel.toLowerCase()})"
+        :aria-label="$t('pages.organization.addDepartment', {departmentLabel: departmentLabel.toLowerCase()})"
         size="small"
         color="primary"
         class="mx-2"

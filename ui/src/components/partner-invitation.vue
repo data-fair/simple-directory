@@ -30,7 +30,7 @@
           :href="loginUrl(undefined, {email: invit.e})"
           variant="flat"
           color="primary"
-          style="text-transform: uppercase"
+          class="text-uppercase"
         />
       </p>
     </template>
@@ -44,7 +44,7 @@
           v-t="'common.login'"
           variant="flat"
           color="primary"
-          style="text-transform: uppercase"
+          class="text-uppercase"
           :href="loginUrl(undefined, {email: invit.e})"
         />
       </p>
@@ -56,7 +56,7 @@
           v-t="'common.signin'"
           variant="flat"
           color="primary"
-          style="text-transform: uppercase"
+          class="text-uppercase"
           :href="loginUrl(undefined, {email: invit.e, step: 'createUser'})"
         />
       </p>

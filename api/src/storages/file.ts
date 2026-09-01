@@ -24,11 +24,16 @@ function getUserOrgas (organizations: StoredOrganization[], user: User) {
   for (const orga of organizations) {
     for (const member of orga.members) {
       if (member.id === user.id) {
-        userOrgas.push({
+        const userOrga: Record<string, any> = {
           ...member,
           id: orga.id,
           name: orga.name
-        })
+        }
+        if (member.department) {
+          const dep = orga.departments?.find(d => d.id === member.department)
+          if (dep) userOrga.departmentName = dep.name
+        }
+        userOrgas.push(userOrga)
       }
     }
   }

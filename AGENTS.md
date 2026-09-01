@@ -14,6 +14,15 @@ Dev processes write to `dev/logs/`:
 - `dev-api.log` -- API server
 - `docker-compose.log` -- docker compose services (mongo, ldap, maildev, etc.)
 
+### Fixtures
+
+`npm run dev-fixtures` seeds the running dev env (`dev/fixtures.ts`) with demo accounts,
+organizations with departments and role labels, a partnership, org limits and a themed
+secondary site. It is idempotent, and its ids and emails deliberately avoid the test
+cleanup patterns (`^test_` ids, `@test.com` emails) so the accounts survive `npm test`.
+The site does not: the test cleanup wipes the whole sites collection, because sites have
+a unique index on host and tests must stay free to claim any dev host.
+
 ### Port assignments
 
 Port numbers are defined in `.env`. Do not modify port assignments.

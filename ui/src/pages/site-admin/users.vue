@@ -87,6 +87,7 @@
               >
                 <v-btn
                   :title="$t('common.asAdmin')"
+                  :aria-label="$t('common.asAdmin')"
                   color="admin"
                   :icon="mdiAccountSwitch"
                   variant="text"
@@ -100,6 +101,7 @@
               <div class="d-flex">
                 <v-btn
                   :title="$t('common.asAdmin')"
+                  :aria-label="$t('common.asAdmin')"
                   color="admin"
                   :icon="mdiAccountSwitch"
                   variant="text"

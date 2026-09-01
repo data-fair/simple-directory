@@ -33,6 +33,7 @@
           size="small"
           :href="csvUrl"
           :title="$t('common.downloadCsv')"
+          :aria-label="$t('common.downloadCsv')"
         >
           <v-icon :icon="mdiFileTable" />
         </v-btn>
@@ -65,7 +66,7 @@
       <v-col :cols="filterMemberCols">
         <v-select
           v-model="role"
-          :items="orga.roles"
+          :items="roleItems"
           :label="$t('common.role')"
           name="role"
           variant="solo"
@@ -126,6 +127,7 @@
             <v-avatar v-if="!members.results[i-1] || members.results[i-1].id !== member.id">
               <v-img
                 :src="`${$sdUrl}/api/avatars/user/${member.id}/avatar.png`"
+                alt=""
               />
             </v-avatar>
             <div
@@ -162,7 +164,7 @@
           </template>
           <v-list-item-subtitle style="white-space:normal;">
             <span v-if="member.department">{{ orga.departmentLabel || $t('common.department') }} = {{ member.departmentName || member.department }}, </span>
-            <span>{{ $t('common.role') }} = {{ member.role }}</span>
+            <span>{{ $t('common.role') }} = {{ roleLabel(member.role) }}</span>
           </v-list-item-subtitle>
 
           <template #append>
@@ -180,6 +182,7 @@
             >
               <v-btn
                 :title="$t('common.asAdmin')"
+                :aria-label="$t('common.asAdmin')"
                 :icon="mdiAccountSwitch"
                 color="warning"
                 variant="text"
@@ -256,6 +259,10 @@ const { isAdminOrga, orga, nbMembersLimits, orgStorage, readonly, adminDepartmen
 const { t } = useI18n()
 const { sendUiNotif } = useUiNotif()
 const { user, asAdmin } = useSessionAuthenticated()
+
+// the roles are stored as keys, their readable labels live in rolesLabels
+const roleLabel = (role: string) => orga.rolesLabels?.[role] || $uiConfig.defaultRolesLabels?.[role] || role
+const roleItems = computed(() => (orga.roles ?? []).map(role => ({ value: role, title: roleLabel(role) })))
 
 const q = ref('')
 const role = ref()

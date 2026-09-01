@@ -6,6 +6,7 @@
     <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.editMember')"
+        :aria-label="$t('pages.organization.editMember')"
         variant="text"
         :icon="mdiPencil"
         density="compact"
