@@ -129,7 +129,7 @@ if (process.env.NODE_ENV !== 'test') {
         PUBLIC_SITE_INFO_HASH: site ? getPublicSiteInfoHash(site) : defaultPublicSiteInfoHash,
         // the SPA sets the definitive title, this one fills the <title> of the served
         // document, which the W3C validator requires (RGAA 8.2)
-        SITE_TITLE: escapeHtml(site?.title ?? 'Simple Directory')
+        SITE_TITLE: escapeHtml(site?.title || 'Simple Directory')
       }
     }
   }))
