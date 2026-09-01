@@ -82,7 +82,7 @@
                 :disabled="!email"
                 color="primary"
                 variant="flat"
-                style="text-transform: uppercase"
+                class="text-uppercase"
                 @click="preLogin"
               >
                 {{ $t('common.next') }}
@@ -242,7 +242,7 @@
                 :disabled="!email || !password || passwordAuth.loading.value"
                 :color="adminMode ? 'admin' : 'primary'"
                 variant="flat"
-                style="text-transform: uppercase"
+                class="text-uppercase"
                 @click="passwordAuth.execute()"
               >
                 {{ $t('common.login') }}
@@ -268,7 +268,7 @@
               <v-btn
                 color="admin"
                 variant="flat"
-                style="text-transform: uppercase"
+                class="text-uppercase"
                 :disabled="passwordAuth.loading.value"
                 :loading="passwordAuth.loading.value"
                 @click="acceptAdminMode"
@@ -304,7 +304,7 @@
                 :disabled="!tosAccepted"
                 color="primary"
                 variant="flat"
-                style="text-transform: uppercase"
+                class="text-uppercase"
                 @click="step='createUser'"
               >
                 {{ $t('common.next') }}
@@ -431,6 +431,7 @@
               <v-btn
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 :disabled="createUser.loading.value"
                 @click="createUser.execute()"
               >
@@ -570,6 +571,7 @@
                 :disabled="!newPassword || newPassword !== newPassword2"
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 @click="changePassword.execute()"
               >
                 {{ $t('common.validate') }}
@@ -624,6 +626,7 @@
                 :disabled="!configure2FACode"
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 @click="validate2FA.execute()"
               >
                 {{ $t('common.validate') }}
@@ -709,6 +712,7 @@
                 v-if="createOrganization.active"
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 @click="createOrga.execute()"
               >
                 {{ $t('common.validate') }}
@@ -734,6 +738,7 @@
               <v-btn
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 :href="redirect"
               >
                 {{ $t('common.continue') }}
@@ -780,6 +785,7 @@
               <v-btn
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 :disabled="authorizeApp.loading.value"
                 @click="authorizeApp.execute()"
               >

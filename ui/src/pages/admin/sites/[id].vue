@@ -45,7 +45,7 @@
       <v-btn
         color="primary"
         variant="flat"
-        style="text-transform: uppercase"
+        class="text-uppercase"
         :disabled="patchSite.loading.value || site.loading.value || sites.loading.value"
         :loading="patchSite.loading.value || site.loading.value"
         @click="confirmEdit"

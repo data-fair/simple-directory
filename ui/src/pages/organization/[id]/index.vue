@@ -105,7 +105,7 @@
         <v-btn
           color="primary"
           variant="elevated"
-          style="text-transform: uppercase"
+          class="text-uppercase"
           :disabled="patchOrganization.loading.value"
           @click="save"
         >
