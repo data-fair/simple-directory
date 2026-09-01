@@ -14,6 +14,15 @@ Dev processes write to `dev/logs/`:
 - `dev-api.log` -- API server
 - `docker-compose.log` -- docker compose services (mongo, ldap, maildev, etc.)
 
+### Fixtures
+
+`npm run dev-fixtures` seeds the running dev env (`dev/fixtures.ts`) with demo accounts,
+organizations with departments and role labels, a partnership, org limits and a themed
+secondary site. It is idempotent, and its ids and emails deliberately avoid the test
+cleanup patterns (`^test_` ids, `@test.com` emails) so the accounts survive `npm test`.
+The site does not: the test cleanup wipes the whole sites collection, because sites have
+a unique index on host and tests must stay free to claim any dev host.
+
 ### Port assignments
 
 Port numbers are defined in `.env`. Do not modify port assignments.
@@ -62,5 +71,6 @@ npm run quality          # Full quality check (lint + types + tests)
 Read before changing anything in the corresponding area:
 
 - [`docs/architecture/email-trust-and-site-isolation.md`](docs/architecture/email-trust-and-site-isolation.md) -- how SSO email claims are verified and how site-level SSO trust is confined so a compromised site config cannot escalate to superadmin or cross-site takeover. Required reading for changes to auth providers, `cleanUser`, `authProviderLoginCallback`, `adminMode`, or the change-host flow.
+- [`docs/architecture/session-theft-protections.md`](docs/architecture/session-theft-protections.md) -- what protects a session whose cookies were copied: the split between the short lived `id_token` and the exchange token, server sessions and their recorded origin, the IP binding of superadmin sessions, and single use exchange tokens with reuse detection. Required reading for changes to `setSessionCookies`, `keepalive`, `logout`, or the `ServerSession` schema.
 - [`docs/architecture/emails.md`](docs/architecture/emails.md) -- the outbound email pipeline: the two `/api/mails*` endpoints, sanitization/escape at the trust boundary, MJML template substitution, and `sendMailI18n`. Required reading for changes under `api/src/mails/`, the MJML templates, the mail schemas, or any caller that posts to `/api/mails`.
 - [`docs/architecture/non-human-identities.md`](docs/architecture/non-human-identities.md) -- how NHI (service account) JWT exchange is verified and confined to a single org with short-lived non-refreshable sessions. Required reading for changes to the nhi-token exchange, `api/src/nhis/`, or NHI-related guards.

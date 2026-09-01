@@ -6,6 +6,7 @@
     <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.editDepartment', {departmentLabel})"
+        :aria-label="$t('pages.organization.editDepartment', {departmentLabel})"
         variant="text"
         :icon="mdiPencil"
         v-bind="props"
@@ -26,6 +27,7 @@
           v-if="orga && $uiConfig.avatars.orgs"
           ref="avatar"
           :owner="{type: 'organization', id: orga.id, department: department.id}"
+          :department-label="departmentLabel"
           :disabled="$uiConfig.readonly"
           :hide-validate="true"
         />

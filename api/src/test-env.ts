@@ -21,6 +21,9 @@ router.delete('/', async (req, res) => {
   const legacyOrgIds = ['KWqAGZ4mG', 'ihMQiGTaY', '3sSi7xDIK', 'uakapD5tu', 'Yty0BxuZG', 'EnTgB2UbH', 'test-ldap']
   await mongo.organizations.deleteMany({ $or: [testIdFilter, { _id: { $in: legacyOrgIds } }] })
   await mongo.users.deleteMany({ $or: [testIdFilter, testEmailFilter, nhiIdFilter, { _id: { $in: legacyIds } }] })
+  // deliberately unscoped: sites have a unique index on host, so tests must be
+  // free to claim any dev host (this is why `npm run dev-fixtures` documents its
+  // site as the one fixture a test run removes)
   await mongo.sites.deleteMany({})
   await mongo.oauthTokens.deleteMany()
   await mongo.ldapUserSessions.deleteMany()

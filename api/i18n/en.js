@@ -7,6 +7,7 @@ export default {
     description: 'Easy users and organizations management for modern Web-oriented architectures.'
   },
   common: {
+    manageNotifications: 'Manage notifications',
     home: 'Home',
     logLink: 'login / sign up',
     logout: 'logout',
@@ -29,6 +30,10 @@ export default {
     id: 'Identifier',
     name: 'Name',
     save: 'Save',
+    send: 'Send',
+    load: 'Upload',
+    active: 'active',
+    inactive: 'inactive',
     members: 'Members',
     orgStorageMembers: 'Members in secondary storage',
     role: 'Role',
@@ -47,6 +52,7 @@ export default {
     confirmDeleteTitle: 'Delete {name}',
     confirmDeleteMsg: 'Do you really want to delete this resource ? Data will not be recoverable.',
     editTitle: 'Edit {name}',
+    seeTitle: 'View {name}',
     loggedAt: 'Logged at',
     createdAt: 'Created on',
     createdPhrase: 'Created by {name} on {date}',
@@ -59,6 +65,10 @@ export default {
     back: 'Back',
     next: 'Next',
     password: 'Password',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+    passwordShown: 'Your password is visible',
+    passwordHidden: 'Your password is hidden',
     checkInbox: 'Check your mail box',
     spamWarning: 'If you didn\'t receive an email, check if it was classified as spam in your mail box.',
     validate: 'Validate',
@@ -183,11 +193,26 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       },
       sites: {
         createSite: 'Define a new site',
+        loginOnSite: 'Sign in on the site',
         colorWarnings: 'Contrast warnings'
+      },
+      passwordLists: {
+        help1: 'You can upload password lists from CSV files. Those too well known passwords will then be rejected if users try to use them.',
+        help2: 'You can find password list files on the internet, for example on the {secLists} project or the {richelieu} project for a French list.',
+        newFile: 'New password file (one password per line)',
+        subtitle: '{state} - {date} - {count} passwords',
+        confirmDelete: 'Delete this password list?'
       },
       site: {
         title: 'Site configuration'
       }
+    },
+    contact: {
+      title: 'Contact us',
+      from: 'Your email address',
+      subject: 'Subject',
+      text: 'Your request',
+      sent: 'Your request has been sent'
     },
     login: {
       title: 'Identify yourself',
@@ -216,8 +241,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       adminMode: 'Confirm your identity to switch to admin mode.',
       adminModePromptTitle: 'Admin mode',
       adminModePromptMsg: 'Your account is a super-administrator account. Do you want to activate admin mode for this session?',
-      adminModePromptAccept: 'admin mode',
-      adminModePromptDecline: 'normal session',
+      adminModePromptAccept: 'Admin mode',
+      adminModePromptDecline: 'Normal session',
       oauth: 'Connect with:',
       error: 'Error',
       rememberMe: 'remember me',
@@ -297,14 +322,17 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       msgDifferentUser: 'This invitation to become member of an organization has been validated. You can <a href="{loginUrl}">login with</a> the invited account.'
     },
     avatar: {
-      load: 'load a new avatar',
+      loadUser: 'Load your avatar',
+      loadOrganization: 'Load an organization avatar',
+      loadDepartment: 'Load an avatar ({departmentLabel})',
       prepare: 'Prepare the image'
     },
     me: {
-      noOrganization: 'Your are not a member in any organization.',
+      emailNotEditable: 'This address cannot be changed.',
+      noOrganization: 'You are not a member of any organization.',
       operations: 'Sensitive operations',
       deleteMyself: 'Delete this account',
-      deleteMyselfAlert: 'If your delete your account you will have a {plannedDeletionDelay} days delay after which all associated data will be deleted and will not be recoverable.',
+      deleteMyselfAlert: 'If you delete your account you will have a {plannedDeletionDelay} days delay after which all associated data will be deleted and will not be recoverable.',
       deleteMyselfCheck: 'check and click on OK to confirm the deletion of the user {name} and all its data.',
       accountChanges: 'Managing account switching',
       defaultOrg: 'Activate this account by default after each login',
@@ -329,8 +357,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       org: 'You can accept this invitation on behalf of an organization you administer, or create a new organization and accept the invitation on its behalf.',
       createOrg: 'create a new organization',
       newOrgName: 'name of the new organization',
-      create: 'create',
-      acceptAs: 'accept on behalf of {name}'
+      create: 'Create',
+      acceptAs: 'Accept on behalf of {name}'
     },
     changeHost: {
       msg1: 'The account {email} does not exist on {host} but exists on {mainHost}.',

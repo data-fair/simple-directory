@@ -36,6 +36,7 @@ declare module 'vue' {
     OrganizationPartners: typeof import('./../src/components/organization-partners.vue')['default']
     OrganizationStorage: typeof import('./../src/components/organization-storage.vue')['default']
     PartnerInvitation: typeof import('./../src/components/partner-invitation.vue')['default']
+    PasswordReveal: typeof import('./../src/components/password-reveal.vue')['default']
     ResendInvitation: typeof import('./../src/components/resend-invitation.vue')['default']
     ResendPartnerInvitation: typeof import('./../src/components/resend-partner-invitation.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

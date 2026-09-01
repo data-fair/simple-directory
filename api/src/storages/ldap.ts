@@ -634,6 +634,12 @@ export class LdapStorage implements SdStorage {
     await mongo.ldapUserSessions.updateOne({ _id: userId }, { $push: { sessions: serverSession } }, { upsert: true })
   }
 
+  async updateUserSession (userId: string, serverSessionId: string, patch: Partial<ServerSession>): Promise<void> {
+    const mongoSet: Record<string, any> = {}
+    for (const [key, value] of Object.entries(patch)) mongoSet[`sessions.$[currentSession].${key}`] = value
+    await mongo.ldapUserSessions.updateOne({ _id: userId }, { $set: mongoSet }, { arrayFilters: [{ 'currentSession.id': serverSessionId }] })
+  }
+
   async deleteUserSession (userId: string, serverSessionId: string): Promise<void> {
     await mongo.ldapUserSessions.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
   }

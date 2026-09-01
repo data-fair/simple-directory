@@ -43,6 +43,15 @@ const readExchangeCookie = (res: any) => {
   return JSON.parse(Buffer.from(tokenValue.split('.')[1], 'base64url').toString())
 }
 
+// extract and decode the id_token JWT payload (split JWT: the cookie contains header.payload)
+const readIdTokenCookie = (res: any) => {
+  const setCookies: string[] = res.headers['set-cookie'] ?? []
+  const idCookie = setCookies.find((c: string) => c.startsWith('id_token='))
+  assert.ok(idCookie, 'missing id_token set-cookie header')
+  const tokenValue = idCookie.match(/^id_token=([^;]+)/)![1]
+  return JSON.parse(Buffer.from(tokenValue.split('.')[1], 'base64url').toString())
+}
+
 test.describe('Superadmin session hardening', () => {
   test.beforeEach(async () => {
     await testEnvAx.delete('/')
@@ -107,6 +116,68 @@ test.describe('Superadmin session hardening', () => {
     res = await ax.post('/api/auth/keepalive')
     const payload2 = readExchangeCookie(res)
     assert.equal(payload2.exp, payload1.exp)
+  })
+
+  test('adminMode session is bound to the login IP', async () => {
+    const ax = await axiosAuth({ email: 'admin@test.com', adminMode: true })
+
+    // both tokens carry the bound IP
+    const res = await ax.post('/api/auth/keepalive')
+    const exPayload = readExchangeCookie(res)
+    assert.ok(exPayload.ip, 'exchange token should carry the bound IP')
+    const idPayload = readIdTokenCookie(res)
+    assert.equal(idPayload.boundIp, exPayload.ip)
+
+    // requests from another IP are rejected, both on a plain API route (session middleware)
+    // and on keepalive (exchange token check)
+    await assert.rejects(
+      ax.get('/api/auth/me', { headers: { 'x-forwarded-for': '9.9.9.9' } }),
+      (err: any) => err.status === 401
+    )
+    await assert.rejects(
+      ax.post('/api/auth/keepalive', null, { headers: { 'x-forwarded-for': '9.9.9.9' } }),
+      (err: any) => err.status === 401
+    )
+  })
+
+  test('normal session is not bound to an IP', async () => {
+    const ax = await axiosAuth({ email: 'dmeadus0@answers.com' })
+    const res = await ax.post('/api/auth/keepalive', null, { headers: { 'x-forwarded-for': '9.9.9.9' } })
+    const exPayload = readExchangeCookie(res)
+    assert.ok(!exPayload.ip, 'normal session exchange token should not carry a bound IP')
+    assert.ok(!readIdTokenCookie(res).boundIp)
+    const me = (await ax.get('/api/auth/me', { headers: { 'x-forwarded-for': '8.8.8.8' } })).data
+    assert.equal(me.email, 'dmeadus0@answers.com')
+  })
+
+  test('server session records IP and geo info at creation and keepalive', async () => {
+    // axiosAuth performs its initial login with a shared instance, so we log in again through
+    // our own instance to control the headers seen at session creation
+    // (dev nginx appends to x-forwarded-for so the first entry stays ours)
+    const ax = await axiosAuth({ email: 'dmeadus0@answers.com' }) as AxiosAuthInstance
+    Object.assign(ax.defaults.headers, { 'x-forwarded-for': '7.7.7.7', 'x-country': 'FR', 'x-asn': '64500', 'x-asn-org': 'TestNet' })
+    await passwordLoginFull(ax, { email: 'dmeadus0@answers.com', password: 'TestPasswd01' })
+    const me = (await ax.get('/api/auth/me')).data
+
+    // keepalive from another IP/geo updates the last-seen info
+    const res = await ax.post('/api/auth/keepalive', null, {
+      headers: { 'x-forwarded-for': '6.6.6.6', 'x-country': 'DE', 'x-asn': '64501', 'x-asn-org': 'OtherNet' }
+    })
+    const sessionId = readExchangeCookie(res).session
+    assert.ok(sessionId)
+
+    const adminAx = await axiosAuth({ email: 'admin@test.com', adminMode: true })
+    const user = (await adminAx.get(`/api/users/${me.id}`)).data
+    const serverSession = (user.sessions as any[]).find(s => s.id === sessionId)
+    assert.ok(serverSession, 'server session not found on user doc')
+    assert.equal(serverSession.ip, '7.7.7.7')
+    assert.equal(serverSession.country, 'FR')
+    assert.equal(serverSession.asn, '64500')
+    assert.equal(serverSession.asnOrg, 'TestNet')
+    assert.equal(serverSession.lastIp, '6.6.6.6')
+    assert.equal(serverSession.lastCountry, 'DE')
+    assert.equal(serverSession.lastAsn, '64501')
+    assert.equal(serverSession.lastAsnOrg, 'OtherNet')
   })
 
   test('normal session keeps the long rolling exchange token', async () => {

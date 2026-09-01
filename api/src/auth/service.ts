@@ -11,6 +11,7 @@ import { nanoid } from 'nanoid'
 import type { CreateMember, AuthProvider, MemberRole, MemberDepartment, OpenIDConnect } from '#types/site/index.ts'
 import { getOrgLimits, getRedirectSite, getTokenPayload, prepareCallbackUrl, reqSite, setNbMembersLimit, unshortenInvit } from '#services'
 import { __all, reqI18n } from '#i18n'
+import { reqIpInfo } from '../utils/ip-info.ts'
 
 const debugAuthProvider = debugModule('auth-provider')
 
@@ -327,10 +328,13 @@ const formatDeviceName = (agentHeader: string) => {
 export const initServerSession = (req: Request): ServerSession => {
   const agentHeader = req.get('user-agent')
   const deviceName = agentHeader ? formatDeviceName(agentHeader) : 'appareil inconnu'
+  const createdAt = new Date().toISOString()
   return {
     id: nanoid(),
-    createdAt: new Date().toISOString(),
-    deviceName
+    createdAt,
+    lastKeepalive: createdAt,
+    deviceName,
+    ...reqIpInfo(req)
   }
 }
 

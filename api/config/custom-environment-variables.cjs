@@ -25,6 +25,7 @@ module.exports = {
   adminsOrg: jsonEnv('ADMINS_ORG'),
   admins2FA: 'ADMINS_2FA',
   adminModeOnSites: 'ADMIN_MODE_ON_SITES',
+  adminSessionIpBinding: 'ADMIN_SESSION_IP_BINDING',
   adminCredentials: jsonEnv('ADMIN_CREDENTIALS'),
   roles: {
     defaults: jsonEnv('ROLES_DEFAULTS')

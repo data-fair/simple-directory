@@ -10,6 +10,7 @@
         variant="text"
         size="small"
         :title="$t('pages.organization.sendInvitationLink')"
+        :aria-label="$t('pages.organization.sendInvitationLink')"
         v-bind="props"
       />
     </template>
@@ -47,7 +48,7 @@
           <v-select
             v-if="$uiConfig.manageSites && redirects && redirects.length > 1"
             v-model="editPartner.redirect"
-            label="Site de redirection"
+            :label="$t('common.redirectSite')"
             :items="redirects"
             name="host"
             required

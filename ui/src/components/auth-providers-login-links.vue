@@ -17,6 +17,7 @@
         <v-img
           v-if="$uiConfig.theme.logo"
           :src="$uiConfig.theme.logo"
+          alt=""
         />
         <logo v-else />
       </v-avatar>

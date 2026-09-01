@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <template lang="html">
   <v-container
     data-iframe-height
@@ -8,22 +9,17 @@
       </h2>
     </v-row>
     <p class="my-3">
-      Vous pouvez charger des listes de mots de passe à partir de fichiers CSV. Ces mots de passe trop connus seront alors rejetés si des utilisateurs tentent de les utiliser.
+      {{ $t('pages.admin.passwordLists.help1') }}
     </p>
-    <p class="my-3">
-      Vous pouvez trouver des fichiers de listes de mots de passe sur internet, par exemple sur le <a
-        href="https://github.com/danielmiessler/SecLists/tree/master/Passwords/Common-Credentials"
-        class="simple-link"
-      >projet SecLists</a> ou le <a
-        href="https://github.com/tarraschk/richelieu"
-        class="simple-link"
-      >projet Richelieu</a> pour une liste française.
-    </p>
+    <p
+      class="my-3"
+      v-html="$t('pages.admin.passwordLists.help2', {secLists, richelieu})"
+    />
     <v-file-input
       v-model="file"
       v-container
       accept=".csv,.txt"
-      label="Nouveau fichier de mots de passe (un mot de passe par ligne)"
+      :label="$t('pages.admin.passwordLists.newFile')"
       variant="outlined"
       density="compact"
       style="max-width:650px;"
@@ -35,7 +31,7 @@
           :loading="upload.loading.value"
           @click="upload.execute()"
         >
-          {{ $t('charger') }}
+          {{ $t('common.load') }}
         </v-btn>
       </template>
     </v-file-input>
@@ -49,7 +45,7 @@
         v-for="passwordList of passwordLists.data.value"
         :key="passwordList._id"
         :title="passwordList.name"
-        :subtitle="(passwordList.active ? 'actif' : 'inactif') + ' - ' + dayjs(passwordList.createdAt).format('LLL') + ' - ' + passwordList.count + ' mots de passe'"
+        :subtitle="$t('pages.admin.passwordLists.subtitle', {state: passwordList.active ? $t('common.active') : $t('common.inactive'), date: dayjs(passwordList.createdAt).format('LLL'), count: passwordList.count})"
       >
         <template #prepend>
           <v-list-item-action start>
@@ -63,12 +59,13 @@
         <template #append>
           <confirm-menu
             yes-color="warning"
-            title="Supprimer cette liste de mots de passe ?"
+            :title="$t('pages.admin.passwordLists.confirmDelete')"
             @confirm="deletePasswordList.execute(passwordList)"
           >
             <template #activator="{props}">
               <v-btn
                 :title="$t('common.delete')"
+                :aria-label="$t('common.delete')"
                 v-bind="props"
                 variant="text"
                 icon
@@ -88,6 +85,11 @@
 import type { PasswordList } from '@sd/api/types'
 
 const { dayjs } = useLocaleDayjs()
+
+// the two project names are injected as links into the help sentence, so that each
+// translation keeps its own word order around them
+const secLists = '<a href="https://github.com/danielmiessler/SecLists/tree/master/Passwords/Common-Credentials" class="simple-link">SecLists</a>'
+const richelieu = '<a href="https://github.com/tarraschk/richelieu" class="simple-link">Richelieu</a>'
 
 const passwordLists = useFetch<PasswordList[]>($apiPath + '/password-lists')
 

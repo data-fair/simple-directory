@@ -93,12 +93,14 @@
                 </v-btn>
                 <v-btn
                   :title="$t('common.editTitle', {name: props.item.name})"
+                  :aria-label="$t('common.editTitle', {name: props.item.name})"
                   :to="`/organization/${props.item.id}`"
                   :icon="mdiPencil"
                   variant="text"
                 />
                 <v-btn
                   :title="$t('common.delete')"
+                  :aria-label="$t('common.delete')"
                   color="warning"
                   :icon="mdiDelete"
                   variant="text"
@@ -113,6 +115,8 @@
             <td>
               <div class="d-flex">
                 <v-btn
+                  :title="$t('common.seeTitle', {name: props.item.name})"
+                  :aria-label="$t('common.seeTitle', {name: props.item.name})"
                   :to="`/organization/${props.item.id}`"
                   :icon="mdiEye"
                   variant="text"

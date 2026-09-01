@@ -57,13 +57,16 @@ export interface SdStorage {
   getUser(userId: string): Promise<User | undefined>
   createUser(user: UserWritable, byUser?: { id: string, name: string }, site?: Site): Promise<User>
   getUserByEmail(email: string, site?: Site): Promise<User | undefined>
-  updateLogged(userId: string, serverSessionId: string | null): Promise<void>
+  updateLogged(userId: string): Promise<void>
   confirmEmail(userId: string): Promise<void>
   deleteUser(userId: string): Promise<void>
   patchUser (userId: string, patch: any, byUser?: { id: string, name: string }): Promise<User>
   findInactiveUsers (): Promise<User[]>
   findUsersToDelete (): Promise<User[]>
   addUserSession (userId: string, serverSession: ServerSession): Promise<void>
+  // sessions are always stored in mongo, even for the readonly storages, so this is
+  // implemented by all of them contrary to the user level updateLogged
+  updateUserSession (userId: string, serverSessionId: string, patch: Partial<ServerSession>): Promise<void>
   deleteUserSession (userId: string, serverSessionId: string): Promise<void>
 
   getOrganization(ordId: string): Promise<Organization | undefined>

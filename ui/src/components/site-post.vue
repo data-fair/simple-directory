@@ -8,6 +8,7 @@
     <template #activator="{props}">
       <v-btn
         :title="$t('pages.admin.sites.createSite')"
+        :aria-label="$t('pages.admin.sites.createSite')"
         size="small"
         color="primary"
         :icon="mdiPlus"

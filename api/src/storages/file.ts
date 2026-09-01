@@ -24,11 +24,16 @@ function getUserOrgas (organizations: StoredOrganization[], user: User) {
   for (const orga of organizations) {
     for (const member of orga.members) {
       if (member.id === user.id) {
-        userOrgas.push({
+        const userOrga: Record<string, any> = {
           ...member,
           id: orga.id,
           name: orga.name
-        })
+        }
+        if (member.department) {
+          const dep = orga.departments?.find(d => d.id === member.department)
+          if (dep) userOrga.departmentName = dep.name
+        }
+        userOrgas.push(userOrga)
       }
     }
   }
@@ -119,6 +124,12 @@ class FileStorage implements SdStorage {
 
   async addUserSession (userId: string, serverSession: ServerSession): Promise<void> {
     await mongo.fileUserSessions.updateOne({ _id: userId }, { $push: { sessions: serverSession } }, { upsert: true })
+  }
+
+  async updateUserSession (userId: string, serverSessionId: string, patch: Partial<ServerSession>): Promise<void> {
+    const mongoSet: Record<string, any> = {}
+    for (const [key, value] of Object.entries(patch)) mongoSet[`sessions.$[currentSession].${key}`] = value
+    await mongo.fileUserSessions.updateOne({ _id: userId }, { $set: mongoSet }, { arrayFilters: [{ 'currentSession.id': serverSessionId }] })
   }
 
   async deleteUserSession (userId: string, serverSessionId: string): Promise<void> {

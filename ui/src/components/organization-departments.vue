@@ -73,6 +73,7 @@
               <v-img
                 v-if="refreshingDepartment !== department.id"
                 :src="`${$sdUrl}/api/avatars/organization/${orga.id}/${department.id}/avatar.png?t=${timestamp}`"
+                alt=""
               />
             </v-avatar>
           </template>

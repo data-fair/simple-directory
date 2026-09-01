@@ -247,6 +247,45 @@ export default {
         lastKeepalive: {
           type: 'string',
           format: 'date-time'
+        },
+        // origin of the session at creation, and at the last keepalive (last*).
+        // the geo fields are filled from the enrichment headers of the reverse-proxy,
+        // they are absent when it does not send them
+        ip: {
+          type: 'string'
+        },
+        country: {
+          type: 'string'
+        },
+        asn: {
+          type: 'string'
+        },
+        asnOrg: {
+          type: 'string'
+        },
+        lastIp: {
+          type: 'string'
+        },
+        lastCountry: {
+          type: 'string'
+        },
+        lastAsn: {
+          type: 'string'
+        },
+        lastAsnOrg: {
+          type: 'string'
+        },
+        // id of the exchange token currently valid for this session, the previous one is
+        // kept to tolerate concurrent keepalives, cf tokens/service.ts
+        jti: {
+          type: 'string'
+        },
+        previousJti: {
+          type: 'string'
+        },
+        rotatedAt: {
+          type: 'string',
+          format: 'date-time'
         }
       }
     }

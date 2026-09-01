@@ -5,7 +5,7 @@
     :class="{'pa-0': $route.query.fluid === 'true'}"
   >
     <h2 class="text-headline-small mb-3">
-      {{ $t('common.createOrganization') }}
+      {{ $t('pages.contact.title') }}
     </h2>
     <v-form
       ref="form"
@@ -16,7 +16,7 @@
         v-model="message.from"
         :rules="[v => !!v || '']"
         :disabled="token.loading.value"
-        label="Votre adresse email"
+        :label="$t('pages.contact.from')"
         name="email"
         required
       />
@@ -24,7 +24,7 @@
         v-model="message.subject"
         :rules="[v => !!v || '']"
         :disabled="token.loading.value"
-        label="Sujet"
+        :label="$t('pages.contact.subject')"
         name="subject"
         required
       />
@@ -32,7 +32,7 @@
         v-model="message.text"
         :rules="[v => !!v || '']"
         :disabled="token.loading.value"
-        label="Votre demande"
+        :label="$t('pages.contact.text')"
         name="text"
         variant="outlined"
         required
@@ -44,7 +44,7 @@
           color="primary"
           @click="send.execute()"
         >
-          Envoyer
+          {{ $t('common.send') }}
         </v-btn>
       </v-row>
     </v-form>
@@ -53,6 +53,8 @@
 
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
+
+const { t } = useI18n()
 
 const newMessage = { from: '', subject: '', text: '' }
 
@@ -70,7 +72,7 @@ const send = useAsyncAction(async () => {
     message.value = { ...newMessage }
     form.value?.resetValidation()
   }
-}, { success: 'Votre demande a été envoyée' })
+}, { success: t('pages.contact.sent') })
 </script>
 
 <style lang="css">
