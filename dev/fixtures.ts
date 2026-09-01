@@ -15,14 +15,18 @@
  * matching /@test\.com$/i, so accounts, organizations, partnerships and limits
  * survive `npm test`.
  *
- * The site is the exception: sites carry a unique index on host, so the test
- * cleanup wipes the whole collection to stay free to claim any dev host. Re-run
- * this script after a test run to get the portal back.
+ * Two exceptions, both re-created by simply re-running this script:
+ * - the site: sites carry a unique index on host, so the test cleanup wipes the
+ *   whole collection to stay free to claim any dev host;
+ * - the service accounts (NHIs): their ids are `nhi-*`, which the test-env sweep
+ *   removes (test NHIs share that namespace and would otherwise collide on the
+ *   users' partial unique email index).
  *
  * Caveat: the dev config runs a cleanup cron with `deleteInactive` and a one
  * day delay, so fixture users nobody ever logs in with eventually get a planned
  * deletion and disappear. Just re-run this script.
  */
+import { generateKeyPairSync } from 'node:crypto'
 import { axios, axiosAuth, waitForMail, testEnvAx, getServerConfig } from '../tests/support/axios.ts'
 
 const EMAIL_DOMAIN = 'dev-fixtures.org'
@@ -42,6 +46,15 @@ const userSpecs = [
   { email: email('member'), firstName: 'Marc', lastName: 'Member' },
   { email: email('depadmin'), firstName: 'Dana', lastName: 'DepAdmin' },
   { email: email('deleting'), firstName: 'Dimitri', lastName: 'Deleting' }
+]
+
+// Non-human identities (service accounts) shown in the org's back-office. Modelled
+// on Kubernetes projected service-account tokens: a bound (issuer, subject) pair and
+// no email, one with a department to exercise that path.
+const K8S_ISSUER = 'https://kubernetes.default.svc.cluster.local'
+const nhiSpecs = [
+  { name: 'Agent pipeline de données', role: 'user', subject: 'system:serviceaccount:data-pipelines:etl-runner' },
+  { name: 'Agent de déploiement Paris', role: 'admin', department: 'paris', subject: 'system:serviceaccount:ci:paris-deployer' }
 ]
 
 let superAdminAx: any
@@ -128,6 +141,30 @@ const ensureMember = async (org: any, invitation: { email: string, role: string,
   console.log(`  + member ${invitation.email} of ${org.name}${invitation.departments ? ` (${invitation.departments.join(', ')})` : ''}`)
 }
 
+const ensureNhi = async (org: any, spec: { name: string, role: string, subject: string, department?: string }) => {
+  // the superadmin (adminMode) is org-admin of every org, so it can manage NHIs here
+  const nhis = (await superAdminAx.get(`/api/organizations/${org.id}/nhis`)).data
+  if (nhis.results.find((n: any) => n.name === spec.name)) {
+    console.log(`  ✓ service account ${spec.name} of ${org.name} (skipped)`)
+    return
+  }
+  // Inline JWKS from a throwaway keypair: enough for the NHI to exist and be listed
+  // in the back-office. The fixture never exchanges tokens, so the private key is
+  // discarded (an exchange would need a token signed by it). `checkProvider` at
+  // creation validates the issuer and that this JWKS parses.
+  const { publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
+  const jwk = { ...publicKey.export({ format: 'jwk' }), kid: 'dev-fixtures', alg: 'RS256', use: 'sig' }
+  const body: Record<string, unknown> = {
+    name: spec.name,
+    role: spec.role,
+    subject: spec.subject,
+    provider: { issuer: K8S_ISSUER, jwks: { keys: [jwk] } }
+  }
+  if (spec.department) body.department = spec.department
+  await superAdminAx.post(`/api/organizations/${org.id}/nhis`, body)
+  console.log(`  + service account ${spec.name} of ${org.name}${spec.department ? ` (${spec.department})` : ''}`)
+}
+
 const main = async () => {
   const config = await getServerConfig()
   console.log(`→ Seeding ${config.publicUrl}`)
@@ -161,6 +198,10 @@ const main = async () => {
   // this one does not exist yet: the invitation creates it without a password,
   // which is what makes it a passwordless-login showcase
   await ensureMember(corp, { email: email('passwordless'), role: 'user', departments: ['lyon'] })
+
+  // like Partners above, this assumes the dev config has the feature on (manageNhis)
+  console.log('\n→ Service accounts (non-human identities)')
+  for (const spec of nhiSpecs) await ensureNhi(corp, spec)
 
   console.log('\n→ Planned deletion')
   const deletingUser = await findUser(email('deleting'))
