@@ -1,5 +1,6 @@
 <template>
   <v-container
+    v-if="adminMode || nhis?.count"
     fluid
     class="pa-0"
   >
@@ -13,7 +14,7 @@
         />
         {{ $t('pages.organization.nhisTitle') }} <span v-if="nhis">({{ $n(nhis.count) }})</span>
         <add-nhi-menu
-          v-if="isAdminOrga"
+          v-if="adminMode"
           :orga="orga"
           @change="fetchNhis.refresh()"
         />
@@ -67,7 +68,7 @@
           </v-list-item-subtitle>
 
           <template #append>
-            <v-list-item-action v-if="isAdminOrga">
+            <v-list-item-action v-if="adminMode">
               <edit-nhi-menu
                 :orga="orga"
                 :nhi="nhi"
@@ -75,7 +76,7 @@
               />
             </v-list-item-action>
             <v-list-item-action
-              v-if="isAdminOrga"
+              v-if="adminMode"
               class="ml-2"
             >
               <delete-nhi-menu
@@ -97,11 +98,10 @@
 <script setup lang="ts">
 import { useClipboard } from '@vueuse/core'
 
-const { isAdminOrga, orga } = defineProps({
-  isAdminOrga: {
-    type: Boolean,
-    default: false
-  },
+// Progressive rollout: normal org admins get a read-only view, and only once at least
+// one NHI exists (the whole section is hidden otherwise). Only superadmins see the
+// create/edit/delete controls. This is a UI gate only — the API stays org-admin scoped.
+const { orga } = defineProps({
   orga: {
     type: Object as () => Organization,
     required: true
@@ -109,6 +109,8 @@ const { isAdminOrga, orga } = defineProps({
 })
 
 const { copy } = useClipboard()
+const session = useSession()
+const adminMode = computed(() => !!session.user.value?.adminMode)
 
 const fetchNhis = useFetch<{ count: number, results: any[] }>(`${$apiPath}/organizations/${orga.id}/nhis`)
 const nhis = computed(() => fetchNhis.data.value)
