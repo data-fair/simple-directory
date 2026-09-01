@@ -240,7 +240,7 @@ export const setSessionCookies = async (req: Request, res: Response, sitePath: s
       if (existingServerSessionInfo?.jti && existingServerSessionInfo.session === serverSessionId) {
         sessionPatch.previousJti = existingServerSessionInfo.jti
       }
-      await storages.updateSessionById(serverSessionId, sessionPatch)
+      await storages.updateSessionById(serverSessionId as string, sessionPatch)
     }
     const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
     const exchangeToken = await signToken(sessionInfo, exchangeExp)

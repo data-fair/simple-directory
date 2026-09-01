@@ -319,7 +319,7 @@ router.post('/nhi-token', async (req, res) => {
   const exp = Math.min(assertionPayload.exp as number, nowSec + jwtDurations.nhiToken)
   const payload = getTokenPayload(user, site)
   const token = await setSessionCookies(req, res, reqSitePath(req), payload, 'nhi-session', userOrg, { skipExchangeToken: true, exp })
-  storages.globalStorage.updateLogged(user.id, null).catch((err: any) => internalError('nhi-update-logged', 'error while updating logged date', err))
+  storages.globalStorage.updateLogged(user.id).catch((err: any) => internalError('nhi-update-logged', 'error while updating logged date', err))
   eventsLog.info('sd.auth.nhi.ok', `an NHI session was created for ${user.id}`, logContext)
   res.set('Cache-Control', 'no-store')
   res.send({ access_token: token, token_type: 'Bearer', expires_in: exp - nowSec })
