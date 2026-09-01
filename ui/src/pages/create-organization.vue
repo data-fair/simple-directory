@@ -32,7 +32,7 @@
         <v-btn
           :disabled="!valid"
           color="primary"
-          style="text-transform: uppercase"
+          class="text-uppercase"
           @click="create.execute()"
         >
           {{ $t('common.save') }}

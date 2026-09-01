@@ -25,7 +25,7 @@
             v-if="logoUrl"
             :src="logoUrl"
             style="max-width:250px;max-height:120px;"
-            :alt="$t('pages.login.siteLogo')"
+            :alt="sitePublic?.title || $t('pages.login.siteLogo')"
           >
           <logo
             v-else
@@ -82,7 +82,7 @@
                 :disabled="!email"
                 color="primary"
                 variant="flat"
-                style="text-transform: uppercase"
+                class="text-uppercase"
                 @click="preLogin"
               >
                 {{ $t('common.next') }}
@@ -143,12 +143,16 @@
                   :autofocus="!!email"
                   :label="$t('common.password')"
                   name="password"
-                  type="password"
+                  :type="showPassword ? 'text' : 'password'"
                   autocomplete="current-password"
                   class="mt-4 hide-autofill"
                   hide-details="auto"
                   @keyup.enter="passwordAuth.execute()"
-                />
+                >
+                  <template #append-inner>
+                    <password-reveal v-model="showPassword" />
+                  </template>
+                </v-text-field>
                 <template v-if="twoFARequired">
                   <v-text-field
                     id="2fa"
@@ -242,7 +246,7 @@
                 :disabled="!email || !password || passwordAuth.loading.value"
                 :color="adminMode ? 'admin' : 'primary'"
                 variant="flat"
-                style="text-transform: uppercase"
+                class="text-uppercase"
                 @click="passwordAuth.execute()"
               >
                 {{ $t('common.login') }}
@@ -268,7 +272,7 @@
               <v-btn
                 color="admin"
                 variant="flat"
-                style="text-transform: uppercase"
+                class="text-uppercase"
                 :disabled="passwordAuth.loading.value"
                 :loading="passwordAuth.loading.value"
                 @click="acceptAdminMode"
@@ -304,7 +308,7 @@
                 :disabled="!tosAccepted"
                 color="primary"
                 variant="flat"
-                style="text-transform: uppercase"
+                class="text-uppercase"
                 @click="step='createUser'"
               >
                 {{ $t('common.next') }}
@@ -372,7 +376,7 @@
                 />
 
                 <v-text-field
-                  id="password"
+                  id="newUserPassword"
                   v-model="newUser.password"
                   :label="$t('common.password')"
                   name="newUserPassword"
@@ -386,11 +390,7 @@
                   @keyup.enter="createUser.execute()"
                 >
                   <template #append-inner>
-                    <v-icon
-                      v-if="newUser.password"
-                      :icon="showNewUserPassword ? mdiEyeOffOutline : mdiEyeOutline"
-                      @click="showNewUserPassword = !showNewUserPassword"
-                    />
+                    <password-reveal v-model="showNewUserPassword" />
                   </template>
                 </v-text-field>
 
@@ -399,7 +399,7 @@
                   :label="$t('pages.login.newPassword2')"
                   :rules="newUserPassword2Errors"
                   name="newUserPassword2"
-                  :type="showNewUserPassword ? 'text' : 'password'"
+                  :type="showNewUserPassword2 ? 'text' : 'password'"
                   validate-on="invalid-input"
                   autocomplete="new-password"
                   variant="outlined"
@@ -407,6 +407,9 @@
                   rounded
                   @keyup.enter="createUser.execute()"
                 >
+                  <template #append-inner>
+                    <password-reveal v-model="showNewUserPassword2" />
+                  </template>
                   <template #append>
                     <div>
                       <v-icon
@@ -431,6 +434,7 @@
               <v-btn
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 :disabled="createUser.loading.value"
                 @click="createUser.execute()"
               >
@@ -512,7 +516,7 @@
                   style="display:none;"
                 />
                 <v-text-field
-                  id="password"
+                  id="newPassword"
                   v-model="newPassword"
                   :autofocus="true"
                   :label="$t('pages.login.newPassword')"
@@ -527,11 +531,7 @@
                   class="mb-2"
                 >
                   <template #append-inner>
-                    <v-icon
-                      v-if="newPassword"
-                      :icon="showNewPassword ? mdiEyeOffOutline : mdiEyeOutline"
-                      @click="showNewPassword = !showNewPassword"
-                    />
+                    <password-reveal v-model="showNewPassword" />
                   </template>
                 </v-text-field>
                 <v-text-field
@@ -539,7 +539,7 @@
                   :label="$t('pages.login.newPassword2')"
                   :rules="newPassword2Errors"
                   name="newPassword2"
-                  :type="showNewPassword ? 'text' : 'password'"
+                  :type="showNewPassword2 ? 'text' : 'password'"
                   validate-on="invalid-input"
                   autocomplete="new-password"
                   variant="outlined"
@@ -547,6 +547,9 @@
                   rounded
                   @keyup.enter="changePassword.execute()"
                 >
+                  <template #append-inner>
+                    <password-reveal v-model="showNewPassword2" />
+                  </template>
                   <template #append>
                     <div>
                       <v-icon
@@ -570,6 +573,7 @@
                 :disabled="!newPassword || newPassword !== newPassword2"
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 @click="changePassword.execute()"
               >
                 {{ $t('common.validate') }}
@@ -595,7 +599,7 @@
                 <v-img
                   v-if="qrcode"
                   :src="qrcode"
-                  :title="$t('pages.login.configure2FAQRCode')"
+                  :alt="$t('pages.login.configure2FAQRCode')"
                   max-width="170"
                   class="my-2"
                 />
@@ -624,6 +628,7 @@
                 :disabled="!configure2FACode"
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 @click="validate2FA.execute()"
               >
                 {{ $t('common.validate') }}
@@ -648,6 +653,7 @@
                 {{ recovery }}
                 <v-btn
                   :title="$t('pages.login.recovery2FADownload')"
+                  :aria-label="$t('pages.login.recovery2FADownload')"
                   variant="text"
                   class="mx-0"
                   color="warning"
@@ -708,6 +714,7 @@
                 v-if="createOrganization.active"
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 @click="createOrga.execute()"
               >
                 {{ $t('common.validate') }}
@@ -733,6 +740,7 @@
               <v-btn
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 :href="redirect"
               >
                 {{ $t('common.continue') }}
@@ -779,6 +787,7 @@
               <v-btn
                 color="primary"
                 variant="flat"
+                class="text-uppercase"
                 :disabled="authorizeApp.loading.value"
                 @click="authorizeApp.execute()"
               >
@@ -870,12 +879,14 @@ const redirect = reactiveSearchParams.redirect
 const email = ref<string>(reactiveSearchParams.email ?? '')
 const emailError = ref<string | null>(null)
 const password = ref('')
+const showPassword = ref(false)
 
 const orgStorage = useBooleanSearchParam('org_storage')
 const membersOnly = useBooleanSearchParam('members_only')
 const rememberMe = ref(true)
 
 const showNewPassword = ref(false)
+const showNewPassword2 = ref(false)
 const newPassword = ref('')
 const newPasswordErrors = computed(() => {
   if (!newPassword.value) return ['']
@@ -900,6 +911,7 @@ const newUserPassword2Errors = computed(() => {
   return []
 })
 const showNewUserPassword = ref(false)
+const showNewUserPassword2 = ref(false)
 const tosAccepted = ref(false)
 const createOrganization = ref({ active: false, name: '' })
 
@@ -1043,6 +1055,7 @@ function preLogin () {
 
 const createUserForm = ref<InstanceType<typeof VForm>>()
 const createUser = useAsyncAction(async () => {
+  showNewUserPassword.value = showNewUserPassword2.value = false
   await createUserForm.value?.validate()
   if (!createUserForm.value?.isValid) return
   if (!createUserToken.data.value) return
@@ -1088,6 +1101,7 @@ const passwordlessAuth = useAsyncAction(async () => {
 }, { catch: 'all' })
 
 const passwordAuth = useAsyncAction(async () => {
+  showPassword.value = false
   try {
     const body: PostPasswordAuthReq['body'] = {
       email: email.value,
@@ -1156,6 +1170,7 @@ watch(email, () => { changePasswordAction.notif.value = undefined })
 
 const changePasswordForm = ref<InstanceType<typeof VForm>>()
 const changePassword = useAsyncAction(async () => {
+  showNewPassword.value = showNewPassword2.value = false
   if (!actionPayload) return
   await changePasswordForm.value?.validate()
   if (!changePasswordForm.value?.isValid) return

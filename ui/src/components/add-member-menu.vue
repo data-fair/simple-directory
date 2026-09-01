@@ -7,6 +7,7 @@
     <template #activator="{props}">
       <v-btn
         :title="$t('pages.organization.addMember')"
+        :aria-label="$t('pages.organization.addMember')"
         size="small"
         color="primary"
         class="mx-2"
@@ -78,7 +79,7 @@
             <v-select
               v-if="redirects && redirects.length > 1"
               v-model="invitation.redirect"
-              label="Site de redirection"
+              :label="$t('common.redirectSite')"
               :items="redirects"
               item-value="value"
               item-title="title"

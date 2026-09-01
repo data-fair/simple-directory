@@ -20,11 +20,18 @@
       data-iframe-height
       @submit="save.execute"
     >
+      <!--
+        readonly and not disabled: a disabled field is dimmed to 38% opacity, which drops the
+        contrast of the address well below the 4.5:1 required (RGAA 3.2). readonly keeps it
+        readable and focusable, and is restituted as non editable.
+      -->
       <v-text-field
         v-model="user.email"
+        :hint="$t('pages.me.emailNotEditable')"
         :label="$t('common.email')"
-        :disabled="true"
         name="email"
+        persistent-hint
+        readonly
       />
 
       <load-avatar
@@ -213,6 +220,7 @@
                   <template #activator="{props}">
                     <v-btn
                       :title="$t('common.delete')"
+                      :aria-label="$t('common.delete')"
                       v-bind="props"
                       variant="text"
                       icon

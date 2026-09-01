@@ -7,6 +7,7 @@ export default {
     description: 'Gestión simplificada de sus usuarios y organizaciones en una moderna arquitectura orientada a la web.'
   },
   common: {
+    manageNotifications: 'Gestionar las notificaciones',
     home: 'Página inicial',
     logLink: 'Iniciar sesión / Registrarse',
     logout: 'Desconectarse',
@@ -29,6 +30,10 @@ export default {
     id: 'Nombre de usuario',
     name: 'Apellido',
     save: 'Grabar',
+    send: 'Enviar',
+    load: 'Cargar',
+    active: 'activo',
+    inactive: 'inactivo',
     members: 'Miembros',
     orgStorageMembers: 'Miembros en almacenamiento secundario',
     role: 'Papel',
@@ -47,6 +52,7 @@ export default {
     confirmDeleteTitle: 'Eliminar {name}',
     confirmDeleteMsg: '¿Estás seguro de que deseas eliminar este recurso? Tenga en cuenta que los datos no se pueden recuperar.',
     editTitle: 'Modificar {name}',
+    seeTitle: 'Ver {name}',
     loggedAt: 'Último acceso',
     createdAt: 'Creó el',
     createdPhrase: 'Creado por {name} el {date}',
@@ -59,6 +65,10 @@ export default {
     back: 'Regreso',
     next: 'Próximo',
     password: 'Contraseña',
+    showPassword: 'Mostrar la contraseña',
+    hidePassword: 'Ocultar la contraseña',
+    passwordShown: 'Su contraseña está visible',
+    passwordHidden: 'Su contraseña está oculta',
     checkInbox: 'Revisa tu correo',
     spamWarning: 'Si no ha recibido un correo electrónico, compruebe que no se haya clasificado automáticamente como spam.',
     validate: 'Validar',
@@ -166,7 +176,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
         noCreatedOrgsLimit: 'Los usuarios pueden crear cualquier número de organizaciones.',
         createdOrgsLimit: 'Los usuarios pueden crear {defaultMaxCreatedOrgs} organizacione(s) predeterminadas.',
         explainLimit: 'Establezca un valor para limitar la cantidad de organizaciones que este usuario puede crear. -1 para un número no especificado. Vacíe el campo para volver al valor predeterminado ({defaultMaxCreatedOrgs}).',
-        editUserEmailTitle: 'Cambiar la dirección de correo electrónico del usuario {nombre}',
+        editUserEmailTitle: 'Cambiar la dirección de correo electrónico del usuario {name}',
         editUserEmailText: '¡Advertencia! El correo electrónico es una clave de usuario importante, al modificar esta información, corre el riesgo de insertar una dirección incorrecta, no funcional o inconsistente con otras entradas. Esta función solo se presenta a los administradores para desbloquear a un usuario cuyo buzón se vuelve inaccesible.',
         drop2FATitle: 'Desactivar la autenticación de dos factores',
         transferTitle: 'Transferir el usuario {name} a otro sitio',
@@ -183,11 +193,26 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       },
       sites: {
         createSite: 'Definir un nuevo sitio',
+        loginOnSite: 'Iniciar sesión en el sitio',
         colorWarnings: 'Advertencias de contraste'
+      },
+      passwordLists: {
+        help1: 'Puede cargar listas de contraseñas a partir de archivos CSV. Esas contraseñas demasiado conocidas serán rechazadas si los usuarios intentan utilizarlas.',
+        help2: 'Puede encontrar archivos de listas de contraseñas en internet, por ejemplo en el proyecto {secLists} o el proyecto {richelieu} para una lista francesa.',
+        newFile: 'Nuevo archivo de contraseñas (una contraseña por línea)',
+        subtitle: '{state} - {date} - {count} contraseñas',
+        confirmDelete: '¿Eliminar esta lista de contraseñas?'
       },
       site: {
         title: 'Configuración del sitio'
       }
+    },
+    contact: {
+      title: 'Contáctenos',
+      from: 'Su dirección de correo electrónico',
+      subject: 'Asunto',
+      text: 'Su solicitud',
+      sent: 'Su solicitud ha sido enviada'
     },
     login: {
       title: 'Identifícate',
@@ -202,7 +227,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       newPasswordMsg: 'Ingrese la nueva contraseña dos veces.',
       changePasswordSent: 'Se ha enviado un correo electrónico a la dirección {email}. Este correo electrónico contiene un enlace para cambiar la contraseña asociada con su cuenta.',
       passwordlessMsg1: 'Para conectar un correo electrónico es suficiente.',
-      passwordlessMsg2: 'Envíe un correo electrónico de inicio de sesión.',
+      passwordlessMsg2: 'Enviar un correo electrónico de inicio de sesión.',
       passwordlessConfirmed: 'Se ha enviado un correo electrónico a la dirección {email}. Este correo electrónico contiene un enlace para conectarse a nuestra plataforma.',
       createUserMsg1: 'Si aún no ha iniciado sesión en nuestra plataforma, cree una cuenta.',
       createUserMsg2: 'Crear una cuenta',
@@ -216,8 +241,8 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       adminMode: 'Confirme su identidad para cambiar al modo de administración.',
       adminModePromptTitle: 'Modo administración',
       adminModePromptMsg: 'Su cuenta es una cuenta de superadministrador. ¿Desea activar el modo administración para esta sesión?',
-      adminModePromptAccept: 'modo administración',
-      adminModePromptDecline: 'sesión normal',
+      adminModePromptAccept: 'Modo administración',
+      adminModePromptDecline: 'Sesión normal',
       oauth: 'Conectar con:',
       error: 'Error',
       rememberMe: 'recordarme',
@@ -285,15 +310,18 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       msgDifferentUser: 'Esta invitación a ser miembro de una organización ha sido aceptada. Usted puede <a href="{loginUrl}">iniciar sesión</a> con la cuenta de invitado.'
     },
     avatar: {
-      load: 'cargar un nuevo avatar',
-      prepare: 'Prepara la imagen'
+      loadUser: 'Cargar su avatar',
+      loadOrganization: 'Cargar un avatar de organización',
+      loadDepartment: 'Cargar un avatar ({departmentLabel})',
+      prepare: 'Preparar la imagen'
     },
     me: {
+      emailNotEditable: 'Esta dirección no se puede modificar.',
       noOrganization: 'No eres miembro de ninguna organización.',
       operations: 'Operaciones sensibles',
       deleteMyself: 'Eliminar esta cuenta',
-      deleteMyselfAlert: 'Si elimina su cuenta, los datos asociados también serán eliminados y no podrán ser recuperados.',
-      deleteMyselfCheck: 'marque esta casilla y haga clic en OK para confirmar la eliminación.',
+      deleteMyselfAlert: 'Si elimina su cuenta de usuario, dispondrá de un plazo de {plannedDeletionDelay} días para cancelar la operación, tras lo cual todos los datos asociados serán eliminados y no podrán ser recuperados.',
+      deleteMyselfCheck: 'marque esta casilla y haga clic en OK para confirmar la eliminación del usuario {name} y de todos sus datos.',
       accountChanges: 'Gestionar el cambio de cuenta',
       defaultOrg: 'Activar esta cuenta por defecto después de cada inicio de sesión',
       ignorePersonalAccount: 'Marque esta casilla si no desea utilizar esta plataforma fuera de una cuenta de organización',
@@ -317,8 +345,8 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       org: 'Puede aceptar esta invitación en nombre de una organización de la que sea administrador, o bien crear una nueva organización y aceptar la invitación en su nombre.',
       createOrg: 'crear una nueva organización',
       newOrgName: 'nombre de la nueva organización',
-      create: 'crear',
-      acceptAs: 'aceptar en nombre de {name}'
+      create: 'Crear',
+      acceptAs: 'Aceptar en nombre de {name}'
     },
     changeHost: {
       msg1: 'La cuenta {email} no existe en {host} pero sí existe en {mainHost}.',
@@ -397,7 +425,7 @@ Se ha realizado una solicitud de identificación de {host}. Para confirmarlo, co
 Si tiene un problema con su cuenta o si no ha solicitado iniciar sesión en {host}, no dude en contactarnos en {contact}.
       `,
       htmlMsg: 'Se ha realizado una solicitud de identificación desde <a href="{origin}">{host}</a>. Para confirmarlo, haga clic en el botón de abajo. El enlace es válido por 15 minutos.',
-      htmlButton: 'Conectado a {host}',
+      htmlButton: 'Conexión a {host}',
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
       htmlCaption: 'Si tiene un problema con su cuenta o no ha solicitado iniciar sesión en <a href="{origin}">{host}</a>, no dudes en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },
@@ -435,7 +463,7 @@ Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no d
 Un administrador de la organización {organization} lo ha invitado a unirse. Para aceptar esta invitación, haga clic en el botón de abajo. El enlace es válido por 10 días.
 Si aún no tiene una cuenta, se creará automáticamente.
       `,
-      htmlButton: 'Aceptar la invitacion',
+      htmlButton: 'Aceptar la invitación',
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
       htmlCaption: 'Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },
@@ -453,7 +481,7 @@ Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no d
 Un administrador de la organización {organization} lo ha invitado a unirse en {host} para acceder a <b>{secondaryHost}</b>. Para aceptar esta invitación, haga clic en el botón de abajo. El enlace es válido por 10 días.
 Si aún no tiene una cuenta, se creará automáticamente.
       `,
-      htmlButton: 'Aceptar la invitacion',
+      htmlButton: 'Aceptar la invitación',
       htmlAlternativeLink: 'Si el botón de arriba no funciona, puede copiar este enlace en la barra de direcciones de su navegador:',
       htmlCaption: 'Si tiene un problema con su cuenta o encuentra esta invitación sospechosa, no dude en contactarnos en <a href="mailto:{contact}">{contact}</a>.'
     },

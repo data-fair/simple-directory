@@ -75,6 +75,7 @@
               <v-img
                 v-if="partner.id"
                 :src="`${$sdUrl}/api/avatars/organization/${partner.id}/avatar.png`"
+                alt=""
               />
             </v-avatar>
           </template>

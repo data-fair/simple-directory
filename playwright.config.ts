@@ -51,7 +51,8 @@ export default defineConfig({
       name: 'e2e',
       testMatch: /.*\.e2e\.spec\.ts/,
       dependencies: ['state-setup'],
-      use: { ...devices['Desktop Chrome'] },
+      // full page loads (incl. superadmin login) can exceed 5s when the whole suite loads the server
+      use: { ...devices['Desktop Chrome'], navigationTimeout: 15_000 },
     },
   ],
 })
