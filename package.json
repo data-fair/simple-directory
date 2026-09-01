@@ -14,6 +14,7 @@
     "lint-fix": "eslint --fix . && npm -w ui run lint-fix",
     "dev-api": "npm -w api run dev",
     "dev-mock-oidc": "node --experimental-strip-types dev/mock-oidc-server.ts",
+    "dev-fixtures": "dotenv -- node --experimental-strip-types --disable-warning=ExperimentalWarning dev/fixtures.ts",
     "dev-ui": "npm -w ui run dev",
     "dev-zellij": "dotenv -- zellij --layout .zellij.kdl",
     "stop-dev-deps": "docker compose --profile dev stop",
