@@ -30,6 +30,10 @@ export default {
     id: 'Login',
     name: 'Nome',
     save: 'Registe-se',
+    send: 'Enviar',
+    load: 'Carregar',
+    active: 'ativo',
+    inactive: 'inativo',
     members: 'Membros',
     orgStorageMembers: 'Membros no armazenamento secundário',
     role: 'Papel',
@@ -189,11 +193,26 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       },
       sites: {
         createSite: 'Definir um novo site',
+        loginOnSite: 'Iniciar sessão no site',
         colorWarnings: 'Avisos de contraste'
+      },
+      passwordLists: {
+        help1: 'Pode carregar listas de palavras-passe a partir de ficheiros CSV. Estas palavras-passe demasiado conhecidas serão rejeitadas se os utilizadores tentarem utilizá-las.',
+        help2: 'Pode encontrar ficheiros de listas de palavras-passe na internet, por exemplo no projeto {secLists} ou no projeto {richelieu} para uma lista francesa.',
+        newFile: 'Novo ficheiro de palavras-passe (uma palavra-passe por linha)',
+        subtitle: '{state} - {date} - {count} palavras-passe',
+        confirmDelete: 'Eliminar esta lista de palavras-passe?'
       },
       site: {
         title: 'Configuração do site'
       }
+    },
+    contact: {
+      title: 'Contacte-nos',
+      from: 'O seu endereço de email',
+      subject: 'Assunto',
+      text: 'O seu pedido',
+      sent: 'O seu pedido foi enviado'
     },
     login: {
       title: 'Faça o login na sua conta',
@@ -408,7 +427,7 @@ Se tiver um problema com a sua conta ou se não tiver solicitado o login em {hos
       htmlMsg: 'Foi feito um pedido de identificação desde <a href="{origin}">{host}</a>. Para o confirmar clique no botão abaixo. A ligação é válida por 15 minutos.',
       htmlButton: 'Ligação ao {host}',
       htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
-      htmlCaption: 'Si vous avez un problème avec votre compte ou si vous n\'avez pas demandé à vous connecter à <a href="{origin}">{host}</a>, n\'hésitez pas à nous contacter à <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'Se tiver um problema com a sua conta ou se não tiver pedido para iniciar sessão em <a href="{origin}">{host}</a>, não hesite em contactar-nos em <a href="mailto:{contact}">{contact}</a>.'
     },
     noCreation: {
       subject: 'Falha de autenticação no {host}.',

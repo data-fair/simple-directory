@@ -30,6 +30,10 @@ export default {
     id: 'Nombre de usuario',
     name: 'Apellido',
     save: 'Grabar',
+    send: 'Enviar',
+    load: 'Cargar',
+    active: 'activo',
+    inactive: 'inactivo',
     members: 'Miembros',
     orgStorageMembers: 'Miembros en almacenamiento secundario',
     role: 'Papel',
@@ -189,11 +193,26 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       },
       sites: {
         createSite: 'Definir un nuevo sitio',
+        loginOnSite: 'Iniciar sesión en el sitio',
         colorWarnings: 'Advertencias de contraste'
+      },
+      passwordLists: {
+        help1: 'Puede cargar listas de contraseñas a partir de archivos CSV. Esas contraseñas demasiado conocidas serán rechazadas si los usuarios intentan utilizarlas.',
+        help2: 'Puede encontrar archivos de listas de contraseñas en internet, por ejemplo en el proyecto {secLists} o el proyecto {richelieu} para una lista francesa.',
+        newFile: 'Nuevo archivo de contraseñas (una contraseña por línea)',
+        subtitle: '{state} - {date} - {count} contraseñas',
+        confirmDelete: '¿Eliminar esta lista de contraseñas?'
       },
       site: {
         title: 'Configuración del sitio'
       }
+    },
+    contact: {
+      title: 'Contáctenos',
+      from: 'Su dirección de correo electrónico',
+      subject: 'Asunto',
+      text: 'Su solicitud',
+      sent: 'Su solicitud ha sido enviada'
     },
     login: {
       title: 'Identifícate',

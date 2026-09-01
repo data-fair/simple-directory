@@ -57,7 +57,7 @@
           <v-select
             v-if="redirects && redirects.length > 1"
             v-model="invitationRedirect"
-            label="Site de redirection"
+            :label="$t('common.redirectSite')"
             :items="redirects"
             item-value="value"
             item-title="title"

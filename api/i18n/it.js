@@ -30,6 +30,10 @@ export default {
     id: 'Login',
     name: 'Nome',
     save: 'Registrati a',
+    send: 'Inviare',
+    load: 'Caricare',
+    active: 'attivo',
+    inactive: 'inattivo',
     members: 'Membri',
     orgStorageMembers: 'Membri nello storage secondario',
     role: 'Ruolo',
@@ -189,11 +193,26 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       },
       sites: {
         createSite: 'Definire un nuovo sito',
+        loginOnSite: 'Accedere al sito',
         colorWarnings: 'Avvertenze di contrasto'
+      },
+      passwordLists: {
+        help1: 'È possibile caricare elenchi di password da file CSV. Queste password troppo note verranno rifiutate se gli utenti tentano di utilizzarle.',
+        help2: 'È possibile trovare file di elenchi di password su internet, ad esempio sul progetto {secLists} o sul progetto {richelieu} per un elenco francese.',
+        newFile: 'Nuovo file di password (una password per riga)',
+        subtitle: '{state} - {date} - {count} password',
+        confirmDelete: 'Eliminare questo elenco di password?'
       },
       site: {
         title: 'Configurazione del sito'
       }
+    },
+    contact: {
+      title: 'Contattaci',
+      from: 'Il tuo indirizzo email',
+      subject: 'Oggetto',
+      text: 'La tua richiesta',
+      sent: 'La tua richiesta è stata inviata'
     },
     login: {
       title: 'Accedi al tuo conto',

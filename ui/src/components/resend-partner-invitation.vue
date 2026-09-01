@@ -48,7 +48,7 @@
           <v-select
             v-if="$uiConfig.manageSites && redirects && redirects.length > 1"
             v-model="editPartner.redirect"
-            label="Site de redirection"
+            :label="$t('common.redirectSite')"
             :items="redirects"
             name="host"
             required

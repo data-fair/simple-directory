@@ -30,6 +30,10 @@ export default {
     id: 'Nutzername',
     name: 'Name',
     save: 'Aufzeichnung',
+    send: 'Senden',
+    load: 'Hochladen',
+    active: 'aktiv',
+    inactive: 'inaktiv',
     members: 'Mitglieder',
     orgStorageMembers: 'Mitglieder im sekundären Speicher',
     role: 'Rolle',
@@ -189,11 +193,26 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       },
       sites: {
         createSite: 'Eine neue Website definieren',
+        loginOnSite: 'Auf der Website anmelden',
         colorWarnings: 'Kontrastwarnungen'
+      },
+      passwordLists: {
+        help1: 'Sie können Kennwortlisten aus CSV-Dateien hochladen. Diese zu bekannten Kennwörter werden dann abgelehnt, wenn Benutzer versuchen, sie zu verwenden.',
+        help2: 'Sie finden Kennwortlisten im Internet, zum Beispiel im Projekt {secLists} oder im Projekt {richelieu} für eine französische Liste.',
+        newFile: 'Neue Kennwortdatei (ein Kennwort pro Zeile)',
+        subtitle: '{state} - {date} - {count} Kennwörter',
+        confirmDelete: 'Diese Kennwortliste löschen?'
       },
       site: {
         title: 'Website-Konfiguration'
       }
+    },
+    contact: {
+      title: 'Kontaktieren Sie uns',
+      from: 'Ihre E-Mail-Adresse',
+      subject: 'Betreff',
+      text: 'Ihre Anfrage',
+      sent: 'Ihre Anfrage wurde gesendet'
     },
     login: {
       title: 'Identifizieren Sie sich',

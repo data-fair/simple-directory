@@ -108,8 +108,8 @@
               </template>
             </confirm-menu>
             <v-btn
-              title="Se connecter sur le site"
-              aria-label="Se connecter sur le site"
+              :title="$t('pages.admin.sites.loginOnSite')"
+              :aria-label="$t('pages.admin.sites.loginOnSite')"
               variant="text"
               :icon="mdiLoginVariant"
               @click="siteRedirect(props.item)"

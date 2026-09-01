@@ -30,6 +30,10 @@ export default {
     id: 'Identifiant',
     name: 'Nom',
     save: 'Enregistrer',
+    send: 'Envoyer',
+    load: 'Charger',
+    active: 'actif',
+    inactive: 'inactif',
     members: 'Membres',
     orgStorageMembers: 'Membres dans le stockage secondaire',
     role: 'Rôle',
@@ -189,11 +193,26 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       },
       sites: {
         createSite: 'Déclarer un nouveau site',
+        loginOnSite: 'Se connecter sur le site',
         colorWarnings: 'Avertissements de contraste',
+      },
+      passwordLists: {
+        help1: 'Vous pouvez charger des listes de mots de passe à partir de fichiers CSV. Ces mots de passe trop connus seront alors rejetés si des utilisateurs tentent de les utiliser.',
+        help2: 'Vous pouvez trouver des fichiers de listes de mots de passe sur internet, par exemple sur le projet {secLists} ou le projet {richelieu} pour une liste française.',
+        newFile: 'Nouveau fichier de mots de passe (un mot de passe par ligne)',
+        subtitle: '{state} - {date} - {count} mots de passe',
+        confirmDelete: 'Supprimer cette liste de mots de passe ?'
       },
       site: {
         title: 'Configuration du site'
       }
+    },
+    contact: {
+      title: 'Nous contacter',
+      from: 'Votre adresse email',
+      subject: 'Sujet',
+      text: 'Votre demande',
+      sent: 'Votre demande a été envoyée'
     },
     login: {
       title: 'Identifiez-vous',

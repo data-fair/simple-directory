@@ -30,6 +30,10 @@ export default {
     id: 'Identifier',
     name: 'Name',
     save: 'Save',
+    send: 'Send',
+    load: 'Upload',
+    active: 'active',
+    inactive: 'inactive',
     members: 'Members',
     orgStorageMembers: 'Members in secondary storage',
     role: 'Role',
@@ -189,11 +193,26 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       },
       sites: {
         createSite: 'Define a new site',
+        loginOnSite: 'Sign in on the site',
         colorWarnings: 'Contrast warnings'
+      },
+      passwordLists: {
+        help1: 'You can upload password lists from CSV files. Those too well known passwords will then be rejected if users try to use them.',
+        help2: 'You can find password list files on the internet, for example on the {secLists} project or the {richelieu} project for a French list.',
+        newFile: 'New password file (one password per line)',
+        subtitle: '{state} - {date} - {count} passwords',
+        confirmDelete: 'Delete this password list?'
       },
       site: {
         title: 'Site configuration'
       }
+    },
+    contact: {
+      title: 'Contact us',
+      from: 'Your email address',
+      subject: 'Subject',
+      text: 'Your request',
+      sent: 'Your request has been sent'
     },
     login: {
       title: 'Identify yourself',
