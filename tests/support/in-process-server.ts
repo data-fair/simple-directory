@@ -18,7 +18,11 @@ let testPort: number
 let directoryUrl: string
 
 export const startApiServer = async () => {
-  testPort = 10000 + Math.floor(Math.random() * 50000)
+  // Stay below the kernel ephemeral range (net.ipv4.ip_local_port_range, 32768-60999 by default):
+  // the previous 10000-59999 range overlapped it, so an outbound connection from mongo/ldap/keycloak
+  // could already hold the port and server.listen() failed with EADDRINUSE. Probing for a free port
+  // would not help, several seconds of init run between the probe and the listen.
+  testPort = 20000 + Math.floor(Math.random() * 12000)
   directoryUrl = `http://localhost:${testPort}/simple-directory`
   process.env.PORT = String(testPort)
   process.env.DEV_API_PORT = String(testPort)
