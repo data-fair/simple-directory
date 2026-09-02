@@ -4,7 +4,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "mkdir -p ../dev/logs && NODE_ENV=development ENABLE_TEST_API=1 IGNORE_ASSERT_REQ_INTERNAL=1 DEBUG=upgrade* node --watch --experimental-strip-types index.ts 2>&1 | tee ../dev/logs/dev-api.log"
+    "dev": "mkdir -p ../dev/logs && NODE_ENV=development ENABLE_TEST_API=1 IGNORE_ASSERT_REQ_INTERNAL=1 DEBUG=upgrade* nodemon --verbose -e js,ts,json,cjs --exec \"node --experimental-strip-types --disable-warning=ExperimentalWarning index.ts || (sleep 2 && touch index.ts)\" 2>&1 | tee ../dev/logs/dev-api.log"
   },
   "imports": {
     "#config": "./src/config.ts",
