@@ -501,22 +501,6 @@ Um administrador da organização {organization} convida-o como contacto para a 
       htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
       htmlCaption: 'Se encontrar um problema com a sua conta ou achar este convite suspeito, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.'
     },
-    partnerInvitationSecondary: {
-      subject: 'A organização {organization} em {secondaryHost} quer adicionar {partner} como parceiro',
-      text: `
-Um administrador da organização {organization} convida-o como contacto para a organização {partner} se juntar em {secondaryHost}. Para aceitar este convite, copie o URL abaixo para um browser. Este URL é válido por 10 dias.
-
-{link}
-
-Se encontrar um problema com a sua conta ou achar este convite suspeito, por favor contacte-nos em {contact}.
-      `,
-      htmlMsg: `
-Um administrador da organização {organization} convida-o como contacto para a organização {partner} se juntar em {secondaryHost}. Para aceitar este convite, clique no botão abaixo. A ligação é válida por 10 dias.
-      `,
-      htmlButton: 'Aceitar o convite',
-      htmlAlternativeLink: 'Se o botão acima não funcionar, pode copiar esta ligação para a barra de endereço do seu navegador :',
-      htmlCaption: 'Se encontrar um problema com a sua conta ou achar este convite suspeito, por favor contacte-nos em <a href="mailto:{contact}">{contact}</a>.'
-    },
     action: {
       subject: 'Execute uma acção na sua conta em {host}.',
       text: `

@@ -92,14 +92,19 @@ test.describe('organizations api', () => {
     const mainHost = '127.0.0.1:' + process.env.NGINX_PORT2
     const secondaryHost = '127.0.0.1:' + process.env.NGINX_PORT3
 
+    // the 2 sites get distinct branding so that we can tell which one the invitation mail was themed with
     await anonymousAx.post('/api/sites',
-      { _id: 'test_partners_main', owner, host: mainHost, theme: { primaryColor: '#FF00FF' } },
+      { _id: 'test_partners_main', owner, host: mainHost, theme: { primaryColor: '#FF0000' } },
       { params: { key: config.secretKeys.sites } })
-    await adminAx.patch('/api/sites/test_partners_main', { isAccountMain: true })
+    const mainSite = (await adminAx.patch('/api/sites/test_partners_main',
+      { isAccountMain: true, mails: { from: 'main@test.com', contact: 'main-contact@test.com' } })).data
     // this second site defaults to onlyOtherSite pointing at the main site
     await anonymousAx.post('/api/sites',
-      { _id: 'test_partners_secondary', owner, host: secondaryHost, theme: { primaryColor: '#FF00FF' } },
+      { _id: 'test_partners_secondary', owner, host: secondaryHost, theme: { primaryColor: '#00FF00' } },
       { params: { key: config.secretKeys.sites } })
+    const secondarySite = (await adminAx.patch('/api/sites/test_partners_secondary',
+      { mails: { from: 'secondary@test.com', contact: 'secondary-contact@test.com' } })).data
+    assert.notEqual(secondarySite.theme.colors.primary, mainSite.theme.colors.primary)
     await testEnvAx.post('/clear-site-cache')
 
     const mail = await waitForMail(
@@ -111,6 +116,9 @@ test.describe('organizations api', () => {
     assert.ok(!mail.subject.includes(mainHost))
     assert.ok(mail.text.includes(secondaryHost))
     assert.ok(!mail.text.includes(mainHost))
+    // the mail is themed with the secondary site, not with the site holding the accounts
+    assert.equal(mail['theme.colors.primary'], secondarySite.theme.colors.primary)
+    assert.equal(mail.contact, 'secondary-contact@test.com')
 
     const token = new URL(mail.link).searchParams.get('partner_invit_token')
     const { ax: ax2 } = await createUser('test-partners4@test.com')

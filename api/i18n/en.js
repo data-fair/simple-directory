@@ -497,22 +497,6 @@ An administrator from the organization {organization} invites you as a contact f
       htmlAlternativeLink: 'If the button above doesn\'t work, you can copy this link into your browser\'s address bar:',
       htmlCaption: 'If you encounter a problem with your account or find this invitation suspicious, please contact us at <a href="mailto:{contact}">{contact}</a>.'
     },
-    partnerInvitationSecondary: {
-      subject: 'The organization {organization} on {secondaryHost} wants to add {partner} as a partner',
-      text: `
-An administrator from the organization {organization} invites you as a contact for the organization {partner} to join on {secondaryHost}. To accept this invitation, copy the URL below into your browser. This URL is valid for 10 days.
-
-{link}
-
-If you encounter a problem with your account or find this invitation suspicious, please contact us at {contact}.
-      `,
-      htmlMsg: `
-An administrator from the organization {organization} invites you as a contact for the organization {partner} to join on {secondaryHost}. To accept this invitation, click the button below. The link is valid for 10 days.
-      `,
-      htmlButton: 'Accept the invitation',
-      htmlAlternativeLink: 'If the button above doesn\'t work, you can copy this link into your browser\'s address bar:',
-      htmlCaption: 'If you encounter a problem with your account or find this invitation suspicious, please contact us at <a href="mailto:{contact}">{contact}</a>.'
-    },
     action: {
       subject: 'Accomplish an action on your account {host}',
       text: `
