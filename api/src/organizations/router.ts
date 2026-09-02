@@ -9,7 +9,7 @@ import { reqI18n } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
 import type { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
-import { setNbMembersLimit, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteBaseUrl, getInvitationRedirect } from '#services'
+import { setNbMembersLimit, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, getInvitationRedirect } from '#services'
 import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
@@ -416,7 +416,12 @@ if (config.managePartners) {
     await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
     eventsLog.info('sd.org.partner.invite', `a user invited an organization to be a partner ${partnerPost.name} ${partnerPost.contactEmail} ${orga.name} ${orga.id}`, logContext)
 
-    const invitSite = await getInvitSite(req, partnerPost.redirect)
+    // contrary to getInvitSite (cf invitations/router.ts) we do not fold the redirect site to the site
+    // where its accounts live: the mail must point to the site the invitation actually targets, so that
+    // the recipient sees its branding. Delegating auth modes are handled client-side, the login page of
+    // the redirect site bounces to its auth site while preserving the query string.
+    const redirectSite = partnerPost.redirect ? await getSiteByUrl(partnerPost.redirect) : undefined
+    const invitSite = redirectSite ?? await getInvitSite(req)
     const invitPublicBaseUrl = invitSite ? (getSiteBaseUrl(invitSite) + '/simple-directory') : config.publicUrl
     const reboundRedirect = getInvitationRedirect(reqSiteUrl(req), partnerPost.redirect)
     const linkUrl = new URL(invitPublicBaseUrl + '/login')
