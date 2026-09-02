@@ -92,7 +92,7 @@ export class SdMongo {
           // collides. A partial index restricted to docs that actually have an email
           // (NHIs and some LDAP-backed records don't) is what actually prevents two
           // email-less users from colliding on the unique (null, null) slot.
-          { unique: true, collation, name: 'email_1', partialFilterExpression: { email: { $exists: true } } }
+          { unique: true, collation, name: 'email_1' }
         ],
         logged_1: [ // for metrics
           { logged: -1 },

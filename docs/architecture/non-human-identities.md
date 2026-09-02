@@ -15,7 +15,8 @@ Org admins can declare a non-human identity — an external system the org
 trusts — that authenticates with a short-lived JWT issued by its own
 provider (first target: Kubernetes projected service-account tokens) and
 receives a normal simple-directory session scoped to that one organization.
-There is no self-management and no email at any point of the lifecycle.
+There is no self-management and no mail-based workflow at any point of the
+lifecycle (an NHI carries a synthetic, non-mailed email — see below).
 
 NHIs are **stored as `User` documents** (so they work everywhere a `User`
 does: member listing, token payloads, avatars, webhooks) but **managed
@@ -30,10 +31,10 @@ nhi: {
 }
 ```
 
-`email` is optional on the base `User` schema to accommodate this (see
-`api/doc/users/post-req/schema.js`); the human self-service signup endpoint
-re-adds `email` to its own `required` list so this stays a no-op for humans.
-Mongo storage only in v1 — LDAP/file storages do not create NHIs.
+`email` stays required on the `User` schema: at creation an NHI is given a stored
+synthetic email (`nhiSyntheticEmail`, see "Stored synthetic email" below), so the
+user model is uniform with human accounts. Mongo storage only in v1 — LDAP/file
+storages do not create NHIs.
 
 ## Trust model
 
@@ -155,39 +156,46 @@ is never set for an NHI — see the invariant below. Downstream services are
 expected to read the `nhi` flag to suppress mail-based actions and
 account-switching UI.
 
-### Synthetic email in the token (not in storage)
+### Stored synthetic email, excluded from email auth
 
-The token carries a **deterministic, non-deliverable synthetic email** for an
-NHI — `<nhi-id>@service-account.invalid` (`nhiSyntheticEmail`, `.invalid` is
-the RFC 6761 reserved TLD, so the address can never resolve or receive mail).
-This is deliberate and load-bearing:
+An NHI carries a **deterministic synthetic email**, `<nhi-id>@nhi.<publicUrl-host>`
+(`nhiSyntheticEmail`), derived once at creation from `config.publicUrl`'s host and
+**stored on the user document** like any other user's email. This keeps the user
+model uniform — `email` stays required and the users unique index stays a plain
+unique index (no partial filter, no migration) — and it is load-bearing downstream:
 
-- Every downstream consumer in the data-fair stack was written under the
-  invariant that `session.user.email` is a non-empty string. Emitting an
-  **absent** email would break that invariant silently and dangerously: the
-  mongo driver runs with `ignoreUndefined: true`, so a permission filter like
-  `{ 'access.email': session.user.email }` with an undefined email **drops the
-  key entirely**, leaving `{ 'access.type': 'user' }` — which matches *every*
-  individual-user permission (privilege escalation). Preserving a real string
-  keeps those filters correct without every consumer needing a guard.
-- The synthetic value lives **only in the signed token**. It is never written
-  to the user document, so `getUserByEmail`, the unique email index, SSO
-  identity linking, and all mail flows still see an email-less record and stay
-  fail-closed (see the storage and fail-closed sections). It also means an NHI
-  can be targeted by per-resource permissions either by id or by this stable
-  synthetic email, mirroring how data-fair addresses API-key pseudo-users.
-- `nhi: 1` remains the semantic signal; the synthetic email is a
-  compatibility shim, not an identity claim. Defense-in-depth still applies
-  downstream — `@data-fair/lib`'s `access-ref` guards the absent-email case,
-  and services should not rely on the synthetic value being present — but the
-  source-side invariant is what makes the whole ecosystem safe by default.
+- Every consumer in the data-fair stack was written under the invariant that
+  `session.user.email` is a non-empty string. An **absent** email would break it
+  silently: the mongo driver runs with `ignoreUndefined: true`, so a permission
+  filter like `{ 'access.email': session.user.email }` with an undefined email
+  **drops the key**, leaving `{ 'access.type': 'user' }` — matching *every*
+  individual-user permission (privilege escalation). A real stored string keeps
+  those filters correct without every consumer needing a guard, and lets an NHI be
+  targeted by per-resource permissions by id or by this stable email.
 
-## Superadmin exclusion (defense in depth, not just "no email")
+The one thing a stored, matchable email must not do is become an **authentication
+path** — an NHI must only ever authenticate via the token exchange, never via SSO
+linking or a password/passwordless login that resolves it by email. That invariant
+is kept by construction with a single guard: **`getUserByEmail` excludes `nhi`
+records** (`api/src/storages/mongo.ts`). Every email-based auth flow goes through
+that chokepoint (SSO in `auth/service.ts`, password/passwordless/2FA, invitations,
+change-host), so none of them can ever resolve an NHI, regardless of the stored
+address.
 
-An NHI has no email, which already makes `config.admins` matching
-structurally unreachable. The exclusion is still enforced affirmatively at
-every layer, because relying solely on "no email" would break the moment
-someone adds an email-independent admin path later:
+- **Mail** never targets an NHI: the `/api/mails` user branch skips `nhi` records
+  (`api/src/mails/router.ts`), and member listings exclude them by default. The
+  address is a `nhi.<host>` subdomain the operator controls — keep it non-routable
+  (no catch-all MX) so any stray send bounces rather than being delivered; even if
+  delivered it lands on the operator's own infrastructure, not a third party.
+- `nhi: 1` remains the semantic signal; the synthetic email is a compatibility
+  value, not an identity claim.
+
+## Superadmin exclusion (defense in depth)
+
+An NHI's synthetic email is never one of `config.admins`, so the email-based
+admin path can't grant it admin. That is incidental, though — the exclusion is
+enforced affirmatively at every layer, so it holds regardless of the stored
+email:
 
 - **`cleanUser` force** (`api/src/storages/mongo.ts`):
   ```ts
@@ -209,12 +217,15 @@ someone adds an email-independent admin path later:
 
 ## Fail-closed audit of user-facing flows
 
-Most flows are unreachable for an NHI purely because it has no email and no
-password — this is structural, not enforced by a check:
+Most email/password flows are unreachable for an NHI by construction: it has no
+password, and `getUserByEmail` excludes `nhi` records, so every flow that resolves
+a user by email (SSO linking, password/passwordless login, invitations, 2FA,
+change-host) treats the NHI's stored synthetic address as an unknown user:
 
-- **Password login** — unreachable (no password set, no email to match).
-- **Mail-action tokens, password reset, passwordless login** — the mail step
-  that would deliver a token has nowhere to send it.
+- **Password login** — unreachable (no password set, and the email resolves to no
+  user).
+- **Mail-action tokens, password reset, passwordless login** — the lookup never
+  returns the NHI, so no token is ever issued for it.
 - **Invitations** — NHI creation is direct (`createNhi`), never invitation-
   based; there is no invitation code path that touches an NHI record.
 - **`keepalive` (session refresh)** — dead by construction, see above.
@@ -324,28 +335,15 @@ time:
   no refetch mechanism for a `jwks` object stored directly on the user
   record; rotating those keys means an org admin `PATCH`-ing the binding.
 
-## Partial unique index on `email`
+## Unique email index unchanged
 
-`api/src/mongo.ts` — the `email_1` index on `users` is declared with
-`partialFilterExpression: { email: { $exists: true } }`:
-
-```ts
-{ unique: true, collation, name: 'email_1', partialFilterExpression: { email: { $exists: true } } }
-```
-
-A plain `sparse` index would not have been sufficient here: sparse only
-excludes documents missing *every* indexed field, but the compound index
-also covers `host`, and NHI/some LDAP-backed records can have `host` set (or
-not) while lacking `email` — so two email-less documents could still collide
-on a `(null, null)` slot under `sparse` alone. The partial filter instead
-excludes any document without an `email` field from the uniqueness
-constraint outright, so arbitrarily many NHIs (and any other email-less
-user) can coexist.
-
-Operationally: `@data-fair/lib-node`'s `mongo.configure` drops and recreates
-indexes by name when their definition changes, so upgrading to this index
-shape causes a brief rebuild window on the `users` collection on first
-deploy of this feature. Expected and one-time, not a recurring cost.
+Because every NHI carries a distinct stored synthetic email, the users `email_1`
+unique index stays a plain unique index — no `partialFilterExpression`, no sparse
+handling, no migration. This is the main reason the synthetic email is stored
+rather than left absent: an email-less NHI record would collide with others on a
+`(null, host)` slot and force a partial/sparse index and its rebuild. Storing a
+unique-per-NHI address sidesteps that entirely and keeps the user model uniform
+with human accounts.
 
 ## Known accepted low-severity surfaces
 

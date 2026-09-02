@@ -21,10 +21,10 @@ const planDeletion = async (user: User) => {
   await storages.globalStorage.patchUser(user.id, { plannedDeletion })
   eventsLog.warn('sd.cleanup-cron.plan-deletion', 'planned deletion of inactive user', { user })
   // storage.findInactiveUsers/findUsersToDelete exclude nhi users, so email is always defined here
-  const link = config.publicUrl + '/login?email=' + encodeURIComponent(user.email ?? '')
+  const link = config.publicUrl + '/login?email=' + encodeURIComponent(user.email)
   if (user.emailConfirmed || user.logged) {
     // TODO: use a locale stored on the user ?
-    await sendMailI18n('plannedDeletion', messages[defaultLocale], user.email ?? '', {
+    await sendMailI18n('plannedDeletion', messages[defaultLocale], user.email, {
       link,
       user: user.name,
       plannedDeletion: localizedDayjs(plannedDeletion).locale(defaultLocale).format('L'),

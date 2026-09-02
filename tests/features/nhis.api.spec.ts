@@ -111,10 +111,11 @@ test('nhi token exchange issues a short-lived org session', async () => {
   const payload = jwt.decode(res.data.access_token) as any
   assert.equal(payload.nhi, 1)
   assert.equal(payload.id, nhi.id)
-  // NHIs carry a deterministic, non-deliverable synthetic email (never stored) so that
-  // downstream email-keyed permission filters never see an undefined value — an absent
-  // email would collapse `ignoreUndefined` mongo filters into match-all.
-  assert.equal(payload.email, `${nhi.id}@service-account.invalid`)
+  // NHIs carry a deterministic synthetic email derived from the public URL host, stored on the
+  // record (so downstream email-keyed permission filters always see a real value) — the payload
+  // reflecting it proves it is stored, not fabricated at token time.
+  const publicHost = new URL((await getServerConfig()).publicUrl).hostname
+  assert.equal(payload.email, `${nhi.id}@nhi.${publicHost}`)
   assert.equal(payload.isAdmin, undefined)
   assert.equal(payload.organizations.length, 1)
   assert.equal(payload.organizations[0].id, org.id)
@@ -136,6 +137,19 @@ test('nhi token exchange issues a short-lived org session', async () => {
   // keepalive is structurally rejected: no exchange token
   await assert.rejects(agentAx.post('/api/auth/keepalive', null, { headers: { cookie: res.headers['set-cookie']!.map(c => c.split(';')[0]).join('; ') } }),
     (err: any) => err.status === 401)
+})
+
+test('an NHI is excluded from email-based auth despite its stored synthetic email', async () => {
+  const { ax } = await createUser('nhi-admin-authpath@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI authpath org' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+  const publicHost = new URL((await getServerConfig()).publicUrl).hostname
+  const nhiEmail = `${nhi.id}@nhi.${publicHost}`
+  // getUserByEmail excludes NHIs, so their stored email is never an authentication path:
+  // a password login using it is rejected as unknown credentials, minting no session
+  const anon = axios()
+  await assert.rejects(anon.post('/api/auth/password', { email: nhiEmail, password: 'irrelevant' }), (err: any) => err.status === 400)
 })
 
 test('nhi session exp is capped by the assertion exp', async () => {

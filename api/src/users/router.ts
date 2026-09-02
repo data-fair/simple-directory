@@ -193,8 +193,8 @@ router.post('', async (req, res, next) => {
       sender: { ...site.owner, role: 'admin' },
       topic: { key: 'simple-directory:user-created:' + site._id },
       title: (invit && !config.alwaysAcceptInvitation && orga)
-        ? __all('notifications.userCreatedOrg', { host: site.host, name: createdUser.name, email: createdUser.email ?? '', orgName: orga.name })
-        : __all('notifications.userCreated', { host: site.host, name: createdUser.name, email: createdUser.email ?? '' })
+        ? __all('notifications.userCreatedOrg', { host: site.host, name: createdUser.name, email: createdUser.email, orgName: orga.name })
+        : __all('notifications.userCreated', { host: site.host, name: createdUser.name, email: createdUser.email })
     })
   }
 
@@ -220,7 +220,7 @@ router.post('', async (req, res, next) => {
     eventsQueue?.pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitDepartments[0] },
       topic: { key: 'simple-directory:invitation-accepted' },
-      title: __all('notifications.acceptedInvitation', { name: createdUser.name, email: createdUser.email ?? '', orgName: invitTargetLabel })
+      title: __all('notifications.acceptedInvitation', { name: createdUser.name, email: createdUser.email, orgName: invitTargetLabel })
     })
     await setNbMembersLimit(orga.id)
   }

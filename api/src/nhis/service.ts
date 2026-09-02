@@ -2,10 +2,20 @@ import { jwtVerify, type JWTPayload } from 'jose'
 import { httpError, reqSession } from '@data-fair/lib-express'
 import type { Request } from 'express'
 import { nanoid } from 'nanoid'
+import config from '#config'
 import mongo from '#mongo'
 import storages from '#storages'
 import type { Organization, User, UserWritable } from '#types'
 import { getKeyResolver } from './keys.ts'
+
+// Deterministic, operator-controlled synthetic email for a non-human identity, derived from the
+// public URL host (e.g. `nhi-x@nhi.example.com`). It is stored on the user record so the user
+// model keeps a required email and a plain unique index, and so downstream email-keyed permission
+// filters always see a real value. NHIs are excluded from `getUserByEmail`, so this address is
+// never an authentication path — they authenticate only via the token exchange. Keep the host
+// non-routable (or accept that mail to it lands on your own infra).
+const nhiEmailDomain = 'nhi.' + new URL(config.publicUrl).hostname
+export const nhiSyntheticEmail = (nhiId: string) => `${nhiId}@${nhiEmailDomain}`
 
 export const verifyAssertion = async (assertion: string, provider: { issuer: string, jwks?: any }, subject: string, audience: string): Promise<JWTPayload> => {
   const keyResolver = await getKeyResolver(provider)
@@ -62,9 +72,11 @@ export const createNhi = async (org: Organization, body: { name: string, role: s
     membership.department = dep.id
     membership.departmentName = dep.name
   }
+  const id = 'nhi-' + nanoid(10)
   const user: UserWritable = {
-    id: 'nhi-' + nanoid(10),
+    id,
     name: body.name,
+    email: nhiSyntheticEmail(id),
     ignorePersonalAccount: true,
     organizations: [membership],
     nhi: { provider: body.provider, subject: body.subject }

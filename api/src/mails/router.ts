@@ -33,15 +33,16 @@ router.post('/', async (req, res, next) => {
       to.add(t)
     } else if (t.type === 'user') {
       const user = (await storage.getUser(t.id))
-      if (user?.email) to.add(user.email)
-      else console.error('Trying to send an email to a user that doesn\'t exist anymore or has no email (nhi)')
+      // never mail a non-human identity: it has a synthetic, non-routable address
+      if (user && !user.nhi) to.add(user.email)
+      else console.error('Trying to send an email to a user that doesn\'t exist anymore or is a non-human identity')
     } else if (t.type === 'organization') {
       const membersParams: FindMembersParams = { size: 10000, skip: 0 }
       if (t.role) membersParams.roles = [t.role]
       if (t.department && t.department !== '*') membersParams.departments = [t.department]
       if (!t.department) membersParams.departments = ['-']
       const members = await storage.findMembers(t.id, membersParams)
-      members.results.forEach(member => { if (member.email) to.add(member.email) })
+      members.results.forEach(member => to.add(member.email))
     }
     let attachments: { filename: string, path: string }[] = []
     if (req.files && Array.isArray(req.files)) {

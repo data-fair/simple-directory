@@ -86,7 +86,10 @@ class MongodbStorage implements SdStorage {
   }
 
   async getUserByEmail (email: string, site?: Site) {
-    const filter: any = { email }
+    // NHIs carry a synthetic email but must never be resolved by an email-based auth flow
+    // (SSO linking, password/passwordless login, invitations): they authenticate only via the
+    // token exchange. Excluding them here keeps that invariant by construction.
+    const filter: any = { email, nhi: { $exists: false } }
     if (site) {
       filter.host = site.host
       filter.path = site.path
