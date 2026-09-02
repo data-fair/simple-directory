@@ -87,11 +87,10 @@ export class SdMongo {
       users: {
         email_1: [
           { email: 1, host: 1 },
-          // sparse alone would not be enough: sparse only excludes docs missing *every*
-          // indexed field, but these docs have host too (or not), so email:null still
-          // collides. A partial index restricted to docs that actually have an email
-          // (NHIs and some LDAP-backed records don't) is what actually prevents two
-          // email-less users from colliding on the unique (null, null) slot.
+          // stays a plain unique index: every NHI stores a distinct synthetic email
+          // (see nhiSyntheticEmail in nhis/service.ts), precisely so email-less docs
+          // never collide on a (null, host) slot and no partial/sparse handling or
+          // index migration is needed — cf docs/architecture/non-human-identities.md
           { unique: true, collation, name: 'email_1' }
         ],
         logged_1: [ // for metrics

@@ -19,8 +19,8 @@
  * - the site: sites carry a unique index on host, so the test cleanup wipes the
  *   whole collection to stay free to claim any dev host;
  * - the service accounts (NHIs): their ids are `nhi-*`, which the test-env sweep
- *   removes (test NHIs share that namespace and would otherwise collide on the
- *   users' partial unique email index).
+ *   removes wholesale (test NHIs share that id namespace, so the sweep cannot
+ *   tell fixture NHIs apart from test leftovers).
  *
  * Caveat: the dev config runs a cleanup cron with `deleteInactive` and a one
  * day delay, so fixture users nobody ever logs in with eventually get a planned
@@ -49,8 +49,8 @@ const userSpecs = [
 ]
 
 // Non-human identities (service accounts) shown in the org's back-office. Modelled
-// on Kubernetes projected service-account tokens: a bound (issuer, subject) pair and
-// no email, one with a department to exercise that path.
+// on Kubernetes projected service-account tokens: a bound (issuer, subject) pair,
+// one with a department to exercise that path.
 const K8S_ISSUER = 'https://kubernetes.default.svc.cluster.local'
 const nhiSpecs = [
   { name: 'Agent pipeline de données', role: 'user', subject: 'system:serviceaccount:data-pipelines:etl-runner' },

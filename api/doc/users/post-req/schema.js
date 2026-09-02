@@ -11,9 +11,9 @@ const body = jsonSchema(UserSchema)
 body.properties.password = { type: 'string' }
 // anonymous-action token required for unauthenticated callers (bot / email-amplifier gate)
 body.properties.token = { type: 'string' }
-// email is optional on the base User schema (to accommodate nhi users, see
-// api/types/user/schema.js) but self-service signup through this endpoint is always for a
-// human user and must keep requiring it
+// self-service signup through this endpoint is always for a human user and must keep
+// requiring an email, independently of whether the base User schema ever relaxes it
+// (NHI users, see api/types/user/schema.js, nearly made it optional)
 body.required = [...new Set([...(body.required ?? []), 'email'])]
 
 export default {

@@ -461,8 +461,8 @@ router.post('/:userId/transfer', async (req, res, next) => {
     if (!targetSite) throw httpError(400, 'unknown target site')
   }
 
-  // The email must stay unique within the target site scope. NHI users have no email, so
-  // there is no collision to check.
+  // The email must stay unique within the target site scope. Some records (e.g.
+  // LDAP-backed ones) can lack an email at runtime — nothing to check then.
   if (user.email) {
     const existing = await storage.getUserByEmail(user.email, targetSite)
     if (existing && existing.id !== user.id) {

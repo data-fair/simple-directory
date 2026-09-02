@@ -10,8 +10,8 @@ const router = Router()
 
 // DELETE /api/test-env — clean test data
 // Seeded data uses test_* prefixed IDs, dynamically-created test users use @test.com emails.
-// NHIs have neither (no email at all) -- swept separately by their nhi-* id prefix, since
-// they otherwise linger and collide on the users collection's partial unique email index.
+// NHIs match neither pattern (their synthetic email is @nhi.<publicHost>, not @test.com)
+// -- swept separately by their nhi-* id prefix so they don't linger across runs.
 router.delete('/', async (req, res) => {
   const testIdFilter = { _id: { $regex: /^test_/ } }
   const testEmailFilter = { email: { $regex: /@test\.com$/i } }
