@@ -127,12 +127,22 @@ Signature, `iss`, `sub`, `aud`, and `exp`/`nbf` are all checked by `jose`'s
    assertion cannot buy a longer session, and a short-lived assertion caps it
    further. `skipExchangeToken: true` means `setSessionCookies` never sets
    `id_token_ex` (clearing any stale one from an earlier human session on the
-   same browser instead) and no server session document is created. Session
-   renewal (`keepalive`, `api/src/tokens/service.ts`) unconditionally 401s
-   and logs the caller out when `id_token_ex` is absent — so there is no code
-   path that could refresh an NHI session even by accident; it is
+   same browser instead) and no server session document is created. There is
+   no code path that could refresh an NHI session even by accident; it is
    structurally, not just policy, non-refreshable. The only way to get a new
    session is a new exchange with a fresh assertion.
+
+   **`keepalive` is inert for an NHI, not destructive** (`keepalive`,
+   `api/src/tokens/service.ts`): it returns early on `sessionState.user.nhi`,
+   logging `sd.auth.keepalive.nhi`. This guard is load-bearing, not cosmetic.
+   The generic missing-`id_token_ex` branch below it calls `logout()`, which
+   *clears the session cookies* — and every SPA in the stack keepalives on
+   page load. Without the guard an NHI would be logged out by the first page
+   it visited: the session destroyed by the act of using it, while pure HTTP
+   callers (which never keepalive) kept working — an asymmetry that presents
+   as "the API works but the browser doesn't" and is painful to diagnose.
+   The guard changes nothing about renewal: it still cannot happen. It only
+   makes the attempt harmless.
 7. The session is issued directly in the NHI's single org membership
    (`userOrg`, passed as the `getDefaultUserOrg`-equivalent argument to
    `setSessionCookies`) — there is no account choice at login and no
@@ -228,7 +238,10 @@ change-host) treats the NHI's stored synthetic address as an unknown user:
   returns the NHI, so no token is ever issued for it.
 - **Invitations** — NHI creation is direct (`createNhi`), never invitation-
   based; there is no invitation code path that touches an NHI record.
-- **`keepalive` (session refresh)** — dead by construction, see above.
+- **`keepalive` (session refresh)** — cannot renew (no exchange token exists,
+  by construction), and returns early without touching the session rather than
+  logging it out. See the exchange-endpoint section above for why the
+  distinction matters.
 
 Where a flow *is* reachable by an authenticated NHI session (it holds valid
 cookies, so it can call any endpoint an authenticated human could), it is
@@ -379,6 +392,10 @@ narrow, low-value target:
   `api/src/nhis/service.ts`.
 - Downstream services (data-fair, portals, …) need to honor the `nhi: 1`
   claim to hide mail-based actions and account switching in their own UIs.
+  This is presentational only now that `keepalive` is inert for NHIs — before
+  that guard existed, an unmodified SPA actively destroyed the session it had
+  just been given, which made this item a blocker for browser automation
+  rather than a polish task.
 - Discovery-path integration testing against a real OIDC mock — the unit
   tests cover inline JWKS and the SSRF guard directly; discovery itself is
   exercised in dev/staging, not CI.
@@ -394,8 +411,9 @@ narrow, low-value target:
    owned by the NHI's own organization (department-tolerant comparison).
 3. An NHI session's `exp` never exceeds `min(assertion.exp, now +
    config.jwtDurations.nhiToken)`, and the session is non-refreshable by
-   construction (`skipExchangeToken`, no server session, `keepalive`
-   structurally fails without `id_token_ex`).
+   construction (`skipExchangeToken`, no server session, no code path that
+   extends it). `keepalive` on an NHI session is a no-op: it neither renews
+   nor logs out.
 4. `user.nhi` implies `isAdmin` is never set, at both the storage layer
    (`cleanUser`) and the token layer (`getTokenPayload`), and an NHI record
    can never be an `asAdmin` impersonation target.

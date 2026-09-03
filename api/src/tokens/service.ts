@@ -261,6 +261,23 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   const sessionState = reqSessionAuthenticated(req)
   const logContext: EventLogContext = { req, account: (await reqSite(req))?.owner }
 
+  // An NHI session has no exchange token by construction (setSessionCookies is called with
+  // skipExchangeToken), so it can never be renewed. Returning here instead of falling through to
+  // the missing-exchange-token branch below is the whole point of this guard: that branch calls
+  // logout(), which CLEARS the session cookies. Every SPA in the stack keepalives on load, so
+  // without this an NHI would be logged out by the first page it visits — the session would be
+  // destroyed by the act of using it, making browser automation impossible while leaving pure
+  // HTTP callers (which never keepalive) working, an especially confusing asymmetry.
+  //
+  // Non-refreshability is untouched and still structural, not policy: nothing here extends the
+  // session. It lives out the exp fixed at exchange time, min(assertion.exp, now + nhiToken),
+  // and the only way to get another is a new exchange with a fresh assertion. What changes is
+  // that a failed renewal is now inert rather than destructive.
+  if (sessionState.user.nhi) {
+    eventsLog.info('sd.auth.keepalive.nhi', 'a keepalive on a non-human identity session was ignored', logContext)
+    return
+  }
+
   // User may have new organizations since last renew
   let org
   if (sessionState.organization) {

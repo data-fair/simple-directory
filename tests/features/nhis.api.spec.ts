@@ -134,9 +134,19 @@ test('nhi token exchange issues a short-lived org session', async () => {
   const me = await agentAx.get(`/api/organizations/${org.id}`, { headers: { cookie: res.headers['set-cookie']!.map(c => c.split(';')[0]).join('; ') } })
   assert.equal(me.data.id, org.id)
 
-  // keepalive is structurally rejected: no exchange token
-  await assert.rejects(agentAx.post('/api/auth/keepalive', null, { headers: { cookie: res.headers['set-cookie']!.map(c => c.split(';')[0]).join('; ') } }),
-    (err: any) => err.status === 401)
+  // keepalive is inert, not destructive: it cannot renew the session (no exchange token exists)
+  // but it must not log it out either. Every SPA in the stack keepalives on page load, so a
+  // logout here would destroy the session on the NHI's first page view — see the guard in
+  // tokens/service.ts. It must answer 204 and leave the cookies alone.
+  const nhiCookie = res.headers['set-cookie']!.map(c => c.split(';')[0]).join('; ')
+  const ka = await agentAx.post('/api/auth/keepalive', null, { headers: { cookie: nhiCookie } })
+  assert.equal(ka.status, 204)
+  for (const c of ka.headers['set-cookie'] ?? []) {
+    assert.ok(!/^id_token(_sign|_org)?=(;|$)/.test(c), `keepalive must not clear ${c.split('=')[0]}`)
+  }
+  // and the session still works afterwards — the real regression this guards against
+  const after = await agentAx.get(`/api/organizations/${org.id}`, { headers: { cookie: nhiCookie } })
+  assert.equal(after.data.id, org.id)
 })
 
 test('an NHI is excluded from email-based auth despite its stored synthetic email', async () => {
