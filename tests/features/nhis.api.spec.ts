@@ -149,10 +149,10 @@ test('nhi token exchange issues a short-lived org session', async () => {
   assert.equal(after.data.id, org.id)
 })
 
-// Count near-white pixels in the bottom-right badge region ([72,98) on both axes) of a
-// 100x100 avatar PNG. The robot badge is a white glyph composited at +68+68, so its body
-// lands squarely in this region; a human initials avatar keeps it in plain background color
-// (initials are centered and never reach the corner).
+// Count near-white pixels in the badge region of a 100x100 avatar PNG. The robot badge is a
+// 26px white glyph composited at +62+62 (inside the circle mask avatars are displayed with),
+// so its lower body lands squarely in the sampled region x[64,86) y[74,86); a human initials
+// avatar keeps that region in plain background color (centered initials stay above y~72).
 const whiteBadgePixels = async (png: Buffer) => {
   const gm = (await import('gm')).default
   const ppm: Buffer = await new Promise((resolve, reject) => {
@@ -168,8 +168,8 @@ const whiteBadgePixels = async (png: Buffer) => {
   const bps = maxval > 255 ? 2 : 1
   const sample = (x: number, y: number, c: number) => bps === 2 ? data.readUInt16BE(((y * w + x) * 3 + c) * 2) : data[(y * w + x) * 3 + c]
   let count = 0
-  for (let y = 72; y < Math.min(98, h); y++) {
-    for (let x = 72; x < Math.min(98, w); x++) {
+  for (let y = 74; y < Math.min(86, h); y++) {
+    for (let x = 64; x < Math.min(86, w); x++) {
       if (sample(x, y, 0) >= maxval * 0.94 && sample(x, y, 1) >= maxval * 0.94 && sample(x, y, 2) >= maxval * 0.94) count++
     }
   }

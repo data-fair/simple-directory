@@ -42,8 +42,10 @@ const makeAvatar = async (text: string, color: string, robot?: boolean) => {
       })
   })
   if (!robot) return buffer as BinaryData
+  // +62+62 keeps the 26px badge inside the inscribed circle: avatars are displayed
+  // round-cropped, a corner placement would be mostly cut off by the mask
   return new Promise<BinaryData>((resolve, reject) => {
-    gm(buffer).composite(robotBadge).geometry('+68+68')
+    gm(buffer).composite(robotBadge).geometry('+62+62')
       .toBuffer('PNG', function (err, buffer) {
         if (err) reject(err)
         else resolve(buffer)

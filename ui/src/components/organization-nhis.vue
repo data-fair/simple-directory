@@ -43,6 +43,14 @@
         :key="nhi.id"
       >
         <v-list-item>
+          <template #prepend>
+            <v-avatar>
+              <v-img
+                :src="`${$sdUrl}/api/avatars/user/${nhi.id}/avatar.png`"
+                alt=""
+              />
+            </v-avatar>
+          </template>
           <v-list-item-title style="white-space:normal;">
             {{ nhi.name }}
           </v-list-item-title>
