@@ -23,7 +23,11 @@ router.delete('/', async (req, res) => {
   // orgs created through POST /api/organizations get a nanoid id (no test_ prefix), so scope
   // them by their creator instead, otherwise they accumulate across runs and pollute other
   // suites (e.g. a name-based org search). Collect the creators before the users are deleted.
-  const testUserIds = (await mongo.users.find(userFilter, { projection: { _id: 1 } }).toArray()).map(u => u._id)
+  // _superadmin is excluded even though its @test.com email matches the user cleanup: it is
+  // ALSO the account operators use to seed persistent dev data (dev-fixtures), and deleting
+  // its organizations here leaves other users' memberships dangling — a user whose default
+  // org no longer exists is forcefully logged out by keepalive on every login.
+  const testUserIds = (await mongo.users.find(userFilter, { projection: { _id: 1 } }).toArray()).map(u => u._id).filter(id => id !== '_superadmin')
   await mongo.organizations.deleteMany({ $or: [testIdFilter, { _id: { $in: legacyOrgIds } }, { 'created.id': { $in: testUserIds } }] })
   await mongo.users.deleteMany(userFilter)
   // deliberately unscoped: sites have a unique index on host, so tests must be
