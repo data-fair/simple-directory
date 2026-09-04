@@ -150,9 +150,10 @@ test('nhi token exchange issues a short-lived org session', async () => {
 })
 
 // Count near-white pixels in the badge region of a 100x100 avatar PNG. The robot badge is a
-// 26px white glyph composited at +62+62 (inside the circle mask avatars are displayed with),
-// so its lower body lands squarely in the sampled region x[64,86) y[74,86); a human initials
-// avatar keeps that region in plain background color (centered initials stay above y~72).
+// 36px white glyph composited bottom-center at +32+58 (staying inside the circle mask avatars
+// are displayed with), so its body lands squarely in the sampled region x[40,60) y[74,92); a
+// human initials avatar keeps that region in plain background color (centered initials stay
+// above y~72, and the robot avatar's initials are additionally shifted up).
 const whiteBadgePixels = async (png: Buffer) => {
   const gm = (await import('gm')).default
   const ppm: Buffer = await new Promise((resolve, reject) => {
@@ -168,8 +169,8 @@ const whiteBadgePixels = async (png: Buffer) => {
   const bps = maxval > 255 ? 2 : 1
   const sample = (x: number, y: number, c: number) => bps === 2 ? data.readUInt16BE(((y * w + x) * 3 + c) * 2) : data[(y * w + x) * 3 + c]
   let count = 0
-  for (let y = 74; y < Math.min(86, h); y++) {
-    for (let x = 64; x < Math.min(86, w); x++) {
+  for (let y = 74; y < Math.min(92, h); y++) {
+    for (let x = 40; x < Math.min(60, w); x++) {
       if (sample(x, y, 0) >= maxval * 0.94 && sample(x, y, 1) >= maxval * 0.94 && sample(x, y, 2) >= maxval * 0.94) count++
     }
   }
@@ -190,6 +191,36 @@ test('nhi automatic avatar carries a robot badge', async () => {
   const humanRes = await ax.get(`/api/avatars/user/${user.id}/avatar.png`, { responseType: 'arraybuffer' })
   const humanWhite = await whiteBadgePixels(Buffer.from(humanRes.data))
   assert.ok(humanWhite < 5, `human avatar must not carry the badge, found ${humanWhite} white pixels in the corner`)
+})
+
+test('org admin can upload a custom avatar for an NHI, but not for a human member', async () => {
+  const FormData = (await import('form-data')).default
+  // smallest valid PNG (1x1), enough to round-trip through upload and download
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
+  const upload = (ax: any, userId: string) => {
+    const form = new FormData()
+    form.append('avatar', png, 'avatar.png')
+    return ax.post(`/api/avatars/user/${userId}/avatar.png`, form)
+  }
+
+  const { ax } = await createUser('nhi-avatar-admin@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI avatar upload org' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+
+  // the org admin manages the NHI, its avatar included
+  assert.equal((await upload(ax, nhi.id)).status, 201)
+  const got = (await ax.get(`/api/avatars/user/${nhi.id}/avatar.png`, { responseType: 'arraybuffer' })).data
+  assert.deepEqual(Buffer.from(got), png)
+
+  // a plain member of the org cannot, and the extension is NHI-only: the org admin
+  // still cannot push an avatar onto a human member
+  const { ax: axMember, user: member } = await createUser('nhi-avatar-member@test.com')
+  await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
+  await ax.post('/api/invitations', { id: org.id, name: org.name, email: 'nhi-avatar-member@test.com', role: 'user' })
+  await testEnvAx.patch('/config', { alwaysAcceptInvitation: false })
+  await assert.rejects(upload(axMember, nhi.id), (err: any) => err.status === 403)
+  await assert.rejects(upload(ax, member.id), (err: any) => err.status === 403)
 })
 
 test('an NHI is excluded from email-based auth despite its stored synthetic email', async () => {

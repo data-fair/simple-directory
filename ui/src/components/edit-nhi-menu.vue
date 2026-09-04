@@ -22,6 +22,9 @@
         {{ $t('pages.organization.editNhi') }}
       </v-card-title>
       <v-card-text>
+        <load-avatar
+          :owner="{type: 'user', id: nhi.id}"
+        />
         <v-form
           ref="editForm"
           @submit.prevent

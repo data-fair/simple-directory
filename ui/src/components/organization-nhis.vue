@@ -46,7 +46,7 @@
           <template #prepend>
             <v-avatar>
               <v-img
-                :src="`${$sdUrl}/api/avatars/user/${nhi.id}/avatar.png`"
+                :src="`${$sdUrl}/api/avatars/user/${nhi.id}/avatar.png?t=${avatarsTimestamp}`"
                 alt=""
               />
             </v-avatar>
@@ -122,6 +122,10 @@ const adminMode = computed(() => !!session.user.value?.adminMode)
 
 const fetchNhis = useFetch<{ count: number, results: any[] }>(`${$apiPath}/organizations/${orga.id}/nhis`)
 const nhis = computed(() => fetchNhis.data.value)
+// cache-buster tied to list refreshes so an avatar uploaded through the edit dialog
+// shows up on the next change event instead of the browser's cached image
+const avatarsTimestamp = ref(Date.now())
+watch(nhis, () => { avatarsTimestamp.value = Date.now() })
 </script>
 
 <style lang="css" scoped>

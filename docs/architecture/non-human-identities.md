@@ -367,7 +367,11 @@ narrow, low-value target:
   /api/users/:userId/sessions/:sessionId` has no `assertNotNhiSession` guard.
   Impact is self-limited to the NHI's own session bookkeeping.
 - **An NHI can set its own avatar**: the avatar endpoints have no NHI guard
-  either. Cosmetic only.
+  either. Cosmetic only. In the other direction, the avatar write guard
+  (`api/src/avatars/router.ts`) explicitly lets the admins of an NHI's single
+  organization set its avatar — parity with the rest of the NHI record, and
+  strictly NHI-only: a human member's avatar remains their own (no org-admin
+  override, and no `siteAdmin`-fallback parity with `isOrgAdmin` either).
 - **Timing side-channel on `client_id` existence beyond the jitter**: the
   0–1000ms random delay in the `/nhi-token` `reject()` path bounds casual
   probing but is not a constant-time guarantee; a patient, high-precision

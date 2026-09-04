@@ -1,7 +1,7 @@
 import config from '#config'
 import { Router, type RequestHandler } from 'express'
 import { resolve } from 'node:path'
-import { type Account, assertAccountRole, httpError, reqSession } from '@data-fair/lib-express'
+import { type Account, assertAccountRole, getAccountRole, httpError, reqSession } from '@data-fair/lib-express'
 import gm from 'gm'
 import colors from 'material-colors'
 import initialsModule from 'initials'
@@ -34,7 +34,8 @@ const makeAvatar = async (text: string, color: string, robot?: boolean) => {
     gm(100, 100, color)
       .fill('#FFFFFF')
       .font(font)
-      .drawText(0, 0, text, 'Center')
+      // initials shift up on robot avatars to leave room for the badge below them
+      .drawText(0, robot ? -10 : 0, text, 'Center')
       .fontSize(text.length === 3 ? 37 : 47)
       .toBuffer('PNG', function (err, buffer) {
         if (err) reject(err)
@@ -42,10 +43,10 @@ const makeAvatar = async (text: string, color: string, robot?: boolean) => {
       })
   })
   if (!robot) return buffer as BinaryData
-  // +62+62 keeps the 26px badge inside the inscribed circle: avatars are displayed
-  // round-cropped, a corner placement would be mostly cut off by the mask
+  // bottom-center placement: avatars are displayed round-cropped, and the bottom of the
+  // inscribed circle is where a 36px badge fits whole (a corner would be mostly cut off)
   return new Promise<BinaryData>((resolve, reject) => {
-    gm(buffer).composite(robotBadge).geometry('+62+62')
+    gm(buffer).composite(robotBadge).geometry('+32+58')
       .toBuffer('PNG', function (err, buffer) {
         if (err) reject(err)
         else resolve(buffer)
@@ -121,8 +122,19 @@ const upload = multer({
   limits: { fileSize: 200000, files: 1, fields: 0 }
 })
 
-const isAdmin: RequestHandler = (req, res, next) => {
-  assertAccountRole(reqSession(req), req.params as unknown as Account, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
+const isAdmin: RequestHandler = async (req, res, next) => {
+  try {
+    assertAccountRole(reqSession(req), req.params as unknown as Account, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
+  } catch (err) {
+    // an NHI's avatar is managed by the admins of its single organization, like the rest of
+    // the NHI record (cf api/src/nhis/router.ts) — the extension is strictly NHI-only, a
+    // human member's avatar stays their own
+    const user = req.params.type === 'user' && await storages.globalStorage.getUser(req.params.id)
+    const orgId = user && user.nhi && user.organizations.length === 1 && user.organizations[0].id
+    if (!orgId || getAccountRole(reqSession(req), { type: 'organization', id: orgId }, { acceptDepAsRoot: config.depAdminIsOrgAdmin }) !== 'admin') {
+      throw err
+    }
+  }
   return next()
 }
 
