@@ -27,13 +27,23 @@ const getInitials = (name: string) => {
 // inspired by https://github.com/thatisuday/npm-no-avatar/blob/master/lib/make.js
 // const font = path.resolve('./node_modules/no-avatar/lib/font.ttf')
 const font = resolve(import.meta.dirname, '../../resources/nunito-ttf/Nunito-ExtraBold.ttf')
-const makeAvatar = async (text: string, color: string) => {
-  return new Promise<BinaryData>((resolve, reject) => {
+// white mdiRobot glyph (same as the UI's NHI icon), composited as a bottom-right badge
+const robotBadge = resolve(import.meta.dirname, '../../resources/robot.png')
+const makeAvatar = async (text: string, color: string, robot?: boolean) => {
+  const buffer = await new Promise<Buffer>((resolve, reject) => {
     gm(100, 100, color)
       .fill('#FFFFFF')
       .font(font)
       .drawText(0, 0, text, 'Center')
       .fontSize(text.length === 3 ? 37 : 47)
+      .toBuffer('PNG', function (err, buffer) {
+        if (err) reject(err)
+        else resolve(buffer)
+      })
+  })
+  if (!robot) return buffer as BinaryData
+  return new Promise<BinaryData>((resolve, reject) => {
+    gm(buffer).composite(robotBadge).geometry('+68+68')
       .toBuffer('PNG', function (err, buffer) {
         if (err) reject(err)
         else resolve(buffer)
@@ -49,6 +59,7 @@ const readAvatar: RequestHandler = async (req, res, next) => {
   let avatar = await getAvatar(owner)
   if (!avatar || avatar.initials) {
     let name
+    let robot = false
     if (req.params.type === 'organization') {
       const org = await storages.globalStorage.getOrganization(req.params.id)
       if (!org) throw httpError(404)
@@ -65,6 +76,7 @@ const readAvatar: RequestHandler = async (req, res, next) => {
         const user = await storages.globalStorage.getUser(req.params.id)
         if (!user) throw httpError(404)
         name = user.name
+        robot = !!user.nhi
         if (user.oauth) {
           const oauthWithAvatar = Object.values(user.oauth).find(oauth => !!(oauth as any).avatarUrl)
           if (oauthWithAvatar) return res.redirect((oauthWithAvatar as any).avatarUrl)
@@ -81,12 +93,15 @@ const readAvatar: RequestHandler = async (req, res, next) => {
     if (!avatar) {
       // create a initials based avatar
       const color = randomColor()
-      const buffer = await makeAvatar(initials, color)
-      avatar = { initials, color, buffer, owner }
+      const buffer = await makeAvatar(initials, color, robot)
+      avatar = { initials, color, buffer, owner, robot }
       await setAvatar(avatar)
-    } else if (avatar.initials !== initials) {
-      // this initials based avatar needs to be updated
-      avatar.buffer = await makeAvatar(initials, avatar.color ?? randomColor())
+    } else if (avatar.initials !== initials || !!avatar.robot !== robot) {
+      // this initials based avatar needs to be updated (the robot check also migrates
+      // NHI avatars cached before the badge existed)
+      avatar.initials = initials
+      avatar.robot = robot
+      avatar.buffer = await makeAvatar(initials, avatar.color ?? randomColor(), robot)
       await setAvatar(avatar)
     }
   }

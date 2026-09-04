@@ -149,6 +149,49 @@ test('nhi token exchange issues a short-lived org session', async () => {
   assert.equal(after.data.id, org.id)
 })
 
+// Count near-white pixels in the bottom-right badge region ([72,98) on both axes) of a
+// 100x100 avatar PNG. The robot badge is a white glyph composited at +68+68, so its body
+// lands squarely in this region; a human initials avatar keeps it in plain background color
+// (initials are centered and never reach the corner).
+const whiteBadgePixels = async (png: Buffer) => {
+  const gm = (await import('gm')).default
+  const ppm: Buffer = await new Promise((resolve, reject) => {
+    gm(png).toBuffer('PPM', (err, buf) => err ? reject(err) : resolve(buf))
+  })
+  // P6 header: "P6 <width> <height> <maxval>" as whitespace-separated ASCII, then binary RGB.
+  // A Q16 GraphicsMagick build emits maxval 65535 with 2 bytes per sample (big-endian).
+  const header = ppm.subarray(0, 32).toString('latin1')
+  const m = header.match(/^P6\s+(\d+)\s+(\d+)\s+(\d+)\s/)
+  if (!m) throw new Error('unexpected PPM header: ' + header)
+  const [, w, h, maxval] = m.map(Number)
+  const data = ppm.subarray(m[0].length)
+  const bps = maxval > 255 ? 2 : 1
+  const sample = (x: number, y: number, c: number) => bps === 2 ? data.readUInt16BE(((y * w + x) * 3 + c) * 2) : data[(y * w + x) * 3 + c]
+  let count = 0
+  for (let y = 72; y < Math.min(98, h); y++) {
+    for (let x = 72; x < Math.min(98, w); x++) {
+      if (sample(x, y, 0) >= maxval * 0.94 && sample(x, y, 1) >= maxval * 0.94 && sample(x, y, 2) >= maxval * 0.94) count++
+    }
+  }
+  return count
+}
+
+test('nhi automatic avatar carries a robot badge', async () => {
+  const { ax, user } = await createUser('nhi-avatar@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI avatar org' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+
+  const nhiRes = await ax.get(`/api/avatars/user/${nhi.id}/avatar.png`, { responseType: 'arraybuffer' })
+  assert.equal(nhiRes.headers['content-type'], 'image/png')
+  const nhiWhite = await whiteBadgePixels(Buffer.from(nhiRes.data))
+  assert.ok(nhiWhite > 40, `expected a white robot badge in the corner, found ${nhiWhite} white pixels`)
+
+  const humanRes = await ax.get(`/api/avatars/user/${user.id}/avatar.png`, { responseType: 'arraybuffer' })
+  const humanWhite = await whiteBadgePixels(Buffer.from(humanRes.data))
+  assert.ok(humanWhite < 5, `human avatar must not carry the badge, found ${humanWhite} white pixels in the corner`)
+})
+
 test('an NHI is excluded from email-based auth despite its stored synthetic email', async () => {
   const { ax } = await createUser('nhi-admin-authpath@test.com')
   const org = (await ax.post('/api/organizations', { name: 'NHI authpath org' })).data
