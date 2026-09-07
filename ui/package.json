@@ -24,7 +24,7 @@
     "@mdi/js": "^7.4.47",
     "@sd/shared": "*",
     "@types/config": "^3.3.5",
-    "@unhead/vue": "^1.11.20",
+    "@unhead/vue": "^3.4.0",
     "@vitejs/plugin-vue": "^5.2.4",
     "@vueuse/core": "^11.3.0",
     "ajv-i18n": "^4.2.0",

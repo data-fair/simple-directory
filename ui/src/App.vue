@@ -30,7 +30,8 @@ const session = useSession()
 const route = useRoute()
 
 useHead({
-  htmlAttrs: () => ({ lang: session.lang.value ?? 'fr' }),
+  // unhead 3 resolves reactivity per attribute rather than over the whole object
+  htmlAttrs: { lang: () => session.lang.value ?? 'fr' },
   // style: () => globalStyle
   // __dangerouslyDisableSanitizers: ['style']
 })
