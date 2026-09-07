@@ -338,9 +338,16 @@ router.delete('/:userId', async (req, res, next) => {
     if (!session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   }
 
+  // read the memberships before deleting, they are the only way back to the impacted organizations
+  const deletedUser = await storages.globalStorage.getUser(req.params.userId)
+
   await storages.globalStorage.deleteUser(req.params.userId)
 
   eventsLog.info('sd.user.del', `user was deleted ${req.params.userId}`, logContext)
+
+  for (const orgId of new Set((deletedUser?.organizations ?? []).map(o => o.id))) {
+    await setNbMembersLimit(orgId)
+  }
 
   deleteIdentityWebhook('user', req.params.userId)
   res.status(204).send()

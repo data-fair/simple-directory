@@ -342,4 +342,20 @@ test.describe('organizations api', () => {
     })).data.results
     assert.equal(memberEmails3Insensitive2.length, 2)
   })
+
+  test('should recompute the member count of an organization when a member is deleted', async () => {
+    const { ax, user } = await createUser('nb-members@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test nb members' })).data
+    ax.setOrg(org.id)
+
+    // reading the limits is what creates the denormalized counter
+    const limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.equal(limits.store_nb_members.consumption, 1)
+
+    const adminAx = await createUser('admin@test.com', true)
+    await adminAx.ax.delete(`/api/users/${user.id}`)
+
+    const orgLimits = (await adminAx.ax.get('/api/limits', { params: { type: 'organization', id: org.id } })).data.results[0]
+    assert.equal(orgLimits.store_nb_members.consumption, 0)
+  })
 })
