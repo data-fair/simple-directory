@@ -87,10 +87,6 @@ export class SdMongo {
       users: {
         email_1: [
           { email: 1, host: 1 },
-          // stays a plain unique index: every NHI stores a distinct synthetic email
-          // (see nhiSyntheticEmail in nhis/service.ts), precisely so email-less docs
-          // never collide on a (null, host) slot and no partial/sparse handling or
-          // index migration is needed — cf docs/architecture/non-human-identities.md
           { unique: true, collation, name: 'email_1' }
         ],
         logged_1: [ // for metrics
