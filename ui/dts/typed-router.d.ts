@@ -14,10 +14,15 @@ import type {
   ParamValueZeroOrMore,
   ParamValueZeroOrOne,
 } from 'vue-router'
+import type {
+  _ExtractParamParserType,
+} from 'vue-router/experimental'
 
 declare module 'vue-router' {
   interface TypesConfig {
-    ParamParsers: never
+    _ParamParsers: {}
+    RouteNamedMap: import('vue-router/auto-routes').RouteNamedMap
+    _RouteFileInfoMap: import('vue-router/auto-routes')._RouteFileInfoMap
   }
 }
 
@@ -127,8 +132,8 @@ declare module 'vue-router/auto-routes' {
     '/organization/[id]/department/[departmentId]': RouteRecordInfo<
       '/organization/[id]/department/[departmentId]',
       '/organization/:id/department/:departmentId',
-      { id: ParamValue<true>, departmentId: ParamValue<true> },
-      { id: ParamValue<false>, departmentId: ParamValue<false> },
+      { departmentId: ParamValue<true>, id: ParamValue<true> },
+      { departmentId: ParamValue<false>, id: ParamValue<false> },
       | never
     >,
     '/site-admin/organizations': RouteRecordInfo<
@@ -163,11 +168,15 @@ declare module 'vue-router/auto-routes' {
         | '/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/admin/oauth-tokens.vue': {
       routes:
         | '/admin/oauth-tokens'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/admin/organizations.vue': {
@@ -175,11 +184,15 @@ declare module 'vue-router/auto-routes' {
         | '/admin/organizations'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/admin/password-lists.vue': {
       routes:
         | '/admin/password-lists'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/admin/sites/index.vue': {
@@ -187,17 +200,23 @@ declare module 'vue-router/auto-routes' {
         | '/admin/sites/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/admin/sites/[id].vue': {
       routes:
         | '/admin/sites/[id]'
       views:
         | never
+      pathParamNames:
+        | 'id'
     }
     'src/pages/admin/users.vue': {
       routes:
         | '/admin/users'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/contact.vue': {
@@ -205,11 +224,15 @@ declare module 'vue-router/auto-routes' {
         | '/contact'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/create-organization.vue': {
       routes:
         | '/create-organization'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/dev.vue': {
@@ -217,11 +240,15 @@ declare module 'vue-router/auto-routes' {
         | '/dev'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/invitation.vue': {
       routes:
         | '/invitation'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/login.vue': {
@@ -229,11 +256,15 @@ declare module 'vue-router/auto-routes' {
         | '/login'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/me.vue': {
       routes:
         | '/me'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/organization/[id]/index.vue': {
@@ -241,23 +272,31 @@ declare module 'vue-router/auto-routes' {
         | '/organization/[id]/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/organization/[id]/department/[departmentId].vue': {
       routes:
         | '/organization/[id]/department/[departmentId]'
       views:
         | never
+      pathParamNames:
+        | 'departmentId'
     }
     'src/pages/site-admin/organizations.vue': {
       routes:
         | '/site-admin/organizations'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/site-admin/users.vue': {
       routes:
         | '/site-admin/users'
       views:
+        | never
+      pathParamNames:
         | never
     }
   }

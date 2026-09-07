@@ -16,14 +16,14 @@ const isSuperAdmin: RequestHandler = (req, res, next) => {
   res.status(401).send()
 }
 
-const isUser: RequestHandler = (req, res, next) => {
+const isUser: RequestHandler<{ id: string }> = (req, res, next) => {
   if (req.query.key && req.query.key === config.secretKeys.limits) return next()
   const session = reqSessionAuthenticated(req)
   assertAccountRole(session, { type: 'user', id: req.params.id }, 'admin')
   next()
 }
 
-const assertAccountMember = async (req: Request, org: Organization) => {
+const assertAccountMember = async (req: Request<{ id: string }>, org: Organization) => {
   if (req.query.key && req.query.key === config.secretKeys.limits) return
   const session = reqSessionAuthenticated(req)
   const site = await reqSite(req)

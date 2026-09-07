@@ -55,6 +55,8 @@
     "@types/material-colors": "^1.2.3",
     "@types/memoizee": "^0.4.12",
     "@types/mjml": "^4.7.4",
+    "@types/mjml-core": "~4.15.0",
+    "@types/ms": "^2.1.0",
     "@types/multer": "^1.4.13",
     "@types/node": "^22.12.0",
     "@types/node-cron": "^3.0.11",

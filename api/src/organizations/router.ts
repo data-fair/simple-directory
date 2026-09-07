@@ -34,7 +34,7 @@ function getUserOrgDep (req) {
 */
 
 // Either a super admin, or a member of the current organization
-async function isMember (req: Request, allAccounts?: boolean) {
+async function isMember (req: Request<{ organizationId: string }>, allAccounts?: boolean) {
   if (getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: true, allAccounts })) {
     return true
   }

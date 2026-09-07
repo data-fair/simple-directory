@@ -2,7 +2,7 @@ import { type User } from '#types'
 import type { ApiConfig } from '../config/type/index.ts'
 import { assertValid } from '../config/type/index.ts'
 import config from 'config'
-import ms from 'ms'
+import ms, { type StringValue } from 'ms'
 import { defaultTheme } from '@data-fair/lib-common-types/theme/index.js'
 
 export type { ApiConfig } from '../config/type/index.ts'
@@ -62,9 +62,11 @@ export const superadmin: User = {
   organizations: []
 }
 
+// durations come from the config schema as plain strings, ms() only accepts its own
+// template-literal type, and it throws at runtime on anything it cannot parse
 export const jwtDurations = {
-  idToken: ms(apiConfig.jwtDurations.idToken) / 1000,
-  exchangeToken: ms(apiConfig.jwtDurations.exchangeToken) / 1000,
-  adminExchangeToken: ms(apiConfig.jwtDurations.adminExchangeToken) / 1000,
-  nhiToken: ms(apiConfig.jwtDurations.nhiToken) / 1000
+  idToken: ms(apiConfig.jwtDurations.idToken as StringValue) / 1000,
+  exchangeToken: ms(apiConfig.jwtDurations.exchangeToken as StringValue) / 1000,
+  adminExchangeToken: ms(apiConfig.jwtDurations.adminExchangeToken as StringValue) / 1000,
+  nhiToken: ms(apiConfig.jwtDurations.nhiToken as StringValue) / 1000
 }

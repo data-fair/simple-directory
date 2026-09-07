@@ -35,7 +35,6 @@ const decodeSamlRequest = (loginRequestUrl: string) => {
 test.describe('SAML2 ForceAuthn on adminMode logins', () => {
   test('adminMode requests carry ForceAuthn="true", normal requests do not', async () => {
     const samlify = (await import('samlify')).default
-    const { createForceAuthnTagReplacement, forceAuthnLoginRequestTemplate } = await import('../../api/src/saml2/service.ts')
 
     const idp = samlify.IdentityProvider({ metadata: idpMetadata })
     const sp = samlify.ServiceProvider({
@@ -45,17 +44,16 @@ test.describe('SAML2 ForceAuthn on adminMode logins', () => {
         Location: 'https://sd.test/api/auth/saml2-assert'
       }],
       // @ts-ignore same string-typed value as in initServiceProvider
-      allowCreate: 'false',
-      loginRequestTemplate: { context: forceAuthnLoginRequestTemplate }
+      allowCreate: 'false'
     })
 
-    // normal login: default samlify path, no ForceAuthn
-    const normal = sp.createLoginRequest(idp, 'redirect')
+    // normal login: no ForceAuthn (samlify drops the attribute when the tag is undefined)
+    const normal = sp.createLoginRequest(idp, 'redirect', {})
     const normalXml = decodeSamlRequest(normal.context)
     assert.ok(!normalXml.includes('ForceAuthn'))
 
-    // adminMode login: custom template path with ForceAuthn
-    const admin = sp.createLoginRequest(idp, 'redirect', createForceAuthnTagReplacement(sp, idp))
+    // adminMode login: same call with the per-request forceAuthn flag
+    const admin = sp.createLoginRequest(idp, 'redirect', { forceAuthn: true })
     const adminXml = decodeSamlRequest(admin.context)
     assert.ok(adminXml.includes('ForceAuthn="true"'))
     assert.ok(!adminXml.includes('{'), `unreplaced template tags in: ${adminXml}`)
@@ -65,7 +63,6 @@ test.describe('SAML2 ForceAuthn on adminMode logins', () => {
 
   test('adminMode requests XML-escape `&` in the IdP SSO Location', async () => {
     const samlify = (await import('samlify')).default
-    const { createForceAuthnTagReplacement, forceAuthnLoginRequestTemplate } = await import('../../api/src/saml2/service.ts')
 
     const idp = samlify.IdentityProvider({ metadata: idpMetadataAmpersand })
     const sp = samlify.ServiceProvider({
@@ -75,11 +72,10 @@ test.describe('SAML2 ForceAuthn on adminMode logins', () => {
         Location: 'https://sd.test/api/auth/saml2-assert'
       }],
       // @ts-ignore same string-typed value as in initServiceProvider
-      allowCreate: 'false',
-      loginRequestTemplate: { context: forceAuthnLoginRequestTemplate }
+      allowCreate: 'false'
     })
 
-    const admin = sp.createLoginRequest(idp, 'redirect', createForceAuthnTagReplacement(sp, idp))
+    const admin = sp.createLoginRequest(idp, 'redirect', { forceAuthn: true })
     const adminXml = decodeSamlRequest(admin.context)
 
     // the `&` in the destination must be escaped, and no raw `&tenant`/`&realm` may leak

@@ -16,6 +16,10 @@ const colorCodes = Object.values(colors).filter(c => (c as any)['600']).map(c =>
 const router = Router()
 export default router
 
+// mounted both on /:type/:id/avatar.png and on /:type/:id/:department/avatar.png,
+// so department is only present on the latter
+type AvatarParams = { type: string, id: string, department?: string }
+
 const randomColor = () => {
   return colorCodes[Math.floor(Math.random() * colorCodes.length)]
 }
@@ -54,7 +58,7 @@ const makeAvatar = async (text: string, color: string, robot?: boolean) => {
   })
 }
 
-const readAvatar: RequestHandler = async (req, res, next) => {
+const readAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
   if (!['user', 'organization'].includes(req.params.type)) {
     return res.status(400).send('Owner type must be "user" or "organization"')
   }
@@ -122,7 +126,7 @@ const upload = multer({
   limits: { fileSize: 200000, files: 1, fields: 0 }
 })
 
-const isAdmin: RequestHandler = async (req, res, next) => {
+const isAdmin: RequestHandler<AvatarParams> = async (req, res, next) => {
   try {
     assertAccountRole(reqSession(req), req.params as unknown as Account, 'admin', { acceptDepAsRoot: config.depAdminIsOrgAdmin })
   } catch (err) {
@@ -138,7 +142,7 @@ const isAdmin: RequestHandler = async (req, res, next) => {
   return next()
 }
 
-const writeAvatar: RequestHandler = async (req, res, next) => {
+const writeAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
   if (!req.file) throw httpError(400)
   await setAvatar({ owner: req.params as unknown as Account, buffer: req.file.buffer })
   res.status(201).send()

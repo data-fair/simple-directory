@@ -1,4 +1,9 @@
 export default {
+  // absolute $id so that the absolute $ref below can be resolved against it; without
+  // one the types builder falls back to the bare directory name, which is not a valid
+  // URL base (cf @data-fair/lib-utils makeLocalDefs)
+  $id: 'https://github.com/data-fair/simple-directory/mail',
+  title: 'Mail',
   type: 'object',
   required: ['to', 'subject'],
   'x-exports': ['types', 'validate'],

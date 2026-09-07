@@ -8,7 +8,7 @@ import { reqSite } from '#services'
 // of the site the organization is bound to, when siteAdmin is enabled). Shared by
 // organizations/router.ts and nhis/router.ts so that anyone who can administer an
 // organization can also administer its non-human identities.
-export async function isOrgAdmin (req: Request) {
+export async function isOrgAdmin (req: Request<{ organizationId: string }>) {
   const role = getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: config.depAdminIsOrgAdmin })
   if (role === 'admin') return true
   if (config.siteAdmin && reqSession(req).siteRole === 'admin') {

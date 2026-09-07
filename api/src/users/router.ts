@@ -15,7 +15,7 @@ import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentity
 
 const router = Router()
 
-const rejectCoreIdUser: RequestHandler = (req, res, next) => {
+const rejectCoreIdUser: RequestHandler<{ userId: string }> = (req, res, next) => {
   const session = reqSession(req)
   if (session.user?.idp) throw httpError(403, 'This route is not available for users with a core identity provider')
   next()
