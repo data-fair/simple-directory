@@ -1,6 +1,13 @@
 {
   "ignoreRoot": [],
-  "ignore": ["node_modules/", "../dev/"],
-  "watch": [".", "../shared", "../ui/dist"],
+  "ignore": [
+    "node_modules/",
+    "../dev/"
+  ],
+  "watch": [
+    ".",
+    "../shared",
+    "../ui/dist/index.html"
+  ],
   "delay": 1000
 }

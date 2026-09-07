@@ -18,7 +18,7 @@
     "dev-ui": "npm -w ui run dev",
     "dev-zellij": "dotenv -- zellij --layout .zellij.kdl",
     "stop-dev-deps": "docker compose --profile dev stop",
-    "build-types": "mkdir -p ui/src/components/vjsf && rm -f ui/src/components/vjsf/* && df-build-types . --vjsf-dir ui/src/components/vjsf",
+    "build-types": "mkdir -p ui/src/components/vjsf && rm -f ui/src/components/vjsf/* && rm -rf node_modules/.cache/@data-fair/lib-types-builder && df-build-types . --vjsf-dir ui/src/components/vjsf",
     "prepare": "husky || true",
     "check-types": "tsc && npm -w ui run check-types",
     "quality": "npm run lint && npm run build-types && npm run check-types && npm run test"
