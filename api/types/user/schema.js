@@ -7,8 +7,8 @@ export default {
   type: 'object',
   additionalProperties: false,
   required: [
-    'email',
     'id',
+    'email',
     'name',
     'organizations'
   ],
