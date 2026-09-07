@@ -69,7 +69,7 @@
     "husky": "^9.1.7",
     "neostandard": "^0.11.9",
     "nodemon": "^3.1.14",
-    "oauth2-mock-server": "^7.2.1",
+    "oauth2-mock-server": "^9.2.0",
     "tough-cookie": "^5.1.2",
     "typescript": "~5.6.3"
   },
@@ -77,7 +77,6 @@
     "@data-fair/lib-types-builder": "^1.8.3",
     "@koumoul/vjsf-compiler": "^1.4.0",
     "@types/debug": "^4.1.13",
-    "@types/vue-cropperjs": "^4.1.6",
     "ajv": "^8.17.1"
   },
   "relativeDependencies": {
