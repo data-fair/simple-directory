@@ -2,6 +2,7 @@ import { type Organization, type UserWritable, type Site } from '#types'
 import { Router, type RequestHandler } from 'express'
 import config from '#config'
 import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession, reqUser, httpError } from '@data-fair/lib-express'
+import { assertNotNhiSession } from '../nhis/service.ts'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { nanoid } from 'nanoid'
 import eventsQueue from '#events-queue'
@@ -65,6 +66,7 @@ router.get('', async (req, res, next) => {
 
 // TODO: block when onlyCreateInvited is true ?
 router.post('', async (req, res, next) => {
+  assertNotNhiSession(req)
   const logContext: EventLogContext = { req }
 
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
@@ -258,6 +260,7 @@ router.get('/:userId', async (req, res, next) => {
 const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 const coreIDPKeys = ['defaultOrg', 'defaultDep', 'ignorePersonalAccount', 'plannedDeletion']
 router.patch('/:userId', async (req, res, next) => {
+  assertNotNhiSession(req)
   const logContext: EventLogContext = { req }
 
   const session = reqSessionAuthenticated(req)
@@ -307,6 +310,7 @@ router.patch('/:userId', async (req, res, next) => {
 })
 
 router.delete('/:userId/plannedDeletion', async (req, res, next) => {
+  assertNotNhiSession(req)
   const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
 
@@ -324,6 +328,7 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
 })
 
 router.delete('/:userId', async (req, res, next) => {
+  assertNotNhiSession(req)
   const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
 
@@ -456,10 +461,13 @@ router.post('/:userId/transfer', async (req, res, next) => {
     if (!targetSite) throw httpError(400, 'unknown target site')
   }
 
-  // The email must stay unique within the target site scope.
-  const existing = await storage.getUserByEmail(user.email, targetSite)
-  if (existing && existing.id !== user.id) {
-    throw httpError(409, 'a user with this email already exists on the target site')
+  // The email must stay unique within the target site scope. Some records (e.g.
+  // LDAP-backed ones) can lack an email at runtime — nothing to check then.
+  if (user.email) {
+    const existing = await storage.getUserByEmail(user.email, targetSite)
+    if (existing && existing.id !== user.id) {
+      throw httpError(409, 'a user with this email already exists on the target site')
+    }
   }
 
   // Strip SSO identities — they were bound to the source site's providers. Memberships are kept.

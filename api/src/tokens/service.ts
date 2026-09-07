@@ -44,7 +44,7 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site?: 
   // single payload chokepoint so every token path (login, keepalive, refresh) stays consistent,
   // without touching the storage `isAdmin = !host` invariant. Only enable when every site is
   // operator-trusted — see docs/architecture/email-trust-and-site-isolation.md.
-  if (user.isAdmin || (config.adminModeOnSites && (config.admins.includes(user.email?.toLowerCase() ?? '') || user.id === '_superadmin'))) {
+  if (!user.nhi && (user.isAdmin || (config.adminModeOnSites && (config.admins.includes(user.email?.toLowerCase() ?? '') || user.id === '_superadmin')))) {
     payload.isAdmin = 1
   }
   if (user.defaultOrg) {
@@ -58,6 +58,8 @@ export const getTokenPayload = (user: Omit<User, 'created' | 'updated'>, site?: 
   // if (user.readonly) payload.readonly = user.readonly
   if (user.coreIdProvider) payload.idp = 1
   if (site) payload.siteOwner = site.owner
+  // nhi flag lets downstream services adapt (no mail-based actions, no account switching)
+  if (user.nhi) payload.nhi = 1
   return payload
 }
 
@@ -119,28 +121,38 @@ export const logout = async (req: Request, res: Response) => {
 // all cookies use sameSite for CSRF prevention
 // the exchange token is single use: each one issued gets an id (jti) recorded on the server
 // session, and presenting an id that is no longer valid means the token was copied (cf keepalive).
-// keepExchangeJti is used to re-issue the current token as is, without rotating it
-export const setSessionCookies = async (req: Request, res: Response, sitePath: string, payload: SessionUser, serverSessionId: string | null, userOrg?: OrganizationMembership, options?: { skipExchangeToken?: boolean, keepExchangeJti?: string }) => {
+// keepExchangeJti is used to re-issue the current token as is, without rotating it.
+// exp caps the id_token lifetime and skips the exchange-token machinery entirely (NHI sessions,
+// which are short lived and non-refreshable — always passed with skipExchangeToken).
+export const setSessionCookies = async (req: Request, res: Response, sitePath: string, payload: SessionUser, serverSessionId: string | null, userOrg?: OrganizationMembership, options?: { skipExchangeToken?: boolean, exp?: number, keepExchangeJti?: string }) => {
   const cookies = new Cookies(req, res, { secure })
   // cf https://www.npmjs.com/package/jsonwebtoken#token-expiration-exp-claim
   const date = Date.now()
-  const exp = Math.floor(date / 1000) + jwtDurations.idToken
+  const exp = options?.exp ?? Math.floor(date / 1000) + jwtDurations.idToken
 
-  const existingExchangeToken = cookies.get('id_token_ex')
   let existingServerSessionInfo: SessionInfoPayload | undefined
-  if (existingExchangeToken) {
-    try {
-      existingServerSessionInfo = (await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined
-    } catch (err) {
-      // ignore an old invalid exchange token
+  if (!options?.exp) {
+    // a bounded-exp session (NHI exchange) never has or needs an exchange token: no server
+    // session exists to look up, and the caller always passes a non-null serverSessionId
+    // (a fixed marker string) in that case, so this whole lookup/requirement block is skipped
+    const existingExchangeToken = cookies.get('id_token_ex')
+    if (existingExchangeToken) {
+      try {
+        existingServerSessionInfo = (await session.verifyToken(existingExchangeToken)) as SessionInfoPayload | undefined
+      } catch (err) {
+        // ignore an old invalid exchange token
+      }
+    }
+    if (!serverSessionId) {
+      if (!existingServerSessionInfo) throw httpError(400, 'missing exchange token')
+      serverSessionId = existingServerSessionInfo.session
     }
   }
-  if (!serverSessionId) {
-    if (!existingServerSessionInfo) throw httpError(400, 'missing exchange token')
-    serverSessionId = existingServerSessionInfo.session
-  }
 
-  const sessionInfo: SessionInfoPayload = { user: payload.id, session: serverSessionId, adminMode: payload.adminMode }
+  // serverSessionId is non-null here: either the block above guaranteed it (throwing otherwise),
+  // or options.exp is set, in which case the caller (an NHI exchange) always passes a non-null
+  // marker string — see the route in auth/router.ts.
+  const sessionInfo: SessionInfoPayload = { user: payload.id, session: serverSessionId as string, adminMode: payload.adminMode }
   // case of asAdmin
   if (existingServerSessionInfo && existingServerSessionInfo.adminMode && payload.id !== existingServerSessionInfo.user) {
     sessionInfo.adminMode = 1
@@ -200,6 +212,10 @@ export const setSessionCookies = async (req: Request, res: Response, sitePath: s
     await storages.deleteSessionById(existingServerSessionInfo.session)
   }
   if (options?.skipExchangeToken) {
+    // also covers the NHI exchange case (always passed alongside options.exp): any pre-existing
+    // id_token_ex cookie from an earlier human session on this browser must be cleared, not left
+    // in place, otherwise a later normal setSessionCookies call could pick it back up (including
+    // its adminMode, via the asAdmin-resurrection branch above)
     cookies.set('id_token_ex', '', { ...deleteOpts, path: sitePath + '/simple-directory/', httpOnly: true })
   } else {
     if (options?.keepExchangeJti) {
@@ -212,12 +228,13 @@ export const setSessionCookies = async (req: Request, res: Response, sitePath: s
       if (existingServerSessionInfo?.jti && existingServerSessionInfo.session === serverSessionId) {
         sessionPatch.previousJti = existingServerSessionInfo.jti
       }
-      await storages.updateSessionById(serverSessionId, sessionPatch)
+      await storages.updateSessionById(serverSessionId as string, sessionPatch)
     }
     const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
     const exchangeToken = await signToken(sessionInfo, exchangeExp)
     cookies.set('id_token_ex', exchangeToken, exchangeCookieOpts)
   }
+  return token
 }
 
 export const switchOrganization = (req: Request, res: Response, user: SessionUser, orgId?: string, depId?: string, role?: string) => {
@@ -243,6 +260,23 @@ export const switchOrganization = (req: Request, res: Response, user: SessionUse
 export const keepalive = async (req: Request, res: Response, _user?: User, removeAdminMode?: boolean) => {
   const sessionState = reqSessionAuthenticated(req)
   const logContext: EventLogContext = { req, account: (await reqSite(req))?.owner }
+
+  // An NHI session has no exchange token by construction (setSessionCookies is called with
+  // skipExchangeToken), so it can never be renewed. Returning here instead of falling through to
+  // the missing-exchange-token branch below is the whole point of this guard: that branch calls
+  // logout(), which CLEARS the session cookies. Every SPA in the stack keepalives on load, so
+  // without this an NHI would be logged out by the first page it visits — the session would be
+  // destroyed by the act of using it, making browser automation impossible while leaving pure
+  // HTTP callers (which never keepalive) working, an especially confusing asymmetry.
+  //
+  // Non-refreshability is untouched and still structural, not policy: nothing here extends the
+  // session. It lives out the exp fixed at exchange time, min(assertion.exp, now + nhiToken),
+  // and the only way to get another is a new exchange with a fresh assertion. What changes is
+  // that a failed renewal is now inert rather than destructive.
+  if (sessionState.user.nhi) {
+    eventsLog.info('sd.auth.keepalive.nhi', 'a keepalive on a non-human identity session was ignored', logContext)
+    return
+  }
 
   // User may have new organizations since last renew
   let org

@@ -13,7 +13,8 @@ export type FindMembersParams = {
   skip: number,
   sort?: any,
   emails?: string[],
-  emailConfirmed?: boolean
+  emailConfirmed?: boolean,
+  types?: ('user' | 'nhi')[]
 }
 
 export type FindOrganizationsParams = {

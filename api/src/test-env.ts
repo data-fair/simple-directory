@@ -3,21 +3,33 @@ import { resolve } from 'node:path'
 import { Router } from 'express'
 import { session } from '@data-fair/lib-express'
 import mongo from '#mongo'
-import config from '#config'
+import config, { jwtDurations } from '#config'
 import { rotateKeys, getSignatureKeys } from './tokens/keys-manager.ts'
 
 const router = Router()
 
 // DELETE /api/test-env — clean test data
-// Seeded data uses test_* prefixed IDs, dynamically-created test users use @test.com emails
+// Seeded data uses test_* prefixed IDs, dynamically-created test users use @test.com emails.
+// NHIs match neither pattern (their synthetic email is @nhi.<publicHost>, not @test.com)
+// -- swept separately by their nhi-* id prefix so they don't linger across runs.
 router.delete('/', async (req, res) => {
   const testIdFilter = { _id: { $regex: /^test_/ } }
   const testEmailFilter = { email: { $regex: /@test\.com$/i } }
+  const nhiIdFilter = { _id: { $regex: /^nhi-/ } }
   // also clean legacy non-prefixed seed data (from before test_ prefix migration)
   const legacyIds = ['dmeadus0', 'ccherryholme1', 'cdurning2', 'hlalonde3', 'ngernier4', 'ddecruce5', 'vdulany6', 'bhazeldean7', 'dhannan8', 'icarlens9', 'superadmin']
   const legacyOrgIds = ['KWqAGZ4mG', 'ihMQiGTaY', '3sSi7xDIK', 'uakapD5tu', 'Yty0BxuZG', 'EnTgB2UbH', 'test-ldap']
-  await mongo.organizations.deleteMany({ $or: [testIdFilter, { _id: { $in: legacyOrgIds } }] })
-  await mongo.users.deleteMany({ $or: [testIdFilter, testEmailFilter, { _id: { $in: legacyIds } }] })
+  const userFilter = { $or: [testIdFilter, testEmailFilter, nhiIdFilter, { _id: { $in: legacyIds } }] }
+  // orgs created through POST /api/organizations get a nanoid id (no test_ prefix), so scope
+  // them by their creator instead, otherwise they accumulate across runs and pollute other
+  // suites (e.g. a name-based org search). Collect the creators before the users are deleted.
+  // _superadmin is excluded even though its @test.com email matches the user cleanup: it is
+  // ALSO the account operators use to seed persistent dev data (dev-fixtures), and deleting
+  // its organizations here leaves other users' memberships dangling — a user whose default
+  // org no longer exists is forcefully logged out by keepalive on every login.
+  const testUserIds = (await mongo.users.find(userFilter, { projection: { _id: 1 } }).toArray()).map(u => u._id).filter(id => id !== '_superadmin')
+  await mongo.organizations.deleteMany({ $or: [testIdFilter, { _id: { $in: legacyOrgIds } }, { 'created.id': { $in: testUserIds } }] })
+  await mongo.users.deleteMany(userFilter)
   // deliberately unscoped: sites have a unique index on host, so tests must be
   // free to claim any dev host (this is why `npm run dev-fixtures` documents its
   // site as the one fixture a test run removes)
@@ -139,7 +151,10 @@ router.get('/config', (req, res) => {
     publicUrl: config.publicUrl,
     secretKeys: config.secretKeys,
     mongo: { url: config.mongo.url },
-    mailsRateLimit: config.mailsRateLimit
+    mailsRateLimit: config.mailsRateLimit,
+    // already converted to seconds by config.ts, so tests can assert on token durations
+    // without duplicating the ms() parsing of the raw config strings
+    jwtDurations
   })
 })
 

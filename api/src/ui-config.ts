@@ -25,6 +25,7 @@ export const uiConfig = {
   manageDepartmentLabel: config.manageDepartmentLabel,
   defaultDepartmentLabel: config.defaultDepartmentLabel,
   managePartners: config.managePartners,
+  manageNhis: config.manageNhis,
   manageSessions: config.manageSessions,
   quotas: config.quotas,
   perOrgStorageTypes: config.perOrgStorageTypes,

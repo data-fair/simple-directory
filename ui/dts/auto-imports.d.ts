@@ -59,6 +59,7 @@ declare global {
   const mdiCheckCircle: typeof import('@mdi/js')['mdiCheckCircle']
   const mdiCog: typeof import('@mdi/js')['mdiCog']
   const mdiConnection: typeof import('@mdi/js')['mdiConnection']
+  const mdiContentCopy: typeof import('@mdi/js')['mdiContentCopy']
   const mdiDelete: typeof import('@mdi/js')['mdiDelete']
   const mdiDevices: typeof import('@mdi/js')['mdiDevices']
   const mdiDotsVertical: typeof import('@mdi/js')['mdiDotsVertical']
@@ -77,6 +78,7 @@ declare global {
   const mdiPencil: typeof import('@mdi/js')['mdiPencil']
   const mdiPlus: typeof import('@mdi/js')['mdiPlus']
   const mdiRefresh: typeof import('@mdi/js')['mdiRefresh']
+  const mdiRobot: typeof import('@mdi/js')['mdiRobot']
   const mdiRss: typeof import('@mdi/js')['mdiRss']
   const mdiSend: typeof import('@mdi/js')['mdiSend']
   const mdiShieldAlert: typeof import('@mdi/js')['mdiShieldAlert']
@@ -211,6 +213,7 @@ declare module 'vue' {
     readonly mdiCheckCircle: UnwrapRef<typeof import('@mdi/js')['mdiCheckCircle']>
     readonly mdiCog: UnwrapRef<typeof import('@mdi/js')['mdiCog']>
     readonly mdiConnection: UnwrapRef<typeof import('@mdi/js')['mdiConnection']>
+    readonly mdiContentCopy: UnwrapRef<typeof import('@mdi/js')['mdiContentCopy']>
     readonly mdiDelete: UnwrapRef<typeof import('@mdi/js')['mdiDelete']>
     readonly mdiDevices: UnwrapRef<typeof import('@mdi/js')['mdiDevices']>
     readonly mdiDotsVertical: UnwrapRef<typeof import('@mdi/js')['mdiDotsVertical']>
@@ -229,6 +232,7 @@ declare module 'vue' {
     readonly mdiPencil: UnwrapRef<typeof import('@mdi/js')['mdiPencil']>
     readonly mdiPlus: UnwrapRef<typeof import('@mdi/js')['mdiPlus']>
     readonly mdiRefresh: UnwrapRef<typeof import('@mdi/js')['mdiRefresh']>
+    readonly mdiRobot: UnwrapRef<typeof import('@mdi/js')['mdiRobot']>
     readonly mdiRss: UnwrapRef<typeof import('@mdi/js')['mdiRss']>
     readonly mdiSend: UnwrapRef<typeof import('@mdi/js')['mdiSend']>
     readonly mdiShieldAlert: UnwrapRef<typeof import('@mdi/js')['mdiShieldAlert']>

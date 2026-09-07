@@ -14,6 +14,9 @@ import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
 import { cipher } from '../utils/cipher.ts'
+import nhisRouter from '../nhis/router.ts'
+import { isOrgAdmin } from './service.ts'
+import { assertNotNhiSession } from '../nhis/service.ts'
 import Debug from 'debug'
 
 const slug = _slug.default
@@ -29,20 +32,6 @@ function getUserOrgDep (req) {
 }
 
 */
-
-// Either a super admin, or an admin of the current organization
-async function isOrgAdmin (req: Request) {
-  const role = getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: config.depAdminIsOrgAdmin })
-  if (role === 'admin') return true
-  if (config.siteAdmin && reqSession(req).siteRole === 'admin') {
-    const site = await reqSite(req)
-    const orga = await storages.globalStorage.getOrganization(req.params.organizationId)
-    if (site && orga?.host === site.host && orga?.path === site.path) {
-      return true
-    }
-  }
-  return false
-}
 
 // Either a super admin, or a member of the current organization
 async function isMember (req: Request, allAccounts?: boolean) {
@@ -136,6 +125,7 @@ router.get('/:organizationId/roles', async (req, res, next) => {
 
 // Create an organization
 router.post('', async (req, res, next) => {
+  assertNotNhiSession(req)
   const user = reqUser(req)
   const logContext: EventLogContext = { req }
 
@@ -257,6 +247,7 @@ router.get('/:organizationId/members', async (req, res, next) => {
   if (typeof req.query.department === 'string') params.departments = req.query.department.split(',')
   if (typeof req.query.email === 'string') params.emails = req.query.email.split(',')
   if (typeof req.query.email_confirmed === 'string') params.emailConfirmed = req.query.email_confirmed === 'true'
+  if (req.query.types && typeof req.query.types === 'string') params.types = req.query.types.split(',') as ('user' | 'nhi')[]
   const members: { count: number, results: Member[], fromCache?: string } = { count: 0, results: [] }
   for (const storage of orgStorages) {
     // do our best to mix results in "org_storage=both" mode
@@ -339,6 +330,7 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
 
 // Change the role of the user in the organization
 router.patch('/:organizationId/members/:userId', async (req, res, next) => {
+  assertNotNhiSession(req)
   const logContext: EventLogContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
@@ -349,6 +341,7 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
   const filter: FindMembersParams = { ids: [req.params.userId], skip: 0, size: 1 }
   if (typeof dep === 'string') filter.departments = [dep]
   const member = (await storage.findMembers(req.params.organizationId, filter)).results[0]
+  if (!member) return res.status(404).send('member not found')
 
   // Only allowed for the organizations that the user is admin of (or admin of the member's department)
   const role = getAccountRole(
@@ -391,6 +384,10 @@ router.delete('/:organizationId', async (req, res, next) => {
 
   res.status(204).send()
 })
+
+if (config.manageNhis) {
+  router.use('/:organizationId/nhis', nhisRouter)
+}
 
 if (config.managePartners) {
   // Invitation for an organization to join us as partners

@@ -215,6 +215,12 @@
     "managePartners": {
       "type": "boolean"
     },
+    "manageNhis": {
+      "type": "boolean"
+    },
+    "nhisAllowInsecureIssuers": {
+      "type": "boolean"
+    },
     "manageDepartments": {
       "type": "boolean"
     },
@@ -278,7 +284,8 @@
         "adminExchangeToken",
         "invitationToken",
         "partnerInvitationToken",
-        "2FAToken"
+        "2FAToken",
+        "nhiToken"
       ],
       "properties": {
         "initialToken": { "type": "string" },
@@ -287,7 +294,8 @@
         "adminExchangeToken": { "type": "string" },
         "invitationToken": { "type": "string" },
         "partnerInvitationToken": { "type": "string" },
-        "2FAToken": { "type": "string" }
+        "2FAToken": { "type": "string" },
+        "nhiToken": { "type": "string" }
       }
     },
     "passwordless": {

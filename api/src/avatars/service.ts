@@ -1,7 +1,7 @@
 import { type Account } from '@data-fair/lib-express'
 import mongo from '#mongo'
 
-export type Avatar = { owner: Account, initials?: string, color?: string, buffer: BinaryData }
+export type Avatar = { owner: Account, initials?: string, color?: string, robot?: boolean, buffer: BinaryData }
 
 export async function setAvatar (avatar: Avatar) {
   const filter: any = { 'owner.type': avatar.owner.type, 'owner.id': avatar.owner.id }
