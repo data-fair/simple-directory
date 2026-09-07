@@ -132,7 +132,8 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
 
   events.emit('send', { to, ...tmplParams })
 
-  const mjmlRes = mjml2html(microTemplate(template, tmplParams))
+  // mjml 5 returns a promise where mjml 4 was synchronous
+  const mjmlRes = await mjml2html(microTemplate(template, tmplParams))
   if (mjmlRes.errors && mjmlRes.errors.length) {
     console.error('Error while preparing mail body', mjmlRes.errors)
     throw new Error('Error while preparing mail body')

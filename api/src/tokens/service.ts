@@ -6,6 +6,7 @@ import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-l
 import { internalError } from '@data-fair/lib-node/observer.js'
 import config, { jwtDurations } from '#config'
 import jwt, { type SignOptions, type JwtPayload } from 'jsonwebtoken'
+import type { StringValue } from 'ms'
 import Cookies from 'cookies'
 import { nanoid } from 'nanoid'
 import storages from '#storages'
@@ -24,9 +25,9 @@ export const signToken = async (payload: any, exp: string | number, notBefore?: 
     algorithm: webKey.alg,
     keyid: webKey.kid,
   }
-  if (typeof exp === 'string') params.expiresIn = exp
+  if (typeof exp === 'string') params.expiresIn = exp as StringValue
   else payload.exp = exp
-  if (notBefore) params.notBefore = notBefore
+  if (notBefore) params.notBefore = notBefore as StringValue
   return jwt.sign(payload, signatureKeys.privateKey, params)
 }
 

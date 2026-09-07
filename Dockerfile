@@ -1,5 +1,8 @@
 ##########################
-FROM node:24.14.0-alpine3.23 AS base
+FROM node:24.20.0-alpine3.24 AS base
+
+# pick up alpine security fixes released after this base image was published
+RUN apk upgrade --no-cache
 
 WORKDIR /app
 ENV NODE_ENV=production
@@ -67,6 +70,10 @@ RUN mkdir -p /app/api/node_modules
 
 ##########################
 FROM native-deps AS main
+
+# npm and corepack are only needed by the build stages, never to run the service,
+# and they drag in their own vulnerable transitive deps (tar, pacote, sigstore...)
+RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 COPY --from=api-installer /app/node_modules node_modules
 ADD /api api

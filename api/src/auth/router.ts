@@ -5,7 +5,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, r
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, createForceAuthnTagReplacement, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
+import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, Site, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -778,7 +778,7 @@ router.get('/providers', async (req, res) => {
 const debugOAuth = Debug('oauth')
 const debugOAuthTokens = Debug('oauth-tokens')
 
-const oauthLogin: RequestHandler = async (req, res, next) => {
+const oauthLogin: RequestHandler<{ oauthId: string }> = async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const provider = await getOAuthProviderById(req, req.params.oauthId)
   if (!provider) {
@@ -911,11 +911,10 @@ router.get('/saml2/:providerId/login', async (req, res) => {
   sp.entitySetting.relayState = relayState._id
 
   // TODO: apply nameid parameter ? { nameid: req.query.email }
-  // adminMode must not reuse an existing IdP session: pass the ForceAuthn tag replacement
-  // (the OIDC equivalent is prompt=login, see oauthLogin above)
-  const { context: loginRequestURL } = relayState.adminMode
-    ? sp.createLoginRequest(provider.idp, 'redirect', createForceAuthnTagReplacement(sp, provider.idp))
-    : sp.createLoginRequest(provider.idp, 'redirect')
+  // adminMode must not reuse an existing IdP session, so the AuthnRequest carries
+  // ForceAuthn="true" (the OIDC equivalent is prompt=login, see oauthLogin above)
+  const { context: loginRequestURL } = sp.createLoginRequest(provider.idp, 'redirect',
+    relayState.adminMode ? { forceAuthn: true } : {})
 
   const parsedURL = new URL(loginRequestURL)
   if (typeof req.query.email === 'string') parsedURL.searchParams.append('login_hint', req.query.email)

@@ -338,7 +338,9 @@ export const initServerSession = (req: Request): ServerSession => {
   }
 }
 
-export const isOIDCProvider = (provider: AuthProvider): provider is OpenIDConnect => {
+// AuthProvider is the common { id, title } part intersected with the union of provider
+// shapes, so narrowing to the oidc variant has to keep that common part to stay assignable
+export const isOIDCProvider = (provider: AuthProvider): provider is AuthProvider & OpenIDConnect => {
   return provider.type === 'oidc'
 }
 
