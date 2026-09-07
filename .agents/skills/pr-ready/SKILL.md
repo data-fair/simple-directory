@@ -73,7 +73,13 @@ Re-read the locked intent, then judge the diff against it at a **macro level** �
    - *Over-delivered / drifted* — did it grow past the intent (gold-plating, speculative generality, unrelated refactors)?
    - *Companions* — does the change carry what makes it complete for this intent: tests for the new behavior, and docs/types/comments that describe it?
 3. **Loose ends & artifacts** — Diff-local things that shouldn't ship: leftover `console.log`/debug branches/commented-out code/stray `TODO` from this change, unused imports; and files that don't belong (editor configs, local env files, build outputs, unrelated lockfile churn).
-4. **Risks / heads-up** — What should the reviewer look at hardest, and what could bite users or maintainers later? Behavior changes in shared code, removed or renamed exports, signature or default changes on public APIs, error-handling changes, data migrations — anything subtle that could break callers or surprise users.
+4. **Intra-branch relics** — A long-lived branch pivots: designs get replaced, constraints appear and dissolve. Hunks written for an intermediate state survive into the final diff even when the outcome no longer needs them. For each hunk whose necessity isn't obvious from the final state alone, ask: *would this still be written if the branch were authored in one sitting from its final design?* Typical relics:
+   - a comment explaining a constraint the final code no longer has, or contradicting the branch's own shipped docs;
+   - defensive code guarding against a state that can no longer occur (a `required` re-added after the base schema made it required again, a null-check for a field the final design always sets);
+   - index/migration/compat shims for a data shape that never shipped;
+   - satellite edits left behind when a later commit reversed the step they served.
+   When you suspect one, test the no-op hypothesis concretely — evaluate what the code produces without the hunk, or diff the behavior — rather than trusting the hunk's own comment: relics lie about their necessity, because the comment was written when it was true. Mid-branch `refactor`/`revert`-flavored commit subjects mark the pivot points; hunks that predate a pivot and touch the pivoted area deserve this check most.
+5. **Risks / heads-up** — What should the reviewer look at hardest, and what could bite users or maintainers later? Behavior changes in shared code, removed or renamed exports, signature or default changes on public APIs, error-handling changes, data migrations — anything subtle that could break callers or surprise users.
 
 ## Phase 5 — Report
 
@@ -128,7 +134,7 @@ Required content:
 - **Why** — the intent, in the user's own words from Phase 2.
 
 Optional:
-- **Risks / heads-up** — include only when there's something the reviewer or a future maintainer should know (the items from Phase 4 vector 4). Omit the section entirely for low-risk changes rather than writing "none".
+- **Risks / heads-up** — include only when there's something the reviewer or a future maintainer should know (the items from Phase 4 vector 5). Omit the section entirely for low-risk changes rather than writing "none".
 
 Length guidance: as compact as the change allows. A typo fix is one sentence. A multi-part feature is a short summary plus a tight bullet list. **No filler, no test-plan boilerplate, no marketing tone.** If you find yourself padding, stop.
 
@@ -174,3 +180,4 @@ Then tell the user, in one short message, the **resolved** file paths and the pl
 - Long list of "nice to have" cleanup → keep it tight; only call out things that actually matter for this PR.
 - Manufacturing findings to make a section look substantial → stop. "Scope: aligned" and "Low risk" are valid results.
 - Sliding into line-level code review → stop. That pass is already done; stay at the scope-and-intent altitude.
+- A hunk justified only by branch history, not by the final design → run the intra-branch relic check (Phase 4 vector 4); don't let the hunk's own comment vouch for it.
