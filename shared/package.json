@@ -4,7 +4,5 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {},
-  "dependencies": {
-    "tinycolor2": "^1.6.0"
-  }
+  "dependencies": {}
 }
