@@ -17,11 +17,7 @@ export const getOrgLimits = async (org: Organization) => {
   return limit
 }
 
-// NHIs are user records carrying an org membership, but they are not members. Every other
-// consumer gets them filtered out by the `types` default of findMembers, and
-// docs/architecture/non-human-identities.md promises quota counts see no behavior change.
-// This counter runs its own query instead of going through findMembers, so it has to
-// repeat the exclusion itself.
+// NHIs are not members: findMembers excludes them by default, this query has to do the same
 const getNbMembers = async (orgId: string) => {
   return mongo.users.countDocuments({ 'organizations.id': orgId, plannedDeletion: { $exists: false }, nhi: { $exists: false } })
 }
