@@ -137,6 +137,14 @@ router.patch('/user/:email', express.json(), async (req, res) => {
   res.status(200).send('ok')
 })
 
+// POST /api/test-env/run-user-cleanup — run the user cleanup cron task once, synchronously,
+// instead of waiting for its schedule
+router.post('/run-user-cleanup', async (req, res) => {
+  const { task } = await import('./users/worker.ts')
+  await task()
+  res.status(200).send('ok')
+})
+
 // POST /api/test-env/clear-site-cache — clear the getSiteByHost memoized cache
 router.post('/clear-site-cache', async (req, res) => {
   const { getSiteByHost } = await import('./sites/service.ts')

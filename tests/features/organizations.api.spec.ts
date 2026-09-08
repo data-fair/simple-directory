@@ -358,4 +358,21 @@ test.describe('organizations api', () => {
     const orgLimits = (await adminAx.ax.get('/api/limits', { params: { type: 'organization', id: org.id } })).data.results[0]
     assert.equal(orgLimits.store_nb_members.consumption, 0)
   })
+
+  test('should recompute the member count of an organization when the cleanup cron deletes a member', async () => {
+    const { ax } = await createUser('nb-members-cron@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test nb members cron' })).data
+    ax.setOrg(org.id)
+
+    const limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.equal(limits.store_nb_members.consumption, 1)
+
+    // a planned deletion in the past makes the cron hard-delete the user on its next run
+    await testEnvAx.patch('/user/nb-members-cron@test.com', { plannedDeletion: '2020-01-01' })
+    await testEnvAx.post('/run-user-cleanup')
+
+    const adminAx = await createUser('admin@test.com', true)
+    const orgLimits = (await adminAx.ax.get('/api/limits', { params: { type: 'organization', id: org.id } })).data.results[0]
+    assert.equal(orgLimits.store_nb_members.consumption, 0)
+  })
 })

@@ -34,7 +34,7 @@ const planDeletion = async (user: User) => {
   }
 }
 
-const task = async () => {
+export const task = async () => {
   if (stopped) return
   try {
     console.info('run user cleanup cron task')
