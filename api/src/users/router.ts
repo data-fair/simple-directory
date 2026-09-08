@@ -11,7 +11,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
-import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, setNbMembersLimits, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
+import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, setNbMembersLimits, deleteIdentityLimits, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
 
 const router = Router()
 
@@ -349,6 +349,7 @@ router.delete('/:userId', async (req, res, next) => {
 
   await setNbMembersLimits((deletedUser?.organizations ?? []).map(o => o.id))
 
+  await deleteIdentityLimits('user', req.params.userId)
   deleteIdentityWebhook('user', req.params.userId)
   res.status(204).send()
 })

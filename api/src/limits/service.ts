@@ -33,6 +33,11 @@ export const setNbMembersLimits = async (orgIds: string[] | Set<string>) => {
   for (const orgId of new Set(orgIds)) await setNbMembersLimit(orgId)
 }
 
+// limits are keyed by identity, they are dead weight once the identity is deleted
+export const deleteIdentityLimits = async (type: 'user' | 'organization', id: string) => {
+  await mongo.limits.deleteOne({ type, id })
+}
+
 /* export const updateName = async (identity: Account) => {
   await mongo.limits
     .updateMany({ type: identity.type, id: identity.id }, { $set: { name: identity.name } })

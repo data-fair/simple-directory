@@ -28,8 +28,11 @@ router.delete('/', async (req, res) => {
   // its organizations here leaves other users' memberships dangling — a user whose default
   // org no longer exists is forcefully logged out by keepalive on every login.
   const testUserIds = (await mongo.users.find(userFilter, { projection: { _id: 1 } }).toArray()).map(u => u._id).filter(id => id !== '_superadmin')
-  await mongo.organizations.deleteMany({ $or: [testIdFilter, { _id: { $in: legacyOrgIds } }, { 'created.id': { $in: testUserIds } }] })
+  const orgFilter = { $or: [testIdFilter, { _id: { $in: legacyOrgIds } }, { 'created.id': { $in: testUserIds } }] }
+  const testOrgIds = (await mongo.organizations.find(orgFilter, { projection: { _id: 1 } }).toArray()).map(o => o._id)
+  await mongo.organizations.deleteMany(orgFilter)
   await mongo.users.deleteMany(userFilter)
+  await mongo.limits.deleteMany({ $or: [{ type: 'user', id: { $in: testUserIds } }, { type: 'organization', id: { $in: testOrgIds } }] })
   // deliberately unscoped: sites have a unique index on host, so tests must be
   // free to claim any dev host (this is why `npm run dev-fixtures` documents its
   // site as the one fixture a test run removes)
