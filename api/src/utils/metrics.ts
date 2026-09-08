@@ -9,20 +9,20 @@ export const init = async () => {
   // eslint-disable-next-line no-new
   new Gauge({
     name: 'sd_organizations',
-    help: 'Total number of users',
+    help: 'Total number of organizations',
     registers: [servicePromRegistry],
     async collect () {
-      this.set(await mongo.users.estimatedDocumentCount())
+      this.set(await mongo.organizations.estimatedDocumentCount())
     }
   })
 
   // eslint-disable-next-line no-new
   new Gauge({
     name: 'sd_users',
-    help: 'Total number of organizations',
+    help: 'Total number of users',
     registers: [servicePromRegistry],
     async collect () {
-      this.set(await mongo.organizations.estimatedDocumentCount())
+      this.set(await mongo.users.estimatedDocumentCount())
     }
   })
 
