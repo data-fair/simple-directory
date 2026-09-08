@@ -28,6 +28,11 @@ export const setNbMembersLimit = async (orgId: string) => {
     .updateOne({ type: 'organization', id: orgId }, { $set: { 'store_nb_members.consumption': nbMembers } })
 }
 
+// deleting a user or syncing memberships from a core identity provider impacts several organizations at once
+export const setNbMembersLimits = async (orgIds: string[] | Set<string>) => {
+  for (const orgId of new Set(orgIds)) await setNbMembersLimit(orgId)
+}
+
 /* export const updateName = async (identity: Account) => {
   await mongo.limits
     .updateMany({ type: identity.type, id: identity.id }, { $set: { name: identity.name } })

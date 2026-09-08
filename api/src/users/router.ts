@@ -11,7 +11,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
-import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
+import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, setNbMembersLimits, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
 
 const router = Router()
 
@@ -182,6 +182,8 @@ router.post('', async (req, res, next) => {
     } else {
       eventsLog.info('sd.user.del-temp-user', 'temp user was deleted/recreated', logContext)
       await storage.deleteUser(user.id)
+      // it was created from an invitation in alwaysAcceptInvitation mode, the recreated user below has no membership
+      await setNbMembersLimits(user.organizations.map(o => o.id))
     }
   }
 
@@ -345,9 +347,7 @@ router.delete('/:userId', async (req, res, next) => {
 
   eventsLog.info('sd.user.del', `user was deleted ${req.params.userId}`, logContext)
 
-  for (const orgId of new Set((deletedUser?.organizations ?? []).map(o => o.id))) {
-    await setNbMembersLimit(orgId)
-  }
+  await setNbMembersLimits((deletedUser?.organizations ?? []).map(o => o.id))
 
   deleteIdentityWebhook('user', req.params.userId)
   res.status(204).send()
