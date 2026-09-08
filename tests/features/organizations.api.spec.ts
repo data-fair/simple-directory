@@ -357,6 +357,10 @@ test.describe('organizations api', () => {
 
     const orgLimits = (await adminAx.ax.get('/api/limits', { params: { type: 'organization', id: org.id } })).data.results[0]
     assert.equal(orgLimits.store_nb_members.consumption, 0)
+
+    // the creator is deleted above, so DELETE /api/test-env cannot scope this org by created.id
+    // any more -- drop it here, or it accumulates across runs and pollutes name-based org searches
+    await adminAx.ax.delete(`/api/organizations/${org.id}`)
   })
 
   test('should recompute the member count of an organization when the cleanup cron deletes a member', async () => {
@@ -374,5 +378,9 @@ test.describe('organizations api', () => {
     const adminAx = await createUser('admin@test.com', true)
     const orgLimits = (await adminAx.ax.get('/api/limits', { params: { type: 'organization', id: org.id } })).data.results[0]
     assert.equal(orgLimits.store_nb_members.consumption, 0)
+
+    // the creator is deleted above, so DELETE /api/test-env cannot scope this org by created.id
+    // any more -- drop it here, or it accumulates across runs and pollutes name-based org searches
+    await adminAx.ax.delete(`/api/organizations/${org.id}`)
   })
 })

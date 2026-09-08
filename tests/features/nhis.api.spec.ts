@@ -390,4 +390,8 @@ test('NHIs do not consume a member slot in the organization limits', async () =>
 
   const orgLimits = (await adminAx.get('/api/limits', { params: { type: 'organization', id: org.id } })).data.results[0]
   assert.equal(orgLimits.store_nb_members.consumption, 0)
+
+  // the creator is deleted above, so DELETE /api/test-env cannot scope this org by created.id
+  // any more -- drop it here, or it accumulates across runs and pollutes name-based org searches
+  await adminAx.delete(`/api/organizations/${org.id}`)
 })
