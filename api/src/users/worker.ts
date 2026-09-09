@@ -1,7 +1,7 @@
 import { type User } from '#types'
 import config, { jwtDurations } from '#config'
 import cron from 'node-cron'
-import { deleteOAuthToken, writeOAuthToken, oauthGlobalProviders, findOfflineOAuthTokens, authProviderMemberInfo, patchCoreAuthUser, deleteIdentityWebhook } from '#services'
+import { deleteOAuthToken, writeOAuthToken, oauthGlobalProviders, findOfflineOAuthTokens, authProviderMemberInfo, patchCoreAuthUser, deleteIdentityWebhook, setNbMembersLimits, deleteIdentityLimits } from '#services'
 import { internalError } from '@data-fair/lib-node/observer.js'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { defaultLocale, localizedDayjs, messages } from '#i18n'
@@ -34,7 +34,7 @@ const planDeletion = async (user: User) => {
   }
 }
 
-const task = async () => {
+export const task = async () => {
   if (stopped) return
   try {
     console.info('run user cleanup cron task')
@@ -85,6 +85,8 @@ const task = async () => {
       console.log('execute planned deletion of user', user)
       await storages.globalStorage.deleteUser(user.id)
       eventsLog.warn('sd.cleanup-cron.delete', 'deleted user', { user })
+      await setNbMembersLimits(user.organizations.map(o => o.id))
+      await deleteIdentityLimits('user', user.id)
       deleteIdentityWebhook('user', user.id)
     }
     await locks.release('user-deletion-task')

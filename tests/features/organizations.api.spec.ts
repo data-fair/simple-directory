@@ -342,4 +342,45 @@ test.describe('organizations api', () => {
     })).data.results
     assert.equal(memberEmails3Insensitive2.length, 2)
   })
+
+  test('should recompute the member count of an organization when a member is deleted', async () => {
+    const { ax, user } = await createUser('nb-members@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test nb members' })).data
+    ax.setOrg(org.id)
+
+    // reading the limits is what creates the denormalized counter
+    const limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.equal(limits.store_nb_members.consumption, 1)
+
+    const adminAx = await createUser('admin@test.com', true)
+    await adminAx.ax.delete(`/api/users/${user.id}`)
+
+    const orgLimits = (await adminAx.ax.get('/api/limits', { params: { type: 'organization', id: org.id } })).data.results[0]
+    assert.equal(orgLimits.store_nb_members.consumption, 0)
+
+    // the creator is deleted above, so DELETE /api/test-env cannot scope this org by created.id
+    // any more -- drop it here, or it accumulates across runs and pollutes name-based org searches
+    await adminAx.ax.delete(`/api/organizations/${org.id}`)
+  })
+
+  test('should recompute the member count of an organization when the cleanup cron deletes a member', async () => {
+    const { ax } = await createUser('nb-members-cron@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test nb members cron' })).data
+    ax.setOrg(org.id)
+
+    const limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.equal(limits.store_nb_members.consumption, 1)
+
+    // a planned deletion in the past makes the cron hard-delete the user on its next run
+    await testEnvAx.patch('/user/nb-members-cron@test.com', { plannedDeletion: '2020-01-01' })
+    await testEnvAx.post('/run-user-cleanup')
+
+    const adminAx = await createUser('admin@test.com', true)
+    const orgLimits = (await adminAx.ax.get('/api/limits', { params: { type: 'organization', id: org.id } })).data.results[0]
+    assert.equal(orgLimits.store_nb_members.consumption, 0)
+
+    // the creator is deleted above, so DELETE /api/test-env cannot scope this org by created.id
+    // any more -- drop it here, or it accumulates across runs and pollutes name-based org searches
+    await adminAx.ax.delete(`/api/organizations/${org.id}`)
+  })
 })

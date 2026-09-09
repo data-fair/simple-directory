@@ -11,6 +11,12 @@ jobs:
     - name: Checkout git repository
       uses: actions/checkout@v4
 
+    # the avatar routes shell out to the gm binary, which the runtime image installs
+    # (cf Dockerfile) but the runner image does not ship. Without it the gm library
+    # fails with "Stream yields empty buffer" rather than a missing-binary error.
+    - name: Install GraphicsMagick
+      run: sudo apt-get update && sudo apt-get install -y graphicsmagick
+
     - uses: actions/setup-node@v3
       with:
         node-version: 24

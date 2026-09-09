@@ -11,7 +11,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
-import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
+import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, setNbMembersLimits, deleteIdentityLimits, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
 
 const router = Router()
 
@@ -182,6 +182,8 @@ router.post('', async (req, res, next) => {
     } else {
       eventsLog.info('sd.user.del-temp-user', 'temp user was deleted/recreated', logContext)
       await storage.deleteUser(user.id)
+      // it was created from an invitation in alwaysAcceptInvitation mode, the recreated user below has no membership
+      await setNbMembersLimits(user.organizations.map(o => o.id))
     }
   }
 
@@ -338,10 +340,16 @@ router.delete('/:userId', async (req, res, next) => {
     if (!session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   }
 
+  // read the memberships before deleting, they are the only way back to the impacted organizations
+  const deletedUser = await storages.globalStorage.getUser(req.params.userId)
+
   await storages.globalStorage.deleteUser(req.params.userId)
 
   eventsLog.info('sd.user.del', `user was deleted ${req.params.userId}`, logContext)
 
+  await setNbMembersLimits((deletedUser?.organizations ?? []).map(o => o.id))
+
+  await deleteIdentityLimits('user', req.params.userId)
   deleteIdentityWebhook('user', req.params.userId)
   res.status(204).send()
 })

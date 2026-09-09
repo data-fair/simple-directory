@@ -9,7 +9,7 @@ import { reqI18n } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
 import type { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
-import { setNbMembersLimit, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, getInvitationRedirect } from '#services'
+import { setNbMembersLimit, deleteIdentityLimits, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, getInvitationRedirect } from '#services'
 import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
@@ -317,6 +317,7 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
   if (config.onlyCreateInvited && !user.organizations.length) {
     eventsLog.info('sd.org.member.del-user', `a user was removed after being excluded from last organization ${user.name} (${user.id})`, logContext)
     await storage.deleteUser(req.params.userId)
+    await deleteIdentityLimits('user', user.id)
     deleteIdentityWebhook('user', user.id)
   } else {
     postUserIdentityWebhook(user)
@@ -377,6 +378,7 @@ router.delete('/:organizationId', async (req, res, next) => {
   if (count > 1) return res.status(400).send(reqI18n(req).messages.errors.nonEmptyOrganization)
   await storages.globalStorage.deleteOrganization(req.params.organizationId)
   eventsLog.info('sd.org.delete', `a user deleted an organization ${req.params.organizationId}`, logContext)
+  await deleteIdentityLimits('organization', req.params.organizationId)
   deleteIdentityWebhook('organization', req.params.organizationId)
 
   // update session info

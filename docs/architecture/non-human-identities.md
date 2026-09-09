@@ -275,6 +275,13 @@ existing consumers (quota counts, invitation UIs, other services) see no
 behavior change unless they opt in with `?types=nhi` or
 `?types=user,nhi`.
 
+**`findMembers` is not the only place that has to exclude NHIs.**
+`getNbMembers` (`api/src/limits/service.ts`), which feeds the
+`store_nb_members` quota, counts the `users` collection directly instead of
+going through `findMembers`, so it repeats the `nhi: { $exists: false }`
+filter itself. Any new consumer that counts memberships with its own query
+has to do the same.
+
 **Cleanup jobs exclude NHIs.** `storage.findInactiveUsers` /
 `findUsersToDelete` (`api/src/storages/mongo.ts`) filter NHIs out, so
 `api/src/users/worker.ts`'s planned-deletion and hard-delete cron never

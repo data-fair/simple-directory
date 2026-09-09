@@ -372,3 +372,26 @@ test('nhi provider is validated at create and patch time', async () => {
   // patch that does not touch the provider performs no provider validation
   await ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { name: 'Renamed validated agent' })
 })
+
+test('NHIs do not consume a member slot in the organization limits', async () => {
+  const { ax, user } = await createUser('nhi-limits@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI limits org' })).data
+  ax.setOrg(org.id)
+
+  // reading the limits is what creates the denormalized counter
+  assert.equal((await ax.get(`/api/limits/organization/${org.id}`)).data.store_nb_members.consumption, 1)
+
+  await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())
+
+  // deleting the last human recomputes the counter: the NHI must not hold the org at 1 member,
+  // consistently with the member listing that excludes NHIs by default
+  const { ax: adminAx } = await createUser('admin@test.com', true)
+  await adminAx.delete(`/api/users/${user.id}`)
+
+  const orgLimits = (await adminAx.get('/api/limits', { params: { type: 'organization', id: org.id } })).data.results[0]
+  assert.equal(orgLimits.store_nb_members.consumption, 0)
+
+  // the creator is deleted above, so DELETE /api/test-env cannot scope this org by created.id
+  // any more -- drop it here, or it accumulates across runs and pollutes name-based org searches
+  await adminAx.delete(`/api/organizations/${org.id}`)
+})

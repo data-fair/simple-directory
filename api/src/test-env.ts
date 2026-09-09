@@ -28,8 +28,11 @@ router.delete('/', async (req, res) => {
   // its organizations here leaves other users' memberships dangling — a user whose default
   // org no longer exists is forcefully logged out by keepalive on every login.
   const testUserIds = (await mongo.users.find(userFilter, { projection: { _id: 1 } }).toArray()).map(u => u._id).filter(id => id !== '_superadmin')
-  await mongo.organizations.deleteMany({ $or: [testIdFilter, { _id: { $in: legacyOrgIds } }, { 'created.id': { $in: testUserIds } }] })
+  const orgFilter = { $or: [testIdFilter, { _id: { $in: legacyOrgIds } }, { 'created.id': { $in: testUserIds } }] }
+  const testOrgIds = (await mongo.organizations.find(orgFilter, { projection: { _id: 1 } }).toArray()).map(o => o._id)
+  await mongo.organizations.deleteMany(orgFilter)
   await mongo.users.deleteMany(userFilter)
+  await mongo.limits.deleteMany({ $or: [{ type: 'user', id: { $in: testUserIds } }, { type: 'organization', id: { $in: testOrgIds } }] })
   // deliberately unscoped: sites have a unique index on host, so tests must be
   // free to claim any dev host (this is why `npm run dev-fixtures` documents its
   // site as the one fixture a test run removes)
@@ -134,6 +137,14 @@ router.patch('/config', express.json(), (req, res) => {
 router.patch('/user/:email', express.json(), async (req, res) => {
   const result = await mongo.users.updateOne({ email: req.params.email }, { $set: req.body })
   if (result.matchedCount === 0) return res.status(404).send('user not found')
+  res.status(200).send('ok')
+})
+
+// POST /api/test-env/run-user-cleanup — run the user cleanup cron task once, synchronously,
+// instead of waiting for its schedule
+router.post('/run-user-cleanup', async (req, res) => {
+  const { task } = await import('./users/worker.ts')
+  await task()
   res.status(200).send('ok')
 })
 

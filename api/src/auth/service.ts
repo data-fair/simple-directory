@@ -9,7 +9,7 @@ import storages from '#storages'
 import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
 import type { CreateMember, AuthProvider, MemberRole, MemberDepartment, OpenIDConnect } from '#types/site/index.ts'
-import { getOrgLimits, getRedirectSite, getTokenPayload, prepareCallbackUrl, reqSite, setNbMembersLimit, unshortenInvit } from '#services'
+import { getOrgLimits, getRedirectSite, getTokenPayload, prepareCallbackUrl, reqSite, setNbMembersLimit, setNbMembersLimits, unshortenInvit } from '#services'
 import { __all, reqI18n } from '#i18n'
 import { reqIpInfo } from '../utils/ip-info.ts'
 
@@ -173,6 +173,8 @@ export const authProviderLoginCallback = async (
     } else {
       eventsLog.info('sd.auth.provider.del-temp-user', `a temporary user was deleted in oauth callback ${user.id}`, logContext)
       await storage.deleteUser(user.id)
+      // it was created from an invitation in alwaysAcceptInvitation mode, its memberships die with it
+      await setNbMembersLimits(user.organizations.map(o => o.id))
       user = undefined
     }
   }
@@ -278,6 +280,9 @@ export const patchCoreAuthUser = async (provider: AuthProviderCore, user: User, 
     authInfo.coreId = true
     authInfo.user.coreIdProvider = { type: provider.type, id: provider.id }
   }
+  // organizations losing a readOnly membership here are only persisted by the patch below,
+  // their counters are refreshed after it
+  const impactedOrgIds = new Set<string>()
   const existingAuthInfo = user[provider.type]?.[provider.id] as any
   const patch: Partial<User> = {
     [provider.type]: { ...user[provider.type] },
@@ -299,11 +304,14 @@ export const patchCoreAuthUser = async (provider: AuthProviderCore, user: User, 
     // would otherwise accumulate a duplicate when the role changes between logins; clearing
     // first also drops memberships the provider no longer asserts. readOnly memberships are
     // only set via this auto-sync path (authProviderMemberInfo) so dropping them is safe.
+    for (const orga of user.organizations || []) {
+      if (orga.readOnly) impactedOrgIds.add(orga.id)
+    }
     user.organizations = (user.organizations || []).filter(o => !o.readOnly)
     for (const memberInfo of memberInfos) {
       if (memberInfo.readOnly) {
         await storages.globalStorage.addMember(memberInfo.org, user, memberInfo.role, memberInfo.department, memberInfo.readOnly)
-        await setNbMembersLimit(memberInfo.org.id)
+        impactedOrgIds.add(memberInfo.org.id)
       }
     }
     // Persist the cleared list through the patch — when memberInfos contains no readOnly
@@ -314,7 +322,9 @@ export const patchCoreAuthUser = async (provider: AuthProviderCore, user: User, 
     if (authInfo.user.firstName && !user.firstName) patch.firstName = authInfo.user.firstName
     if (authInfo.user.lastName && !user.lastName) patch.lastName = authInfo.user.lastName
   }
-  return await storages.globalStorage.patchUser(user.id, patch)
+  const patchedUser = await storages.globalStorage.patchUser(user.id, patch)
+  await setNbMembersLimits(impactedOrgIds)
+  return patchedUser
 }
 
 const formatDeviceName = (agentHeader: string) => {
