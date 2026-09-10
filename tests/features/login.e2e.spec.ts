@@ -14,6 +14,11 @@ test.describe('Login page', () => {
 
     await page.goto(appUrl('/login'))
     await expect(page.locator('input[name="email"]')).toBeVisible({ timeout: 10_000 })
+    // the form is v-show-hidden until the auth providers load, and vuetify's autofocus
+    // (useAutofocus) focuses the email field 50ms AFTER it intersects -- so it is visible
+    // before that focus lands. Wait for it: landing mid-fill steals focus back from the
+    // password field and the keystrokes get appended to the email address instead.
+    await expect(page.locator('input[name="email"]')).toBeFocused()
     await page.locator('input[name="email"]').fill('dmeadus0@answers.com')
     await page.locator('input[name="password"]').fill('TestPasswd01')
     await page.locator('input[name="password"]').press('Enter')
@@ -30,6 +35,11 @@ test.describe('Login page', () => {
 
     await page.goto(appUrl('/login'))
     await expect(page.locator('input[name="email"]')).toBeVisible({ timeout: 10_000 })
+    // the form is v-show-hidden until the auth providers load, and vuetify's autofocus
+    // (useAutofocus) focuses the email field 50ms AFTER it intersects -- so it is visible
+    // before that focus lands. Wait for it: landing mid-fill steals focus back from the
+    // password field and the keystrokes get appended to the email address instead.
+    await expect(page.locator('input[name="email"]')).toBeFocused()
     await page.locator('input[name="email"]').fill('dmeadus0@answers.com')
     await page.locator('input[name="password"]').fill('WrongPassword1')
     await page.locator('input[name="password"]').press('Enter')
@@ -43,6 +53,11 @@ test.describe('Login page', () => {
 
     await page.goto(appUrl('/login'))
     await expect(page.locator('input[name="email"]')).toBeVisible({ timeout: 10_000 })
+    // the form is v-show-hidden until the auth providers load, and vuetify's autofocus
+    // (useAutofocus) focuses the email field 50ms AFTER it intersects -- so it is visible
+    // before that focus lands. Wait for it: landing mid-fill steals focus back from the
+    // password field and the keystrokes get appended to the email address instead.
+    await expect(page.locator('input[name="email"]')).toBeFocused()
     await page.locator('input[name="email"]').fill('admin@test.com')
     await page.locator('input[name="password"]').fill('TestPasswd01')
     await page.locator('input[name="password"]').press('Enter')
@@ -61,6 +76,11 @@ test.describe('Login page', () => {
 
     await page.goto(appUrl('/login'))
     await expect(page.locator('input[name="email"]')).toBeVisible({ timeout: 10_000 })
+    // the form is v-show-hidden until the auth providers load, and vuetify's autofocus
+    // (useAutofocus) focuses the email field 50ms AFTER it intersects -- so it is visible
+    // before that focus lands. Wait for it: landing mid-fill steals focus back from the
+    // password field and the keystrokes get appended to the email address instead.
+    await expect(page.locator('input[name="email"]')).toBeFocused()
     await page.locator('input[name="email"]').fill('admin@test.com')
     await page.locator('input[name="password"]').fill('TestPasswd01')
     await page.locator('input[name="password"]').press('Enter')
