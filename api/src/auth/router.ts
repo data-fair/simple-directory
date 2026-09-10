@@ -15,6 +15,7 @@ import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
 import { verifyAssertion } from '../nhis/service.ts'
+import { ipAllowed } from '../nhis/ips.ts'
 
 import { checkPassword, validatePassword, type Password } from '../utils/passwords.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
@@ -289,7 +290,11 @@ router.post('/nhi-token', async (req, res) => {
   if (!config.manageNhis) throw httpError(404, 'nhi support is not activated')
   const { body } = (await import('#doc/auth/post-nhi-token-req/index.ts')).returnValid(req, { name: 'req' })
   const logContext: EventLogContext = { req }
-  if (!await limiter()(reqIp(req)) || !await limiter()(body.client_id)) {
+  // reqIp throws when the reverse-proxy left no usable X-Forwarded-For; that happens here,
+  // before any lookup, so a broken proxy chain rejects every caller identically (no oracle)
+  // and the address controls below can never run without a client address
+  const clientIp = reqIp(req)
+  if (!await limiter()(clientIp) || !await limiter()(body.client_id)) {
     eventsLog.warn('sd.auth.nhi.rate-limit', 'rate limit error for /auth/nhi-token route', logContext)
     throw httpError(429, reqI18n(req).messages.errors.rateLimitAuth)
   }
@@ -309,6 +314,11 @@ router.post('/nhi-token', async (req, res) => {
   if (site && !(site.owner.type === 'organization' && site.owner.id === userOrg.id && (!userOrg.department || !site.owner.department || userOrg.department === site.owner.department))) {
     throw await reject('site not owned by nhi org ' + user.id)
   }
+  // optional per-NHI address control: allowedIps gates the exchange itself, so a captured
+  // assertion replayed from another network is refused before it is even verified
+  if (user.nhi.allowedIps?.length && !ipAllowed(clientIp, user.nhi.allowedIps)) {
+    throw await reject(`ip ${clientIp} not in allowedIps for ` + user.id)
+  }
   let assertionPayload
   try {
     assertionPayload = await verifyAssertion(body.assertion, user.nhi.provider, user.nhi.subject, reqSiteUrl(req))
@@ -318,6 +328,9 @@ router.post('/nhi-token', async (req, res) => {
   const nowSec = Math.floor(Date.now() / 1000)
   const exp = Math.min(assertionPayload.exp as number, nowSec + jwtDurations.nhiToken)
   const payload = getTokenPayload(user, site)
+  // same claim, same enforcement (lib-express Session.req) as an adminMode session's binding —
+  // setSessionCookies only stamps boundIp for adminMode, which an NHI never has, so no conflict
+  if (user.nhi.ipBinding) payload.boundIp = clientIp
   const token = await setSessionCookies(req, res, reqSitePath(req), payload, 'nhi-session', userOrg, { skipExchangeToken: true, exp })
   storages.globalStorage.updateLogged(user.id).catch((err: any) => internalError('nhi-update-logged', 'error while updating logged date', err))
   eventsLog.info('sd.auth.nhi.ok', `an NHI session was created for ${user.id}`, logContext)

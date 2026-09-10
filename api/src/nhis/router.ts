@@ -7,6 +7,7 @@ import { reqI18n } from '#i18n'
 import { postUserIdentityWebhook, deleteIdentityWebhook } from '#services'
 import { isOrgAdmin } from '../organizations/service.ts'
 import { checkProvider } from './keys.ts'
+import { checkAllowedIps } from './ips.ts'
 import { createNhi, getNhi, listNhis } from './service.ts'
 import type { Request } from 'express'
 
@@ -41,6 +42,7 @@ router.post('', async (req: Request<OrgParams>, res) => {
   const { org, roles } = await getOrgAndRoles(req.params.organizationId)
   if (!roles.includes(body.role)) throw httpError(400, 'unknown role')
   await checkProvider(body.provider)
+  if (body.allowedIps) checkAllowedIps(body.allowedIps)
   const sessionUser = reqSessionAuthenticated(req).user
   const user = await createNhi(org, body, { id: sessionUser.id, name: sessionUser.name })
   logContext.account = { type: 'organization', id: org.id, name: org.name }
@@ -59,11 +61,24 @@ router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
   const patch: any = {}
   if (body.name) patch.name = body.name
   if (body.provider) await checkProvider(body.provider)
-  if (body.subject || body.provider) {
-    patch.nhi = {
-      provider: body.provider ?? user.nhi!.provider,
-      subject: body.subject ?? user.nhi!.subject
+  if (body.subject || body.provider || body.allowedIps !== undefined || body.ipBinding !== undefined) {
+    // patchUser $sets the whole nhi sub-object, so carry the untouched fields over
+    const nhi = { ...user.nhi! }
+    if (body.provider) nhi.provider = body.provider
+    if (body.subject) nhi.subject = body.subject
+    if (body.allowedIps !== undefined) {
+      if (body.allowedIps === null) delete nhi.allowedIps
+      else {
+        checkAllowedIps(body.allowedIps)
+        nhi.allowedIps = body.allowedIps
+      }
     }
+    // stored only when true, so an unrestricted NHI has no leftover ipBinding: false
+    if (body.ipBinding !== undefined) {
+      if (body.ipBinding) nhi.ipBinding = true
+      else delete nhi.ipBinding
+    }
+    patch.nhi = nhi
   }
   if (body.role || body.department !== undefined) {
     const membership = { ...user.organizations[0] }

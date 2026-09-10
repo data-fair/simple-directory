@@ -200,6 +200,104 @@ address.
 - `nhi: 1` remains the semantic signal; the synthetic email is a compatibility
   value, not an identity claim.
 
+## Optional address controls
+
+Two opt-in, per-NHI controls narrow *where* a service account can authenticate
+from and *where* the session it gets can be used. Both live on the `nhi`
+sub-object, are set by the same org admins who manage the rest of the record,
+and are **absent by default** — an NHI that declares neither behaves exactly as
+before:
+
+```
+nhi: {
+  provider, subject,
+  allowedIps?: string[],   // addresses or CIDR subnets, either family
+  ipBinding?: boolean      // stored only when true
+}
+```
+
+They address different halves of the exposure and are independent of each other.
+
+### `allowedIps` — an allowlist on the exchange
+
+Checked in the `/nhi-token` route, after the site-ownership check and **before
+`verifyAssertion`**, so an assertion arriving from a disallowed network is
+refused before it is even verified. Matching is `ipAllowed`
+(`api/src/nhis/ips.ts`), built on `node:net`'s `BlockList` — the same tool as
+the SSRF guard in `keys.ts` but with the opposite polarity, and with the same
+free handling of IPv4-mapped IPv6 client addresses (`::ffff:10.0.0.1` matches an
+ipv4 rule), which is what a dual-stack reverse-proxy commonly reports.
+
+The rejection goes through the endpoint's existing `reject()` helper, so it is
+the **same uniform 401 plus jitter** as every other failure: an attacker learns
+nothing about whether the `client_id` exists, let alone that it carries address
+controls. This is asserted directly by comparing the failure to another
+failure's status and message (`tests/features/nhis.api.spec.ts`) rather than by
+matching a literal body.
+
+This is the one control that dents the "no replay protection on the assertion"
+surface below: a captured, still-valid Kubernetes service-account token replayed
+from outside the declared ranges no longer buys a session.
+
+Entries are validated **fail-fast at create/patch time** (`checkAllowedIps`),
+giving a descriptive 400 on the admin-only management surface — the same split
+as `checkProvider`, with the exchange keeping its deliberately oracle-free 401.
+An empty array is refused (`allowedIps` must be absent, not empty) so that a
+stored empty list can never be misread as "everything is allowed"; `ipAllowed`
+independently returns false for an empty list and for entries it cannot parse,
+so the fail-closed reading holds even for a record edited out of band.
+
+### `ipBinding` — binding the issued session
+
+When set, the exchange stamps `payload.boundIp = clientIp` on the `id_token`.
+That is the **same claim, with the same enforcement**, as the IP binding of
+superadmin sessions (see
+[`session-theft-protections.md`](session-theft-protections.md)): every service
+reading the token through `@data-fair/lib-express`'s `Session.req()` refuses it
+from another address, so nothing downstream had to change. The exchange route
+sets the claim itself; `setSessionCookies` only stamps `boundIp` for `adminMode`
+sessions, which an NHI never has, so the two paths cannot collide.
+
+Only the `id_token` half of the superadmin mechanism applies here. The other
+half — the `ip` recorded in the exchange token and re-checked at `keepalive` —
+is meaningless for an NHI, which has no exchange token and cannot renew
+(invariant #3). For an NHI the `id_token` *is* the `access_token`, so that half
+is also the half that matters: it is what confines a token leaked through a
+client log, an environment dump or CI output, where an NHI credential is far
+more likely to end up than a browser cookie.
+
+**Why it is off by default, and the sharp edge to warn admins about.** Binding
+assumes a stable client address, which the reverse-proxy chain must report
+identically at exchange time *and* on every later request:
+
+- A NAT gateway with an address pool (AWS NAT GW with several EIPs, GCP Cloud
+  NAT) can source consecutive connections from different addresses for the same
+  pod; dual-stack can flip family. The session then dies mid-use. This is
+  survivable — an NHI client can simply exchange again on a 401, unlike a human
+  — but it is silent.
+- Worse, and undetectable from here: if the token is *used* over a network path
+  where `X-Forwarded-For` differs from the exchange path (an in-cluster call to
+  a downstream service over an internal URL, behind a different proxy), the
+  binding fails for reasons that look nothing like IP binding. simple-directory
+  cannot see this and cannot warn about it.
+
+Both are deployment properties only the org admin knows, which is why this is a
+per-NHI opt-in rather than a deployment-wide default, and why the form carries
+an explicit warning.
+
+### Where the client address comes from
+
+`reqIp(req)` — the first `X-Forwarded-For` entry, which our reverse-proxy
+overwrites, so a client cannot spoof it; a correctly configured proxy chain is a
+prerequisite, exactly as for the superadmin binding.
+
+`reqIp` **throws** when there is no usable header. In the `/nhi-token` route
+that happens at the very top, in the rate-limiter call, *before* the NHI is
+looked up — so a broken proxy chain rejects every caller identically and cannot
+become an oracle for which `client_id`s exist or carry address controls. It also
+means the address controls can never run without a client address: there is no
+code path where a proxy misconfiguration silently disables them.
+
 ## Superadmin exclusion (defense in depth)
 
 An NHI's synthetic email is never one of `config.admins`, so the email-based
@@ -390,7 +488,9 @@ narrow, low-value target:
   nonce/jti tracking). A captured, still-valid assertion can be replayed
   until it expires (assertion `exp`, further capped by `nhiToken`, so at
   most 30 minutes of exposure by default). Standard bearer-token trust
-  model, not a defect specific to this feature.
+  model, not a defect specific to this feature. An NHI that declares
+  `allowedIps` narrows this considerably: the replay must also originate from a
+  declared range.
 - **Rate limiter consumes a point on successful exchange**, see the
   exchange-endpoint section above — operationally relevant for pod fleets
   sharing an egress IP.
@@ -435,6 +535,11 @@ narrow, low-value target:
    hosts unless `config.nhisAllowInsecureIssuers` is explicitly set (dev/
    test only); inline JWKS bypasses discovery entirely for private
    clusters.
+7. The address controls are opt-in and fail closed: a declared `allowedIps`
+   is checked before the assertion is verified and rejects through the same
+   uniform 401 as every other failure, an empty list is never a valid stored
+   value, and neither control can run without a client address (`reqIp`
+   throws first, before any NHI lookup).
 
 Violations of #2 or #4 would let a compromised site config or an NHI's own
 session escalate beyond its owning org — the same category of failure this

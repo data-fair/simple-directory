@@ -89,6 +89,27 @@
             density="compact"
             variant="outlined"
           />
+          <v-combobox
+            v-model="allowedIps"
+            :label="$t('pages.organization.nhiAllowedIps')"
+            :hint="$t('pages.organization.nhiAllowedIpsHint')"
+            persistent-hint
+            name="allowedIps"
+            multiple
+            chips
+            closable-chips
+            clearable
+            density="compact"
+            variant="outlined"
+          />
+          <v-checkbox
+            v-model="ipBinding"
+            :label="$t('pages.organization.nhiIpBinding')"
+            :hint="$t('pages.organization.nhiIpBindingHint')"
+            persistent-hint
+            name="ipBinding"
+            density="compact"
+          />
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -135,11 +156,15 @@ const newEditNhi = () => ({
 const newJwks = () => (nhi.provider?.jwks ? JSON.stringify(nhi.provider.jwks, null, 2) : '')
 const editNhi = ref(newEditNhi())
 const jwks = ref(newJwks())
+const allowedIps = ref<string[]>([...(nhi.allowedIps ?? [])])
+const ipBinding = ref(!!nhi.ipBinding)
 
 watch(menu, () => {
   if (!menu.value) return
   editNhi.value = newEditNhi()
   jwks.value = newJwks()
+  allowedIps.value = [...(nhi.allowedIps ?? [])]
+  ipBinding.value = !!nhi.ipBinding
   editForm.value?.reset()
 })
 
@@ -152,8 +177,12 @@ const confirmEdit = useAsyncAction(async () => {
     role: editNhi.value.role,
     department: editNhi.value.department || '',
     subject: editNhi.value.subject,
-    provider: { issuer: editNhi.value.provider.issuer }
+    provider: { issuer: editNhi.value.provider.issuer },
+    // null clears the restriction, an empty array is refused by the API on purpose
+    allowedIps: allowedIps.value.map(ip => ip.trim()).filter(ip => !!ip),
+    ipBinding: ipBinding.value
   }
+  if (!body.allowedIps.length) body.allowedIps = null
   if (jwks.value.trim()) {
     try {
       body.provider.jwks = JSON.parse(jwks.value)

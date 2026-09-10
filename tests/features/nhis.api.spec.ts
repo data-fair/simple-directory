@@ -395,3 +395,118 @@ test('NHIs do not consume a member slot in the organization limits', async () =>
   // any more -- drop it here, or it accumulates across runs and pollutes name-based org searches
   await adminAx.delete(`/api/organizations/${org.id}`)
 })
+
+test('nhi token exchange is restricted to the declared allowedIps', async () => {
+  const { ax } = await createUser('nhi-ips@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI ips org' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ allowedIps: ['9.9.9.9', '10.4.0.0/16'] }))).data
+
+  const agentAx = axios()
+  // the dev nginx appends to x-forwarded-for so the entry we set stays first, which is the
+  // one reqIp reads (same technique as admin-sessions.api.spec.ts)
+  const from = (ip: string) => ({ headers: { 'x-forwarded-for': ip } })
+  const exchange = (ip: string) => agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion() }, from(ip))
+
+  assert.equal((await exchange('9.9.9.9')).status, 200)
+  assert.equal((await exchange('10.4.2.9')).status, 200) // inside the declared subnet
+
+  // outside production the error handler appends the stack to the body, which differs per throw
+  // site; production sends err.message alone, so compare the message line only
+  const failure = async (p: Promise<any>) => {
+    const err: any = await p.then(() => undefined, (e: any) => e)
+    assert.ok(err, 'expected a rejection')
+    return { status: err.status, message: String(err.data).split('\n')[0] }
+  }
+  // a disallowed source is indistinguishable from any other exchange failure: no oracle telling
+  // an attacker that this client_id exists and only the address was wrong
+  const uniform = await failure(agentAx.post('/api/auth/nhi-token',
+    { client_id: nhi.id, assertion: signAssertion({ sub: 'system:serviceaccount:agents:other' }) }, from('9.9.9.9')))
+  assert.equal(uniform.status, 401)
+  assert.deepEqual(await failure(exchange('8.8.8.8')), uniform)
+  assert.deepEqual(await failure(exchange('10.5.2.9')), uniform)
+})
+
+test('an nhi without allowedIps is not restricted by ip', async () => {
+  const { ax } = await createUser('nhi-ips2@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI ips org 2' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+  const agentAx = axios()
+  const res = await agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion() }, { headers: { 'x-forwarded-for': '8.8.8.8' } })
+  assert.equal(res.status, 200)
+  // and no binding is applied either, both controls are opt-in and independent
+  assert.equal((jwt.decode(res.data.access_token) as any).boundIp, undefined)
+})
+
+test('allowedIps is validated at create and patch time', async () => {
+  const { ax } = await createUser('nhi-ips3@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI ips org 3' })).data
+  ax.setOrg(org.id)
+  const is400 = (err: any) => err.status === 400
+  await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ allowedIps: ['nonsense'] })), is400)
+  await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ allowedIps: ['10.4.0.0/33'] })), is400)
+  await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ allowedIps: [] })), is400)
+
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ allowedIps: ['9.9.9.9'] }))).data
+  await assert.rejects(ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { allowedIps: ['nonsense'] }), is400)
+  // the rejected patch left the record untouched
+  assert.deepEqual((await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0].allowedIps, ['9.9.9.9'])
+})
+
+test('an ipBinding nhi session is refused from another ip', async () => {
+  const { ax } = await createUser('nhi-bind@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI bind org' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ ipBinding: true }))).data
+
+  const agentAx = axios()
+  const res = await agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion() },
+    { headers: { 'x-forwarded-for': '9.9.9.9' } })
+  assert.equal((jwt.decode(res.data.access_token) as any).boundIp, '9.9.9.9')
+
+  const cookie = res.headers['set-cookie']!.map((c: string) => c.split(';')[0]).join('; ')
+  // usable from the address the exchange came from...
+  const ok = await agentAx.get(`/api/organizations/${org.id}`, { headers: { cookie, 'x-forwarded-for': '9.9.9.9' } })
+  assert.equal(ok.data.id, org.id)
+  // ...and refused everywhere else, which is what confines a leaked access_token
+  await assert.rejects(agentAx.get(`/api/organizations/${org.id}`, { headers: { cookie, 'x-forwarded-for': '8.8.8.8' } }),
+    (err: any) => err.status === 401)
+})
+
+test('allowedIps and ipBinding can be turned off again by patching', async () => {
+  const { ax } = await createUser('nhi-bind2@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI bind org 2' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ allowedIps: ['9.9.9.9'], ipBinding: true }))).data
+
+  await ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { allowedIps: null, ipBinding: false })
+  const listed = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0]
+  assert.equal(listed.allowedIps, undefined)
+  assert.equal(listed.ipBinding, undefined)
+
+  const agentAx = axios()
+  const res = await agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion() },
+    { headers: { 'x-forwarded-for': '8.8.8.8' } })
+  assert.equal(res.status, 200)
+  assert.equal((jwt.decode(res.data.access_token) as any).boundIp, undefined)
+})
+
+test('an unusable client address fails the exchange closed, before any nhi lookup', async () => {
+  const { ax } = await createUser('nhi-noip@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI noip org' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ allowedIps: ['9.9.9.9'] }))).data
+  const agentAx = axios()
+
+  // reqIp throws when the first X-Forwarded-For entry is not an address, i.e. when the
+  // reverse-proxy chain is misconfigured. The address controls must never run without a client
+  // address, and the rejection happens before the NHI is even looked up, so a broken proxy
+  // cannot become an oracle for which client_ids exist or carry address controls.
+  const broken = (clientId: string) => agentAx.post('/api/auth/nhi-token',
+    { client_id: clientId, assertion: signAssertion() }, { headers: { 'x-forwarded-for': 'not-an-ip' } })
+  const statusOf = async (p: Promise<any>) => (await p.then(() => undefined, (e: any) => e))?.status
+  const known = await statusOf(broken(nhi.id))
+  assert.ok(known && known >= 400, 'a broken X-Forwarded-For must reject the exchange')
+  assert.equal(await statusOf(broken('nhi-unknown000')), known)
+})

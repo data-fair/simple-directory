@@ -160,6 +160,8 @@ export const setSessionCookies = async (req: Request, res: Response, sitePath: s
     sessionInfo.user = existingServerSessionInfo.user
   }
 
+  // (the NHI exchange sets payload.boundIp itself, see the /nhi-token route: it is an opt-in
+  // per-NHI control and those sessions never have adminMode, so the block below leaves it alone)
   // adminMode sessions are bound to the IP they were created from: their tokens carry it and
   // both the keepalive below and the services reading the id_token (cf lib-express session)
   // refuse requests coming from another address.

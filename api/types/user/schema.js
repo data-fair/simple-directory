@@ -188,7 +188,17 @@ export default {
             jwks: { type: 'object', description: 'Inline JWKS; if absent, OIDC discovery is performed on the issuer URL' }
           }
         },
-        subject: { type: 'string', description: 'Must equal the assertion `sub` claim' }
+        subject: { type: 'string', description: 'Must equal the assertion `sub` claim' },
+        allowedIps: {
+          description: 'Addresses or CIDR subnets the token exchange is accepted from; when absent the exchange is not restricted by address',
+          type: 'array',
+          maxItems: 50,
+          items: { type: 'string', maxLength: 50 }
+        },
+        ipBinding: {
+          description: 'Bind the issued session to the address the exchange was performed from (boundIp in the id_token), so a leaked access token is unusable elsewhere',
+          type: 'boolean'
+        }
       }
     }
   },
