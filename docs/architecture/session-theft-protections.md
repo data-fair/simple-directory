@@ -58,9 +58,16 @@ The client IP is the first entry of `X-Forwarded-For`, which our reverse-proxy
 overwrites — it cannot be spoofed by the client, but this **requires** a
 correctly configured proxy chain.
 
-Only superadmins are bound: normal users move between networks (mobile
-handovers, dual-stack IPv4/IPv6, proxy farms) often enough that binding them
-would mostly produce spurious logouts.
+Only superadmins are bound among human sessions: normal users move between
+networks (mobile handovers, dual-stack IPv4/IPv6, proxy farms) often enough that
+binding them would mostly produce spurious logouts.
+
+The same `boundIp` claim, with the same `Session.req()` enforcement, is also
+available to non-human identities as a per-NHI opt-in — an org admin decides,
+because only they know whether that service account calls from a stable address.
+Only the `id_token` half applies there: an NHI has no exchange token and cannot
+renew, so the `keepalive` check below is irrelevant to it. See
+[`non-human-identities.md`](non-human-identities.md).
 
 ## Single use exchange tokens
 

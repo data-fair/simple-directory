@@ -13,6 +13,8 @@ export default {
         role: { type: 'string', maxLength: 100 },
         department: { type: 'string', maxLength: 100 },
         subject: { type: 'string', maxLength: 500 },
+        allowedIps: { type: ['array', 'null'], maxItems: 50, items: { type: 'string', maxLength: 50 } },
+        ipBinding: { type: 'boolean' },
         provider: {
           type: 'object',
           additionalProperties: false,

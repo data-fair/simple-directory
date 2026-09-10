@@ -88,6 +88,27 @@
               density="compact"
               variant="outlined"
             />
+            <v-combobox
+              v-model="allowedIps"
+              :label="$t('pages.organization.nhiAllowedIps')"
+              :hint="$t('pages.organization.nhiAllowedIpsHint')"
+              persistent-hint
+              name="allowedIps"
+              multiple
+              chips
+              closable-chips
+              clearable
+              density="compact"
+              variant="outlined"
+            />
+            <v-checkbox
+              v-model="ipBinding"
+              :label="$t('pages.organization.nhiIpBinding')"
+              :hint="$t('pages.organization.nhiIpBindingHint')"
+              persistent-hint
+              name="ipBinding"
+              density="compact"
+            />
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -127,11 +148,15 @@ const createForm = ref<InstanceType<typeof VForm>>()
 const newNhi = () => ({ name: '', role: '', department: undefined as string | undefined, subject: '', provider: { issuer: '' } })
 const editNhi = ref(newNhi())
 const jwks = ref('')
+const allowedIps = ref<string[]>([])
+const ipBinding = ref(false)
 
 watch(menu, () => {
   if (!menu.value) return
   editNhi.value = newNhi()
   jwks.value = ''
+  allowedIps.value = []
+  ipBinding.value = false
   createForm.value?.reset()
 })
 
@@ -146,6 +171,9 @@ const confirmCreate = useAsyncAction(async () => {
     provider: { issuer: editNhi.value.provider.issuer }
   }
   if (editNhi.value.department) body.department = editNhi.value.department
+  const ips = allowedIps.value.map(ip => ip.trim()).filter(ip => !!ip)
+  if (ips.length) body.allowedIps = ips
+  if (ipBinding.value) body.ipBinding = true
   if (jwks.value.trim()) {
     try {
       body.provider.jwks = JSON.parse(jwks.value)

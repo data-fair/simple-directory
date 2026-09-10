@@ -58,13 +58,15 @@ export const listNhis = async (organizationId: string) => {
       departmentName: d.organizations[0].departmentName,
       subject: d.nhi!.subject,
       provider: d.nhi!.provider,
+      allowedIps: d.nhi!.allowedIps,
+      ipBinding: d.nhi!.ipBinding,
       created: d.created,
       logged: d.logged
     }))
   }
 }
 
-export const createNhi = async (org: Organization, body: { name: string, role: string, department?: string, subject: string, provider: { issuer: string, jwks?: any } }, byUser: { id: string, name: string }): Promise<User> => {
+export const createNhi = async (org: Organization, body: { name: string, role: string, department?: string, subject: string, provider: { issuer: string, jwks?: any }, allowedIps?: string[], ipBinding?: boolean }, byUser: { id: string, name: string }): Promise<User> => {
   const membership: User['organizations'][0] = { id: org.id, name: org.name, role: body.role, createdAt: new Date().toISOString() }
   if (body.department) {
     const dep = org.departments?.find(d => d.id === body.department)
@@ -79,7 +81,12 @@ export const createNhi = async (org: Organization, body: { name: string, role: s
     email: nhiSyntheticEmail(id),
     ignorePersonalAccount: true,
     organizations: [membership],
-    nhi: { provider: body.provider, subject: body.subject }
+    nhi: {
+      provider: body.provider,
+      subject: body.subject,
+      ...(body.allowedIps ? { allowedIps: body.allowedIps } : {}),
+      ...(body.ipBinding ? { ipBinding: true } : {})
+    }
   } as UserWritable
   return storages.globalStorage.createUser(user, byUser)
 }

@@ -64,6 +64,18 @@
           <v-list-item-subtitle style="white-space:normal;">
             {{ $t('pages.organization.nhiIssuer') }} = {{ nhi.provider?.issuer }}
           </v-list-item-subtitle>
+          <v-list-item-subtitle
+            v-if="nhi.allowedIps?.length"
+            style="white-space:normal;"
+          >
+            {{ $t('pages.organization.nhiAllowedIps') }} = {{ nhi.allowedIps.join(', ') }}
+          </v-list-item-subtitle>
+          <v-list-item-subtitle
+            v-if="nhi.ipBinding"
+            style="white-space:normal;"
+          >
+            {{ $t('pages.organization.nhiIpBinding') }}
+          </v-list-item-subtitle>
           <v-list-item-subtitle style="white-space:normal;">
             {{ $t('pages.organization.nhiClientId') }} = {{ nhi.id }}
             <v-btn
