@@ -4,7 +4,7 @@ import config from '#config'
 import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthenticated, type AccountKeys } from '@data-fair/lib-express'
 import { nanoid } from 'nanoid'
 import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite, toggleMainSite, findMainSite } from './service.ts'
-import { getThemeCss, getThemeCssHash, defaultThemeCssHash, defaultThemeCss } from '../utils/theme.ts'
+import { getThemeCss, getThemeCssHash } from '../utils/theme.ts'
 import { isOIDCProvider, reqSite } from '#services'
 import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
@@ -13,7 +13,8 @@ import clone from '@data-fair/lib-utils/clone.js'
 import Debug from 'debug'
 import { cipher } from '../utils/cipher.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
-import { defaultPublicSiteInfo, defaultPublicSiteInfoHash, getPublicSiteInfo, getPublicSiteInfoHash } from '../utils/public-site-info.ts'
+import { getPublicSiteInfo, getPublicSiteInfoHash } from '../utils/public-site-info.ts'
+import { getMainSiteResources, getMainSitePresentation } from './main-site.ts'
 import serialize from 'serialize-javascript'
 
 const debugPostSite = Debug('post-site')
@@ -212,7 +213,7 @@ router.get('/_public', async (req, res, next) => {
   // force buffering (necessary for caching) of this response in the reverse proxy
   res.setHeader('X-Accel-Buffering', 'yes')
   const site = await reqSite(req)
-  const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
+  const publicSiteInfo = site ? await getPublicSiteInfo(site) : (await getMainSiteResources()).publicInfo
   res.send(publicSiteInfo)
 })
 router.get('/_public.js', async (req, res, next) => {
@@ -220,7 +221,7 @@ router.get('/_public.js', async (req, res, next) => {
   // force buffering (necessary for caching) of this response in the reverse proxy
   res.setHeader('X-Accel-Buffering', 'yes')
   const site = await reqSite(req)
-  const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
+  const publicSiteInfo = site ? await getPublicSiteInfo(site) : (await getMainSiteResources()).publicInfo
   res.contentType('application/javascript')
   res.send(`window.__PUBLIC_SITE_INFO=${serialize(publicSiteInfo)}`)
 })
@@ -229,14 +230,14 @@ router.get('/:hash/_public.js', async (req, res, next) => {
   // force buffering (necessary for caching) of this response in the reverse proxy
   res.setHeader('X-Accel-Buffering', 'yes')
   const site = await reqSite(req)
-  const publicSiteInfo = site ? await getPublicSiteInfo(site) : defaultPublicSiteInfo
+  const publicSiteInfo = site ? await getPublicSiteInfo(site) : (await getMainSiteResources()).publicInfo
   // TODO: fail if hash doesn't match ?
   res.contentType('application/javascript')
   res.send(`window.__PUBLIC_SITE_INFO=${serialize(publicSiteInfo)}`)
 })
 
 router.get('/_default_theme', async (req, res, next) => {
-  res.send(config.theme)
+  res.send((await getMainSitePresentation()).theme)
 })
 
 router.get('/_theme.css', async (req, res, next) => {
@@ -244,7 +245,7 @@ router.get('/_theme.css', async (req, res, next) => {
   // force buffering (necessary for caching) of this response in the reverse proxy
   res.setHeader('X-Accel-Buffering', 'yes')
   const site = await reqSite(req)
-  const css = site ? getThemeCss(site.theme, site.path ?? '') : defaultThemeCss
+  const css = site ? getThemeCss(site.theme, site.path ?? '') : (await getMainSiteResources()).themeCss
   res.contentType('css')
   res.send(css)
 })
@@ -254,23 +255,25 @@ router.get('/:hash/_theme.css', async (req, res, next) => {
   res.setHeader('X-Accel-Buffering', 'yes')
   const site = await reqSite(req)
   // TODO: fail if hash doesn't match ?
-  const css = site ? getThemeCss(site.theme, site.path ?? '') : defaultThemeCss
+  const css = site ? getThemeCss(site.theme, site.path ?? '') : (await getMainSiteResources()).themeCss
   res.contentType('css')
   res.send(css)
 })
 router.get('/_hashes', async (req, res, next) => {
   const site = await reqSite(req)
+  const mainResources = site ? undefined : await getMainSiteResources()
   res.send({
-    publicInfo: site ? getPublicSiteInfoHash(site) : defaultPublicSiteInfoHash,
-    themeCss: site ? getThemeCssHash(site) : defaultThemeCssHash,
-    preloadLinks: site?.theme.preloadLinks ?? config.theme.preloadLinks ?? []
+    publicInfo: site ? getPublicSiteInfoHash(site) : mainResources!.publicInfoHash,
+    themeCss: site ? getThemeCssHash(site) : mainResources!.themeCssHash,
+    preloadLinks: site?.theme.preloadLinks ?? (await getMainSitePresentation()).theme.preloadLinks ?? []
   })
 })
 
 router.get('/:id/_theme_warnings', async (req, res, next) => {
   const site = await reqSite(req)
   const { localeCode } = reqI18n(req)
-  res.send(getSiteColorsWarnings(localeCode as 'fr' | 'en', site?.theme ?? config.theme, site?.authProviders as { title?: string, color?: string }[]))
+  const theme = site?.theme ?? (await getMainSitePresentation()).theme
+  res.send(getSiteColorsWarnings(localeCode as 'fr' | 'en', theme, site?.authProviders as { title?: string, color?: string }[]))
 })
 
 router.get('/:id', async (req, res, next) => {
