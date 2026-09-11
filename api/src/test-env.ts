@@ -148,10 +148,14 @@ router.post('/run-user-cleanup', async (req, res) => {
   res.status(200).send('ok')
 })
 
-// POST /api/test-env/clear-site-cache — clear the getSiteByHost memoized cache
+// POST /api/test-env/clear-site-cache — clear the memoized site lookups and
+// the derived main-site resources
 router.post('/clear-site-cache', async (req, res) => {
-  const { getSiteByHost } = await import('./sites/service.ts')
+  const { getSiteByHost, getMainSiteDoc } = await import('./sites/service.ts')
+  const { clearMainSiteCache } = await import('./sites/main-site.ts')
   getSiteByHost.clear()
+  getMainSiteDoc.clear()
+  clearMainSiteCache()
   res.status(200).send('ok')
 })
 

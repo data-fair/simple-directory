@@ -12,7 +12,7 @@ const removeUndef = (obj?: Record<string, any>) => {
   }
 }
 
-const lighterTheme = (fullTheme: Theme) => {
+export const lighterTheme = (fullTheme: Theme) => {
   const theme = clone(fullTheme)
   if (!theme.dark) delete theme.darkColors
   if (!theme.hc) delete theme.hcColors
@@ -54,11 +54,39 @@ export const getPublicSiteInfoHash = (site: Site) => {
   return publicSiteInfoHashCache[cacheKey]
 }
 
-export const defaultPublicSiteInfo = {
-  main: true,
-  host: publicHost,
-  theme: lighterTheme(config.theme),
-  isAccountMain: true,
-  authMode: 'onlyLocal',
+export type MainSitePresentation = {
+  theme: Theme,
+  title?: string,
+  tosMessage?: string,
+  reducedPersonalInfoAtCreation?: boolean,
+  mails: { from?: string, contact?: string },
+  // identity of the document actually contributing, used as a cache key;
+  // undefined when every value comes from the environment
+  docKey?: string
 }
+
+export const envMainSitePresentation = (): MainSitePresentation => ({
+  theme: config.theme,
+  mails: { from: config.mails.from, contact: config.contact }
+})
+
+// The main site is always a locally authenticated back-office, whatever its
+// document says: authMode, authProviders, owner and isAccountMain are never
+// taken from it. See docs/architecture/main-site-config.md
+export const buildMainPublicSiteInfo = (presentation: MainSitePresentation): SitePublic & { main: true } => {
+  const info: Record<string, any> = {
+    main: true,
+    host: publicHost,
+    theme: lighterTheme(presentation.theme),
+    title: presentation.title,
+    tosMessage: presentation.tosMessage,
+    reducedPersonalInfoAtCreation: presentation.reducedPersonalInfoAtCreation,
+    isAccountMain: true,
+    authMode: 'onlyLocal'
+  }
+  removeUndef(info)
+  return info as SitePublic & { main: true }
+}
+
+export const defaultPublicSiteInfo = buildMainPublicSiteInfo(envMainSitePresentation())
 export const defaultPublicSiteInfoHash = crypto.createHash('md5').update(serialize(defaultPublicSiteInfo)).digest('hex')

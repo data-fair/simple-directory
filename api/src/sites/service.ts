@@ -26,6 +26,24 @@ export const getSiteBaseUrl = (site: Site) => {
   return `${publicUrl.protocol}//${site.host}${site.path ?? ''}`
 }
 
+// The "main site document" is a site doc whose (host, path) matches publicUrl.
+// It is honoured for presentation only — reqSite() below still returns
+// undefined on that host, so identity and trust rules are untouched.
+// See docs/architecture/main-site-config.md
+export const isMainSiteUrl = (siteUrl: string) => config.publicUrl.startsWith(siteUrl)
+
+export const isMainSiteDoc = (site: Pick<Site, 'host' | 'path'>) =>
+  isMainSiteUrl(`${publicUrl.protocol}//${site.host}${site.path ?? ''}`)
+
+export const getMainSiteDoc = memoize(async (): Promise<Site | undefined> => {
+  if (!config.manageSites) return undefined
+  const sites = await mongo.sites.find({ host: publicUrl.host }).toArray()
+  return sites.find(isMainSiteDoc)
+}, {
+  promise: true,
+  maxAge: 2000 // 2s, same as getSiteByHost
+})
+
 export const getRedirectSite = async (req: Request, redirect: string) => {
   const currentSiteUrl = reqSiteUrl(req)
   const currentSite = await reqSite(req)
