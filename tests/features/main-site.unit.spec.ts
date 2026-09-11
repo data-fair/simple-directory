@@ -115,4 +115,30 @@ test.describe('main site document resolver', () => {
     const { themeCss, themeCssHash } = await getMainSiteResources()
     assert.equal(crypto.createHash('md5').update(themeCss).digest('hex'), themeCssHash)
   })
+
+  // Regression: getSiteExtraParams used to call getSiteByUrl directly, with no
+  // publicUrl exclusion, while the /api/sites/_* endpoints call reqSite. On a
+  // host that is both the publicUrl host and carries a document, the served
+  // HTML asked for /api/sites/<document-hash>/_theme.css and got the *env* CSS
+  // back under max-age=31536000, immutable.
+  test('the hashes injected into the html match the resources actually served', async () => {
+    await seedMainSiteDoc()
+    const config = (await import('../../api/src/config.ts')).default
+    const { getSiteExtraParams } = await import('../../api/src/sites/spa-params.ts')
+    const { getMainSiteResources } = await import('../../api/src/sites/main-site.ts')
+    const siteUrl = config.publicUrl.replace(/\/simple-directory$/, '')
+
+    for (const categories of [[], ['theme'], ['theme', 'title']]) {
+      await withCategories(categories)
+      const params = await getSiteExtraParams(siteUrl)
+      const resources = await getMainSiteResources()
+      assert.equal(params.THEME_CSS_HASH, resources.themeCssHash, `categories=${categories.join(',')}`)
+      assert.equal(params.PUBLIC_SITE_INFO_HASH, resources.publicInfoHash, `categories=${categories.join(',')}`)
+    }
+
+    await withCategories(['title'])
+    assert.equal((await getSiteExtraParams(siteUrl)).SITE_TITLE, 'Portail de test')
+    await withCategories([])
+    assert.equal((await getSiteExtraParams(siteUrl)).SITE_TITLE, 'Simple Directory')
+  })
 })
