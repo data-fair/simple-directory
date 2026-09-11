@@ -45,7 +45,8 @@
     "cleanup",
     "avatars",
     "noBirthday",
-    "passwordValidation"
+    "passwordValidation",
+    "mainSiteFromDb"
   ],
   "properties": {
     "info": {
@@ -211,6 +212,13 @@
     },
     "acceptUnknownSite": {
       "type": "boolean"
+    },
+    "mainSiteFromDb": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["theme", "title", "mails", "registration"]
+      }
     },
     "managePartners": {
       "type": "boolean"

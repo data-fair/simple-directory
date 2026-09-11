@@ -324,6 +324,7 @@ module.exports = {
   depAdminIsOrgAdmin: 'DEP_ADMIN_IS_ORG_ADMIN',
   manageSites: 'MANAGE_SITES',
   acceptUnknownSite: 'ACCEPT_UNKNOWN_SITE',
+  mainSiteFromDb: jsonEnv('MAIN_SITE_FROM_DB'),
   managePartners: 'MANAGE_PARTNERS',
   manageNhis: 'MANAGE_NHIS',
   nhisAllowInsecureIssuers: 'NHIS_ALLOW_INSECURE_ISSUERS',

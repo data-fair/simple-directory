@@ -274,6 +274,14 @@ module.exports = {
   depAdminIsOrgAdmin: false,
   manageSites: false,
   acceptUnknownSite: false,
+  // Which categories of main-site configuration are read from its site document
+  // in the database instead of the environment. The "main site document" is a
+  // site whose host+path matches publicUrl. Empty means everything comes from
+  // env, which is the 8.x default; 9.0 will default to the full list.
+  // Never read from that document whatever this contains: authMode,
+  // authOnlyOtherSite, authProviders, applications, isAccountMain, owner,
+  // and user scoping. See docs/architecture/main-site-config.md
+  mainSiteFromDb: [],
   managePartners: false,
   manageNhis: false,
   nhisAllowInsecureIssuers: false,
