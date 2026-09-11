@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import serialize from 'serialize-javascript'
 import config from '#config'
 import { type Site, type SitePublic } from '#types'
+import { getMessage } from '#i18n'
 import { getMainSiteDoc } from './service.ts'
 import {
   type MainSitePresentation,
@@ -110,4 +111,25 @@ export const getMainSiteResources = async (): Promise<MainSiteResources> => {
 
 export const clearMainSiteCache = () => {
   for (const key of Object.keys(resourcesCache)) delete resourcesCache[key]
+}
+
+// Fields the document carries that have no effect on the main host.
+export const getMainSiteIgnoredFields = (site: Site): string[] =>
+  mainSiteIgnoredFields.filter(field => site[field] !== undefined)
+
+// Human readable report for the admin UI and the boot check. Nothing here
+// blocks a write: the admin form round-trips the whole document, so a write
+// barrier would reject an idempotent save. See
+// docs/architecture/main-site-config.md
+export const getMainSiteWarnings = (localeCode: string, site: Site): string[] => {
+  const warnings: string[] = []
+  for (const field of getMainSiteIgnoredFields(site)) {
+    warnings.push(getMessage(localeCode, 'mainSite.ignoredField', { field }))
+  }
+  for (const category of mainSiteCategories) {
+    if (config.mainSiteFromDb.includes(category)) continue
+    if (!mainSiteCategoryFields[category].some(field => site[field] !== undefined)) continue
+    warnings.push(getMessage(localeCode, 'mainSite.ignoredCategory', { category }))
+  }
+  return warnings
 }

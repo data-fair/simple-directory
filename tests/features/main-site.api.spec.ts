@@ -121,6 +121,37 @@ test.describe('main site document', () => {
     assert.equal(dbMail.envelope.from.address, 'portal@test.com')
   })
 
+  test('reports fields that are never honoured on the main host', async () => {
+    const { adminAx } = await seedMainSiteDoc()
+    await adminAx.patch('/api/sites/test_main_site', { authMode: 'ssoBackOffice' })
+    await setCategories(['theme', 'title', 'mails', 'registration'])
+    const site = (await adminAx.get('/api/sites/test_main_site')).data
+    assert.ok(Array.isArray(site.mainSiteWarnings))
+    assert.ok(site.mainSiteWarnings.some((w: string) => w.includes('authMode')), site.mainSiteWarnings.join(' | '))
+  })
+
+  test('reports stored values whose category is disabled', async () => {
+    const { adminAx } = await seedMainSiteDoc()
+    await setCategories(['title'])
+    const site = (await adminAx.get('/api/sites/test_main_site')).data
+    const joined = site.mainSiteWarnings.join(' | ')
+    assert.ok(joined.includes('MAIN_SITE_FROM_DB'), joined)
+    assert.ok(!site.mainSiteWarnings.some((w: string) => w.includes('MAIN_SITE_FROM_DB') && w.includes('title')), joined)
+  })
+
+  test('an ordinary site has no main-site warnings', async () => {
+    const serverConfig = await getServerConfig()
+    const { ax } = await createUser('test-other-site@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test_other_org' })).data
+    const anonymousAx = await axios()
+    await anonymousAx.post('/api/sites',
+      { _id: 'test_other_site', owner: { type: 'organization', id: org.id, name: org.name }, host: '127.0.0.1:' + process.env.NGINX_PORT2 },
+      { params: { key: serverConfig.secretKeys.sites } })
+    const adminAx = (await createUser('admin@test.com', true)).ax
+    const site = (await adminAx.get('/api/sites/test_other_site')).data
+    assert.deepEqual(site.mainSiteWarnings, [])
+  })
+
   test('a session on the main host is still a back-office session', async () => {
     await seedMainSiteDoc()
     await setCategories(['theme', 'title', 'mails', 'registration'])

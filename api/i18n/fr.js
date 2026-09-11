@@ -558,5 +558,11 @@ N'hésitez pas à nous contacter à {contact}.
     acceptedPartnerInvitation: 'L\'organisation {partnerName} ({email}) a rejoint l\'organisation {orgName} en tant que partenaire.',
     addMemberTopic: 'un membre a été ajouté',
     addMember: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.'
+  },
+  // server-side only (not in publicMessages): reported through
+  // mainSiteWarnings on the sites API and by the boot check
+  mainSite: {
+    ignoredField: 'Le champ "{field}" est ignoré sur le site principal : cette configuration provient des variables d\'environnement.',
+    ignoredCategory: 'La valeur enregistrée pour "{category}" est ignorée : MAIN_SITE_FROM_DB ne contient pas cette catégorie.'
   }
 }

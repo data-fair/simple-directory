@@ -5,7 +5,7 @@ import { reqUser, reqUserAuthenticated, reqSiteUrl, httpError, reqSessionAuthent
 import { nanoid } from 'nanoid'
 import { findAllSites, findOwnerSites, patchSite, deleteSite, getSite, toggleMainSite, findMainSite } from './service.ts'
 import { getThemeCss, getThemeCssHash } from '../utils/theme.ts'
-import { isOIDCProvider, reqSite } from '#services'
+import { isOIDCProvider, reqSite, isMainSiteDoc } from '#services'
 import { reqI18n } from '#i18n'
 import { getOidcProviderId } from '../oauth/oidc.ts'
 import { getSiteColorsWarnings, fillTheme } from '@data-fair/lib-common-types/theme/index.js'
@@ -14,7 +14,7 @@ import Debug from 'debug'
 import { cipher } from '../utils/cipher.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { getPublicSiteInfo, getPublicSiteInfoHash } from '../utils/public-site-info.ts'
-import { getMainSiteResources, getMainSitePresentation } from './main-site.ts'
+import { getMainSiteResources, getMainSitePresentation, getMainSiteWarnings } from './main-site.ts'
 import serialize from 'serialize-javascript'
 
 const debugPostSite = Debug('post-site')
@@ -38,9 +38,10 @@ const prepareFullSite = (req: Request, site: Site) => {
       }
     }
   }
-  const resultWithColorWarnings: any = site as any
+  const resultWithWarnings: any = site as any
   const { localeCode } = reqI18n(req)
-  resultWithColorWarnings.colorWarnings = getSiteColorsWarnings(localeCode as 'fr' | 'en', site.theme, site.authProviders as { title?: string, color?: string }[])
+  resultWithWarnings.colorWarnings = getSiteColorsWarnings(localeCode as 'fr' | 'en', site.theme, site.authProviders as { title?: string, color?: string }[])
+  resultWithWarnings.mainSiteWarnings = isMainSiteDoc(site) ? getMainSiteWarnings(localeCode, site) : []
 }
 
 router.get('', async (req, res, next) => {

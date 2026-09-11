@@ -558,5 +558,11 @@ Feel free to contact us at {contact}.
     acceptedPartnerInvitation: 'The organization {partnerName} ({email}) has joined the organization {orgName} as a partner.',
     addMemberTopic: 'a member has been added',
     addMember: 'The user {name} ({email}) has joined the organization {orgName}.'
+  },
+  // server-side only (not in publicMessages): reported through
+  // mainSiteWarnings on the sites API and by the boot check
+  mainSite: {
+    ignoredField: 'The "{field}" field is ignored on the main site: this configuration comes from environment variables.',
+    ignoredCategory: 'The stored value for "{category}" is ignored: MAIN_SITE_FROM_DB does not contain this category.'
   }
 }
