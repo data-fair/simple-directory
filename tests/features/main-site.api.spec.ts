@@ -152,6 +152,40 @@ test.describe('main site document', () => {
     assert.deepEqual(site.mainSiteWarnings, [])
   })
 
+  test('a full-document round-trip patch succeeds and does not toggle other sites', async () => {
+    const serverConfig = await getServerConfig()
+    const { adminAx, owner } = await seedMainSiteDoc()
+    const anonymousAx = await axios()
+    await anonymousAx.post('/api/sites',
+      { _id: 'test_sibling_site', owner, host: '127.0.0.1:' + process.env.NGINX_PORT2 },
+      { params: { key: serverConfig.secretKeys.sites } })
+    await adminAx.patch('/api/sites/test_sibling_site', { authMode: 'onlyLocal' })
+
+    // exactly what ui/src/pages/admin/sites/[id].vue sends: the fetched
+    // document minus _id / colorWarnings / owner / host / path
+    const fetched = (await adminAx.get('/api/sites/test_main_site')).data
+    const roundTrip = { ...fetched, isAccountMain: true }
+    delete roundTrip._id
+    delete roundTrip.colorWarnings
+    delete roundTrip.mainSiteWarnings
+    delete roundTrip.owner
+    delete roundTrip.host
+    delete roundTrip.path
+    delete roundTrip.updatedAt
+    // the theme is in assisted mode, so fillTheme recomputes colors from
+    // assistedModeColors on save — editing colors.primary directly would be
+    // overwritten
+    assert.equal(roundTrip.theme.assistedMode, true)
+    roundTrip.theme.assistedModeColors.primary = '#00FF00'
+
+    await adminAx.patch('/api/sites/test_main_site', roundTrip)
+
+    const sibling = (await adminAx.get('/api/sites/test_sibling_site')).data
+    assert.equal(sibling.authMode, 'onlyLocal', 'toggleMainSite must not have rewritten the sibling site')
+    const patched = (await adminAx.get('/api/sites/test_main_site')).data
+    assert.equal(patched.theme.colors.primary, '#00FF00')
+  })
+
   test('a session on the main host is still a back-office session', async () => {
     await seedMainSiteDoc()
     await setCategories(['theme', 'title', 'mails', 'registration'])

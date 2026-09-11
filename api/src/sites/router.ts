@@ -193,7 +193,10 @@ router.patch('/:id', async (req, res, next) => {
 
   const patchedSite = await patchSite({ _id: req.params.id, updatedAt: new Date().toISOString(), ...patch })
 
-  if (patch.isAccountMain) {
+  // isAccountMain is inert on the main site document (it already *is* the main
+  // site), and the admin form round-trips the whole document, so firing
+  // toggleMainSite here would rewrite the owner's other sites on every save
+  if (patch.isAccountMain && !isMainSiteDoc(patchedSite)) {
     // toggle the main site
     await toggleMainSite(patchedSite)
   }
