@@ -4,7 +4,13 @@
 
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, axiosAuth, testEnvAx, createUser, getServerConfig } from '../support/axios.ts'
+import { axios, axiosAuth, testEnvAx, createUser, getServerConfig, maildevAx, deleteAllEmails } from '../support/axios.ts'
+
+const findEmailTo = async (address: string) => {
+  await new Promise(resolve => setTimeout(resolve, 50))
+  const emails: any[] = (await maildevAx.get('/email')).data
+  return emails.find(m => m.envelope?.to?.[0]?.address === address)
+}
 
 const setCategories = async (categories: string[]) => {
   await testEnvAx.patch('/config', { mainSiteFromDb: categories })
@@ -95,6 +101,24 @@ test.describe('main site document', () => {
     const hashedCss = (await anonymousAx.get<string>(`/api/sites/${hashes.themeCss}/_theme.css`)).data
     const plainCss = (await anonymousAx.get<string>('/api/sites/_theme.css')).data
     assert.equal(hashedCss, plainCss)
+  })
+
+  test('mails use the document sender only when the mails category is enabled', async () => {
+    await seedMainSiteDoc()
+
+    await setCategories([])
+    await deleteAllEmails()
+    await createUser('test-mail-env@test.com')
+    const envMail = await findEmailTo('test-mail-env@test.com')
+    assert.ok(envMail, 'no mail captured for the env case')
+    assert.equal(envMail.envelope.from.address, 'no-reply@test.com')
+
+    await setCategories(['mails'])
+    await deleteAllEmails()
+    await createUser('test-mail-db@test.com')
+    const dbMail = await findEmailTo('test-mail-db@test.com')
+    assert.ok(dbMail, 'no mail captured for the db case')
+    assert.equal(dbMail.envelope.from.address, 'portal@test.com')
   })
 
   test('a session on the main host is still a back-office session', async () => {

@@ -6,7 +6,8 @@ import config from '#config'
 import { flatten } from 'flat'
 import EventEmitter from 'node:events'
 import mailsTransport from './transport.ts'
-import { getSiteByUrl, getSiteByHost } from '#services'
+import { getSiteByUrl, getSiteByHost, isMainSiteDoc } from '#services'
+import { getMainSitePresentation } from '../sites/main-site.ts'
 import { internalError } from '@data-fair/lib-node/observer.js'
 import { mailLimiter } from '../utils/limiter.ts'
 
@@ -108,19 +109,34 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
   if (!site && params.host) {
     site = await getSiteByHost(params.host, params.path ?? '')
   }
+  // on the main host the document is only honoured through the category list,
+  // never read raw: this path used to bypass reqSite() entirely
+  const mainSite = !!site && isMainSiteDoc(site)
+  if (mainSite) site = undefined
 
   const flatTheme: FlatTheme = flatten({ theme: config.theme })
   let logo = config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/v0.12.3/public/assets/logo-150x150.png'
   let from = config.mails.from
   let contact = config.contact
+  // the main site keeps the main template in both cases — it *is* the main
+  // site, only its colours and sender can change
   let template = params.htmlButton ? mainSiteTemplate : mainSiteNoButtonTemplate
-  if (site?.mails?.from) {
-    from = site.mails.from
-    Object.assign(flatTheme, flatten({ theme: site.theme }))
-    logo = site.theme.logo || logo
-    template = params.htmlButton ? genericTemplate : genericNoButtonTemplate
+
+  if (mainSite) {
+    const presentation = await getMainSitePresentation()
+    Object.assign(flatTheme, flatten({ theme: presentation.theme }))
+    logo = presentation.theme.logo || logo
+    from = presentation.mails.from ?? from
+    contact = presentation.mails.contact ?? contact
+  } else {
+    if (site?.mails?.from) {
+      from = site.mails.from
+      Object.assign(flatTheme, flatten({ theme: site.theme }))
+      logo = site.theme.logo || logo
+      template = params.htmlButton ? genericTemplate : genericNoButtonTemplate
+    }
+    if (site?.mails?.contact) contact = site.mails.contact
   }
-  if (site?.mails?.contact) contact = site.mails.contact
 
   const tmplParams: SendMailTmplParams = {
     ...params,
