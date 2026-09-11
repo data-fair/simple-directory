@@ -29,8 +29,16 @@ function createStore () {
   const mainPublicUrl = new URL($uiConfig.publicUrl)
   const isAccountMainSite = host === mainPublicUrl.host
 
+  // a site document is *the main site document* when its host+path matches
+  // publicUrl. Its presentation drives the main site for the categories in
+  // $uiConfig.mainSiteFromDb; its auth configuration never applies.
+  // See docs/architecture/main-site-config.md
+  const isMainSiteDoc = (site: { host: string, path?: string }) =>
+    $uiConfig.publicUrl.startsWith(`${mainPublicUrl.protocol}//${site.host}${site.path ?? ''}`)
+
   return {
     sitePublic,
+    isMainSiteDoc,
     userDetailsFetch,
     authProvidersFetch,
     patchOrganization,

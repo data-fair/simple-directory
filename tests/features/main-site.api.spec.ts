@@ -184,6 +184,14 @@ test.describe('main site document', () => {
     assert.equal(sibling.authMode, 'onlyLocal', 'toggleMainSite must not have rewritten the sibling site')
     const patched = (await adminAx.get('/api/sites/test_main_site')).data
     assert.equal(patched.theme.colors.primary, '#00FF00')
+
+    // the patch schema is additionalProperties:false, so the computed
+    // mainSiteWarnings must be stripped from the body like colorWarnings is —
+    // otherwise every save of the main document 400s
+    await assert.rejects(
+      adminAx.patch('/api/sites/test_main_site', { ...roundTrip, mainSiteWarnings: ['x'] }),
+      { status: 400 }
+    )
   })
 
   test('a session on the main host is still a back-office session', async () => {

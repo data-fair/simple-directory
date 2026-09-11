@@ -194,7 +194,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       sites: {
         createSite: 'Define a new site',
         loginOnSite: 'Sign in on the site',
-        colorWarnings: 'Contrast warnings'
+        colorWarnings: 'Contrast warnings',
+        mainSite: 'Main site',
       },
       passwordLists: {
         help1: 'You can upload password lists from CSV files. Those too well known passwords will then be rejected if users try to use them.',
@@ -204,7 +205,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
         confirmDelete: 'Delete this password list?'
       },
       site: {
-        title: 'Site configuration'
+        title: 'Site configuration',
+        mainSiteExplanation: 'This site matches this service\'s main domain. Its database document drives presentation only, and only for the categories listed in MAIN_SITE_FROM_DB. Authentication, identity providers and account scoping always come from environment variables.'
       }
     },
     contact: {

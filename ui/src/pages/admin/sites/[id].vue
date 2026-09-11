@@ -20,6 +20,27 @@
         :href="siteHref"
         class="simple-link"
       >{{ siteHref }}</a> - {{ site.data.value?._id }}
+      <v-alert
+        v-if="isMainSite"
+        data-testid="main-site-banner"
+        type="info"
+        variant="tonal"
+        class="my-4"
+      >
+        <p>{{ $t('pages.admin.site.mainSiteExplanation') }}</p>
+        <ul
+          v-if="site.data.value?.mainSiteWarnings?.length"
+          data-testid="main-site-warnings"
+          class="mt-2 ml-4"
+        >
+          <li
+            v-for="(warning, i) of site.data.value.mainSiteWarnings"
+            :key="i"
+          >
+            {{ warning }}
+          </li>
+        </ul>
+      </v-alert>
       <vjsf-patch-req-body
         v-model="patch"
         :locale="locale"
@@ -74,6 +95,8 @@ const vjsfOptions = computed(() => {
     density: 'comfortable',
     initialValidation: 'always',
     context: {
+      isMainSite: isMainSite.value,
+      mainSiteFromDb: $uiConfig.mainSiteFromDb,
       hasAccountMainSite: otherSites?.some(s => s.isAccountMain),
       otherSites: otherSites?.map(site => site.host),
       otherSitesProviders: otherSites?.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {} as Record<string, string[]>)
@@ -81,7 +104,7 @@ const vjsfOptions = computed(() => {
   }
 })
 
-type SiteWithColorWarnings = Site & { colorWarnings: string[] }
+type SiteWithColorWarnings = Site & { colorWarnings: string[], mainSiteWarnings?: string[] }
 
 const siteId = useRoute<'/admin/sites/[id]'>().params.id
 const sites = useFetch<{ count: number, results: SiteWithColorWarnings[] }>($apiPath + '/sites', { query: { showAll: true } })
@@ -89,13 +112,15 @@ const site = useFetch<SiteWithColorWarnings>($apiPath + '/sites/' + siteId, { qu
 
 const siteHref = computed(() => `${site.data.value?.host.startsWith('localhost:') ? 'http' : 'https'}://${site.data.value?.host}${site.data.value?.path ?? ''}`)
 
-const { patchSite } = useStore()
+const { patchSite, isMainSiteDoc } = useStore()
+const isMainSite = computed(() => !!site.data.value && isMainSiteDoc(site.data.value))
 
 watch(site.data, () => {
   if (!site.data.value) return
   const siteClone = JSON.parse(JSON.stringify(site.data.value))
   delete siteClone._id
   delete siteClone.colorWarnings
+  delete siteClone.mainSiteWarnings
   delete siteClone.owner
   delete siteClone.host
   delete siteClone.path

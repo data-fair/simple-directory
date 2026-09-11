@@ -111,6 +111,10 @@ export default {
     },
     isAccountMain: {
       type: 'boolean',
+      // inert on the main site document (it already *is* the main site), and
+      // the admin form round-trips the whole document, so offering it there
+      // would invite a save that rewrites the owner's other sites
+      layout: { if: '!context.isMainSite' },
       title: 'Site principal du compte',
       'x-i18n-title': {
         fr: 'Site principal du compte',
