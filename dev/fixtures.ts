@@ -32,6 +32,7 @@ import { axios, axiosAuth, waitForMail, testEnvAx, getServerConfig } from '../te
 const EMAIL_DOMAIN = 'dev-fixtures.org'
 const PASSWORD = 'TestPasswd01'
 const SITE_ID = 'dev-fixtures-portal'
+const MAIN_SITE_ID = 'dev-fixtures-main'
 const CORP_NAME = 'Dev Fixtures Corp'
 const PARTNER_NAME = 'Dev Fixtures Partner'
 const MEMBERS_LIMIT = 10
@@ -268,6 +269,36 @@ const main = async () => {
   await superAdminAx.patch(`/api/sites/${SITE_ID}`, { authMode: 'ssoBackOffice' })
   await testEnvAx.post('/clear-site-cache')
   console.log(`  ~ site ${SITE_ID} on http://${siteHost}/simple-directory (ssoBackOffice)`)
+  console.log('    note: a test run wipes the sites collection, re-run this script to get it back')
+
+  // the main site document: a site on the publicUrl host. It drives
+  // presentation only, and only for the categories in MAIN_SITE_FROM_DB —
+  // which is empty by default, so nothing visibly changes until you set
+  // MAIN_SITE_FROM_DB='["theme","title","mails","registration"]' in .env.
+  // See docs/architecture/main-site-config.md
+  const mainSiteHost = new URL(config.publicUrl).host
+  const mainSquatter = allSites.results.find((s: any) => s.host === mainSiteHost && s._id !== MAIN_SITE_ID)
+  if (mainSquatter) {
+    if (!mainSquatter._id.startsWith('test_')) {
+      throw new Error(`site ${mainSquatter._id} already uses host ${mainSiteHost}, refusing to touch it — delete it or free the host first`)
+    }
+    await anonymousAx.delete(`/api/sites/${mainSquatter._id}`, { params: { key: config.secretKeys.sites } })
+    console.log(`  - removed leftover test site ${mainSquatter._id} from ${mainSiteHost}`)
+  }
+  await anonymousAx.post('/api/sites', {
+    _id: MAIN_SITE_ID,
+    owner: { type: 'organization', id: corp.id, name: corp.name },
+    host: mainSiteHost,
+    title: 'Annuaire Dev Fixtures',
+    theme: { primaryColor: '#6A1B9A' }
+  }, { params: { key: config.secretKeys.sites } })
+  await superAdminAx.patch(`/api/sites/${MAIN_SITE_ID}`, {
+    mails: { contact: 'contact-main@fixtures.dev' },
+    tosMessage: 'CGU du site principal (fixtures)'
+  })
+  await testEnvAx.post('/clear-site-cache')
+  console.log(`  ~ main site document ${MAIN_SITE_ID} on ${config.publicUrl}`)
+  console.log(`    MAIN_SITE_FROM_DB is currently ${process.env.MAIN_SITE_FROM_DB ?? '[]'}; set it in .env to see it take effect`)
   console.log('    note: a test run wipes the sites collection, re-run this script to get it back')
 
   console.log(`\n✔ Fixtures applied. Log in at ${config.publicUrl}/login with ${email('owner')} / ${PASSWORD}`)
