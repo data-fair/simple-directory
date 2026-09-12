@@ -43,11 +43,17 @@ test.describe('main site document admin page', () => {
     await expect(page.getByTestId('main-site-warnings')).toContainText('MAIN_SITE_FROM_DB')
 
     // auth sections stay visible: the form round-trips them, so hiding would
-    // conceal the values the warnings refer to
-    await expect(page.getByText('Gestion des utilisateurs')).toBeVisible()
+    // conceal the values the warnings refer to. The generous timeout covers a
+    // cold vite compile of this route on the first navigation.
+    await expect(page.getByText('Gestion des utilisateurs')).toBeVisible({ timeout: 15_000 })
 
-    // isAccountMain is the one control not offered on the main document
-    await expect(page.getByText('Site principal du compte')).toHaveCount(0)
+    // isAccountMain is the one control not offered on the main document.
+    // Matched by label, not by text: the deprecated authMode field's own label
+    // quotes "Site principal du compte" and would match a text locator.
+    await expect(page.getByLabel('Site principal du compte', { exact: true })).toHaveCount(0)
+    // the sibling field of that section is still there, so the section itself
+    // did render and the assertion above is meaningful
+    await expect(page.getByLabel('Titre du site', { exact: true })).toBeVisible()
 
     // and the form still saves
     await expect(page.getByRole('textbox', { name: 'Couleur principale', exact: true })).toHaveValue('#FF00FF')
