@@ -12,8 +12,10 @@ export async function postUserIdentityWebhook (user?: Pick<User, 'id' | 'name' |
   if (!user) return
   await postIdentityWebhook({ type: 'user', id: user.id, name: user.name, organizations: user.organizations })
 }
-export async function postOrganizationIdentityWebhook (org: Pick<Organization, 'id' | 'name' | 'departments'>) {
-  await postIdentityWebhook({ type: 'organization', id: org.id, name: org.name, departments: org.departments })
+export async function postOrganizationIdentityWebhook (org: Pick<Organization, 'id' | 'name' | 'departments' | 'partners'>) {
+  // pending invitations have no id yet, only established partnerships are sent
+  const partners = (org.partners ?? []).filter(p => p.id).map(p => ({ id: p.id as string, name: p.name }))
+  await postIdentityWebhook({ type: 'organization', id: org.id, name: org.name, departments: org.departments, partners })
 }
 
 const postIdentityWebhook = async (identity: PostIdentityReq['body'] & PostIdentityReq['params']) => {
@@ -24,7 +26,7 @@ const postIdentityWebhook = async (identity: PostIdentityReq['body'] & PostIdent
     const url = `${webhook.base}/${identity.type}/${identity.id}`
     debug(`Send identity name webhook to ${url} : `, identity)
     try {
-      await axios.post(url, identity, { params: { key: webhook.key } })
+      await axios.post(url, identity, { params: { key: webhook.key }, headers: { 'x-secret-key': webhook.key } })
     } catch (err: any) {
       internalError('webhook-identity-post', err)
     }
@@ -36,7 +38,7 @@ export const deleteIdentityWebhook = async (type: string, id: string) => {
     const url = `${webhook.base}/${type}/${id}`
     debug(`Send identity delete webhook to ${url}`)
     try {
-      await axios.delete(url, { params: { key: webhook.key } })
+      await axios.delete(url, { params: { key: webhook.key }, headers: { 'x-secret-key': webhook.key } })
     } catch (err: any) {
       internalError('webhook-identity-delete', err)
     }

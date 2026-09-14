@@ -481,6 +481,7 @@ if (config.managePartners) {
     if (!pendingInvitation) return res.status(400).send('pas d\'invitation en attente de validation')
 
     await storage.validatePartner(orga.id, tokenPayload.partnerId, partnerOrga)
+    postOrganizationIdentityWebhook((await storage.getOrganization(orga.id)) ?? orga)
 
     eventsLog.info('sd.org.partner.accept', `a user accepted an organization to be a partner ${partnerOrga.name} (${partnerOrga.id}) of ${orga.name} (${orga.id})`, logContext)
 
@@ -526,6 +527,7 @@ if (config.managePartners) {
       createdAt: new Date().toISOString()
     }
     await storage.addPartner(orga.id, partner)
+    postOrganizationIdentityWebhook((await storage.getOrganization(orga.id)) ?? orga)
 
     eventsLog.info('sd.org.partner.create', `a superadmin manually created a partnership ${partnerOrga.name} (${partnerOrga.id}) of ${orga.name} (${orga.id})`, logContext)
 
@@ -539,6 +541,8 @@ if (config.managePartners) {
     if (!await isOrgAdmin(req)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     const storage = storages.globalStorage
     await storage.deletePartner(req.params.organizationId, req.params.partnerId)
+    const orga = await storage.getOrganization(req.params.organizationId)
+    if (orga) postOrganizationIdentityWebhook(orga)
 
     eventsLog.info('sd.org.partner.delete', `a user removed a partner from an organization ${req.params.partnerId} ${req.params.organizationId}`, logContext)
     res.status(201).send()
