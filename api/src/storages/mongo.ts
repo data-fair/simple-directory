@@ -361,12 +361,22 @@ class MongodbStorage implements SdStorage {
         await mongo.users.updateOne({ _id: user._id }, { $set: { organizations: user.organizations } })
       }
     }
+    // also update the partner entries referencing this organization in other organizations
+    if (patch.name) {
+      await mongo.organizations.updateMany(
+        { 'partners.id': id },
+        { $set: { 'partners.$[partner].name': patch.name } },
+        { arrayFilters: [{ 'partner.id': id }] }
+      )
+    }
     return orga
   }
 
   async deleteOrganization (organizationId: string) {
     await mongo.users
       .updateMany({}, { $pull: { organizations: { id: organizationId } } })
+    await mongo.organizations
+      .updateMany({ 'partners.id': organizationId }, { $pull: { partners: { id: organizationId } } })
     await mongo.organizations.deleteOne({ _id: organizationId })
   }
 
