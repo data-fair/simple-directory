@@ -18,6 +18,10 @@ export async function postOrganizationIdentityWebhook (org: Pick<Organization, '
   await postIdentityWebhook({ type: 'organization', id: org.id, name: org.name, departments: org.departments, partners })
 }
 
+// the secret is expected in the x-secret-key header (assertReqInternalSecret in @data-fair/lib-express),
+// the key query parameter is only kept for services whose identities router still reads it
+const webhookAuth = (key: string) => ({ params: { key }, headers: { 'x-secret-key': key } })
+
 const postIdentityWebhook = async (identity: PostIdentityReq['body'] & PostIdentityReq['params']) => {
   for (const webhook of config.webhooks.identities) {
     for (const org of identity.organizations || []) {
@@ -26,7 +30,7 @@ const postIdentityWebhook = async (identity: PostIdentityReq['body'] & PostIdent
     const url = `${webhook.base}/${identity.type}/${identity.id}`
     debug(`Send identity name webhook to ${url} : `, identity)
     try {
-      await axios.post(url, identity, { params: { key: webhook.key }, headers: { 'x-secret-key': webhook.key } })
+      await axios.post(url, identity, webhookAuth(webhook.key))
     } catch (err: any) {
       internalError('webhook-identity-post', err)
     }
@@ -38,7 +42,7 @@ export const deleteIdentityWebhook = async (type: string, id: string) => {
     const url = `${webhook.base}/${type}/${id}`
     debug(`Send identity delete webhook to ${url}`)
     try {
-      await axios.delete(url, { params: { key: webhook.key }, headers: { 'x-secret-key': webhook.key } })
+      await axios.delete(url, webhookAuth(webhook.key))
     } catch (err: any) {
       internalError('webhook-identity-delete', err)
     }
