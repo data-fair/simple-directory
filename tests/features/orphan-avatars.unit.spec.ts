@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { initMongo } from '../support/unit.ts'
+import { initMongo, clean } from '../support/unit.ts'
 
 // Exercises the upgrade script that purges the avatars whose owner was deleted before avatars
 // were dropped along with their owner (in-process Mongo, no HTTP server needed)
@@ -12,12 +12,12 @@ test.describe('orphan avatars upgrade script', () => {
     mongo = (await import('../../api/src/mongo.ts')).default
   })
 
+  test.beforeEach(async () => {
+    await clean()
+  })
+
   test('should delete the avatars whose owner does not exist any more, and keep the others', async () => {
     const prefix = 'test_orphan_avatar_'
-    await mongo.users.deleteMany({ _id: { $regex: '^' + prefix } })
-    await mongo.organizations.deleteMany({ _id: { $regex: '^' + prefix } })
-    await mongo.avatars.deleteMany({ 'owner.id': { $regex: '^' + prefix } })
-
     await mongo.users.insertOne({ _id: prefix + 'user', email: prefix + 'user@test.com', name: 'Kept user', organizations: [] })
     await mongo.organizations.insertOne({ _id: prefix + 'org', name: 'Kept org', departments: [{ id: 'kept', name: 'Kept dep' }] })
     const buffer = Buffer.from('png')
@@ -44,9 +44,5 @@ test.describe('orphan avatars upgrade script', () => {
       `organization/${prefix}org/kept`,
       `user/${prefix}user/`
     ])
-
-    await mongo.users.deleteMany({ _id: { $regex: '^' + prefix } })
-    await mongo.organizations.deleteMany({ _id: { $regex: '^' + prefix } })
-    await mongo.avatars.deleteMany({ 'owner.id': { $regex: '^' + prefix } })
   })
 })

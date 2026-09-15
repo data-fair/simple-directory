@@ -1,5 +1,5 @@
 import config from '#config'
-import { Router, type RequestHandler } from 'express'
+import { Router, type Request, type RequestHandler, type Response } from 'express'
 import { resolve } from 'node:path'
 import { readFileSync } from 'node:fs'
 import { type Account, assertAccountRole, getAccountRole, httpError, reqSession } from '@data-fair/lib-express'
@@ -37,8 +37,14 @@ const robotBadge = resolve(import.meta.dirname, '../../resources/robot.png')
 // grey placeholders (mdiAccount / mdiAccountGroup / mdiFamilyTree, see dev/make-unknown-avatars.ts)
 // served with a 404 when the owner does not exist any more: an <img> keeps rendering something
 // where the name of a deleted account is still displayed, and an API client still sees the 404
-const unknownAvatars = Object.fromEntries(['user', 'organization', 'department'].map(kind => [kind, readFileSync(resolve(import.meta.dirname, `../../resources/unknown-${kind}.png`))]))
-const sendUnknown = (res: Parameters<RequestHandler>[1], kind: 'user' | 'organization' | 'department') => {
+const readResource = (name: string) => readFileSync(resolve(import.meta.dirname, `../../resources/${name}`))
+const unknownAvatars = {
+  user: readResource('unknown-user.png'),
+  organization: readResource('unknown-organization.png'),
+  department: readResource('unknown-department.png')
+}
+const sendUnknown = (req: Request<AvatarParams>, res: Response) => {
+  const kind = req.params.type === 'user' ? 'user' : (req.params.department ? 'department' : 'organization')
   res.status(404).set('Content-Type', 'image/png').send(unknownAvatars[kind])
 }
 const makeAvatar = async (text: string, color: string, robot?: boolean) => {
@@ -77,11 +83,11 @@ const readAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
     let robot = false
     if (req.params.type === 'organization') {
       const org = await storages.globalStorage.getOrganization(req.params.id)
-      if (!org) return sendUnknown(res, req.params.department ? 'department' : 'organization')
+      if (!org) return sendUnknown(req, res)
       name = org.name
       if (req.params.department) {
         const dep = org.departments?.find(d => d.id === req.params.department)
-        if (!dep) return sendUnknown(res, 'department')
+        if (!dep) return sendUnknown(req, res)
         name = dep.name
       }
     } else {
@@ -89,7 +95,7 @@ const readAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
         name = 'Super Admin'
       } else {
         const user = await storages.globalStorage.getUser(req.params.id)
-        if (!user) return sendUnknown(res, 'user')
+        if (!user) return sendUnknown(req, res)
         name = user.name
         robot = !!user.nhi
         if (user.oauth) {

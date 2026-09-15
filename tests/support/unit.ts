@@ -27,6 +27,7 @@ export const clean = async (options?: { ldapConfig?: any }) => {
   await mongo.organizations.deleteMany(testIdFilter)
   await mongo.users.deleteMany({ $or: [testIdFilter, testEmailFilter] })
   await mongo.limits.deleteMany({ id: { $regex: /^test_/ } })
+  await mongo.avatars.deleteMany({ 'owner.id': { $regex: /^test_/ } })
   await mongo.sites.deleteMany(testIdFilter)
   await mongo.oauthTokens.deleteMany()
   await mongo.ldapUserSessions.deleteMany()

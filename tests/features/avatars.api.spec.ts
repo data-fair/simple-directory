@@ -1,17 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { readFile } from 'node:fs/promises'
 import { test } from '@playwright/test'
-import { axios, createUser, testEnvAx } from '../support/axios.ts'
-
-// smallest valid PNG (1x1), enough to round-trip through upload and download
-const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
-
-const upload = async (ax: any, path: string) => {
-  const FormData = (await import('form-data')).default
-  const form = new FormData()
-  form.append('avatar', png, 'avatar.png')
-  return ax.post(path, form)
-}
+import { axios, createUser, testEnvAx, uploadAvatar, testPng } from '../support/axios.ts'
 
 const download = async (ax: any, path: string) => Buffer.from((await ax.get(path, { responseType: 'arraybuffer' })).data)
 
@@ -43,8 +33,8 @@ test.describe('avatars api', () => {
     const { ax: adminAx } = await createUser('admin@test.com', true)
     const { ax, user } = await createUser('avatar-deleted@test.com')
     const path = `/api/avatars/user/${user.id}/avatar.png`
-    assert.equal((await upload(ax, path)).status, 201)
-    assert.deepEqual(await download(ax, path), png)
+    assert.equal((await uploadAvatar(ax, path)).status, 201)
+    assert.deepEqual(await download(ax, path), testPng)
 
     await adminAx.delete(`/api/users/${user.id}`)
 
@@ -59,10 +49,10 @@ test.describe('avatars api', () => {
     const dep = org.departments[0]
     const orgPath = `/api/avatars/organization/${org.id}/avatar.png`
     const depPath = `/api/avatars/organization/${org.id}/${dep.id}/avatar.png`
-    assert.equal((await upload(ax, orgPath)).status, 201)
-    assert.equal((await upload(ax, depPath)).status, 201)
-    assert.deepEqual(await download(ax, orgPath), png)
-    assert.deepEqual(await download(ax, depPath), png)
+    assert.equal((await uploadAvatar(ax, orgPath)).status, 201)
+    assert.equal((await uploadAvatar(ax, depPath)).status, 201)
+    assert.deepEqual(await download(ax, orgPath), testPng)
+    assert.deepEqual(await download(ax, depPath), testPng)
 
     const { ax: adminAx } = await createUser('admin@test.com', true)
     await adminAx.delete(`/api/organizations/${org.id}`)
@@ -78,12 +68,12 @@ test.describe('avatars api', () => {
     const [kept, removed] = org.departments
     const keptPath = `/api/avatars/organization/${org.id}/${kept.id}/avatar.png`
     const removedPath = `/api/avatars/organization/${org.id}/${removed.id}/avatar.png`
-    assert.equal((await upload(ax, keptPath)).status, 201)
-    assert.equal((await upload(ax, removedPath)).status, 201)
+    assert.equal((await uploadAvatar(ax, keptPath)).status, 201)
+    assert.equal((await uploadAvatar(ax, removedPath)).status, 201)
 
     await ax.patch(`/api/organizations/${org.id}`, { departments: [kept] })
 
-    assert.deepEqual(await download(ax, keptPath), png)
+    assert.deepEqual(await download(ax, keptPath), testPng)
     await assertUnknown(ax, removedPath, 'unknown-department.png')
   })
 })

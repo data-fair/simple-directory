@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { generateKeyPairSync } from 'node:crypto'
 import jwt from 'jsonwebtoken'
-import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl, getServerConfig } from '../support/axios.ts'
+import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl, getServerConfig, uploadAvatar, testPng } from '../support/axios.ts'
 
 const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const publicJwk = { ...publicKey.export({ format: 'jwk' }), kid: 'test-key', alg: 'RS256', use: 'sig' }
@@ -194,14 +194,7 @@ test('nhi automatic avatar carries a robot badge', async () => {
 })
 
 test('org admin can upload a custom avatar for an NHI, but not for a human member', async () => {
-  const FormData = (await import('form-data')).default
-  // smallest valid PNG (1x1), enough to round-trip through upload and download
-  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
-  const upload = (ax: any, userId: string) => {
-    const form = new FormData()
-    form.append('avatar', png, 'avatar.png')
-    return ax.post(`/api/avatars/user/${userId}/avatar.png`, form)
-  }
+  const upload = (ax: any, userId: string) => uploadAvatar(ax, `/api/avatars/user/${userId}/avatar.png`)
 
   const { ax } = await createUser('nhi-avatar-admin@test.com')
   const org = (await ax.post('/api/organizations', { name: 'NHI avatar upload org' })).data
@@ -211,7 +204,7 @@ test('org admin can upload a custom avatar for an NHI, but not for a human membe
   // the org admin manages the NHI, its avatar included
   assert.equal((await upload(ax, nhi.id)).status, 201)
   const got = (await ax.get(`/api/avatars/user/${nhi.id}/avatar.png`, { responseType: 'arraybuffer' })).data
-  assert.deepEqual(Buffer.from(got), png)
+  assert.deepEqual(Buffer.from(got), testPng)
 
   // a plain member of the org cannot, and the extension is NHI-only: the org admin
   // still cannot push an avatar onto a human member
