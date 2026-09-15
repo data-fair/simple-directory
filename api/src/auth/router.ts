@@ -5,7 +5,7 @@ import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, r
 import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
-import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
+import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, is2FARequired, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, Site, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
@@ -217,7 +217,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   }
   // 2FA management
   const user2FA = await storage.get2FA(user.id)
-  if ((user2FA && user2FA.active) || await storage.required2FA(user)) {
+  if (await is2FARequired(storage, user, user2FA)) {
     if (!body.adminMode && await check2FASession(req, user.id)) {
       // 2FA was already validated earlier and present in a cookie.
       // Entering adminMode always requires a fresh TOTP: the long-lived cookie must not
@@ -228,7 +228,8 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
         if (user2FA?.recovery) {
           const validRecovery = await checkPassword(body['2fa'].trim(), user2FA.recovery)
           if (validRecovery) {
-            await storages.globalStorage.patchUser(user.id, { '2FA': { active: false } })
+            // the recovery token drops the whole 2FA configuration, the user will have to enrol again
+            await storages.globalStorage.patchUser(user.id, { '2FA': null })
             eventsLog.info('sd.auth.password.fail', 'a user tried to use a recovery token as a normal token', logContext)
             return returnError('2fa-missing', 403)
           }
@@ -400,7 +401,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   if (req.body.rememberMe) payload.rememberMe = 1
 
   // passwordless is not compatible with 2FA for now
-  if (await storage.get2FA(user.id) || await storage.required2FA(user)) {
+  if (await is2FARequired(storage, user, await storage.get2FA(user.id))) {
     eventsLog.info('sd.auth.passwordless.fail', 'a passwordless authentication failed due to incompatibility with 2fa', logContext)
     return res.status(400).send(reqI18n(req).messages.errors.passwordless2FA)
   }
