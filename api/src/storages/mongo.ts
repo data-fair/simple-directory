@@ -7,6 +7,7 @@ import type { TwoFA } from '#services'
 import { httpError, type UserRef } from '@data-fair/lib-express'
 import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
 import mongo from '#mongo'
+import { deleteAvatars } from '../avatars/service.ts'
 import type { Password } from '../utils/passwords.ts'
 import dayjs from 'dayjs'
 import { nanoid } from 'nanoid'
@@ -167,6 +168,7 @@ class MongodbStorage implements SdStorage {
   async deleteUser (userId: string) {
     await mongo.users.deleteOne({ _id: userId })
     await mongo.oauthTokens.deleteMany({ 'user.id': userId })
+    await deleteAvatars({ type: 'user', id: userId })
   }
 
   async addUserSession (userId: string, serverSession: ServerSession) {
@@ -339,12 +341,17 @@ class MongodbStorage implements SdStorage {
 
   async patchOrganization (id: string, patch: any, user: UserRef) {
     patch.updated = { id: user.id, name: user.name, date: new Date().toISOString() }
+    const previousDepartments = patch.departments && (await mongo.organizations.findOne({ _id: id }, { projection: { departments: 1 } }))?.departments
     const mongoRes = await mongo.organizations.findOneAndUpdate(
       { _id: id },
       { $set: patch },
       { returnDocument: 'after' }
     )
     const orga = cleanOrganization(mongoRes)
+    // the avatars of removed departments would be orphans
+    for (const dep of previousDepartments ?? []) {
+      if (!patch.departments.find((d: any) => d.id === dep.id)) await deleteAvatars({ type: 'organization', id, department: dep.id })
+    }
     // the labels are cached for the session tokens, a change must be visible at the next login
     if (patch.rolesLabels) getRolesLabels.delete(id)
     // also update all organizations references in users
@@ -380,6 +387,7 @@ class MongodbStorage implements SdStorage {
     await mongo.organizations
       .updateMany({ 'partners.id': organizationId }, { $pull: { partners: { id: organizationId } } })
     await mongo.organizations.deleteOne({ _id: organizationId })
+    await deleteAvatars({ type: 'organization', id: organizationId })
   }
 
   async findOrganizations (params: FindOrganizationsParams) {

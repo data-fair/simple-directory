@@ -3,16 +3,26 @@ import mongo from '#mongo'
 
 export type Avatar = { owner: Account, initials?: string, color?: string, robot?: boolean, buffer: BinaryData }
 
-export async function setAvatar (avatar: Avatar) {
-  const filter: any = { 'owner.type': avatar.owner.type, 'owner.id': avatar.owner.id }
-  if (avatar.owner.department) filter['owner.department'] = avatar.owner.department
-  await mongo.avatars.replaceOne(filter, avatar, { upsert: true })
-}
+type AvatarOwner = Pick<Account, 'type' | 'id' | 'department'>
 
-export async function getAvatar (owner: Account) {
+const ownerFilter = (owner: AvatarOwner) => {
   const filter: any = { 'owner.type': owner.type, 'owner.id': owner.id }
   if (owner.department) filter['owner.department'] = owner.department
-  const avatar = await mongo.avatars.findOne(filter)
+  return filter
+}
+
+export async function setAvatar (avatar: Avatar) {
+  await mongo.avatars.replaceOne(ownerFilter(avatar.owner), avatar, { upsert: true })
+}
+
+export async function getAvatar (owner: AvatarOwner) {
+  const avatar = await mongo.avatars.findOne(ownerFilter(owner))
   if (avatar && avatar.buffer) avatar.buffer = (avatar.buffer as any).buffer
   return avatar as Avatar
+}
+
+// Drop the avatars of a deleted account. Without a department, an organization owner also
+// drops the avatars of all its departments (same owner.id, any owner.department).
+export async function deleteAvatars (owner: AvatarOwner) {
+  await mongo.avatars.deleteMany(ownerFilter(owner))
 }
