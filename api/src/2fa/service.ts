@@ -14,9 +14,6 @@ export const cookie2FAName = (userId: string) => 'id_token_2fa_' + userId
 
 export type TwoFA = { active: boolean, secret: string, recovery?: Password }
 
-// whether a login must be validated by a TOTP code: the user completed a 2FA enrolment
-// (a pending enrolment only holds a secret, active=false and must not block anything)
-// or 2FA is imposed by the platform / one of the user's organizations
 export const is2FARequired = async (storage: SdStorage, user: User, user2FA: TwoFA | undefined) => {
   return !!user2FA?.active || await storage.required2FA(user)
 }
