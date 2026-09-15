@@ -83,6 +83,7 @@
           v-model="orga.rolesLabels[role]"
           :label="$t('pages.organization.roleLabel', {role})"
           :placeholder="$uiConfig.defaultRolesLabels?.[role]"
+          :persistent-placeholder="!!$uiConfig.defaultRolesLabels?.[role]"
           :disabled="orgRole !== 'admin' || $uiConfig.readonly"
           density="compact"
           autocomplete="off"
@@ -184,12 +185,7 @@ watch(fetchOrga.data, (freshOrga) => {
     orga.value = editOrg
   }
 })
-// the roles are stored as keys, their readable labels live in rolesLabels
-// (blanked above when they match the default, hence the fallbacks)
-const roleItems = computed(() => (orga.value?.roles ?? []).map(role => ({
-  value: role,
-  title: orga.value?.rolesLabels?.[role] || $uiConfig.defaultRolesLabels?.[role] || role
-})))
+const { roleItems } = useRoleLabels(orga)
 
 const orgRole = computed(() => {
   const role = getAccountRole(session.state, { type: 'organization', id: orgId }, { acceptDepAsRoot: $uiConfig.depAdminIsOrgAdmin })

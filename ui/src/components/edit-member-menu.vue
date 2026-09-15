@@ -34,7 +34,7 @@
         <template v-else>
           <v-select
             v-model="editMember.role"
-            :items="orga.roles"
+            :items="roleItems"
             :label="$t('common.role')"
             density="compact"
             variant="outlined"
@@ -80,6 +80,7 @@ const { orga, department, member } = defineProps({
   department: { type: String, default: null },
   member: { type: Object as () => Member, required: true }
 })
+const { roleItems } = useRoleLabels(() => orga)
 defineEmits({ save: (_editMember: Member) => true })
 
 const menu = ref(false)

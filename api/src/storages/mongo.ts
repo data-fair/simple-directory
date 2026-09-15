@@ -36,7 +36,7 @@ async function cleanUser (resource: any): Promise<User> {
   if (resource.onlyCreateInvited) resource.ignorePersonalAccount = true
   if (resource.organizations) {
     for (const org of resource.organizations) {
-      const rolesLabels = await getRolesLabels(org)
+      const rolesLabels = await getRolesLabels(org.id)
       if (rolesLabels?.[org.role]) org.roleLabel = rolesLabels[org.role]
     }
   }
@@ -345,6 +345,8 @@ class MongodbStorage implements SdStorage {
       { returnDocument: 'after' }
     )
     const orga = cleanOrganization(mongoRes)
+    // the labels are cached for the session tokens, a change must be visible at the next login
+    if (patch.rolesLabels) getRolesLabels.delete(id)
     // also update all organizations references in users
     if (patch.name || patch.departments) {
       for await (const user of mongo.users.find({ organizations: { $elemMatch: { id } } })) {
