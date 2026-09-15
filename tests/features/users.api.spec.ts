@@ -41,6 +41,40 @@ test.describe('users api', () => {
     assert.ok(users.results.length >= 1)
   })
 
+  test('should refuse a password login on an unconfirmed account and resend the confirmation mail', async () => {
+    const ax = await axios()
+    const token = (await ax.get('/api/auth/anonymous-action')).data
+    const email = 'unconfirmed@test.com'
+
+    // register but never open the confirmation link
+    await waitForMail(
+      () => ax.post('/api/users', { email, password: 'Test1234', token }),
+      (m) => m.to === email && m.link?.includes('token_callback')
+    )
+
+    // a correct password must not be reported as bad credentials, and a fresh confirmation link is sent
+    const mail = await waitForMail(
+      () => assert.rejects(ax.post('/api/auth/password', { email, password: 'Test1234' }), (err: any) => {
+        assert.equal(err.status, 403)
+        assert.ok(err.data.includes('confirm'), err.data)
+        return true
+      }),
+      (m) => m.to === email && m.link?.includes('token_callback')
+    )
+
+    // a wrong password is still refused as bad credentials, without any mail
+    await assert.rejects(ax.post('/api/auth/password', { email, password: 'Wrong1234' }), { status: 400 })
+
+    // the resent link confirms the account and opens a session
+    await assert.rejects(ax(mail.link), (res: any) => {
+      assert.equal(res.status, 302)
+      assert.ok(res.headers['set-cookie'].find((c: string) => c.startsWith('id_token=')))
+      return true
+    })
+    const callbackUrl = (await ax.post('/api/auth/password', { email, password: 'Test1234' })).data
+    assert.ok(callbackUrl.includes('token_callback'))
+  })
+
   test('should send an email to confirm new password', async () => {
     const config = await getServerConfig()
     const ax = await axios()
