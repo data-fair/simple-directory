@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert'
 import type { AxiosAuthInstance, AxiosAuthOptions } from '@data-fair/lib-node/axios-auth.js'
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
+import FormData from 'form-data'
 
 // Set NODE_CONFIG_DIR so test files can import api/src/config.ts
 process.env.NODE_CONFIG_DIR = process.env.NODE_CONFIG_DIR || './api/config/'
@@ -120,6 +121,15 @@ export const createUser = async (email: string, adminMode = false, password = 'T
   const ax = await axiosAuth({ email, adminMode, password, axiosOpts: createAxiosOpts, directoryUrl: baseUrl }) as AxiosAuthInstance
   const user = (await ax.get('/api/auth/me')).data
   return { ax, user }
+}
+
+// smallest valid PNG (1x1), enough to round-trip through an avatar upload and download
+export const testPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
+
+export const uploadAvatar = (ax: any, path: string) => {
+  const form = new FormData()
+  form.append('avatar', testPng, 'avatar.png')
+  return ax.post(path, form)
 }
 
 export const deleteAllEmails = async () => {

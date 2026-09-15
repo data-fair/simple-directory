@@ -9,7 +9,7 @@ import { reqI18n } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
 import type { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
-import { setNbMembersLimit, deleteIdentityLimits, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, getInvitationRedirect } from '#services'
+import { setNbMembersLimit, deleteIdentityLimits, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, getInvitationRedirect, deleteOtherDepartmentsAvatars } from '#services'
 import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
@@ -194,6 +194,7 @@ router.patch('/:organizationId', async (req, res, next) => {
     }
   }
   const patchedOrga = await storages.globalStorage.patchOrganization(req.params.organizationId, patch, user)
+  if (patch.departments) await deleteOtherDepartmentsAvatars(patchedOrga.id, patch.departments.map(d => d.id as string))
 
   logContext.account = { type: 'organization', id: patchedOrga.id, name: patchedOrga.name }
   eventsLog.info('sd.org.patch', `a user patched the organization info ${Object.keys(patch).join(', ')} - ${patchedOrga.name} ${patchedOrga.id}`, logContext)
