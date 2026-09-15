@@ -167,6 +167,18 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
     return returnError('badCredentials', 400)
   }
 
+  // The password is right but the account was never confirmed: token_callback would refuse the
+  // session with a misleading badCredentials. Tell the user what is missing and send a fresh
+  // confirmation link (same link as the creation mail, see users/router.ts). Doing this only
+  // after the password check keeps the account enumeration protection of the routes above.
+  if (user.emailConfirmed === false) {
+    const payload = { ...getTokenPayload(user, site), emailConfirmed: true }
+    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, site, orgId, depId))
+    await sendMailI18n('creation', reqI18n(req).messages, user.email, { link: linkUrl.href })
+    eventsLog.info('sd.auth.password.unconfirmed', 'a user with a valid password tried to authenticate before confirming their email, a new confirmation mail was sent', logContext)
+    return returnError('emailNotConfirmed', 403)
+  }
+
   if (userFromMainHost && site) {
     // A main-site user password-logged into a secondary site is offered to transfer their
     // account. This is a sensitive state change: it permanently detaches them from the main
