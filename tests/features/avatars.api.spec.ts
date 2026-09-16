@@ -1,14 +1,15 @@
 import { strict as assert } from 'node:assert'
 import { readFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import { test } from '@playwright/test'
-import { axios, createUser, testEnvAx, uploadAvatar, testPng } from '../support/axios.ts'
+import { axios, createUser, testEnvAx, uploadAvatar, testPng, testPng2 } from '../support/axios.ts'
 
 const download = async (ax: any, path: string) => Buffer.from((await ax.get(path, { responseType: 'arraybuffer' })).data)
 
 // an unknown owner answers 404 with a static placeholder image in the body, so that <img> tags
 // pointing at a deleted account still render something
 const assertUnknown = async (ax: any, path: string, placeholder: string) => {
-  const expected = await readFile(`api/resources/${placeholder}`)
+  const expected = await readFile(resolve(import.meta.dirname, '../../api/resources', placeholder))
   await assert.rejects(ax.get(path, { responseType: 'arraybuffer' }), (err: any) => {
     assert.equal(err.status, 404)
     assert.equal(err.headers['content-type'], 'image/png')
@@ -40,6 +41,22 @@ test.describe('avatars api', () => {
 
     // an orphan uploaded avatar would still be served as is, the placeholder proves it is gone
     await assertUnknown(adminAx, path, 'unknown-user.png')
+  })
+
+  test('should keep the avatars of an organization and of its departments apart', async () => {
+    const { ax } = await createUser('avatar-org-dep@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'Avatar org dep', departments: [{ id: 'dep1', name: 'Avatar dep' }] })).data
+    ax.setOrg(org.id)
+    const orgPath = `/api/avatars/organization/${org.id}/avatar.png`
+    const depPath = `/api/avatars/organization/${org.id}/dep1/avatar.png`
+
+    // the department first: a filter on the organization that ignores the department would
+    // pick the department's avatar for the organization, then overwrite it
+    assert.equal((await uploadAvatar(ax, depPath, testPng2)).status, 201)
+    assert.notDeepEqual(await download(ax, orgPath), testPng2)
+    assert.equal((await uploadAvatar(ax, orgPath, testPng)).status, 201)
+    assert.deepEqual(await download(ax, orgPath), testPng)
+    assert.deepEqual(await download(ax, depPath), testPng2)
   })
 
   test('should delete the avatars of a deleted organization and of its departments', async () => {

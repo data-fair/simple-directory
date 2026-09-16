@@ -1,15 +1,15 @@
 import { type Account, type AccountKeys } from '@data-fair/lib-express'
 import mongo from '#mongo'
-import { ownerFilter } from '../utils/owner-filter.ts'
+import { ownerFilter, exactOwnerFilter } from '../utils/owner-filter.ts'
 
 export type Avatar = { owner: Account, initials?: string, color?: string, robot?: boolean, buffer: BinaryData }
 
 export async function setAvatar (avatar: Avatar) {
-  await mongo.avatars.replaceOne(ownerFilter(avatar.owner), avatar, { upsert: true })
+  await mongo.avatars.replaceOne(exactOwnerFilter(avatar.owner), avatar, { upsert: true })
 }
 
 export async function getAvatar (owner: AccountKeys) {
-  const avatar = await mongo.avatars.findOne(ownerFilter(owner))
+  const avatar = await mongo.avatars.findOne(exactOwnerFilter(owner))
   if (avatar && avatar.buffer) avatar.buffer = (avatar.buffer as any).buffer
   return avatar as Avatar
 }

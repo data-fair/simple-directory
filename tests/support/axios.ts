@@ -123,12 +123,14 @@ export const createUser = async (email: string, adminMode = false, password = 'T
   return { ax, user }
 }
 
-// smallest valid PNG (1x1), enough to round-trip through an avatar upload and download
+// smallest valid PNGs (1x1), enough to round-trip through an avatar upload and download,
+// two distinct ones to tell the avatars of two owners apart
 export const testPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
+export const testPng2 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC', 'base64')
 
-export const uploadAvatar = (ax: any, path: string) => {
+export const uploadAvatar = (ax: any, path: string, png: Buffer = testPng) => {
   const form = new FormData()
-  form.append('avatar', testPng, 'avatar.png')
+  form.append('avatar', png, 'avatar.png')
   return ax.post(path, form)
 }
 
