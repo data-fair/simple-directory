@@ -7,6 +7,7 @@ import type { TwoFA } from '#services'
 import { httpError, type UserRef } from '@data-fair/lib-express'
 import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
 import mongo from '#mongo'
+import { deleteAvatars } from '../avatars/service.ts'
 import type { Password } from '../utils/passwords.ts'
 import dayjs from 'dayjs'
 import { nanoid } from 'nanoid'
@@ -167,6 +168,7 @@ class MongodbStorage implements SdStorage {
   async deleteUser (userId: string) {
     await mongo.users.deleteOne({ _id: userId })
     await mongo.oauthTokens.deleteMany({ 'user.id': userId })
+    await deleteAvatars({ type: 'user', id: userId })
   }
 
   async addUserSession (userId: string, serverSession: ServerSession) {
@@ -380,6 +382,7 @@ class MongodbStorage implements SdStorage {
     await mongo.organizations
       .updateMany({ 'partners.id': organizationId }, { $pull: { partners: { id: organizationId } } })
     await mongo.organizations.deleteOne({ _id: organizationId })
+    await deleteAvatars({ type: 'organization', id: organizationId })
   }
 
   async findOrganizations (params: FindOrganizationsParams) {
