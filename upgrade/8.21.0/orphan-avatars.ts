@@ -6,7 +6,7 @@ import type { UpgradeScript } from '@data-fair/lib-node/upgrade-scripts.js'
 const upgradeScript: UpgradeScript = {
   description: 'Delete the avatars whose owner does not exist any more',
   async exec (db, debug) {
-    const avatars = db.collection<{ owner: { type: string, id: string, department?: string } }>('avatars')
+    const avatars = db.collection<{ owner?: { type: string, id: string, department?: string } }>('avatars')
 
     // the avatars collection grows with the number of accounts: resolve the existing owners in
     // a few set queries rather than one lookup per avatar
@@ -20,7 +20,8 @@ const upgradeScript: UpgradeScript = {
 
     const orphans: any[] = []
     for await (const avatar of avatars.find({}, { projection: { owner: 1 } })) {
-      const { type, id, department } = avatar.owner
+      // a malformed document (no owner) is an orphan too
+      const { type, id, department } = avatar.owner ?? { type: undefined, id: '' }
       const exists = type === 'user'
         ? existingUsers.has(id)
         : type === 'organization' && existingDepartments.has(id) && (!department || existingDepartments.get(id)!.has(department))

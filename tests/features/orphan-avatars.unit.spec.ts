@@ -21,6 +21,8 @@ test.describe('orphan avatars upgrade script', () => {
     await mongo.users.insertOne({ _id: prefix + 'user', email: prefix + 'user@test.com', name: 'Kept user', organizations: [] })
     await mongo.organizations.insertOne({ _id: prefix + 'org', name: 'Kept org', departments: [{ id: 'kept', name: 'Kept dep' }] })
     const buffer = Buffer.from('png')
+    // not covered by clean(), a previous failed run may have left it behind
+    await mongo.avatars.deleteMany({ test: prefix + 'no-owner' })
     await mongo.avatars.insertMany([
       { owner: { type: 'user', id: prefix + 'user' }, buffer },
       { owner: { type: 'user', id: prefix + 'deleted-user' }, buffer },
@@ -28,7 +30,10 @@ test.describe('orphan avatars upgrade script', () => {
       { owner: { type: 'organization', id: prefix + 'org', department: 'kept' }, buffer },
       { owner: { type: 'organization', id: prefix + 'org', department: 'removed' }, buffer },
       { owner: { type: 'organization', id: prefix + 'deleted-org' }, buffer },
-      { owner: { type: 'organization', id: prefix + 'deleted-org', department: 'dep' }, buffer }
+      { owner: { type: 'organization', id: prefix + 'deleted-org', department: 'dep' }, buffer },
+      // a malformed document is an orphan too, and must not crash the script
+      { owner: { id: prefix + 'malformed' }, buffer },
+      { test: prefix + 'no-owner', buffer }
     ])
 
     const upgradeScript = (await import('../../upgrade/8.21.0/orphan-avatars.ts')).default
@@ -44,5 +49,6 @@ test.describe('orphan avatars upgrade script', () => {
       `organization/${prefix}org/kept`,
       `user/${prefix}user/`
     ])
+    assert.equal(await mongo.avatars.countDocuments({ test: prefix + 'no-owner' }), 0)
   })
 })
