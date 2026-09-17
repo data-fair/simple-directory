@@ -143,7 +143,6 @@ export default {
           public: '<b>IMPORTANTE.</b> Il percorso della chiave di cifratura RSA pubblica. Consultare la documentazione per l\'installazione del servizio di assistenza.',
           private: '<b>IMPORTANTE.</b> Il percorso della chiave di cifratura privata RSA. Consultare la documentazione per l\'installazione del servizio di assistenza.'
         },
-        analytics: 'JSON per la configurazione analitica, corrisponde alla parte di configurazione "moduli" della libreria <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
           type: `<b>IMPORTANTE.</b> Il tipo di archiviazione per la persistenza degli utenti e delle organizzazioni.<br>
 Il tipo "file" di default è di sola lettura ed è adatto per lo sviluppo/test o per utilizzare una collezione utente esportata da un altro sistema.<br>

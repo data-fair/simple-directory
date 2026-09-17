@@ -143,7 +143,6 @@ export default {
           public: '<b>WICHTIG.</b> Der Pfad zum öffentlichen RSA-Verschlüsselungsschlüssel. Siehe die Dokumentation zur Dienstinstallation.',
           private: '<b>WICHTIG.</b> Der Pfad zum privaten RSA-Verschlüsselungsschlüssel. Siehe die Dokumentation zur Dienstinstallation.'
         },
-        analytics: 'JSON für die Analysekonfiguration, entspricht dem Konfigurationsteil "Module" der Bibliothek <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
           type: `<b>WICHTIG.</b> Die Art der Speicherung für die Persistenz von Benutzern und Organisationen.<br>
 Der voreingestellte "Datei"-Typ ist schreibgeschützt und eignet sich für Entwicklung/Test oder zur Verwendung einer aus einem anderen System exportierten Benutzersammlung.<br>

@@ -143,7 +143,6 @@ export default {
           public: '<b>IMPORTANTE.</b> O caminho para a chave pública de encriptação RSA. Ver a documentação de instalação do serviço.',
           private: '<b>IMPORTANTE.</b> O caminho para a chave de encriptação privada RSA. Ver a documentação de instalação do serviço.'
         },
-        analytics: 'JSON para configuração analítica, corresponde à parte de configuração "módulos" da biblioteca <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
           type: `<b>IMPORTANTE.</b> O tipo de armazenamento para a persistência do utilizador e da organização.<br><br>
 O tipo "ficheiro" padrão é apenas de leitura e é adequado para desenvolvimento/teste ou para utilizar uma colecção de utilizadores exportada de outro sistema.<br>
