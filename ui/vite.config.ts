@@ -72,7 +72,6 @@ export default defineConfig({
             'mdiAccountSwitch',
             'mdiAlertCircle',
             'mdiBell',
-            'mdiCalendar',
             'mdiCancel',
             'mdiCellphone',
             'mdiCheck',

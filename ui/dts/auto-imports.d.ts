@@ -212,7 +212,6 @@ declare module 'vue' {
     readonly mdiAccountSwitch: UnwrapRef<typeof import('@mdi/js')['mdiAccountSwitch']>
     readonly mdiAlertCircle: UnwrapRef<typeof import('@mdi/js')['mdiAlertCircle']>
     readonly mdiBell: UnwrapRef<typeof import('@mdi/js')['mdiBell']>
-    readonly mdiCalendar: UnwrapRef<typeof import('@mdi/js')['mdiCalendar']>
     readonly mdiCancel: UnwrapRef<typeof import('@mdi/js')['mdiCancel']>
     readonly mdiCellphone: UnwrapRef<typeof import('@mdi/js')['mdiCellphone']>
     readonly mdiCheck: UnwrapRef<typeof import('@mdi/js')['mdiCheck']>
