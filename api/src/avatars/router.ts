@@ -8,7 +8,7 @@ import colors from 'material-colors'
 import initialsModule from 'initials'
 import capitalize from 'capitalize'
 import multer from 'multer'
-import { getAvatar, setAvatar } from './service.ts'
+import { getAvatar, setAvatar, deleteCustomAvatar } from './service.ts'
 import storages from '#storages'
 import { crossOriginResourcePolicy } from 'helmet'
 
@@ -122,6 +122,8 @@ const readAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
   }
 
   res.set('Content-Type', 'image/png')
+  res.set('x-avatar-custom', avatar.initials ? 'false' : 'true')
+  res.set('Access-Control-Expose-Headers', 'x-avatar-custom')
   res.send(avatar.buffer)
 }
 
@@ -158,3 +160,14 @@ const writeAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
 
 router.post('/:type/:id/avatar.png', isAdmin, upload.single('avatar'), writeAvatar)
 router.post('/:type/:id/:department/avatar.png', isAdmin, upload.single('avatar'), writeAvatar)
+
+const deleteAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
+  if (!['user', 'organization'].includes(req.params.type)) {
+    return res.status(400).send('Owner type must be "user" or "organization"')
+  }
+  await deleteCustomAvatar(req.params as unknown as Account)
+  res.status(204).send()
+}
+
+router.delete('/:type/:id/avatar.png', isAdmin, deleteAvatar)
+router.delete('/:type/:id/:department/avatar.png', isAdmin, deleteAvatar)

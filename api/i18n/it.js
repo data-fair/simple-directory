@@ -327,10 +327,10 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       msgDifferentUser: 'L\'invito a far parte di un\'organizzazione è stato ben accolto. È possibile <a href="{loginUrl}">Accedi</a> con l\'account dell\'ospite.'
     },
     avatar: {
-      loadUser: 'Caricare il tuo avatar',
-      loadOrganization: 'Caricare un avatar dell\'organizzazione',
-      loadDepartment: 'Caricare un avatar ({departmentLabel})',
-      prepare: 'Preparare l\'immagine.'
+      changeUser: 'Cambiare l\'avatar del tuo account',
+      changeOrganization: 'Cambiare l\'avatar dell\'organizzazione',
+      changeDepartment: 'Cambiare l\'avatar di "{departmentName}"',
+      reset: 'Ripristinare l\'avatar predefinito'
     },
     me: {
       emailNotEditable: 'Questo indirizzo non può essere modificato.',

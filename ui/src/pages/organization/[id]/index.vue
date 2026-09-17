@@ -29,6 +29,7 @@
         v-if="$uiConfig.avatars.orgs"
         :owner="{...orga, type: 'organization'}"
         :disabled="$uiConfig.readonly"
+        class="mb-4"
       />
       <v-text-field
         v-model="orga.name"

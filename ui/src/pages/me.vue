@@ -38,6 +38,7 @@
         v-if="userDetailsFetch.data.value && $uiConfig.avatars.users"
         :owner="{type: 'user', id: user.id}"
         :disabled="readonlyPersonalInfo"
+        class="mb-4"
       />
 
       <v-row dense>

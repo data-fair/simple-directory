@@ -327,10 +327,10 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       msgDifferentUser: 'Esta invitación a ser miembro de una organización ha sido aceptada. Usted puede <a href="{loginUrl}">iniciar sesión</a> con la cuenta de invitado.'
     },
     avatar: {
-      loadUser: 'Cargar su avatar',
-      loadOrganization: 'Cargar un avatar de organización',
-      loadDepartment: 'Cargar un avatar ({departmentLabel})',
-      prepare: 'Preparar la imagen'
+      changeUser: 'Cambiar el avatar de su cuenta',
+      changeOrganization: 'Cambiar el avatar de la organización',
+      changeDepartment: 'Cambiar el avatar de "{departmentName}"',
+      reset: 'Restablecer el avatar por defecto'
     },
     me: {
       emailNotEditable: 'Esta dirección no se puede modificar.',
