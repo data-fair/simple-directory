@@ -1,8 +1,7 @@
 // Regenerates api/resources/unknown-*.png, the placeholder images served with a 404 when the
 // owner of an avatar does not exist (see api/src/avatars/router.ts). Run once, commit the output:
 //   node --experimental-strip-types dev/make-unknown-avatars.ts
-// Needs ImageMagick (`convert`) with SVG support, which is why the images are committed rather
-// than rendered at runtime (the docker image only ships GraphicsMagick for the initials avatars).
+// Pre-committed placeholder images served directly without dynamic rendering.
 import { execFileSync } from 'node:child_process'
 import { writeFileSync, unlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'

@@ -10,7 +10,7 @@ ENV NODE_ENV=production
 ##########################
 FROM base AS native-deps
 
-RUN apk add --no-cache openssl graphicsmagick
+RUN apk add --no-cache openssl
 
 ##########################
 FROM base AS package-strip
@@ -33,7 +33,9 @@ ADD api/package.json api/package.json
 ADD shared/package.json shared/package.json
 # full deps install used for types and ui building
 # also used to fill the npm cache for faster install of api deps
-RUN npm ci --omit=dev --omit=optional --no-audit --no-fund
+# optional deps are kept: the platform binaries of sharp, rolldown, lightningcss and
+# sass-embedded are optional deps, and npm only installs the ones matching this image
+RUN npm ci --omit=dev --no-audit --no-fund
 
 ##########################
 FROM installer AS types
@@ -46,7 +48,6 @@ RUN npm run build-types
 ##########################
 FROM installer AS ui
 
-RUN npm i --no-save @rollup/rollup-linux-x64-musl
 COPY --from=types /app/api/config api/config
 COPY --from=types /app/api/types api/types
 COPY --from=types /app/api/doc api/doc
@@ -64,7 +65,7 @@ RUN npm -w ui run build
 ##########################
 FROM installer AS api-installer
 
-RUN npm ci -w api --prefer-offline --omit=dev --omit=optional --no-audit --no-fund && \
+RUN npm ci -w api --prefer-offline --omit=dev --no-audit --no-fund && \
     npx clean-modules --yes "!ramda/src/test.js"
 RUN mkdir -p /app/api/node_modules
 
@@ -85,6 +86,9 @@ COPY --from=types /app/api/config api/config
 COPY --from=api-installer /app/api/node_modules api/node_modules
 COPY --from=ui /app/ui/dist ui/dist
 ADD package.json README.md LICENSE BUILD.json* ./
+
+# libvips renders the initials avatars through fontconfig, cf api/resources/fonts.conf
+ENV FONTCONFIG_FILE=/app/api/resources/fonts.conf
 
 EXPOSE 8080
 EXPOSE 9090
