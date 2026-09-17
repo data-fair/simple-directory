@@ -19,16 +19,9 @@ const devSitePath = ''
 export default defineConfig({
   base: devSitePath + '/simple-directory',
   optimizeDeps: { include: commonjsDeps },
-  build: {
-    rollupOptions: {
-      output: {
-        experimentalMinChunkSize: 2000
-      }
-    }
-  },
   resolve: {
     alias: {
-      '~': path.resolve(__dirname, 'src/')
+      '~': path.resolve(import.meta.dirname, 'src/')
     },
   },
   html: {
