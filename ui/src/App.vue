@@ -100,7 +100,7 @@ const appClass = computed(() => {
 body .v-application .logo-container {
   height: 100%;
   padding: 4px;
-  margin-left: 4px !important;
+  margin-left: 4px;
   margin-right: 4px;
   width: 64px;
 }

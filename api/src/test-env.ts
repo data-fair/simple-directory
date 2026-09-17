@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { Router } from 'express'
+import express, { Router } from 'express'
 import { session } from '@data-fair/lib-express'
 import mongo from '#mongo'
 import config, { jwtDurations } from '#config'
@@ -126,7 +126,6 @@ router.post('/rotate-keys', async (req, res) => {
 // PATCH /api/test-env/config — apply temporary config overrides on the running server
 // Body: JSON object with config keys to override (e.g. { "alwaysAcceptInvitation": true })
 // Uses Object.defineProperty to bypass node-config immutability
-import express from 'express'
 router.patch('/config', express.json(), (req, res) => {
   for (const [key, value] of Object.entries(req.body)) {
     Object.defineProperty(config, key, { value, writable: true, configurable: true })

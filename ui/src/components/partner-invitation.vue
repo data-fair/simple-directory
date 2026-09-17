@@ -185,6 +185,6 @@ const goToRedirect = useAsyncAction(async (org: string) => {
 
 <style lang="css">
 .create-org-name .v-input__append{
-  margin-top: 2px !important;
+  margin-top: 2px;
 }
 </style>

@@ -11,9 +11,8 @@
   </v-app-bar>
   <v-row
     v-show="!delayedRendering"
-    justify="space-around"
     data-iframe-height
-    class="mt-6"
+    class="mt-6 justify-space-around"
   >
     <v-col
       cols="12"
@@ -1296,19 +1295,10 @@ function cancelAuthorizeApp () {
 
 <style>
 
-/* https://stackoverflow.com/a/37432260 */
-.hide-autofill.theme--dark input:-webkit-autofill,
-.hide-autofill.theme--dark input:-webkit-autofill:hover,
-.hide-autofill.theme--dark input:-webkit-autofill:focus,
-.hide-autofill.theme--dark input:-webkit-autofill:active {
-    transition: background-color 5000s ease-in-out 0s;
-    -webkit-text-fill-color: white !important;
-}
-.hide-autofill.theme--light input:-webkit-autofill,
-.hide-autofill.theme--light input:-webkit-autofill:hover,
-.hide-autofill.theme--light input:-webkit-autofill:focus,
-.hide-autofill.theme--light input:-webkit-autofill:active {
-    transition: background-color 5000s ease-in-out 0s;
-    -webkit-text-fill-color: rgba(0, 0, 0, 0.87) !important;
+/* neutralize the browser autofill colors, which are applied with !important
+   cf https://stackoverflow.com/a/37432260 */
+.hide-autofill input:-webkit-autofill {
+  transition: background-color 5000s ease-in-out 0s;
+  -webkit-text-fill-color: rgb(var(--v-theme-on-surface)) !important;
 }
 </style>

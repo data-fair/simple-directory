@@ -41,7 +41,7 @@
         class="mb-4"
       />
 
-      <v-row dense>
+      <v-row density="compact">
         <v-col cols="6">
           <v-text-field
             v-model="patch.firstName"
@@ -131,7 +131,7 @@
           <v-avatar
             size="28"
             :style="`left:-1px;top:-1px;background-color: ${$vuetify.theme.current.colors.surface};`"
-            class="elevation-4"
+            class="elevation-1"
           >
             <v-icon
               v-if="identity.icon"

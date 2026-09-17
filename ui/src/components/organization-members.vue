@@ -47,7 +47,7 @@
       {{ t('pages.organization.fromCache', { fromNow: dayjs(members?.fromCache).fromNow() }) }}
     </v-row>
 
-    <v-row dense>
+    <v-row density="compact">
       <v-col :cols="filterMemberCols">
         <v-text-field
           v-model="q"
