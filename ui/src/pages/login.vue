@@ -69,7 +69,7 @@
                 :label="$t('pages.login.emailLabel')"
                 :error-messages="emailError"
                 name="email"
-                class="mb-3 hide-autofill"
+                class="mb-3"
                 hide-details="auto"
                 autocomplete="email"
                 @keyup.enter="preLogin"
@@ -115,7 +115,7 @@
                   :label="$t('pages.login.emailLabel')"
                   :error-messages="emailError"
                   name="email"
-                  class="mb-3 hide-autofill"
+                  class="mb-3"
                   hide-details="auto"
                   autocomplete="email"
                   :disabled="separateEmailPasswordSteps"
@@ -144,7 +144,7 @@
                   name="password"
                   :type="showPassword ? 'text' : 'password'"
                   autocomplete="current-password"
-                  class="mt-4 hide-autofill"
+                  class="mt-4"
                   hide-details="auto"
                   @keyup.enter="passwordAuth.execute()"
                 >
@@ -162,7 +162,7 @@
                     variant="outlined"
                     density="compact"
                     rounded
-                    class="mt-4 hide-autofill"
+                    class="mt-4"
                     hide-details="auto"
                     :autofocus="true"
                     @keyup.enter="passwordAuth.execute()"
@@ -409,15 +409,6 @@
                   <template #append-inner>
                     <password-reveal v-model="showNewUserPassword2" />
                   </template>
-                  <template #append>
-                    <div>
-                      <v-icon
-                        style="visibility:hidden"
-                        color="info"
-                        :icon="mdiInformation"
-                      />
-                    </div>
-                  </template>
                 </v-text-field>
               </v-form>
             </v-card-text>
@@ -548,15 +539,6 @@
                 >
                   <template #append-inner>
                     <password-reveal v-model="showNewPassword2" />
-                  </template>
-                  <template #append>
-                    <div>
-                      <v-icon
-                        style="visibility:hidden"
-                        color="info"
-                        :icon="mdiInformation"
-                      />
-                    </div>
                   </template>
                 </v-text-field>
 
@@ -1292,13 +1274,3 @@ function cancelAuthorizeApp () {
   }
 }
 </script>
-
-<style>
-
-/* neutralize the browser autofill colors, which are applied with !important
-   cf https://stackoverflow.com/a/37432260 */
-.hide-autofill input:-webkit-autofill {
-  transition: background-color 5000s ease-in-out 0s;
-  -webkit-text-fill-color: rgb(var(--v-theme-on-surface)) !important;
-}
-</style>
