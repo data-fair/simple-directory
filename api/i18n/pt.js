@@ -326,10 +326,10 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       msgDifferentUser: 'Este convite para ser membro de uma organização foi bem aceite. Pode <a href="{loginUrl}">login</a> com a conta de convidado.'
     },
     avatar: {
-      loadUser: 'Carregar o seu avatar',
-      loadOrganization: 'Carregar um avatar de organização',
-      loadDepartment: 'Carregar um avatar ({departmentLabel})',
-      prepare: 'Preparar a imagem'
+      changeUser: 'Alterar o avatar da sua conta',
+      changeOrganization: 'Alterar o avatar da organização',
+      changeDepartment: 'Alterar o avatar de "{departmentName}"',
+      reset: 'Repor o avatar predefinido'
     },
     me: {
       emailNotEditable: 'Este endereço não pode ser alterado.',

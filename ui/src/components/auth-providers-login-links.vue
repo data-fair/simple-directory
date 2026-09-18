@@ -12,7 +12,7 @@
       <v-avatar
         size="29"
         :style="`left:-1px;top:-1px;background-color: ${$vuetify.theme.current.colors.surface};`"
-        class="elevation-4"
+        class="elevation-1"
       >
         <v-img
           v-if="$uiConfig.theme.logo"
@@ -33,7 +33,7 @@
       <v-avatar
         size="29"
         :style="`left:-1px;top:-1px;background-color: ${$vuetify.theme.current.colors.surface};`"
-        class="elevation-4"
+        class="elevation-1"
       >
         <v-img
           v-if="authProvider.img"

@@ -93,4 +93,22 @@ test.describe('avatars api', () => {
     assert.deepEqual(await download(ax, keptPath), testPng)
     await assertUnknown(ax, removedPath, 'unknown-department.png')
   })
+
+  test('should delete a custom avatar and revert to default initials avatar', async () => {
+    const { ax, user } = await createUser('avatar-reset@test.com')
+    const path = `/api/avatars/user/${user.id}/avatar.png`
+
+    const initialRes = await ax.get(path, { responseType: 'arraybuffer' })
+    assert.equal(initialRes.headers['x-avatar-custom'], 'false')
+
+    assert.equal((await uploadAvatar(ax, path)).status, 201)
+    const customRes = await ax.get(path, { responseType: 'arraybuffer' })
+    assert.equal(customRes.headers['x-avatar-custom'], 'true')
+    assert.deepEqual(Buffer.from(customRes.data), testPng)
+
+    assert.equal((await ax.delete(path)).status, 204)
+    const revertedRes = await ax.get(path, { responseType: 'arraybuffer' })
+    assert.equal(revertedRes.headers['x-avatar-custom'], 'false')
+    assert.notDeepEqual(Buffer.from(revertedRes.data), testPng)
+  })
 })

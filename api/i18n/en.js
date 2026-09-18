@@ -326,10 +326,10 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       msgDifferentUser: 'This invitation to become member of an organization has been validated. You can <a href="{loginUrl}">login with</a> the invited account.'
     },
     avatar: {
-      loadUser: 'Load your avatar',
-      loadOrganization: 'Load an organization avatar',
-      loadDepartment: 'Load an avatar ({departmentLabel})',
-      prepare: 'Prepare the image'
+      changeUser: 'Change your account avatar',
+      changeOrganization: 'Change the organization avatar',
+      changeDepartment: 'Change the avatar of "{departmentName}"',
+      reset: 'Reset the default avatar'
     },
     me: {
       emailNotEditable: 'This address cannot be changed.',
