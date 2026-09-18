@@ -77,7 +77,7 @@
         >
           <!-- the picker opens on the years, a birthday is rarely in the current month -->
           <v-date-input
-            :model-value="patch.birthday ? new Date(patch.birthday) : null"
+            :model-value="patch.birthday ? dayjs(patch.birthday).toDate() : null"
             :label="$t('common.birthday')"
             :disabled="!userDetailsFetch.data.value || readonlyPersonalInfo"
             :max="maxBirthday"
