@@ -3,12 +3,12 @@ import { Router, type Request, type RequestHandler, type Response } from 'expres
 import { resolve } from 'node:path'
 import { readFileSync } from 'node:fs'
 import { type Account, assertAccountRole, getAccountRole, httpError, reqSession } from '@data-fair/lib-express'
-import sharp from 'sharp'
 import colors from 'material-colors'
 import initialsModule from 'initials'
 import capitalize from 'capitalize'
 import multer from 'multer'
 import { getAvatar, setAvatar, deleteCustomAvatar } from './service.ts'
+import { makeAvatar } from './render.ts'
 import storages from '#storages'
 import { crossOriginResourcePolicy } from 'helmet'
 
@@ -30,8 +30,6 @@ const getInitials = (name: string) => {
 }
 
 const readResource = (name: string) => readFileSync(resolve(import.meta.dirname, `../../resources/${name}`))
-// white mdiRobot glyph (same as the UI's NHI icon), composited as a badge
-const robotBadge = readResource('robot.png')
 // grey placeholders (mdiAccount / mdiAccountGroup / mdiFamilyTree, see dev/make-unknown-avatars.ts)
 // served with a 404 when the owner does not exist any more: an <img> keeps rendering something
 // where the name of a deleted account is still displayed, and an API client still sees the 404
@@ -43,27 +41,6 @@ const unknownAvatars = {
 const sendUnknown = (req: Request<AvatarParams>, res: Response) => {
   const kind = req.params.type === 'user' ? 'user' : (req.params.department ? 'department' : 'organization')
   res.status(404).set('Content-Type', 'image/png').send(unknownAvatars[kind])
-}
-
-const escapeXml = (str: string) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-
-// the font is resolved by fontconfig, librsvg ignores @font-face (cf resources/fonts.conf)
-const svgAvatar = (text: string, color: string, robot?: boolean) => {
-  const fontSize = text.length === 3 ? 37 : 47
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-<rect width="100" height="100" fill="${color}"/>
-<text x="50" y="${robot ? 44 : 52}" text-anchor="middle" dominant-baseline="central" font-family="Nunito, sans-serif" font-weight="800" font-size="${fontSize}" fill="#fff">${escapeXml(text)}</text>
-</svg>`
-}
-
-const makeAvatar = async (text: string, color: string, robot?: boolean): Promise<Buffer> => {
-  let img = sharp(Buffer.from(svgAvatar(text, color, robot)))
-  if (robot) {
-    // bottom-center placement: avatars are displayed round-cropped, and the bottom of the
-    // inscribed circle is where a 36px badge fits whole (a corner would be mostly cut off)
-    img = img.composite([{ input: robotBadge, left: 32, top: 58 }])
-  }
-  return await img.png().toBuffer()
 }
 
 const readAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {

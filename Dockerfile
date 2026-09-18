@@ -87,9 +87,6 @@ COPY --from=api-installer /app/api/node_modules api/node_modules
 COPY --from=ui /app/ui/dist ui/dist
 ADD package.json README.md LICENSE BUILD.json* ./
 
-# libvips renders the initials avatars through fontconfig, cf api/resources/fonts.conf
-ENV FONTCONFIG_FILE=/app/api/resources/fonts.conf
-
 EXPOSE 8080
 EXPOSE 9090
 
