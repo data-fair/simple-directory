@@ -4,11 +4,14 @@
 
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { initMongo, closeMongo } from '../support/unit.ts'
+import { initMongo } from '../support/unit.ts'
 
 test.describe('main site document resolver', () => {
+  // the mongo client from initMongo is shared by every unit spec in this
+  // worker process — do not close it here, the next spec's initMongo() would
+  // try to reconnect an already-closed client and take the rest of the
+  // project down with it
   test.beforeAll(async () => { await initMongo() })
-  test.afterAll(async () => { await closeMongo() })
 
   test.beforeEach(async () => {
     const mongo = (await import('../../api/src/mongo.ts')).default
