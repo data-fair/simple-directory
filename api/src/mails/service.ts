@@ -7,7 +7,7 @@ import { flatten } from 'flat'
 import EventEmitter from 'node:events'
 import mailsTransport from './transport.ts'
 import { getSiteByUrl, getSiteByHost, isMainSiteDoc } from '#services'
-import { getMainSitePresentation } from '../sites/main-site.ts'
+import { getEffectiveMainSite } from '../sites/main-site.ts'
 import { internalError } from '@data-fair/lib-node/observer.js'
 import { mailLimiter } from '../utils/limiter.ts'
 
@@ -123,11 +123,11 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
   let template = params.htmlButton ? mainSiteTemplate : mainSiteNoButtonTemplate
 
   if (mainSite) {
-    const presentation = await getMainSitePresentation()
-    Object.assign(flatTheme, flatten({ theme: presentation.theme }))
-    logo = presentation.theme.logo || logo
-    from = presentation.mails.from ?? from
-    contact = presentation.mails.contact ?? contact
+    const effectiveSite = await getEffectiveMainSite()
+    Object.assign(flatTheme, flatten({ theme: effectiveSite.theme }))
+    logo = effectiveSite.theme.logo || logo
+    from = effectiveSite.mails?.from ?? from
+    contact = effectiveSite.mails?.contact ?? contact
   } else {
     if (site?.mails?.from) {
       from = site.mails.from

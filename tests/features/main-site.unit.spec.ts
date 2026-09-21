@@ -1,6 +1,7 @@
 // The main site document is the site whose host+path matches publicUrl.
-// getMainSitePresentation merges its presentation fields over config.*
-// according to config.mainSiteFromDb, and nothing else.
+// getEffectiveMainSite merges its presentation fields over config.* according
+// to config.mainSiteFromDb, and nothing else. The result is an ordinary
+// EffectiveSite that runs through the same renderers as any other site.
 
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
@@ -17,9 +18,9 @@ test.describe('main site document resolver', () => {
     const mongo = (await import('../../api/src/mongo.ts')).default
     await mongo.sites.deleteMany({ _id: { $regex: /^test_/ } })
     const { getMainSiteDoc } = await import('../../api/src/sites/service.ts')
-    const { clearMainSiteCache } = await import('../../api/src/sites/main-site.ts')
+    const { clearSiteResourceCaches } = await import('../../api/src/sites/main-site.ts')
     getMainSiteDoc.clear()
-    clearMainSiteCache()
+    clearSiteResourceCaches()
   })
 
   const seedMainSiteDoc = async (doc: any = {}) => {
@@ -46,8 +47,8 @@ test.describe('main site document resolver', () => {
   const withCategories = async (categories: string[]) => {
     const config = (await import('../../api/src/config.ts')).default
     Object.defineProperty(config, 'mainSiteFromDb', { value: categories, writable: true, configurable: true })
-    const { clearMainSiteCache } = await import('../../api/src/sites/main-site.ts')
-    clearMainSiteCache()
+    const { clearSiteResourceCaches } = await import('../../api/src/sites/main-site.ts')
+    clearSiteResourceCaches()
   }
 
   test('finds the document sitting on the publicUrl host', async () => {
@@ -66,33 +67,34 @@ test.describe('main site document resolver', () => {
     await seedMainSiteDoc()
     await withCategories([])
     const config = (await import('../../api/src/config.ts')).default
-    const { getMainSitePresentation } = await import('../../api/src/sites/main-site.ts')
-    const presentation = await getMainSitePresentation()
+    const { getEffectiveMainSite } = await import('../../api/src/sites/main-site.ts')
+    const presentation = await getEffectiveMainSite()
     assert.equal(presentation.theme.colors.primary, config.theme.colors.primary)
     assert.notEqual(presentation.theme.colors.primary, '#FF00FF')
     assert.equal(presentation.title, undefined)
-    assert.equal(presentation.mails.from, config.mails.from)
+    assert.equal(presentation.mails?.from, config.mails.from)
     assert.equal(presentation.tosMessage, undefined)
-    assert.equal(presentation.docKey, undefined)
+    // no category contributed, so the id stays the env-only one
+    assert.equal(presentation._id, '_main')
   })
 
   test('each category is honoured independently', async () => {
     await seedMainSiteDoc()
     const config = (await import('../../api/src/config.ts')).default
-    const { getMainSitePresentation } = await import('../../api/src/sites/main-site.ts')
+    const { getEffectiveMainSite } = await import('../../api/src/sites/main-site.ts')
 
     await withCategories(['theme'])
-    let presentation = await getMainSitePresentation()
+    let presentation = await getEffectiveMainSite()
     assert.equal(presentation.theme.colors.primary, '#FF00FF')
     assert.equal(presentation.title, undefined)
-    assert.equal(presentation.mails.from, config.mails.from)
+    assert.equal(presentation.mails?.from, config.mails.from)
 
     await withCategories(['title', 'mails', 'registration'])
-    presentation = await getMainSitePresentation()
+    presentation = await getEffectiveMainSite()
     assert.equal(presentation.theme.colors.primary, config.theme.colors.primary)
     assert.equal(presentation.title, 'Portail de test')
-    assert.equal(presentation.mails.from, 'portal@test.com')
-    assert.equal(presentation.mails.contact, 'hello@test.com')
+    assert.equal(presentation.mails?.from, 'portal@test.com')
+    assert.equal(presentation.mails?.contact, 'hello@test.com')
     assert.equal(presentation.tosMessage, 'CGU du portail')
     assert.equal(presentation.reducedPersonalInfoAtCreation, true)
   })
@@ -100,8 +102,9 @@ test.describe('main site document resolver', () => {
   test('never exposes trust-bearing fields', async () => {
     await seedMainSiteDoc({ authProviders: [{ type: 'saml2', title: 'evil' }], applications: [{ id: 'x' }] })
     await withCategories(['theme', 'title', 'mails', 'registration'])
-    const { getMainSiteResources } = await import('../../api/src/sites/main-site.ts')
-    const { publicInfo } = await getMainSiteResources()
+    const { getEffectiveMainSite } = await import('../../api/src/sites/main-site.ts')
+    const { getPublicSiteInfo } = await import('../../api/src/utils/public-site-info.ts')
+    const publicInfo = getPublicSiteInfo(await getEffectiveMainSite())
     assert.equal((publicInfo as any).authProviders, undefined)
     assert.equal((publicInfo as any).applications, undefined)
     assert.equal((publicInfo as any).owner, undefined)
@@ -114,9 +117,11 @@ test.describe('main site document resolver', () => {
     await seedMainSiteDoc()
     await withCategories(['theme'])
     const crypto = await import('node:crypto')
-    const { getMainSiteResources } = await import('../../api/src/sites/main-site.ts')
-    const { themeCss, themeCssHash } = await getMainSiteResources()
-    assert.equal(crypto.createHash('md5').update(themeCss).digest('hex'), themeCssHash)
+    const { getEffectiveMainSite } = await import('../../api/src/sites/main-site.ts')
+    const { getThemeCss, getThemeCssHash } = await import('../../api/src/utils/theme.ts')
+    const site = await getEffectiveMainSite()
+    const themeCss = getThemeCss(site.theme, site.path ?? '')
+    assert.equal(crypto.createHash('md5').update(themeCss).digest('hex'), getThemeCssHash(site))
   })
 
   // Regression: getSiteExtraParams used to call getSiteByUrl directly, with no
@@ -128,15 +133,17 @@ test.describe('main site document resolver', () => {
     await seedMainSiteDoc()
     const config = (await import('../../api/src/config.ts')).default
     const { getSiteExtraParams } = await import('../../api/src/sites/spa-params.ts')
-    const { getMainSiteResources } = await import('../../api/src/sites/main-site.ts')
+    const { getEffectiveMainSite } = await import('../../api/src/sites/main-site.ts')
+    const { getThemeCssHash } = await import('../../api/src/utils/theme.ts')
+    const { getPublicSiteInfoHash } = await import('../../api/src/utils/public-site-info.ts')
     const siteUrl = config.publicUrl.replace(/\/simple-directory$/, '')
 
     for (const categories of [[], ['theme'], ['theme', 'title']]) {
       await withCategories(categories)
       const params = await getSiteExtraParams(siteUrl)
-      const resources = await getMainSiteResources()
-      assert.equal(params.THEME_CSS_HASH, resources.themeCssHash, `categories=${categories.join(',')}`)
-      assert.equal(params.PUBLIC_SITE_INFO_HASH, resources.publicInfoHash, `categories=${categories.join(',')}`)
+      const site = await getEffectiveMainSite()
+      assert.equal(params.THEME_CSS_HASH, getThemeCssHash(site), `categories=${categories.join(',')}`)
+      assert.equal(params.PUBLIC_SITE_INFO_HASH, getPublicSiteInfoHash(site), `categories=${categories.join(',')}`)
     }
 
     await withCategories(['title'])

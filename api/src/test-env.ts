@@ -153,10 +153,10 @@ router.post('/run-user-cleanup', async (req, res) => {
 // the derived main-site resources
 router.post('/clear-site-cache', async (req, res) => {
   const { getSiteByHost, getMainSiteDoc } = await import('./sites/service.ts')
-  const { clearMainSiteCache } = await import('./sites/main-site.ts')
+  const { clearSiteResourceCaches } = await import('./sites/main-site.ts')
   getSiteByHost.clear()
   getMainSiteDoc.clear()
-  clearMainSiteCache()
+  clearSiteResourceCaches()
   res.status(200).send('ok')
 })
 

@@ -1,6 +1,6 @@
 import config from '../config.ts'
 import crypto from 'node:crypto'
-import { type Site } from '../../types/index.ts'
+import { type EffectiveSite } from './public-site-info.ts'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import { getTextColorsCss, type Theme } from '@data-fair/lib-common-types/theme/index.js'
 
@@ -29,10 +29,14 @@ export const getThemeCss = (theme: Theme, sitePath: string = '') => {
 }
 
 const themeCssHashCache: Record<string, string> = {}
-export const getThemeCssHash = (site: Site) => {
+export const getThemeCssHash = (site: EffectiveSite) => {
   const cacheKey = site._id + '-' + site.updatedAt
   themeCssHashCache[cacheKey] = themeCssHashCache[cacheKey] ?? crypto.createHash('md5').update(getThemeCss(site.theme, site.path)).digest('hex')
   return themeCssHashCache[cacheKey]
+}
+
+export const clearThemeCssHashCache = () => {
+  for (const key of Object.keys(themeCssHashCache)) delete themeCssHashCache[key]
 }
 
 export const defaultThemeCss = getThemeCss(config.theme)

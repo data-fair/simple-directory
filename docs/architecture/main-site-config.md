@@ -96,25 +96,47 @@ and user scoping. `getPublicSiteInfo` for the main site forces `main: true`,
 The default is `[]` in 8.x, so no existing install changes behaviour on
 upgrade. 9.0 will default to the full list.
 
-## One resolver
+## One merge, no second rendering path
 
-`api/src/sites/main-site.ts` owns the merge. Every presentation consumer goes
-through it, so paths A and B can no longer disagree:
+`api/src/sites/main-site.ts` owns the merge and nothing else. Its only job is
+`getEffectiveMainSite()`: take the env baseline and overlay the document's
+presentation fields for each enabled category. What it returns is an ordinary
+`EffectiveSite`, so every consumer renders it with the **same** functions it
+uses for a real site — there is deliberately no main-site variant of
+`getPublicSiteInfo`, `getThemeCss` or the hash caches:
 
-- the `/api/sites/_*` endpoints in `api/src/sites/router.ts`
-- `getSiteExtraParams` in `api/src/sites/spa-params.ts`, which feeds the served
-  HTML. It is routed through the resolver **unconditionally**, independent of
-  `mainSiteFromDb` — with an empty list the resolver returns pure env values, so
-  both sides agree. This is the cache-hash bug fix.
-- `api/src/mails/service.ts`
+```ts
+const site = await reqSite(req) ?? await getEffectiveMainSite()
+res.send(getPublicSiteInfo(site))
+```
 
-Hashes are computed from the content actually served, never from the document's
-`updatedAt` alone, so `_hashes` and `/:hash/_theme.css` cannot diverge again.
+That shape holds in the `/api/sites/_*` endpoints
+(`api/src/sites/router.ts`), in `getSiteExtraParams`
+(`api/src/sites/spa-params.ts`) and in `api/src/mails/service.ts`. Because the
+renderer is shared, paths A and B cannot disagree and the hashes cannot stop
+describing the bytes served under them.
 
-The env baseline constants (`defaultThemeCss`, `defaultPublicSiteInfo` and their
-hashes) are **kept**: `ui/vite.config.ts` imports them to inject the dev
-server's HTML and must not reach into mongo. The resolver returns those same
-constants when no category contributes, so dev and prod inject identical hashes.
+`EffectiveSite` (`api/src/utils/public-site-info.ts`) is `Site` with an optional
+`owner` and a `main?: true` flag — the main site has no owning organization, and
+`main` is the one key `getPublicSiteInfo` emits conditionally so an ordinary
+site's payload, and therefore its hash, is byte for byte what it was before this
+change.
+
+Two details the merge handles so the shared renderer stays dumb:
+
+- **Logo precedence differs.** An ordinary site falls back to its owner's
+  avatar; the main site prefers `config.theme.logo` and uses the owner avatar
+  only as a last resort. The merge resolves the logo before returning, so
+  `getPublicSiteInfo` only ever reads `theme.logo`.
+- **Cache keys.** The shared hash caches key on `_id + updatedAt`, which cannot
+  see a change to `mainSiteFromDb`. The merge folds the contributing categories
+  into the synthetic `_id` (`_main-<docId>-<categories>`). This only matters for
+  tests, which flip the config at runtime; `clearSiteResourceCaches()` backs
+  `POST /api/test-env/clear-site-cache`.
+
+`envMainSite()` and the `defaultPublicSiteInfo` / `defaultThemeCss` constants
+stay free of any mongo access: `ui/vite.config.ts` imports the hashes to inject
+the dev server's HTML.
 
 ### Blast radius beyond simple-directory
 
