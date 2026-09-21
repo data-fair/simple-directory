@@ -56,7 +56,7 @@
           </v-list-item-title>
           <v-list-item-subtitle style="white-space:normal;">
             <span v-if="nhi.department">{{ orga.departmentLabel || $t('common.department') }} = {{ nhi.departmentName || nhi.department }}, </span>
-            <span>{{ $t('common.role') }} = {{ nhi.role }}</span>
+            <span>{{ $t('common.role') }} = {{ roleLabel(nhi.role) }}</span>
           </v-list-item-subtitle>
           <v-list-item-subtitle style="white-space:normal;">
             {{ $t('pages.organization.nhiSubject') }} = {{ nhi.subject }}
@@ -127,6 +127,7 @@ const { orga } = defineProps({
     required: true
   }
 })
+const { roleLabel } = useRoleLabels(() => orga)
 
 const { copy } = useClipboard()
 const session = useSession()

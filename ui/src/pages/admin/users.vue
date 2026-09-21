@@ -90,7 +90,7 @@
           </td>-->
           <td>
             <template v-if="props.item['2FA'] && props.item['2FA'].active">
-              oui
+              {{ $t('common.yes') }}
               <v-btn
                 :title="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
                 :aria-label="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
@@ -113,7 +113,7 @@
                   :to="`/organization/${orga.id}`"
                 >{{ orga.name }}</router-link>
                 <template v-if="orga.department">{{ orga.departmentName || orga.department }}</template>
-                ({{ orga.role }})
+                ({{ orga.roleLabel || orga.role }})
               </span>
             </div>
           </td>
@@ -446,7 +446,8 @@ const showDrop2FADialog = (user: User) => {
 }
 const drop2FACurrentUser = useAsyncAction(async () => {
   if (currentUser.value === undefined) return
-  await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { '2FA': { active: false } } })
+  // null unsets the whole 2FA configuration, the user will have to enrol again
+  await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { '2FA': null } })
 })
 
 type TransferTarget = { title: string, host?: string, path?: string }

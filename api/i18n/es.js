@@ -108,6 +108,7 @@ export default {
     adminGlobal: 'Administración global',
     adminSite: 'Administración del sitio',
     no: 'no',
+    yes: 'sí',
     redirectSite: 'Sitio de redirección',
     manageOrg: 'Gestión de la organización',
     manageDep: 'Gestión del departamento'
@@ -142,7 +143,6 @@ export default {
           public: '<b>IMPORTANTE.</b> La ruta a la clave pública de cifrado RSA. Consulte la documentación de instalación del servicio.',
           private: '<b>IMPORTANTE.</b> La ruta a la clave privada de cifrado RSA. Consulte la documentación de instalación del servicio.'
         },
-        analytics: 'JSON de configuración de análisis, corresponde a la parte de "módulos" de la configuración de la biblioteca <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
           type: `<b>IMPORTANTE.</b> El tipo de almacenamiento para la persistencia del usuario y la organización.<br>
 El tipo de "archivo" predeterminado es de solo lectura y es adecuado para desarrollo/pruebas o para usar una colección de usuarios exportada desde otro sistema.<br>
@@ -403,6 +403,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
     unknownSAMLProvider: 'La identificación SAML no es compatible.',
     adminModeOnly: 'Funcionalidad reservada para superadministradores.',
     adminChangeHostBlocked: 'Los superadministradores no pueden transferir su cuenta a un sitio secundario. Inicie sesión desde el sitio principal.',
+    emailNotConfirmed: 'Su dirección de correo electrónico aún no ha sido confirmada. Se le acaba de enviar un nuevo enlace de confirmación, ábralo para activar su cuenta.',
     '2FANotConfigured': 'La autenticación de dos factores es requerida para esta cuenta y aún no está configurada.',
     passwordless2FA: 'La autenticación sin contraseña es incompatible con la autenticación de dos factores requerida para esta cuenta.',
     bad2FAToken: 'Código de verificación inválido o expirado para la autenticación de dos factores',

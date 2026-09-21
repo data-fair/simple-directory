@@ -169,7 +169,7 @@
               v-if="orga.role"
               :key="'org-' + orga.id + '-' + orga.department"
             >
-              {{ orga.name }} <span v-if="orga.department">- {{ orga.departmentName || orga.department }}</span> ({{ orga.role }})
+              {{ orga.name }} <span v-if="orga.department">- {{ orga.departmentName || orga.department }}</span> ({{ orga.roleLabel || orga.role }})
               <br>
             </span>
           </template>

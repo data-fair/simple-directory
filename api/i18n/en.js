@@ -108,6 +108,7 @@ export default {
     adminGlobal: 'Global administration',
     adminSite: 'Site administration',
     no: 'no',
+    yes: 'yes',
     redirectSite: 'Redirect site',
     manageOrg: 'Organization management',
     manageDep: 'Department management'
@@ -142,7 +143,6 @@ export default {
           public: '<b>IMPORTANT.</b> The key to the public RSA signing key. See the install doc of the service.',
           private: '<b>IMPORTANT.</b> The key to the private RSA signing key. See the install doc of the service.'
         },
-        analytics: 'JSON for configuring analytics, matches with the "modules" section of the lib <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
           type: `<b>IMPORTANT.</b> The type of storage for persisting users and organizations.<br>
 The default type "file" is read-only and suited for development/test or to use data exported from another system.<br>
@@ -405,6 +405,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     unknownSAMLProvider: 'SAML identification not supported.',
     adminModeOnly: 'Functionality reserved for super administrators.',
     adminChangeHostBlocked: 'Super administrators cannot transfer their account to a secondary site. Sign in from the main site.',
+    emailNotConfirmed: 'Your email address has not been confirmed yet. A new confirmation link has just been sent to you, open it to activate your account.',
     '2FANotConfigured': 'Two-factor authentication is required for this account and is not yet configured.',
     passwordless2FA: 'Passwordless authentication is incompatible with two-factor authentication required for this account.',
     bad2FAToken: 'Invalid or expired verification code for two-factor authentication',

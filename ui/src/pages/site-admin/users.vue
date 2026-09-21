@@ -68,7 +68,7 @@
                   :to="`/organization/${orga.id}`"
                 >{{ orga.name }}</router-link>
                 <template v-if="orga.department">{{ orga.departmentName || orga.department }}</template>
-                ({{ orga.role }})
+                ({{ orga.roleLabel || orga.role }})
               </span>
             </div>
           </td>

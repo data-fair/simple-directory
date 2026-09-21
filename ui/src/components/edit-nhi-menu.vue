@@ -41,7 +41,7 @@
           />
           <v-select
             v-model="editNhi.role"
-            :items="orga.roles"
+            :items="roleItems"
             :label="$t('common.role')"
             :rules="[v => !!v || '']"
             name="role"
@@ -142,6 +142,7 @@ const { orga, nhi } = defineProps({
   orga: { type: Object as () => Organization, required: true },
   nhi: { type: Object as () => any, required: true }
 })
+const { roleItems } = useRoleLabels(() => orga)
 const emit = defineEmits(['change'])
 
 const menu = ref(false)

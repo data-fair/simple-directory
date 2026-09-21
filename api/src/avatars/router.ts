@@ -1,6 +1,7 @@
 import config from '#config'
-import { Router, type RequestHandler } from 'express'
+import { Router, type Request, type RequestHandler, type Response } from 'express'
 import { resolve } from 'node:path'
+import { readFileSync } from 'node:fs'
 import { type Account, assertAccountRole, getAccountRole, httpError, reqSession } from '@data-fair/lib-express'
 import gm from 'gm'
 import colors from 'material-colors'
@@ -33,6 +34,19 @@ const getInitials = (name: string) => {
 const font = resolve(import.meta.dirname, '../../resources/nunito-ttf/Nunito-ExtraBold.ttf')
 // white mdiRobot glyph (same as the UI's NHI icon), composited as a bottom-right badge
 const robotBadge = resolve(import.meta.dirname, '../../resources/robot.png')
+// grey placeholders (mdiAccount / mdiAccountGroup / mdiFamilyTree, see dev/make-unknown-avatars.ts)
+// served with a 404 when the owner does not exist any more: an <img> keeps rendering something
+// where the name of a deleted account is still displayed, and an API client still sees the 404
+const readResource = (name: string) => readFileSync(resolve(import.meta.dirname, `../../resources/${name}`))
+const unknownAvatars = {
+  user: readResource('unknown-user.png'),
+  organization: readResource('unknown-organization.png'),
+  department: readResource('unknown-department.png')
+}
+const sendUnknown = (req: Request<AvatarParams>, res: Response) => {
+  const kind = req.params.type === 'user' ? 'user' : (req.params.department ? 'department' : 'organization')
+  res.status(404).set('Content-Type', 'image/png').send(unknownAvatars[kind])
+}
 const makeAvatar = async (text: string, color: string, robot?: boolean) => {
   const buffer = await new Promise<Buffer>((resolve, reject) => {
     gm(100, 100, color)
@@ -69,11 +83,11 @@ const readAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
     let robot = false
     if (req.params.type === 'organization') {
       const org = await storages.globalStorage.getOrganization(req.params.id)
-      if (!org) throw httpError(404)
+      if (!org) return sendUnknown(req, res)
       name = org.name
       if (req.params.department) {
         const dep = org.departments?.find(d => d.id === req.params.department)
-        if (!dep) throw httpError(404)
+        if (!dep) return sendUnknown(req, res)
         name = dep.name
       }
     } else {
@@ -81,7 +95,7 @@ const readAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
         name = 'Super Admin'
       } else {
         const user = await storages.globalStorage.getUser(req.params.id)
-        if (!user) throw httpError(404)
+        if (!user) return sendUnknown(req, res)
         name = user.name
         robot = !!user.nhi
         if (user.oauth) {

@@ -9,7 +9,7 @@ import { reqI18n } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
 import type { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
-import { setNbMembersLimit, deleteIdentityLimits, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, getInvitationRedirect } from '#services'
+import { setNbMembersLimit, deleteIdentityLimits, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, getInvitationRedirect, deleteOtherDepartmentsAvatars } from '#services'
 import { __all } from '#i18n'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
@@ -194,6 +194,7 @@ router.patch('/:organizationId', async (req, res, next) => {
     }
   }
   const patchedOrga = await storages.globalStorage.patchOrganization(req.params.organizationId, patch, user)
+  if (patch.departments) await deleteOtherDepartmentsAvatars(patchedOrga.id, patch.departments.map(d => d.id as string))
 
   logContext.account = { type: 'organization', id: patchedOrga.id, name: patchedOrga.name }
   eventsLog.info('sd.org.patch', `a user patched the organization info ${Object.keys(patch).join(', ')} - ${patchedOrga.name} ${patchedOrga.id}`, logContext)
@@ -481,6 +482,7 @@ if (config.managePartners) {
     if (!pendingInvitation) return res.status(400).send('pas d\'invitation en attente de validation')
 
     await storage.validatePartner(orga.id, tokenPayload.partnerId, partnerOrga)
+    postOrganizationIdentityWebhook((await storage.getOrganization(orga.id)) ?? orga)
 
     eventsLog.info('sd.org.partner.accept', `a user accepted an organization to be a partner ${partnerOrga.name} (${partnerOrga.id}) of ${orga.name} (${orga.id})`, logContext)
 
@@ -526,6 +528,7 @@ if (config.managePartners) {
       createdAt: new Date().toISOString()
     }
     await storage.addPartner(orga.id, partner)
+    postOrganizationIdentityWebhook((await storage.getOrganization(orga.id)) ?? orga)
 
     eventsLog.info('sd.org.partner.create', `a superadmin manually created a partnership ${partnerOrga.name} (${partnerOrga.id}) of ${orga.name} (${orga.id})`, logContext)
 
@@ -539,6 +542,8 @@ if (config.managePartners) {
     if (!await isOrgAdmin(req)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     const storage = storages.globalStorage
     await storage.deletePartner(req.params.organizationId, req.params.partnerId)
+    const orga = await storage.getOrganization(req.params.organizationId)
+    if (orga) postOrganizationIdentityWebhook(orga)
 
     eventsLog.info('sd.org.partner.delete', `a user removed a partner from an organization ${req.params.partnerId} ${req.params.organizationId}`, logContext)
     res.status(201).send()

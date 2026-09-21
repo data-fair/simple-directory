@@ -108,6 +108,7 @@ export default {
     adminGlobal: 'Administration générale',
     adminSite: 'Administration de site',
     no: 'non',
+    yes: 'oui',
     redirectSite: 'Site de redirection',
     manageOrg: 'Gestion de l\'organisation',
     manageDep: 'Gestion du département'
@@ -142,7 +143,6 @@ export default {
           public: '<b>IMPORTANT.</b> Le chemin vers la clé publique de chiffrement RSA. Voir la documentation d\'installation du service.',
           private: '<b>IMPORTANT.</b> Le chemin vers la clé privée de chiffrement RSA. Voir la documentation d\'installation du service.'
         },
-        analytics: 'JSON de configuration des analytics, correspond à la partie "modules" de configuration de la librairie <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
           type: `<b>IMPORTANT.</b> Le type de stockage pour la persistance des utilisateurs et des organisations.<br>
 Le type "file" par défaut est lecture seule et est adapté en développement/test ou pour utiliser une collection d'utilisateurs exportée depuis un autre système.<br>
@@ -405,6 +405,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     unknownSAMLProvider: 'Identification SAML non supportée.',
     adminModeOnly: 'Fonctionnalité réservée aux super-administrateurs.',
     adminChangeHostBlocked: 'Les super-administrateurs ne peuvent pas transférer leur compte vers un site secondaire. Connectez-vous depuis le site principal.',
+    emailNotConfirmed: 'Votre adresse email n\'a pas encore été confirmée. Un nouveau lien de confirmation vient de vous être envoyé, ouvrez-le pour activer votre compte.',
     '2FANotConfigured': 'L\'authentification à 2 facteurs est nécessaire pour ce compte et n\'est pas encore configurée.',
     passwordless2FA: 'L\'authentification sans mot de passe est incompatible avec l\'authentification à 2 facteurs requise pour ce compte.',
     bad2FAToken: 'Code de vérification erroné ou périmé pour l\'authentification à 2 facteurs',

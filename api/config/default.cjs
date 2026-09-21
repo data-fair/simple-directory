@@ -134,7 +134,6 @@ module.exports = {
   webhooks: {
     identities: []
   },
-  analytics: {}, // a "modules" definition for @koumoul/vue-multianalytics
   theme: {},
   i18n: {
     defaultLocale: 'fr',

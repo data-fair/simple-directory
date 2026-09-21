@@ -108,6 +108,7 @@ export default {
     adminGlobal: 'Globale Verwaltung',
     adminSite: 'Seitenverwaltung',
     no: 'Nein',
+    yes: 'Ja',
     redirectSite: 'Website für die Weiterleitung',
     manageOrg: 'Organisationsverwaltung',
     manageDep: 'Abteilungsverwaltung'
@@ -142,7 +143,6 @@ export default {
           public: '<b>WICHTIG.</b> Der Pfad zum öffentlichen RSA-Verschlüsselungsschlüssel. Siehe die Dokumentation zur Dienstinstallation.',
           private: '<b>WICHTIG.</b> Der Pfad zum privaten RSA-Verschlüsselungsschlüssel. Siehe die Dokumentation zur Dienstinstallation.'
         },
-        analytics: 'JSON für die Analysekonfiguration, entspricht dem Konfigurationsteil "Module" der Bibliothek <a href="https://github.com/koumoul-dev/vue-multianalytics#modules">vue-multianalytics</a>',
         storage: {
           type: `<b>WICHTIG.</b> Die Art der Speicherung für die Persistenz von Benutzern und Organisationen.<br>
 Der voreingestellte "Datei"-Typ ist schreibgeschützt und eignet sich für Entwicklung/Test oder zur Verwendung einer aus einem anderen System exportierten Benutzersammlung.<br>
@@ -403,6 +403,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
     unknownSAMLProvider: 'SAML identification not supported.',
     adminModeOnly: 'Funktionalität für Superadministratoren reserviert.',
     adminChangeHostBlocked: 'Superadministratoren können ihr Konto nicht auf eine Sekundärseite übertragen. Melden Sie sich von der Hauptseite aus an.',
+    emailNotConfirmed: 'Ihre E-Mail-Adresse wurde noch nicht bestätigt. Ein neuer Bestätigungslink wurde Ihnen soeben zugesandt, öffnen Sie ihn, um Ihr Konto zu aktivieren.',
     '2FANotConfigured': 'Zwei-Faktor-Authentifizierung ist für dieses Konto erforderlich und noch nicht konfiguriert.',
     passwordless2FA: 'Kennwortlose Authentifizierung ist inkompatibel mit der Zwei-Faktor-Authentifizierung, die für dieses Konto erforderlich ist.',
     bad2FAToken: 'Ungültiger oder abgelaufener Bestätigungscode für die Zwei-Faktor-Authentifizierung',
