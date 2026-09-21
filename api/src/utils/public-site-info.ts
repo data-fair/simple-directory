@@ -12,7 +12,7 @@ const removeUndef = (obj?: Record<string, any>) => {
   }
 }
 
-export const lighterTheme = (fullTheme: Theme) => {
+const lighterTheme = (fullTheme: Theme) => {
   const theme = clone(fullTheme)
   if (!theme.dark) delete theme.darkColors
   if (!theme.hc) delete theme.hcColors

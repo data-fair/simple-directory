@@ -96,7 +96,6 @@ const vjsfOptions = computed(() => {
     initialValidation: 'always',
     context: {
       isMainSite: isMainSite.value,
-      mainSiteFromDb: $uiConfig.mainSiteFromDb,
       hasAccountMainSite: otherSites?.some(s => s.isAccountMain),
       otherSites: otherSites?.map(site => site.host),
       otherSitesProviders: otherSites?.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {} as Record<string, string[]>)

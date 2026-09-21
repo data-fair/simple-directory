@@ -8,7 +8,6 @@ export const uiConfig = {
   publicUrl: config.publicUrl,
   theme: config.theme,
   manageSites: config.manageSites,
-  mainSiteFromDb: config.mainSiteFromDb,
   i18n: config.i18n,
   tosUrl: config.tosUrl,
   passwordless: config.passwordless,

@@ -7,7 +7,7 @@ import { getMainSiteResources } from './main-site.ts'
 // it must also survive the micro-template passes that follow: '{' is neutralized so a title cannot
 // smuggle a later placeholder (CSP_NONCE is substituted after us), and '$' is doubled because
 // microTemplate interpolates through String.replace, where $&, $` and $' are replacement patterns.
-export const escapeHtml = (value: string) => value
+const escapeHtml = (value: string) => value
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/\{/g, '&#123;')
   .replace(/\$/g, '$$$$')

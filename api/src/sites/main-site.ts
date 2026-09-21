@@ -13,19 +13,17 @@ import {
 } from '../utils/public-site-info.ts'
 import { getThemeCss, defaultThemeCss, defaultThemeCssHash } from '../utils/theme.ts'
 
-export type { MainSitePresentation }
+type MainSiteCategory = 'theme' | 'title' | 'mails' | 'registration'
 
-export type MainSiteCategory = 'theme' | 'title' | 'mails' | 'registration'
-
-export const mainSiteCategories: MainSiteCategory[] = ['theme', 'title', 'mails', 'registration']
+const mainSiteCategories: MainSiteCategory[] = ['theme', 'title', 'mails', 'registration']
 
 // Fields of a site document that are never honoured on the main host, whatever
 // config.mainSiteFromDb contains. They are inert here, not refused: the API
 // blocks no write (see docs/architecture/main-site-config.md for why a write
 // barrier was rejected).
-export const mainSiteIgnoredFields = ['authMode', 'authOnlyOtherSite', 'authProviders', 'applications', 'isAccountMain'] as const
+const mainSiteIgnoredFields = ['authMode', 'authOnlyOtherSite', 'authProviders', 'applications', 'isAccountMain'] as const
 
-export const mainSiteCategoryFields: Record<MainSiteCategory, (keyof Site)[]> = {
+const mainSiteCategoryFields: Record<MainSiteCategory, (keyof Site)[]> = {
   theme: ['theme'],
   title: ['title'],
   mails: ['mails'],
