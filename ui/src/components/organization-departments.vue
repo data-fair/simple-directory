@@ -30,7 +30,7 @@
 
     <v-row
       v-if="(orga.departments?.length ?? 0) > pageSize"
-      dense
+      density="compact"
     >
       <v-col cols="4">
         <v-text-field

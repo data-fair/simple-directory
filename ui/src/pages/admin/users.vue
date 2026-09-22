@@ -503,7 +503,7 @@ headers.push({ title: '', value: 'actions', sortable: false })
 
 <style lang="css">
 .users-table td, .users-table th {
-  padding-left: 4px !important;
-  padding-right: 4px !important;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 </style>

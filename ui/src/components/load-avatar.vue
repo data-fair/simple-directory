@@ -1,150 +1,189 @@
 <template>
-  <v-input
-    name="avatar"
-    :label="$t('common.avatar')"
-    :disabled="disabled"
-    class="vjsf-crop-img"
-  >
-    <!--<v-icon
-      v-if="!disabled"
-      style="position: absolute; right: 0;"
-      @click="on.input(null)"
-      :icon="mdiClose"
+  <div>
+    <v-file-input
+      v-model="file"
+      :label="label"
+      :disabled="disabled"
+      accept="image/png, image/jpeg"
+      variant="outlined"
+      density="compact"
+      prepend-icon=""
+      hide-details="auto"
+      clearable
     >
-    </v-icon>-->
-    <v-row class="mt-0 mx-0">
-      <v-avatar
-        class="mt-2 mr-1"
-      >
-        <v-img
-          v-if="owner && !loading"
-          :src="avatarUrl + '?t=' + getTimestamp()"
-          alt=""
+      <!-- the current avatar, the timestamp forces a reload after an upload or a reset -->
+      <template #prepend>
+        <v-avatar
+          size="40"
+          :image="`${avatarUrl}?t=${timestamp}`"
         />
-      </v-avatar>
-      <v-file-input
-        v-if="!disabled"
-        v-model="file"
-        class="pt-2"
-        accept="image/png, image/jpeg"
-        :label="loadLabel"
-        variant="outlined"
-        density="compact"
-        prepend-icon=""
-        @change="change"
+      </template>
+      <!-- a declared slot renders its container and margin even when empty -->
+      <template
+        v-if="canValidate || canReset"
+        #append
       >
-        <template #append>
-          <v-btn
-            v-if="file && !hideValidate"
-            size="small"
-            color="primary"
-            :title="$t('common.validate')"
-            :aria-label="$t('common.validate')"
-            style="position: relative;"
-            :icon="mdiCheck"
-            @click="validate.execute()"
-          />
-        </template>
-      </v-file-input>
-    </v-row>
-    <vue-cropper
-      v-if="file"
-      ref="cropper"
-      v-bind="cropperOptions"
-      :src="imgSrc"
-    />
-  </v-input>
+        <v-btn
+          v-if="canValidate"
+          color="primary"
+          size="small"
+          :icon="mdiCheck"
+          :title="$t('common.validate')"
+          :aria-label="$t('common.validate')"
+          :loading="validate.loading.value"
+          @click="validate.execute()"
+        />
+        <v-btn
+          v-else
+          color="error"
+          variant="text"
+          size="small"
+          :icon="mdiDelete"
+          :title="$t('pages.avatar.reset')"
+          :aria-label="$t('pages.avatar.reset')"
+          :loading="reset.loading.value"
+          @click="reset.execute()"
+        />
+      </template>
+    </v-file-input>
+
+    <!-- square crop of the loaded image, the image itself can be dragged and zoomed under the selection -->
+    <cropper-canvas
+      v-if="imgSrc"
+      class="load-avatar-canvas border rounded mt-2"
+    >
+      <cropper-image
+        :src="imgSrc"
+        :alt="$t('common.avatar')"
+        rotatable
+        scalable
+        translatable
+      />
+      <cropper-shade />
+      <cropper-selection
+        ref="selection"
+        aspect-ratio="1"
+        initial-coverage="0.85"
+        movable
+        resizable
+      >
+        <cropper-grid
+          role="grid"
+          bordered
+          covered
+        />
+        <cropper-crosshair centered />
+        <cropper-handle
+          action="move"
+          theme-color="rgba(255, 255, 255, 0.35)"
+        />
+        <cropper-handle action="n-resize" />
+        <cropper-handle action="e-resize" />
+        <cropper-handle action="s-resize" />
+        <cropper-handle action="w-resize" />
+        <cropper-handle action="ne-resize" />
+        <cropper-handle action="nw-resize" />
+        <cropper-handle action="se-resize" />
+        <cropper-handle action="sw-resize" />
+      </cropper-selection>
+    </cropper-canvas>
+  </div>
 </template>
 
 <script setup lang="ts">
-import VueCropper from 'vue-cropperjs'
-import 'cropperjs/dist/cropper.css'
 import type { AccountKeys } from '@data-fair/lib-vue/session'
-import debugModule from 'debug'
+import 'cropperjs'
+import type { CropperSelection } from 'cropperjs'
 
-const debug = debugModule('sd:load-avatar')
-
-// see https://stackoverflow.com/a/5100158
-function dataURItoBlob (dataURI: string) {
-  // convert base64/URLEncoded data component to raw binary data held in a string
-  let byteString
-  if (dataURI.split(',')[0].indexOf('base64') >= 0) { byteString = atob(dataURI.split(',')[1]) } else { byteString = unescape(dataURI.split(',')[1]) }
-
-  // separate out the mime component
-  const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
-
-  // write the bytes of the string to a typed array
-  const ia = new Uint8Array(byteString.length)
-  for (let i = 0; i < byteString.length; i++) {
-    ia[i] = byteString.charCodeAt(i)
-  }
-
-  return new Blob([ia], { type: mimeString })
-}
-
-const { owner, disabled, hideValidate, departmentLabel } = defineProps({
-  owner: { type: Object as () => AccountKeys, default: null },
+const { owner, disabled, hideValidate, departmentName } = defineProps({
+  owner: { type: Object as () => AccountKeys, required: true },
   disabled: { type: Boolean, default: false },
+  // the parent triggers the upload itself through the exposed validate()
   hideValidate: { type: Boolean, default: false },
-  departmentLabel: { type: String, default: null }
+  departmentName: { type: String, default: null }
 })
 
 const { t } = useI18n()
 
 // the label must name the owner explicitly, users used to mistake the organization
 // avatar for their own
-const loadLabel = computed(() => {
-  if (owner?.type === 'user') return t('pages.avatar.loadUser')
-  if (owner?.department) return t('pages.avatar.loadDepartment', { departmentLabel: (departmentLabel || t('common.department')).toLowerCase() })
-  return t('pages.avatar.loadOrganization')
+const label = computed(() => {
+  if (owner.type === 'user') return t('pages.avatar.changeUser')
+  if (owner.department) return t('pages.avatar.changeDepartment', { departmentName })
+  return t('pages.avatar.changeOrganization')
 })
-
-const cropper = ref<any>()
-const loading = ref(false)
-const file = ref<File | null>(null)
-const imgSrc = ref('')
-const cropperOptions = { aspectRatio: 1, autoCrop: true }
 
 const avatarUrl = computed(() => {
   let url = `${$sdUrl}/api/avatars/${owner.type}/${owner.id}`
   if (owner.department) url += `/${owner.department}`
-  url += '/avatar.png'
-  return url
+  return url + '/avatar.png'
 })
 
-const change = () => {
-  if (!file.value) {
-    imgSrc.value = ''
-    return
-  }
-  const reader = new FileReader()
-  reader.onload = (event) => {
-    imgSrc.value = event.target?.result as string
-    cropper.value?.replace(imgSrc.value)
-  }
-  reader.readAsDataURL(file.value)
-}
+const file = ref<File | null>(null)
+const imgSrc = ref<string>()
+const selection = ref<CropperSelection>()
+const timestamp = ref(Date.now())
+
+// the reset button only makes sense over an uploaded avatar, not the generated initials
+const isCustom = ref(false)
+watch(avatarUrl, async () => {
+  const res = await $fetch.raw(avatarUrl.value, { method: 'HEAD' }).catch(() => null)
+  isCustom.value = res?.headers.get('x-avatar-custom') === 'true'
+}, { immediate: true })
+
+// an object URL keeps the multi-MB image out of the DOM, unlike a data URL
+watch(file, (file) => {
+  if (imgSrc.value) URL.revokeObjectURL(imgSrc.value)
+  imgSrc.value = file ? URL.createObjectURL(file) : undefined
+})
+onBeforeUnmount(() => { if (imgSrc.value) URL.revokeObjectURL(imgSrc.value) })
+
+const canValidate = computed(() => !!file.value && !hideValidate)
+const canReset = computed(() => isCustom.value && !disabled)
 
 const validate = useAsyncAction(async () => {
-  debug('validate', file.value)
-  if (!file.value) return
-  loading.value = true
-  const croppedImg = dataURItoBlob(cropper.value?.getCroppedCanvas({ width: 100, height: 100 }).toDataURL('image/png'))
+  if (!file.value || !selection.value) return
+  const canvas = await selection.value.$toCanvas({ width: 100, height: 100 })
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
+  if (!blob) return
   const formData = new FormData()
-  formData.append('avatar', croppedImg)
-  debug('send new avatar', avatarUrl.value)
+  formData.append('avatar', blob)
   await $fetch(avatarUrl.value, { method: 'POST', body: formData })
-  loading.value = false
   file.value = null
+  timestamp.value = Date.now()
+  isCustom.value = true
+})
+
+const reset = useAsyncAction(async () => {
+  await $fetch(avatarUrl.value, { method: 'DELETE' })
+  timestamp.value = Date.now()
+  isCustom.value = false
 })
 
 defineExpose({ validate: () => validate.execute() })
-
-const getTimestamp = () => new Date().getTime()
 </script>
 
 <style lang="css">
-.vjsf-crop-img>.v-input__control {
-  display: block;
+.load-avatar-canvas {
+  height: 360px;
+  max-height: 50vh;
+}
+
+/* preview the round avatar cut: a dashed circle and dimmed corners inside the selection */
+.load-avatar-canvas cropper-selection::before,
+.load-avatar-canvas cropper-selection::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.load-avatar-canvas cropper-selection::before {
+  background: radial-gradient(circle closest-side, transparent 99%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+.load-avatar-canvas cropper-selection::after {
+  border: 1.5px dashed rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
 }
 </style>

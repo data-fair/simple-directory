@@ -20,7 +20,8 @@ test.describe('Superadmin user transfer', () => {
     await testEnvAx.post('/clear-site-cache')
 
     await loginExisting('admin@test.com', { adminMode: true })
-    await page.goto(appUrl('/admin/users'))
+    // filter on the target user: the table is paginated and the dev fixtures survive the test cleanup
+    await page.goto(appUrl('/admin/users?q=transfer-e2e'))
 
     const row = page.locator('tr').filter({ hasText: 'transfer-e2e@test.com' })
     await expect(row).toBeVisible({ timeout: 10_000 })

@@ -4,7 +4,6 @@
       {{ $t('common.createOrganization') }}
     </h2>
     <v-form
-      ref="form"
       v-model="valid"
       @submit.prevent
     >
@@ -43,8 +42,6 @@
 </template>
 
 <script setup lang="ts">
-import type { VForm } from 'vuetify/components'
-
 const { user, keepalive } = useSession()
 const router = useRouter()
 
@@ -53,7 +50,6 @@ const newOrga = ref({ name: '', description: '' })
 const valid = ref(false)
 const autoAdmin = ref(true)
 
-const form = ref<InstanceType<typeof VForm>>()
 const create = useAsyncAction(async () => {
   const createdOrga = await $fetch<Organization>('organizations', { method: 'POST', body: newOrga.value, params: { autoAdmin: autoAdmin.value } })
   await keepalive()

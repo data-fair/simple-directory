@@ -155,23 +155,13 @@ test('nhi token exchange issues a short-lived org session', async () => {
 // human initials avatar keeps that region in plain background color (centered initials stay
 // above y~72, and the robot avatar's initials are additionally shifted up).
 const whiteBadgePixels = async (png: Buffer) => {
-  const gm = (await import('gm')).default
-  const ppm: Buffer = await new Promise((resolve, reject) => {
-    gm(png).toBuffer('PPM', (err, buf) => err ? reject(err) : resolve(buf))
-  })
-  // P6 header: "P6 <width> <height> <maxval>" as whitespace-separated ASCII, then binary RGB.
-  // A Q16 GraphicsMagick build emits maxval 65535 with 2 bytes per sample (big-endian).
-  const header = ppm.subarray(0, 32).toString('latin1')
-  const m = header.match(/^P6\s+(\d+)\s+(\d+)\s+(\d+)\s/)
-  if (!m) throw new Error('unexpected PPM header: ' + header)
-  const [, w, h, maxval] = m.map(Number)
-  const data = ppm.subarray(m[0].length)
-  const bps = maxval > 255 ? 2 : 1
-  const sample = (x: number, y: number, c: number) => bps === 2 ? data.readUInt16BE(((y * w + x) * 3 + c) * 2) : data[(y * w + x) * 3 + c]
+  const sharp = (await import('sharp')).default
+  const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true })
   let count = 0
-  for (let y = 74; y < Math.min(92, h); y++) {
-    for (let x = 40; x < Math.min(60, w); x++) {
-      if (sample(x, y, 0) >= maxval * 0.94 && sample(x, y, 1) >= maxval * 0.94 && sample(x, y, 2) >= maxval * 0.94) count++
+  for (let y = 74; y < Math.min(92, info.height); y++) {
+    for (let x = 40; x < Math.min(60, info.width); x++) {
+      const idx = (y * info.width + x) * info.channels
+      if (data[idx] >= 255 * 0.94 && data[idx + 1] >= 255 * 0.94 && data[idx + 2] >= 255 * 0.94) count++
     }
   }
   return count
