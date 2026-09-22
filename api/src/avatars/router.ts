@@ -49,7 +49,9 @@ const readAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
   }
   const owner = req.params as unknown as Account
   let avatar = await getAvatar(owner)
-  if (!avatar || avatar.initials) {
+  // an uploaded avatar has no initials key at all, a generated one always has it (possibly empty)
+  const generated = !avatar || avatar.initials !== undefined
+  if (generated) {
     let name
     let robot = false
     if (req.params.type === 'organization') {
@@ -99,7 +101,7 @@ const readAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
   }
 
   res.set('Content-Type', 'image/png')
-  res.set('x-avatar-custom', avatar.initials ? 'false' : 'true')
+  res.set('x-avatar-custom', generated ? 'false' : 'true')
   res.set('Access-Control-Expose-Headers', 'x-avatar-custom')
   res.send(avatar.buffer)
 }

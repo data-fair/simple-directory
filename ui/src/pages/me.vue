@@ -315,8 +315,11 @@ watch(userDetailsFetch.data, () => {
 })
 
 const maxBirthday = dayjs().subtract(13, 'years').toISOString()
+// v-date-input re-emits a new Date object on every blur, only save an actual change
 const setBirthday = (birthday: Date | null) => {
-  patch.value.birthday = birthday ? dayjs(birthday).format('YYYY-MM-DD') : null
+  const formatted = birthday ? dayjs(birthday).format('YYYY-MM-DD') : null
+  if (formatted === patch.value.birthday) return
+  patch.value.birthday = formatted
   save.execute()
 }
 

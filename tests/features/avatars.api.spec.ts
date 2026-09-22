@@ -111,4 +111,20 @@ test.describe('avatars api', () => {
     assert.equal(revertedRes.headers['x-avatar-custom'], 'false')
     assert.notDeepEqual(Buffer.from(revertedRes.data), testPng)
   })
+
+  test('should keep regenerating the avatar of a name without initials', async () => {
+    const { ax } = await createUser('avatar-no-initials@test.com')
+    // a name without any letter gives empty initials, which must not pass for a custom avatar
+    const org = (await ax.post('/api/organizations', { name: '---' })).data
+    ax.setOrg(org.id)
+    const path = `/api/avatars/organization/${org.id}/avatar.png`
+
+    const emptyRes = await ax.get(path, { responseType: 'arraybuffer' })
+    assert.equal(emptyRes.headers['x-avatar-custom'], 'false')
+
+    await ax.patch(`/api/organizations/${org.id}`, { name: 'Avatar org' })
+    const renamedRes = await ax.get(path, { responseType: 'arraybuffer' })
+    assert.equal(renamedRes.headers['x-avatar-custom'], 'false')
+    assert.notDeepEqual(Buffer.from(renamedRes.data), Buffer.from(emptyRes.data))
+  })
 })
