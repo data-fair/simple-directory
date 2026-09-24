@@ -33,17 +33,26 @@
           :loading="validate.loading.value"
           @click="validate.execute()"
         />
-        <v-btn
+        <confirm-menu
           v-else
-          color="error"
-          variant="text"
-          size="small"
-          :icon="mdiDelete"
+          yes-color="warning"
           :title="$t('pages.avatar.reset')"
-          :aria-label="$t('pages.avatar.reset')"
-          :loading="reset.loading.value"
-          @click="reset.execute()"
-        />
+          location="top end"
+          @confirm="reset.execute()"
+        >
+          <template #activator="{props}">
+            <v-btn
+              color="error"
+              variant="text"
+              size="small"
+              :icon="mdiDelete"
+              :title="$t('pages.avatar.reset')"
+              :aria-label="$t('pages.avatar.reset')"
+              :loading="reset.loading.value"
+              v-bind="props"
+            />
+          </template>
+        </confirm-menu>
       </template>
     </v-file-input>
 
