@@ -2,7 +2,7 @@ import type { Request } from 'express'
 import { getAccountRole, reqSession } from '@data-fair/lib-express'
 import config from '#config'
 import storages from '#storages'
-import { reqSite } from '#services'
+import { isSiteAdminOf } from '../utils/site-admin.ts'
 
 // Either a super admin, or an admin of the current organization (or the org admin
 // of the site the organization is bound to, when siteAdmin is enabled). Shared by
@@ -11,12 +11,5 @@ import { reqSite } from '#services'
 export async function isOrgAdmin (req: Request<{ organizationId: string }>) {
   const role = getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: config.depAdminIsOrgAdmin })
   if (role === 'admin') return true
-  if (config.siteAdmin && reqSession(req).siteRole === 'admin') {
-    const site = await reqSite(req)
-    const orga = await storages.globalStorage.getOrganization(req.params.organizationId)
-    if (site && orga?.host === site.host && orga?.path === site.path) {
-      return true
-    }
-  }
-  return false
+  return isSiteAdminOf(req, await storages.globalStorage.getOrganization(req.params.organizationId))
 }

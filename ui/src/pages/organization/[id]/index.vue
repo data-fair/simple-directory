@@ -5,7 +5,10 @@
     data-iframe-height
     style="max-width:650px;"
   >
-    <h2 class="text-headline-medium mb-4">
+    <h2
+      id="info"
+      class="text-headline-medium mb-4"
+    >
       <v-icon
         size="large"
         color="primary"
@@ -117,12 +120,14 @@
     </v-form>
 
     <organization-departments
-      v-if="$uiConfig.manageDepartments && showDetailedManagement"
+      v-if="showDepartments"
+      id="departments"
       :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
       @change="fetchOrga.refresh()"
     />
     <organization-members
+      id="members"
       :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
       :nb-members-limits="limits.data.value?.store_nb_members"
@@ -137,6 +142,7 @@
 
     <organization-members
       v-if="orga.orgStorage?.active"
+      id="org-storage-members"
       :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
       :nb-members-limits="limits.data.value?.store_nb_members"
@@ -145,7 +151,8 @@
     />
 
     <organization-partners
-      v-if="$uiConfig.managePartners && (showDetailedManagement || session.user.value?.adminMode)"
+      v-if="showPartners"
+      id="partners"
       :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
       @change="fetchOrga.refresh()"
@@ -153,14 +160,53 @@
 
     <organization-nhis
       v-if="$uiConfig.manageNhis && orgRole === 'admin'"
+      id="nhis"
       :orga="orga"
     />
+
+    <v-container
+      v-if="isSiteAdmin"
+      id="site-users"
+      fluid
+      class="pa-0"
+    >
+      <v-row class="mt-3 mx-0">
+        <h2 class="text-headline-medium mt-10 mb-4">
+          <v-icon
+            size="small"
+            color="primary"
+            style="top:-2px"
+            :icon="mdiAccountMultiple"
+          />
+          {{ $t('pages.organization.siteUsersTitle') }}
+          <v-tooltip location="right">
+            <template #activator="{props}">
+              <v-icon
+                v-bind="props"
+                size="small"
+                color="info"
+                class="ml-1"
+                :icon="mdiInformation"
+              />
+            </template>
+            {{ $t('pages.organization.siteUsersHelp') }}
+          </v-tooltip>
+        </h2>
+      </v-row>
+      <site-users />
+    </v-container>
+
+    <df-navigation-right>
+      <df-toc :sections="tocSections" />
+    </df-navigation-right>
   </v-container>
 </template>
 
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
 import { getAccountRole } from '@data-fair/lib-vue/session'
+import DfNavigationRight from '@data-fair/lib-vuetify/navigation-right.vue'
+import DfToc from '@data-fair/lib-vuetify/toc.vue'
 
 const session = useSession()
 const orgId = useRoute<'/organization/[id]/'>().params.id
@@ -191,7 +237,7 @@ const { roleItems } = useRoleLabels(orga)
 const orgRole = computed(() => {
   const role = getAccountRole(session.state, { type: 'organization', id: orgId }, { acceptDepAsRoot: $uiConfig.depAdminIsOrgAdmin })
   if (role) return role
-  if ($uiConfig.siteAdmin && session.siteRole.value === 'admin' && orga.value && orga.value.host === window.location.host && (orga.value.path || '') === ($sitePath || '')) {
+  if ($uiConfig.siteAdmin && session.siteRole.value === 'admin' && !session.organization.value?.department && orga.value && orga.value.host === window.location.host && (orga.value.path || '') === ($sitePath || '')) {
     return 'admin'
   }
 })
@@ -222,6 +268,29 @@ const showDetailedManagement = computed(() => {
   // on account's site only the owner can manage all
   if (session.user.value?.siteOwner?.type === 'organization' && session.user.value?.siteOwner?.id === orgId) return true
   return false
+})
+
+// root admin of the organization that owns the current site (siteAdmin): manages the accounts of the site
+const isSiteAdmin = computed(() => {
+  if (!$uiConfig.siteAdmin || session.siteRole.value !== 'admin' || session.organization.value?.department) return false
+  const siteOwner = session.user.value?.siteOwner
+  return siteOwner?.type === 'organization' && siteOwner.id === orgId
+})
+
+const showDepartments = computed(() => $uiConfig.manageDepartments && showDetailedManagement.value)
+const showPartners = computed(() => $uiConfig.managePartners && (showDetailedManagement.value || !!session.user.value?.adminMode))
+
+const tocSections = computed(() => {
+  if (!orga.value) return []
+  const sections = [{ id: 'info', title: t('pages.organization.infoTitle') }]
+  if (showDepartments.value) sections.push({ id: 'departments', title: orga.value.departmentLabel || t('common.departments') })
+  sections.push({ id: 'members', title: t('common.members') })
+  if (orga.value.orgStorage?.active) sections.push({ id: 'org-storage-members', title: t('common.orgStorageMembers') })
+  if (showPartners.value) sections.push({ id: 'partners', title: t('common.partners') })
+  // the nhis section of a normal org admin only shows up once a nhi exists, only superadmins are sure to see it
+  if ($uiConfig.manageNhis && orgRole.value === 'admin' && session.user.value?.adminMode) sections.push({ id: 'nhis', title: t('pages.organization.nhisTitle') })
+  if (isSiteAdmin.value) sections.push({ id: 'site-users', title: t('pages.organization.siteUsersTitle') })
+  return sections
 })
 </script>
 

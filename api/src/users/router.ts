@@ -11,6 +11,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
+import { isSiteAdminOf, isSiteAdminOfUser } from '../utils/site-admin.ts'
 import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, setNbMembersLimits, deleteIdentityLimits, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
 
 const router = Router()
@@ -35,14 +36,13 @@ router.get('', async (req, res, next) => {
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
+  let siteAdminList = false
   if (allFields) {
     if (user?.adminMode) {
       // ok
-    } else if (config.siteAdmin && session.siteRole === 'admin') {
-      const site = await reqSite(req)
-      if (!site || site.host !== req.query.host || site.path !== req.query.path) {
-        throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
-      }
+    } else if (await isSiteAdminOf(req, { host: req.query.host as string | undefined, path: req.query.path as string | undefined })) {
+      // ok, restricted to the accounts of the current site, without their sessions (ips, locations)
+      siteAdminList = true
     } else {
       throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     }
@@ -58,6 +58,9 @@ router.get('', async (req, res, next) => {
   if (typeof req.query.q === 'string') params.q = req.query.q
 
   const users = await storages.globalStorage.findUsers(params)
+  if (siteAdminList) {
+    for (const u of users.results) delete u.sessions
+  }
 
   eventsLog.info('sd.list-users', 'list users', logContext)
 
@@ -266,12 +269,21 @@ router.patch('/:userId', async (req, res, next) => {
   const logContext: EventLogContext = { req }
 
   const session = reqSessionAuthenticated(req)
-  if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  let siteAdminPatch = false
+  if (!session.user?.adminMode && session.user.id !== req.params.userId) {
+    // site admins can only reset the 2FA of the accounts of their site
+    const keys = Object.keys(req.body ?? {})
+    const is2FAReset = keys.length === 1 && keys[0] === '2FA' && req.body['2FA'] === null
+    if (!is2FAReset || !await isSiteAdminOfUser(req, await storages.globalStorage.getUser(req.params.userId))) {
+      throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+    }
+    siteAdminPatch = true
+  }
 
   const { body: patch } = (await import('#doc/users/patch-req/index.ts')).returnValid(req, { name: 'req' })
 
   const adminKey = Object.keys(req.body).find(key => adminKeys.includes(key))
-  if (adminKey && !session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  if (adminKey && !session.user?.adminMode && !siteAdminPatch) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
 
   if (session.user?.idp && Object.keys(req.body).find(key => !coreIDPKeys.includes(key))) {
     throw httpError(403, 'Invalid patch for user with a core identity provider')
@@ -291,7 +303,8 @@ router.patch('/:userId', async (req, res, next) => {
     postUserIdentityWebhook(patchedUser)
   }
 
-  eventsLog.info('sd.user.patch', `user was patched ${patchedUser.name} (${patchedUser.id})`, logContext)
+  if (siteAdminPatch) eventsLog.info('sd.site-admin.user.drop-2fa', `site admin reset the 2FA of user ${patchedUser.name} (${patchedUser.id})`, logContext)
+  else eventsLog.info('sd.user.patch', `user was patched ${patchedUser.name} (${patchedUser.id})`, logContext)
 
   const link = reqSiteUrl(req) + '/simple-directory/login?email=' + encodeURIComponent(session.user.email)
   if (patch.plannedDeletion) {
@@ -316,7 +329,11 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
 
-  if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  let siteAdmin = false
+  if (!session.user?.adminMode && session.user.id !== req.params.userId) {
+    if (!await isSiteAdminOfUser(req, await storages.globalStorage.getUser(req.params.userId))) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+    siteAdmin = true
+  }
   const patch = { plannedDeletion: null }
 
   await storages.globalStorage.patchUser(req.params.userId, patch, session.user)
@@ -324,7 +341,8 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
   // update session info
   await keepalive(req, res)
 
-  eventsLog.info('sd.user.cancelDeletion', 'user cancelled their planned deletion', logContext)
+  if (siteAdmin) eventsLog.info('sd.site-admin.user.cancel-deletion', `site admin cancelled the planned deletion of user ${req.params.userId}`, logContext)
+  else eventsLog.info('sd.user.cancelDeletion', 'user cancelled their planned deletion', logContext)
 
   res.status(204).send()
 })
@@ -334,18 +352,22 @@ router.delete('/:userId', async (req, res, next) => {
   const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
 
-  if (config.userSelfDelete) {
+  // read the memberships before deleting, they are the only way back to the impacted organizations
+  const deletedUser = await storages.globalStorage.getUser(req.params.userId)
+
+  const siteAdmin = !session.user?.adminMode && session.user.id !== req.params.userId && await isSiteAdminOfUser(req, deletedUser)
+  if (siteAdmin) {
+    // ok, site admins can delete the accounts of their site
+  } else if (config.userSelfDelete) {
     if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   } else {
     if (!session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   }
 
-  // read the memberships before deleting, they are the only way back to the impacted organizations
-  const deletedUser = await storages.globalStorage.getUser(req.params.userId)
-
   await storages.globalStorage.deleteUser(req.params.userId)
 
-  eventsLog.info('sd.user.del', `user was deleted ${req.params.userId}`, logContext)
+  if (siteAdmin) eventsLog.info('sd.site-admin.user.del', `site admin deleted user ${deletedUser?.name} (${req.params.userId})`, logContext)
+  else eventsLog.info('sd.user.del', `user was deleted ${req.params.userId}`, logContext)
 
   await setNbMembersLimits((deletedUser?.organizations ?? []).map(o => o.id))
 
@@ -488,6 +510,20 @@ router.post('/:userId/transfer', async (req, res, next) => {
   eventsLog.info('sd.user.transfer', `user ${user.id} (${user.email}) transferred to ${target}`, logContext)
 
   res.send(patchedUser)
+})
+
+// Revoke all the sessions of a user, as a superadmin or as the admin of the user's site
+router.delete('/:userId/sessions', async (req, res, next) => {
+  assertNotNhiSession(req)
+  const logContext: EventLogContext = { req }
+  const session = reqSessionAuthenticated(req)
+  const user = await storages.globalStorage.getUser(req.params.userId)
+  if (!session.user?.adminMode && !await isSiteAdminOfUser(req, user)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  if (!user) throw httpError(404)
+  await storages.globalStorage.deleteUserSessions(req.params.userId)
+  if (session.user?.adminMode) eventsLog.info('sd.user.revoke-sessions', `admin revoked all the sessions of user ${user.name} (${user.id})`, logContext)
+  else eventsLog.info('sd.site-admin.user.revoke-sessions', `site admin revoked all the sessions of user ${user.name} (${user.id})`, logContext)
+  res.status(204).send()
 })
 
 router.delete('/:userId/sessions/:sessionId', async (req, res, next) => {

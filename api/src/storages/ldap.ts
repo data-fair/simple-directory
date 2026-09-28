@@ -643,6 +643,10 @@ export class LdapStorage implements SdStorage {
     await mongo.ldapUserSessions.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
   }
 
+  async deleteUserSessions (userId: string): Promise<void> {
+    await mongo.ldapUserSessions.updateOne({ _id: userId }, { $set: { sessions: [] } })
+  }
+
   // ids, q, sort, select, skip, size
   async findUsers (params: FindUsersParams) {
     debug('find users', params)

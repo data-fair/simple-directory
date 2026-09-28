@@ -268,6 +268,12 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       appRedirected: 'Redirection effectuée',
       appRedirectedMsg: 'Vous pouvez fermer cet onglet.'
     },
+    siteAdmin: {
+      cancelDeletion: 'Annuler la suppression planifiée de {name}',
+      revokeSessions: 'Déconnecter {name} de toutes ses sessions',
+      confirmRevokeSessionsMsg: 'Toutes les sessions de cet utilisateur seront fermées. Les pages déjà ouvertes restent utilisables quelques minutes, jusqu\'au renouvellement de leur jeton de session.',
+      confirmDeleteMsg: 'Le compte {email} sera supprimé définitivement, et retiré de toutes les organisations dont il est membre.'
+    },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
       disableInvite: 'Cette organisation a atteint son nombre maximal de membres.',
@@ -303,6 +309,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       deletePartnerWarning: 'Attention les permissions accordées à l\'organisation partenaire ne seront pas modifiées par cette opération. Vous devriez probablement aller les modifier vous-même.',
       fromCache: 'Dernière synchronisation de cette liste avec le fournisseur d\'identités : {fromNow}.',
       roleLabel: 'Libellé du rôle "{role}"',
+      infoTitle: 'Informations',
+      siteUsersTitle: 'Comptes du site',
+      siteUsersHelp: 'Comptes créés sur ce site, le site principal de l\'organisation. En tant qu\'administrateur de l\'organisation vous pouvez réinitialiser leur authentification à deux facteurs, annuler une suppression planifiée, fermer leurs sessions ou les supprimer.',
       nhisTitle: 'Comptes de service (identités non humaines)',
       nhisHelp: 'Les comptes de service s\'authentifient avec un jeton émis par un fournisseur d\'identité de confiance (par exemple un cluster Kubernetes). Ils n\'ont pas d\'email et leurs sessions sont de courte durée.',
       addNhi: 'Créer un compte de service',

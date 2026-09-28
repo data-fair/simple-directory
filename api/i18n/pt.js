@@ -268,6 +268,12 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       appRedirected: 'Redirecionado',
       appRedirectedMsg: 'Pode fechar este separador.'
     },
+    siteAdmin: {
+      cancelDeletion: 'Cancelar a eliminação planeada de {name}',
+      revokeSessions: 'Terminar todas as sessões de {name}',
+      confirmRevokeSessionsMsg: 'Todas as sessões deste utilizador serão terminadas. As páginas já abertas continuam utilizáveis durante alguns minutos, até o seu token de sessão ter de ser renovado.',
+      confirmDeleteMsg: 'A conta {email} será eliminada definitivamente e removida de todas as organizações a que pertence.'
+    },
     organization: {
       addMember: 'Convidar um utilizador para se juntar à organização...',
       disableInvite: 'Esta organização atingiu o seu número máximo de membros.',
@@ -303,6 +309,9 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       deletePartnerWarning: 'Atenção, as permissões concedidas à organização parceira não serão modificadas por esta operação. Provavelmente deve ir modificá-las.',
       fromCache: 'Última sincronização desta lista com o provedor de identidade: {fromNow}.',
       roleLabel: 'Nome do papel "{role}"',
+      infoTitle: 'Informações',
+      siteUsersTitle: 'Contas do site',
+      siteUsersHelp: 'Contas criadas neste site, o site principal da organização. Como administrador da organização pode redefinir a sua autenticação de dois fatores, cancelar uma eliminação planeada, terminar as suas sessões ou eliminá-las.',
       nhisTitle: 'Contas de serviço (identidades não humanas)',
       nhisHelp: 'As contas de serviço autenticam-se com um token emitido por um provedor de identidade de confiança (por exemplo, um cluster Kubernetes). Não têm e-mail e as suas sessões são de curta duração.',
       addNhi: 'Criar uma conta de serviço',

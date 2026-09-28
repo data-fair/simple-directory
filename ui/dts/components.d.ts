@@ -46,6 +46,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SitePost: typeof import('./../src/components/site-post.vue')['default']
+    SiteUsers: typeof import('./../src/components/site-users.vue')['default']
     VjsfPatchReqBody: typeof import('./../src/components/vjsf/vjsf-patch-req-body.vue')['default']
     VjsfPatchReqBodyDe: typeof import('./../src/components/vjsf/vjsf-patch-req-body-de.vue')['default']
     VjsfPatchReqBodyEn: typeof import('./../src/components/vjsf/vjsf-patch-req-body-en.vue')['default']

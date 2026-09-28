@@ -746,13 +746,8 @@ router.post('/asadmin', async (req, res, next) => {
   const storage = storages.globalStorage
   const user = await storage.getUser(req.body.id)
   const site = await reqSite(req)
-  if (loggedUser.adminMode) {
-    // ok as global admin
-  } else if (config.siteAdmin && site && session.siteRole === 'admin' && site.host === user?.host && site.path === user?.path) {
-    // ok as site admin
-  } else {
-    throw httpError(403, 'This functionality is for admins only')
-  }
+  // superadmins only, site admins are deliberately not allowed to impersonate the accounts of their site
+  if (!loggedUser.adminMode) throw httpError(403, 'This functionality is for admins only')
   if (!user) return res.status(404).send('User does not exist')
   if (user.nhi) throw httpError(403, 'impersonating a non-human identity is not allowed')
   const payload = getTokenPayload(user, site)

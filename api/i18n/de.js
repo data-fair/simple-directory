@@ -268,6 +268,12 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       appRedirected: 'Weitergeleitet',
       appRedirectedMsg: 'Sie können diesen Tab schließen.'
     },
+    siteAdmin: {
+      cancelDeletion: 'Geplante Löschung von {name} abbrechen',
+      revokeSessions: '{name} von allen Sitzungen abmelden',
+      confirmRevokeSessionsMsg: 'Alle Sitzungen dieses Benutzers werden beendet. Bereits geöffnete Seiten bleiben einige Minuten nutzbar, bis ihr Sitzungstoken erneuert werden muss.',
+      confirmDeleteMsg: 'Das Konto {email} wird endgültig gelöscht und aus allen Organisationen entfernt, denen es angehört.'
+    },
     organization: {
       addMember: 'Einen Benutzer zum Beitritt zur Organisation einladen',
       disableInvite: 'Diese Organisation hat ihre maximale Mitgliederzahl erreicht.',
@@ -303,6 +309,9 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       deletePartnerWarning: 'Achtung! Die Berechtigungen, die der Partnerorganisation gewährt wurden, werden durch diese Operation nicht geändert. Sie sollten diese wahrscheinlich selbst ändern.',
       fromCache: 'Letzte Synchronisierung dieser Liste mit dem Identitätsanbieter: {fromNow}.',
       roleLabel: 'Bezeichnung der Rolle "{role}"',
+      infoTitle: 'Informationen',
+      siteUsersTitle: 'Konten der Website',
+      siteUsersHelp: 'Auf dieser Website, der Hauptwebsite der Organisation, erstellte Konten. Als Administrator der Organisation können Sie ihre Zwei-Faktor-Authentifizierung zurücksetzen, eine geplante Löschung abbrechen, ihre Sitzungen beenden oder sie löschen.',
       nhisTitle: 'Dienstkonten (nicht-menschliche Identitäten)',
       nhisHelp: 'Dienstkonten authentifizieren sich mit einem Token, das von einem vertrauenswürdigen Identitätsanbieter ausgestellt wurde (zum Beispiel einem Kubernetes-Cluster). Sie haben keine E-Mail-Adresse und ihre Sitzungen sind kurzlebig.',
       addNhi: 'Dienstkonto erstellen',

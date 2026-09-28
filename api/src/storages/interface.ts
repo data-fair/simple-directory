@@ -68,6 +68,7 @@ export interface SdStorage {
   // implemented by all of them contrary to the user level updateLogged
   updateUserSession (userId: string, serverSessionId: string, patch: Partial<ServerSession>): Promise<void>
   deleteUserSession (userId: string, serverSessionId: string): Promise<void>
+  deleteUserSessions (userId: string): Promise<void>
 
   getOrganization(ordId: string): Promise<Organization | undefined>
   createOrganization(org: OrganizationPost, user: UserRef): Promise<Organization>

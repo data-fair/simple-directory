@@ -190,6 +190,24 @@ admin status permanently. Two safeguards:
 - Target `(host, path)` is signed into the action token; the `/host` endpoint
   applies the host from the decoded token, not the request body.
 
+## Site admins
+
+With `config.siteAdmin`, the root admins of the organization that owns a site,
+logged in on that site, administer the site's accounts: typically on the
+organization's main site (`isAccountMain`), used as its back-office. The
+privilege is computed from the session's `siteRole` (derived from the token's
+`siteOwner`) and checked by `api/src/utils/site-admin.ts`:
+
+- department admins are excluded, although their `siteRole` is also `admin`;
+- it only matches resources whose `(host, path)` is the current site's, so
+  main-site records (superadmins included) and other sites' records are out of
+  reach;
+- on user accounts it is limited to listing them (without their `sessions`),
+  deleting them, cancelling a planned deletion, resetting 2FA and revoking all
+  their sessions. Never on their own account, never on NHIs, and never
+  impersonation: `asAdmin` is superadmin-only, and changing an email stays
+  superadmin-only too (it would be an account takeover).
+
 ## Invariants
 
 1. A secondary-site user **record** never carries admin status (storage rule,
@@ -209,6 +227,8 @@ admin status permanently. Two safeguards:
    `jwtDurations.adminExchangeToken` (default 12h, +~15m id_token grace)
    after it was granted — modulo a fresh grant through a new login or a
    `site_redirect` (per-session, not per-identity).
+7. A site admin's privileges never reach a record outside its own
+   `(host, path)`, and never include impersonation or email changes.
 
 Violations re-open an exploit path in the C-0 family from
 `docs/security-review-2026-04.md`.

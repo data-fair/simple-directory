@@ -190,6 +190,10 @@ class MongodbStorage implements SdStorage {
     await mongo.users.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
   }
 
+  async deleteUserSessions (userId: string) {
+    await mongo.users.updateOne({ _id: userId }, { $set: { sessions: [] } })
+  }
+
   async findUsers (params: FindUsersParams) {
     // _superadmin is a virtual system user whose data lives in config; the mongo doc
     // is only a stub for session tracking and lacks email/name/organizations, so exclude it.

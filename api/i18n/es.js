@@ -268,6 +268,12 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       appRedirected: 'Redirigido',
       appRedirectedMsg: 'Puede cerrar esta pestaña.'
     },
+    siteAdmin: {
+      cancelDeletion: 'Cancelar la eliminación programada de {name}',
+      revokeSessions: 'Cerrar todas las sesiones de {name}',
+      confirmRevokeSessionsMsg: 'Se cerrarán todas las sesiones de este usuario. Las páginas ya abiertas siguen siendo utilizables unos minutos, hasta que su token de sesión deba renovarse.',
+      confirmDeleteMsg: 'La cuenta {email} se eliminará definitivamente y se retirará de todas las organizaciones a las que pertenece.'
+    },
     organization: {
       addMember: 'Invitar a un usuario a unirse a la organización',
       disableInvite: 'Esta organización ha alcanzado su número máximo de miembros.',
@@ -303,6 +309,9 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       deletePartnerWarning: 'Atención, los permisos concedidos a la organización asociada no se modificarán con esta operación. Probablemente deberá modificarlos usted mismo.',
       fromCache: 'Última sincronización de esta lista con el proveedor de identidad: {fromNow}.',
       roleLabel: 'Etiqueta del rol "{role}"',
+      infoTitle: 'Información',
+      siteUsersTitle: 'Cuentas del sitio',
+      siteUsersHelp: 'Cuentas creadas en este sitio, el sitio principal de la organización. Como administrador de la organización puede restablecer su autenticación de dos factores, cancelar una eliminación programada, cerrar sus sesiones o eliminarlas.',
       nhisTitle: 'Cuentas de servicio (identidades no humanas)',
       nhisHelp: 'Las cuentas de servicio se autentican con un token emitido por un proveedor de identidad de confianza (por ejemplo, un clúster de Kubernetes). No tienen correo electrónico y sus sesiones son de corta duración.',
       addNhi: 'Crear una cuenta de servicio',

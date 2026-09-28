@@ -53,6 +53,7 @@ declare global {
   const mdiAccount: typeof import('@mdi/js').mdiAccount
   const mdiAccountCircle: typeof import('@mdi/js').mdiAccountCircle
   const mdiAccountGroup: typeof import('@mdi/js').mdiAccountGroup
+  const mdiAccountMultiple: typeof import('@mdi/js').mdiAccountMultiple
   const mdiAccountSwitch: typeof import('@mdi/js').mdiAccountSwitch
   const mdiAlertCircle: typeof import('@mdi/js').mdiAlertCircle
   const mdiBell: typeof import('@mdi/js').mdiBell
@@ -77,6 +78,7 @@ declare global {
   const mdiGraph: typeof import('@mdi/js').mdiGraph
   const mdiInformation: typeof import('@mdi/js').mdiInformation
   const mdiLoginVariant: typeof import('@mdi/js').mdiLoginVariant
+  const mdiLogout: typeof import('@mdi/js').mdiLogout
   const mdiMagnify: typeof import('@mdi/js').mdiMagnify
   const mdiMonitorCellphoneStar: typeof import('@mdi/js').mdiMonitorCellphoneStar
   const mdiPencil: typeof import('@mdi/js').mdiPencil
@@ -209,6 +211,7 @@ declare module 'vue' {
     readonly mdiAccount: UnwrapRef<typeof import('@mdi/js')['mdiAccount']>
     readonly mdiAccountCircle: UnwrapRef<typeof import('@mdi/js')['mdiAccountCircle']>
     readonly mdiAccountGroup: UnwrapRef<typeof import('@mdi/js')['mdiAccountGroup']>
+    readonly mdiAccountMultiple: UnwrapRef<typeof import('@mdi/js')['mdiAccountMultiple']>
     readonly mdiAccountSwitch: UnwrapRef<typeof import('@mdi/js')['mdiAccountSwitch']>
     readonly mdiAlertCircle: UnwrapRef<typeof import('@mdi/js')['mdiAlertCircle']>
     readonly mdiBell: UnwrapRef<typeof import('@mdi/js')['mdiBell']>
@@ -232,6 +235,7 @@ declare module 'vue' {
     readonly mdiGraph: UnwrapRef<typeof import('@mdi/js')['mdiGraph']>
     readonly mdiInformation: UnwrapRef<typeof import('@mdi/js')['mdiInformation']>
     readonly mdiLoginVariant: UnwrapRef<typeof import('@mdi/js')['mdiLoginVariant']>
+    readonly mdiLogout: UnwrapRef<typeof import('@mdi/js')['mdiLogout']>
     readonly mdiMagnify: UnwrapRef<typeof import('@mdi/js')['mdiMagnify']>
     readonly mdiMonitorCellphoneStar: UnwrapRef<typeof import('@mdi/js')['mdiMonitorCellphoneStar']>
     readonly mdiPencil: UnwrapRef<typeof import('@mdi/js')['mdiPencil']>

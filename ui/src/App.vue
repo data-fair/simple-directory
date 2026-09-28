@@ -6,7 +6,7 @@
       <layout-app-bar v-if="!inIframe" />
     </template>
 
-    <v-main>
+    <v-main :scrollable="scrollable">
       <v-container fluid>
         <RouterView />
       </v-container>
@@ -40,6 +40,10 @@ useHead({
 // const showToolbarParam = useBooleanSearchParam('showToolbar')
 
 const isLoginPage = computed(() => route.name === '/login')
+
+// pages with a table of contents (@data-fair/lib-vuetify/toc.vue) track the scroll of .v-main__scroller,
+// the other pages keep the document scroll that the auto-height of their embedding iframes relies on
+const scrollable = computed(() => route.name === '/organization/[id]/')
 
 // const showToolbar = computed(() => !embed.value || showToolbarParam.value)
 const appClass = computed(() => {

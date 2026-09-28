@@ -268,6 +268,12 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       appRedirected: 'Redirected',
       appRedirectedMsg: 'You can close this tab.'
     },
+    siteAdmin: {
+      cancelDeletion: 'Cancel the planned deletion of {name}',
+      revokeSessions: 'Log {name} out of all their sessions',
+      confirmRevokeSessionsMsg: 'All the sessions of this user will be closed. Pages that are already open stay usable for a few minutes, until their session token needs to be renewed.',
+      confirmDeleteMsg: 'The account {email} will be deleted permanently, and removed from all the organizations it belongs to.'
+    },
     organization: {
       addMember: 'Invite a user to join this organization',
       disableInvite: 'This organization already contains its maximum number of members.',
@@ -303,6 +309,9 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       deletePartnerWarning: 'Warning: permissions granted to the partner organization will not be modified by this operation. You should probably modify them yourself.',
       fromCache: 'Last synchronization of this list with the identity provider: {fromNow}.',
       roleLabel: 'Label for the role "{role}"',
+      infoTitle: 'Information',
+      siteUsersTitle: 'Accounts of the site',
+      siteUsersHelp: 'Accounts created on this site, the main site of the organization. As an administrator of the organization you can reset their two-factor authentication, cancel a planned deletion, close their sessions or delete them.',
       nhisTitle: 'Service accounts (non-human identities)',
       nhisHelp: 'Service accounts authenticate with a token issued by a trusted identity provider (for example a Kubernetes cluster). They have no email and their sessions are short-lived.',
       addNhi: 'Create a service account',
