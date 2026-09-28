@@ -42,6 +42,7 @@
     "@commitlint/config-conventional": "^19.8.1",
     "@data-fair/lib-express": "^1.25.0",
     "@data-fair/lib-node": "^2.13.1",
+    "@json-layout/core": "~2.9.0",
     "@playwright/test": "^1.59.1",
     "@types/accept-language-parser": "^1.5.8",
     "@types/capitalize": "^2.0.2",
