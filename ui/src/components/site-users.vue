@@ -41,57 +41,61 @@
               :image="$sdUrl + '/api/avatars/user/' + props.item.id + '/avatar.png'"
             />
           </td>
-          <td class="text-no-wrap">
-            {{ props.item.email }}
-          </td>
-          <td class="text-no-wrap">
-            {{ props.item.name }}
+          <td class="py-1">
+            <div class="font-weight-medium">
+              {{ props.item.name }}
+            </div>
+            <div class="text-medium-emphasis">
+              {{ props.item.email }}
+            </div>
+            <div
+              v-if="props.item['2FA']?.active"
+              class="text-caption text-no-wrap"
+            >
+              {{ $t('pages.siteAdmin.2FAActive') }}
+              <v-btn
+                v-if="isOther(props.item)"
+                :title="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
+                :aria-label="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
+                :icon="mdiDelete"
+                size="x-small"
+                variant="text"
+                @click="openDialog('drop2FA', props.item)"
+              />
+            </div>
+            <div
+              v-if="props.item.plannedDeletion"
+              class="text-caption text-warning text-no-wrap"
+            >
+              {{ $t('pages.siteAdmin.plannedDeletion', {date: $d(new Date(props.item.plannedDeletion))}) }}
+              <v-btn
+                v-if="isOther(props.item)"
+                :title="$t('pages.siteAdmin.cancelDeletion', {name: props.item.name})"
+                :aria-label="$t('pages.siteAdmin.cancelDeletion', {name: props.item.name})"
+                :icon="mdiCancel"
+                size="x-small"
+                variant="text"
+                @click="cancelDeletion.execute(props.item)"
+              />
+            </div>
           </td>
           <td>
             <div
               v-for="orga in props.item.organizations"
               :key="orga.id + (orga.department ?? '')"
             >
-              <span style="white-space:nowrap">
-                <router-link
-                  class="text-primary"
-                  :to="`/organization/${orga.id}`"
-                >{{ orga.name }}</router-link>
-                <template v-if="orga.department"> {{ orga.departmentName || orga.department }}</template>
-                ({{ orga.roleLabel || orga.role }})
-              </span>
+              <router-link
+                class="text-primary"
+                :to="`/organization/${orga.id}`"
+              >
+                {{ orga.name }}
+              </router-link>
+              {{ orga.department ? (orga.departmentName || orga.department) : '' }}
+              ({{ orga.roleLabel || orga.role }})
             </div>
           </td>
           <td class="text-no-wrap">
-            <template v-if="props.item['2FA']?.active">
-              {{ $t('common.yes') }}
-              <v-btn
-                v-if="isOther(props.item)"
-                :title="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
-                :aria-label="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
-                :icon="mdiDelete"
-                size="small"
-                variant="text"
-                @click="openDialog('drop2FA', props.item)"
-              />
-            </template>
-            <span v-else>{{ $t('common.no') }}</span>
-          </td>
-          <td>{{ props.item.created && $d(new Date(props.item.created.date)) }}</td>
-          <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
-          <td class="text-no-wrap">
-            <template v-if="props.item.plannedDeletion">
-              {{ $d(new Date(props.item.plannedDeletion)) }}
-              <v-btn
-                v-if="isOther(props.item)"
-                :title="$t('pages.siteAdmin.cancelDeletion', {name: props.item.name})"
-                :aria-label="$t('pages.siteAdmin.cancelDeletion', {name: props.item.name})"
-                :icon="mdiCancel"
-                size="small"
-                variant="text"
-                @click="cancelDeletion.execute(props.item)"
-              />
-            </template>
+            {{ props.item.logged && $d(new Date(props.item.logged)) }}
           </td>
           <td>
             <div
@@ -102,6 +106,7 @@
                 :title="$t('pages.siteAdmin.revokeSessions', {name: props.item.name})"
                 :aria-label="$t('pages.siteAdmin.revokeSessions', {name: props.item.name})"
                 :icon="mdiLogout"
+                size="small"
                 variant="text"
                 @click="openDialog('revokeSessions', props.item)"
               />
@@ -110,6 +115,7 @@
                 :aria-label="$t('common.confirmDeleteTitle', {name: props.item.name})"
                 color="warning"
                 :icon="mdiDelete"
+                size="small"
                 variant="text"
                 @click="openDialog('delete', props.item)"
               />
@@ -193,13 +199,9 @@ const users = useFetch<{ count: number, results: User[] }>($apiPath + '/users', 
 
 const headers: { title: string, value?: string, sortable?: boolean }[] = []
 if ($uiConfig.avatars.users) headers.push({ title: '', sortable: false })
-headers.push({ title: t('common.email'), value: 'email', sortable: true })
-headers.push({ title: t('common.name'), value: 'name', sortable: true })
+headers.push({ title: t('pages.siteAdmin.account'), value: 'email', sortable: true })
 headers.push({ title: t('common.organizations'), value: 'organizations', sortable: false })
-headers.push({ title: t('common.2FA'), value: '2FA', sortable: false })
-headers.push({ title: t('common.createdAt'), value: 'created.date', sortable: true })
 headers.push({ title: t('common.loggedAt'), value: 'logged', sortable: true })
-headers.push({ title: t('common.plannedDeletionShort'), value: 'plannedDeletion', sortable: true })
 headers.push({ title: '', value: 'actions', sortable: false })
 
 // actions on their own account go through the personal page, not this list

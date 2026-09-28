@@ -269,6 +269,9 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       appRedirectedMsg: 'Pode fechar este separador.'
     },
     siteAdmin: {
+      account: 'Conta',
+      '2FAActive': 'Autenticação de dois fatores ativa',
+      plannedDeletion: 'Eliminação prevista em {date}',
       cancelDeletion: 'Cancelar a eliminação planeada de {name}',
       revokeSessions: 'Terminar todas as sessões de {name}',
       confirmRevokeSessionsMsg: 'Todas as sessões deste utilizador serão terminadas. As páginas já abertas continuam utilizáveis durante alguns minutos, até o seu token de sessão ter de ser renovado.',

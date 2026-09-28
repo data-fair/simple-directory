@@ -269,6 +269,9 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       appRedirectedMsg: 'Puoi chiudere questa scheda.'
     },
     siteAdmin: {
+      account: 'Account',
+      '2FAActive': 'Autenticazione a due fattori attiva',
+      plannedDeletion: 'Cancellazione prevista il {date}',
       cancelDeletion: 'Annulla la cancellazione pianificata di {name}',
       revokeSessions: 'Disconnetti {name} da tutte le sessioni',
       confirmRevokeSessionsMsg: 'Tutte le sessioni di questo utente verranno chiuse. Le pagine già aperte restano utilizzabili per qualche minuto, finché il loro token di sessione non deve essere rinnovato.',

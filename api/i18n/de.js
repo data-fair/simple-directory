@@ -269,6 +269,9 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       appRedirectedMsg: 'Sie können diesen Tab schließen.'
     },
     siteAdmin: {
+      account: 'Konto',
+      '2FAActive': 'Zwei-Faktor-Authentifizierung aktiv',
+      plannedDeletion: 'Löschung geplant am {date}',
       cancelDeletion: 'Geplante Löschung von {name} abbrechen',
       revokeSessions: '{name} von allen Sitzungen abmelden',
       confirmRevokeSessionsMsg: 'Alle Sitzungen dieses Benutzers werden beendet. Bereits geöffnete Seiten bleiben einige Minuten nutzbar, bis ihr Sitzungstoken erneuert werden muss.',

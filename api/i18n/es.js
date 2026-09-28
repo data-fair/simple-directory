@@ -269,6 +269,9 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       appRedirectedMsg: 'Puede cerrar esta pestaña.'
     },
     siteAdmin: {
+      account: 'Cuenta',
+      '2FAActive': 'Autenticación de dos factores activa',
+      plannedDeletion: 'Eliminación prevista el {date}',
       cancelDeletion: 'Cancelar la eliminación programada de {name}',
       revokeSessions: 'Cerrar todas las sesiones de {name}',
       confirmRevokeSessionsMsg: 'Se cerrarán todas las sesiones de este usuario. Las páginas ya abiertas siguen siendo utilizables unos minutos, hasta que su token de sesión deba renovarse.',

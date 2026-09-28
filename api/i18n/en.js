@@ -269,6 +269,9 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       appRedirectedMsg: 'You can close this tab.'
     },
     siteAdmin: {
+      account: 'Account',
+      '2FAActive': 'Two-factor authentication active',
+      plannedDeletion: 'Deletion planned on {date}',
       cancelDeletion: 'Cancel the planned deletion of {name}',
       revokeSessions: 'Log {name} out of all their sessions',
       confirmRevokeSessionsMsg: 'All the sessions of this user will be closed. Pages that are already open stay usable for a few minutes, until their session token needs to be renewed.',

@@ -269,6 +269,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       appRedirectedMsg: 'Vous pouvez fermer cet onglet.'
     },
     siteAdmin: {
+      account: 'Compte',
+      '2FAActive': 'Authentification à deux facteurs active',
+      plannedDeletion: 'Suppression prévue le {date}',
       cancelDeletion: 'Annuler la suppression planifiée de {name}',
       revokeSessions: 'Déconnecter {name} de toutes ses sessions',
       confirmRevokeSessionsMsg: 'Toutes les sessions de cet utilisateur seront fermées. Les pages déjà ouvertes restent utilisables quelques minutes, jusqu\'au renouvellement de leur jeton de session.',
