@@ -73,13 +73,29 @@ class StorageManager {
 
   // the session of an exchange token is updated without knowing which storage its user
   // belongs to, sessions of all the storages are kept in mongo anyway
-  async updateSessionById (sessionId: string, patch: Partial<ServerSession>) {
+  async updateSessionById (sessionId: string, patch: Partial<ServerSession>, expectedJti?: string) {
     const mongoSet: Record<string, any> = {}
     for (const [key, value] of Object.entries(patch)) mongoSet[`sessions.$.${key}`] = value
+    // expectedJti makes the write a compare-and-swap on the token being superseded: two
+    // keepalives racing from the same token must not both rotate, cf tokens/service.ts
+    const filter = expectedJti
+      ? { sessions: { $elemMatch: { id: sessionId, jti: expectedJti } } }
+      : { 'sessions.id': sessionId }
+    const results = await Promise.all([
+      mongo.users.updateOne(filter, { $set: mongoSet }),
+      mongo.ldapUserSessions.updateOne(filter, { $set: mongoSet }),
+      mongo.fileUserSessions.updateOne(filter, { $set: mongoSet })
+    ])
+    return results.some(result => result.matchedCount > 0)
+  }
+
+  async getSessionById (sessionId: string) {
     const filter = { 'sessions.id': sessionId }
-    await mongo.users.updateOne(filter, { $set: mongoSet })
-    await mongo.ldapUserSessions.updateOne(filter, { $set: mongoSet })
-    await mongo.fileUserSessions.updateOne(filter, { $set: mongoSet })
+    const projection = { sessions: { $elemMatch: { id: sessionId } } } as const
+    for (const collection of [mongo.users, mongo.ldapUserSessions, mongo.fileUserSessions]) {
+      const doc = await collection.findOne(filter, { projection })
+      if (doc?.sessions?.[0]) return doc.sessions[0]
+    }
   }
 
   async deleteSessionById (sessionId: string) {
