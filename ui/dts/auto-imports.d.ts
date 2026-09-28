@@ -127,6 +127,7 @@ declare global {
   const useConceptFilters: typeof import('@data-fair/lib-vue/concept-filters.js').useConceptFilters
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
+  const useDisplayOwner: typeof import('@data-fair/lib-vue/owner.js').useDisplayOwner
   const useEditFetch: typeof import('@data-fair/lib-vue/edit-fetch.js').useEditFetch
   const useFetch: typeof import('@data-fair/lib-vue/fetch.js').useFetch
   const useHead: typeof import('@unhead/vue').useHead
@@ -282,6 +283,7 @@ declare module 'vue' {
     readonly useConceptFilters: UnwrapRef<typeof import('@data-fair/lib-vue/concept-filters.js')['useConceptFilters']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
+    readonly useDisplayOwner: UnwrapRef<typeof import('@data-fair/lib-vue/owner.js')['useDisplayOwner']>
     readonly useEditFetch: UnwrapRef<typeof import('@data-fair/lib-vue/edit-fetch.js')['useEditFetch']>
     readonly useFetch: UnwrapRef<typeof import('@data-fair/lib-vue/fetch.js')['useFetch']>
     readonly useHead: UnwrapRef<typeof import('@unhead/vue')['useHead']>

@@ -25,7 +25,8 @@ test.describe('Superadmin manual partnerships', () => {
     await expect(dialog).toBeVisible()
 
     // Search for the org by name and select it
-    await dialog.locator('input[name="partnerOrg"]').fill('Blogpad')
+    // (not input[name=...]: since vuetify 4.2.2 v-autocomplete puts name on hidden value inputs, not on the search input)
+    await dialog.getByRole('combobox', { name: 'Organisation', exact: true }).fill('Blogpad')
     await page.getByRole('option', { name: /Blogpad/ }).first().click()
 
     // Confirm
