@@ -31,6 +31,7 @@ declare module 'vue' {
     EditMemberMenu: typeof import('./../src/components/edit-member-menu.vue')['default']
     EditNhiMenu: typeof import('./../src/components/edit-nhi-menu.vue')['default']
     LayoutAppBar: typeof import('./../src/components/layout/layout-app-bar.vue')['default']
+    LayoutNavigationRight: typeof import('./../src/components/layout/layout-navigation-right.vue')['default']
     LoadAvatar: typeof import('./../src/components/load-avatar.vue')['default']
     Logo: typeof import('./../src/components/logo.vue')['default']
     NotifyMenu: typeof import('./../src/components/notify-menu.vue')['default']

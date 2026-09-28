@@ -34,7 +34,7 @@ test.describe('Site admin on the organization page', () => {
     await expect(page.getByRole('heading', { name: /Comptes du site/ })).toBeVisible({ timeout: 15_000 })
 
     // the table of contents links to the section
-    const tocItem = page.locator('.v-navigation-drawer').getByText('Comptes du site')
+    const tocItem = page.locator('#navigation-right-local').getByText('Comptes du site')
     await expect(tocItem).toBeVisible()
     await tocItem.click()
 

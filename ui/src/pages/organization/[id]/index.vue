@@ -196,16 +196,15 @@
       <site-users />
     </v-container>
 
-    <df-navigation-right>
+    <layout-navigation-right>
       <df-toc :sections="tocSections" />
-    </df-navigation-right>
+    </layout-navigation-right>
   </v-container>
 </template>
 
 <script setup lang="ts">
 import type { VForm } from 'vuetify/components'
 import { getAccountRole } from '@data-fair/lib-vue/session'
-import DfNavigationRight from '@data-fair/lib-vuetify/navigation-right.vue'
 import DfToc from '@data-fair/lib-vuetify/toc.vue'
 
 const session = useSession()
