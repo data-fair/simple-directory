@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { generateKeyPairSync } from 'node:crypto'
 import jwt from 'jsonwebtoken'
-import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl, getServerConfig } from '../support/axios.ts'
+import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl, getServerConfig, uploadAvatar, testPng } from '../support/axios.ts'
 
 const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const publicJwk = { ...publicKey.export({ format: 'jwk' }), kid: 'test-key', alg: 'RS256', use: 'sig' }
@@ -155,23 +155,13 @@ test('nhi token exchange issues a short-lived org session', async () => {
 // human initials avatar keeps that region in plain background color (centered initials stay
 // above y~72, and the robot avatar's initials are additionally shifted up).
 const whiteBadgePixels = async (png: Buffer) => {
-  const gm = (await import('gm')).default
-  const ppm: Buffer = await new Promise((resolve, reject) => {
-    gm(png).toBuffer('PPM', (err, buf) => err ? reject(err) : resolve(buf))
-  })
-  // P6 header: "P6 <width> <height> <maxval>" as whitespace-separated ASCII, then binary RGB.
-  // A Q16 GraphicsMagick build emits maxval 65535 with 2 bytes per sample (big-endian).
-  const header = ppm.subarray(0, 32).toString('latin1')
-  const m = header.match(/^P6\s+(\d+)\s+(\d+)\s+(\d+)\s/)
-  if (!m) throw new Error('unexpected PPM header: ' + header)
-  const [, w, h, maxval] = m.map(Number)
-  const data = ppm.subarray(m[0].length)
-  const bps = maxval > 255 ? 2 : 1
-  const sample = (x: number, y: number, c: number) => bps === 2 ? data.readUInt16BE(((y * w + x) * 3 + c) * 2) : data[(y * w + x) * 3 + c]
+  const sharp = (await import('sharp')).default
+  const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true })
   let count = 0
-  for (let y = 74; y < Math.min(92, h); y++) {
-    for (let x = 40; x < Math.min(60, w); x++) {
-      if (sample(x, y, 0) >= maxval * 0.94 && sample(x, y, 1) >= maxval * 0.94 && sample(x, y, 2) >= maxval * 0.94) count++
+  for (let y = 74; y < Math.min(92, info.height); y++) {
+    for (let x = 40; x < Math.min(60, info.width); x++) {
+      const idx = (y * info.width + x) * info.channels
+      if (data[idx] >= 255 * 0.94 && data[idx + 1] >= 255 * 0.94 && data[idx + 2] >= 255 * 0.94) count++
     }
   }
   return count
@@ -194,14 +184,7 @@ test('nhi automatic avatar carries a robot badge', async () => {
 })
 
 test('org admin can upload a custom avatar for an NHI, but not for a human member', async () => {
-  const FormData = (await import('form-data')).default
-  // smallest valid PNG (1x1), enough to round-trip through upload and download
-  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
-  const upload = (ax: any, userId: string) => {
-    const form = new FormData()
-    form.append('avatar', png, 'avatar.png')
-    return ax.post(`/api/avatars/user/${userId}/avatar.png`, form)
-  }
+  const upload = (ax: any, userId: string) => uploadAvatar(ax, `/api/avatars/user/${userId}/avatar.png`)
 
   const { ax } = await createUser('nhi-avatar-admin@test.com')
   const org = (await ax.post('/api/organizations', { name: 'NHI avatar upload org' })).data
@@ -211,7 +194,7 @@ test('org admin can upload a custom avatar for an NHI, but not for a human membe
   // the org admin manages the NHI, its avatar included
   assert.equal((await upload(ax, nhi.id)).status, 201)
   const got = (await ax.get(`/api/avatars/user/${nhi.id}/avatar.png`, { responseType: 'arraybuffer' })).data
-  assert.deepEqual(Buffer.from(got), png)
+  assert.deepEqual(Buffer.from(got), testPng)
 
   // a plain member of the org cannot, and the extension is NHI-only: the org admin
   // still cannot push an avatar onto a human member

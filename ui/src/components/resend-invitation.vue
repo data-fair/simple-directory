@@ -37,7 +37,7 @@
           />
           <v-select
             v-model="invitation.role"
-            :items="orga.roles"
+            :items="roleItems"
             :label="$t('common.role')"
             disabled
             variant="outlined"
@@ -106,6 +106,7 @@ const { orga, member, invitDepartments } = defineProps({
   member: { type: Object as () => Member, required: true },
   invitDepartments: { type: Array as () => string[], required: true }
 })
+const { roleItems } = useRoleLabels(() => orga)
 const emit = defineEmits({ sent: (_invit: Invitation) => true })
 
 const { sendUiNotif } = useUiNotif()

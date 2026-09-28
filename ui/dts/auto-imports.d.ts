@@ -141,6 +141,7 @@ declare global {
   const useNumberSearchParam: typeof import('@data-fair/lib-vue/reactive-search-params.js').useNumberSearchParam
   const useReactiveSearchParams: typeof import('@data-fair/lib-vue/reactive-search-params.js').useReactiveSearchParams
   const useRedirects: typeof import('../src/composables/use-redirects').useRedirects
+  const useRoleLabels: typeof import('../src/composables/use-role-labels').useRoleLabels
   const useRoute: typeof import('vue-router').useRoute
   const useRouter: typeof import('vue-router').useRouter
   const useSeoMeta: typeof import('@unhead/vue').useSeoMeta
@@ -212,7 +213,6 @@ declare module 'vue' {
     readonly mdiAccountSwitch: UnwrapRef<typeof import('@mdi/js')['mdiAccountSwitch']>
     readonly mdiAlertCircle: UnwrapRef<typeof import('@mdi/js')['mdiAlertCircle']>
     readonly mdiBell: UnwrapRef<typeof import('@mdi/js')['mdiBell']>
-    readonly mdiCalendar: UnwrapRef<typeof import('@mdi/js')['mdiCalendar']>
     readonly mdiCancel: UnwrapRef<typeof import('@mdi/js')['mdiCancel']>
     readonly mdiCellphone: UnwrapRef<typeof import('@mdi/js')['mdiCellphone']>
     readonly mdiCheck: UnwrapRef<typeof import('@mdi/js')['mdiCheck']>
@@ -297,6 +297,7 @@ declare module 'vue' {
     readonly useNumberSearchParam: UnwrapRef<typeof import('@data-fair/lib-vue/reactive-search-params.js')['useNumberSearchParam']>
     readonly useReactiveSearchParams: UnwrapRef<typeof import('@data-fair/lib-vue/reactive-search-params.js')['useReactiveSearchParams']>
     readonly useRedirects: UnwrapRef<typeof import('../src/composables/use-redirects')['useRedirects']>
+    readonly useRoleLabels: UnwrapRef<typeof import('../src/composables/use-role-labels')['useRoleLabels']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
     readonly useSeoMeta: UnwrapRef<typeof import('@unhead/vue')['useSeoMeta']>

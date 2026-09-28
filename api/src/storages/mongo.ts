@@ -7,6 +7,7 @@ import type { TwoFA } from '#services'
 import { httpError, type UserRef } from '@data-fair/lib-express'
 import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
 import mongo from '#mongo'
+import { deleteAvatars } from '../avatars/service.ts'
 import type { Password } from '../utils/passwords.ts'
 import dayjs from 'dayjs'
 import { nanoid } from 'nanoid'
@@ -36,7 +37,7 @@ async function cleanUser (resource: any): Promise<User> {
   if (resource.onlyCreateInvited) resource.ignorePersonalAccount = true
   if (resource.organizations) {
     for (const org of resource.organizations) {
-      const rolesLabels = await getRolesLabels(org)
+      const rolesLabels = await getRolesLabels(org.id)
       if (rolesLabels?.[org.role]) org.roleLabel = rolesLabels[org.role]
     }
   }
@@ -167,6 +168,7 @@ class MongodbStorage implements SdStorage {
   async deleteUser (userId: string) {
     await mongo.users.deleteOne({ _id: userId })
     await mongo.oauthTokens.deleteMany({ 'user.id': userId })
+    await deleteAvatars({ type: 'user', id: userId })
   }
 
   async addUserSession (userId: string, serverSession: ServerSession) {
@@ -345,6 +347,8 @@ class MongodbStorage implements SdStorage {
       { returnDocument: 'after' }
     )
     const orga = cleanOrganization(mongoRes)
+    // the labels are cached for the session tokens, a change must be visible at the next login
+    if (patch.rolesLabels) getRolesLabels.delete(id)
     // also update all organizations references in users
     if (patch.name || patch.departments) {
       for await (const user of mongo.users.find({ organizations: { $elemMatch: { id } } })) {
@@ -361,13 +365,24 @@ class MongodbStorage implements SdStorage {
         await mongo.users.updateOne({ _id: user._id }, { $set: { organizations: user.organizations } })
       }
     }
+    // also update the partner entries referencing this organization in other organizations
+    if (patch.name) {
+      await mongo.organizations.updateMany(
+        { 'partners.id': id },
+        { $set: { 'partners.$[partner].name': patch.name } },
+        { arrayFilters: [{ 'partner.id': id }] }
+      )
+    }
     return orga
   }
 
   async deleteOrganization (organizationId: string) {
     await mongo.users
       .updateMany({}, { $pull: { organizations: { id: organizationId } } })
+    await mongo.organizations
+      .updateMany({ 'partners.id': organizationId }, { $pull: { partners: { id: organizationId } } })
     await mongo.organizations.deleteOne({ _id: organizationId })
+    await deleteAvatars({ type: 'organization', id: organizationId })
   }
 
   async findOrganizations (params: FindOrganizationsParams) {

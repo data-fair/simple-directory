@@ -56,7 +56,7 @@
             />
             <v-select
               v-model="invitation.role"
-              :items="orga.roles"
+              :items="roleItems"
               :label="$t('common.role')"
               :rules="[v => !!v || '']"
               name="role"
@@ -137,6 +137,7 @@ const { orga, department } = defineProps({
   disableInvite: { type: Boolean, default: false },
   department: { type: String, default: null }
 })
+const { roleItems } = useRoleLabels(() => orga)
 
 const { redirects, loadingRedirects, defaultRedirect } = useRedirects({ type: 'organization', id: orga.id })
 

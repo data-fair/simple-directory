@@ -1,10 +1,10 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <v-container
-    class="fill-height"
+    class="fill-height d-flex align-center flex-wrap"
     data-iframe-height
   >
-    <v-row align="center">
+    <v-row class="align-center">
       <v-col class="text-center">
         <h3 class="text-display-small">
           {{ $t('pages.invitation.title') }}
@@ -14,12 +14,12 @@
 
         <span
           v-if="sameUser"
-          class="text-subtitle-1"
+          class="text-body-large"
           v-html="$t('pages.invitation.msgSameUser', {profileUrl: $sdUrl + '/me'})"
         />
         <span
           v-else
-          class="text-subtitle-1"
+          class="text-body-large"
           v-html="$t('pages.invitation.msgDifferentUser', {loginUrl: $sdUrl + '/login?email=' + encodeURIComponent(email)})"
         />
       </v-col>

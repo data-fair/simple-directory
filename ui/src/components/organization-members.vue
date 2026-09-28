@@ -47,7 +47,7 @@
       {{ t('pages.organization.fromCache', { fromNow: dayjs(members?.fromCache).fromNow() }) }}
     </v-row>
 
-    <v-row dense>
+    <v-row density="compact">
       <v-col :cols="filterMemberCols">
         <v-text-field
           v-model="q"
@@ -260,9 +260,7 @@ const { t } = useI18n()
 const { sendUiNotif } = useUiNotif()
 const { user, asAdmin } = useSessionAuthenticated()
 
-// the roles are stored as keys, their readable labels live in rolesLabels
-const roleLabel = (role: string) => orga.rolesLabels?.[role] || $uiConfig.defaultRolesLabels?.[role] || role
-const roleItems = computed(() => (orga.roles ?? []).map(role => ({ value: role, title: roleLabel(role) })))
+const { roleLabel, roleItems } = useRoleLabels(() => orga)
 
 const q = ref('')
 const role = ref()

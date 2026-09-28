@@ -79,6 +79,27 @@ test.describe('organizations api', () => {
     assert.equal(userPartners[0].name, org2.name)
   })
 
+  test('should sync partner entries when the partner organization is renamed or deleted', async () => {
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const { ax } = await createUser('test-partners-sync@test.com')
+    const host = (await ax.post('/api/organizations', { name: 'Host org' })).data
+    const partner = (await adminAx.post('/api/organizations', { name: 'Partner org' })).data
+    await adminAx.post(`/api/organizations/${host.id}/partners/_create`, { id: partner.id })
+
+    ax.setOrg(host.id)
+    let hostInfo = (await ax.get('/api/organizations/' + host.id)).data
+    assert.equal(hostInfo.partners.length, 1)
+    assert.equal(hostInfo.partners[0].name, 'Partner org')
+
+    await adminAx.patch('/api/organizations/' + partner.id, { name: 'Renamed partner' })
+    hostInfo = (await ax.get('/api/organizations/' + host.id)).data
+    assert.equal(hostInfo.partners[0].name, 'Renamed partner')
+
+    await adminAx.delete('/api/organizations/' + partner.id)
+    hostInfo = (await ax.get('/api/organizations/' + host.id)).data
+    assert.equal(hostInfo.partners.length, 0)
+  })
+
   test('should invite a partner with a redirect on a secondary site', async () => {
     const config = await getServerConfig()
 

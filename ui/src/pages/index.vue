@@ -4,7 +4,7 @@
     data-iframe-height
   >
     <v-container class="fill-height d-flex align-center flex-wrap">
-      <v-row align="center">
+      <v-row class="align-center">
         <v-col class="text-center">
           <img
             v-if="$uiConfig.theme.logo"
@@ -22,7 +22,7 @@
 
           <v-divider class="my-3" />
 
-          <span class="text-subtitle-1">{{ $t('root.description') }}</span>
+          <span class="text-body-large">{{ $t('root.description') }}</span>
         </v-col>
       </v-row>
     </v-container>

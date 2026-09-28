@@ -68,7 +68,7 @@
                   :to="`/organization/${orga.id}`"
                 >{{ orga.name }}</router-link>
                 <template v-if="orga.department">{{ orga.departmentName || orga.department }}</template>
-                ({{ orga.role }})
+                ({{ orga.roleLabel || orga.role }})
               </span>
             </div>
           </td>
@@ -157,7 +157,7 @@ headers.push({ title: '', value: 'actions', sortable: false })
 
 <style lang="css">
 .users-table td, .users-table th {
-  padding-left: 4px !important;
-  padding-right: 4px !important;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 </style>

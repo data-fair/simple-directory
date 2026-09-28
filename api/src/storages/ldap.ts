@@ -1,7 +1,6 @@
 import type { FindMembersParams, FindOrganizationsParams, FindUsersParams, SdStorage } from './interface.ts'
 import config from '#config'
-import type { LdapParams, Member, MemberOverwrite, ServerSession, Site } from '#types'
-import type { Organization, Partner, User, UserWritable } from '#types'
+import type { LdapParams, Member, MemberOverwrite, ServerSession, Site, Organization, Partner, User, UserWritable } from '#types'
 import mongo from '#mongo'
 import memoize from 'memoizee'
 import { promisify } from 'util'

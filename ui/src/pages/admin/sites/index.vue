@@ -64,7 +64,7 @@
               <v-avatar
                 size="28"
                 :style="`left:-1px;top:-1px;background-color: ${$vuetify.theme.current.colors.surface};`"
-                class="elevation-4"
+                class="elevation-1"
               >
                 <v-icon
                   v-if="authProvider.icon"

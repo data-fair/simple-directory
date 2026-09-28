@@ -2,6 +2,8 @@ import { type Request } from 'express'
 import { authenticator } from 'otplib'
 import { type Password } from '../utils/passwords.ts'
 import { session } from '@data-fair/lib-express'
+import type { User } from '#types'
+import type { SdStorage } from '../storages/interface.ts'
 
 export const is2FAValid = (secret: string | undefined, token: string) => {
   if (!secret) return false
@@ -11,6 +13,10 @@ export const is2FAValid = (secret: string | undefined, token: string) => {
 export const cookie2FAName = (userId: string) => 'id_token_2fa_' + userId
 
 export type TwoFA = { active: boolean, secret: string, recovery?: Password }
+
+export const is2FARequired = async (storage: SdStorage, user: User, user2FA: TwoFA | undefined) => {
+  return !!user2FA?.active || await storage.required2FA(user)
+}
 
 export const check2FASession = async (req: Request, userId: string) => {
   const token = req.cookies[cookie2FAName(userId)]

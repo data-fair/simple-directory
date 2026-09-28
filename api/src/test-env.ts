@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { Router } from 'express'
+import express, { Router } from 'express'
 import { session } from '@data-fair/lib-express'
 import mongo from '#mongo'
 import config, { jwtDurations } from '#config'
@@ -33,6 +33,7 @@ router.delete('/', async (req, res) => {
   await mongo.organizations.deleteMany(orgFilter)
   await mongo.users.deleteMany(userFilter)
   await mongo.limits.deleteMany({ $or: [{ type: 'user', id: { $in: testUserIds } }, { type: 'organization', id: { $in: testOrgIds } }] })
+  await mongo.avatars.deleteMany({ $or: [{ 'owner.type': 'user', 'owner.id': { $in: testUserIds } }, { 'owner.type': 'organization', 'owner.id': { $in: testOrgIds } }] })
   // deliberately unscoped: sites have a unique index on host, so tests must be
   // free to claim any dev host (this is why `npm run dev-fixtures` documents its
   // site as the one fixture a test run removes)
@@ -125,7 +126,6 @@ router.post('/rotate-keys', async (req, res) => {
 // PATCH /api/test-env/config — apply temporary config overrides on the running server
 // Body: JSON object with config keys to override (e.g. { "alwaysAcceptInvitation": true })
 // Uses Object.defineProperty to bypass node-config immutability
-import express from 'express'
 router.patch('/config', express.json(), (req, res) => {
   for (const [key, value] of Object.entries(req.body)) {
     Object.defineProperty(config, key, { value, writable: true, configurable: true })

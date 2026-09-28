@@ -102,7 +102,6 @@ module.exports = {
       }
     }
   },
-  analytics: jsonEnv('ANALYTICS'),
   webhooks: {
     identities: jsonEnv('IDENTITIES_WEBHOOKS')
   },

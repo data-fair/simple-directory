@@ -15,7 +15,8 @@ import { getDefaultLoginRedirect, getRedirectSite, reqSite } from '#services'
 import { lastIpInfo } from '../utils/ip-info.ts'
 
 // delay during which the previous exchange token is still accepted, so that concurrent
-// keepalives (multiple tabs) do not look like a stolen token being replayed
+// keepalives (multiple tabs) do not look like a stolen token being replayed.
+// it must stay a time bound: see docs/architecture/session-theft-protections.md
 const exchangeTokenGrace = 60000
 
 export const signToken = async (payload: any, exp: string | number, notBefore?: string) => {
@@ -224,14 +225,24 @@ export const setSessionCookies = async (req: Request, res: Response, sitePath: s
     if (options?.keepExchangeJti) {
       sessionInfo.jti = options.keepExchangeJti
     } else {
-      sessionInfo.jti = nanoid()
+      const newJti = nanoid()
       // recorded before the cookie is sent: a token whose id was not stored would look
       // like a stolen one at the next keepalive
-      const sessionPatch: Partial<ServerSession> = { jti: sessionInfo.jti, rotatedAt: new Date().toISOString() }
-      if (existingServerSessionInfo?.jti && existingServerSessionInfo.session === serverSessionId) {
-        sessionPatch.previousJti = existingServerSessionInfo.jti
+      const sessionPatch: Partial<ServerSession> = { jti: newJti, rotatedAt: new Date().toISOString() }
+      const supersededJti = existingServerSessionInfo?.session === serverSessionId ? existingServerSessionInfo?.jti : undefined
+      if (supersededJti) sessionPatch.previousJti = supersededJti
+      // compare-and-swap on the token we are superseding: concurrent keepalives (several tabs
+      // restored at once) all start from it, and minting one successor each would leave the
+      // browser holding a token the server did not keep — a replay at the next keepalive.
+      // losing the swap proves the winner already committed, so its token can be read back and
+      // served as is, exactly like the keepExchangeJti path above.
+      if (await storages.updateSessionById(serverSessionId as string, sessionPatch, supersededJti)) {
+        sessionInfo.jti = newJti
+      } else {
+        const currentSession = await storages.getSessionById(serverSessionId as string)
+        if (!currentSession?.jti) throw httpError(401, 'Session interrompue')
+        sessionInfo.jti = currentSession.jti
       }
-      await storages.updateSessionById(serverSessionId as string, sessionPatch)
     }
     const exchangeCookieOpts = { ...opts, expires: new Date(exchangeExp * 1000), path: sitePath + '/simple-directory/', httpOnly: true }
     const exchangeToken = await signToken(sessionInfo, exchangeExp)
@@ -360,7 +371,8 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   // single use exchange token: presenting anything else than the last one issued means a copy
   // of the cookie is in circulation, the session is destroyed and its owner must authenticate again.
   // the previous token is tolerated for a short delay, the time for concurrent keepalives
-  // (multiple tabs of the same browser) to converge on the new one.
+  // (multiple tabs of the same browser) to converge on the new one. Without this time bound a
+  // thief and the owner would both keep converging on the current token and never be detected.
   // sessions created before this mechanism have no jti yet, they get one at this keepalive
   let keepExchangeJti: string | undefined
   if (serverSession.jti && serverSessionInfo.jti !== serverSession.jti) {
