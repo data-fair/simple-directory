@@ -97,10 +97,29 @@ const appClass = computed(() => {
   }
 }
 
+/* neutralize the browser autofill colors, which are applied with !important
+   cf https://stackoverflow.com/a/37432260 */
+.v-field input:-webkit-autofill {
+  transition: background-color 5000s ease-in-out 0s;
+  -webkit-text-fill-color: rgb(var(--v-theme-on-surface)) !important;
+}
+
+/* chrome autofills a password on load without exposing the value to the page until the
+   user interacts, so the field never becomes active: float its label like VField.css does */
+.v-field:has(input:-webkit-autofill) .v-label.v-field-label {
+  visibility: hidden;
+}
+.v-field:has(input:-webkit-autofill) .v-label.v-field-label--floating {
+  visibility: unset;
+}
+.v-field--variant-outlined:has(input:-webkit-autofill) .v-field__outline__notch::before {
+  opacity: 0;
+}
+
 body .v-application .logo-container {
   height: 100%;
   padding: 4px;
-  margin-left: 4px !important;
+  margin-left: 4px;
   margin-right: 4px;
   width: 64px;
 }

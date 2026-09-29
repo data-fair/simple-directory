@@ -93,4 +93,38 @@ test.describe('avatars api', () => {
     assert.deepEqual(await download(ax, keptPath), testPng)
     await assertUnknown(ax, removedPath, 'unknown-department.png')
   })
+
+  test('should delete a custom avatar and revert to default initials avatar', async () => {
+    const { ax, user } = await createUser('avatar-reset@test.com')
+    const path = `/api/avatars/user/${user.id}/avatar.png`
+
+    const initialRes = await ax.get(path, { responseType: 'arraybuffer' })
+    assert.equal(initialRes.headers['x-avatar-custom'], 'false')
+
+    assert.equal((await uploadAvatar(ax, path)).status, 201)
+    const customRes = await ax.get(path, { responseType: 'arraybuffer' })
+    assert.equal(customRes.headers['x-avatar-custom'], 'true')
+    assert.deepEqual(Buffer.from(customRes.data), testPng)
+
+    assert.equal((await ax.delete(path)).status, 204)
+    const revertedRes = await ax.get(path, { responseType: 'arraybuffer' })
+    assert.equal(revertedRes.headers['x-avatar-custom'], 'false')
+    assert.notDeepEqual(Buffer.from(revertedRes.data), testPng)
+  })
+
+  test('should keep regenerating the avatar of a name without initials', async () => {
+    const { ax } = await createUser('avatar-no-initials@test.com')
+    // a name without any letter gives empty initials, which must not pass for a custom avatar
+    const org = (await ax.post('/api/organizations', { name: '---' })).data
+    ax.setOrg(org.id)
+    const path = `/api/avatars/organization/${org.id}/avatar.png`
+
+    const emptyRes = await ax.get(path, { responseType: 'arraybuffer' })
+    assert.equal(emptyRes.headers['x-avatar-custom'], 'false')
+
+    await ax.patch(`/api/organizations/${org.id}`, { name: 'Avatar org' })
+    const renamedRes = await ax.get(path, { responseType: 'arraybuffer' })
+    assert.equal(renamedRes.headers['x-avatar-custom'], 'false')
+    assert.notDeepEqual(Buffer.from(renamedRes.data), Buffer.from(emptyRes.data))
+  })
 })

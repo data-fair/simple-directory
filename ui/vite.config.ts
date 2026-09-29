@@ -19,16 +19,9 @@ const devSitePath = ''
 export default defineConfig({
   base: devSitePath + '/simple-directory',
   optimizeDeps: { include: commonjsDeps },
-  build: {
-    rollupOptions: {
-      output: {
-        experimentalMinChunkSize: 2000
-      }
-    }
-  },
   resolve: {
     alias: {
-      '~': path.resolve(__dirname, 'src/')
+      '~': path.resolve(import.meta.dirname, 'src/')
     },
   },
   html: {
@@ -56,7 +49,7 @@ export default defineConfig({
       dts: './dts/typed-router.d.ts',
       exclude: process.env.NODE_ENV === 'development' ? [] : ['src/pages/dev.vue']
     }),
-    Vue({ template: { compilerOptions: { isCustomElement: (tag) => ['d-frame'].includes(tag) } } }),
+    Vue({ template: { compilerOptions: { isCustomElement: (tag) => ['d-frame'].includes(tag) || tag.startsWith('cropper-') } } }),
     VueI18nPlugin(),
     Vuetify({ styles: { configFile: settingsPath } }),
     AutoImport({
@@ -79,7 +72,6 @@ export default defineConfig({
             'mdiAccountSwitch',
             'mdiAlertCircle',
             'mdiBell',
-            'mdiCalendar',
             'mdiCancel',
             'mdiCellphone',
             'mdiCheck',

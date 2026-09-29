@@ -24,6 +24,7 @@
       <v-card-text>
         <load-avatar
           :owner="{type: 'user', id: nhi.id}"
+          class="mb-4"
         />
         <v-form
           ref="editForm"

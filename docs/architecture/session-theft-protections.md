@@ -84,10 +84,33 @@ still accepted during `exchangeTokenGrace` (one minute), and such a request
 returns the current token as is instead of rotating again, so racing tabs
 converge.
 
+This tolerance must stay bounded by time. Accepting the previous `jti` hands out
+the current token, so without a time limit a thief who used a copied token first
+and the owner still holding the previous one would both keep converging on each
+new token, and the replay would never be detected. With the window, the owner's
+next keepalive (every ten minutes in the SPA) comes too late and destroys the
+session. The price is that a client which missed a rotation (aborted request,
+lost response) and stays idle past the window is logged out. That is rare, since
+a keepalive is fast and an active client usually sends the next one within the
+window.
+
+Concurrent keepalives need a second guarantee: several tabs restored at once all
+start from the same token, and minting one successor each would leave the
+browser holding a token the server did not keep — a replay at the next
+keepalive, whatever the grace window. This is the likely cause of superadmins
+being logged out repeatedly (they rotate most often, through `/asadmin` and
+`/adminmode`). The rotation write is therefore a compare-and-swap on the token
+being superseded (`updateSessionById`'s `expectedJti`). Losing the swap proves
+the winner already committed, so the loser reads the winning token back and
+serves it unchanged.
+
 Consequences to keep in mind when changing this code:
 
 - any flow issuing an exchange token must record its `jti` on the server session
   (this is why the write lives in `setSessionCookies`), otherwise the next
   keepalive destroys the session;
+- the rotation write must stay a compare-and-swap: a blind `$set` lets two
+  concurrent keepalives record different successors, and the next keepalive
+  reports the loser's token as a theft;
 - sessions created before this mechanism have no `jti`, they are tolerated and
   get one at their next keepalive.

@@ -20,6 +20,11 @@ const replayExchangeToken = (ax: AxiosAuthInstance, token: string) => {
   ax.cookieJar.setCookieSync(`id_token_ex=${token}; Path=/simple-directory/`, cookieUrl)
 }
 
+// pretend the last rotation happened long ago, outside of the grace window
+const ageRotation = async (email: string) => {
+  await testEnvAx.patch(`/user/${email}`, { 'sessions.0.rotatedAt': new Date(Date.now() - 3600000).toISOString() })
+}
+
 const readUserSessions = async (userId: string) => {
   const adminAx = await axiosAuth({ email: 'admin@test.com', adminMode: true })
   return (await adminAx.get(`/api/users/${userId}`)).data.sessions as any[]
@@ -68,5 +73,33 @@ test.describe('Exchange token rotation', () => {
     // no new rotation, the racing tab simply converges on the current token
     assert.equal(readJti(res), currentJti)
     assert.equal((await ax.get('/api/auth/me')).data.email, 'dmeadus0@answers.com')
+  })
+
+  test('replaying the previous exchange token after the grace window kills the session', async () => {
+    const ax = await axiosAuth('dmeadus0@answers.com') as AxiosAuthInstance
+    // a thief used the copied token first: the owner is left holding the previous one
+    const previousToken = readExchangeToken(await ax.post('/api/auth/keepalive'))
+    const sessionId = JSON.parse(Buffer.from(readExchangeToken(await ax.post('/api/auth/keepalive')).split('.')[1], 'base64url').toString()).session
+    await ageRotation('dmeadus0@answers.com')
+
+    // accepting it would hand the current token to both holders, the theft would never be detected
+    replayExchangeToken(ax, previousToken)
+    await assert.rejects(ax.post('/api/auth/keepalive'), (err: any) => err.status === 401)
+    assert.ok(!(await readUserSessions('test_dmeadus0')).some(s => s.id === sessionId))
+  })
+
+  test('concurrent keepalives converge on a single exchange token', async () => {
+    const ax = await axiosAuth('dmeadus0@answers.com') as AxiosAuthInstance
+    const sessionId = JSON.parse(Buffer.from(readExchangeToken(await ax.post('/api/auth/keepalive')).split('.')[1], 'base64url').toString()).session
+
+    // several tabs restored at once all keepalive from the same token: a single successor
+    // must be issued, otherwise the browser keeps one while the server records another
+    const responses = await Promise.all(Array.from({ length: 5 }, () => ax.post('/api/auth/keepalive')))
+    const jtis = new Set(responses.map(readJti))
+    assert.equal(jtis.size, 1, `concurrent keepalives issued ${jtis.size} different tokens`)
+
+    // the session survived and the token the browser kept is still the valid one
+    assert.equal((await ax.post('/api/auth/keepalive')).status, 204)
+    assert.ok((await readUserSessions('test_dmeadus0')).some(s => s.id === sessionId))
   })
 })

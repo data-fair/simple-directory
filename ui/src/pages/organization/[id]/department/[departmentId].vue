@@ -17,8 +17,9 @@
     <load-avatar
       v-if="orga && $uiConfig.avatars.orgs"
       :owner="{type: 'organization', id: orga.data.value.id, department: department.id}"
-      :department-label="orga.data.value.departmentLabel"
+      :department-name="department.name"
       :disabled="$uiConfig.readonly"
+      class="mb-4"
     />
 
     <organization-members

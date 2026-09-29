@@ -326,10 +326,10 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       msgDifferentUser: 'Diese Einladung, Mitglied einer Organisation zu werden, wurde gut angenommen. Sie können <a href="{loginUrl}">Anmelden</a> mit dem Gastkonto.'
     },
     avatar: {
-      loadUser: 'Ihren Avatar hochladen',
-      loadOrganization: 'Avatar der Organisation hochladen',
-      loadDepartment: 'Avatar hochladen ({departmentLabel})',
-      prepare: 'Das Bild vorbereiten'
+      changeUser: 'Avatar Ihres Kontos ändern',
+      changeOrganization: 'Avatar der Organisation ändern',
+      changeDepartment: 'Avatar von "{departmentName}" ändern',
+      reset: 'Standard-Avatar wiederherstellen'
     },
     me: {
       emailNotEditable: 'Diese Adresse kann nicht geändert werden.',

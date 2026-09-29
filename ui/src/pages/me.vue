@@ -30,6 +30,9 @@
         :hint="$t('pages.me.emailNotEditable')"
         :label="$t('common.email')"
         name="email"
+        variant="outlined"
+        density="compact"
+        class="mb-2"
         persistent-hint
         readonly
       />
@@ -38,9 +41,10 @@
         v-if="userDetailsFetch.data.value && $uiConfig.avatars.users"
         :owner="{type: 'user', id: user.id}"
         :disabled="readonlyPersonalInfo"
+        class="mb-4"
       />
 
-      <v-row dense>
+      <v-row density="comfortable">
         <v-col cols="6">
           <v-text-field
             v-model="patch.firstName"
@@ -50,6 +54,7 @@
             :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
             variant="outlined"
             density="compact"
+            hide-details="auto"
             @change="save.execute"
           />
         </v-col>
@@ -62,6 +67,7 @@
             :rules="[v => (!v || v.length < 100) || $t('common.tooLong')]"
             variant="outlined"
             density="compact"
+            hide-details="auto"
             @change="save.execute"
           />
         </v-col>
@@ -69,36 +75,21 @@
           v-if="!$uiConfig.noBirthday"
           cols="6"
         >
-          <v-menu
-            v-model="birthdayMenu"
-            :close-on-content-click="false"
-            transition="scale-transition"
-            max-width="290px"
-            min-width="290px"
-          >
-            <template #activator="{ props }">
-              <v-text-field
-                :model-value="patch.birthday && $d(new Date(patch.birthday))"
-                :label="$t('common.birthday')"
-                :disabled="!userDetailsFetch.data.value || readonlyPersonalInfo"
-                :append-icon="mdiCalendar"
-                readonly
-                clearable
-                variant="outlined"
-                density="compact"
-                hide-details
-                v-bind="props"
-                @click:clear="patch.birthday = null; save.execute()"
-              />
-            </template>
-            <v-date-picker
-              v-model:active-picker="activeBirthDayPicker"
-              :model-value="patch.birthday ? new Date(patch.birthday) : undefined"
-              :max="maxBirthday"
-              no-title
-              @update:model-value="setBirthDay"
-            />
-          </v-menu>
+          <!-- the picker opens on the years, a birthday is rarely in the current month -->
+          <v-date-input
+            :model-value="patch.birthday ? dayjs(patch.birthday).toDate() : null"
+            :label="$t('common.birthday')"
+            :disabled="!userDetailsFetch.data.value || readonlyPersonalInfo"
+            :max="maxBirthday"
+            view-mode="year"
+            prepend-icon=""
+            append-inner-icon="$calendar"
+            variant="outlined"
+            density="compact"
+            hide-details="auto"
+            clearable
+            @update:model-value="setBirthday"
+          />
         </v-col>
         <v-col v-if="!readonlyPersonalInfo">
           <v-btn
@@ -130,7 +121,7 @@
           <v-avatar
             size="28"
             :style="`left:-1px;top:-1px;background-color: ${$vuetify.theme.current.colors.surface};`"
-            class="elevation-4"
+            class="elevation-1"
           >
             <v-icon
               v-if="identity.icon"
@@ -323,12 +314,12 @@ watch(userDetailsFetch.data, () => {
   patch.value = newPatch()
 })
 
-const birthdayMenu = ref(false)
 const maxBirthday = dayjs().subtract(13, 'years').toISOString()
-const activeBirthDayPicker = ref()
-const setBirthDay = (birthday: Date) => {
-  patch.value.birthday = birthday.toISOString().slice(0, 10)
-  birthdayMenu.value = false
+// v-date-input re-emits a new Date object on every blur, only save an actual change
+const setBirthday = (birthday: Date | null) => {
+  const formatted = birthday ? dayjs(birthday).format('YYYY-MM-DD') : null
+  if (formatted === patch.value.birthday) return
+  patch.value.birthday = formatted
   save.execute()
 }
 
@@ -384,10 +375,6 @@ const userIdentities = computed(() => {
     ...p,
     user: (userDetailsFetch.data.value as any)?.[p.type]?.[p.id]
   })).filter(p => !!p.user).map(p => ({ ...p, name: p.user.login || p.user.name }))
-})
-
-watch(birthdayMenu, (val) => {
-  if (val) setTimeout(() => { activeBirthDayPicker.value = 'YEAR' })
 })
 
 const form = ref<InstanceType<typeof VForm>>()

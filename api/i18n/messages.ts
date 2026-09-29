@@ -1,12 +1,23 @@
 import { flatten, unflatten } from 'flat'
 import config from '../src/config.ts'
+import fr from './fr.js'
+import en from './en.js'
+import es from './es.js'
+import pt from './pt.js'
+import it from './it.js'
+import de from './de.js'
 const flatOpts = { delimiter: '_' }
+
+// static imports: this module is also bundled into the vite dev config, where a relative
+// dynamic import would not resolve
+const allMessages: Record<string, any> = { fr, en, es, pt, it, de }
 
 // Build a map of messages of this form
 // {fr: {msg1: 'libellé 1'}, en: {msg1: 'label 1'}}
 const _messages: any = {}
 for (const l of config.i18n.locales) {
-  _messages[l] = (await import('./' + l + '.js')).default
+  if (!allMessages[l]) throw new Error(`unsupported locale "${l}" in config i18n.locales`)
+  _messages[l] = allMessages[l]
 }
 export const flatMessages = flatten(_messages, flatOpts) as Record<string, string>
 

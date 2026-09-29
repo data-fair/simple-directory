@@ -345,7 +345,13 @@ router.post('/nhi-token', async (req, res) => {
   // setSessionCookies only stamps boundIp for adminMode, which an NHI never has, so no conflict
   if (user.nhi.ipBinding) payload.boundIp = clientIp
   const token = await setSessionCookies(req, res, reqSitePath(req), payload, 'nhi-session', userOrg, { skipExchangeToken: true, exp })
-  storages.globalStorage.updateLogged(user.id).catch((err: any) => internalError('nhi-update-logged', 'error while updating logged date', err))
+  // Guarded on `readonly`, like confirmLog on the password path: a read-only storage cannot record a
+  // last-logged date, and FileStorage's updateLogged throws SYNCHRONOUSLY — it is not async — so the
+  // .catch() below never attaches and the rejection became a 500 that failed the whole exchange.
+  // Without the guard an NHI could not obtain a session at all under file storage.
+  if (!storages.globalStorage.readonly) {
+    storages.globalStorage.updateLogged(user.id).catch((err: any) => internalError('nhi-update-logged', 'error while updating logged date', err))
+  }
   eventsLog.info('sd.auth.nhi.ok', `an NHI session was created for ${user.id}`, logContext)
   res.set('Cache-Control', 'no-store')
   res.send({ access_token: token, token_type: 'Bearer', expires_in: exp - nowSec })
