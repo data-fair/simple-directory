@@ -53,6 +53,15 @@ router.delete('/', async (req, res) => {
   await mongo.passwordLists.deleteMany()
   await mongo.db.collection('sd-rate-limiter-auth').deleteMany()
   await mongo.db.collection('sd-rate-limiter-contact').deleteMany()
+  // the per-recipient mail budget is the one limiter whose window outlives a
+  // test run: the dev server runs with NODE_ENV=development, so it uses the
+  // production default of 500 mails per recipient per DAY rather than the tiny
+  // test.cjs window. Shared fixture addresses (admin@test.com, user@test.com)
+  // burn that budget a few mails per run and eventually exhaust it, which
+  // surfaces as an unrelated `waitForMail timeout` somewhere else entirely.
+  // mails-rate-limit.api.spec.ts is unaffected: it pre-fills its own bucket
+  // inside each test, with a unique recipient, after this cleanup has run.
+  await mongo.db.collection('sd-rate-limiter-mail').deleteMany()
   const { getSiteByHost } = await import('./sites/service.ts')
   getSiteByHost.clear()
   // Force a fresh SAML cert mint on the next request — exercises createCert end-to-end
@@ -148,10 +157,14 @@ router.post('/run-user-cleanup', async (req, res) => {
   res.status(200).send('ok')
 })
 
-// POST /api/test-env/clear-site-cache — clear the getSiteByHost memoized cache
+// POST /api/test-env/clear-site-cache — clear the memoized site lookups and
+// the derived main-site resources
 router.post('/clear-site-cache', async (req, res) => {
-  const { getSiteByHost } = await import('./sites/service.ts')
+  const { getSiteByHost, getMainSiteDoc } = await import('./sites/service.ts')
+  const { clearSiteResourceCaches } = await import('./sites/main-site.ts')
   getSiteByHost.clear()
+  getMainSiteDoc.clear()
+  clearSiteResourceCaches()
   res.status(200).send('ok')
 })
 

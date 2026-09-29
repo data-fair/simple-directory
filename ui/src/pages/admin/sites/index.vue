@@ -39,6 +39,14 @@
               target="blank"
               class="text-primary"
             >{{ `${props.item.host}${props.item.path ?? ''}` }}</a>
+            <v-chip
+              v-if="isMainSiteDoc(props.item)"
+              size="x-small"
+              color="primary"
+              class="ml-2"
+            >
+              {{ $t('pages.admin.sites.mainSite') }}
+            </v-chip>
           </td>
           <td>{{ props.item._id }}</td>
           <td>
@@ -114,7 +122,7 @@
               :icon="mdiLoginVariant"
               @click="siteRedirect(props.item)"
             />
-            <v-menu v-if="props.item.colorWarnings.length">
+            <v-menu v-if="allWarnings(props.item).length">
               <template #activator="{props: colorWarningsMenuProps}">
                 <v-btn
                   :title="$t('pages.admin.sites.colorWarnings')"
@@ -128,7 +136,7 @@
               </template>
               <v-list class="border-sm">
                 <v-list-item
-                  v-for="(warning, i) of props.item.colorWarnings"
+                  v-for="(warning, i) of allWarnings(props.item)"
                   :key="i"
                 >
                   <v-list-item-title>
@@ -146,11 +154,14 @@
 
 <script setup lang="ts">
 
-type SiteWithColorWarnings = Site & { colorWarnings: string[] }
+type SiteWithColorWarnings = Site & { colorWarnings: string[], mainSiteWarnings?: string[] }
+
+const allWarnings = (site: SiteWithColorWarnings) => [...site.colorWarnings, ...(site.mainSiteWarnings ?? [])]
 
 const { t } = useI18n()
 const sites = useFetch<{ count: number, results: SiteWithColorWarnings[] }>($apiPath + '/sites', { query: { showAll: true } })
 const protocol = window.location.protocol
+const { isMainSiteDoc } = useStore()
 
 const deleteSite = useAsyncAction(async (site: Site) => {
   await $fetch(`sites/${site._id}`, { method: 'DELETE' })

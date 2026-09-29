@@ -194,7 +194,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       sites: {
         createSite: 'Define a new site',
         loginOnSite: 'Sign in on the site',
-        colorWarnings: 'Contrast warnings'
+        colorWarnings: 'Contrast warnings',
+        mainSite: 'Main site',
       },
       passwordLists: {
         help1: 'You can upload password lists from CSV files. Those too well known passwords will then be rejected if users try to use them.',
@@ -204,7 +205,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
         confirmDelete: 'Delete this password list?'
       },
       site: {
-        title: 'Site configuration'
+        title: 'Site configuration',
+        mainSiteExplanation: 'This site matches this service\'s main domain. Its database document drives presentation only, and only for the categories listed in MAIN_SITE_FROM_DB. Authentication, identity providers and account scoping always come from environment variables.'
       }
     },
     contact: {
@@ -559,5 +561,11 @@ Feel free to contact us at {contact}.
     acceptedPartnerInvitation: 'The organization {partnerName} ({email}) has joined the organization {orgName} as a partner.',
     addMemberTopic: 'a member has been added',
     addMember: 'The user {name} ({email}) has joined the organization {orgName}.'
+  },
+  // server-side only (not in publicMessages): reported through
+  // mainSiteWarnings on the sites API and by the boot check
+  mainSite: {
+    ignoredField: 'The "{field}" field is ignored on the main site: this configuration comes from environment variables.',
+    ignoredCategory: 'The stored value for "{category}" is ignored: MAIN_SITE_FROM_DB does not contain this category.'
   }
 }
