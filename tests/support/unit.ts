@@ -13,6 +13,11 @@ export const initMongo = async () => {
   initialized = true
 }
 
+// Closes the client that initMongo shares across every unit spec in the worker
+// process. Do NOT call this from a spec's afterAll: the next spec's initMongo()
+// reconnects the same closed client and throws MongoNotConnectedError, taking
+// the rest of the unit project down with it. Specs just call initMongo() and
+// let the process exit clean up.
 export const closeMongo = async () => {
   if (!initialized) return
   const mongo = (await import('../../api/src/mongo.ts')).default

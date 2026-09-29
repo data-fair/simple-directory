@@ -195,6 +195,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         createSite: 'Déclarer un nouveau site',
         loginOnSite: 'Se connecter sur le site',
         colorWarnings: 'Avertissements de contraste',
+        mainSite: 'Site principal',
       },
       passwordLists: {
         help1: 'Vous pouvez charger des listes de mots de passe à partir de fichiers CSV. Ces mots de passe trop connus seront alors rejetés si des utilisateurs tentent de les utiliser.',
@@ -204,7 +205,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
         confirmDelete: 'Supprimer cette liste de mots de passe ?'
       },
       site: {
-        title: 'Configuration du site'
+        title: 'Configuration du site',
+        mainSiteExplanation: 'Ce site correspond au domaine principal de ce service. Son document en base de données ne pilote que la présentation, et seulement pour les catégories listées dans MAIN_SITE_FROM_DB. L\'authentification, les fournisseurs d\'identité et le périmètre des comptes proviennent toujours des variables d\'environnement.'
       }
     },
     contact: {
@@ -571,5 +573,11 @@ N'hésitez pas à nous contacter à {contact}.
     acceptedPartnerInvitation: 'L\'organisation {partnerName} ({email}) a rejoint l\'organisation {orgName} en tant que partenaire.',
     addMemberTopic: 'un membre a été ajouté',
     addMember: 'L\'utilisateur {name} ({email}) a rejoint l\'organisation {orgName}.'
+  },
+  // server-side only (not in publicMessages): reported through
+  // mainSiteWarnings on the sites API and by the boot check
+  mainSite: {
+    ignoredField: 'Le champ "{field}" est ignoré sur le site principal : cette configuration provient des variables d\'environnement.',
+    ignoredCategory: 'La valeur enregistrée pour "{category}" est ignorée : MAIN_SITE_FROM_DB ne contient pas cette catégorie.'
   }
 }

@@ -22,18 +22,7 @@ import tokens from './tokens/router.ts'
 import sites from './sites/router.ts'
 import accounts from './accounts/router.ts'
 import passwordLists from './password-lists/router.ts'
-import { getSiteByUrl } from '#services'
-import { defaultThemeCssHash, getThemeCssHash } from './utils/theme.ts'
-import { defaultPublicSiteInfoHash, getPublicSiteInfoHash } from './utils/public-site-info.ts'
-
-// the site title is injected as text into the served HTML, it must not be able to break out of its tag.
-// it must also survive the micro-template passes that follow: '{' is neutralized so a title cannot
-// smuggle a later placeholder (CSP_NONCE is substituted after us), and '$' is doubled because
-// microTemplate interpolates through String.replace, where $&, $` and $' are replacement patterns.
-const escapeHtml = (value: string) => value
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  .replace(/\{/g, '&#123;')
-  .replace(/\$/g, '$$$$')
+import { getSiteExtraParams } from './sites/spa-params.ts'
 
 const app = express()
 export default app
@@ -122,16 +111,7 @@ app.use(tokens)
 if (process.env.NODE_ENV !== 'test') {
   app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig, {
     csp: { nonce: true, header: true },
-    getSiteExtraParams: async (siteUrl: string) => {
-      const site = await getSiteByUrl(siteUrl)
-      return {
-        THEME_CSS_HASH: site ? getThemeCssHash(site) : defaultThemeCssHash,
-        PUBLIC_SITE_INFO_HASH: site ? getPublicSiteInfoHash(site) : defaultPublicSiteInfoHash,
-        // the SPA sets the definitive title, this one fills the <title> of the served
-        // document, which the W3C validator requires (RGAA 8.2)
-        SITE_TITLE: escapeHtml(site?.title || 'Simple Directory')
-      }
-    }
+    getSiteExtraParams
   }))
 }
 

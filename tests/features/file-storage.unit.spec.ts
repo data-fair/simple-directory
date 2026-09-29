@@ -53,4 +53,18 @@ test.describe('file storage interface', () => {
     assert.equal(ntag.department, 'dep1')
     assert.equal(ntag.departmentName, 'Dep 1')
   })
+
+  test('declares itself readonly, which is what callers must branch on', () => {
+    // The NHI token exchange and the password login both record a last-logged date, which a
+    // read-only storage cannot do. Both must therefore branch on this flag rather than rely on
+    // catching a failure — see the next test for why catching does not work.
+    assert.equal(storage.readonly, true)
+  })
+
+  test('updateLogged throws synchronously, so a .catch() cannot absorb it', () => {
+    // This is the reason the NHI exchange needs an explicit `readonly` guard rather than a .catch():
+    // the method is not async, so the throw happens at the call site before any handler attaches and
+    // propagates as a 500. If it ever becomes an async rejection this test fails, and the guard can go.
+    assert.throws(() => storage.updateLogged('anyone'))
+  })
 })
