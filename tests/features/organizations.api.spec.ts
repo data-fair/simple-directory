@@ -281,6 +281,44 @@ test.describe('organizations api', () => {
     await testEnvAx.patch('/config', { alwaysAcceptInvitation: false })
   })
 
+  test('multi-roles: changing a membership to a role the member already has merges them', async () => {
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true, multiRoles: true })
+    try {
+      const { ax } = await createUser('test-owner-mr1@test.com')
+      const { ax: axMember, user: member } = await createUser('test-member-mr1@test.com')
+      const org = (await ax.post('/api/organizations', { name: 'test' })).data
+      ax.setOrg(org.id)
+      await ax.post('/api/invitations', { id: org.id, name: org.name, email: member.email, role: 'user' })
+      await ax.post('/api/invitations', { id: org.id, name: org.name, email: member.email, role: 'admin' })
+
+      await ax.patch(`/api/organizations/${org.id}/members/${member.id}`, { role: 'admin' }, { params: { role: 'user' } })
+      const memberships = (await axMember.get(`/api/users/${member.id}`)).data.organizations.filter((o: any) => o.id === org.id)
+      assert.deepEqual(memberships.map((o: any) => o.role), ['admin'])
+    } finally {
+      await testEnvAx.patch('/config', { alwaysAcceptInvitation: false, multiRoles: false })
+    }
+  })
+
+  test('multi-roles: moving a membership to another department keeps the other memberships', async () => {
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true, multiRoles: true })
+    try {
+      const { ax } = await createUser('test-owner-mr2@test.com')
+      const { ax: axMember, user: member } = await createUser('test-member-mr2@test.com')
+      // the member administers an organization of their own
+      const ownOrg = (await axMember.post('/api/organizations', { name: 'own' })).data
+      const org = (await ax.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }] })).data
+      ax.setOrg(org.id)
+      await ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: member.email, role: 'user' })
+
+      await ax.patch(`/api/organizations/${org.id}/members/${member.id}`, { role: 'user', department: 'dep2' }, { params: { role: 'user', department: 'dep1' } })
+      const memberships = (await axMember.get(`/api/users/${member.id}`)).data.organizations
+        .map((o: any) => `${o.id}/${o.department ?? ''}/${o.role}`).sort()
+      assert.deepEqual(memberships, [`${org.id}/dep2/user`, `${ownOrg.id}//admin`].sort())
+    } finally {
+      await testEnvAx.patch('/config', { alwaysAcceptInvitation: false, multiRoles: false })
+    }
+  })
+
   test('should send emails based on roles and departments', async () => {
     await getServerConfig()
     await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
