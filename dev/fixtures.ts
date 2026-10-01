@@ -1,8 +1,8 @@
 /**
  * Dev fixtures: seed the RUNNING dev environment with representative accounts,
- * organizations, a themed secondary site and a partnership, so that every
- * back-office screen has something real to show without clicking through the
- * signup flow by hand.
+ * organizations, a themed secondary site, an organization's main site with its
+ * own accounts (site admin) and a partnership, so that every back-office screen
+ * has something real to show without clicking through the signup flow by hand.
  *
  * Run it (dev env must be up -- `bash dev/status.sh`):
  *   npm run dev-fixtures
@@ -16,8 +16,9 @@
  * survive `npm test`.
  *
  * Two exceptions, both re-created by simply re-running this script:
- * - the site: sites carry a unique index on host, so the test cleanup wipes the
- *   whole collection to stay free to claim any dev host;
+ * - the sites: sites carry a unique index on host, so the test cleanup wipes the
+ *   whole collection to stay free to claim any dev host (the accounts living on
+ *   the organization's main site survive, they only need their site back);
  * - the service accounts (NHIs): their ids are `nhi-*`, which the test-env sweep
  *   removes wholesale (test NHIs share that id namespace, so the sweep cannot
  *   tell fixture NHIs apart from test leftovers).
@@ -35,6 +36,10 @@ const SITE_ID = 'dev-fixtures-portal'
 const MAIN_SITE_ID = 'dev-fixtures-main'
 const CORP_NAME = 'Dev Fixtures Corp'
 const PARTNER_NAME = 'Dev Fixtures Partner'
+// an organization whose main site (isAccountMain) is its back-office: the root admins
+// of the organization administer the accounts living on that site (siteAdmin)
+const SITE_ORG_NAME = 'Dev Fixtures Site Owner'
+const ORG_MAIN_SITE_ID = 'dev-fixtures-org-main-site'
 const MEMBERS_LIMIT = 10
 
 const email = (local: string) => `${local}@${EMAIL_DOMAIN}`
@@ -47,6 +52,15 @@ const userSpecs = [
   { email: email('member'), firstName: 'Marc', lastName: 'Member' },
   { email: email('depadmin'), firstName: 'Dana', lastName: 'DepAdmin' },
   { email: email('deleting'), firstName: 'Dimitri', lastName: 'Deleting' }
+]
+
+// Accounts created on the organization's main site (they carry its host), see SITE_ORG_NAME
+const siteUserSpecs = [
+  { email: email('siteadmin'), firstName: 'Sacha', lastName: 'SiteAdmin' },
+  { email: email('sitedepadmin'), firstName: 'Sam', lastName: 'SiteDepAdmin' },
+  { email: email('siteuser'), firstName: 'Suzanne', lastName: 'SiteUser' },
+  { email: email('sitedeleting'), firstName: 'Simon', lastName: 'SiteDeleting' },
+  { email: email('site2fa'), firstName: 'Selma', lastName: 'Site2FA' }
 ]
 
 // Non-human identities (service accounts) shown in the org's back-office. Modelled
@@ -78,9 +92,10 @@ const notBeforeMs = (token: string) => {
   return payload.nbf ? payload.nbf * 1000 : 0
 }
 
-const ensureUsers = async () => {
+// directoryUrl: the users are created on the site serving it (no host for the main back-office)
+const ensureUsers = async (specs: typeof userSpecs, directoryUrl?: string) => {
   const missing = []
-  for (const spec of userSpecs) {
+  for (const spec of specs) {
     if (await findUser(spec.email)) {
       console.log(`  ✓ user ${spec.email} (skipped)`)
     } else {
@@ -89,7 +104,7 @@ const ensureUsers = async () => {
   }
   if (!missing.length) return
 
-  const anonymousAx = await axios()
+  const anonymousAx = await axios(directoryUrl ? { baseURL: directoryUrl } : {})
   // Grab every token first, then wait out the bot trap once instead of once per user.
   const tokens = new Map<string, string>()
   for (const spec of missing) {
@@ -130,7 +145,7 @@ const ensureOrg = async (name: string, adminEmail: string, patch: Record<string,
   return org
 }
 
-const ensureMember = async (org: any, invitation: { email: string, role: string, departments?: string[] }) => {
+const ensureMember = async (org: any, invitation: { email: string, role: string, departments?: string[], redirect?: string }) => {
   const members = (await superAdminAx.get(`/api/organizations/${org.id}/members`, { params: { email: invitation.email } })).data
   if (members.count) {
     console.log(`  ✓ member ${invitation.email} of ${org.name} (skipped)`)
@@ -166,6 +181,18 @@ const ensureNhi = async (org: any, spec: { name: string, role: string, subject: 
   console.log(`  + service account ${spec.name} of ${org.name}${spec.department ? ` (${spec.department})` : ''}`)
 }
 
+// a test run that ended without a cleanup can leave a site squatting a host,
+// and the unique index on host would turn that into an opaque 409
+const freeSiteHost = async (allSites: any[], host: string, siteId: string, secretKey: string) => {
+  const squatter = allSites.find((s: any) => s.host === host && s._id !== siteId)
+  if (!squatter) return
+  if (!squatter._id.startsWith('test_')) {
+    throw new Error(`site ${squatter._id} already uses host ${host}, refusing to touch it — delete it or free the host first`)
+  }
+  await (await axios()).delete(`/api/sites/${squatter._id}`, { params: { key: secretKey } })
+  console.log(`  - removed leftover test site ${squatter._id} from ${host}`)
+}
+
 const main = async () => {
   const config = await getServerConfig()
   console.log(`→ Seeding ${config.publicUrl}`)
@@ -174,8 +201,12 @@ const main = async () => {
   // is immune to the test-suite cleanup
   superAdminAx = await axiosAuth({ email: '_superadmin@test.com', password: 'Test1234', adminMode: true })
 
+  // the memberships below rely on alwaysAcceptInvitation (on in the dev config), but the
+  // invitations tests switch it off on the running server and leave it that way
+  await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
+
   console.log('\n→ Users')
-  await ensureUsers()
+  await ensureUsers(userSpecs)
 
   console.log('\n→ Organizations')
   const corp = await ensureOrg(CORP_NAME, email('owner'), {
@@ -246,17 +277,8 @@ const main = async () => {
   console.log('\n→ Site')
   const siteHost = `127.0.0.1:${process.env.NGINX_PORT2}`
   const anonymousAx = await axios()
-  // a test run that ended without a cleanup can leave a site squatting our host,
-  // and the unique index on host would turn that into an opaque 409
-  const allSites = (await superAdminAx.get('/api/sites', { params: { showAll: true } })).data
-  const squatter = allSites.results.find((s: any) => s.host === siteHost && s._id !== SITE_ID)
-  if (squatter) {
-    if (!squatter._id.startsWith('test_')) {
-      throw new Error(`site ${squatter._id} already uses host ${siteHost}, refusing to touch it — delete it or free the host first`)
-    }
-    await anonymousAx.delete(`/api/sites/${squatter._id}`, { params: { key: config.secretKeys.sites } })
-    console.log(`  - removed leftover test site ${squatter._id} from ${siteHost}`)
-  }
+  const allSites = (await superAdminAx.get('/api/sites', { params: { showAll: true } })).data.results
+  await freeSiteHost(allSites, siteHost, SITE_ID, config.secretKeys.sites)
   // POST /api/sites is an upsert, so it is idempotent on its own
   await anonymousAx.post('/api/sites', {
     _id: SITE_ID,
@@ -277,14 +299,7 @@ const main = async () => {
   // MAIN_SITE_FROM_DB='["theme","title","mails","registration"]' in .env.
   // See docs/architecture/main-site-config.md
   const mainSiteHost = new URL(config.publicUrl).host
-  const mainSquatter = allSites.results.find((s: any) => s.host === mainSiteHost && s._id !== MAIN_SITE_ID)
-  if (mainSquatter) {
-    if (!mainSquatter._id.startsWith('test_')) {
-      throw new Error(`site ${mainSquatter._id} already uses host ${mainSiteHost}, refusing to touch it — delete it or free the host first`)
-    }
-    await anonymousAx.delete(`/api/sites/${mainSquatter._id}`, { params: { key: config.secretKeys.sites } })
-    console.log(`  - removed leftover test site ${mainSquatter._id} from ${mainSiteHost}`)
-  }
+  await freeSiteHost(allSites, mainSiteHost, MAIN_SITE_ID, config.secretKeys.sites)
   await anonymousAx.post('/api/sites', {
     _id: MAIN_SITE_ID,
     owner: { type: 'organization', id: corp.id, name: corp.name },
@@ -300,6 +315,67 @@ const main = async () => {
   console.log(`  ~ main site document ${MAIN_SITE_ID} on ${config.publicUrl}`)
   console.log(`    MAIN_SITE_FROM_DB is currently ${process.env.MAIN_SITE_FROM_DB ?? '[]'}; set it in .env to see it take effect`)
   console.log('    note: a test run wipes the sites collection, re-run this script to get it back')
+
+  console.log('\n→ Organization main site (site admin)')
+  // a distinct organization: flagging a main site switches every other site of
+  // its owner to onlyOtherSite, which would rewrite the Corp's sites above
+  let siteOrg = await findOrg(SITE_ORG_NAME)
+  if (siteOrg) {
+    console.log(`  ✓ organization ${SITE_ORG_NAME} (skipped)`)
+  } else {
+    // created by the superadmin (no autoAdmin in adminMode): its admins are accounts
+    // of its own site, which cannot exist before the site
+    siteOrg = (await superAdminAx.post('/api/organizations', { name: SITE_ORG_NAME })).data
+    console.log(`  + organization ${SITE_ORG_NAME} (${siteOrg.id})`)
+  }
+  siteOrg = (await superAdminAx.patch(`/api/organizations/${siteOrg.id}`, {
+    description: 'Organisation dont le site principal sert de back-office, ses administrateurs gèrent les comptes de ce site',
+    departments: [{ id: 'nantes', name: 'Agence de Nantes' }]
+  })).data
+
+  const orgMainSiteHost = `127.0.0.1:${process.env.NGINX_PORT3}`
+  const orgMainSiteUrl = `http://${orgMainSiteHost}/simple-directory`
+  await freeSiteHost(allSites, orgMainSiteHost, ORG_MAIN_SITE_ID, config.secretKeys.sites)
+  await anonymousAx.post('/api/sites', {
+    _id: ORG_MAIN_SITE_ID,
+    owner: { type: 'organization', id: siteOrg.id, name: siteOrg.name },
+    host: orgMainSiteHost,
+    title: 'Back-office Dev Fixtures Site Owner',
+    theme: { primaryColor: '#2E7D32' }
+  }, { params: { key: config.secretKeys.sites } })
+  // isAccountMain also switches the site to onlyLocal: its accounts live there
+  await superAdminAx.patch(`/api/sites/${ORG_MAIN_SITE_ID}`, { isAccountMain: true })
+  await testEnvAx.post('/clear-site-cache')
+  console.log(`  ~ main site ${ORG_MAIN_SITE_ID} of ${SITE_ORG_NAME} on ${orgMainSiteUrl} (isAccountMain, onlyLocal)`)
+
+  await ensureUsers(siteUserSpecs, orgMainSiteUrl)
+  // the redirect makes the invitation resolve the accounts of the site, not of the back-office
+  const ensureSiteMember = (invitation: { email: string, role: string, departments?: string[] }) =>
+    ensureMember(siteOrg, { ...invitation, redirect: orgMainSiteUrl })
+  await ensureSiteMember({ email: email('siteadmin'), role: 'admin' })
+  await ensureSiteMember({ email: email('sitedepadmin'), role: 'admin', departments: ['nantes'] })
+  await ensureSiteMember({ email: email('siteuser'), role: 'user' })
+  // sitedeleting and site2fa stay outside of the organization: a site admin manages
+  // every account of the site, members or not
+
+  const siteDeletingUser = await findUser(email('sitedeleting'))
+  if (siteDeletingUser.plannedDeletion) {
+    console.log(`  ✓ ${siteDeletingUser.email} already has a planned deletion (skipped)`)
+  } else {
+    const plannedDeletion = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 10)
+    await superAdminAx.patch(`/api/users/${siteDeletingUser.id}`, { plannedDeletion })
+    console.log(`  + ${siteDeletingUser.email} planned for deletion on ${plannedDeletion}`)
+  }
+  const site2FAUser = await findUser(email('site2fa'))
+  if (site2FAUser['2FA']?.active) {
+    console.log(`  ✓ ${site2FAUser.email} has 2FA active (skipped)`)
+  } else {
+    // a placeholder secret: the account cannot log in any more, it only shows the 2FA reset
+    await testEnvAx.patch(`/user/${encodeURIComponent(site2FAUser.email)}`, { '2FA': { active: true, secret: 'DEVFIXTURESPLACEHOLDER' } })
+    console.log(`  + ${site2FAUser.email} with 2FA active (placeholder, cannot log in)`)
+  }
+  console.log(`    log in at ${orgMainSiteUrl}/login with ${email('siteadmin')} / ${PASSWORD}`)
+  console.log(`    then open ${orgMainSiteUrl}/organization/${siteOrg.id} ("Comptes du site")`)
 
   console.log(`\n✔ Fixtures applied. Log in at ${config.publicUrl}/login with ${email('owner')} / ${PASSWORD}`)
 }
