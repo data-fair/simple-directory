@@ -179,20 +179,13 @@
             :icon="mdiAccountMultiple"
           />
           {{ $t('pages.organization.siteUsersTitle') }}
-          <v-tooltip location="right">
-            <template #activator="{props}">
-              <v-icon
-                v-bind="props"
-                size="small"
-                color="info"
-                class="ml-1"
-                :icon="mdiInformation"
-              />
-            </template>
-            {{ $t('pages.organization.siteUsersHelp') }}
-          </v-tooltip>
         </h2>
       </v-row>
+      <df-tutorial-alert
+        id="org-site-users"
+        :text="$t('pages.organization.siteUsersHelp')"
+        persistent
+      />
       <site-users />
     </v-container>
 
@@ -206,6 +199,7 @@
 import type { VForm } from 'vuetify/components'
 import { getAccountRole } from '@data-fair/lib-vue/session'
 import DfToc from '@data-fair/lib-vuetify/toc.vue'
+import DfTutorialAlert from '@data-fair/lib-vuetify/tutorial-alert.vue'
 
 const session = useSession()
 const orgId = useRoute<'/organization/[id]/'>().params.id

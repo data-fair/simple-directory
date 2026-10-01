@@ -84,12 +84,9 @@
               v-for="orga in props.item.organizations"
               :key="orga.id + (orga.department ?? '')"
             >
-              <router-link
-                class="text-primary"
-                :to="`/organization/${orga.id}`"
-              >
-                {{ orga.name }}
-              </router-link>
+              <!-- no link: a site admin does not administer these organizations, and the
+              page can be embedded in another back-office's iframe -->
+              {{ orga.name }}
               {{ orga.department ? (orga.departmentName || orga.department) : '' }}
               ({{ orga.roleLabel || orga.role }})
             </div>

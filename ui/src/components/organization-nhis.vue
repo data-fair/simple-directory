@@ -18,20 +18,13 @@
           :orga="orga"
           @change="fetchNhis.refresh()"
         />
-        <v-tooltip location="right">
-          <template #activator="{props}">
-            <v-icon
-              v-bind="props"
-              size="small"
-              color="info"
-              class="ml-1"
-              :icon="mdiInformation"
-            />
-          </template>
-          {{ $t('pages.organization.nhisHelp') }}
-        </v-tooltip>
       </h2>
     </v-row>
+    <df-tutorial-alert
+      id="org-nhis"
+      :text="$t('pages.organization.nhisHelp')"
+      persistent
+    />
 
     <v-list
       v-if="nhis && nhis.count"
@@ -117,6 +110,7 @@
 
 <script setup lang="ts">
 import { useClipboard } from '@vueuse/core'
+import DfTutorialAlert from '@data-fair/lib-vuetify/tutorial-alert.vue'
 
 // Progressive rollout: normal org admins get a read-only view, and only once at least
 // one NHI exists (the whole section is hidden otherwise). Only superadmins see the
