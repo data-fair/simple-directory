@@ -25,11 +25,11 @@ jobs:
     - name: Build types
       run: npm run build-types
 
-    - name: Type check
-      run: npm run check-types
-
     - name: Build UI
       run: npm -w ui run build
+
+    - name: Type check
+      run: npm run check-types
 
     - name: Init .env
       run: ./dev/init-env.sh
