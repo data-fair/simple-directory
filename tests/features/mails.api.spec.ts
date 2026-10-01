@@ -145,6 +145,23 @@ test.describe('mails', () => {
     assert.ok(!email.html.includes('alert(1)'), 'script content must be stripped')
   })
 
+  test('Contact form: plain text keeps its line breaks', async () => {
+    await testEnvAx.patch('/config', { anonymousContactForm: true })
+    const ax = await axios()
+    const token = (await ax.get('/api/auth/anonymous-action')).data
+    const res = await ax.post('/api/mails/contact', {
+      token,
+      from: 'visitor@test.com',
+      subject: 'contact-plain',
+      text: 'first line\nsecond line'
+    })
+    assert.equal(res.status, 200)
+    const email = await findEmail('contact-plain')
+    assert.ok(email)
+    assert.ok(email.html.includes('first line<br />second line') || email.html.includes('first line<br>second line'), 'line breaks should render')
+    assert.ok(email.html.includes('href="mailto:visitor@test.com"'), 'the sender is named by simple-directory, as a link')
+  })
+
   test('Send email to address and with attachments', async () => {
     const ax = await axios()
     const readmeBuffer = fs.readFileSync('./README.md')

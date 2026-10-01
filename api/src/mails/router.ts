@@ -124,9 +124,14 @@ router.post('/contact', async (req, res) => {
     return res.status(429).send('Trop de messages dans un bref interval. Veuillez patienter avant d\'essayer de nouveau.')
   }
 
-  const text = `Message transmis par le formulaire de contact de ${reqSiteUrl(req)}
-  
-  ${req.body.text}`
+  const siteUrl = reqSiteUrl(req)
+  const intro = `Message transmis par le formulaire de contact de ${siteUrl} émis par ${req.body.from}`
+  const body: string = req.body.text ?? ''
+  const text = `${intro}\n\n${body}`
+  // the portal contact form sends html, the simple-directory one plain text whose line breaks must survive
+  const bodyHtml = /<\/?[a-z][^>]*>/i.test(body) ? body : `<p>${textToSafeHtml(body)}</p>`
+  const [safeUrl, safeFrom] = [textToSafeHtml(siteUrl), textToSafeHtml(req.body.from)]
+  const html = `<p>Message transmis par le formulaire de contact de <a href="${safeUrl}">${safeUrl}</a> émis par <a href="mailto:${safeFrom}">${safeFrom}</a></p>${bodyHtml}`
 
   const site = await reqSite(req)
 
@@ -141,7 +146,7 @@ router.post('/contact', async (req, res) => {
     // escape so that structure renders while scripts/dangerous hrefs are
     // stripped. The body is partly anonymous-visitor-controlled, so the
     // sanitizer (not raw passthrough) stays the trust boundary.
-    htmlMsg: sanitizeMailHtml(text),
+    htmlMsg: sanitizeMailHtml(html),
     htmlCaption: ''
   })
   res.send(req.body)
