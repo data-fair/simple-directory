@@ -212,6 +212,13 @@ test.describe('organizations api', () => {
     const newMember = members.find((m: any) => m.email === 'test-member1@test.com')
     assert.equal(newMember.role, 'user')
 
+    // a simple member can list the members but not export them
+    await axMember.post('/api/auth/keepalive')
+    axMember.setOrg(org.id)
+    assert.equal((await axMember.get(`/api/organizations/${org.id}/members`)).status, 200)
+    await assert.rejects(axMember.get(`/api/organizations/${org.id}/members`, { params: { format: 'csv' } }), { status: 403 })
+    assert.ok((await ax.get(`/api/organizations/${org.id}/members`, { params: { format: 'csv' } })).data.includes('test-member1@test.com'))
+
     // the member cannot change his own role as a simple user
     await assert.rejects(
       axMember.patch(`/api/organizations/${org.id}/members/${memberUser.id}`, { role: 'admin' }),

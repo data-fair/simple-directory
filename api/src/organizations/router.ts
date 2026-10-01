@@ -221,6 +221,17 @@ router.get('/:organizationId/members', async (req, res, next) => {
   if (!org) return res.status(404).send('organization not found')
   logContext.account = { type: 'organization', id: org.id, name: org.name }
 
+  // the export is for admins only (of the organization, or of the single department exported)
+  if (req.query.format === 'csv') {
+    const dep = typeof req.query.department === 'string' && !req.query.department.includes(',') ? req.query.department : undefined
+    const userRole = getAccountRole(
+      reqSession(req),
+      { type: 'organization', id: req.params.organizationId, department: dep },
+      { acceptDepAsRoot: config.depAdminIsOrgAdmin }
+    )
+    if (userRole !== 'admin') throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  }
+
   const orgStorages: (SdStorage & { orgStorage?: boolean })[] = [storages.globalStorage]
 
   // org_storage can be yes, no or both (both is default)
