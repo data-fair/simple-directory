@@ -7,7 +7,8 @@ import { RateLimiterMongo } from 'rate-limiter-flexible'
 import emailValidator from 'email-validator'
 import multer from 'multer'
 import { reqI18n } from '#i18n'
-import { sendMail } from './service.ts'
+import { sendMail, defaultLogoPng } from './service.ts'
+import { crossOriginResourcePolicy } from 'helmet'
 import { textToSafeHtml, sanitizeMailHtml } from './escape.ts'
 import type { FindMembersParams } from '../storages/interface.ts'
 import { reqSite } from '#services'
@@ -85,6 +86,13 @@ router.post('/', async (req, res, next) => {
     }, attachments))
   }
   res.send(results)
+})
+
+// the url built by the mails service carries a hash of the content, the image can be cached forever
+router.get('/logo.png', crossOriginResourcePolicy({ policy: 'cross-origin' }), (req, res) => {
+  res.set('Content-Type', 'image/png')
+  res.set('Cache-Control', 'public, max-age=31536000, immutable')
+  res.send(defaultLogoPng)
 })
 
 // protect contact route with rate limiting to prevent spam

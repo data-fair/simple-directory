@@ -162,6 +162,17 @@ test.describe('mails', () => {
     assert.ok(email.html.includes('href="mailto:visitor@test.com"'), 'the sender is named by simple-directory, as a link')
   })
 
+  test('Default logo is served by simple-directory and cached for good', async () => {
+    const ax = await axios()
+    await ax.post('/api/mails', { to: ['logo@test.com'], subject: 'logo-test', text: 'logo' }, { params: { key: 'testkey' } })
+    const email = await findEmail('logo-test')
+    const logoUrl = email.html.match(/src="([^"]*\/api\/mails\/logo\.png\?v=[0-9a-f]{8})"/)?.[1]
+    assert.ok(logoUrl, 'the mail should use the bundled logo with a content hash')
+    const res = await ax.get(logoUrl, { responseType: 'arraybuffer' })
+    assert.equal(res.headers['content-type'], 'image/png')
+    assert.equal(res.headers['cache-control'], 'public, max-age=31536000, immutable')
+  })
+
   test('Send email to address and with attachments', async () => {
     const ax = await axios()
     const readmeBuffer = fs.readFileSync('./README.md')
