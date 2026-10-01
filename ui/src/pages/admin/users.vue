@@ -196,7 +196,7 @@
       max-width="500px"
     >
       <v-card v-if="currentUser">
-        <v-card-title>
+        <v-card-title class="text-wrap">
           {{ $t('common.confirmDeleteTitle', {name: currentUser.name}) }}
         </v-card-title>
         <v-card-text>
@@ -226,7 +226,7 @@
       max-width="500px"
     >
       <v-card v-if="currentUser">
-        <v-card-title>
+        <v-card-title class="text-wrap">
           {{ $t('pages.admin.users.editUserEmailTitle', {name: currentUser.name}) }}
         </v-card-title>
         <v-card-text>
@@ -263,7 +263,7 @@
       max-width="500px"
     >
       <v-card v-if="currentUser">
-        <v-card-title>
+        <v-card-title class="text-wrap">
           {{ $t('common.editTitle', {name: currentUser.name}) }}
         </v-card-title>
         <v-card-text>
@@ -308,7 +308,7 @@
       max-width="500px"
     >
       <v-card v-if="currentUser">
-        <v-card-title>
+        <v-card-title class="text-wrap">
           {{ $t('pages.admin.users.drop2FATitle', {name: currentUser.name}) }}
         </v-card-title>
         <v-card-text>
@@ -343,7 +343,7 @@
       max-width="500px"
     >
       <v-card v-if="currentUser">
-        <v-card-title>
+        <v-card-title class="text-wrap">
           {{ $t('pages.admin.users.transferTitle', {name: currentUser.name}) }}
         </v-card-title>
         <v-card-text>
