@@ -15,7 +15,7 @@ import { commonjsDeps } from '@koumoul/vjsf/utils/build.js'
 // const devSitePath = '/site-prefix'
 const devSitePath = ''
 
-// https://vitejs.dev/config/
+// https://vite.dev/config/
 export default defineConfig({
   base: devSitePath + '/simple-directory',
   optimizeDeps: { include: commonjsDeps },

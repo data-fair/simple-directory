@@ -2,6 +2,7 @@ import mjml2html from 'mjml'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import { join } from 'path'
 import { readFileSync, existsSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import config from '#config'
 import { flatten } from 'flat'
 import EventEmitter from 'node:events'
@@ -12,6 +13,11 @@ import { internalError } from '@data-fair/lib-node/observer.js'
 import { mailLimiter } from '../utils/limiter.ts'
 
 export const events = new EventEmitter()
+
+// logo used when neither the site nor the config define one, served by GET /api/mails/logo.png;
+// the content hash in the url lets it be cached forever and still change with a new image
+export const defaultLogoPng = readFileSync(join(import.meta.dirname, '../../resources/logo.png'))
+const defaultLogoUrl = `${config.publicUrl}/api/mails/logo.png?v=${createHash('sha256').update(defaultLogoPng).digest('hex').slice(0, 8)}`
 
 const genericTplPath = join(import.meta.dirname, 'generic-mail.mjml')
 const genericTemplate = readFileSync(genericTplPath, 'utf8')
@@ -115,7 +121,7 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
   if (mainSite) site = undefined
 
   const flatTheme: FlatTheme = flatten({ theme: config.theme })
-  let logo = config.theme.logo || 'https://cdn.rawgit.com/koumoul-dev/simple-directory/v0.12.3/public/assets/logo-150x150.png'
+  let logo = config.theme.logo || defaultLogoUrl
   let from = config.mails.from
   let contact = config.contact
   // the main site keeps the main template in both cases — it *is* the main
@@ -137,6 +143,10 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
     }
     if (site?.mails?.contact) contact = site.mails.contact
   }
+
+  // a mail without caption (the contact form for instance) does not need the divider that announces it
+  // ponytail: matches the divider + caption block shape of the bundled and documented custom templates only
+  if (!params.htmlCaption) template = template.replace(/<mj-divider[^>]*>\s*<\/mj-divider>\s*<mj-text[^>]*>\s*\{htmlCaption\}\s*<\/mj-text>/, '')
 
   const tmplParams: SendMailTmplParams = {
     ...params,

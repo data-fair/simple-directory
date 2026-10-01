@@ -2,8 +2,7 @@
 
 This service aims to provide easy access to user and organizations structures and authentication mechanism using Json Web tokens.
 
-[![Build Status](https://travis-ci.org/koumoul-dev/simple-directory.svg?branch=master)](https://travis-ci.org/koumoul-dev/simple-directory)
-[![Coverage Status](https://coveralls.io/repos/github/koumoul-dev/simple-directory/badge.svg?branch=master)](https://coveralls.io/github/koumoul-dev/simple-directory?branch=master)
+[![Release](https://github.com/data-fair/simple-directory/actions/workflows/releases.yml/badge.svg)](https://github.com/data-fair/simple-directory/actions/workflows/releases.yml)
 
 ## Sponsors
 

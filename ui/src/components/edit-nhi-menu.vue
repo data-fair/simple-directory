@@ -23,6 +23,7 @@
       </v-card-title>
       <v-card-text>
         <load-avatar
+          v-if="$uiConfig.avatars.users"
           :owner="{type: 'user', id: nhi.id}"
           class="mb-4"
         />
@@ -122,7 +123,7 @@
           {{ $t('common.confirmCancel') }}
         </v-btn>
         <v-btn
-          color="primary"
+          color="admin"
           variant="flat"
           @click="confirmEdit.execute()"
         >

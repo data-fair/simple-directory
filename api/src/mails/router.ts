@@ -7,7 +7,8 @@ import { RateLimiterMongo } from 'rate-limiter-flexible'
 import emailValidator from 'email-validator'
 import multer from 'multer'
 import { reqI18n } from '#i18n'
-import { sendMail } from './service.ts'
+import { sendMail, defaultLogoPng } from './service.ts'
+import { crossOriginResourcePolicy } from 'helmet'
 import { textToSafeHtml, sanitizeMailHtml } from './escape.ts'
 import type { FindMembersParams } from '../storages/interface.ts'
 import { reqSite } from '#services'
@@ -87,6 +88,13 @@ router.post('/', async (req, res, next) => {
   res.send(results)
 })
 
+// the url built by the mails service carries a hash of the content, the image can be cached forever
+router.get('/logo.png', crossOriginResourcePolicy({ policy: 'cross-origin' }), (req, res) => {
+  res.set('Content-Type', 'image/png')
+  res.set('Cache-Control', 'public, max-age=31536000, immutable')
+  res.send(defaultLogoPng)
+})
+
 // protect contact route with rate limiting to prevent spam
 let _contactLimiter: RateLimiterMongo | undefined
 router.post('/contact', async (req, res) => {
@@ -124,9 +132,14 @@ router.post('/contact', async (req, res) => {
     return res.status(429).send('Trop de messages dans un bref interval. Veuillez patienter avant d\'essayer de nouveau.')
   }
 
-  const text = `Message transmis par le formulaire de contact de ${reqSiteUrl(req)}
-  
-  ${req.body.text}`
+  const siteUrl = reqSiteUrl(req)
+  const intro = `Message transmis par le formulaire de contact de ${siteUrl} émis par ${req.body.from}`
+  const body: string = req.body.text ?? ''
+  const text = `${intro}\n\n${body}`
+  // the portal contact form sends html, the simple-directory one plain text whose line breaks must survive
+  const bodyHtml = /<\/?[a-z][^>]*>/i.test(body) ? body : `<p>${textToSafeHtml(body)}</p>`
+  const [safeUrl, safeFrom] = [textToSafeHtml(siteUrl), textToSafeHtml(req.body.from)]
+  const html = `<p>Message transmis par le formulaire de contact de <a href="${safeUrl}">${safeUrl}</a> émis par <a href="mailto:${safeFrom}">${safeFrom}</a></p>${bodyHtml}`
 
   const site = await reqSite(req)
 
@@ -141,7 +154,7 @@ router.post('/contact', async (req, res) => {
     // escape so that structure renders while scripts/dangerous hrefs are
     // stripped. The body is partly anonymous-visitor-controlled, so the
     // sanitizer (not raw passthrough) stays the trust boundary.
-    htmlMsg: sanitizeMailHtml(text),
+    htmlMsg: sanitizeMailHtml(html),
     htmlCaption: ''
   })
   res.send(req.body)

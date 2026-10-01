@@ -94,6 +94,21 @@ test.describe('avatars api', () => {
     await assertUnknown(ax, removedPath, 'unknown-department.png')
   })
 
+  test('should refuse uploads but keep deletion when avatars are disabled', async () => {
+    const { ax, user } = await createUser('avatar-disabled@test.com')
+    const path = `/api/avatars/user/${user.id}/avatar.png`
+    assert.equal((await uploadAvatar(ax, path)).status, 201)
+
+    await testEnvAx.patch('/config', { avatars: { users: false, orgs: true } })
+    try {
+      await assert.rejects(uploadAvatar(ax, path), { status: 403 })
+      assert.equal((await ax.delete(path)).status, 204)
+      assert.equal((await ax.get(path)).headers['x-avatar-custom'], 'false')
+    } finally {
+      await testEnvAx.patch('/config', { avatars: { users: true, orgs: true } })
+    }
+  })
+
   test('should delete a custom avatar and revert to default initials avatar', async () => {
     const { ax, user } = await createUser('avatar-reset@test.com')
     const path = `/api/avatars/user/${user.id}/avatar.png`

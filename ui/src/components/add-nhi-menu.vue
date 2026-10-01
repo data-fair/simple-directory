@@ -7,7 +7,7 @@
       <v-fab
         :title="$t('pages.organization.addNhi')"
         size="small"
-        color="primary"
+        color="admin"
         class="mx-2"
         :icon="mdiPlus"
         v-bind="props"
@@ -120,7 +120,7 @@
             {{ $t('common.confirmCancel') }}
           </v-btn>
           <v-btn
-            color="primary"
+            color="admin"
             variant="flat"
             @click="confirmCreate.execute()"
           >

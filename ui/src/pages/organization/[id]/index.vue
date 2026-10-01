@@ -28,7 +28,7 @@
       <load-avatar
         v-if="$uiConfig.avatars.orgs"
         :owner="{...orga, type: 'organization'}"
-        :disabled="$uiConfig.readonly"
+        :disabled="orgRole !== 'admin' || $uiConfig.readonly"
         class="mb-4"
       />
       <v-text-field
@@ -95,6 +95,7 @@
         :items="roleItems"
         :messages="[$t('pages.organization.2FARolesMsg')]"
         :placeholder="$t('pages.organization.2FARoles')"
+        :disabled="orgRole !== 'admin' || $uiConfig.readonly"
         multiple
         name="2FARoles"
         density="compact"
@@ -102,7 +103,10 @@
         @update:model-value="set2FARoles"
       />
 
-      <v-row class="mx-0 mb-0 mt-4">
+      <v-row
+        v-if="orgRole === 'admin' && !$uiConfig.readonly"
+        class="mx-0 mb-0 mt-4"
+      >
         <v-spacer />
         <v-btn
           color="primary"

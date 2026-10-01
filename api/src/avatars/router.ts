@@ -131,14 +131,20 @@ const isAdmin: RequestHandler<AvatarParams> = async (req, res, next) => {
   return next()
 }
 
+// AVATARS_USERS / AVATARS_ORGS = false stops new uploads; deleting stays open so existing avatars can be moderated
+const uploadEnabled: RequestHandler<AvatarParams> = (req, res, next) => {
+  if (!config.avatars[req.params.type === 'user' ? 'users' : 'orgs']) throw httpError(403, 'avatar upload is disabled')
+  next()
+}
+
 const writeAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
   if (!req.file) throw httpError(400)
   await setAvatar({ owner: req.params as unknown as Account, buffer: req.file.buffer })
   res.status(201).send()
 }
 
-router.post('/:type/:id/avatar.png', isAdmin, upload.single('avatar'), writeAvatar)
-router.post('/:type/:id/:department/avatar.png', isAdmin, upload.single('avatar'), writeAvatar)
+router.post('/:type/:id/avatar.png', isAdmin, uploadEnabled, upload.single('avatar'), writeAvatar)
+router.post('/:type/:id/:department/avatar.png', isAdmin, uploadEnabled, upload.single('avatar'), writeAvatar)
 
 const deleteAvatar: RequestHandler<AvatarParams> = async (req, res, next) => {
   if (!['user', 'organization'].includes(req.params.type)) {
