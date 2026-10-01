@@ -87,7 +87,7 @@
               <!-- no link: a site admin does not administer these organizations, and the
               page can be embedded in another back-office's iframe -->
               {{ orga.name }}
-              {{ orga.department ? (orga.departmentName || orga.department) : '' }}
+              {{ orga.department ? '/ ' + (orga.departmentName || orga.department) : '' }}
               ({{ orga.roleLabel || orga.role }})
             </div>
           </td>

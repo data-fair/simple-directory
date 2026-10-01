@@ -27,6 +27,7 @@
           :topics="notifyTopics"
         />
         <v-btn
+          v-if="isAdminOrga"
           icon
           color="primary"
           class="mx-2"
@@ -184,7 +185,7 @@
                 :title="$t('common.asAdmin')"
                 :aria-label="$t('common.asAdmin')"
                 :icon="mdiAccountSwitch"
-                color="warning"
+                color="admin"
                 variant="text"
                 density="compact"
                 :disabled="!member.emailConfirmed"
@@ -282,7 +283,7 @@ const notifyTopics = computed(() => {
   }
 })
 
-const csvUrl = computed(() => $sdUrl + `/api/organizations/${orga.id}/members?size=10000&format=csv`)
+const csvUrl = computed(() => $sdUrl + `/api/organizations/${orga.id}/members?size=10000&format=csv` + (adminDepartment ? `&department=${encodeURIComponent(adminDepartment)}` : ''))
 const filterMemberCols = $uiConfig.alwaysAcceptInvitation ? 6 : 4
 
 const departmentsList = computed(() => {

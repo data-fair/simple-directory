@@ -84,7 +84,7 @@
           color="primary"
           :label="userOrg.name"
           hide-details
-          :disabled="userOrg.role !== 'admin'"
+          :disabled="userOrg.role !== 'admin' || !!userOrg.department"
           @update:model-value="v => toggleSelectedUserOrg(userOrg, v as boolean)"
         />
         <v-checkbox
@@ -141,9 +141,15 @@ const createNewOrg = ref(false)
 
 const token = reactiveSearchParams.partner_invit_token
 const invit = token ? jwtDecode(token) as ShortenedPartnerInvitation : undefined
+// one entry per organization: only an admin of the organization itself (not of a department) can accept
 const otherUserOrgs = computed(() => {
   if (!invit) return []
-  return user.value?.organizations.filter(o => invit.o !== o.id)
+  const byId = new Map<string, NonNullable<typeof user.value>['organizations'][number]>()
+  for (const o of user.value?.organizations ?? []) {
+    if (o.id === invit.o) continue
+    if (!byId.has(o.id) || (o.role === 'admin' && !o.department)) byId.set(o.id, o)
+  }
+  return [...byId.values()]
 })
 if (invit) {
   createOrganizationName.value = invit.n

@@ -496,12 +496,19 @@ class MongodbStorage implements SdStorage {
     const dupUserOrg = user.organizations.find(o => {
       return o.id === organizationId && (o.department || null) === (patch.department || null) && o.role === patch.role
     })
-    if (dupUserOrg) return
+    if (dupUserOrg) {
+      // the target membership already exists: merge by dropping the patched one
+      if (dupUserOrg !== userOrg) {
+        await mongo.users.updateOne({ _id: userId }, { $set: { organizations: user.organizations.filter(o => o !== userOrg) } })
+      }
+      return
+    }
 
     // if we are switching department remove potential conflict
     if ((patch.department || null) !== (department || null)) {
       user.organizations = user.organizations.filter(o => {
-        if (config.multiRoles && o.role !== patch.role) return false
+        // in multi-roles mode only a membership with the same role conflicts
+        if (config.multiRoles && o.role !== patch.role) return true
         const isConflict = o.id === organizationId && (o.department || null) === (patch.department || null)
         return !isConflict
       })

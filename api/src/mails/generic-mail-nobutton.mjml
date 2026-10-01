@@ -3,11 +3,11 @@
     <mj-section>
       <mj-column>
         <mj-image width="100px" src="{logo}"></mj-image>
-        <mj-text font-size="14px" font-weight="500" line-height="21px" color="#212121" font-family="helvetica" padding-top="16px" padding-bottom="24px">
+        <mj-text font-size="14px" font-weight="500" line-height="21px" color="#212121" font-family="helvetica" padding-top="16px" padding-bottom="32px">
           {htmlMsg}
         </mj-text>
-        <mj-divider border-width="1px" border-color="#757575" padding-top="48px"></mj-divider>
-        <mj-text font-size="12px" font-weight="400" line-height="18px" color="#424242" font-family="helvetica">
+        <mj-divider border-width="1px" border-color="#757575" padding="0px 25px"></mj-divider>
+        <mj-text font-size="12px" font-weight="400" line-height="18px" color="#424242" font-family="helvetica" padding-top="32px">
           {htmlCaption}
         </mj-text>
       </mj-column>

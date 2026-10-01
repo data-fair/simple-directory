@@ -9,7 +9,6 @@
     "test-api": "playwright test --project api --max-failures=1",
     "test-inproc": "playwright test --project api-inproc-ldap --project api-inproc-oidc --max-failures=1",
     "test-e2e": "playwright test --project e2e --max-failures=1",
-    "report": "nyc report --reporter=html",
     "lint": "eslint . && npm -w ui run lint",
     "lint-fix": "eslint --fix . && npm -w ui run lint-fix",
     "dev-api": "npm -w api run dev",
@@ -21,11 +20,11 @@
     "build-types": "mkdir -p ui/src/components/vjsf && rm -f ui/src/components/vjsf/* && rm -rf node_modules/.cache/@data-fair/lib-types-builder && df-build-types . --vjsf-dir ui/src/components/vjsf",
     "prepare": "husky || true",
     "check-types": "tsc && npm -w ui run check-types",
-    "quality": "npm run lint && npm run build-types && npm run check-types && npm run test"
+    "quality": "npm run lint && npm run build-types && npm -w ui run build && npm run check-types && npm run test"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koumoul-dev/simple-directory.git"
+    "url": "git+https://github.com/data-fair/simple-directory.git"
   },
   "workspaces": [
     "ui",
@@ -35,9 +34,9 @@
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/koumoul-dev/simple-directory/issues"
+    "url": "https://github.com/data-fair/simple-directory/issues"
   },
-  "homepage": "https://github.com/koumoul-dev/simple-directory#readme",
+  "homepage": "https://github.com/data-fair/simple-directory#readme",
   "devDependencies": {
     "@commitlint/config-conventional": "^19.8.1",
     "@data-fair/lib-express": "^1.27.0",
