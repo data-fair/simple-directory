@@ -138,6 +138,10 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
     if (site?.mails?.contact) contact = site.mails.contact
   }
 
+  // a mail without caption (the contact form for instance) does not need the divider that announces it
+  // ponytail: matches the divider + caption block shape of the bundled and documented custom templates only
+  if (!params.htmlCaption) template = template.replace(/<mj-divider[^>]*>\s*<\/mj-divider>\s*<mj-text[^>]*>\s*\{htmlCaption\}\s*<\/mj-text>/, '')
+
   const tmplParams: SendMailTmplParams = {
     ...params,
     ...flatTheme,
