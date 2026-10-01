@@ -72,9 +72,9 @@
         <v-list-item>
           <template #prepend>
             <v-avatar>
+              <!-- a pending partner has no id yet: an unknown id serves the default organization avatar -->
               <v-img
-                v-if="partner.id"
-                :src="`${$sdUrl}/api/avatars/organization/${partner.id}/avatar.png`"
+                :src="`${$sdUrl}/api/avatars/organization/${partner.id ?? '_pending'}/avatar.png`"
                 alt=""
               />
             </v-avatar>
