@@ -217,7 +217,6 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
     login: {
       title: 'Identifizieren Sie sich',
       emailLabel: 'Deine E-Mail',
-      emailCaption: 'Erfahren Sie mehr über die <a href="https://koumoul.com/blog/passwordless">kennwortlose Authentifizierung</a>',
       success: 'Sie erhalten eine E-Mail an die angegebene Adresse, die einen Link enthält. Bitte öffnen Sie diesen Link, um Ihre Identifikation zu vervollständigen.',
       maildevLink: 'Auf das Entwicklungspostfach zugreifen',
       newPassword: 'Neues Kennwort',
