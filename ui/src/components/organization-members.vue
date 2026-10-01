@@ -184,7 +184,7 @@
                 :title="$t('common.asAdmin')"
                 :aria-label="$t('common.asAdmin')"
                 :icon="mdiAccountSwitch"
-                color="warning"
+                color="admin"
                 variant="text"
                 density="compact"
                 :disabled="!member.emailConfirmed"

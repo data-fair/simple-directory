@@ -123,7 +123,7 @@
           {{ $t('common.confirmCancel') }}
         </v-btn>
         <v-btn
-          color="primary"
+          color="admin"
           variant="flat"
           @click="confirmEdit.execute()"
         >
