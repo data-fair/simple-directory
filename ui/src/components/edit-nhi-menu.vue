@@ -23,6 +23,7 @@
       </v-card-title>
       <v-card-text>
         <load-avatar
+          v-if="$uiConfig.avatars.users"
           :owner="{type: 'user', id: nhi.id}"
           class="mb-4"
         />
