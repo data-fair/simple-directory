@@ -4,7 +4,7 @@ import eventsLog from '@data-fair/lib-express/events-log.js'
 import config from '#config'
 import storages from '#storages'
 import { reqI18n } from '#i18n'
-import { postUserIdentityWebhook, deleteIdentityWebhook } from '#services'
+import { postUserIdentityWebhook, deleteIdentityWebhook, getOrgLimits, setNbMembersLimit } from '#services'
 import { isOrgAdmin } from '../organizations/service.ts'
 import { checkProvider } from './keys.ts'
 import { checkAllowedIps } from './ips.ts'
@@ -43,9 +43,15 @@ router.post('', async (req: Request<OrgParams>, res) => {
   if (!roles.includes(body.role)) throw httpError(400, 'unknown role')
   await checkProvider(body.provider)
   if (body.allowedIps) checkAllowedIps(body.allowedIps)
+  logContext.account = { type: 'organization', id: org.id, name: org.name }
+  const limits = await getOrgLimits(org)
+  if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
+    eventsLog.info('sd.nhi.limit', `limit error for NHI creation in org ${org.id}`, logContext)
+    throw httpError(429, reqI18n(req).messages.errors.maxNbMembers)
+  }
   const sessionUser = reqSessionAuthenticated(req).user
   const user = await createNhi(org, body, { id: sessionUser.id, name: sessionUser.name })
-  logContext.account = { type: 'organization', id: org.id, name: org.name }
+  await setNbMembersLimit(org.id)
   eventsLog.info('sd.nhi.create', `an NHI was created ${user.id} in org ${org.id}`, logContext)
   postUserIdentityWebhook(user)
   res.status(201).send(user)
@@ -111,6 +117,7 @@ router.delete('/:nhiId', async (req: Request<NhiParams>, res) => {
   const user = await getNhi(req.params.organizationId, req.params.nhiId)
   logContext.account = { type: 'organization', id: req.params.organizationId, name: user.organizations[0]?.name }
   await storages.globalStorage.deleteUser(user.id)
+  await setNbMembersLimit(req.params.organizationId)
   eventsLog.info('sd.nhi.delete', `an NHI was deleted ${user.id}`, logContext)
   deleteIdentityWebhook('user', user.id)
   res.status(204).send()

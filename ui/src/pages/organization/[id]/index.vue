@@ -158,6 +158,8 @@
     <organization-nhis
       v-if="$uiConfig.manageNhis && orgRole === 'admin'"
       :orga="orga"
+      :nb-members-limits="limits.data.value?.store_nb_members"
+      @change="limits.refresh()"
     />
   </v-container>
 </template>

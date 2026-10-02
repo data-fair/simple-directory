@@ -369,16 +369,19 @@ $exists: false }`). An NHI id passed as `:userId` 404s before the
 `assertNotNhiSession` guard is even relevant — the guard covers the case of
 an NHI *session* acting on someone else, the 404 gate covers an NHI as
 *target*. `GET /api/organizations/:id/members` uses the same default, so
-existing consumers (quota counts, invitation UIs, other services) see no
+existing consumers (invitation UIs, other services) see no
 behavior change unless they opt in with `?types=nhi` or
 `?types=user,nhi`.
 
-**`findMembers` is not the only place that has to exclude NHIs.**
+**NHIs do count in the members quota.** Unlike `findMembers`,
 `getNbMembers` (`api/src/limits/service.ts`), which feeds the
-`store_nb_members` quota, counts the `users` collection directly instead of
-going through `findMembers`, so it repeats the `nhi: { $exists: false }`
-filter itself. Any new consumer that counts memberships with its own query
-has to do the same.
+`store_nb_members` quota, counts every membership in the `users` collection,
+NHIs included: a service account holds an org membership and acts with its
+role, so it consumes a member slot like a human does. NHI creation
+(`POST /api/organizations/:organizationId/nhis`) is refused with a 429 when the
+org is full, and both creation and deletion recompute the counter. The
+consequence is that `store_nb_members.consumption` can exceed the `count` of
+the default (human only) member listing.
 
 **Cleanup jobs exclude NHIs.** `storage.findInactiveUsers` /
 `findUsersToDelete` (`api/src/storages/mongo.ts`) filter NHIs out, so
