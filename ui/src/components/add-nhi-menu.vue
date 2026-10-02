@@ -22,7 +22,15 @@
       <v-card-title>
         {{ $t('pages.organization.addNhi') }}
       </v-card-title>
-      <template v-if="editNhi">
+      <v-card-text v-if="disableCreate">
+        <v-alert
+          :value="true"
+          type="warning"
+        >
+          {{ $t('pages.organization.disableInvite') }}
+        </v-alert>
+      </v-card-text>
+      <template v-else-if="editNhi">
         <v-card-text>
           <v-form
             ref="createForm"
@@ -138,8 +146,10 @@ import type { VForm } from 'vuetify/components'
 const { sendUiNotif } = useUiNotif()
 const { t } = useI18n()
 
-const { orga } = defineProps({
-  orga: { type: Object as () => Organization, required: true }
+const { orga, disableCreate } = defineProps({
+  orga: { type: Object as () => Organization, required: true },
+  // NHIs consume a member slot, so the members quota gates their creation too
+  disableCreate: { type: Boolean, default: false }
 })
 const { roleItems } = useRoleLabels(() => orga)
 const emit = defineEmits(['change'])
