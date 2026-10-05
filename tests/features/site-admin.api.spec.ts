@@ -67,7 +67,8 @@ test.describe('site admin api', () => {
       await assert.rejects(memberAx.get('/api/users', { params: { allFields: true, host: host2 } }), { status: 403 })
       await assert.rejects(siteAdminAx.get('/api/users', { params: { allFields: true } }), { status: 403 })
     } finally {
-      await testEnvAx.patch('/config', { listUsersMode: undefined })
+      // null and not undefined, that would be dropped from the json body
+      await testEnvAx.patch('/config', { listUsersMode: null })
     }
   })
 
