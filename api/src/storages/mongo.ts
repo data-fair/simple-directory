@@ -213,6 +213,7 @@ class MongodbStorage implements SdStorage {
     }
     if (params.host) filter.host = params.host
     if (params.path) filter.path = params.path
+    else if (params.path === null) filter.path = null // matches a missing path
 
     const [count, users] = await Promise.all([
       mongo.users.countDocuments(filter),
@@ -405,6 +406,7 @@ class MongodbStorage implements SdStorage {
     }
     if (params.host) filter.host = params.host
     if (params.path) filter.path = params.path
+    else if (params.path === null) filter.path = null // matches a missing path
 
     const [count, organizations] = await Promise.all([
       mongo.organizations.countDocuments(filter),

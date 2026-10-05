@@ -133,6 +133,47 @@ test.describe('site admin api', () => {
     await assert.rejects(siteAdminAx.patch(`/api/users/${siteAdminUser.id}`, { '2FA': null }), { status: 403 })
   })
 
+  test('should not administer another site by sending the session through its host', async () => {
+    const { adminAx, siteAdminAx } = await setup()
+    const config = await getServerConfig()
+    // main site of another organization at host3, with an account and an organization of its own
+    const host3 = '127.0.0.1:' + process.env.NGINX_PORT3
+    const otherSiteUrl = `http://${host3}/simple-directory`
+    const { ax: otherOwnerAx } = await createUser('site-admin-other-owner@test.com')
+    const otherOrg = (await otherOwnerAx.post('/api/organizations', { name: 'site-admin-other-org' })).data
+    await (await axios()).post('/api/sites',
+      { _id: 'test_site_admin_other', owner: { type: 'organization', id: otherOrg.id, name: otherOrg.name }, host: host3, theme: { primaryColor: '#00FFFF' } },
+      { params: { key: config.secretKeys.sites } })
+    await adminAx.patch('/api/sites/test_site_admin_other', { isAccountMain: true })
+    await testEnvAx.post('/clear-site-cache')
+    const { user: victim } = await createUser('site-admin-victim@test.com', false, 'TestPasswd01', otherSiteUrl)
+    await testEnvAx.patch('/user/site-admin-victim@test.com', { plannedDeletion: '2099-01-01', '2FA': { active: true, secret: 'secret' } })
+
+    // the session of the admin of host2, replayed on host3
+    await assert.rejects(siteAdminAx.get(`${otherSiteUrl}/api/users`, { params: { allFields: true, host: host3 } }), { status: 403 })
+    await assert.rejects(siteAdminAx.get(`${otherSiteUrl}/api/organizations`, { params: { allFields: true, host: host3 } }), { status: 403 })
+    await assert.rejects(siteAdminAx.delete(`${otherSiteUrl}/api/users/${victim.id}/sessions`), { status: 403 })
+    await assert.rejects(siteAdminAx.delete(`${otherSiteUrl}/api/users/${victim.id}/plannedDeletion`), { status: 403 })
+    await assert.rejects(siteAdminAx.patch(`${otherSiteUrl}/api/users/${victim.id}`, { '2FA': null }), { status: 403 })
+    await assert.rejects(siteAdminAx.delete(`${otherSiteUrl}/api/users/${victim.id}`), { status: 403 })
+    await assert.rejects(siteAdminAx.get(`${otherSiteUrl}/api/organizations/${otherOrg.id}`), { status: 403 })
+
+    const user = (await adminAx.get(`/api/users/${victim.id}`)).data
+    assert.equal(user.plannedDeletion, '2099-01-01')
+    assert.equal(user['2FA']?.active, true)
+  })
+
+  test('should not list the accounts of a site under a path of the same host', async () => {
+    const { siteAdminAx, member } = await setup()
+    const { user: pathUser } = await createUser('site-admin-path-user@test.com', false, 'TestPasswd01', siteDirectoryUrl)
+    await testEnvAx.patch('/user/site-admin-path-user@test.com', { path: '/other-site' })
+
+    const users = (await siteAdminAx.get('/api/users', { params: { allFields: true, host: host2 } })).data
+    assert.ok(users.results.find((u: any) => u.id === member.id))
+    assert.ok(!users.results.find((u: any) => u.id === pathUser.id))
+    await assert.rejects(siteAdminAx.get('/api/users', { params: { allFields: true, host: host2, path: '/other-site' } }), { status: 403 })
+  })
+
   test('should refuse department admins and plain members of the owner organization', async () => {
     const { org, memberAx } = await setup()
     await createUser('site-dep-admin@test.com', false, 'TestPasswd01', siteDirectoryUrl)

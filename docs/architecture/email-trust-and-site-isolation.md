@@ -198,10 +198,15 @@ organization's main site (`isAccountMain`), used as its back-office. The
 privilege is computed from the session's `siteRole` (derived from the token's
 `siteOwner`) and checked by `api/src/utils/site-admin.ts`:
 
+- the site of the request (resolved from its host) must be owned by the
+  session's active organization: the token carries `siteOwner` but no host,
+  so without this check a site admin could replay their session through
+  another site's host and administer that site's accounts;
 - department admins are excluded, although their `siteRole` is also `admin`;
 - it only matches resources whose `(host, path)` is the current site's, so
   main-site records (superadmins included) and other sites' records are out of
-  reach;
+  reach. The lists filter on the exact path (`path: null` in the storages'
+  find params for a site at the root of its host), not only on the host;
 - on user accounts it is limited to listing them (without their `sessions`),
   deleting them, cancelling a planned deletion, resetting 2FA and revoking all
   their sessions. Never on their own account, never on NHIs, and never

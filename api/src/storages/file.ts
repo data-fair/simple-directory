@@ -153,6 +153,9 @@ class FileStorage implements SdStorage {
     if (params.host) {
       filteredUsers = filteredUsers.filter(user => user.host === params.host)
     }
+    if (params.path || params.path === null) {
+      filteredUsers = filteredUsers.filter(user => (user.path || null) === params.path)
+    }
     if (params.q) {
       const lq = params.q.toLowerCase()
       filteredUsers = filteredUsers.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
@@ -228,6 +231,9 @@ class FileStorage implements SdStorage {
     }
     if (params.host) {
       filteredOrganizations = filteredOrganizations.filter(organization => organization.host === params.host)
+    }
+    if (params.path || params.path === null) {
+      filteredOrganizations = filteredOrganizations.filter(organization => (organization.path || null) === params.path)
     }
     if (params.q) {
       const lq = params.q.toLowerCase()

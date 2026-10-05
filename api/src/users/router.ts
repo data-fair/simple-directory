@@ -48,6 +48,8 @@ router.get('', async (req, res, next) => {
 
   if (typeof req.query.host === 'string') params.host = req.query.host
   if (typeof req.query.path === 'string') params.path = req.query.path
+  // a site at the root of its host must not list the accounts of the sites under a path of the same host
+  if (siteAdminList && !params.path) params.path = null
   if (typeof req.query.id === 'string') params.ids = req.query.id.split(',')
   else if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
   if (typeof req.query.email === 'string') params.emails = req.query.email.split(',')

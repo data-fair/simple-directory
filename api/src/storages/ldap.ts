@@ -660,6 +660,9 @@ export class LdapStorage implements SdStorage {
     if (emails) {
       results = results.filter(user => !!user.email && emails.includes(user.email.toLowerCase()))
     }
+    // same host/path filter as the other storages, a filter on a site must not return the main site's accounts
+    if (params.host) results = results.filter(user => user.host === params.host)
+    if (params.path || params.path === null) results = results.filter(user => (user.path || null) === params.path)
     if (params.q) {
       const lq = params.q.toLowerCase()
       results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)
@@ -812,6 +815,7 @@ export class LdapStorage implements SdStorage {
   async findOrganizations (params: FindOrganizationsParams) {
     debug('find orgs', params)
     if (this.ldapParams.organizations.staticSingleOrg) {
+      if (params.host) return { count: 0, results: [] }
       return {
         count: 1,
         results: [this.ldapParams.organizations.staticSingleOrg]
@@ -819,6 +823,8 @@ export class LdapStorage implements SdStorage {
     }
     const { results: ogResults, fromCache } = await this.getAllOrgs()
     let results = ogResults
+    if (params.host) results = results.filter(org => org.host === params.host)
+    if (params.path || params.path === null) results = results.filter(org => (org.path || null) === params.path)
     if (params.q) {
       const lq = params.q.toLowerCase()
       results = results.filter(user => user.name.toLowerCase().indexOf(lq) >= 0)

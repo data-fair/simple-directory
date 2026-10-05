@@ -54,11 +54,13 @@ router.get('', async (req, res, next) => {
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
+  let siteAdminList = false
   if (allFields) {
     if (user?.adminMode) {
       // ok
     } else if (await isSiteAdminOf(req, { host: req.query.host as string | undefined, path: req.query.path as string | undefined })) {
       // ok, restricted to the organizations of the current site
+      siteAdminList = true
     } else {
       throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     }
@@ -68,6 +70,8 @@ router.get('', async (req, res, next) => {
 
   if (typeof req.query.host === 'string') params.host = req.query.host
   if (typeof req.query.path === 'string') params.path = req.query.path
+  // a site at the root of its host must not list the organizations of the sites under a path of the same host
+  if (siteAdminList && !params.path) params.path = null
 
   if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
   if (typeof req.query.q === 'string') params.q = req.query.q

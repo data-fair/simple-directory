@@ -26,7 +26,8 @@ export type FindOrganizationsParams = {
   creator?: string,
   select?: string[],
   host?: string,
-  path?: string
+  // null: only the records without a path (a site at the root of its host), not every path of the host
+  path?: string | null
 }
 
 export type FindUsersParams = {
@@ -37,7 +38,8 @@ export type FindUsersParams = {
   sort?: any,
   select?: string[],
   host?: string,
-  path?: string,
+  // null: only the records without a path (a site at the root of its host), not every path of the host
+  path?: string | null,
   emails?: string[],
 }
 

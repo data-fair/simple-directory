@@ -11,9 +11,13 @@ import { reqSite } from '#services'
 export async function reqSiteAdminSite (req: Request): Promise<Site | undefined> {
   if (!config.siteAdmin) return
   const session = reqSession(req)
-  if (session.siteRole !== 'admin' || !session.user) return
-  if (session.organization?.department) return
-  return await reqSite(req)
+  if (session.siteRole !== 'admin' || !session.user || !session.organization) return
+  if (session.organization.department) return
+  const site = await reqSite(req)
+  // the token carries no host: without this check a site admin could replay their session
+  // through another site's host and administer that site's accounts
+  if (!site || site.owner.type !== 'organization' || site.owner.id !== session.organization.id) return
+  return site
 }
 
 // true if the request comes from a site admin and the resource (user or organization) is bound
