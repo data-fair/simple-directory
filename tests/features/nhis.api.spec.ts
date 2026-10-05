@@ -356,27 +356,29 @@ test('nhi provider is validated at create and patch time', async () => {
   await ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { name: 'Renamed validated agent' })
 })
 
-test('NHIs do not consume a member slot in the organization limits', async () => {
-  const { ax, user } = await createUser('nhi-limits@test.com')
+test('NHIs consume a member slot in the organization limits', async () => {
+  const { ax } = await createUser('nhi-limits@test.com')
   const org = (await ax.post('/api/organizations', { name: 'NHI limits org' })).data
   ax.setOrg(org.id)
+  const { ax: adminAx } = await createUser('admin@test.com', true)
+  const getConsumption = async () => (await ax.get(`/api/limits/organization/${org.id}`)).data.store_nb_members.consumption
 
   // reading the limits is what creates the denormalized counter
-  assert.equal((await ax.get(`/api/limits/organization/${org.id}`)).data.store_nb_members.consumption, 1)
+  assert.equal(await getConsumption(), 1)
 
-  await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+  assert.equal(await getConsumption(), 2)
 
-  // deleting the last human recomputes the counter: the NHI must not hold the org at 1 member,
-  // consistently with the member listing that excludes NHIs by default
-  const { ax: adminAx } = await createUser('admin@test.com', true)
-  await adminAx.delete(`/api/users/${user.id}`)
+  // a full org refuses another NHI, like it refuses another invitation
+  await adminAx.post(`/api/limits/organization/${org.id}`, { store_nb_members: { limit: 2, consumption: 2 }, lastUpdate: new Date().toISOString() })
+  await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ name: 'Second agent' })), { status: 429 })
+  assert.equal((await ax.get(`/api/organizations/${org.id}/nhis`)).data.count, 1)
 
-  const orgLimits = (await adminAx.get('/api/limits', { params: { type: 'organization', id: org.id } })).data.results[0]
-  assert.equal(orgLimits.store_nb_members.consumption, 0)
-
-  // the creator is deleted above, so DELETE /api/test-env cannot scope this org by created.id
-  // any more -- drop it here, or it accumulates across runs and pollutes name-based org searches
-  await adminAx.delete(`/api/organizations/${org.id}`)
+  // deleting the NHI frees its slot
+  await ax.delete(`/api/organizations/${org.id}/nhis/${nhi.id}`)
+  assert.equal(await getConsumption(), 1)
+  await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ name: 'Second agent' }))
+  assert.equal(await getConsumption(), 2)
 })
 
 test('nhi token exchange is restricted to the declared allowedIps', async () => {

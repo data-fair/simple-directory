@@ -17,9 +17,10 @@ export const getOrgLimits = async (org: Organization) => {
   return limit
 }
 
-// NHIs are not members: findMembers excludes them by default, this query has to do the same
+// NHIs count as members here: they hold an org membership like humans do and consume the same quota,
+// even though findMembers hides them by default
 const getNbMembers = async (orgId: string) => {
-  return mongo.users.countDocuments({ 'organizations.id': orgId, plannedDeletion: { $exists: false }, nhi: { $exists: false } })
+  return mongo.users.countDocuments({ 'organizations.id': orgId, plannedDeletion: { $exists: false } })
 }
 
 export const setNbMembersLimit = async (orgId: string) => {

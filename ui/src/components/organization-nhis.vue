@@ -16,7 +16,8 @@
         <add-nhi-menu
           v-if="adminMode"
           :orga="orga"
-          @change="fetchNhis.refresh()"
+          :disable-create="disableCreate"
+          @change="onChange"
         />
       </h2>
     </v-row>
@@ -85,7 +86,7 @@
               <edit-nhi-menu
                 :orga="orga"
                 :nhi="nhi"
-                @change="fetchNhis.refresh()"
+                @change="onChange"
               />
             </v-list-item-action>
             <v-list-item-action
@@ -95,7 +96,7 @@
               <delete-nhi-menu
                 :orga="orga"
                 :nhi="nhi"
-                @change="fetchNhis.refresh()"
+                @change="onChange"
               />
             </v-list-item-action>
           </template>
@@ -115,12 +116,17 @@ import DfTutorialAlert from '@data-fair/lib-vuetify/tutorial-alert.vue'
 // Progressive rollout: normal org admins get a read-only view, and only once at least
 // one NHI exists (the whole section is hidden otherwise). Only superadmins see the
 // create/edit/delete controls. This is a UI gate only — the API stays org-admin scoped.
-const { orga } = defineProps({
+const { orga, nbMembersLimits } = defineProps({
   orga: {
     type: Object as () => Organization,
     required: true
+  },
+  nbMembersLimits: {
+    type: Object as () => { limit: number, consumption: number } | undefined,
+    default: undefined
   }
 })
+const emit = defineEmits(['change'])
 const { roleLabel } = useRoleLabels(() => orga)
 
 const { copy } = useClipboard()
@@ -129,6 +135,12 @@ const adminMode = computed(() => !!session.user.value?.adminMode)
 
 const fetchNhis = useFetch<{ count: number, results: any[] }>(`${$apiPath}/organizations/${orga.id}/nhis`)
 const nhis = computed(() => fetchNhis.data.value)
+const disableCreate = computed(() => !nbMembersLimits || (nbMembersLimits.limit > 0 && nbMembersLimits.consumption >= nbMembersLimits.limit))
+// NHIs count in the members quota, let the parent refresh the limits it shares with the members list
+const onChange = () => {
+  fetchNhis.refresh()
+  emit('change')
+}
 // cache-buster tied to list refreshes so an avatar uploaded through the edit dialog
 // shows up on the next change event instead of the browser's cached image
 const avatarsTimestamp = ref(Date.now())
