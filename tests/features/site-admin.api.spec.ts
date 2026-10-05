@@ -54,6 +54,23 @@ test.describe('site admin api', () => {
     await assert.rejects(siteAdminAx.get('/api/users', { params: { allFields: true, host: 'other.example.com' } }), { status: 403 })
   })
 
+  test('should list the accounts of the site even when listing users is reserved to superadmins', async () => {
+    const { siteAdminAx, memberAx, member } = await setup()
+    await testEnvAx.patch('/config', { listUsersMode: 'admin' })
+    try {
+      const users = (await siteAdminAx.get('/api/users', { params: { allFields: true, host: host2 } })).data
+      assert.ok(users.results.find((u: any) => u.id === member.id))
+
+      // outside of the administration of the site, the list mode still applies
+      assert.equal((await siteAdminAx.get('/api/users')).data.count, 0)
+      assert.equal((await memberAx.get('/api/users')).data.count, 0)
+      await assert.rejects(memberAx.get('/api/users', { params: { allFields: true, host: host2 } }), { status: 403 })
+      await assert.rejects(siteAdminAx.get('/api/users', { params: { allFields: true } }), { status: 403 })
+    } finally {
+      await testEnvAx.patch('/config', { listUsersMode: undefined })
+    }
+  })
+
   test('should reset the 2FA of an account of the site, and nothing else', async () => {
     const { adminAx, siteAdminAx, member } = await setup()
     await testEnvAx.patch('/user/site-member@test.com', { '2FA': { active: true, secret: 'secret' } })

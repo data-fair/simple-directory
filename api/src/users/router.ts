@@ -28,27 +28,23 @@ router.get('', async (req, res, next) => {
   const session = reqSession(req)
   const user = session.user
 
-  const listMode = config.listUsersMode || config.listEntitiesMode
-  if (listMode === 'authenticated' && !user) return res.send({ results: [], count: 0 })
-  if (listMode === 'admin' && !user?.adminMode) return res.send({ results: [], count: 0 })
+  // Only service admins can request to see all field. Other users only see id/name
+  // Site admins get the same partial view of the accounts of their site as superadmins,
+  // so they are resolved before the list mode, which would otherwise hide every account from them
+  const allFields = req.query.allFields === 'true'
+  // site admins are restricted to the accounts of the current site, without their sessions (ips, locations)
+  const siteAdminList = allFields && !user?.adminMode &&
+    await isSiteAdminOf(req, { host: req.query.host as string | undefined, path: req.query.path as string | undefined })
+  if (allFields && !user?.adminMode && !siteAdminList) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+
+  if (!siteAdminList) {
+    const listMode = config.listUsersMode || config.listEntitiesMode
+    if (listMode === 'authenticated' && !user) return res.send({ results: [], count: 0 })
+    if (listMode === 'admin' && !user?.adminMode) return res.send({ results: [], count: 0 })
+  }
 
   const params: FindUsersParams = { ...mongoPagination(req.query), sort: mongoSort(req.query.sort) }
-
-  // Only service admins can request to see all field. Other users only see id/name
-  const allFields = req.query.allFields === 'true'
-  let siteAdminList = false
-  if (allFields) {
-    if (user?.adminMode) {
-      // ok
-    } else if (await isSiteAdminOf(req, { host: req.query.host as string | undefined, path: req.query.path as string | undefined })) {
-      // ok, restricted to the accounts of the current site, without their sessions (ips, locations)
-      siteAdminList = true
-    } else {
-      throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
-    }
-  } else {
-    params.select = ['id', 'name']
-  }
+  if (!allFields) params.select = ['id', 'name']
 
   if (typeof req.query.host === 'string') params.host = req.query.host
   if (typeof req.query.path === 'string') params.path = req.query.path
