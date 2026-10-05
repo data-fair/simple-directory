@@ -5,6 +5,7 @@ import eventsLog from '@data-fair/lib-express/events-log.js'
 import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
 import config from '#config'
+import { isSiteAdminOf } from '../utils/site-admin.ts'
 import { reqI18n, __all } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
@@ -37,13 +38,7 @@ async function isMember (req: Request<{ organizationId: string }>, allAccounts?:
   if (getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: true, allAccounts })) {
     return true
   }
-  if (config.siteAdmin && reqSession(req).siteRole === 'admin') {
-    const site = await reqSite(req)
-    const orga = await storages.globalStorage.getOrganization(req.params.organizationId)
-    if (site && orga?.host === site.host && orga?.path === site.path) {
-      return true
-    }
-  }
+  return isSiteAdminOf(req, await storages.globalStorage.getOrganization(req.params.organizationId))
 }
 
 // Get the list of organizations
@@ -59,14 +54,13 @@ router.get('', async (req, res, next) => {
 
   // Only service admins can request to see all field. Other users only see id/name
   const allFields = req.query.allFields === 'true'
+  let siteAdminList = false
   if (allFields) {
     if (user?.adminMode) {
       // ok
-    } else if (config.siteAdmin && session.siteRole === 'admin') {
-      const site = await reqSite(req)
-      if (!site || site.host !== req.query.host || site.path !== req.query.path) {
-        throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
-      }
+    } else if (await isSiteAdminOf(req, { host: req.query.host as string | undefined, path: req.query.path as string | undefined })) {
+      // ok, restricted to the organizations of the current site
+      siteAdminList = true
     } else {
       throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     }
@@ -76,6 +70,8 @@ router.get('', async (req, res, next) => {
 
   if (typeof req.query.host === 'string') params.host = req.query.host
   if (typeof req.query.path === 'string') params.path = req.query.path
+  // a site at the root of its host must not list the organizations of the sites under a path of the same host
+  if (siteAdminList && !params.path) params.path = null
 
   if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
   if (typeof req.query.q === 'string') params.q = req.query.q

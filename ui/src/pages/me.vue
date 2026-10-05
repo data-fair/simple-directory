@@ -309,9 +309,17 @@ const newPatch = () => ({
   defaultOrg: userDetailsFetch.data.value?.defaultOrg || '',
   defaultDep: userDetailsFetch.data.value?.defaultDep || ''
 })
-const patch = ref(newPatch())
+let loadedPatch = newPatch()
+const patch = ref({ ...loadedPatch })
+// fresh details arrive after every save (and after the refresh on page load): only apply them to
+// the fields that the user did not change in the meantime, or a save of one field would wipe
+// what is being typed in another
 watch(userDetailsFetch.data, () => {
-  patch.value = newPatch()
+  const freshPatch = newPatch()
+  for (const key of Object.keys(freshPatch) as (keyof typeof freshPatch)[]) {
+    if (patch.value[key] === loadedPatch[key]) (patch.value as any)[key] = freshPatch[key]
+  }
+  loadedPatch = freshPatch
 })
 
 const maxBirthday = dayjs().subtract(13, 'years').toISOString()

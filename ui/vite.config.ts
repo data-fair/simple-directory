@@ -69,6 +69,7 @@ export default defineConfig({
             'mdiAccount',
             'mdiAccountCircle',
             'mdiAccountGroup',
+            'mdiAccountMultiple',
             'mdiAccountSwitch',
             'mdiAlertCircle',
             'mdiBell',
@@ -104,7 +105,8 @@ export default defineConfig({
             'mdiWeb',
             'mdiMonitorCellphoneStar',
             'mdiThemeLightDark',
-            'mdiLoginVariant'
+            'mdiLoginVariant',
+            'mdiLogout'
           ]
         }
       ],

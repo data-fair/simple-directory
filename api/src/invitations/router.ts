@@ -10,6 +10,7 @@ import dayjs from 'dayjs'
 import { reqI18n, __all, __ } from '#i18n'
 import storages from '#storages'
 import { getOrgLimits, setNbMembersLimit, reqSite, shortenInvit, unshortenInvit, sendMailI18n, decodeToken, signToken, postUserIdentityWebhook, getInvitationRedirect, getSiteBaseUrl, getInvitSite, keepalive, switchOrganization } from '#services'
+import { isSiteAdminOf } from '../utils/site-admin.ts'
 import emailValidator from 'email-validator'
 import Debug from 'debug'
 
@@ -45,7 +46,7 @@ router.post('', async (req, res, next) => {
   const departments = invitation.departments ?? (invitation.department ? [invitation.department] : [])
   const departmentNames: string[] = []
 
-  if (session.siteRole === 'admin' && invitSite && invitSite.host === orga.host) {
+  if (invitSite && invitSite.host === orga.host && (invitSite.path ?? '') === (orga.path ?? '') && await isSiteAdminOf(req, orga)) {
     // ok for site admins
   } else {
     if (departments.length > 0) {

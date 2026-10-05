@@ -6,10 +6,27 @@
       <layout-app-bar v-if="!inIframe" />
     </template>
 
-    <v-main>
-      <v-container fluid>
-        <RouterView />
-      </v-container>
+    <v-main
+      :scrollable="scrollable"
+      :class="{ 'main-with-navigation-right': scrollable }"
+    >
+      <!-- min-width: 0 lets the content shrink next to the right panel instead of overflowing -->
+      <div
+        class="flex-grow-1"
+        style="min-width: 0"
+      >
+        <v-container fluid>
+          <RouterView />
+        </v-container>
+      </div>
+      <!-- target of layout-navigation-right.vue, sticky inside the scroller so that the
+      scrollbar stays on the right of the page, same width as a vuetify navigation drawer -->
+      <div
+        v-if="scrollable"
+        id="navigation-right-local"
+        class="position-sticky top-0 flex-shrink-0 align-self-start overflow-y-auto pt-6"
+        style="width: 256px; max-height: 100vh"
+      />
       <ui-notif />
     </v-main>
     <!--<v-footer
@@ -40,6 +57,11 @@ useHead({
 // const showToolbarParam = useBooleanSearchParam('showToolbar')
 
 const isLoginPage = computed(() => route.name === '/login')
+
+// pages with a table of contents (@data-fair/lib-vuetify/toc.vue) track the scroll of .v-main__scroller
+// and put it in the right panel (layout-navigation-right.vue), the other pages keep the document scroll
+// that the auto-height of their embedding iframes relies on
+const scrollable = computed(() => route.name === '/organization/[id]/')
 
 // const showToolbar = computed(() => !embed.value || showToolbarParam.value)
 const appClass = computed(() => {
@@ -136,6 +158,14 @@ body .v-application .logo-container img, body .v-application .logo-container svg
 .notification.v-snack .v-snack__content p {
   margin-bottom: 4px;
   margin-top: 4px;
+}
+
+/* the content and the right panel side by side inside the scroller */
+.main-with-navigation-right .v-main__scroller {
+  display: flex !important;
+}
+#navigation-right-local:empty {
+  display: none;
 }
 
 /* No need to prevent users from selecting (and copying) the texts in lists */

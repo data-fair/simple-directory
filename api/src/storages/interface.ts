@@ -26,7 +26,8 @@ export type FindOrganizationsParams = {
   creator?: string,
   select?: string[],
   host?: string,
-  path?: string
+  // null: only the records without a path (a site at the root of its host), not every path of the host
+  path?: string | null
 }
 
 export type FindUsersParams = {
@@ -37,7 +38,8 @@ export type FindUsersParams = {
   sort?: any,
   select?: string[],
   host?: string,
-  path?: string,
+  // null: only the records without a path (a site at the root of its host), not every path of the host
+  path?: string | null,
   emails?: string[],
 }
 
@@ -68,6 +70,7 @@ export interface SdStorage {
   // implemented by all of them contrary to the user level updateLogged
   updateUserSession (userId: string, serverSessionId: string, patch: Partial<ServerSession>): Promise<void>
   deleteUserSession (userId: string, serverSessionId: string): Promise<void>
+  deleteUserSessions (userId: string): Promise<void>
 
   getOrganization(ordId: string): Promise<Organization | undefined>
   createOrganization(org: OrganizationPost, user: UserRef): Promise<Organization>

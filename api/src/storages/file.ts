@@ -136,6 +136,10 @@ class FileStorage implements SdStorage {
     await mongo.fileUserSessions.updateOne({ _id: userId }, { $pull: { sessions: { id: serverSessionId } } })
   }
 
+  async deleteUserSessions (userId: string): Promise<void> {
+    await mongo.fileUserSessions.updateOne({ _id: userId }, { $set: { sessions: [] } })
+  }
+
   async findUsers (params: FindUsersParams) {
     let filteredUsers = this.users.map(user => this.cleanUser(user))
     const ids = params.ids
@@ -148,6 +152,9 @@ class FileStorage implements SdStorage {
     }
     if (params.host) {
       filteredUsers = filteredUsers.filter(user => user.host === params.host)
+    }
+    if (params.path || params.path === null) {
+      filteredUsers = filteredUsers.filter(user => (user.path || null) === params.path)
     }
     if (params.q) {
       const lq = params.q.toLowerCase()
@@ -224,6 +231,9 @@ class FileStorage implements SdStorage {
     }
     if (params.host) {
       filteredOrganizations = filteredOrganizations.filter(organization => organization.host === params.host)
+    }
+    if (params.path || params.path === null) {
+      filteredOrganizations = filteredOrganizations.filter(organization => (organization.path || null) === params.path)
     }
     if (params.q) {
       const lq = params.q.toLowerCase()

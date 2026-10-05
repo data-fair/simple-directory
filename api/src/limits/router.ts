@@ -2,7 +2,8 @@ import config from '#config'
 import { Router, type RequestHandler, type Request } from 'express'
 import { reqUser, reqSessionAuthenticated, assertAccountRole, httpError } from '@data-fair/lib-express'
 import * as limitsSchema from '#types/limits/index.ts'
-import { getOrgLimits, reqSite } from '#services'
+import { getOrgLimits } from '#services'
+import { isSiteAdminOf } from '../utils/site-admin.ts'
 import mongo from '#mongo'
 import storages from '#storages'
 import type { Organization } from '#types'
@@ -26,8 +27,7 @@ const isUser: RequestHandler<{ id: string }> = (req, res, next) => {
 const assertAccountMember = async (req: Request<{ id: string }>, org: Organization) => {
   if (req.query.key && req.query.key === config.secretKeys.limits) return
   const session = reqSessionAuthenticated(req)
-  const site = await reqSite(req)
-  if (session.siteRole === 'admin' && site && org.host && org.host === site.host) return
+  if (await isSiteAdminOf(req, org)) return
   assertAccountRole(session, { type: 'organization', id: req.params.id }, 'admin', { acceptDepAsRoot: true })
 }
 
