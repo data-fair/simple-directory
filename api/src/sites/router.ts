@@ -16,6 +16,8 @@ import { type OpenIDConnect } from '#types/site/index.ts'
 import { getPublicSiteInfo, getPublicSiteInfoHash } from '../utils/public-site-info.ts'
 import { getEffectiveMainSite, getMainSiteWarnings } from './main-site.ts'
 import serialize from 'serialize-javascript'
+import { parseThemeOverride, getOverriddenSite } from '../utils/theme-override.ts'
+import { type EffectiveSite } from '../utils/public-site-info.ts'
 
 const debugPostSite = Debug('post-site')
 
@@ -212,21 +214,44 @@ router.delete('/:id', async (req, res, next) => {
 
 const hashedMaxAge = 60 * 60 * 24 * 365 // 365 days
 
+/**
+ * The site served by the non-hashed presentation endpoints, with the local
+ * color override of the _t_* query parameters applied if any. Hashed
+ * endpoints never apply it: a hash describes the site's own resources.
+ */
+const reqPresentationSite = async (req: Request): Promise<{ site: EffectiveSite, colorWarnings?: string[] }> => {
+  const site = await reqSite(req) ?? await getEffectiveMainSite()
+  const override = parseThemeOverride(req.query)
+  if (!override) return { site }
+  return getOverriddenSite(site, override, reqI18n(req).localeCode === 'fr' ? 'fr' : 'en')
+}
+
+const reqPublicSiteInfo = async (req: Request) => {
+  const { site, colorWarnings } = await reqPresentationSite(req)
+  const publicSiteInfo = getPublicSiteInfo(site)
+  if (colorWarnings?.length) publicSiteInfo.colorWarnings = colorWarnings
+  return publicSiteInfo
+}
+
 router.get('/_public', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
   // force buffering (necessary for caching) of this response in the reverse proxy
   res.setHeader('X-Accel-Buffering', 'yes')
-  const site = await reqSite(req) ?? await getEffectiveMainSite()
-  res.send(getPublicSiteInfo(site))
+  res.send(await reqPublicSiteInfo(req))
 })
 router.get('/_public.js', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
   // force buffering (necessary for caching) of this response in the reverse proxy
   res.setHeader('X-Accel-Buffering', 'yes')
-  const site = await reqSite(req) ?? await getEffectiveMainSite()
-  const publicSiteInfo = getPublicSiteInfo(site)
+  const publicSiteInfo = await reqPublicSiteInfo(req)
+  let js = `window.__PUBLIC_SITE_INFO=${serialize(publicSiteInfo)}`
+  // a page served with a color override has no administrator looking at the theme warnings,
+  // the console of its developer is the only place this signal can still reach
+  if (publicSiteInfo.colorWarnings) {
+    js += ';window.__PUBLIC_SITE_INFO.colorWarnings.forEach(function(w){console.error(\'[simple-directory] \'+w)})'
+  }
   res.contentType('application/javascript')
-  res.send(`window.__PUBLIC_SITE_INFO=${serialize(publicSiteInfo)}`)
+  res.send(js)
 })
 router.get('/:hash/_public.js', async (req, res, next) => {
   res.setHeader('Cache-Control', `public, max-age=${hashedMaxAge}, immutable`)
@@ -247,8 +272,11 @@ router.get('/_theme.css', async (req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60')
   // force buffering (necessary for caching) of this response in the reverse proxy
   res.setHeader('X-Accel-Buffering', 'yes')
-  const site = await reqSite(req) ?? await getEffectiveMainSite()
-  const css = getThemeCss(site.theme, site.path ?? '')
+  const { site, colorWarnings } = await reqPresentationSite(req)
+  let css = getThemeCss(site.theme, site.path ?? '')
+  if (colorWarnings?.length) {
+    css = colorWarnings.map(w => `/* color warning: ${w.replaceAll('*/', '* /')} */\n`).join('') + css
+  }
   res.contentType('css')
   res.send(css)
 })

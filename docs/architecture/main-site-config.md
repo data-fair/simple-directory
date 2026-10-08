@@ -138,6 +138,27 @@ Two details the merge handles so the shared renderer stays dumb:
 stay free of any mongo access: `ui/vite.config.ts` imports the hashes to inject
 the dev server's HTML.
 
+### Local color override (`_t_*`)
+
+The **non-hashed** `_public`, `_public.js` and `_theme.css` accept
+`_t_primary` and `_t_secondary` (6 hex digits, `#` optional, 400 otherwise).
+data-fair's application proxy passes them through so that one application can
+render in other colors than its site's, typically when embedded in an external
+site, without any override logic in the application itself.
+
+- `applyThemeOverride` (`api/src/utils/theme-override.ts`) re-runs the assisted
+  mode derivation (`on-*`, contrast corrected `text-*` in every palette) on top
+  of the site's palettes, so a manually themed site keeps its other colors.
+- The **hashed** routes ignore the parameters: a hash describes the site's own
+  resources. Overridden resources are only ever served with the 60 s cache.
+- Contrast warnings introduced by the override (the site's own are excluded)
+  are returned as `colorWarnings` in `_public` / `_public.js` — the latter also
+  prints them with `console.error` — and as leading comments in `_theme.css`.
+  No administrator looks at these variants, the console is the only place left
+  for the signal.
+- The results are memoized in a bounded cache, the parameters being free user
+  input, and cleared by `clearSiteResourceCaches()`.
+
 ### Blast radius beyond simple-directory
 
 `GET /api/sites/_hashes` is what every other data-fair service calls

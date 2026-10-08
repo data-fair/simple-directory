@@ -34,6 +34,11 @@
     "theme": {
       "$ref": "https://github.com/data-fair/lib/theme"
     },
+    "colorWarnings": {
+      "type": "array",
+      "description": "Contrast warnings introduced by a local color override (_t_* query parameters), absent without one.",
+      "items": { "type": "string" }
+    },
     "reducedPersonalInfoAtCreation": {
       "$ref": "https://github.com/data-fair/simple-directory/site#/properties/reducedPersonalInfoAtCreation"
     },

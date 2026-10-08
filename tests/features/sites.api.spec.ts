@@ -74,6 +74,50 @@ test.describe('sites api', () => {
     await assert.rejects(ax.post<string>('/api/auth/site_redirect', { redirect: siteDirectoryUrl }), { status: 400 })
   })
 
+  test('should apply a local color override on the non-hashed presentation resources', async () => {
+    const config = await getServerConfig()
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const anonymousAx = await axios()
+    const owner = { type: 'organization', id: 'test_org', name: 'Test org' }
+    await anonymousAx.post('/api/sites',
+      { _id: 'test_sites_override', owner, host: '127.0.0.1:' + process.env.NGINX_PORT2, theme: { primaryColor: '#1565C0' } },
+      { params: { key: config.secretKeys.sites } })
+    const site = (await adminAx.get('/api/sites/test_sites_override')).data
+    await adminAx.patch('/api/sites/test_sites_override', { theme: { ...site.theme, hc: true } })
+    const sitesUrl = `http://127.0.0.1:${process.env.NGINX_PORT2}/simple-directory/api/sites`
+
+    const publicSite = (await anonymousAx.get(`${sitesUrl}/_public`, { params: { _t_primary: 'FFEB3B', _t_secondary: '#004D40' } })).data
+    assert.equal(publicSite.theme.colors.primary, '#FFEB3B')
+    assert.equal(publicSite.theme.colors['on-primary'], '#000000')
+    assert.notEqual(publicSite.theme.colors['text-primary'].toUpperCase(), '#FFEB3B')
+    assert.equal(publicSite.theme.hcColors.primary, '#FFEB3B')
+    assert.equal(publicSite.theme.colors.secondary, '#004D40')
+    assert.equal(publicSite.colorWarnings, undefined)
+
+    const css = (await anonymousAx.get<string>(`${sitesUrl}/_theme.css`, { params: { _t_primary: 'FFEB3B' } })).data
+    assert.ok(css.includes(`a.simple-link { color: ${publicSite.theme.colors['text-primary']};`))
+    const siteCss = (await anonymousAx.get<string>(`${sitesUrl}/_theme.css`)).data
+    assert.notEqual(css, siteCss)
+
+    // hashed resources describe the site's own theme, the override is ignored there
+    const hashes = (await anonymousAx.get(`${sitesUrl}/_hashes`)).data
+    const hashedCss = (await anonymousAx.get<string>(`${sitesUrl}/${hashes.themeCss}/_theme.css`, { params: { _t_primary: 'FFEB3B' } })).data
+    assert.equal(hashedCss, siteCss)
+
+    // no on-color reaches AAA on a mid grey: the high contrast palette gets warnings
+    const warnedSite = (await anonymousAx.get(`${sitesUrl}/_public`, { params: { _t_primary: '808080' } })).data
+    assert.ok(warnedSite.colorWarnings.length > 0)
+    const warnedJs = (await anonymousAx.get<string>(`${sitesUrl}/_public.js`, { params: { _t_primary: '808080' } })).data
+    assert.ok(warnedJs.startsWith('window.__PUBLIC_SITE_INFO='))
+    assert.ok(warnedJs.includes('console.error'))
+    const warnedCss = (await anonymousAx.get<string>(`${sitesUrl}/_theme.css`, { params: { _t_primary: '808080' } })).data
+    assert.ok(warnedCss.startsWith('/* color warning: '))
+    const siteJs = (await anonymousAx.get<string>(`${sitesUrl}/_public.js`)).data
+    assert.ok(!siteJs.includes('console.error'))
+
+    await assert.rejects(anonymousAx.get(`${sitesUrl}/_theme.css`, { params: { _t_primary: 'red' } }), { status: 400 })
+  })
+
   test('should default a new site to onlyOtherSite when the owner already has a primary site', async () => {
     const config = await getServerConfig()
 
