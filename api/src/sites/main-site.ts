@@ -4,6 +4,7 @@ import { getMessage } from '#i18n'
 import { getMainSiteDoc } from './service.ts'
 import { type EffectiveSite, envMainSite, clearPublicSiteInfoHashCache } from '../utils/public-site-info.ts'
 import { clearThemeCssHashCache } from '../utils/theme.ts'
+import { clearOverriddenSitesCache } from '../utils/theme-override.ts'
 
 type MainSiteCategory = 'theme' | 'title' | 'mails' | 'registration'
 
@@ -80,6 +81,7 @@ export const getEffectiveMainSite = async (): Promise<EffectiveSite> => {
 export const clearSiteResourceCaches = () => {
   clearPublicSiteInfoHashCache()
   clearThemeCssHashCache()
+  clearOverriddenSitesCache()
 }
 
 // Fields the document carries that have no effect on the main host.
