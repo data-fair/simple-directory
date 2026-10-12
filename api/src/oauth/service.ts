@@ -14,6 +14,12 @@ import { type CipheredContent, decipher } from '../utils/cipher.ts'
 
 export { getOidcProviderId } from './oidc.ts'
 
+// public agents for the token requests of untrusted providers. simple-oauth2 deep clones its http
+// options with @hapi/hoek, which would copy the agents and their pooled sockets: a copied keep-alive
+// socket fails with "Illegal invocation" when it is reused. Hoek does not clone an object whose
+// prototype is marked isImmutable, so the shared agents are passed as they are.
+const publicWreckAgents = Object.assign(Object.create({ isImmutable: true }), { http: httpAgent, https: httpsAgent, httpsAllowUnauthorized: httpsAgent })
+
 export type OAuthUserInfo = {
   data: any,
   user: {
@@ -103,7 +109,7 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     // the token endpoint of an untrusted provider comes from a site config or a discovery document,
     // the public agents refuse to connect to non public addresses (cf SSRF_PUBLIC_IPS)
     // wreck's "agents" defaults option is missing from the simple-oauth2 typings, which only know the per request "agent"
-    http: p.trusted ? undefined : { agents: { http: httpAgent, https: httpsAgent, httpsAllowUnauthorized: httpsAgent } } as any
+    http: p.trusted ? undefined : { agents: publicWreckAgents } as any
   })
 
   let state = (await mongo.secrets.findOne({ _id: 'oauth-state-' + p.id }))?.data as string | undefined
