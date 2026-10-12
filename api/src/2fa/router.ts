@@ -8,7 +8,7 @@ import emailValidator from 'email-validator'
 import storages from '#storages'
 import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.ts'
-import { checkPassword, hashPassword, reqSite } from '#services'
+import { checkPassword, hashPassword, reqSite, is2FAValid } from '#services'
 import { assertNotNhiSession } from '../nhis/service.ts'
 
 const router = Router()
@@ -56,7 +56,7 @@ router.post('/', async (req, res, next) => {
   } else {
     // validate secret with initial token
     if (!user2FA) throw httpError(400)
-    const isValid = authenticator.check(req.body.token, user2FA.secret)
+    const isValid = is2FAValid(user2FA.secret, req.body.token)
     if (!isValid) return res.status(400).send(reqI18n(req).messages.errors.bad2FAToken)
     const recovery = randomUUID()
     await storage.set2FA(user.id, { ...user2FA, active: true, recovery: await hashPassword(recovery) })
