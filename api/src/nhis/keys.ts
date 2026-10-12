@@ -1,5 +1,5 @@
 import { createLocalJWKSet, createRemoteJWKSet, type JWTVerifyGetKey } from 'jose'
-import axios from '@data-fair/lib-node/axios.js'
+import { axiosInstance, privateAxiosInstance } from '@data-fair/lib-node/axios.js'
 import { httpError } from '@data-fair/lib-express'
 import memoize from 'memoizee'
 import { BlockList, isIP } from 'node:net'
@@ -40,6 +40,12 @@ export const assertSafeIssuer = (issuer: string) => {
   // into dotted-decimal form, so checking the parsed hostname is sufficient here.
   if (isPrivateHost(url.hostname)) throw httpError(400, 'issuer host is not allowed')
 }
+
+// the public agents refuse non public addresses at connection time, on the resolved address, so
+// the discovery and jwks fetches below are also covered against the DNS rebinding that
+// assertSafeIssuer cannot see. createRemoteJWKSet uses its own fetch and is not covered.
+// nhisAllowInsecureIssuers lifts both checks (dev/test mock issuers on localhost).
+const axios = config.nhisAllowInsecureIssuers ? privateAxiosInstance : axiosInstance
 
 const getJwksUri = memoize(async (issuer: string) => {
   const discoveryUrl = issuer.replace(/\/$/, '') + '/.well-known/openid-configuration'

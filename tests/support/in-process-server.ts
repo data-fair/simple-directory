@@ -40,19 +40,19 @@ export const startApiServer = async () => {
   const apiServer = await import('../../api/src/server.ts')
   await apiServer.start()
 
-  // Set forwarded headers on the shared axios instance used by lib-node's axiosAuth
-  const { axiosInstance } = await import('@data-fair/lib-node/axios.js')
-  Object.assign(axiosInstance.defaults.headers.common, forwardedHeaders())
+  // Set forwarded headers on the shared private axios instance used by lib-node's axiosAuth
+  const { privateAxiosInstance } = await import('@data-fair/lib-node/axios.js')
+  Object.assign(privateAxiosInstance.defaults.headers.common, forwardedHeaders())
 }
 
 export const stopApiServer = async () => {
   const apiServer = await import('../../api/src/server.ts')
   await apiServer.stop()
-  // Clean up forwarded headers from the global axios instance
-  const { axiosInstance } = await import('@data-fair/lib-node/axios.js')
-  delete axiosInstance.defaults.headers.common['X-Forwarded-For']
-  delete axiosInstance.defaults.headers.common['X-Forwarded-Host']
-  delete axiosInstance.defaults.headers.common['X-Forwarded-Proto']
+  // Clean up forwarded headers from the shared private axios instance
+  const { privateAxiosInstance } = await import('@data-fair/lib-node/axios.js')
+  delete privateAxiosInstance.defaults.headers.common['X-Forwarded-For']
+  delete privateAxiosInstance.defaults.headers.common['X-Forwarded-Host']
+  delete privateAxiosInstance.defaults.headers.common['X-Forwarded-Proto']
 }
 
 const forwardedHeaders = () => ({

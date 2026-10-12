@@ -2,7 +2,6 @@ import fs from 'node:fs'
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { axios, testEnvAx, maildevAx, deleteAllEmails } from '../support/axios.ts'
-import FormData from 'form-data'
 
 const findEmail = async (subject: string) => {
   await new Promise(resolve => setTimeout(resolve, 50))
@@ -182,8 +181,8 @@ test.describe('mails', () => {
       subject: 'test4',
       text: 'test mail content 2',
     }))
-    form.append('attachment1', readmeBuffer, 'README.md')
-    form.append('attachment2', readmeBuffer, 'README2.md')
+    form.append('attachment1', new Blob([readmeBuffer], { type: 'text/markdown' }), 'README.md')
+    form.append('attachment2', new Blob([readmeBuffer], { type: 'text/markdown' }), 'README2.md')
     const res = await ax.post('/api/mails', form, { params: { key: 'testkey' } })
     assert.equal(res.status, 200)
     await new Promise(resolve => setTimeout(resolve, 50))

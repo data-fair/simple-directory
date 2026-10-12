@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 import 'dotenv/config'
 
+// the test infrastructure (dev API, maildev, mock OIDC servers, in-process API servers) is on
+// loopback, that the SSRF protection of @data-fair/lib-node's public agents refuses by default
+process.env.SSRF_PUBLIC_IPS = process.env.SSRF_PUBLIC_IPS || '127.0.0.1,::1'
+
 export default defineConfig({
   testDir: './tests',
   workers: 1,
