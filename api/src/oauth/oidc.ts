@@ -1,4 +1,4 @@
-import axios from '@data-fair/lib-node/axios.js'
+import { axiosInstance, privateAxiosInstance } from '@data-fair/lib-node/axios.js'
 import type { OpenIDConnect } from '../../config/type/index.ts'
 import { type OAuthProvider, type OAuthUserInfo } from './service.ts'
 import mongo from '#mongo'
@@ -21,7 +21,11 @@ export const getOidcProviderId = (url: string) => {
   return slug(host, { lower: true, strict: true })
 }
 
-export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProvider> {
+// trusted: the provider comes from the operator's config (config.oidc.providers) and may live on
+// a private network. Site-level providers are not trusted, their discovery and userinfo requests
+// go through the public agents that refuse non public addresses (cf SSRF_PUBLIC_IPS).
+export async function completeOidcProvider (p: OpenIDConnect, trusted = false): Promise<OAuthProvider> {
+  const axios = trusted ? privateAxiosInstance : axiosInstance
   const id = getOidcProviderId(p.discovery)
   // use full discovery URL as cache key to avoid collision between providers
   // on the same host but different paths (e.g. Azure AD multi-tenant)
@@ -122,6 +126,7 @@ export async function completeOidcProvider (p: OpenIDConnect): Promise<OAuthProv
     id,
     type: 'oidc',
     oidc: true,
+    trusted,
     scope: 'openid email profile',
     auth,
     userInfo

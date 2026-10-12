@@ -3,6 +3,7 @@ import type { OpenIDConnect, OpenIDConnect1 } from '../../config/type/index.ts'
 import { reqSiteUrl } from '@data-fair/lib-express'
 import type { EventLogContext } from '@data-fair/lib-express/events-log.js'
 import oauth2 from 'simple-oauth2'
+import { httpAgent, httpsAgent } from '@data-fair/lib-node/http-agents.js'
 import { nanoid } from 'nanoid'
 import config from '#config'
 import mongo from '#mongo'
@@ -33,6 +34,8 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
   title?: string,
   icon?: string,
   scope: string,
+  // operator-declared provider (config.oidc.providers), its endpoints may be on a private network
+  trusted?: boolean,
   auth: {
     tokenHost: string,
     tokenPath: string,
@@ -96,7 +99,11 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
       credentialsEncodingMode: p.credentialsEncodingMode ?? 'strict', // strict or loose
       authorizationMethod: p.authorizationMethod ?? 'header', // header or body
       bodyFormat: p.bodyFormat ?? 'form'
-    }
+    },
+    // the token endpoint of an untrusted provider comes from a site config or a discovery document,
+    // the public agents refuse to connect to non public addresses (cf SSRF_PUBLIC_IPS)
+    // wreck's "agents" defaults option is missing from the simple-oauth2 typings, which only know the per request "agent"
+    http: p.trusted ? undefined : { agents: { http: httpAgent, https: httpsAgent, httpsAllowUnauthorized: httpsAgent } } as any
   })
 
   let state = (await mongo.secrets.findOne({ _id: 'oauth-state-' + p.id }))?.data as string | undefined
@@ -179,7 +186,7 @@ export const init = async () => {
       if (!envSecret) throw new Error(`Missing environment variable ${envKey} for OIDC provider ${oidc.title}`)
       oidc.client.secret = envSecret
     }
-    _globalProviders.push(await initOAuthProvider(await completeOidcProvider(oidc)))
+    _globalProviders.push(await initOAuthProvider(await completeOidcProvider(oidc, true)))
   }
   initialized = true
 }

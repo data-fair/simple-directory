@@ -434,8 +434,19 @@ time:
   resolvers and HTTP clients, so the practical exposure is low; it is
   documented rather than fixed pending real-world evidence it's reachable
   through Node's actual DNS/socket stack for this code path.
+- **Connection-time check on the resolved address.** The discovery document
+  and the JWKS fetched by `checkProvider` go through the public axios
+  instance of `@data-fair/lib-node`, whose agents refuse any non public
+  address when the connection is created, after DNS resolution and again on
+  each redirect. This covers the DNS rebinding that the hostname-level
+  `assertSafeIssuer` cannot see. It does not cover the exchange-time JWKS
+  fetch: `jose`'s `createRemoteJWKSet` uses its own `fetch`, so DNS rebinding
+  of a `jwks_uri` host stays out of scope there. Operators can declare
+  intranet issuers public with `SSRF_PUBLIC_IPS` (comma separated IPs / CIDR
+  ranges), which the agents honor and `assertSafeIssuer` does not.
 - **`config.nhisAllowInsecureIssuers`** (default `false`) bypasses both the
-  https and private-host checks entirely — for dev/test only, where issuers
+  https and private-host checks entirely, and switches the discovery fetches
+  to lib-node's private axios instance — for dev/test only, where issuers
   are commonly `http://localhost:...` mock OIDC servers. It must never be
   enabled in a production config; nothing in the code enforces that beyond
   the default and operator discipline, consistent with other dev-only

@@ -190,6 +190,39 @@ admin status permanently. Two safeguards:
 - Target `(host, path)` is signed into the action token; the `/host` endpoint
   applies the host from the decoded token, not the request body.
 
+## Outgoing requests of auth providers
+
+A site-level OIDC provider is configured in a site document, which the sites
+secret key (another service such as a portals manager) can write without a
+superadmin. Its discovery URL, and the `token_endpoint` / `userinfo_endpoint`
+of the discovery document, must not let that config reach the private network
+of simple-directory (SSRF). `@data-fair/lib-node` provides public agents that
+refuse non public addresses at connection time, on the resolved address and
+on every redirect, and private agents for the infrastructure:
+
+- **Root-level OIDC providers** (`config.oidc.providers`) are operator-declared
+  and may run on a private network (an intranet Keycloak). Their discovery and
+  userinfo requests use lib-node's `privateAxiosInstance`, and the token
+  exchange uses simple-oauth2's default agents.
+- **Site-level OIDC providers** and the standard OAuth providers use the public
+  agents for all three: discovery and userinfo through lib-node's public
+  `axiosInstance`, the token exchange and refresh through the same agents
+  passed to simple-oauth2 (wreck's `agents` option). `completeOidcProvider`
+  defaults to untrusted, only `oauth/service.ts`'s `init` passes `trusted`.
+- **Identity webhooks** (`config.webhooks`) target other services of the same
+  infrastructure and use the private instance.
+- **`SSRF_PUBLIC_IPS`** (comma separated IPs / CIDR ranges) declares intranet
+  addresses public, for a self-hosted instance whose site-level IdP is on a
+  private network. `SSRF_PRIVATE_IPS` does the opposite. The dev server and
+  the test runner set `SSRF_PUBLIC_IPS` to loopback for their mock servers.
+  Defining an `HTTP(S)_PROXY` variable disables the public agents' checks
+  (lib-node warns at startup), because they would only see the proxy.
+
+The discovery cache (`oidcDiscovery` collection) is keyed by the discovery URL,
+not by trust: a site-level provider with the same discovery URL as a root-level
+one reads the document the root-level provider fetched, which only discloses a
+document the operator already chose to trust.
+
 ## Site admins
 
 With `config.siteAdmin`, the root admins of the organization that owns a site,
@@ -234,6 +267,9 @@ privilege is computed from the session's `siteRole` (derived from the token's
    `site_redirect` (per-session, not per-identity).
 7. A site admin's privileges never reach a record outside its own
    `(host, path)`, and never include impersonation or email changes.
+8. The outgoing requests of a site-level auth provider (discovery, userinfo,
+   token exchange and refresh) never use the private agents: only an
+   operator's `SSRF_PUBLIC_IPS` can open a private address to them.
 
 Violations re-open an exploit path in the C-0 family from
 `docs/security-review-2026-04.md`.
