@@ -1,7 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { testEnvAx, createUser } from '../support/axios.ts'
-import FormData from 'form-data'
 import type { PasswordList } from '../../api/types/index.ts'
 
 test.describe('password lists api', () => {
@@ -16,8 +15,8 @@ test.describe('password lists api', () => {
     assert.equal(check.data.found, false)
 
     const form = new FormData()
-    form.append('passwords', 'password1\npassword2\npassword3\n', 'passwords.txt')
-    const passwordList = (await adminAx.post<PasswordList>('/api/password-lists', form.getBuffer(), { headers: form.getHeaders() })).data
+    form.append('passwords', new Blob(['password1\npassword2\npassword3\n'], { type: 'text/plain' }), 'passwords.txt')
+    const passwordList = (await adminAx.post<PasswordList>('/api/password-lists', form)).data
     assert.equal(passwordList.count, 3)
     assert.equal(passwordList.name, 'passwords.txt')
     assert.equal(passwordList.active, false)

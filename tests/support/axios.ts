@@ -2,7 +2,6 @@ import { strict as assert } from 'node:assert'
 import type { AxiosAuthInstance, AxiosAuthOptions } from '@data-fair/lib-node/axios-auth.js'
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
-import FormData from 'form-data'
 
 // Set NODE_CONFIG_DIR so test files can import api/src/config.ts
 process.env.NODE_CONFIG_DIR = process.env.NODE_CONFIG_DIR || './api/config/'
@@ -130,7 +129,7 @@ export const testPng2 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1P
 
 export const uploadAvatar = (ax: any, path: string, png: Buffer = testPng) => {
   const form = new FormData()
-  form.append('avatar', png, 'avatar.png')
+  form.append('avatar', new Blob([png], { type: 'image/png' }), 'avatar.png')
   return ax.post(path, form)
 }
 
