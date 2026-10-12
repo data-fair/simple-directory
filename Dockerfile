@@ -1,5 +1,5 @@
 ##########################
-FROM node:24.20.0-alpine3.24 AS base
+FROM node:24.21.0-alpine3.24 AS base
 
 # pick up alpine security fixes released after this base image was published
 RUN apk upgrade --no-cache
