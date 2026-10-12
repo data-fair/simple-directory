@@ -5,9 +5,14 @@ import { session } from '@data-fair/lib-express'
 import type { User } from '#types'
 import type { SdStorage } from '../storages/interface.ts'
 
+// accept the codes of the previous and next 30s steps too (RFC 6238 recommends one step of
+// tolerance): otplib defaults to the current step only, so a code typed while the
+// authenticator app rolls over, or a slight clock drift, was rejected
+const totp = authenticator.clone({ window: 1 })
+
 export const is2FAValid = (secret: string | undefined, token: string) => {
   if (!secret) return false
-  return authenticator.check(token, secret)
+  return totp.check(token, secret)
 }
 
 export const cookie2FAName = (userId: string) => 'id_token_2fa_' + userId
