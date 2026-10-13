@@ -112,7 +112,9 @@ res.send(getPublicSiteInfo(site))
 
 That shape holds in the `/api/sites/_*` endpoints
 (`api/src/sites/router.ts`), in `getSiteExtraParams`
-(`api/src/sites/spa-params.ts`) and in `api/src/mails/service.ts`. Because the
+(`api/src/sites/spa-params.ts`), in `api/src/mails/service.ts` and in the
+contact form recipient (`POST /api/mails/contact`, `api/src/mails/router.ts`).
+Because the
 renderer is shared, paths A and B cannot disagree and the hashes cannot stop
 describing the bytes served under them.
 

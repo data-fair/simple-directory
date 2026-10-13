@@ -12,6 +12,7 @@ import { crossOriginResourcePolicy } from 'helmet'
 import { textToSafeHtml, sanitizeMailHtml } from './escape.ts'
 import type { FindMembersParams } from '../storages/interface.ts'
 import { reqSite } from '#services'
+import { getEffectiveMainSite } from '../sites/main-site.ts'
 
 const router = Router()
 export default router
@@ -141,12 +142,14 @@ router.post('/contact', async (req, res) => {
   const [safeUrl, safeFrom] = [textToSafeHtml(siteUrl), textToSafeHtml(req.body.from)]
   const html = `<p>Message transmis par le formulaire de contact de <a href="${safeUrl}">${safeUrl}</a> émis par <a href="mailto:${safeFrom}">${safeFrom}</a></p>${bodyHtml}`
 
-  const site = await reqSite(req)
+  // on the main host reqSite() is undefined, the portal contact lives in the
+  // main site document (mails category of MAIN_SITE_FROM_DB)
+  const site = await reqSite(req) ?? await getEffectiveMainSite()
 
-  await sendMail(site?.mails?.contact ?? config.contact, {
+  await sendMail(site.mails?.contact ?? config.contact, {
     replyTo: req.body.from,
-    host: site?.host,
-    path: site?.path,
+    host: site.host,
+    path: site.path,
     subject: req.body.subject,
     text,
     // the portal contact form builds an HTML body client-side (lists, bold
