@@ -121,6 +121,32 @@ test.describe('main site document', () => {
     assert.equal(dbMail.envelope.from.address, 'portal@test.com')
   })
 
+  const sendContactForm = async (subject: string) => {
+    await testEnvAx.patch('/config', { anonymousContactForm: true })
+    await deleteAllEmails()
+    const anonymousAx = await axios()
+    const token = (await anonymousAx.get('/api/auth/anonymous-action')).data
+    await anonymousAx.post('/api/mails/contact', { token, from: 'visitor@test.com', subject, text: 'hello' })
+    await new Promise(resolve => setTimeout(resolve, 50))
+    const emails: any[] = (await maildevAx.get('/email')).data
+    return emails.find(m => m.subject === subject)
+  }
+
+  test('the contact form goes to the env contact when the mails category is disabled', async () => {
+    await seedMainSiteDoc()
+    const mail = await sendContactForm('contact-main-env')
+    assert.ok(mail, 'no mail captured')
+    assert.equal(mail.envelope.to[0].address, 'contact@test.com')
+  })
+
+  test('the contact form goes to the document contact when the mails category is enabled', async () => {
+    await seedMainSiteDoc()
+    await setCategories(['mails'])
+    const mail = await sendContactForm('contact-main-db')
+    assert.ok(mail, 'no mail captured')
+    assert.equal(mail.envelope.to[0].address, 'hello@test.com')
+  })
+
   test('reports fields that are never honoured on the main host', async () => {
     const { adminAx } = await seedMainSiteDoc()
     await adminAx.patch('/api/sites/test_main_site', { authMode: 'ssoBackOffice' })
