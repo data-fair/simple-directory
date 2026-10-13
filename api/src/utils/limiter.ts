@@ -27,6 +27,18 @@ export default () => {
   return _limiter
 }
 
+// give back the point consumed by an attempt that turned out to be legitimate, so that only
+// failures count against the budget. Deliberately not rateLimiterMongo.reward(): on a window that
+// expired since the consume it upserts a fresh doc with negative points, i.e. a credit of extra
+// attempts in the next window. This decrement only touches a live window and never goes below 0.
+export const refundLimiter = async (key: string) => {
+  const keyPrefix = 'sd-rate-limiter-auth'
+  await mongo.db.collection(keyPrefix).updateOne(
+    { key: `${keyPrefix}:${key}`, expire: { $gt: new Date() }, points: { $gt: 0 } },
+    { $inc: { points: -1 } }
+  )
+}
+
 // per-recipient mail rate limit, prevents a bug or runaway webhook from spamming a user's mailbox
 let _mailLimiter: (key: string) => Promise<boolean> | undefined
 

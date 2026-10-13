@@ -2,6 +2,8 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { generateKeyPairSync } from 'node:crypto'
 import jwt from 'jsonwebtoken'
+import { MongoClient } from 'mongodb'
+import { RateLimiterMongo } from 'rate-limiter-flexible'
 import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl, getServerConfig, uploadAvatar, testPng } from '../support/axios.ts'
 
 const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
@@ -494,4 +496,43 @@ test('an unusable client address fails the exchange closed, before any nhi looku
   const known = await statusOf(broken(nhi.id))
   assert.ok(known && known >= 400, 'a broken X-Forwarded-For must reject the exchange')
   assert.equal(await statusOf(broken('nhi-unknown000')), known)
+})
+
+test('only failed nhi token exchanges count against the auth rate limit', async () => {
+  const { ax } = await createUser('nhi-ratelimit@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI rate limit org' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+
+  const cfg = await getServerConfig()
+  const mongoClient = await MongoClient.connect(cfg.mongo.url)
+  try {
+    const rateLimiter = new RateLimiterMongo({
+      storeClient: mongoClient,
+      dbName: mongoClient.db().databaseName,
+      keyPrefix: 'sd-rate-limiter-auth',
+      points: cfg.authRateLimit.attempts,
+      duration: cfg.authRateLimit.duration
+    })
+    const ip = '9.8.7.6'
+    const agentAx = axios()
+    const exchange = (claims: Record<string, any> = {}) => agentAx.post('/api/auth/nhi-token',
+      { client_id: nhi.id, assertion: signAssertion(claims) }, { headers: { 'x-forwarded-for': ip } })
+    const statusOf = async (p: Promise<any>) => (await p.then((r: any) => r, (e: any) => e)).status
+
+    // a success leaves both buckets as it found them: consumed then refunded, never below 0
+    assert.equal(await statusOf(exchange()), 200)
+    assert.equal((await rateLimiter.get(ip))?.consumedPoints, 0)
+    assert.equal((await rateLimiter.get(nhi.id))?.consumedPoints, 0)
+
+    // one attempt short of the limit, successes keep going through
+    await rateLimiter.set(ip, cfg.authRateLimit.attempts - 1, cfg.authRateLimit.duration)
+    for (let i = 0; i < 3; i++) assert.equal(await statusOf(exchange()), 200)
+
+    // a failure spends the last point for good, after which even a valid assertion is refused
+    assert.equal(await statusOf(exchange({ sub: 'system:serviceaccount:agents:other' })), 401)
+    assert.equal(await statusOf(exchange()), 429)
+  } finally {
+    await mongoClient.close()
+  }
 })

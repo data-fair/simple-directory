@@ -79,11 +79,20 @@ Signature, `iss`, `sub`, `aud`, and `exp`/`nbf` are all checked by `jose`'s
    feature isn't enabled for a deployment.
 2. Rate-limited twice: once by caller IP, once by `client_id`, both through
    the shared auth limiter (`api/src/utils/limiter.ts`, Mongo-backed,
-   `config.authRateLimit`). **The limiter consumes a point on every call,
-   including a successful exchange** — there's no separate "only count
-   failures" path. On a pod fleet sharing one egress IP, a legitimate burst
-   of NHI logins can trip the per-IP bucket; operators running many NHIs
-   behind one NAT gateway should size `authRateLimit` accordingly.
+   `config.authRateLimit`). **Only failures count**: every call consumes a
+   point up front, and a successful exchange gives both points back
+   (`refundLimiter`). A success proves possession of the signing key, which
+   is what the limiter guards, so counting it would only throttle QA suites
+   and agent fleets sharing one egress IP. Consuming first rather than
+   counting failures after the fact keeps concurrent in-flight attempts
+   counted, so parallel requests cannot outrun the bucket. The refund only
+   cancels the point its own request just consumed, so the shared bucket
+   grants no extra password or 2FA attempts. It is a conditional decrement
+   on a live window that never goes below 0, not `rate-limiter-flexible`'s
+   `reward()`: on a window that expired in between, `reward()` would upsert
+   a fresh negative counter, i.e. a credit of extra attempts. Residual
+   limit: more than `attempts` *simultaneous* exchanges from one IP are
+   still refused while in flight.
 3. Every failure path — unknown `client_id`, non-NHI user, wrong site, bad
    assertion — returns the **same** `401 invalid credentials` through a
    single `reject()` helper that also sleeps a random 0–1000ms and logs
@@ -505,9 +514,9 @@ narrow, low-value target:
   model, not a defect specific to this feature. An NHI that declares
   `allowedIps` narrows this considerably: the replay must also originate from a
   declared range.
-- **Rate limiter consumes a point on successful exchange**, see the
-  exchange-endpoint section above — operationally relevant for pod fleets
-  sharing an egress IP.
+- **Per-`client_id` lockout**: anyone who knows a `client_id` can fill its
+  bucket with failures and block the legitimate NHI for the window. Keying
+  the bucket on `client_id` + IP would close this; not done yet.
 
 ## Out of scope / follow-ups
 
