@@ -12,7 +12,7 @@ import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-l
 import { internalError } from '@data-fair/lib-node/observer.js'
 import emailValidator from 'email-validator'
 import { reqI18n } from '#i18n'
-import limiter from '../utils/limiter.ts'
+import limiter, { refundLimiter } from '../utils/limiter.ts'
 import storages from '#storages'
 import { verifyAssertion } from '../nhis/service.ts'
 import { ipAllowed } from '../nhis/ips.ts'
@@ -352,6 +352,10 @@ router.post('/nhi-token', async (req, res) => {
   if (!storages.globalStorage.readonly) {
     storages.globalStorage.updateLogged(user.id).catch((err: any) => internalError('nhi-update-logged', 'error while updating logged date', err))
   }
+  // only failures count: a success proves possession of the signing key, which is exactly what
+  // the limiter guards, so its points are given back. Consume-then-refund (rather than counting
+  // failures after the fact) keeps concurrent in-flight attempts counted against the budget.
+  await Promise.all([refundLimiter(clientIp), refundLimiter(body.client_id)])
   eventsLog.info('sd.auth.nhi.ok', `an NHI session was created for ${user.id}`, logContext)
   res.set('Cache-Control', 'no-store')
   res.send({ access_token: token, token_type: 'Bearer', expires_in: exp - nowSec })

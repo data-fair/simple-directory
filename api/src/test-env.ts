@@ -175,6 +175,7 @@ router.get('/config', (req, res) => {
     publicUrl: config.publicUrl,
     secretKeys: config.secretKeys,
     mongo: { url: config.mongo.url },
+    authRateLimit: config.authRateLimit,
     mailsRateLimit: config.mailsRateLimit,
     // already converted to seconds by config.ts, so tests can assert on token durations
     // without duplicating the ms() parsing of the raw config strings
