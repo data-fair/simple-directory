@@ -10,7 +10,7 @@ const privatePem = privateKey.export({ format: 'pem', type: 'pkcs8' }) as string
 const issuer = 'https://test-issuer.example.com'
 const audience = directoryUrl.replace('/simple-directory', '')
 
-const scopedNhi = async (email: string, scopes: string[]) => {
+const scopedNhi = async (email: string, scopes?: string[]) => {
   const { ax } = await createUser(email)
   const org = (await ax.post('/api/organizations', { name: 'Scoped ' + email })).data
   ax.setOrg(org.id)
@@ -63,7 +63,12 @@ test('a scoped NHI with the admin role is refused outside the gate', async () =>
 
 test('a scope that does not cover organizations reads nothing in SD', async () => {
   const { org, cookieAx } = await scopedNhi('nhi-gate3@test.com', ['datasets:read'])
-  await assert.rejects(cookieAx.get(`/api/organizations/${org.id}`), (err: any) => err.status === 403)
+  const { bearerAx } = await scopedNhi('nhi-gate3b@test.com', ['datasets:read'])
+  const is403 = (err: any) => err.status === 403
+  await assert.rejects(cookieAx.get(`/api/organizations/${org.id}`), is403)
+  await assert.rejects(cookieAx.get('/api/accounts'), is403)
+  await assert.rejects(bearerAx.get('/api/organizations'), is403)
+  await assert.rejects(bearerAx.get('/api/accounts'), is403)
 })
 
 test('keepalive stays inert for a scoped NHI session', async () => {
@@ -71,4 +76,40 @@ test('keepalive stays inert for a scoped NHI session', async () => {
   const ka = await axios({ headers: { cookie } }).post('/api/auth/keepalive', null)
   assert.equal(ka.status, 204)
   assert.equal((await cookieAx.get(`/api/organizations/${org.id}`)).data.id, org.id)
+})
+
+test('a scoped NHI cannot use the external apps flow, nor can an unscoped one', async () => {
+  await testEnvAx.patch('/config', { applications: [{ id: 'native-app-client', name: 'Native App', redirectUris: ['native-app://auth-callback'] }] })
+  try {
+    const body = { client_id: 'native-app-client', redirect_uri: 'native-app://auth-callback' }
+    const is403 = (err: any) => err.status === 403
+    const scoped = await scopedNhi('nhi-gate5@test.com', ['datasets:read'])
+    for (const ax of [scoped.cookieAx, scoped.bearerAx]) {
+      await assert.rejects(ax.post('/api/auth/apps/authorize', body), is403)
+    }
+    const unscoped = await scopedNhi('nhi-gate6@test.com')
+    await assert.rejects(unscoped.cookieAx.post('/api/auth/apps/authorize', body), is403)
+  } finally {
+    await testEnvAx.patch('/config', { applications: undefined })
+  }
+})
+
+test('the gate matches paths case-insensitively', async () => {
+  // the dev nginx sends uppercase paths to the UI, express itself routes them to the API:
+  // hit the API port directly
+  const { org, nhi, bearerAx, cookie } = await scopedNhi('nhi-gate7@test.com', ['organizations'])
+  const is403 = (err: any) => err.status === 403
+  const bearer = String((bearerAx.defaults.headers as any).authorization ?? (bearerAx.defaults.headers as any).common?.authorization)
+  for (const headers of [{ authorization: bearer }, { cookie }]) {
+    const direct = axios({ baseURL: devApiUrl, headers })
+    await assert.rejects(direct.get(`/API/organizations/${org.id}/nhis`), is403)
+    await assert.rejects(direct.get(`/Api/users/${nhi.id}`), is403)
+  }
+})
+
+test('a scoped session can log out without trailing slash but reaches no other auth route', async () => {
+  const { cookie } = await scopedNhi('nhi-gate8@test.com', ['organizations:read'])
+  const ax = axios({ headers: { cookie } })
+  await assert.rejects(ax.delete('/api/auth/adminmode'), (err: any) => err.status === 403)
+  assert.equal((await ax.delete('/api/auth')).status, 204)
 })

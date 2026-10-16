@@ -14,7 +14,7 @@ import emailValidator from 'email-validator'
 import { reqI18n } from '#i18n'
 import limiter, { refundLimiter } from '../utils/limiter.ts'
 import storages from '#storages'
-import { verifyAssertion } from '../nhis/service.ts'
+import { verifyAssertion, assertNotNhiSession } from '../nhis/service.ts'
 import { ipAllowed } from '../nhis/ips.ts'
 import { grantedScope } from '../nhis/scopes.ts'
 
@@ -1071,6 +1071,8 @@ router.post('/apps/authorize', async (req, res) => {
 
   const user = reqUser(req)
   if (!user) return res.status(401).send('Not authenticated')
+  // an NHI must not turn its restricted session (scopes, expiry, ip binding) into a full one
+  assertNotNhiSession(req)
 
   const codePayload = {
     userId: user.id,
@@ -1104,6 +1106,7 @@ router.post('/apps/login', async (req, res) => {
   const storage = storages.globalStorage
   const user = await storage.getUser(decoded.userId)
   if (!user) return res.status(400).send('User not found')
+  if (user.nhi) throw httpError(403, 'forbidden for non-human identities')
 
   const site = await reqSite(req)
   const serverSession = initServerSession(req)
