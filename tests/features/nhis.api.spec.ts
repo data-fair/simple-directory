@@ -571,6 +571,29 @@ test('NHI maximum scopes are stored, validated against the platform list and rem
   assert.equal(listed.subject, subject)
 })
 
+test('an NHI holding a scope the platform no longer lists stays editable, but cannot gain unlisted scopes', async () => {
+  const { ax } = await createUser('nhi-scopes-stale@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI scopes stale org' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ scopes: ['datasets:read', 'organizations'] }))).data
+
+  // the platform drops datasets:read
+  await testEnvAx.put('/platform-scopes', { scopes: { datasets: 'All dataset scopes', 'datasets:write': 'Write datasets' } })
+  await testEnvAx.post('/clear-platform-scopes-cache')
+
+  const url = `/api/organizations/${org.id}/nhis/${nhi.id}`
+  // UI style: the full scopes array is always sent
+  await ax.patch(url, { name: 'Renamed', scopes: ['datasets:read', 'organizations'] })
+  let listed = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0]
+  assert.equal(listed.name, 'Renamed')
+  await ax.patch(url, { scopes: ['datasets:read'] })
+  listed = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0]
+  assert.deepEqual(listed.scopes, ['datasets:read'])
+  // a newly added unlisted scope is still refused, and so is a malformed one
+  await assert.rejects(ax.patch(url, { scopes: ['datasets:read', 'processings:read'] }), (err: any) => err.status === 400)
+  await assert.rejects(ax.patch(url, { scopes: ['datasets:read', 'Bad scope'] }), (err: any) => err.status === 400)
+})
+
 const exchange = async (nhiId: string, scope?: string, sub: string = subject) =>
   axios().post('/api/auth/nhi-token', { client_id: nhiId, assertion: signAssertion({ sub }), ...(scope !== undefined ? { scope } : {}) })
 

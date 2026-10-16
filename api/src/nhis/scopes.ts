@@ -1,10 +1,11 @@
 import { httpError, scopeRegexp, scopeCovers } from '@data-fair/lib-express'
 
-// only scopes listed by the platform (or by simple-directory itself) can be stored on an NHI
-export const checkScopes = (scopes: string[], known: Record<string, string>) => {
+// only scopes listed by the platform (or by simple-directory itself) can be newly stored on an NHI;
+// a scope already stored (the platform may have dropped it since) can be kept, never added back
+export const checkScopes = (scopes: string[], known: Record<string, string>, alreadyStored: string[] = []) => {
   for (const scope of scopes) {
     if (!scopeRegexp.test(scope)) throw httpError(400, `invalid scope "${scope}"`)
-    if (!Object.hasOwn(known, scope)) throw httpError(400, `unknown scope "${scope}"`)
+    if (!alreadyStored.includes(scope) && !Object.hasOwn(known, scope)) throw httpError(400, `unknown scope "${scope}"`)
   }
 }
 

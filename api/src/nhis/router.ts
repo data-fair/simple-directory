@@ -95,7 +95,7 @@ router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
     if (body.scopes !== undefined) {
       if (body.scopes === null) delete nhi.scopes
       else {
-        checkScopes(body.scopes, await knownScopes(req))
+        checkScopes(body.scopes, await knownScopes(req), user.nhi?.scopes ?? [])
         nhi.scopes = body.scopes
       }
     }
