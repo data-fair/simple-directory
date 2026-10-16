@@ -157,14 +157,61 @@ Signature, `iss`, `sub`, `aud`, and `exp`/`nbf` are all checked by `jose`'s
    `setSessionCookies`) — there is no account choice at login and no
    switching afterwards (see "fail-closed audit" below).
 8. The response body also returns `{ access_token, token_type: 'Bearer',
-   expires_in }` for pure-HTTP callers that don't want to parse cookies.
-   Because `setSessionCookies` still sets the browser cookies, and
-   Playwright's `APIRequestContext` shares its cookie jar with the browser
-   context, calling this endpoint from `context.request.post(...)` leaves
-   the browser authenticated too — useful for e2e automation of NHI-driven
-   flows.
+   expires_in }` (plus `scope` when the session is restricted). The
+   `access_token` is **not** the session token: it is an RFC 9068 `at+jwt`
+   signed with the scoped key set (see "Scopes"), usable only as
+   `Authorization: Bearer`. Callers that used to replay it as an `id_token`
+   cookie must switch to the bearer header (or use the cookies set by the
+   response). It carries the same claims and the same `exp` (and `boundIp`)
+   as the cookie session. Because `setSessionCookies` still sets the browser
+   cookies, and Playwright's `APIRequestContext` shares its cookie jar with
+   the browser context, calling this endpoint from
+   `context.request.post(...)` leaves the browser authenticated too -- useful
+   for e2e automation of NHI-driven flows.
 9. `updateLogged` and `eventsLog.info('sd.auth.nhi.ok', …)` on success for
    observability; the HTML login form is untouched by any of this.
+
+## Scopes
+
+An NHI may store maximum scopes (`nhi.scopes`, names `resource:class` or a bare `resource`
+umbrella), validated at create/patch time against the platform list served by
+`GET /api/scopes` (`api/src/scopes/service.ts`; the list comes from `PLATFORM_SCOPES_URL`, a
+soft dependency). The exchange accepts `scope` (space-delimited); each requested scope must be
+covered by the maximum, exactly or through the umbrella, never by prefix. No request grants the
+maximum. An NHI without maximum scopes is unrestricted unless it asks for less: this keeps
+NHIs created before scopes working unchanged.
+
+The granted scopes become the `scope` claim of both the cookie session and the returned
+`access_token` (and `scope` in the response when restricted). The access token alone has the JWT
+header `typ: at+jwt`, the only kind of token the services accept as `Authorization: Bearer`
+(lib-express). A session token or the exchange token presented as bearer is a 401.
+
+Tokens carrying a scope and every at+jwt are signed with a separate key set (kid prefix
+`scoped-`) published only at `/.well-known/scoped-jwks.json`, so services on libs that predate
+scopes refuse them instead of ignoring the scope. simple-directory refuses to start with a
+configured kid starting with `scoped-` (`api/src/tokens/keys-manager.ts`).
+
+Enforcement is deny by default per route (lib-express `markScopeChecked` / `assertReqScope`: a
+scoped session reading the session on an unmarked route gets 403). Services enforce scopes only
+once they declare themselves scope-aware (`session.init(..., { scopeAware: true })`).
+simple-directory is scope-aware: `api/src/utils/scope-gate.ts` is an explicit list of rules
+matched on the lowercased path, anchored. It lists the session machinery (`POST
+/api/auth/keepalive`, `DELETE /api/auth` with or without trailing slash, `GET /api/auth/me`,
+`GET /api/auth/my-session`, `POST /api/auth/nhi-token`), public resources (`/.well-known/`, the
+UI shell, avatars) and the `organizations:read` (or `organizations`) rules for reading
+organizations, their roles and members, and `/api/accounts`. Everything else is unmarked and
+refused to scoped sessions, whatever the role of the NHI. Adding a rule is a security decision.
+The OpenAPI contract declares the `oauth2` client credentials scheme and the scopes on
+`GET /api/organizations`.
+
+### NHIs cannot mint sessions elsewhere
+
+An NHI session carries restrictions (scopes, short `exp`, `boundIp`, no refresh) that would be
+shed by any other endpoint that signs a fresh session. These refuse an NHI user or session with
+403 (`api/src/auth/router.ts`): `GET /api/auth/token_callback`, `POST /api/auth/apps/authorize`
+(`assertNotNhiSession`), `POST /api/auth/apps/login` and `POST /api/auth/pseudo` (`user.nhi`
+checks). The exchange is the only way to obtain an NHI session. The scope gate additionally does
+not list these routes for scoped sessions.
 
 ## Session payload
 
@@ -563,6 +610,11 @@ narrow, low-value target:
    uniform 401 as every other failure, an empty list is never a valid stored
    value, and neither control can run without a client address (`reqIp`
    throws first, before any NHI lookup).
+8. A scoped session only reaches routes listed in `scope-gate.ts` (or marked
+   by the route itself), the `access_token` is the only bearer-accepted
+   token, and scoped tokens are signed only by the scoped key set.
+9. No endpoint other than the exchange issues a session to an NHI
+   (`token_callback`, `apps/authorize`, `apps/login`, `pseudo` refuse it).
 
 Violations of #2 or #4 would let a compromised site config or an NHI's own
 session escalate beyond its owning org — the same category of failure this

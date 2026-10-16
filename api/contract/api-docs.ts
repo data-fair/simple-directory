@@ -31,6 +31,23 @@ export default {
     url: config.publicUrl,
     description: process.env.NODE_ENV || 'development' + ' server.'
   }],
+  components: {
+    securitySchemes: {
+      oauth2: {
+        type: 'oauth2',
+        description: 'Access tokens issued by simple-directory. A token without scope claim is an unrestricted first party session.',
+        flows: {
+          clientCredentials: {
+            tokenUrl: '/simple-directory/api/auth/nhi-token',
+            scopes: {
+              organizations: 'All organization scopes',
+              'organizations:read': 'Read organizations, their roles and members'
+            }
+          }
+        }
+      }
+    }
+  },
   paths: {
     '/.well-known/jwks.json': {
       get: {
@@ -214,6 +231,7 @@ export default {
       get: {
         tags: ['Organizations'],
         summary: 'Retrieve a list of organizations',
+        security: [{ oauth2: ['organizations:read'] }, { oauth2: ['organizations'] }],
         parameters: authenticationParams.concat([{
           name: 'ids',
           in: 'query',
