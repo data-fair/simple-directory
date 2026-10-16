@@ -25,7 +25,7 @@ let rotatePromise: Promise<void> | undefined
 
 export const start = async () => {
   // the libs look up a key id starting with "scoped-" only in the scoped key set
-  if (config.kid.startsWith('scoped-')) {
+  if ((config.kid + '-').startsWith('scoped-')) {
     throw new Error(`config.kid "${config.kid}" must not start with "scoped-", this prefix is reserved to the scoped tokens key set`)
   }
   const existingKeys = await readSignatureKeys('session')
@@ -49,7 +49,10 @@ export const start = async () => {
   if (!await readSignatureKeys('scoped')) {
     console.log('Generating new scoped signature keys')
     const newKeys = await createKeys()
-    await writeSignatureKeys('scoped', { ...newKeys, webKeys: [createWekKey(newKeys.publicKey, undefined, 'scoped')], lastUpdate: new Date() })
+    const stored = { ...newKeys, webKeys: [createWekKey(newKeys.publicKey, undefined, 'scoped')], lastUpdate: new Date() } as any
+    stored.privateKey = cipher(newKeys.privateKey)
+    // insert-if-absent: with several replicas booting at once the first writer wins
+    await mongo.secrets.updateOne({ _id: secretIds.scoped }, { $setOnInsert: { data: stored } }, { upsert: true })
   }
 
   rotateLoop()

@@ -80,7 +80,7 @@ export const stop = async () => {
     config.observer.active && stopObserver(),
     usersWorker.stop(),
     mailsTransport.stop(),
-    keysManager.start(),
+    keysManager.stop(),
     eventsQueue.stop(),
   ])
   await locks.stop()
