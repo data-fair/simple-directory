@@ -34,7 +34,7 @@ export const start = async () => {
   session.init('http://localhost:' + config.port, 'fr', (req) => {
     // on keepalive route we accept a older token if it is accompanied by a valid exchange token
     return req.method === 'POST' && req.url === '/api/auth/keepalive'
-  })
+  }, { scopeAware: true })
   await mongo.init()
   await locks.start(mongo.db)
   await Promise.all([

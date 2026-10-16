@@ -1,0 +1,74 @@
+import { strict as assert } from 'node:assert'
+import { test } from '@playwright/test'
+import { generateKeyPairSync } from 'node:crypto'
+import jwt from 'jsonwebtoken'
+import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl, devApiUrl } from '../support/axios.ts'
+
+const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
+const jwks = { keys: [{ ...publicKey.export({ format: 'jwk' }), kid: 'test-key', alg: 'RS256', use: 'sig' }] }
+const privatePem = privateKey.export({ format: 'pem', type: 'pkcs8' }) as string
+const issuer = 'https://test-issuer.example.com'
+const audience = directoryUrl.replace('/simple-directory', '')
+
+const scopedNhi = async (email: string, scopes: string[]) => {
+  const { ax } = await createUser(email)
+  const org = (await ax.post('/api/organizations', { name: 'Scoped ' + email })).data
+  ax.setOrg(org.id)
+  const subject = 'scoped:' + email
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, { name: 'Scoped agent', role: 'admin', subject, provider: { issuer, jwks }, scopes })).data
+  const assertion = jwt.sign({ iss: issuer, sub: subject, aud: audience }, privatePem, { algorithm: 'RS256', keyid: 'test-key', expiresIn: '10m' })
+  const res = await axios().post('/api/auth/nhi-token', { client_id: nhi.id, assertion })
+  const cookie = res.headers['set-cookie']!.map((c: string) => c.split(';')[0]).join('; ')
+  return {
+    org,
+    nhi,
+    cookieAx: axios({ headers: { cookie } }),
+    bearerAx: axios({ headers: { authorization: 'Bearer ' + res.data.access_token } }),
+    cookie
+  }
+}
+
+test.beforeEach(async () => {
+  await deleteAllEmails()
+  await testEnvAx.delete('/')
+  // datasets:read must be a listed scope to be stored on an NHI
+  await testEnvAx.patch('/config', { platformScopesUrl: `${devApiUrl}/api/test-env/platform-scopes` })
+  await testEnvAx.put('/platform-scopes', { scopes: { 'datasets:read': 'Read datasets' } })
+})
+
+test.afterAll(async () => {
+  await testEnvAx.patch('/config', { platformScopesUrl: '' })
+})
+
+test('a scoped NHI reads its organization through the gated routes, cookie or bearer', async () => {
+  const { org, cookieAx, bearerAx } = await scopedNhi('nhi-gate1@test.com', ['organizations:read'])
+  for (const ax of [cookieAx, bearerAx]) {
+    assert.equal((await ax.get(`/api/organizations/${org.id}`)).data.id, org.id)
+    assert.ok((await ax.get(`/api/organizations/${org.id}/members`)).data.count >= 1)
+    assert.ok(Array.isArray((await ax.get(`/api/organizations/${org.id}/roles`)).data))
+    assert.ok((await ax.get('/api/organizations', { params: { 'is-member': true } })).data.count >= 1)
+  }
+})
+
+test('a scoped NHI with the admin role is refused outside the gate', async () => {
+  const { org, nhi, cookieAx, bearerAx } = await scopedNhi('nhi-gate2@test.com', ['organizations'])
+  const is403 = (err: any) => err.status === 403
+  for (const ax of [cookieAx, bearerAx]) {
+    await assert.rejects(ax.patch(`/api/organizations/${org.id}`, { description: 'changed' }), is403)
+    await assert.rejects(ax.get(`/api/users/${nhi.id}`), is403)
+    await assert.rejects(ax.get(`/api/organizations/${org.id}/nhis`), is403)
+    await assert.rejects(ax.get('/api/sites'), is403)
+  }
+})
+
+test('a scope that does not cover organizations reads nothing in SD', async () => {
+  const { org, cookieAx } = await scopedNhi('nhi-gate3@test.com', ['datasets:read'])
+  await assert.rejects(cookieAx.get(`/api/organizations/${org.id}`), (err: any) => err.status === 403)
+})
+
+test('keepalive stays inert for a scoped NHI session', async () => {
+  const { org, cookie, cookieAx } = await scopedNhi('nhi-gate4@test.com', ['organizations:read'])
+  const ka = await axios({ headers: { cookie } }).post('/api/auth/keepalive', null)
+  assert.equal(ka.status, 204)
+  assert.equal((await cookieAx.get(`/api/organizations/${org.id}`)).data.id, org.id)
+})

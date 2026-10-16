@@ -148,7 +148,7 @@ router.post('/seed', async (req, res) => {
 router.post('/rotate-keys', async (req, res) => {
   await rotateKeys()
   getSignatureKeys.clear()
-  session.init('http://localhost:' + config.port)
+  session.init('http://localhost:' + config.port, 'fr', undefined, { scopeAware: true })
   res.status(200).send('ok')
 })
 

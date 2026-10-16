@@ -23,6 +23,7 @@ import scopes from './scopes/router.ts'
 import sites from './sites/router.ts'
 import accounts from './accounts/router.ts'
 import passwordLists from './password-lists/router.ts'
+import { scopeGate } from './utils/scope-gate.ts'
 import { getSiteExtraParams } from './sites/spa-params.ts'
 
 const app = express()
@@ -49,6 +50,7 @@ app.use(cookieParser())
 app.use(bodyParser.json({ limit: '100kb' }))
 app.use(createSiteMiddleware('simple-directory'))
 app.use(session.middleware())
+app.use(scopeGate)
 
 // minimalist api key management
 const readApiKey: RequestHandler = async (req, res, next) => {
