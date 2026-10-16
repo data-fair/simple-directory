@@ -226,6 +226,9 @@
     "manageNhis": {
       "type": "boolean"
     },
+    "platformScopesUrl": {
+      "type": "string"
+    },
     "nhisAllowInsecureIssuers": {
       "type": "boolean"
     },

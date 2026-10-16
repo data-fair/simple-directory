@@ -19,6 +19,7 @@ import invitations from './invitations/router.ts'
 import avatars from './avatars/router.ts'
 import oauthTokens from './oauth-tokens/router.ts'
 import tokens from './tokens/router.ts'
+import scopes from './scopes/router.ts'
 import sites from './sites/router.ts'
 import accounts from './accounts/router.ts'
 import passwordLists from './password-lists/router.ts'
@@ -83,6 +84,7 @@ app.use('/api/limits', auth, limits)
 app.use('/api/2fa', twoFA)
 app.use('/api/oauth-tokens', oauthTokens)
 app.use('/api/accounts', accounts)
+app.use('/api/scopes', scopes)
 app.use('/api/sites', sites)
 app.use('/api/password-lists', passwordLists)
 

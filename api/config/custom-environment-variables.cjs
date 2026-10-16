@@ -326,6 +326,7 @@ module.exports = {
   mainSiteFromDb: jsonEnv('MAIN_SITE_FROM_DB'),
   managePartners: 'MANAGE_PARTNERS',
   manageNhis: 'MANAGE_NHIS',
+  platformScopesUrl: 'PLATFORM_SCOPES_URL',
   nhisAllowInsecureIssuers: 'NHIS_ALLOW_INSECURE_ISSUERS',
   manageSessions: 'MANAGE_SESSIONS',
   defaultOrg: 'DEFAULT_ORG',

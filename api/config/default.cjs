@@ -283,6 +283,7 @@ module.exports = {
   mainSiteFromDb: [],
   managePartners: false,
   manageNhis: false,
+  platformScopesUrl: '',
   nhisAllowInsecureIssuers: false,
   manageSessions: true,
   defaultOrg: undefined,

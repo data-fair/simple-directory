@@ -8,6 +8,22 @@ import { rotateKeys, getSignatureKeys } from './tokens/keys-manager.ts'
 
 const router = Router()
 
+// a stand-in for data-fair's platform scopes endpoint, controlled by the tests
+let mockPlatformScopes: { scopes?: Record<string, string>, down?: boolean } = { scopes: {} }
+router.put('/platform-scopes', express.json(), (req, res) => {
+  mockPlatformScopes = req.body
+  res.status(200).send('ok')
+})
+router.get('/platform-scopes', (req, res) => {
+  if (mockPlatformScopes.down) return res.status(503).send()
+  res.send({ scopes: mockPlatformScopes.scopes ?? {} })
+})
+router.post('/clear-platform-scopes-cache', async (req, res) => {
+  const { clearPlatformScopesCache } = await import('./scopes/service.ts')
+  clearPlatformScopesCache()
+  res.status(200).send('ok')
+})
+
 // DELETE /api/test-env — clean test data
 // Seeded data uses test_* prefixed IDs, dynamically-created test users use @test.com emails.
 // NHIs match neither pattern (their synthetic email is @nhi.<publicHost>, not @test.com)
@@ -68,6 +84,10 @@ router.delete('/', async (req, res) => {
   // every cleanup cycle instead of letting a one-time bootstrap cert linger.
   const { resetForTests: resetSaml } = await import('./saml2/service.ts')
   await resetSaml()
+  mockPlatformScopes = { scopes: {} }
+  await mongo.platformScopes.deleteMany({})
+  const { clearPlatformScopesCache } = await import('./scopes/service.ts')
+  clearPlatformScopesCache()
   res.status(204).send()
 })
 

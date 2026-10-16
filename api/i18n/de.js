@@ -572,5 +572,10 @@ Kontaktieren Sie uns gerne unter {contact}.
     acceptedPartnerInvitation: 'Die Organisation {partnerName} ({email}) ist der Organisation {orgName} als Partner beigetreten.',
     addMemberTopic: 'ein Mitglied wurde hinzugefügt',
     addMember: 'Der Benutzer {name} ({email}) ist der Organisation {orgName} beigetreten.'
+  },
+  // server-side only: simple-directory's own scopes, merged with the platform scopes
+  scopes: {
+    organizations: 'Alle Organisationsbereiche',
+    'organizations:read': 'Organisationen, ihre Rollen und Mitglieder lesen'
   }
 }

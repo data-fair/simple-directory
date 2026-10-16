@@ -574,5 +574,10 @@ No dude en contactarnos en {contact}.
     acceptedPartnerInvitation: 'La organización {partnerName} ({email}) se ha unido a la organización {orgName} como socio.',
     addMemberTopic: 'se agregó un miembro',
     addMember: 'El usuario {name} ({email}) se ha unido a la organización {orgName}.'
+  },
+  // server-side only: simple-directory's own scopes, merged with the platform scopes
+  scopes: {
+    organizations: 'Todos los ámbitos de organizaciones',
+    'organizations:read': 'Leer las organizaciones, sus roles y sus miembros'
   }
 }

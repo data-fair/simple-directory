@@ -578,5 +578,10 @@ Feel free to contact us at {contact}.
   mainSite: {
     ignoredField: 'The "{field}" field is ignored on the main site: this configuration comes from environment variables.',
     ignoredCategory: 'The stored value for "{category}" is ignored: MAIN_SITE_FROM_DB does not contain this category.'
+  },
+  // server-side only: simple-directory's own scopes, merged with the platform scopes
+  scopes: {
+    organizations: 'All organization scopes',
+    'organizations:read': 'Read organizations, their roles and members'
   }
 }

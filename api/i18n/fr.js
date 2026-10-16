@@ -578,5 +578,10 @@ N'hésitez pas à nous contacter à {contact}.
   mainSite: {
     ignoredField: 'Le champ "{field}" est ignoré sur le site principal : cette configuration provient des variables d\'environnement.',
     ignoredCategory: 'La valeur enregistrée pour "{category}" est ignorée : MAIN_SITE_FROM_DB ne contient pas cette catégorie.'
+  },
+  // server-side only: simple-directory's own scopes, merged with the platform scopes
+  scopes: {
+    organizations: 'Toutes les portées sur les organisations',
+    'organizations:read': 'Lire les organisations, leurs rôles et leurs membres'
   }
 }
