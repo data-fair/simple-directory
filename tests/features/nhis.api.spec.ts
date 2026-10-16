@@ -568,3 +568,63 @@ test('NHI maximum scopes are stored, validated against the platform list and rem
   // the other nhi fields survived the scope patches
   assert.equal(listed.subject, subject)
 })
+
+const exchange = async (nhiId: string, scope?: string, sub: string = subject) =>
+  axios().post('/api/auth/nhi-token', { client_id: nhiId, assertion: signAssertion({ sub }), ...(scope !== undefined ? { scope } : {}) })
+
+test('nhi token exchange grants scopes within the stored maximum', async () => {
+  const { ax } = await createUser('nhi-scopes2@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI scopes org 2' })).data
+  ax.setOrg(org.id)
+  const unrestricted = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ subject: subject + '-u' }))).data
+  const limited = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ subject, scopes: ['datasets:read', 'organizations'] }))).data
+
+  // unchanged behavior for an NHI without maximum scopes
+  let res = await exchange(unrestricted.id, undefined, subject + '-u')
+  const decoded = jwt.decode(res.data.access_token, { complete: true }) as any
+  assert.equal(decoded.header.typ, 'at+jwt')
+  // every access token comes from the scoped key set, the unrestricted cookie session does not
+  assert.ok(decoded.header.kid.startsWith('scoped-'))
+  const unrestrictedIdToken = res.headers['set-cookie']!.find((c: string) => c.startsWith('id_token='))!.split(';')[0].slice('id_token='.length)
+  assert.ok(!JSON.parse(Buffer.from(unrestrictedIdToken.split('.')[0], 'base64url').toString()).kid.startsWith('scoped-'))
+  assert.equal(decoded.payload.scope, undefined)
+
+  // an unrestricted NHI may still ask for less
+  res = await exchange(unrestricted.id, 'datasets:read', subject + '-u')
+  assert.equal((jwt.decode(res.data.access_token) as any).scope, 'datasets:read')
+
+  // no request: the maximum is granted
+  res = await exchange(limited.id)
+  assert.equal((jwt.decode(res.data.access_token) as any).scope, 'datasets:read organizations')
+  assert.equal(res.data.scope, 'datasets:read organizations')
+  // the cookie session carries the same restriction
+  // the id_token cookie holds header.payload (the signature is in id_token_sign)
+  const idToken = res.headers['set-cookie']!.find((c: string) => c.startsWith('id_token='))!.split(';')[0].slice('id_token='.length)
+  assert.equal(JSON.parse(Buffer.from(idToken.split('.')[1], 'base64url').toString()).scope, 'datasets:read organizations')
+  // a scoped cookie session is signed by the scoped key set too
+  assert.ok(JSON.parse(Buffer.from(idToken.split('.')[0], 'base64url').toString()).kid.startsWith('scoped-'))
+
+  // a subset, including through the umbrella
+  res = await exchange(limited.id, 'organizations:read')
+  assert.equal((jwt.decode(res.data.access_token) as any).scope, 'organizations:read')
+
+  // prefix is not coverage, unknown and malformed scopes are refused
+  for (const bad of ['datasets:readAdvanced', 'datasets:write', 'datasets', 'Bad:scope']) {
+    await assert.rejects(exchange(limited.id, bad), (err: any) => err.status === 400, bad)
+  }
+})
+
+test('the nhi access token works as a bearer, a session token does not', async () => {
+  const { ax } = await createUser('nhi-scopes3@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI scopes org 3' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+  const res = await exchange(nhi.id)
+
+  const bearerAx = axios({ headers: { authorization: 'Bearer ' + res.data.access_token } })
+  assert.equal((await bearerAx.get(`/api/organizations/${org.id}`)).data.id, org.id)
+
+  const cookieValue = (name: string) => res.headers['set-cookie']!.find((c: string) => c.startsWith(name + '='))!.split(';')[0].slice(name.length + 1)
+  const sessionToken = cookieValue('id_token') + '.' + cookieValue('id_token_sign')
+  await assert.rejects(axios({ headers: { authorization: 'Bearer ' + sessionToken } }).get(`/api/organizations/${org.id}`), (err: any) => err.status === 401)
+})

@@ -16,6 +16,7 @@ import limiter, { refundLimiter } from '../utils/limiter.ts'
 import storages from '#storages'
 import { verifyAssertion } from '../nhis/service.ts'
 import { ipAllowed } from '../nhis/ips.ts'
+import { grantedScope } from '../nhis/scopes.ts'
 
 import { checkPassword, validatePassword, type Password } from '../utils/passwords.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
@@ -340,11 +341,18 @@ router.post('/nhi-token', async (req, res) => {
   }
   const nowSec = Math.floor(Date.now() / 1000)
   const exp = Math.min(assertionPayload.exp as number, nowSec + jwtDurations.nhiToken)
+  // computed after the assertion is verified: the caller is authenticated, so a precise 400 is
+  // not an oracle; it is not refunded to the rate limiter (a misconfigured client keeps counting)
+  const scope = grantedScope(user.nhi.scopes, body.scope)
   const payload = getTokenPayload(user, site)
+  if (scope !== undefined) payload.scope = scope
   // same claim, same enforcement (lib-express Session.req) as an adminMode session's binding —
   // setSessionCookies only stamps boundIp for adminMode, which an NHI never has, so no conflict
   if (user.nhi.ipBinding) payload.boundIp = clientIp
-  const token = await setSessionCookies(req, res, reqSitePath(req), payload, 'nhi-session', userOrg, { skipExchangeToken: true, exp })
+  await setSessionCookies(req, res, reqSitePath(req), payload, 'nhi-session', userOrg, { skipExchangeToken: true, exp })
+  // the response token is an RFC 9068 access token (typ at+jwt), the only kind of token the
+  // services accept as a bearer; the cookie token above stays a session token
+  const accessToken = await signToken({ ...payload }, exp, undefined, 'at+jwt')
   // Guarded on `readonly`, like confirmLog on the password path: a read-only storage cannot record a
   // last-logged date, and FileStorage's updateLogged throws SYNCHRONOUSLY — it is not async — so the
   // .catch() below never attaches and the rejection became a 500 that failed the whole exchange.
@@ -358,7 +366,7 @@ router.post('/nhi-token', async (req, res) => {
   await Promise.all([refundLimiter(clientIp), refundLimiter(body.client_id)])
   eventsLog.info('sd.auth.nhi.ok', `an NHI session was created for ${user.id}`, logContext)
   res.set('Cache-Control', 'no-store')
-  res.send({ access_token: token, token_type: 'Bearer', expires_in: exp - nowSec })
+  res.send({ access_token: accessToken, token_type: 'Bearer', expires_in: exp - nowSec, ...(scope !== undefined ? { scope } : {}) })
 })
 
 // Either find or create an user based on an email address then send a mail with a link and a token
