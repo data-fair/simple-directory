@@ -5,7 +5,8 @@ import { privateAxiosInstance } from '@data-fair/lib-node/axios.js'
 import { internalError } from '@data-fair/lib-node/observer.js'
 
 type ScopesMap = Record<string, string>
-type Entry = { checkedAt: number, etag?: string, scopes: ScopesMap }
+// ok: the last fetch succeeded (the etag is optional, its absence says nothing about success)
+type Entry = { checkedAt: number, ok: boolean, etag?: string, scopes: ScopesMap }
 
 // The platform scopes come from data-fair. This is a soft dependency: simple-directory never
 // blocks on it, it serves the last list it received (memory, then mongo) and only its own
@@ -30,12 +31,12 @@ const validScopes = (raw: any): ScopesMap => {
 const fetchPlatformScopes = async (localeCode: string): Promise<ScopesMap> => {
   if (!config.platformScopesUrl) return {}
   const cached = memory.get(localeCode)
-  if (cached && Date.now() - cached.checkedAt < (cached.etag ? ttl : failureTtl)) return cached.scopes
+  if (cached && Date.now() - cached.checkedAt < (cached.ok ? ttl : failureTtl)) return cached.scopes
   let stored: Entry | undefined = cached
   if (!stored) {
     try {
       const doc = await mongo.platformScopes.findOne({ _id: localeCode })
-      if (doc) stored = { checkedAt: 0, etag: doc.etag, scopes: doc.scopes }
+      if (doc) stored = { checkedAt: 0, ok: true, etag: doc.etag, scopes: doc.scopes }
     } catch (err) {
       // no stored copy, never thrown into the request
       internalError('platform-scopes', 'failed to read the stored platform scopes', err)
@@ -47,15 +48,20 @@ const fetchPlatformScopes = async (localeCode: string): Promise<ScopesMap> => {
     if (stored?.etag) headers['if-none-match'] = stored.etag
     const res = await privateAxiosInstance.get(config.platformScopesUrl, { headers, timeout: 5000, validateStatus: status => status === 200 || status === 304 })
     if (res.status === 304 && stored) {
-      entry = { ...stored, checkedAt: Date.now() }
+      entry = { ...stored, ok: true, checkedAt: Date.now() }
     } else {
-      entry = { checkedAt: Date.now(), etag: res.headers.etag, scopes: validScopes(res.data?.scopes) }
-      await mongo.platformScopes.replaceOne({ _id: localeCode }, { etag: entry.etag, scopes: entry.scopes }, { upsert: true })
+      entry = { checkedAt: Date.now(), ok: true, etag: res.headers.etag, scopes: validScopes(res.data?.scopes) }
+      try {
+        await mongo.platformScopes.replaceOne({ _id: localeCode }, { etag: entry.etag, scopes: entry.scopes }, { upsert: true })
+      } catch (err) {
+        // the fetched list is still good, only its persistence failed
+        internalError('platform-scopes', 'failed to store the platform scopes', err)
+      }
     }
   } catch (err) {
     internalError('platform-scopes', 'failed to fetch the platform scopes', err)
     // keep serving the last list received, retry sooner than after a success
-    entry = { checkedAt: Date.now(), scopes: stored?.scopes ?? {} }
+    entry = { checkedAt: Date.now(), ok: false, etag: stored?.etag, scopes: stored?.scopes ?? {} }
   }
   memory.set(localeCode, entry)
   return entry.scopes
