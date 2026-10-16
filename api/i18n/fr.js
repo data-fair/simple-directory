@@ -329,6 +329,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       nhiAllowedIpsHint: "Adresses ou sous-réseaux CIDR depuis lesquels l'échange de jeton est accepté, par exemple 203.0.113.5 ou 10.4.0.0/16. Laissez vide pour accepter toute adresse.",
       nhiIpBinding: "Lier la session à l'adresse depuis laquelle elle a été obtenue",
       nhiIpBindingHint: "Un jeton dérobé devient inutilisable depuis ailleurs. N'activez cette option que si ce compte de service appelle toujours depuis une adresse stable : une adresse de sortie changeante (pool NAT, double pile) casserait ses sessions.",
+      nhiScopes: 'Portées maximales (optionnel)',
+      nhiScopesHint: 'Les portées que ce compte de service peut demander, par exemple datasets:read ou datasets. Laissez vide pour un compte sans restriction qui agit avec tous les droits de son rôle.',
       nhiJwks: 'JWKS (optionnel, si le fournisseur n\'est pas accessible publiquement)',
       nhiClientId: 'Identifiant client (client_id)',
       nhiJwksInvalid: 'JSON invalide pour le JWKS : {message}'

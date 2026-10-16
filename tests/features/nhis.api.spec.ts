@@ -4,7 +4,7 @@ import { generateKeyPairSync } from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import { MongoClient } from 'mongodb'
 import { RateLimiterMongo } from 'rate-limiter-flexible'
-import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl, getServerConfig, uploadAvatar, testPng } from '../support/axios.ts'
+import { axios, createUser, deleteAllEmails, testEnvAx, devApiUrl, directoryUrl, getServerConfig, uploadAvatar, testPng } from '../support/axios.ts'
 
 const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const publicJwk = { ...publicKey.export({ format: 'jwk' }), kid: 'test-key', alg: 'RS256', use: 'sig' }
@@ -26,6 +26,12 @@ const nhiBody = (overrides: Record<string, any> = {}) => ({
 test.beforeEach(async () => {
   await deleteAllEmails()
   await testEnvAx.delete('/')
+  await testEnvAx.patch('/config', { platformScopesUrl: `${devApiUrl}/api/test-env/platform-scopes` })
+  await testEnvAx.put('/platform-scopes', { scopes: { datasets: 'All dataset scopes', 'datasets:read': 'Read datasets', 'datasets:write': 'Write datasets' } })
+})
+
+test.afterAll(async () => {
+  await testEnvAx.patch('/config', { platformScopesUrl: '' })
 })
 
 test('org admin manages NHIs, member listing excludes them by default', async () => {
@@ -535,4 +541,30 @@ test('only failed nhi token exchanges count against the auth rate limit', async 
   } finally {
     await mongoClient.close()
   }
+})
+
+test('NHI maximum scopes are stored, validated against the platform list and removable', async () => {
+  const { ax } = await createUser('nhi-scopes1@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI scopes org 1' })).data
+  ax.setOrg(org.id)
+
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ scopes: ['datasets:read', 'organizations'] }))).data
+  let listed = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0]
+  assert.deepEqual(listed.scopes, ['datasets:read', 'organizations'])
+
+  // malformed, unlisted (valid name but unknown to the platform), empty
+  for (const bad of [['Datasets:read'], ['datasets:'], ['datasets read'], ['datasets:*'], ['datasets:readAdvanced'], ['processings:read'], []]) {
+    await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ subject: subject + '-bad', scopes: bad })), (err: any) => err.status === 400)
+    await assert.rejects(ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { scopes: bad }), (err: any) => err.status === 400)
+  }
+
+  await ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { scopes: ['datasets'] })
+  listed = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0]
+  assert.deepEqual(listed.scopes, ['datasets'])
+
+  await ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { scopes: null })
+  listed = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0]
+  assert.equal(listed.scopes, undefined)
+  // the other nhi fields survived the scope patches
+  assert.equal(listed.subject, subject)
 })

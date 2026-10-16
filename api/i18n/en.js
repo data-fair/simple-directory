@@ -329,6 +329,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       nhiAllowedIpsHint: 'Addresses or CIDR subnets the token exchange is accepted from, for example 203.0.113.5 or 10.4.0.0/16. Leave empty to accept any address.',
       nhiIpBinding: 'Bind the session to the address it was obtained from',
       nhiIpBindingHint: 'A leaked token becomes unusable from anywhere else. Only enable it if this service account always calls from a stable address: a changing egress address (NAT pool, dual-stack) would break its sessions.',
+      nhiScopes: 'Maximum scopes (optional)',
+      nhiScopesHint: 'The scopes this service account may request, for example datasets:read or datasets. Leave empty for an unrestricted account acting with the full rights of its role.',
       nhiJwks: 'JWKS (optional, if the provider is not publicly reachable)',
       nhiClientId: 'Client identifier (client_id)',
       nhiJwksInvalid: 'Invalid JSON for the JWKS: {message}'

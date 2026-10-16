@@ -117,6 +117,21 @@
               name="ipBinding"
               density="compact"
             />
+            <v-autocomplete
+              v-model="scopes"
+              :items="scopeItems"
+              item-props
+              :label="$t('pages.organization.nhiScopes')"
+              :hint="$t('pages.organization.nhiScopesHint')"
+              persistent-hint
+              name="scopes"
+              multiple
+              chips
+              closable-chips
+              clearable
+              density="compact"
+              variant="outlined"
+            />
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -152,6 +167,7 @@ const { orga, disableCreate } = defineProps({
   disableCreate: { type: Boolean, default: false }
 })
 const { roleItems } = useRoleLabels(() => orga)
+const { scopeItems } = usePlatformScopes()
 const emit = defineEmits(['change'])
 
 const menu = ref(false)
@@ -161,6 +177,7 @@ const editNhi = ref(newNhi())
 const jwks = ref('')
 const allowedIps = ref<string[]>([])
 const ipBinding = ref(false)
+const scopes = ref<string[]>([])
 
 watch(menu, () => {
   if (!menu.value) return
@@ -168,6 +185,7 @@ watch(menu, () => {
   jwks.value = ''
   allowedIps.value = []
   ipBinding.value = false
+  scopes.value = []
   createForm.value?.reset()
 })
 
@@ -185,6 +203,7 @@ const confirmCreate = useAsyncAction(async () => {
   const ips = allowedIps.value.map(ip => ip.trim()).filter(ip => !!ip)
   if (ips.length) body.allowedIps = ips
   if (ipBinding.value) body.ipBinding = true
+  if (scopes.value.length) body.scopes = scopes.value
   if (jwks.value.trim()) {
     try {
       body.provider.jwks = JSON.parse(jwks.value)

@@ -327,6 +327,8 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       nhiAllowedIpsHint: 'Endereços ou sub-redes CIDR a partir dos quais a troca de token é aceita, por exemplo 203.0.113.5 ou 10.4.0.0/16. Deixe vazio para aceitar qualquer endereço.',
       nhiIpBinding: 'Vincular a sessão ao endereço a partir do qual foi obtida',
       nhiIpBindingHint: 'Um token vazado torna-se inutilizável de qualquer outro lugar. Ative apenas se esta conta de serviço chamar sempre a partir de um endereço estável: um endereço de saída variável (pool NAT, pilha dupla) quebraria suas sessões.',
+      nhiScopes: 'Âmbitos máximos (opcional)',
+      nhiScopesHint: 'Os âmbitos que esta conta de serviço pode solicitar, por exemplo datasets:read ou datasets. Deixe vazio para uma conta sem restrição que age com todos os direitos da sua função.',
       nhiJwks: 'JWKS (opcional, se o provedor não for acessível publicamente)',
       nhiClientId: 'Identificador de cliente (client_id)',
       nhiJwksInvalid: 'JSON inválido para o JWKS: {message}'

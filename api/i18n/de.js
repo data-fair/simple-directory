@@ -327,6 +327,8 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       nhiAllowedIpsHint: 'Adressen oder CIDR-Subnetze, von denen der Token-Austausch akzeptiert wird, zum Beispiel 203.0.113.5 oder 10.4.0.0/16. Leer lassen, um jede Adresse zu akzeptieren.',
       nhiIpBinding: 'Sitzung an die Adresse binden, von der sie erhalten wurde',
       nhiIpBindingHint: 'Ein entwendetes Token wird von anderen Adressen unbrauchbar. Aktivieren Sie dies nur, wenn dieses Dienstkonto immer von einer stabilen Adresse aus aufruft: eine wechselnde Ausgangsadresse (NAT-Pool, Dual-Stack) würde seine Sitzungen unterbrechen.',
+      nhiScopes: 'Maximale Berechtigungsbereiche (optional)',
+      nhiScopesHint: 'Die Bereiche, die dieses Dienstkonto anfordern darf, zum Beispiel datasets:read oder datasets. Leer lassen für ein uneingeschränktes Konto, das mit allen Rechten seiner Rolle handelt.',
       nhiJwks: 'JWKS (optional, falls der Anbieter nicht öffentlich erreichbar ist)',
       nhiClientId: 'Client-Kennung (client_id)',
       nhiJwksInvalid: 'Ungültiges JSON für den JWKS: {message}'

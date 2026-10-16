@@ -198,6 +198,13 @@ export default {
         ipBinding: {
           description: 'Bind the issued session to the address the exchange was performed from (boundIp in the id_token), so a leaked access token is unusable elsewhere',
           type: 'boolean'
+        },
+        scopes: {
+          description: 'Maximum scopes the token exchange may grant; when absent the NHI is not restricted by scope and acts with its full role',
+          type: 'array',
+          minItems: 1,
+          maxItems: 50,
+          items: { type: 'string', maxLength: 100 }
         }
       }
     }

@@ -327,6 +327,8 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       nhiAllowedIpsHint: 'Indirizzi o sottoreti CIDR da cui lo scambio di token è accettato, per esempio 203.0.113.5 o 10.4.0.0/16. Lasciare vuoto per accettare qualsiasi indirizzo.',
       nhiIpBinding: "Vincolare la sessione all'indirizzo da cui è stata ottenuta",
       nhiIpBindingHint: 'Un token trafugato diventa inutilizzabile altrove. Attivare solo se questo account di servizio chiama sempre da un indirizzo stabile: un indirizzo di uscita variabile (pool NAT, dual-stack) interromperebbe le sue sessioni.',
+      nhiScopes: 'Ambiti massimi (opzionale)',
+      nhiScopesHint: 'Gli ambiti che questo account di servizio può richiedere, per esempio datasets:read o datasets. Lasciare vuoto per un account senza restrizioni che agisce con tutti i diritti del suo ruolo.',
       nhiJwks: 'JWKS (opzionale, se il provider non è raggiungibile pubblicamente)',
       nhiClientId: 'Identificativo client (client_id)',
       nhiJwksInvalid: 'JSON non valido per il JWKS: {message}'
