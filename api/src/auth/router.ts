@@ -14,7 +14,7 @@ import emailValidator from 'email-validator'
 import { reqI18n } from '#i18n'
 import limiter, { refundLimiter } from '../utils/limiter.ts'
 import storages from '#storages'
-import { verifyAssertion, assertNotNhiSession } from '../nhis/service.ts'
+import { verifyAssertion } from '../nhis/service.ts'
 import { ipAllowed } from '../nhis/ips.ts'
 import { grantedScope } from '../nhis/scopes.ts'
 
@@ -1025,102 +1025,6 @@ router.post('/saml2-logout', (req, res) => {
     res.redirect(logout_url);async
   });
 }) */
-
-// Authorize endpoint for external apps - redirects to UI for user confirmation
-router.get('/apps/authorize', async (req, res) => {
-  const { client_id: clientId, redirect_uri: redirectUri, state } = req.query
-  if (!redirectUri || typeof redirectUri !== 'string') return res.status(400).send('Missing redirect_uri')
-  if (!clientId || typeof clientId !== 'string') return res.status(400).send('Missing client_id')
-
-  const site = await reqSite(req)
-  let client = (site?.applications || []).find(c => c.id === clientId)
-  if (!client) {
-    client = (config.applications || []).find(c => c.id === clientId)
-  }
-  if (!client) return res.status(400).send('Unknown client_id')
-
-  if (!client.redirectUris.some(uri => redirectUri.startsWith(uri))) {
-    return res.status(400).send('Invalid redirect_uri')
-  }
-
-  // Redirect to UI for user confirmation (login first if not authenticated)
-  const loginUrl = new URL(reqSiteUrl(req) + '/simple-directory/login')
-  loginUrl.searchParams.set('step', 'authorizeApp')
-  loginUrl.searchParams.set('client_id', clientId)
-  loginUrl.searchParams.set('client_name', client.name)
-  loginUrl.searchParams.set('redirect_uri', redirectUri)
-  if (state && typeof state === 'string') loginUrl.searchParams.set('state', state)
-
-  res.redirect(loginUrl.href)
-})
-
-// Authorize confirmation endpoint - generates code after user confirms
-router.post('/apps/authorize', async (req, res) => {
-  const { client_id: clientId, redirect_uri: redirectUri, state } = req.body
-  if (!redirectUri || typeof redirectUri !== 'string') return res.status(400).send('Missing redirect_uri')
-  if (!clientId || typeof clientId !== 'string') return res.status(400).send('Missing client_id')
-
-  const site = await reqSite(req)
-  let client = (site?.applications || []).find(c => c.id === clientId)
-  if (!client) {
-    client = (config.applications || []).find(c => c.id === clientId)
-  }
-  if (!client) return res.status(400).send('Unknown client_id')
-
-  if (!client.redirectUris.some(uri => redirectUri.startsWith(uri))) {
-    return res.status(400).send('Invalid redirect_uri')
-  }
-
-  const user = reqUser(req)
-  if (!user) return res.status(401).send('Not authenticated')
-  // an NHI must not turn its restricted session (scopes, expiry, ip binding) into a full one
-  assertNotNhiSession(req)
-
-  const codePayload = {
-    userId: user.id,
-    clientId: client.id,
-    redirectUri,
-    type: 'auth_code'
-  }
-  const code = await signToken(codePayload, '5m')
-
-  const callbackUrl = new URL(redirectUri)
-  callbackUrl.searchParams.set('code', code)
-  if (state && typeof state === 'string') callbackUrl.searchParams.set('state', state)
-
-  res.send({ redirectUrl: callbackUrl.href })
-})
-
-// Login endpoint for external apps (exchanges code for session cookies)
-router.post('/apps/login', async (req, res) => {
-  const { code } = req.body
-  if (!code) return res.status(400).send('Missing code')
-
-  let decoded
-  try {
-    decoded = await session.verifyToken(code)
-  } catch (err) {
-    return res.status(400).send('Invalid or expired code')
-  }
-
-  if (decoded.type !== 'auth_code') return res.status(400).send('Invalid token type')
-
-  const storage = storages.globalStorage
-  const user = await storage.getUser(decoded.userId)
-  if (!user) return res.status(400).send('User not found')
-  if (user.nhi) throw httpError(403, 'forbidden for non-human identities')
-
-  const site = await reqSite(req)
-  const serverSession = initServerSession(req)
-  await storage.addUserSession(user.id, serverSession)
-
-  const payload = getTokenPayload(user, site)
-
-  await confirmLog(storage, user, serverSession)
-  await setSessionCookies(req, res, reqSitePath(req), payload, serverSession.id, getDefaultUserOrg(user, site))
-
-  res.send(user)
-})
 
 router.post('/pseudo', async (req, res) => {
   if (!config.secretKeys.pseudoSession) throw httpError(400, 'pseudoSession functionality is disabled')

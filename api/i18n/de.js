@@ -260,12 +260,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       cancelDeletion: 'Löschen des Benutzers abbrechen',
       siteLogo: 'Website-Logo',
       partnerInvitation: 'Partner-Einladung',
-      changeHost: 'Konto mit Back-Office verknüpft',
-      authorizeApp: 'Anwendung autorisieren',
-      authorizeAppMsg: 'Die Anwendung {appName} möchte auf Ihr Konto zugreifen. Möchten Sie dies zulassen?',
-      authorizeAppConfirm: 'Autorisieren',
-      appRedirected: 'Weitergeleitet',
-      appRedirectedMsg: 'Sie können diesen Tab schließen.'
+      changeHost: 'Konto mit Back-Office verknüpft'
     },
     siteAdmin: {
       account: 'Konto',

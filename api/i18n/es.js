@@ -260,12 +260,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       cancelDeletion: 'Cancelar la eliminación del usuario',
       siteLogo: 'Logotipo del sitio',
       partnerInvitation: 'Invitación de socio',
-      changeHost: 'Cuenta asociada con el back-office',
-      authorizeApp: 'Autorizar aplicación',
-      authorizeAppMsg: 'La aplicación {appName} quiere acceder a su cuenta. ¿Desea autorizarla?',
-      authorizeAppConfirm: 'Autorizar',
-      appRedirected: 'Redirigido',
-      appRedirectedMsg: 'Puede cerrar esta pestaña.'
+      changeHost: 'Cuenta asociada con el back-office'
     },
     siteAdmin: {
       account: 'Cuenta',

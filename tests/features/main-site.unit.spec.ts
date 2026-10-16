@@ -100,13 +100,12 @@ test.describe('main site document resolver', () => {
   })
 
   test('never exposes trust-bearing fields', async () => {
-    await seedMainSiteDoc({ authProviders: [{ type: 'saml2', title: 'evil' }], applications: [{ id: 'x' }] })
+    await seedMainSiteDoc({ authProviders: [{ type: 'saml2', title: 'evil' }] })
     await withCategories(['theme', 'title', 'mails', 'registration'])
     const { getEffectiveMainSite } = await import('../../api/src/sites/main-site.ts')
     const { getPublicSiteInfo } = await import('../../api/src/utils/public-site-info.ts')
     const publicInfo = getPublicSiteInfo(await getEffectiveMainSite())
     assert.equal((publicInfo as any).authProviders, undefined)
-    assert.equal((publicInfo as any).applications, undefined)
     assert.equal((publicInfo as any).owner, undefined)
     assert.equal(publicInfo.authMode, 'onlyLocal')
     assert.equal(publicInfo.main, true)

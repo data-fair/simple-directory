@@ -262,12 +262,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       cancelDeletion: 'Cancel the deletion of the user',
       siteLogo: 'Site logo',
       partnerInvitation: 'Partner invitation',
-      changeHost: 'Account associated with back-office',
-      authorizeApp: 'Authorize application',
-      authorizeAppMsg: 'The application {appName} wants to access your account. Do you want to authorize it?',
-      authorizeAppConfirm: 'Authorize',
-      appRedirected: 'Redirected',
-      appRedirectedMsg: 'You can close this tab.'
+      changeHost: 'Account associated with back-office'
     },
     siteAdmin: {
       account: 'Account',

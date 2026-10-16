@@ -12,8 +12,7 @@ const organizationsRead = ['organizations:read', 'organizations']
 type Rule = { method: 'GET' | 'POST' | 'DELETE', path: RegExp, scopes: string[] | 'any' }
 const rules: Rule[] = [
   // session machinery a scoped session needs: keepalive (inert), logout (lib-vue calls DELETE
-  // /api/auth without trailing slash), who am I. Nothing else under /api/auth: apps/authorize
-  // would sign an auth code for the NHI and apps/login would turn it into an unrestricted session.
+  // /api/auth without trailing slash), who am I. Nothing else under /api/auth.
   { method: 'POST', path: /^\/api\/auth\/keepalive\/?$/, scopes: 'any' },
   { method: 'DELETE', path: /^\/api\/auth\/?$/, scopes: 'any' },
   { method: 'GET', path: /^\/api\/auth\/me\/?$/, scopes: 'any' },

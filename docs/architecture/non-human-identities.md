@@ -208,8 +208,7 @@ The OpenAPI contract declares the `oauth2` client credentials scheme and the sco
 
 An NHI session carries restrictions (scopes, short `exp`, `boundIp`, no refresh) that would be
 shed by any other endpoint that signs a fresh session. These refuse an NHI user or session with
-403 (`api/src/auth/router.ts`): `GET /api/auth/token_callback`, `POST /api/auth/apps/authorize`
-(`assertNotNhiSession`), `POST /api/auth/apps/login` and `POST /api/auth/pseudo` (`user.nhi`
+403 (`api/src/auth/router.ts`): `GET /api/auth/token_callback` and `POST /api/auth/pseudo` (`user.nhi`
 checks). The exchange is the only way to obtain an NHI session. The scope gate additionally does
 not list these routes for scoped sessions.
 
@@ -614,7 +613,7 @@ narrow, low-value target:
    by the route itself), the `access_token` is the only bearer-accepted
    token, and scoped tokens are signed only by the scoped key set.
 9. No endpoint other than the exchange issues a session to an NHI
-   (`token_callback`, `apps/authorize`, `apps/login`, `pseudo` refuse it).
+   (`token_callback`, `pseudo` refuse it).
 
 Violations of #2 or #4 would let a compromised site config or an NHI's own
 session escalate beyond its owning org — the same category of failure this

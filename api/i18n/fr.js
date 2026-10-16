@@ -262,12 +262,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       cancelDeletion: 'Annuler la suppression de l\'utilisateur',
       siteLogo: 'Logo du site',
       partnerInvitation: 'Invitation partenaire',
-      changeHost: 'Compte associé au back-office',
-      authorizeApp: 'Autoriser l\'application',
-      authorizeAppMsg: 'L\'application {appName} souhaite accéder à votre compte. Voulez-vous l\'autoriser ?',
-      authorizeAppConfirm: 'Autoriser',
-      appRedirected: 'Redirection effectuée',
-      appRedirectedMsg: 'Vous pouvez fermer cet onglet.'
+      changeHost: 'Compte associé au back-office'
     },
     siteAdmin: {
       account: 'Compte',

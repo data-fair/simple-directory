@@ -14,7 +14,7 @@ const mainSiteCategories: MainSiteCategory[] = ['theme', 'title', 'mails', 'regi
 // config.mainSiteFromDb contains. They are inert here, not refused: the API
 // blocks no write (see docs/architecture/main-site-config.md for why a write
 // barrier was rejected).
-const mainSiteIgnoredFields = ['authMode', 'authOnlyOtherSite', 'authProviders', 'applications', 'isAccountMain'] as const
+const mainSiteIgnoredFields = ['authMode', 'authOnlyOtherSite', 'authProviders', 'isAccountMain'] as const
 
 const mainSiteCategoryFields: Record<MainSiteCategory, (keyof Site)[]> = {
   theme: ['theme'],

@@ -78,22 +78,6 @@ test('keepalive stays inert for a scoped NHI session', async () => {
   assert.equal((await cookieAx.get(`/api/organizations/${org.id}`)).data.id, org.id)
 })
 
-test('a scoped NHI cannot use the external apps flow, nor can an unscoped one', async () => {
-  await testEnvAx.patch('/config', { applications: [{ id: 'native-app-client', name: 'Native App', redirectUris: ['native-app://auth-callback'] }] })
-  try {
-    const body = { client_id: 'native-app-client', redirect_uri: 'native-app://auth-callback' }
-    const is403 = (err: any) => err.status === 403
-    const scoped = await scopedNhi('nhi-gate5@test.com', ['datasets:read'])
-    for (const ax of [scoped.cookieAx, scoped.bearerAx]) {
-      await assert.rejects(ax.post('/api/auth/apps/authorize', body), is403)
-    }
-    const unscoped = await scopedNhi('nhi-gate6@test.com')
-    await assert.rejects(unscoped.cookieAx.post('/api/auth/apps/authorize', body), is403)
-  } finally {
-    await testEnvAx.patch('/config', { applications: [] })
-  }
-})
-
 test('the gate matches paths case-insensitively', async () => {
   // the dev nginx sends uppercase paths to the UI, express itself routes them to the API:
   // hit the API port directly
