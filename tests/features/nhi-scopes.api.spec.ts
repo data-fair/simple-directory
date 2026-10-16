@@ -10,12 +10,12 @@ const privatePem = privateKey.export({ format: 'pem', type: 'pkcs8' }) as string
 const issuer = 'https://test-issuer.example.com'
 const audience = directoryUrl.replace('/simple-directory', '')
 
-const scopedNhi = async (email: string, scopes?: string[]) => {
+const scopedNhi = async (email: string, scopes?: string[], extra: Record<string, any> = {}) => {
   const { ax } = await createUser(email)
   const org = (await ax.post('/api/organizations', { name: 'Scoped ' + email })).data
   ax.setOrg(org.id)
   const subject = 'scoped:' + email
-  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, { name: 'Scoped agent', role: 'admin', subject, provider: { issuer, jwks }, scopes })).data
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, { name: 'Scoped agent', role: 'admin', subject, provider: { issuer, jwks }, scopes, ...extra })).data
   const assertion = jwt.sign({ iss: issuer, sub: subject, aud: audience }, privatePem, { algorithm: 'RS256', keyid: 'test-key', expiresIn: '10m' })
   const res = await axios().post('/api/auth/nhi-token', { client_id: nhi.id, assertion })
   const cookie = res.headers['set-cookie']!.map((c: string) => c.split(';')[0]).join('; ')
@@ -90,7 +90,7 @@ test('a scoped NHI cannot use the external apps flow, nor can an unscoped one', 
     const unscoped = await scopedNhi('nhi-gate6@test.com')
     await assert.rejects(unscoped.cookieAx.post('/api/auth/apps/authorize', body), is403)
   } finally {
-    await testEnvAx.patch('/config', { applications: undefined })
+    await testEnvAx.patch('/config', { applications: [] })
   }
 })
 
@@ -112,4 +112,17 @@ test('a scoped session can log out without trailing slash but reaches no other a
   const ax = axios({ headers: { cookie } })
   await assert.rejects(ax.delete('/api/auth/adminmode'), (err: any) => err.status === 403)
   assert.equal((await ax.delete('/api/auth')).status, 204)
+})
+
+test('an NHI cannot mint a renewable session through token_callback', async () => {
+  const { cookie, cookieAx } = await scopedNhi('nhi-gate9@test.com', undefined, { ipBinding: true })
+  const cookies = Object.fromEntries(cookie.split('; ').map(c => [c.slice(0, c.indexOf('=')), c.slice(c.indexOf('=') + 1)]))
+  assert.ok(cookies.id_token && cookies.id_token_sign)
+  const res = await axios().get('/api/auth/token_callback', {
+    params: { id_token: cookies.id_token + '.' + cookies.id_token_sign },
+    validateStatus: () => true
+  })
+  assert.equal(res.status, 403)
+  assert.ok(!(res.headers['set-cookie'] ?? []).some((c: string) => c.startsWith('id_token_ex=')))
+  assert.ok(cookieAx)
 })

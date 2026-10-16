@@ -497,6 +497,8 @@ router.get('/token_callback', async (req, res, next) => {
   if (!user || (decoded.emailConfirmed !== true && user.emailConfirmed === false)) {
     return redirectError('badCredentials')
   }
+  // an NHI session must never be renewed or widened through a token fed back here (cf nhi-token)
+  if (user.nhi) throw httpError(403, 'forbidden for non-human identities')
 
   let reboundRedirect = getDefaultLoginRedirect(reqSiteUrl(req), query.redirect)
   try {
@@ -1132,6 +1134,7 @@ router.post('/pseudo', async (req, res) => {
   if (type === 'user') {
     const user = await storage.getUser(id)
     if (!user) return res.status(404).send('User not found')
+    if (user.nhi) throw httpError(403, 'forbidden for non-human identities')
 
     const payload = getTokenPayload(user) as any
     payload.pseudoSession = true

@@ -6,7 +6,7 @@ test.describe('External Apps Authorization Flow', () => {
   test.beforeEach(async () => {
     await testEnvAx.delete('/')
     // reset applications config to empty
-    await testEnvAx.patch('/config', { applications: undefined })
+    await testEnvAx.patch('/config', { applications: [] })
   })
 
   test('should implement Authorization flow for external apps', async () => {
