@@ -457,6 +457,8 @@ test('an ipBinding nhi session is refused from another ip', async () => {
   const res = await agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion() },
     { headers: { 'x-forwarded-for': '9.9.9.9' } })
   assert.equal((jwt.decode(res.data.access_token) as any).boundIp, '9.9.9.9')
+  const bindIdToken = res.headers['set-cookie']!.find((c: string) => c.startsWith('id_token='))!.split(';')[0].slice('id_token='.length)
+  assert.equal(JSON.parse(Buffer.from(bindIdToken.split('.')[1], 'base64url').toString()).boundIp, '9.9.9.9')
 
   const cookie = res.headers['set-cookie']!.map((c: string) => c.split(';')[0]).join('; ')
   // usable from the address the exchange came from...
@@ -588,6 +590,9 @@ test('nhi token exchange grants scopes within the stored maximum', async () => {
   const unrestrictedIdToken = res.headers['set-cookie']!.find((c: string) => c.startsWith('id_token='))!.split(';')[0].slice('id_token='.length)
   assert.ok(!JSON.parse(Buffer.from(unrestrictedIdToken.split('.')[0], 'base64url').toString()).kid.startsWith('scoped-'))
   assert.equal(decoded.payload.scope, undefined)
+  // no restriction at all: no scope in the response nor in the cookie session
+  assert.equal(res.data.scope, undefined)
+  assert.ok(!('scope' in JSON.parse(Buffer.from(unrestrictedIdToken.split('.')[1], 'base64url').toString())))
 
   // an unrestricted NHI may still ask for less
   res = await exchange(unrestricted.id, 'datasets:read', subject + '-u')
@@ -601,6 +606,8 @@ test('nhi token exchange grants scopes within the stored maximum', async () => {
   // the id_token cookie holds header.payload (the signature is in id_token_sign)
   const idToken = res.headers['set-cookie']!.find((c: string) => c.startsWith('id_token='))!.split(';')[0].slice('id_token='.length)
   assert.equal(JSON.parse(Buffer.from(idToken.split('.')[1], 'base64url').toString()).scope, 'datasets:read organizations')
+  // the access token and the cookie session expire together
+  assert.equal(JSON.parse(Buffer.from(idToken.split('.')[1], 'base64url').toString()).exp, (jwt.decode(res.data.access_token) as any).exp)
   // a scoped cookie session is signed by the scoped key set too
   assert.ok(JSON.parse(Buffer.from(idToken.split('.')[0], 'base64url').toString()).kid.startsWith('scoped-'))
 
