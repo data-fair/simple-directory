@@ -553,7 +553,7 @@ test('NHI maximum scopes are stored, validated against the platform list and rem
   assert.deepEqual(listed.scopes, ['datasets:read', 'organizations'])
 
   // malformed, unlisted (valid name but unknown to the platform), empty
-  for (const bad of [['Datasets:read'], ['datasets:'], ['datasets read'], ['datasets:*'], ['datasets:readAdvanced'], ['processings:read'], []]) {
+  for (const bad of [['Datasets:read'], ['datasets:'], ['datasets read'], ['datasets:*'], ['datasets:readAdvanced'], ['processings:read'], ['constructor'], []]) {
     await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ subject: subject + '-bad', scopes: bad })), (err: any) => err.status === 400)
     await assert.rejects(ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { scopes: bad }), (err: any) => err.status === 400)
   }

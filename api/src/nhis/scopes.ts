@@ -4,7 +4,7 @@ import { httpError, scopeRegexp, scopeCovers } from '@data-fair/lib-express'
 export const checkScopes = (scopes: string[], known: Record<string, string>) => {
   for (const scope of scopes) {
     if (!scopeRegexp.test(scope)) throw httpError(400, `invalid scope "${scope}"`)
-    if (!(scope in known)) throw httpError(400, `unknown scope "${scope}"`)
+    if (!Object.hasOwn(known, scope)) throw httpError(400, `unknown scope "${scope}"`)
   }
 }
 
