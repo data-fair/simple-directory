@@ -5,6 +5,7 @@ import { startObserver, stopObserver, internalError } from '@data-fair/lib-node/
 import locks from '@data-fair/lib-node/locks.js'
 import upgradeScripts from '@data-fair/lib-node/upgrade-scripts.js'
 import mongo from '#mongo'
+import { onlyDecode } from './utils/session-only-decode.ts'
 import * as usersWorker from './users/worker.ts'
 import * as keysManager from './tokens/keys-manager.ts'
 import * as oauth from './oauth/service.ts'
@@ -31,10 +32,7 @@ server.keepAliveTimeout = (60 * 1000) + 1000
 server.headersTimeout = (60 * 1000) + 2000
 
 export const start = async () => {
-  session.init('http://localhost:' + config.port, 'fr', (req) => {
-    // on keepalive route we accept a older token if it is accompanied by a valid exchange token
-    return req.method === 'POST' && req.url === '/api/auth/keepalive'
-  }, { scopeAware: true })
+  session.init('http://localhost:' + config.port, 'fr', onlyDecode, { scopeAware: true })
   await mongo.init()
   await locks.start(mongo.db)
   await Promise.all([

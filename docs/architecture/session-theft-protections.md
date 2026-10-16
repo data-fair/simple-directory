@@ -37,6 +37,18 @@ It records how the session was created (`deviceName`, `ip`, and the `country` /
 (`lastKeepalive`, `lastIp`, `lastCountry`, `lastAsn`, `lastAsnOrg`), so that a
 suspicious session can be recognized by its owner.
 
+## The NHI access token
+
+The `access_token` returned by `POST /api/auth/nhi-token` is a different kind of
+credential: an `at+jwt` bearer, signed with the scoped key set. It is not tied to
+a server session, so logging out does not revoke it, and it is not confined to a
+cookie path or domain: whoever holds it can present it from anywhere. What limits
+a stolen one is its short lifetime (the minimum of the assertion `exp` and
+`jwtDurations.nhiToken`), the optional `boundIp` of the NHI, and the scoped key
+set, which keeps it from being accepted as a cookie session (and session tokens
+from being accepted as bearers). NHIs cannot convert it, nor their cookie, into
+a renewable session: `token_callback` and the keepalive refuse them.
+
 ## IP binding of superadmin sessions
 
 When a session gets `adminMode` and `config.adminSessionIpBinding` is enabled

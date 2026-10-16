@@ -115,7 +115,7 @@ test('a scoped session can log out without trailing slash but reaches no other a
 })
 
 test('an NHI cannot mint a renewable session through token_callback', async () => {
-  const { cookie, cookieAx } = await scopedNhi('nhi-gate9@test.com', undefined, { ipBinding: true })
+  const { cookie } = await scopedNhi('nhi-gate9@test.com', undefined, { ipBinding: true })
   const cookies = Object.fromEntries(cookie.split('; ').map(c => [c.slice(0, c.indexOf('=')), c.slice(c.indexOf('=') + 1)]))
   assert.ok(cookies.id_token && cookies.id_token_sign)
   const res = await axios().get('/api/auth/token_callback', {
@@ -124,5 +124,4 @@ test('an NHI cannot mint a renewable session through token_callback', async () =
   })
   assert.equal(res.status, 403)
   assert.ok(!(res.headers['set-cookie'] ?? []).some((c: string) => c.startsWith('id_token_ex=')))
-  assert.ok(cookieAx)
 })

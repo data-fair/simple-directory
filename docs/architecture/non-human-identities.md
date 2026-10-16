@@ -177,7 +177,7 @@ An NHI may store maximum scopes (`nhi.scopes`, names `resource:class` or a bare 
 umbrella), validated at create/patch time against the platform list served by
 `GET /api/scopes` (`api/src/scopes/service.ts`; the list comes from `PLATFORM_SCOPES_URL`, a
 soft dependency). The exchange accepts `scope` (space-delimited); each requested scope must be
-covered by the maximum, exactly or through the umbrella, never by prefix. No request grants the
+covered by the maximum, exactly or through the umbrella, never by prefix. A request without `scope` grants the
 maximum. An NHI without maximum scopes is unrestricted unless it asks for less: this keeps
 NHIs created before scopes working unchanged.
 
@@ -199,7 +199,7 @@ matched on the lowercased path, anchored. It lists the session machinery (`POST
 /api/auth/keepalive`, `DELETE /api/auth` with or without trailing slash, `GET /api/auth/me`,
 `GET /api/auth/my-session`, `POST /api/auth/nhi-token`), public resources (`/.well-known/`, the
 UI shell, avatars) and the `organizations:read` (or `organizations`) rules for reading
-organizations, their roles and members, and `/api/accounts`. Everything else is unmarked and
+organizations, their roles and members. Everything else is unmarked and
 refused to scoped sessions, whatever the role of the NHI. Adding a rule is a security decision.
 The OpenAPI contract declares the `oauth2` client credentials scheme and the scopes on
 `GET /api/organizations`.

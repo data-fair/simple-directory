@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import express, { Router } from 'express'
 import { session } from '@data-fair/lib-express'
 import mongo from '#mongo'
+import { onlyDecode } from './utils/session-only-decode.ts'
 import config, { jwtDurations } from '#config'
 import { rotateKeys, getSignatureKeys } from './tokens/keys-manager.ts'
 
@@ -148,7 +149,7 @@ router.post('/seed', async (req, res) => {
 router.post('/rotate-keys', async (req, res) => {
   await rotateKeys()
   getSignatureKeys.clear()
-  session.init('http://localhost:' + config.port, 'fr', undefined, { scopeAware: true })
+  session.init('http://localhost:' + config.port, 'fr', onlyDecode, { scopeAware: true })
   res.status(200).send('ok')
 })
 

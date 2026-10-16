@@ -26,8 +26,7 @@ const rules: Rule[] = [
   { method: 'GET', path: /^\/(?!api(\/|$))/, scopes: 'any' },
   { method: 'GET', path: /^\/api\/avatars\//, scopes: 'any' },
   // the list, one organization, its roles, its members
-  { method: 'GET', path: /^\/api\/organizations(\/[^/]+(\/roles|\/members)?)?\/?$/, scopes: organizationsRead },
-  { method: 'GET', path: /^\/api\/accounts\/?$/, scopes: organizationsRead }
+  { method: 'GET', path: /^\/api\/organizations(\/[^/]+(\/roles|\/members)?)?\/?$/, scopes: organizationsRead }
 ]
 
 // runs once per request, before every router: it is the scope check of every SD route (the lib
