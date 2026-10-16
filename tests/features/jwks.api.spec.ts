@@ -69,4 +69,32 @@ test.describe('JWKS router and keys management', () => {
     // the first key is no longer usable
     await assert.rejects(axAuth1.get('/api/auth/me'), { status: 401 })
   })
+
+  test('scoped tokens have their own key set', async () => {
+    const ax = await axios()
+    const assertSeparated = async () => {
+      const sessionKids: string[] = (await ax.get('/.well-known/jwks.json')).data.keys.map((k: any) => k.kid)
+      const scopedKids: string[] = (await ax.get('/.well-known/scoped-jwks.json')).data.keys.map((k: any) => k.kid)
+      assert.ok(scopedKids.length >= 1)
+      for (const kid of scopedKids) {
+        assert.ok(kid.startsWith('scoped-'))
+        assert.ok(!sessionKids.includes(kid))
+      }
+      for (const kid of sessionKids) assert.ok(!kid.startsWith('scoped-'))
+      return { sessionKids, scopedKids }
+    }
+    const before = await assertSeparated()
+
+    const devAx = await axios({ baseURL: devApiUrl })
+    await devAx.post('/api/test-env/rotate-keys')
+    const after = await assertSeparated()
+    // the dev db may hold keys from earlier runs: a rotation keeps the previous key and adds a new one
+    assert.equal(after.scopedKids.length, 2)
+    assert.equal(after.sessionKids.length, 2)
+    assert.notEqual(after.scopedKids[0], before.scopedKids[0])
+    assert.equal(after.scopedKids[1], before.scopedKids[0])
+    await devAx.post('/api/test-env/rotate-keys')
+    const third = await assertSeparated()
+    assert.equal(third.scopedKids[1], after.scopedKids[0])
+  })
 })

@@ -19,13 +19,18 @@ import { lastIpInfo } from '../utils/ip-info.ts'
 // it must stay a time bound: see docs/architecture/session-theft-protections.md
 const exchangeTokenGrace = 60000
 
-export const signToken = async (payload: any, exp: string | number, notBefore?: string) => {
-  const signatureKeys = await getSignatureKeys()
+export const signToken = async (payload: any, exp: string | number, notBefore?: string, typ?: string) => {
+  // tokens that carry scopes and access tokens are signed with the scoped key set: libs released
+  // before scopes existed cannot verify them, so a scope is never ignored by an old service
+  const keySet = (typ === 'at+jwt' || payload.scope !== undefined) ? 'scoped' : 'session'
+  const signatureKeys = await getSignatureKeys(keySet)
   const webKey = signatureKeys.webKeys[0]
   const params: SignOptions = {
     algorithm: webKey.alg,
     keyid: webKey.kid,
   }
+  // jsonwebtoken merges options.header over its defaults (alg, typ: JWT, kid)
+  if (typ) params.header = { alg: webKey.alg, typ }
   if (typeof exp === 'string') params.expiresIn = exp as StringValue
   else payload.exp = exp
   if (notBefore) params.notBefore = notBefore as StringValue
