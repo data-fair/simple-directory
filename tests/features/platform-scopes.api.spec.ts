@@ -41,6 +41,14 @@ test('the last platform scopes received survive an outage', async () => {
   assert.ok((await ax.get('/api/scopes')).data.scopes['datasets:read'])
 })
 
+test('platform scope descriptions are truncated to 500 characters', async () => {
+  await testEnvAx.patch('/config', { platformScopesUrl })
+  await testEnvAx.put('/platform-scopes', { scopes: { 'datasets:read': 'x'.repeat(600) } })
+  const { ax } = await createUser('scopes-list4@test.com')
+  const scopes = (await ax.get('/api/scopes')).data.scopes
+  assert.equal(scopes['datasets:read'].length, 500)
+})
+
 test('the scope list requires a session', async () => {
   await assert.rejects(axios().get('/api/scopes'), (err: any) => err.status === 401)
 })

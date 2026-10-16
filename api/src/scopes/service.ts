@@ -13,6 +13,7 @@ type Entry = { checkedAt: number, etag?: string, scopes: ScopesMap }
 // it is not checked at token exchange time.
 const ttl = 5 * 60 * 1000
 const failureTtl = 30 * 1000
+const maxDescriptionLength = 500
 const memory = new Map<string, Entry>()
 
 export const clearPlatformScopesCache = () => { memory.clear() }
@@ -21,7 +22,7 @@ const validScopes = (raw: any): ScopesMap => {
   const scopes: ScopesMap = {}
   if (!raw || typeof raw !== 'object') return scopes
   for (const [name, description] of Object.entries(raw)) {
-    if (scopeRegexp.test(name) && typeof description === 'string') scopes[name] = description
+    if (scopeRegexp.test(name) && typeof description === 'string') scopes[name] = description.slice(0, maxDescriptionLength)
   }
   return scopes
 }
@@ -30,7 +31,16 @@ const fetchPlatformScopes = async (localeCode: string): Promise<ScopesMap> => {
   if (!config.platformScopesUrl) return {}
   const cached = memory.get(localeCode)
   if (cached && Date.now() - cached.checkedAt < (cached.etag ? ttl : failureTtl)) return cached.scopes
-  const stored: Entry | undefined = cached ?? await mongo.platformScopes.findOne({ _id: localeCode }).then(doc => doc ? { checkedAt: 0, etag: doc.etag, scopes: doc.scopes } : undefined)
+  let stored: Entry | undefined = cached
+  if (!stored) {
+    try {
+      const doc = await mongo.platformScopes.findOne({ _id: localeCode })
+      if (doc) stored = { checkedAt: 0, etag: doc.etag, scopes: doc.scopes }
+    } catch (err) {
+      // no stored copy, never thrown into the request
+      internalError('platform-scopes', 'failed to read the stored platform scopes', err)
+    }
+  }
   let entry: Entry
   try {
     const headers: Record<string, string> = { 'accept-language': localeCode }
