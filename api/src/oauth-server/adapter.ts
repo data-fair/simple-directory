@@ -26,8 +26,6 @@ export class MongoAdapter implements Adapter {
   }
 
   async find (id: string) {
-    // clients are resolved elsewhere, never stored by this adapter
-    if (this.name === 'Client') return undefined
     return this.toPayload(await this.collection.findOne({ _id: id }))
   }
 

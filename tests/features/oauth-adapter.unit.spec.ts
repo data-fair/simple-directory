@@ -59,10 +59,10 @@ test.describe('oauth server mongo adapter', () => {
     assert.deepEqual(await adapter.findByUid('uid-1'), { uid: 'uid-1' })
   })
 
-  test('find on Client returns undefined', async () => {
+  test('find on Client reads the stored client', async () => {
     const { MongoAdapter } = await import('../../api/src/oauth-server/adapter.ts')
     const adapter = new MongoAdapter('Client')
     await adapter.upsert('test_c1', { client_id: 'test_c1' }, 60)
-    assert.equal(await adapter.find('test_c1'), undefined)
+    assert.deepEqual(await adapter.find('test_c1'), { client_id: 'test_c1' })
   })
 })

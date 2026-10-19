@@ -14,6 +14,8 @@ import Debug from 'debug'
 import { cipher } from '../utils/cipher.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { getPublicSiteInfo, getPublicSiteInfoHash } from '../utils/public-site-info.ts'
+import { siteRedirectUriAllowed } from '../oauth-server/clients.ts'
+import { revokeGrants } from '../oauth-server/grants.ts'
 import { getEffectiveMainSite, getMainSiteWarnings } from './main-site.ts'
 import serialize from 'serialize-javascript'
 import { parseThemeOverride, getOverriddenSite } from '../utils/theme-override.ts'
@@ -193,7 +195,33 @@ router.patch('/:id', async (req, res, next) => {
     }
   }
 
+  if (patch.oauthClients) {
+    const previousIds = new Set((site.oauthClients ?? []).map(c => c.id))
+    const ids = new Set<string>()
+    for (const client of patch.oauthClients) {
+      // an id never changes nor moves from another site
+      if (client.id && !previousIds.has(client.id)) throw httpError(400, 'unknown oauth client id ' + client.id)
+      client.id = client.id || 'site-' + nanoid()
+      if (ids.has(client.id)) throw httpError(400, 'duplicate oauth client id ' + client.id)
+      ids.add(client.id)
+      for (const uri of client.redirectUris) {
+        if (!siteRedirectUriAllowed(uri)) throw httpError(400, 'redirect uri must be https (or http on a loopback host), without fragment or credentials: ' + uri)
+      }
+      for (const origin of client.allowedOrigins ?? []) {
+        if (new URL(origin).origin !== origin) throw httpError(400, 'allowed origin must be a bare origin: ' + origin)
+      }
+    }
+  }
+
   const patchedSite = await patchSite({ _id: req.params.id, updatedAt: new Date().toISOString(), ...patch })
+
+  // removing a client revokes everything it was granted
+  if (patch.oauthClients) {
+    const kept = new Set(patch.oauthClients.map(c => c.id))
+    for (const previous of site.oauthClients ?? []) {
+      if (!kept.has(previous.id)) await revokeGrants({ clientId: previous.id }, 'site client removed', { req })
+    }
+  }
 
   // isAccountMain is inert on the main site document (it already *is* the main
   // site), and the admin form round-trips the whole document, so firing

@@ -217,7 +217,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["theme", "title", "mails", "registration"]
+        "enum": ["theme", "title", "mails", "registration", "oauthClients"]
       }
     },
     "managePartners": {

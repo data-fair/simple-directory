@@ -315,9 +315,150 @@ export default {
         de: 'Identitätsanbieter (SSO)'
       },
       items: { $ref: '#/$defs/authProvider' }
+    },
+    oauthClients: {
+      type: 'array',
+      title: 'Clients OAuth (tableaux de bord)',
+      'x-i18n-title': {
+        fr: 'Clients OAuth (tableaux de bord)',
+        en: 'OAuth clients (dashboards)',
+        es: 'Clientes OAuth (paneles)',
+        it: 'Client OAuth (dashboard)',
+        pt: 'Clientes OAuth (painéis)',
+        de: 'OAuth-Clients (Dashboards)'
+      },
+      description: 'Applications web autorisées à demander l\'accès au nom d\'un utilisateur de ce site par le flux OAuth authorization code.',
+      'x-i18n-description': {
+        fr: 'Applications web autorisées à demander l\'accès au nom d\'un utilisateur de ce site par le flux OAuth authorization code.',
+        en: 'Web applications allowed to request access on behalf of a user of this site through the OAuth authorization code flow.',
+        es: 'Aplicaciones web autorizadas a solicitar acceso en nombre de un usuario de este sitio mediante el flujo OAuth authorization code.',
+        it: 'Applicazioni web autorizzate a richiedere l\'accesso per conto di un utente di questo sito tramite il flusso OAuth authorization code.',
+        pt: 'Aplicações web autorizadas a pedir acesso em nome de um utilizador deste site através do fluxo OAuth authorization code.',
+        de: 'Webanwendungen, die im Namen eines Benutzers dieser Website über den OAuth-Authorization-Code-Flow Zugriff anfordern dürfen.'
+      },
+      items: { $ref: '#/$defs/oauthClient' }
     }
   },
   $defs: {
+    oauthClient: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['name', 'redirectUris', 'scopes'],
+      layout: { children: ['id', 'name', 'logoUri', 'redirectUris', 'allowedOrigins', 'scopes', 'resources', 'consent'] },
+      properties: {
+        id: {
+          title: 'Identifiant (client_id)',
+          'x-i18n-title': {
+            fr: 'Identifiant (client_id)',
+            en: 'Identifier (client_id)',
+            es: 'Identificador (client_id)',
+            it: 'Identificatore (client_id)',
+            pt: 'Identificador (client_id)',
+            de: 'Kennung (client_id)'
+          },
+          readOnly: true,
+          type: 'string',
+          pattern: '^site-',
+        },
+        name: {
+          title: 'Nom',
+          'x-i18n-title': {
+            fr: 'Nom',
+            en: 'Name',
+            es: 'Nombre',
+            it: 'Nome',
+            pt: 'Nome',
+            de: 'Name'
+          },
+          type: 'string',
+          minLength: 1,
+        },
+        logoUri: {
+          title: 'Logo (URL https)',
+          'x-i18n-title': {
+            fr: 'Logo (URL https)',
+            en: 'Logo (https URL)',
+            es: 'Logo (URL https)',
+            it: 'Logo (URL https)',
+            pt: 'Logótipo (URL https)',
+            de: 'Logo (https-URL)'
+          },
+          type: 'string',
+          pattern: '^https://',
+        },
+        redirectUris: {
+          title: 'URIs de redirection',
+          'x-i18n-title': {
+            fr: 'URIs de redirection',
+            en: 'Redirect URIs',
+            es: 'URIs de redirección',
+            it: 'URI di reindirizzamento',
+            pt: 'URIs de redirecionamento',
+            de: 'Redirect-URIs'
+          },
+          type: 'array',
+          minItems: 1,
+          items: { type: 'string', pattern: '^https?://' },
+        },
+        allowedOrigins: {
+          title: 'Origines autorisées (CORS)',
+          'x-i18n-title': {
+            fr: 'Origines autorisées (CORS)',
+            en: 'Allowed origins (CORS)',
+            es: 'Orígenes permitidos (CORS)',
+            it: 'Origini consentite (CORS)',
+            pt: 'Origens permitidas (CORS)',
+            de: 'Erlaubte Origins (CORS)'
+          },
+          type: 'array',
+          items: { type: 'string', pattern: '^https?://' },
+        },
+        scopes: {
+          title: 'Permissions maximales',
+          'x-i18n-title': {
+            fr: 'Permissions maximales',
+            en: 'Maximum scopes',
+            es: 'Permisos máximos',
+            it: 'Permessi massimi',
+            pt: 'Permissões máximas',
+            de: 'Maximale Berechtigungen'
+          },
+          type: 'array',
+          minItems: 1,
+          items: { type: 'string' },
+        },
+        resources: {
+          title: 'Ressources',
+          'x-i18n-title': {
+            fr: 'Ressources',
+            en: 'Resources',
+            es: 'Recursos',
+            it: 'Risorse',
+            pt: 'Recursos',
+            de: 'Ressourcen'
+          },
+          type: 'array',
+          items: { type: 'string' },
+        },
+        consent: {
+          title: 'Consentement',
+          'x-i18n-title': {
+            fr: 'Consentement',
+            en: 'Consent',
+            es: 'Consentimiento',
+            it: 'Consenso',
+            pt: 'Consentimento',
+            de: 'Zustimmung'
+          },
+          type: 'string',
+          default: 'explicit',
+          oneOf: [
+            { const: 'explicit', title: 'Explicite' },
+            { const: 'implicit', title: 'Implicite' }
+          ],
+        }
+      }
+    },
     authProvider: {
       type: 'object',
       layout: {

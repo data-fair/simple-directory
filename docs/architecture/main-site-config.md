@@ -78,6 +78,17 @@ unknown category refuses to start.
 | `title` | `title` | `'Simple Directory'` |
 | `mails` | `mails.from`, `mails.contact` | `config.mails.from`, `config.contact` |
 | `registration` | `tosMessage`, `reducedPersonalInfoAtCreation` | none |
+| `oauthClients` | `oauthClients` | none (no site client) |
+
+`oauthClients` is the first category that is **security relevant** rather than
+presentation: it lists the dashboards (site clients) the main site's OAuth
+authorization server accepts. Consequently it is never overlaid by
+`getEffectiveMainSite()` (which stays presentation only and feeds the public
+caches) and is read only through the dedicated `getMainSiteOAuthClients()`,
+which returns `[]` unless the category is enabled and a main site document
+exists. `reqSite()` still returns `undefined` on the main host. Any new
+security relevant category must follow the same rule: its own accessor, no
+overlay.
 
 Fallback is per-category, not per-key: a document's `theme` is already
 `fillTheme`'d against `config.theme` when written, so a stored theme is always
