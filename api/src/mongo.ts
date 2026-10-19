@@ -6,6 +6,7 @@ import mongo from '@data-fair/lib-node/mongo.js'
 import config from './config.ts'
 import { type OAuthRelayState } from './oauth/service.ts'
 import { type Saml2RelayState } from './saml2/service.ts'
+import { type OAuthGrantRecord } from './oauth-server/grants.ts'
 
 const collation = { locale: 'en', strength: 1 }
 
@@ -56,6 +57,11 @@ export class SdMongo {
 
   get oauthRelayStates () {
     return mongo.db.collection<OAuthRelayState>('oauth-relay-states')
+  }
+
+  // SD-owned record of each authorization granted to an OAuth client (the provider Grant is keyed by the same id)
+  get oauthGrants () {
+    return mongo.db.collection<OAuthGrantRecord>('oauth-grants')
   }
 
   get saml2RelayStates () {
@@ -148,6 +154,11 @@ export class SdMongo {
         ttl: [{ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 }]
       },
       ...oauthServerIndexes,
+      'oauth-grants': {
+        subject: { 'subject.id': 1 },
+        client: { clientId: 1 },
+        ttl: [{ expiresAt: 1 }, { expireAfterSeconds: 0 }]
+      },
       'saml2-relay-states': {
         ttl: [{ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 }]
       },
