@@ -11,7 +11,7 @@ import { getKnownScopes } from '../scopes/service.ts'
 import { grantedScope } from '../nhis/scopes.ts'
 import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
-import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins } from './clients.ts'
+import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS } from './clients.ts'
 import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts'
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
 import { sdClaims, stripOidcScopes } from './access-token.ts'
@@ -129,15 +129,16 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
     responseTypes: ['code'],
     pkce: { required: () => true },
     // carries the allowed CORS origins of a site client, see adapterFactory
-    extraClientMetadata: { properties: ['sd_allowed_origins'] },
-    // site clients name their origins, other kinds keep the provider default (an origin of a
-    // registered redirect uri, public clients only)
-    clientBasedCORS: (_koaCtx, origin, client) => {
-      if (origin === 'null') return false
-      const allowed = (client as any)['sd_allowed_origins'] as string[] | undefined
-      if (allowed) return allowed.includes(origin)
-      return client.clientAuthMethod === 'none' && !!client.redirectUris?.some(uri => URL.parse(uri)?.origin === origin)
+    extraClientMetadata: {
+      properties: ['sd_allowed_origins'],
+      // reserved to site clients: a dynamic client must not be able to widen its own CORS origins
+      validator: (_koaCtx, key, value, metadata) => {
+        if (key === 'sd_allowed_origins' && value !== undefined && clientKind(metadata.client_id as string) !== 'site') {
+          (metadata as any).invalidate('sd_allowed_origins is reserved to site clients')
+        }
+      }
     },
+    clientBasedCORS: (_koaCtx, origin, client) => sdClientBasedCORS(origin, client as any),
     // NHI clients authenticate with their keys, no client has a secret and M1 has no public client
     clientAuthMethods: ['private_key_jwt'],
     enabledJWA: {

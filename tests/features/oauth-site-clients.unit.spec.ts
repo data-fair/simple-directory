@@ -55,4 +55,14 @@ test.describe('oauth site clients', () => {
     assert.deepEqual(siteClientOrigins(client()), ['https://dash.example.org'])
     assert.deepEqual(siteClientOrigins(client({ allowedOrigins: ['https://other.example.org'] })), ['https://other.example.org'])
   })
+
+  test('only a site client may name its CORS origins', async () => {
+    const { sdClientBasedCORS } = await clients()
+    const origin = 'https://evil.example.org'
+    assert.ok(sdClientBasedCORS(origin, { clientId: 'site-abc', sd_allowed_origins: [origin] }))
+    assert.ok(!sdClientBasedCORS('https://other.example.org', { clientId: 'site-abc', sd_allowed_origins: [origin] }))
+    assert.ok(!sdClientBasedCORS(origin, { clientId: 'nhi-abc', clientAuthMethod: 'private_key_jwt', sd_allowed_origins: [origin] }))
+    assert.ok(!sdClientBasedCORS(origin, { clientId: 'Xy12abc', clientAuthMethod: 'none', redirectUris: ['https://app.example.org/cb'], sd_allowed_origins: [origin] }))
+    assert.ok(sdClientBasedCORS('https://app.example.org', { clientId: 'Xy12abc', clientAuthMethod: 'none', redirectUris: ['https://app.example.org/cb'] }))
+  })
 })

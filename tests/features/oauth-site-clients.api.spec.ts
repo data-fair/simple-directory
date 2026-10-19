@@ -88,4 +88,43 @@ test.describe('oauth site clients api', () => {
       await mongoClient.close()
     }
   })
+
+  test('invalid allowed origins and unknown scopes are refused', async () => {
+    const { adminAx } = await setup()
+    for (const allowedOrigins of [['https://'], ['http://dash.example.org'], ['https://dash.example.org/path']]) {
+      await assert.rejects(adminAx.patch('/api/sites/' + siteId, { oauthClients: [clientBody({ allowedOrigins })] }), (err: any) => err.status === 400, JSON.stringify(allowedOrigins))
+    }
+    await assert.rejects(adminAx.patch('/api/sites/' + siteId, { oauthClients: [clientBody({ scopes: ['nothing:known'] })] }), (err: any) => err.status === 400)
+    await adminAx.patch('/api/sites/' + siteId, { oauthClients: [clientBody({ allowedOrigins: ['https://dash.example.org'] })] })
+  })
+
+  test('deleting a site revokes the grants of its clients', async () => {
+    const { adminAx, config } = await setup()
+    await adminAx.patch('/api/sites/' + siteId, { oauthClients: [clientBody()] })
+    const clientId = (await adminAx.get('/api/sites/' + siteId, { params: { showAll: true } })).data.oauthClients[0].id
+    const mongoClient = await MongoClient.connect(config.mongo.url)
+    try {
+      const grants = mongoClient.db().collection<any>('oauth-grants')
+      await grants.insertOne({
+        _id: 'test_g_del',
+        issuer: 'http://' + siteHost + '/simple-directory',
+        siteId,
+        clientId,
+        clientName: 'Dash',
+        clientKind: 'site',
+        subject: { type: 'user', id: 'test_u1' },
+        account: { type: 'user', id: 'test_u1' },
+        scope: 'organizations:read',
+        resources: [],
+        authorizedBy: { id: 'test_u1', name: 'U1' },
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 60000)
+      })
+      await adminAx.delete('/api/sites/' + siteId)
+      assert.equal(await grants.countDocuments({ _id: 'test_g_del' }), 0)
+    } finally {
+      await mongoClient.db().collection<any>('oauth-grants').deleteMany({ _id: /^test_g/ })
+      await mongoClient.close()
+    }
+  })
 })

@@ -1,5 +1,6 @@
-// OAuth clients of the authorization server: in M1 the only clients are NHIs, synthesized from the
-// NHI record on every lookup (never stored by the adapter).
+// OAuth clients of the authorization server: NHIs (synthesized from the NHI record on every lookup),
+// site clients (read from the issuer site document) and, later, dynamic clients. The adapter's own
+// Client collection only holds the dynamic ones.
 import type { IncomingMessage } from 'node:http'
 import type { ClientMetadata } from 'oidc-provider'
 import config from '#config'
@@ -40,7 +41,8 @@ export const clientKind = (clientId: string): SdClientKind => {
   return 'dcr'
 }
 
-// always a fresh read: removing or shrinking a client must apply on the next request
+// no cache of our own: a site document is read on every call, the main site document goes through
+// the 2 s memoization of getMainSiteDoc, so a removal applies on the next request or within 2 s
 export const getIssuerSiteClients = async (ctx: IssuerContext): Promise<SiteOAuthClient[]> => {
   if (!ctx.site) return await getMainSiteOAuthClients()
   return (await getSite(ctx.site._id))?.oauthClients ?? []
@@ -89,4 +91,15 @@ export const siteClientOrigins = (client: SiteOAuthClient): string[] => {
     try { origins.add(new URL(uri).origin) } catch { /* refused at registration */ }
   }
   return [...origins]
+}
+
+// only a site client may name its CORS origins (sd_allowed_origins), whatever other kinds carry;
+// the others keep the provider default (an origin of a registered redirect uri, public clients only)
+export const sdClientBasedCORS = (origin: string, client: { clientId: string, clientAuthMethod?: string, redirectUris?: string[] } & Record<string, any>): boolean => {
+  if (origin === 'null') return false
+  if (clientKind(client.clientId) === 'site') {
+    const allowed = client.sd_allowed_origins as string[] | undefined
+    return !!allowed?.includes(origin)
+  }
+  return client.clientAuthMethod === 'none' && !!client.redirectUris?.some(uri => URL.parse(uri)?.origin === origin)
 }

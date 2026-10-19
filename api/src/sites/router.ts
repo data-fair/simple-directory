@@ -14,6 +14,8 @@ import Debug from 'debug'
 import { cipher } from '../utils/cipher.ts'
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { getPublicSiteInfo, getPublicSiteInfoHash } from '../utils/public-site-info.ts'
+import { checkScopes } from '../nhis/scopes.ts'
+import { getKnownScopes } from '../scopes/service.ts'
 import { siteRedirectUriAllowed } from '../oauth-server/clients.ts'
 import { revokeGrants } from '../oauth-server/grants.ts'
 import { getEffectiveMainSite, getMainSiteWarnings } from './main-site.ts'
@@ -208,8 +210,10 @@ router.patch('/:id', async (req, res, next) => {
         if (!siteRedirectUriAllowed(uri)) throw httpError(400, 'redirect uri must be https (or http on a loopback host), without fragment or credentials: ' + uri)
       }
       for (const origin of client.allowedOrigins ?? []) {
-        if (new URL(origin).origin !== origin) throw httpError(400, 'allowed origin must be a bare origin: ' + origin)
+        if (!siteRedirectUriAllowed(origin) || new URL(origin).origin !== origin) throw httpError(400, 'allowed origin must be a bare https (or loopback http) origin: ' + origin)
       }
+      const { localeCode, messages } = reqI18n(req)
+      checkScopes(client.scopes, await getKnownScopes(localeCode, messages.scopes), (site.oauthClients ?? []).find(c => c.id === client.id)?.scopes)
     }
   }
 
@@ -236,7 +240,11 @@ router.patch('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   await checkSecret(req)
+  const site = await getSite(req.params.id)
   await deleteSite(req.params.id)
+  for (const client of site?.oauthClients ?? []) {
+    await revokeGrants({ clientId: client.id }, 'site deleted', { req })
+  }
   res.status(204).send()
 })
 
