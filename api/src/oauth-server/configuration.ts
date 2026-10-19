@@ -1,13 +1,20 @@
 import { errors } from 'oidc-provider'
-import type { Configuration, JWK } from 'oidc-provider'
+import type { Configuration, JWK, KoaContextWithOIDC } from 'oidc-provider'
 import { randomBytes } from 'node:crypto'
 import mongo from '#mongo'
 import config, { jwtDurations } from '#config'
+import storages from '#storages'
 import { defaultLocale, messages } from '#i18n'
+import { reqIp } from '@data-fair/lib-express'
 import { getKnownScopes } from '../scopes/service.ts'
+import { grantedScope } from '../nhis/scopes.ts'
+import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
-import { resolveResource, ResourceError } from './issuers.ts'
-import type { IssuerContext } from './issuers.ts'
+import { findNhiClient } from './clients.ts'
+import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts'
+import type { IssuerContext, ResolvedResource } from './issuers.ts'
+import { sdClaims, stripOidcScopes } from './access-token.ts'
+import { jwtBearerGrantType } from './jwt-bearer.ts'
 
 const cookieKeysId = 'oauth-server-cookie-keys'
 
@@ -20,12 +27,49 @@ export const getCookieKeys = async (): Promise<string[]> => {
   return (await mongo.secrets.findOne({ _id: cookieKeysId }))?.data ?? keys
 }
 
-export const jwtBearerGrantType = 'urn:ietf:params:oauth:grant-type:jwt-bearer'
+// what an SD grant computed for the access token, handed to the JWT customizer through the koa state
+export type SdTokenState = { clientId: string, sub: string, aud: string | string[], scope: string | undefined, claims: Record<string, any> }
+
+// claims the provider (or the customizer itself) owns, never taken from sdClaims
+const reservedClaims = new Set(['iss', 'sub', 'aud', 'exp', 'iat', 'nbf', 'jti', 'client_id', 'scope', 'cnf', 'authorization_details'])
+const adminClaims = ['isAdmin', 'adminMode', 'asAdmin']
+
+// the clients are NHIs synthesized from their record, the other models are stored in mongo
+const adapterFactory = (name: string) => {
+  const adapter = new MongoAdapter(name)
+  if (name === 'Client') adapter.find = async (id: string) => await findNhiClient(id) as any
+  return adapter
+}
+
+// client_credentials for an NHI: the same rules as the JWT bearer grant (nhis/exchange.ts), with
+// the client already authenticated by the provider (private_key_jwt), so precise errors are fine
+const nhiClientCredentials = async (koaCtx: KoaContextWithOIDC, clientId: string, resource: ResolvedResource) => {
+  const user = await storages.globalStorage.getUser(clientId)
+  if (!user?.nhi || user.organizations.length !== 1) throw new errors.InvalidGrant('unknown nhi')
+  // ResourceError, mapped to invalid_target by the caller
+  assertNhiMayTarget(user, resource)
+  const clientIp = reqIp(koaCtx.req)
+  if (user.nhi.allowedIps?.length && !ipAllowed(clientIp, user.nhi.allowedIps)) {
+    throw new errors.InvalidGrant(`ip ${clientIp} not in allowedIps`)
+  }
+  const requested = koaCtx.oidc.params?.scope as string | undefined
+  let scope: string | undefined
+  try {
+    scope = grantedScope(user.nhi.scopes, stripOidcScopes(requested) || undefined)
+  } catch (err: any) {
+    if (err.status === 400) throw new errors.InvalidScope(err.message.replace(/^invalid_scope: /, ''), requested ?? '')
+    throw err
+  }
+  const boundIp = user.nhi.ipBinding ? clientIp : undefined
+  const state: SdTokenState = { clientId, sub: user.id, aud: resource.audience, scope, claims: sdClaims(user, resource, { scope, boundIp }) }
+  koaCtx.state.sdToken = state
+  return scope
+}
 
 export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): Promise<Configuration> => {
   const knownScopes = await getKnownScopes(defaultLocale, messages[defaultLocale].scopes)
   return {
-    adapter: MongoAdapter,
+    adapter: adapterFactory,
     jwks: { keys: [signingJwk] },
     cookies: { keys: await getCookieKeys() },
     features: {
@@ -33,17 +77,24 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
       resourceIndicators: {
         enabled: true,
         defaultResource: async () => ctx.siteUrl,
-        getResourceServerInfo: async (_koaCtx, resourceIndicator) => {
-          let resource
+        getResourceServerInfo: async (koaCtx, resourceIndicator, client) => {
+          let resource: ResolvedResource
+          // the provider filters the requested scopes by this list: the NHI's granted scope, or
+          // every known scope for an unrestricted one
+          let scope = Object.keys(knownScopes).join(' ')
           try {
             resource = await resolveResource(ctx, resourceIndicator)
+            if (koaCtx.oidc?.params?.grant_type === 'client_credentials') {
+              scope = await nhiClientCredentials(koaCtx, client.clientId, resource) ?? scope
+            }
           } catch (err) {
             if (err instanceof ResourceError) throw new errors.InvalidTarget(err.message)
             throw err
           }
           return {
-            scope: Object.keys(knownScopes).join(' '),
-            audience: resource.audience as any,
+            scope,
+            // the provider only accepts a string, an mcp resource gets its full audience in the customizer
+            audience: Array.isArray(resource.audience) ? resource.audience[0] : resource.audience,
             accessTokenFormat: 'jwt',
             accessTokenTTL: jwtDurations.nhiToken,
             jwt: { sign: { alg: 'RS256', kid: signingJwk.kid } }
@@ -73,10 +124,20 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
     formats: {
       customizers: {
         // the claims of the platform (sdClaims) are computed by the grant that knows the NHI
-        // and handed over through the koa state; a token without them is left untouched
-        jwt: async (koaCtx, _token, jwt) => {
-          const claims = (koaCtx as any)?.state?.sdClaims
-          if (claims) Object.assign(jwt.payload, claims)
+        // and handed over through the koa state
+        jwt: async (koaCtx, token, jwt) => {
+          const sdToken: SdTokenState | undefined = (koaCtx as any)?.state?.sdToken
+          if (sdToken && sdToken.clientId === (token as any).clientId) {
+            for (const [key, value] of Object.entries(sdToken.claims)) {
+              if (!reservedClaims.has(key)) jwt.payload[key] = value
+            }
+            jwt.payload.sub = sdToken.sub
+            jwt.payload.aud = sdToken.aud
+            if (sdToken.scope === undefined) delete jwt.payload.scope
+            else jwt.payload.scope = sdToken.scope
+          }
+          // an access token never carries an admin role
+          for (const key of adminClaims) delete jwt.payload[key]
         }
       }
     },
@@ -97,6 +158,11 @@ export const discoveryOverrides = (ctx: IssuerContext, body: Record<string, any>
     body.response_types_supported = []
     grantTypes = grantTypes.filter(g => !['authorization_code', 'implicit', 'refresh_token'].includes(g))
   }
-  if (!grantTypes.includes(jwtBearerGrantType)) grantTypes.push(jwtBearerGrantType)
+  if (config.manageNhis) {
+    if (!grantTypes.includes(jwtBearerGrantType)) grantTypes.push(jwtBearerGrantType)
+  } else {
+    // both machine grants are for NHIs only
+    grantTypes = grantTypes.filter(g => g !== 'client_credentials' && g !== jwtBearerGrantType)
+  }
   body.grant_types_supported = grantTypes
 }

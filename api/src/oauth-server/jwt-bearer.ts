@@ -14,7 +14,7 @@ import { sdClaims, signAccessToken, stripOidcScopes } from './access-token.ts'
 
 export const jwtBearerGrantType = 'urn:ietf:params:oauth:grant-type:jwt-bearer'
 
-const oauthError = (res: Response, status: number, error: string, description?: string) => {
+export const oauthError = (res: Response, status: number, error: string, description?: string) => {
   res.set('Cache-Control', 'no-store')
   res.status(status).send({ error, ...(description ? { error_description: description } : {}) })
 }

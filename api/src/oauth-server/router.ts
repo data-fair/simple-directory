@@ -1,10 +1,15 @@
-import express, { Router } from 'express'
+import express, { Router, type Request, type Response } from 'express'
+import { decodeJwt } from 'jose'
 import config from '#config'
-import { reqIsInternal, reqSiteUrl } from '@data-fair/lib-express'
+import { reqIp, reqIsInternal, reqSiteUrl } from '@data-fair/lib-express'
+import eventsLog from '@data-fair/lib-express/events-log.js'
+import { reqI18n } from '#i18n'
+import { internalError } from '@data-fair/lib-node/observer.js'
+import { consumeNhiLimits, refundNhiLimits } from '../nhis/exchange.ts'
 import { reqSite } from '../sites/service.ts'
 import { issuerOfSite } from './issuers.ts'
 import { getProvider } from './providers.ts'
-import { handleJwtBearerGrant, jwtBearerGrantType } from './jwt-bearer.ts'
+import { handleJwtBearerGrant, jwtBearerGrantType, oauthError } from './jwt-bearer.ts'
 import type Provider from 'oidc-provider'
 
 const router = Router()
@@ -37,6 +42,35 @@ const canonicalSiteUrl = (siteUrl: string) => {
   return url.origin + url.pathname.replace(/\/+$/, '')
 }
 
+// rate limiting key of a client_credentials request, before any verification: the unverified sub
+// of the client assertion (private_key_jwt), or the client_id parameter
+const clientCredentialsClientId = (body: Record<string, any>): string | undefined => {
+  if (typeof body.client_assertion === 'string') {
+    try {
+      const sub = decodeJwt(body.client_assertion).sub
+      if (typeof sub === 'string' && sub) return sub
+    } catch {}
+  }
+  if (typeof body.client_id === 'string' && body.client_id) return body.client_id
+}
+
+// same limits as the JWT bearer grant: consumed up front, refunded once the token is issued
+const limitClientCredentials = async (req: Request, res: Response): Promise<boolean> => {
+  const clientIp = reqIp(req)
+  const clientId = clientCredentialsClientId(req.body)
+  if (!await consumeNhiLimits(clientIp, clientId)) {
+    eventsLog.warn('sd.auth.nhi.rate-limit', 'rate limit error for the client_credentials grant', { req })
+    oauthError(res, 429, 'invalid_request', reqI18n(req).messages.errors.rateLimitAuth)
+    return false
+  }
+  res.on('finish', () => {
+    if (res.statusCode === 200) {
+      refundNhiLimits(clientIp, clientId).catch(err => internalError('oauth-cc-refund', 'failed to refund the rate limiter', err))
+    }
+  })
+  return true
+}
+
 router.use(async (req, res, next) => {
   const path = req.path
   if (!path.startsWith('/api/oauth/') && path !== openidDiscovery && path !== oauthDiscovery) return next()
@@ -50,6 +84,7 @@ router.use(async (req, res, next) => {
   if (path === '/api/oauth/token' && req.method === 'POST') {
     await new Promise<void>((resolve, reject) => tokenBodyParser(req, res, err => err ? reject(err) : resolve()))
     if (req.body?.grant_type === jwtBearerGrantType) return handleJwtBearerGrant(req, res, ctx)
+    if (req.body?.grant_type === 'client_credentials' && !await limitClientCredentials(req, res)) return
   }
 
   const provider = await getProvider(ctx)

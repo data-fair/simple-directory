@@ -1,4 +1,5 @@
 import { strict as assert } from 'node:assert'
+import { randomUUID, createPublicKey } from 'node:crypto'
 import { test } from '@playwright/test'
 import jwt from 'jsonwebtoken'
 import { axios, createUser, testEnvAx, devApiUrl, directoryUrl, getServerConfig } from '../support/axios.ts'
@@ -270,5 +271,179 @@ test.describe('oauth server jwt bearer grant', () => {
     }
     const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() }, from)
     assert.equal(res.status, 200, JSON.stringify(res.data))
+  })
+})
+
+const clientAssertionType = 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+
+// a private_key_jwt client assertion signed with the nhi's test key
+const clientAssertion = (nhiId: string, claims: Record<string, any> = {}) =>
+  signAssertion({ iss: nhiId, sub: nhiId, aud: directoryUrl + '/api/oauth/token', jti: randomUUID(), ...claims }, { expiresIn: 60 })
+
+const ccRequest = (nhiId: string, params: Record<string, string> = {}, headers: Record<string, string> = {}, assertion = clientAssertion(nhiId)) =>
+  tokenRequest({ grant_type: 'client_credentials', client_assertion_type: clientAssertionType, client_assertion: assertion, ...params }, headers)
+
+test.describe('oauth server client_credentials grant', () => {
+  test.beforeEach(async () => {
+    await testEnvAx.delete('/')
+    await testEnvAx.patch('/config', { platformScopesUrl: `${devApiUrl}/api/test-env/platform-scopes` })
+    await testEnvAx.put('/platform-scopes', { scopes: { datasets: 'All dataset scopes', 'datasets:read': 'Read datasets', 'datasets:write': 'Write datasets' } })
+  })
+
+  test.afterAll(async () => {
+    await testEnvAx.patch('/config', { platformScopesUrl: '' })
+  })
+
+  test('client_credentials with private_key_jwt issues an at+jwt for the nhi', async () => {
+    const { nhi, org } = await createNhi('oauth-cc1@test.com')
+    const res = await ccRequest(nhi.id)
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    assert.equal(res.data.token_type, 'Bearer')
+    const { jwtDurations } = await getServerConfig()
+    assert.ok(res.data.expires_in > 0 && res.data.expires_in <= jwtDurations.nhiToken)
+    assert.equal(res.headers['cache-control'], 'no-store')
+    assert.equal(res.headers['set-cookie'], undefined)
+    const decoded = jwt.decode(res.data.access_token, { complete: true }) as any
+    assert.equal(decoded.header.typ, 'at+jwt')
+    assert.equal(decoded.header.alg, 'RS256')
+    assert.ok(decoded.header.kid.startsWith('scoped-'))
+    const payload = decoded.payload
+    assert.equal(payload.iss, directoryUrl)
+    assert.equal(payload.sub, nhi.id)
+    assert.equal(payload.client_id, nhi.id)
+    assert.equal(payload.aud, directoryUrl.replace('/simple-directory', ''))
+    assert.equal(typeof payload.jti, 'string')
+    assert.equal(payload.exp - payload.iat, jwtDurations.nhiToken)
+    assert.equal(payload.nhi, 1)
+    assert.equal(payload.organizations.length, 1)
+    assert.equal(payload.organizations[0].id, org.id)
+    assert.equal(payload.siteOwner, undefined)
+    for (const key of ['isAdmin', 'adminMode', 'asAdmin', 'boundIp']) assert.equal(payload[key], undefined, key)
+    assert.equal(Object.hasOwn(payload, 'scope'), false)
+    assert.equal(res.data.scope, undefined)
+    // the token verifies against the scoped jwks of the issuer
+    const jwks = (await axios().get('/.well-known/scoped-jwks.json')).data
+    const jwk = jwks.keys.find((k: any) => k.kid === decoded.header.kid)
+    jwt.verify(res.data.access_token, createPublicKey({ key: jwk, format: 'jwk' }), { algorithms: ['RS256'] })
+  })
+
+  test('client_credentials: nhi claims and siteOwner on a site of the nhi org', async () => {
+    const { nhi, org } = await createNhi('oauth-cc2@test.com')
+    await postSite(org.id, org.name, {}, { authMode: 'onlyBackOffice' })
+    const res = await ccRequest(nhi.id, { resource: site2Url })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    const payload = jwt.decode(res.data.access_token) as any
+    assert.equal(payload.aud, site2Url)
+    assert.equal(payload.nhi, 1)
+    assert.equal(payload.organizations.length, 1)
+    assert.deepEqual(payload.siteOwner, { type: 'organization', id: org.id, name: org.name })
+  })
+
+  test('client_credentials: site of another org is refused', async () => {
+    const { nhi } = await createNhi('oauth-cc3@test.com')
+    const otherOrg = await createOrg('oauth-cc3-other@test.com', 'Other CC org')
+    await postSite(otherOrg.id, otherOrg.name, {}, { authMode: 'onlyBackOffice' })
+    const res = await ccRequest(nhi.id, { resource: site2Url })
+    assert.equal(res.status, 400)
+    assert.equal(res.data.error, 'invalid_target')
+  })
+
+  test('client_credentials: mcp resource gives two audiences', async () => {
+    const { nhi } = await createNhi('oauth-cc4@test.com')
+    const siteUrl = directoryUrl.replace('/simple-directory', '')
+    const res = await ccRequest(nhi.id, { resource: siteUrl + '/mcp-server/datasets' })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    const decoded = jwt.decode(res.data.access_token, { complete: true }) as any
+    assert.equal(decoded.header.typ, 'at+jwt')
+    assert.ok(decoded.header.kid.startsWith('scoped-'))
+    assert.deepEqual(decoded.payload.aud, [siteUrl + '/mcp-server', siteUrl])
+  })
+
+  test('client_credentials: unknown resource is invalid_target', async () => {
+    const { nhi } = await createNhi('oauth-cc5@test.com')
+    const res = await ccRequest(nhi.id, { resource: 'http://unknown.example.com' })
+    assert.equal(res.status, 400)
+    assert.equal(res.data.error, 'invalid_target')
+  })
+
+  test('client_credentials: replayed client assertion is refused (invalid_client)', async () => {
+    const { nhi } = await createNhi('oauth-cc6@test.com')
+    const assertion = clientAssertion(nhi.id)
+    const first = await ccRequest(nhi.id, {}, {}, assertion)
+    assert.equal(first.status, 200, JSON.stringify(first.data))
+    const replay = await ccRequest(nhi.id, {}, {}, assertion)
+    assert.equal(replay.status, 401)
+    assert.equal(replay.data.error, 'invalid_client')
+  })
+
+  test('client_credentials: nhi without inline jwks is invalid_client', async () => {
+    const { nhi } = await createNhi('oauth-cc7@test.com', { provider: { issuer: `http://localhost:${process.env.MOCK_OIDC_PORT1 || '8998'}` } })
+    const res = await ccRequest(nhi.id)
+    assert.equal(res.status, 401)
+    assert.equal(res.data.error, 'invalid_client')
+  })
+
+  test('client_credentials: scope within the maximum', async () => {
+    const { nhi } = await createNhi('oauth-cc8@test.com', { scopes: ['datasets'] })
+    const res = await ccRequest(nhi.id, { scope: 'openid datasets:read' })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    assert.equal(res.data.scope, 'datasets:read')
+    assert.equal((jwt.decode(res.data.access_token) as any).scope, 'datasets:read')
+    // nothing requested grants the maximum
+    const max = await ccRequest(nhi.id)
+    assert.equal(max.status, 200, JSON.stringify(max.data))
+    assert.equal(max.data.scope, 'datasets')
+    assert.equal((jwt.decode(max.data.access_token) as any).scope, 'datasets')
+  })
+
+  test('client_credentials: scope exceeding the maximum is invalid_scope', async () => {
+    const { nhi } = await createNhi('oauth-cc9@test.com', { scopes: ['datasets:read'] })
+    const res = await ccRequest(nhi.id, { scope: 'datasets:write' })
+    assert.equal(res.status, 400)
+    assert.equal(res.data.error, 'invalid_scope')
+  })
+
+  test('client_credentials: ipBinding puts boundIp', async () => {
+    const { nhi } = await createNhi('oauth-cc10@test.com', { ipBinding: true })
+    const res = await ccRequest(nhi.id, {}, { 'x-forwarded-for': '9.9.9.7' })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    assert.equal((jwt.decode(res.data.access_token) as any).boundIp, '9.9.9.7')
+  })
+
+  test('client_credentials: allowedIps refusal is invalid_grant', async () => {
+    const { nhi } = await createNhi('oauth-cc11@test.com', { allowedIps: ['9.9.9.9'] })
+    const ok = await ccRequest(nhi.id, {}, { 'x-forwarded-for': '9.9.9.9' })
+    assert.equal(ok.status, 200, JSON.stringify(ok.data))
+    const res = await ccRequest(nhi.id, {}, { 'x-forwarded-for': '7.7.7.6' })
+    assert.equal(res.status, 400)
+    assert.equal(res.data.error, 'invalid_grant')
+  })
+
+  test('client_credentials: only failures count against the limiter', async () => {
+    const { nhi } = await createNhi('oauth-cc12@test.com')
+    const attempts = (await getServerConfig()).authRateLimit.attempts
+    const from = { 'x-forwarded-for': '9.8.7.4' }
+    for (let i = 0; i < attempts + 1; i++) {
+      const res = await ccRequest(nhi.id, {}, from)
+      assert.equal(res.status, 200, `attempt ${i}: ${JSON.stringify(res.data)}`)
+    }
+    for (let i = 0; i < attempts; i++) {
+      const res = await ccRequest(nhi.id, {}, from, clientAssertion(nhi.id, { aud: 'https://other.example.com' }))
+      assert.equal(res.status, 401, `failure ${i}: ${JSON.stringify(res.data)}`)
+    }
+    const limited = await ccRequest(nhi.id, {}, from)
+    assert.equal(limited.status, 429)
+    assert.equal(limited.headers['set-cookie'], undefined)
+  })
+
+  test('nhi grants are not advertised without nhi support', async () => {
+    await testEnvAx.patch('/config', { manageNhis: false })
+    try {
+      const discovery = (await axios().get('/.well-known/openid-configuration')).data
+      assert.ok(!discovery.grant_types_supported.includes('client_credentials'))
+      assert.ok(!discovery.grant_types_supported.includes(jwtBearer))
+    } finally {
+      await testEnvAx.patch('/config', { manageNhis: true })
+    }
   })
 })

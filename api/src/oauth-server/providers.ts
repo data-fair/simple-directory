@@ -1,7 +1,7 @@
 import Provider, { type JWK } from 'oidc-provider'
 import { createPrivateKey } from 'node:crypto'
 import { getSignatureKeys } from '../tokens/keys-manager.ts'
-import { buildConfiguration, discoveryOverrides } from './configuration.ts'
+import { buildConfiguration, discoveryOverrides, type SdTokenState } from './configuration.ts'
 import type { IssuerContext } from './issuers.ts'
 
 type CachedProvider = { marker: string, promise: Promise<Provider> }
@@ -28,6 +28,14 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
     await next()
     if (koaCtx.oidc?.route === 'discovery' && koaCtx.status === 200 && koaCtx.body) {
       discoveryOverrides(ctx, koaCtx.body as Record<string, any>)
+    }
+    // the provider reports the requested scope, an SD grant may have granted a different one
+    // (the NHI's maximum when nothing was requested): the response must match the token
+    const sdToken: SdTokenState | undefined = koaCtx.state.sdToken
+    if (koaCtx.oidc?.route === 'token' && koaCtx.status === 200 && sdToken && koaCtx.body) {
+      const body = koaCtx.body as Record<string, any>
+      if (sdToken.scope === undefined) delete body.scope
+      else body.scope = sdToken.scope
     }
   })
   return provider
