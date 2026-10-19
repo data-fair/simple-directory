@@ -1,5 +1,5 @@
 import { errors, interactionPolicy } from 'oidc-provider'
-import type { ClientMetadata, Configuration, JWK, KoaContextWithOIDC, FindAccount } from 'oidc-provider'
+import type { Configuration, JWK, KoaContextWithOIDC, FindAccount } from 'oidc-provider'
 import { randomBytes } from 'node:crypto'
 import mongo from '#mongo'
 import config, { jwtDurations } from '#config'
@@ -11,6 +11,7 @@ import { getKnownScopes } from '../scopes/service.ts'
 import { grantedScope, narrowScope } from '../nhis/scopes.ts'
 import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
+import { allowClient, ssrfFetch } from './dynamic-clients.ts'
 import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS, siteClientResourceAllowed } from './clients.ts'
 import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts'
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
@@ -41,21 +42,20 @@ export type SdTokenState = { clientId: string, user: User, sub: string, aud: str
 const reservedClaims = new Set(['iss', 'sub', 'aud', 'exp', 'iat', 'nbf', 'jti', 'client_id', 'scope', 'cnf', 'authorization_details'])
 const adminClaims = ['isAdmin', 'adminMode', 'asAdmin']
 
-// stored dynamic clients (filled by the registration task)
-const findStoredClient = async (_ctx: IssuerContext, _clientId: string): Promise<ClientMetadata | undefined> => undefined
-
 // the clients are NHIs synthesized from their record, site clients read from the issuer site and
-// stored dynamic clients, the other models are stored in mongo
+// dynamic clients registered on this issuer (DCR), the other models are stored in mongo. CIMD
+// clients are resolved by the provider itself after this lookup (dynamic-clients.ts).
 const adapterFactory = (ctx: IssuerContext) => (name: string) => {
-  const adapter = new MongoAdapter(name)
-  if (name === 'Client') {
-    adapter.find = async (id: string) => {
-      const nhiClient = await findNhiClient(id)
-      if (nhiClient) return nhiClient as any
-      const siteClient = await findSiteClient(ctx, id)
-      if (siteClient) return { ...siteClientMetadata(siteClient), sd_allowed_origins: siteClientOrigins(siteClient) } as any
-      return await findStoredClient(ctx, id) as any
-    }
+  if (name !== 'Client') return new MongoAdapter(name)
+  const adapter = new MongoAdapter(name, { issuer: ctx.issuer })
+  const findStoredClient = adapter.find.bind(adapter)
+  adapter.find = async (id: string) => {
+    const nhiClient = await findNhiClient(id)
+    if (nhiClient) return nhiClient as any
+    const siteClient = await findSiteClient(ctx, id)
+    if (siteClient) return { ...siteClientMetadata(siteClient), sd_allowed_origins: siteClientOrigins(siteClient) } as any
+    if (!config.oauthServer?.dynamicClients || clientKind(id) !== 'dcr') return undefined
+    return await findStoredClient(id)
   }
   return adapter
 }
@@ -176,6 +176,7 @@ const siteClientResourceScope = async (ctx: IssuerContext, koaCtx: KoaContextWit
 
 export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): Promise<Configuration> => {
   const codeFlow = !!config.oauthServer?.authorizationCode
+  const dynamicClients = codeFlow && !!config.oauthServer?.dynamicClients
   const knownScopes = await getKnownScopes(defaultLocale, messages[defaultLocale].scopes)
   return {
     adapter: adapterFactory(ctx),
@@ -219,7 +220,16 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
       dPoP: { enabled: false },
       devInteractions: { enabled: false },
       introspection: { enabled: false },
-      registration: { enabled: false },
+      // open (MCP clients cannot have an initial access token) and rate limited by the router,
+      // without management: a registration is final. The router normalizes the body first.
+      registration: { enabled: dynamicClients, initialAccessToken: false, issueRegistrationAccessToken: false },
+      // https ids only (checked by the provider), fetched through ssrfFetch
+      clientIdMetadataDocument: {
+        enabled: dynamicClients,
+        ack: 'draft-02',
+        allowFetch: async () => dynamicClients,
+        allowClient
+      },
       // served nowhere by the dispatcher, they must not be advertised
       rpInitiatedLogout: { enabled: false },
       userinfo: { enabled: false },
@@ -248,8 +258,12 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
       token: '/api/oauth/token',
       jwks: '/api/oauth/jwks',
       authorization: '/api/oauth/authorize',
-      revocation: '/api/oauth/revoke'
+      revocation: '/api/oauth/revoke',
+      registration: '/api/oauth/register'
     },
+    // CIMD documents and the jwks_uri of a registered client
+    fetch: ssrfFetch as Configuration['fetch'],
+    fetchResponseBodyLimits: { 'client_id metadata document': 5 * 1024, jwks_uri: 64 * 1024, sector_identifier_uri: 64 * 1024 },
     formats: {
       customizers: {
         // the claims of the platform (sdClaims) are computed by the grant that knows the NHI

@@ -4,15 +4,18 @@ import type { Adapter, AdapterPayload } from 'oidc-provider'
 import type { Collection } from 'mongodb'
 import mongo from '#mongo'
 
-type OAuthDoc = { _id: string, payload: AdapterPayload, expiresAt?: Date }
+// scope: extra fields written on upsert and required on find (the issuer of a registered client)
+type OAuthDoc = { _id: string, payload: AdapterPayload, expiresAt?: Date, createdAt?: Date } & Record<string, unknown>
 
 const kebabCase = (name: string) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
 
 export class MongoAdapter implements Adapter {
   readonly name: string
+  readonly scope: Record<string, string>
 
-  constructor (name: string) {
+  constructor (name: string, scope: Record<string, string> = {}) {
     this.name = name
+    this.scope = scope
   }
 
   private get collection (): Collection<OAuthDoc> {
@@ -20,13 +23,15 @@ export class MongoAdapter implements Adapter {
   }
 
   async upsert (id: string, payload: AdapterPayload, expiresIn: number) {
-    const doc: OAuthDoc = { _id: id, payload }
+    const doc: OAuthDoc = { _id: id, payload, ...this.scope }
     if (expiresIn) doc.expiresAt = new Date(Date.now() + expiresIn * 1000)
+    // registered clients: the age of an unused one decides its cleanup (dynamic-clients.ts)
+    if (this.name === 'Client') doc.createdAt = new Date()
     await this.collection.replaceOne({ _id: id }, doc, { upsert: true })
   }
 
   async find (id: string) {
-    return this.toPayload(await this.collection.findOne({ _id: id }))
+    return this.toPayload(await this.collection.findOne({ _id: id, ...this.scope }))
   }
 
   async findByUid (uid: string) {

@@ -8,6 +8,7 @@ import { defaultLocale, localizedDayjs, messages } from '#i18n'
 import locks from '@data-fair/lib-node/locks.js'
 import storages from '#storages'
 import mongo from '#mongo'
+import { cleanupDynamicClients } from '../oauth-server/dynamic-clients.ts'
 
 // this single small worker loop doesn't really justify running in separate processes
 // we simply run it as part of the api server
@@ -87,6 +88,12 @@ export const task = async () => {
       await setNbMembersLimits(user.organizations.map(o => o.id))
       await deleteIdentityLimits('user', user.id)
       deleteIdentityWebhook('user', user.id)
+    }
+    // its own failure must not stop the user cleanup
+    try {
+      await cleanupDynamicClients()
+    } catch (err) {
+      internalError('cleanup-oauth-clients', err)
     }
     await locks.release('user-deletion-task')
     console.info('user cleanup cron task done\n\n')

@@ -91,6 +91,8 @@ router.delete('/', async (req, res) => {
   const { resetForTests: resetSaml } = await import('./saml2/service.ts')
   await resetSaml()
   mockPlatformScopes = { scopes: {} }
+  const { cimdFixtures } = await import('./oauth-server/dynamic-clients.ts')
+  cimdFixtures.clear()
   await mongo.platformScopes.deleteMany({})
   const { clearPlatformScopesCache } = await import('./scopes/service.ts')
   clearPlatformScopesCache()
@@ -180,6 +182,15 @@ router.patch('/user/:email', express.json(), async (req, res) => {
 router.post('/run-user-cleanup', async (req, res) => {
   const { task } = await import('./users/worker.ts')
   await task()
+  res.status(200).send('ok')
+})
+
+// POST /api/test-env/cimd-fixtures — serve a client id metadata document from memory instead of
+// fetching its url (oauth-server/dynamic-clients.ts ssrfFetch)
+// Body: { url: string, document: object }
+router.post('/cimd-fixtures', express.json(), async (req, res) => {
+  const { cimdFixtures } = await import('./oauth-server/dynamic-clients.ts')
+  cimdFixtures.set(req.body.url, req.body.document)
   res.status(200).send('ok')
 })
 
