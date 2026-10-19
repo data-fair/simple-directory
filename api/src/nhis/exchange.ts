@@ -32,6 +32,8 @@ export const rejectDelay = (): Promise<void> => new Promise(resolve => setTimeou
 export const loadExchangeNhi = async (clientId: string, targetSite: Site | undefined, clientIp: string): Promise<User> => {
   const user = await storages.globalStorage.getUser(clientId)
   if (!user?.nhi || user.organizations.length !== 1) throw new NhiExchangeError('unknown or invalid nhi ' + clientId)
+  // an OAuth-bound NHI has no key binding: it can only act through OAuth grants
+  if (!user.nhi.provider || !user.nhi.subject) throw new NhiExchangeError('nhi without key binding ' + clientId)
   const userOrg = user.organizations[0]
   // the exchange is only valid on the main site or on a site owned by the NHI's own org — a
   // compromised or unrelated site config must not be able to mint a session for an NHI it
@@ -49,7 +51,7 @@ export const loadExchangeNhi = async (clientId: string, targetSite: Site | undef
 
 // returns the session exp: min(assertion exp, now + jwtDurations.nhiToken)
 export const verifyExchangeAssertion = async (user: User, assertion: string, audience: string): Promise<number> => {
-  if (!user.nhi) throw new NhiExchangeError('not an nhi ' + user.id)
+  if (!user.nhi?.provider || !user.nhi.subject) throw new NhiExchangeError('not a key bound nhi ' + user.id)
   let assertionPayload
   try {
     assertionPayload = await verifyAssertion(assertion, user.nhi.provider, user.nhi.subject, audience)

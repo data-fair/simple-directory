@@ -3,7 +3,7 @@ import { randomUUID, createPublicKey } from 'node:crypto'
 import { test } from '@playwright/test'
 import jwt from 'jsonwebtoken'
 import { axios, createUser, testEnvAx, devApiUrl, directoryUrl, getServerConfig } from '../support/axios.ts'
-import { signAssertion, nhiBody } from '../support/nhi.ts'
+import { signAssertion, nhiBody, unbindNhi } from '../support/nhi.ts'
 
 const site2Host = `127.0.0.1:${process.env.NGINX_PORT2}`
 const site2Url = `http://${site2Host}`
@@ -412,6 +412,19 @@ test.describe('oauth server client_credentials grant', () => {
     const replay = await ccRequest(nhi.id, {}, {}, assertion)
     assert.equal(replay.status, 401)
     assert.equal(replay.data.error, 'invalid_client')
+  })
+
+  test('an nhi without key binding is refused by both machine grants', async () => {
+    const { nhi } = await createNhi('oauth-nb@test.com')
+    assert.equal((await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() })).status, 200)
+    assert.equal((await ccRequest(nhi.id)).status, 200)
+    await unbindNhi(nhi.id)
+    const bearer = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() })
+    assert.equal(bearer.status, 400)
+    assert.equal(bearer.data.error, 'invalid_grant')
+    const cc = await ccRequest(nhi.id)
+    assert.equal(cc.status, 401)
+    assert.equal(cc.data.error, 'invalid_client')
   })
 
   test('client_credentials: nhi without inline jwks is invalid_client', async () => {

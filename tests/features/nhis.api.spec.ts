@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import { MongoClient } from 'mongodb'
 import { RateLimiterMongo } from 'rate-limiter-flexible'
 import { axios, createUser, deleteAllEmails, testEnvAx, devApiUrl, directoryUrl, getServerConfig, uploadAvatar, testPng } from '../support/axios.ts'
-import { jwks, issuer, subject, audience, signAssertion, nhiBody } from '../support/nhi.ts'
+import { jwks, issuer, subject, audience, signAssertion, nhiBody, unbindNhi } from '../support/nhi.ts'
 
 test.beforeEach(async () => {
   await deleteAllEmails()
@@ -653,4 +653,44 @@ test('the nhi access token works as a bearer, a session token does not', async (
   const cookieValue = (name: string) => res.headers['set-cookie']!.find((c: string) => c.startsWith(name + '='))!.split(';')[0].slice(name.length + 1)
   const sessionToken = cookieValue('id_token') + '.' + cookieValue('id_token_sign')
   await assert.rejects(axios({ headers: { authorization: 'Bearer ' + sessionToken } }).get(`/api/organizations/${org.id}`), (err: any) => err.status === 401)
+})
+
+test('POST /nhis still requires a key binding', async () => {
+  const { ax } = await createUser('nhi-admin-nb1@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI org nb1' })).data
+  ax.setOrg(org.id)
+  const { provider, subject: _s, ...noProvider } = nhiBody()
+  await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, noProvider), (err: any) => err.status === 400)
+  const { subject: _s2, ...noSubject } = nhiBody()
+  await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, noSubject), (err: any) => err.status === 400)
+  assert.ok(provider)
+})
+
+test('GET /nhis lists an nhi without binding, which cannot be half bound by a patch', async () => {
+  const { ax } = await createUser('nhi-admin-nb2@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI org nb2' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ scopes: ['datasets:read'] }))).data
+  await unbindNhi(nhi.id)
+  const list = (await ax.get(`/api/organizations/${org.id}/nhis`)).data
+  assert.equal(list.count, 1)
+  assert.equal(list.results[0].id, nhi.id)
+  assert.equal(list.results[0].provider, undefined)
+  assert.equal(list.results[0].subject, undefined)
+  assert.deepEqual(list.results[0].scopes, ['datasets:read'])
+  // other fields stay editable, a binding only comes whole
+  await ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { name: 'Renamed', allowedIps: ['10.0.0.0/8'] })
+  await assert.rejects(ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { subject: 'x' }), (err: any) => err.status === 400)
+  await ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { subject, provider: { issuer, jwks } })
+  assert.equal((await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0].subject, subject)
+})
+
+test('an nhi without key binding is refused by /nhi-token', async () => {
+  const { ax } = await createUser('nhi-admin-nb3@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI org nb3' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+  await axios().post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion() })
+  await unbindNhi(nhi.id)
+  await assert.rejects(axios().post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion() }), (err: any) => err.status === 401)
 })

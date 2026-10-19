@@ -1,6 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto'
 import jwt from 'jsonwebtoken'
-import { directoryUrl } from './axios.ts'
+import { MongoClient } from 'mongodb'
+import { directoryUrl, getServerConfig } from './axios.ts'
 
 // a key pair standing for the external provider an NHI is bound to (e.g. a k8s cluster)
 const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
@@ -20,3 +21,14 @@ export const signAssertion = (claims: Record<string, any> = {}, opts: jwt.SignOp
 export const nhiBody = (overrides: Record<string, any> = {}) => ({
   name: 'My agent', role: 'user', subject, provider: { issuer, jwks }, ...overrides
 })
+
+// turns a key bound NHI into an OAuth-bound one (no provider, no subject), the way the consent
+// screen will create them; the API itself always requires a key binding
+export const unbindNhi = async (nhiId: string) => {
+  const mongoClient = await MongoClient.connect((await getServerConfig()).mongo.url)
+  try {
+    await mongoClient.db().collection('users').updateOne({ _id: nhiId } as any, { $unset: { 'nhi.provider': '', 'nhi.subject': '' } })
+  } finally {
+    await mongoClient.close()
+  }
+}

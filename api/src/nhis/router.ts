@@ -4,13 +4,13 @@ import eventsLog from '@data-fair/lib-express/events-log.js'
 import config from '#config'
 import storages from '#storages'
 import { reqI18n } from '#i18n'
-import { postUserIdentityWebhook, deleteIdentityWebhook, getOrgLimits, setNbMembersLimit } from '#services'
+import { postUserIdentityWebhook, deleteIdentityWebhook, setNbMembersLimit } from '#services'
 import { isOrgAdmin } from '../organizations/service.ts'
 import { checkProvider } from './keys.ts'
 import { checkAllowedIps } from './ips.ts'
 import { checkScopes } from './scopes.ts'
 import { getKnownScopes } from '../scopes/service.ts'
-import { createNhi, getNhi, listNhis } from './service.ts'
+import { createNhi, getNhi, listNhis, validateNewNhi } from './service.ts'
 import type { Request } from 'express'
 
 const router = Router({ mergeParams: true })
@@ -46,17 +46,9 @@ router.post('', async (req: Request<OrgParams>, res) => {
   await assertOrgAdmin(req)
   const { body } = (await import('#doc/nhis/post-req/index.ts')).returnValid(req, { name: 'req' })
   const logContext: EventLogContext = { req }
-  const { org, roles } = await getOrgAndRoles(req.params.organizationId)
-  if (!roles.includes(body.role)) throw httpError(400, 'unknown role')
-  await checkProvider(body.provider)
-  if (body.allowedIps) checkAllowedIps(body.allowedIps)
-  if (body.scopes) checkScopes(body.scopes, await knownScopes(req))
+  const { org } = await getOrgAndRoles(req.params.organizationId)
+  await validateNewNhi(req, org, body)
   logContext.account = { type: 'organization', id: org.id, name: org.name }
-  const limits = await getOrgLimits(org)
-  if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
-    eventsLog.info('sd.nhi.limit', `limit error for NHI creation in org ${org.id}`, logContext)
-    throw httpError(429, reqI18n(req).messages.errors.maxNbMembers)
-  }
   const sessionUser = reqSessionAuthenticated(req).user
   const user = await createNhi(org, body, { id: sessionUser.id, name: sessionUser.name })
   await setNbMembersLimit(org.id)
@@ -80,6 +72,8 @@ router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
     const nhi = { ...user.nhi! }
     if (body.provider) nhi.provider = body.provider
     if (body.subject) nhi.subject = body.subject
+    // an OAuth-bound NHI may be given a key binding, but only whole
+    if (!!nhi.provider !== !!nhi.subject) throw httpError(400, 'provider and subject go together')
     if (body.allowedIps !== undefined) {
       if (body.allowedIps === null) delete nhi.allowedIps
       else {

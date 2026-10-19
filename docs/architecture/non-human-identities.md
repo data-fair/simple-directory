@@ -651,3 +651,7 @@ Violations of #2 or #4 would let a compromised site config or an NHI's own
 session escalate beyond its owning org — the same category of failure this
 document's sibling, `email-trust-and-site-isolation.md`, guards against for
 human SSO.
+
+## OAuth-bound NHIs (no key binding)
+
+`nhi.provider` and `nhi.subject` are optional, both or neither (`dependentRequired`). An NHI without them is reachable only through OAuth grants: `loadExchangeNhi` / `verifyExchangeAssertion` refuse it with the uniform exchange error (401 on `/nhi-token`, `invalid_grant` on the jwt-bearer grant), and `findNhiClient` yields no client for it (`invalid_client`). `POST /nhis` still requires a key binding; creation checks live in `validateNewNhi` (`api/src/nhis/service.ts`), reusable by the consent screen. A patch may add a binding to such an NHI only whole.
