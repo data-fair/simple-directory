@@ -174,13 +174,17 @@ the exchange as `/nhi-token` runs it.
    cookie must switch to the bearer header (or use the cookies set by the
    response). It carries the same claims and the same `exp` (and `boundIp`)
    as the cookie session. The access token also carries the OAuth claims
-   `iss` (the site's issuer), `aud` (the site URL), `sub` and `client_id` (the
-   NHI id) and a `jti`, the same as the token endpoint issues, so a service can
-   verify it with the same audience check. Because `setSessionCookies` still sets the browser
-   cookies, and Playwright's `APIRequestContext` shares its cookie jar with
-   the browser context, calling this endpoint from
-   `context.request.post(...)` leaves the browser authenticated too -- useful
-   for e2e automation of NHI-driven flows.
+   `iss`, `aud` (the site URL), `sub` and `client_id` (the NHI id) and a
+   `jti`, so a service can verify it with the same audience check as the
+   tokens of the token endpoint. `iss` is `<site url>/simple-directory` on
+   every site: a legacy alias, not the OAuth issuer. Only issuer sites (see
+   [`oauth-authorization-server.md`](oauth-authorization-server.md)) serve
+   discovery there, and on the main site it can differ from
+   `config.publicUrl`, the issuer of the token endpoint. Because
+   `setSessionCookies` still sets the browser cookies, and Playwright's
+   `APIRequestContext` shares its cookie jar with the browser context,
+   calling this endpoint from `context.request.post(...)` leaves the browser
+   authenticated too -- useful for e2e automation of NHI-driven flows.
 9. `updateLogged` and `eventsLog.info('sd.auth.nhi.ok', …)` on success for
    observability; the HTML login form is untouched by any of this.
 

@@ -17,13 +17,22 @@ external identity providers; the server lives in `api/src/oauth-server/`.
 ## Shape
 
 `oidc-provider` (node-oidc-provider) does the protocol work (discovery,
-`client_credentials`, private_key_jwt client authentication, revocation,
-resource indicators). SD wraps it:
+`client_credentials`, private_key_jwt client authentication, resource
+indicators). SD wraps it:
 
 - `router.ts` is a dispatcher mounted on `/api/oauth/*` and the two
   `/.well-known/{openid-configuration,oauth-authorization-server}` documents.
-  It resolves the issuer from the request site, answers the JWT bearer grant
-  itself, and hands everything else to the provider of that issuer.
+  It forwards only an allowlist of exact canonical routes (the token endpoint,
+  the two discovery documents, and `/api/oauth/authorize` only when
+  `oauthServer.authorizationCode` is on); every other path under
+  `/api/oauth/` or variant spelling of a discovery document is 404. The
+  provider's own router is case insensitive and accepts trailing slashes, so
+  without the allowlist `/api/oauth/Token/` would reach the token endpoint
+  past the rate limiter and the failure log. The provider's own jwks route is
+  not forwarded: discovery advertises the scoped key set instead. The
+  dispatcher then resolves the issuer from the request site, answers the JWT
+  bearer grant itself, and hands everything else to the provider of that
+  issuer.
 - `providers.ts` caches one provider per issuer, rebuilt when the scoped
   signing key rotates or the issuer context (site, site `updatedAt`) changes,
   because the provider's hooks read the context through closures.
@@ -43,6 +52,14 @@ The issuer of a request is derived from its site (`issuerOfSite`):
 | main site | `config.publicUrl` |
 | an account main site (`isAccountMain`), or a standalone `onlyLocal` site whose owner has no designated main site | `<site url>/simple-directory` |
 | anything else | no issuer: 404 |
+
+The site URL of the request must also be the canonical URL of the site that
+was resolved for it (same host, path equal to the site path), and the main
+issuer is only reached through the main site URL. The site lookup is a host
+plus path prefix match, so a request on a path site can resolve to the root
+site of the same host (or an unknown host to the main site); without this
+guard, the default audience (the request site URL) would name a site of
+another realm. Such a request has no issuer: 404.
 
 An issuer site must additionally be **its own account main site**
 (`resolveAccountMainSite(site)._id === site._id`). A site flagged
@@ -147,7 +164,11 @@ same token shape.
 Discovery advertises only what is served: endpoints that are not routed
 (userinfo, introspection, registration, PAR, logout) are disabled in the
 provider configuration, and `grant_types_supported` is filtered by the flags
-above. `jwks_uri` points to the scoped key set. Internal requests (no site
+above. DPoP is disabled (no resource server enforces sender-constrained
+tokens) and so is revocation (M1 issues stateless JWT access tokens only, M2
+re-enables it). Client authentication is `private_key_jwt` only, as no client
+has a secret. Without the authorization code flow, `response_modes_supported`
+and `authorization_response_iss_parameter_supported` are dropped too. `jwks_uri` points to the scoped key set. Internal requests (no site
 context) get 404 on all of it.
 
 ## Invariants
@@ -156,8 +177,10 @@ context) get 404 on all of it.
    and never creates a server session; the output is a bearer token only.
 2. **No superadmin claims.** `isAdmin`, `adminMode` and `asAdmin` are removed
    in `sdClaims` and again in the provider customizer, whatever the user is.
-3. **An MCP audience means an NHI subject.** In M1 only NHIs get tokens, and
-   they are the only subjects an MCP token can name.
+3. **An MCP audience means an NHI subject.** In M1 this holds by
+   construction: the only grants are NHI grants, so no other subject can get
+   any token. Nothing in the resource hook enforces it, so the authorization
+   code flow of M2 must check it explicitly.
 4. **Realm confinement.** A resource must belong to the realm of the issuer,
    and an issuer site is its own account main site.
 5. **The NHI site rule.** An NHI is only issued a token for the main site or a
@@ -183,3 +206,11 @@ Services accept these tokens through `@data-fair/lib-express`. Its bearer
 audience check -- `aud` must contain the request's site URL, and an internal
 request without `x-forwarded-host` is refused -- is released separately in the
 lib; services upgrade it only after this server is deployed.
+
+SD itself runs the strict lib, which has two visible effects on upgrade:
+
+- a bearer access token is refused (401) on an internal request, one without
+  `x-forwarded-host`: internal callers must use the public URL or a session;
+- access tokens returned by `/api/auth/nhi-token` before the upgrade carry no
+  `aud` and are refused, for at most their 30 minute lifetime. The NHI only
+  has to request a new one.
