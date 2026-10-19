@@ -98,6 +98,11 @@ module.exports = {
   manageSites: true,
   managePartners: true,
   manageNhis: true,
+  oauthServer: {
+    enabled: true,
+    authorizationCode: false,
+    dynamicClients: false
+  },
   nhisAllowInsecureIssuers: true,
   cipherPassword: 'test',
   observer: {

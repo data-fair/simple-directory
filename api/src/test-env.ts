@@ -56,6 +56,11 @@ router.delete('/', async (req, res) => {
   // site as the one fixture a test run removes)
   await mongo.sites.deleteMany({})
   await mongo.oauthTokens.deleteMany()
+  // oidc-provider adapter collections (oauth-tokens and oauth-relay-states are SD as an OAuth client)
+  for (const { name } of await mongo.db.listCollections({ name: { $regex: /^oauth-/ } }, { nameOnly: true }).toArray()) {
+    if (name === 'oauth-tokens' || name === 'oauth-relay-states') continue
+    await mongo.db.collection(name).deleteMany({})
+  }
   await mongo.ldapUserSessions.deleteMany()
   await mongo.fileUserSessions.deleteMany()
   await mongo.ldapMembersOverwrite.deleteMany()

@@ -267,6 +267,12 @@ module.exports = {
   manageSites: true,
   managePartners: true,
   manageNhis: true,
+  oauthServer: {
+    enabled: true,
+    // declared now, switched on by a later milestone
+    authorizationCode: false,
+    dynamicClients: false
+  },
   // the dev mock OIDC providers are plain http on localhost
   nhisAllowInsecureIssuers: true,
   defaultOrg: 'admins-org',

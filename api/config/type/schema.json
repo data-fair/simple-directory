@@ -226,6 +226,17 @@
     "manageNhis": {
       "type": "boolean"
     },
+    "oauthServer": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "authorizationCode": { "type": "boolean" },
+        "dynamicClients": { "type": "boolean" }
+      }
+    },
+    "mcpPath": {
+      "type": "string"
+    },
     "platformScopesUrl": {
       "type": "string"
     },

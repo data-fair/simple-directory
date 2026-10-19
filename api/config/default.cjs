@@ -282,6 +282,12 @@ module.exports = {
   mainSiteFromDb: [],
   managePartners: false,
   manageNhis: false,
+  oauthServer: {
+    enabled: false,
+    authorizationCode: false,
+    dynamicClients: false
+  },
+  mcpPath: '/mcp-server',
   platformScopesUrl: '',
   nhisAllowInsecureIssuers: false,
   manageSessions: true,
