@@ -481,3 +481,48 @@ test.describe('oauth server client_credentials grant', () => {
     }
   })
 })
+
+test.describe('oauth server tokens used as bearer on sd', () => {
+  test.beforeEach(async () => {
+    await testEnvAx.delete('/')
+    await testEnvAx.patch('/config', { platformScopesUrl: `${devApiUrl}/api/test-env/platform-scopes` })
+    await testEnvAx.put('/platform-scopes', { scopes: { 'organizations:read': 'Read organizations' } })
+  })
+
+  test.afterAll(async () => {
+    await testEnvAx.patch('/config', { platformScopesUrl: '' })
+  })
+
+  const getOrg = (orgId: string, token: string) =>
+    axios().get(`/api/organizations/${orgId}`, { headers: { authorization: `Bearer ${token}` } })
+
+  test('token from the token endpoint is accepted as bearer by sd', async () => {
+    const { nhi, org } = await createNhi('oauth-bearer1@test.com', { scopes: ['organizations:read'] })
+    const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    const orgRes = await getOrg(org.id, res.data.access_token)
+    assert.equal(orgRes.status, 200)
+    assert.equal(orgRes.data.id, org.id)
+  })
+
+  test('mcp-resource token is accepted by sd', async () => {
+    const { nhi, org } = await createNhi('oauth-bearer2@test.com', { scopes: ['organizations:read'] })
+    const siteUrl = directoryUrl.replace('/simple-directory', '')
+    const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion(), resource: siteUrl + '/mcp-server/datasets' })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    assert.equal((await getOrg(org.id, res.data.access_token)).status, 200)
+  })
+
+  test('tokens survive a scoped key rotation', async () => {
+    const { nhi, org } = await createNhi('oauth-bearer3@test.com', { scopes: ['organizations:read'] })
+    const first = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() })
+    assert.equal(first.status, 200, JSON.stringify(first.data))
+    await testEnvAx.post('/rotate-keys')
+    assert.equal((await getOrg(org.id, first.data.access_token)).status, 200)
+    const second = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() })
+    assert.equal(second.status, 200, JSON.stringify(second.data))
+    const kid = (t: string) => (jwt.decode(t, { complete: true }) as any).header.kid
+    assert.notEqual(kid(second.data.access_token), kid(first.data.access_token))
+    assert.equal((await getOrg(org.id, second.data.access_token)).status, 200)
+  })
+})
