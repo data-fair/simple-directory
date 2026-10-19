@@ -1,7 +1,6 @@
 import config from '#config'
-import mongo from '#mongo'
 import type { Site, User } from '#types'
-import { getSiteByUrl, resolveAccountMainSite } from '../sites/service.ts'
+import { getSiteByUrl, resolveAccountMainSite, findMainSite } from '../sites/service.ts'
 
 export type IssuerContext = { issuer: string, site: Site | undefined, siteUrl: string }
 export type ResolvedResource = { kind: 'api' | 'mcp', site: Site | undefined, siteUrl: string, audience: string | string[] }
@@ -12,7 +11,10 @@ export class ResourceError extends Error {}
 const stripSlash = (s: string) => s.replace(/\/+$/, '')
 
 // config.publicUrl may include the /simple-directory path (dev/test), the site url never does
-export const mainSiteUrl = () => stripSlash(stripSlash(config.publicUrl).replace(/\/simple-directory$/, ''))
+export const mainSiteUrl = () => {
+  const url = new URL(config.publicUrl)
+  return url.origin + stripSlash(url.pathname).replace(/\/simple-directory$/, '')
+}
 
 export const issuerOfSite = async (site: Site | undefined, siteUrl: string): Promise<IssuerContext | null> => {
   siteUrl = stripSlash(siteUrl)
@@ -20,10 +22,11 @@ export const issuerOfSite = async (site: Site | undefined, siteUrl: string): Pro
   let isIssuer = !!site.isAccountMain
   if (!isIssuer && site.authMode === 'onlyLocal') {
     // a standalone site only: an owner with a designated main site delegates to it
-    const accountMain = await mongo.sites.findOne({ 'owner.type': site.owner.type, 'owner.id': site.owner.id, isAccountMain: true })
-    isIssuer = !accountMain
+    isIssuer = !await findMainSite(site.owner)
   }
   if (!isIssuer) return null
+  // an issuer site must be its own account main site (an isAccountMain site left in onlyBackOffice is not)
+  if ((await resolveAccountMainSite(site))?._id !== site._id) return null
   return { issuer: siteUrl + '/simple-directory', site, siteUrl }
 }
 
@@ -37,20 +40,31 @@ const findSite = async (url: string): Promise<Site | undefined | null> => {
 }
 
 export const resolveResource = async (ctx: IssuerContext, resource: string | undefined): Promise<ResolvedResource> => {
+  try {
+    return await doResolveResource(ctx, resource)
+  } catch (err) {
+    if (err instanceof ResourceError) throw err
+    throw new ResourceError('invalid resource')
+  }
+}
+
+const doResolveResource = async (ctx: IssuerContext, resource: string | undefined): Promise<ResolvedResource> => {
   if (resource === undefined) return { kind: 'api', site: ctx.site, siteUrl: ctx.siteUrl, audience: ctx.siteUrl }
   let url: URL
   try { url = new URL(resource) } catch (err) { throw new ResourceError('invalid resource uri') }
   if (url.search || url.hash) throw new ResourceError('resource must not have a query or fragment')
+  if (url.username || url.password) throw new ResourceError('resource must not have credentials')
+  if (url.pathname.includes('//')) throw new ResourceError('resource path must not have empty segments')
   if (url.protocol !== new URL(ctx.siteUrl).protocol) throw new ResourceError('unsupported resource scheme')
-  const normalized = stripSlash(url.origin + url.pathname)
+  const normalized = url.origin + stripSlash(url.pathname)
 
   let kind: 'api' | 'mcp' = 'api'
   let siteUrl = normalized
   let site = await findSite(normalized)
   if (site === null) {
-    const idx = normalized.indexOf(config.mcpPath + '/')
-    if (idx > 0) {
-      siteUrl = normalized.slice(0, idx)
+    const idx = url.pathname.indexOf(config.mcpPath + '/')
+    if (idx >= 0) {
+      siteUrl = url.origin + stripSlash(url.pathname.slice(0, idx))
       site = await findSite(siteUrl)
       kind = 'mcp'
     }

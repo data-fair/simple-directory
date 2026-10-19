@@ -123,6 +123,42 @@ test.describe('oauth server issuers and resources', () => {
     }
   })
 
+  test('malformed paths are refused or canonical', async () => {
+    await seed(portal)
+    const { issuerOfSite, resolveResource, ResourceError } = await import('../../api/src/oauth-server/issuers.ts')
+    const ctx = (await issuerOfSite(portal as any, portalUrl))!
+    await assert.rejects(resolveResource(ctx, 'https://portal.example.org//mcp-server/mcp'), ResourceError)
+    await assert.rejects(resolveResource(ctx, 'https://mcp-server/mcp-server/mcp'), ResourceError)
+    await assert.rejects(resolveResource(ctx, 'https://user:pw@portal.example.org'), ResourceError)
+    // dot segments are collapsed by URL parsing
+    const r = await resolveResource(ctx, 'https://portal.example.org/mcp-server/../')
+    assert.equal(r.kind, 'api')
+    assert.equal(r.audience, portalUrl)
+  })
+
+  test('non default port and site path match exactly', async () => {
+    const pathSite = site('test_path', 'paths.example.org', 'test_orga5', { authMode: 'onlyLocal', isAccountMain: true, path: '/sub' })
+    const portSite = site('test_port', 'port.example.org', 'test_orga6', { authMode: 'onlyLocal', isAccountMain: true })
+    await seed(pathSite, portSite)
+    const { issuerOfSite, resolveResource, ResourceError } = await import('../../api/src/oauth-server/issuers.ts')
+    const ctx = (await issuerOfSite(pathSite as any, 'https://paths.example.org/sub'))!
+    assert.equal((await resolveResource(ctx, 'https://paths.example.org/sub/')).audience, 'https://paths.example.org/sub')
+    const m = await resolveResource(ctx, 'https://paths.example.org/sub/mcp-server/mcp')
+    assert.deepEqual(m.audience, ['https://paths.example.org/sub/mcp-server', 'https://paths.example.org/sub'])
+    await assert.rejects(resolveResource(ctx, 'https://paths.example.org/sub/other'), ResourceError)
+    await assert.rejects(resolveResource(ctx, 'https://paths.example.org'), ResourceError)
+    const pctx = (await issuerOfSite(portSite as any, 'https://port.example.org:8443'))!
+    assert.equal(pctx.siteUrl, 'https://port.example.org:8443')
+    assert.equal(pctx.issuer, 'https://port.example.org:8443/simple-directory')
+  })
+
+  test('isAccountMain site without own auth is not an issuer', async () => {
+    const { issuerOfSite } = await import('../../api/src/oauth-server/issuers.ts')
+    const s = site('test_nobo', 'nobo.example.org', 'test_orga7', { authMode: 'onlyBackOffice', isAccountMain: true })
+    await seed(s)
+    assert.equal(await issuerOfSite(s as any, 'https://nobo.example.org'), null)
+  })
+
   test('site of another realm is refused', async () => {
     const foreign = site('test_foreign', 'foreign.example.org', 'test_orga3', { authMode: 'onlyLocal', isAccountMain: true })
     await seed(portal, foreign)
