@@ -436,6 +436,40 @@ test.describe('oauth server client_credentials grant', () => {
     assert.equal(limited.headers['set-cookie'], undefined)
   })
 
+  test('client_credentials: success records the last logged date of the nhi', async () => {
+    const { ax, org, nhi } = await createNhi('oauth-cc13@test.com')
+    const logged = async () => (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results.find((r: any) => r.id === nhi.id).logged
+    assert.equal(await logged(), undefined)
+    const res = await ccRequest(nhi.id)
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    // updateNhiLogged is not awaited by the grant
+    let value
+    for (let i = 0; i < 20 && !value; i++) {
+      value = await logged()
+      if (!value) await new Promise(resolve => setTimeout(resolve, 50))
+    }
+    assert.ok(value, 'logged date set')
+  })
+
+  test('client_credentials: a user that is not an nhi is invalid_client', async () => {
+    const { user } = await createUser('oauth-cc14@test.com')
+    const res = await ccRequest(user.id)
+    assert.equal(res.status, 401)
+    assert.equal(res.data.error, 'invalid_client')
+  })
+
+  test('client_credentials: invalid_client without nhi support', async () => {
+    const { nhi } = await createNhi('oauth-cc15@test.com')
+    await testEnvAx.patch('/config', { manageNhis: false })
+    try {
+      const res = await ccRequest(nhi.id)
+      assert.equal(res.status, 401)
+      assert.equal(res.data.error, 'invalid_client')
+    } finally {
+      await testEnvAx.patch('/config', { manageNhis: true })
+    }
+  })
+
   test('nhi grants are not advertised without nhi support', async () => {
     await testEnvAx.patch('/config', { manageNhis: false })
     try {

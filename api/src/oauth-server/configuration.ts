@@ -1,9 +1,10 @@
 import { errors } from 'oidc-provider'
-import type { Configuration, JWK, KoaContextWithOIDC } from 'oidc-provider'
+import type { ClientMetadata, Configuration, JWK, KoaContextWithOIDC } from 'oidc-provider'
 import { randomBytes } from 'node:crypto'
 import mongo from '#mongo'
 import config, { jwtDurations } from '#config'
 import storages from '#storages'
+import type { User } from '#types'
 import { defaultLocale, messages } from '#i18n'
 import { reqIp } from '@data-fair/lib-express'
 import { getKnownScopes } from '../scopes/service.ts'
@@ -28,7 +29,7 @@ export const getCookieKeys = async (): Promise<string[]> => {
 }
 
 // what an SD grant computed for the access token, handed to the JWT customizer through the koa state
-export type SdTokenState = { clientId: string, sub: string, aud: string | string[], scope: string | undefined, claims: Record<string, any> }
+export type SdTokenState = { clientId: string, user: User, sub: string, aud: string | string[], scope: string | undefined, claims: Record<string, any> }
 
 // claims the provider (or the customizer itself) owns, never taken from sdClaims
 const reservedClaims = new Set(['iss', 'sub', 'aud', 'exp', 'iat', 'nbf', 'jti', 'client_id', 'scope', 'cnf', 'authorization_details'])
@@ -37,7 +38,7 @@ const adminClaims = ['isAdmin', 'adminMode', 'asAdmin']
 // the clients are NHIs synthesized from their record, the other models are stored in mongo
 const adapterFactory = (name: string) => {
   const adapter = new MongoAdapter(name)
-  if (name === 'Client') adapter.find = async (id: string) => await findNhiClient(id) as any
+  if (name === 'Client') adapter.find = async (id: string) => await findNhiClient(id) as ClientMetadata | undefined
   return adapter
 }
 
@@ -61,7 +62,7 @@ const nhiClientCredentials = async (koaCtx: KoaContextWithOIDC, clientId: string
     throw err
   }
   const boundIp = user.nhi.ipBinding ? clientIp : undefined
-  const state: SdTokenState = { clientId, sub: user.id, aud: resource.audience, scope, claims: sdClaims(user, resource, { scope, boundIp }) }
+  const state: SdTokenState = { clientId, user, sub: user.id, aud: resource.audience, scope, claims: sdClaims(user, resource, { scope, boundIp }) }
   koaCtx.state.sdToken = state
   return scope
 }

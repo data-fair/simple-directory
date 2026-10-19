@@ -1,8 +1,11 @@
-import Provider, { type JWK } from 'oidc-provider'
+import Provider, { type JWK, type KoaContextWithOIDC } from 'oidc-provider'
 import { createPrivateKey } from 'node:crypto'
 import { getSignatureKeys } from '../tokens/keys-manager.ts'
 import { buildConfiguration, discoveryOverrides, type SdTokenState } from './configuration.ts'
 import type { IssuerContext } from './issuers.ts'
+import eventsLog from '@data-fair/lib-express/events-log.js'
+import { refundNhiLimits, updateNhiLogged } from '../nhis/exchange.ts'
+import { clientCredentialsLimits } from './clients.ts'
 
 type CachedProvider = { marker: string, promise: Promise<Provider> }
 
@@ -36,7 +39,19 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
       const body = koaCtx.body as Record<string, any>
       if (sdToken.scope === undefined) delete body.scope
       else body.scope = sdToken.scope
+      // awaited here, before koa writes the response, so the client's next attempt sees the refund
+      const limits = clientCredentialsLimits.get(koaCtx.req)
+      if (limits) await refundNhiLimits(limits.clientIp, limits.clientId)
+      updateNhiLogged(sdToken.user)
+      eventsLog.info('sd.auth.nhi.ok', `an NHI access token was issued for ${sdToken.user.id} by the client_credentials grant`, { req: koaCtx.req as any })
     }
+  })
+  // every failure of the token endpoint (client authentication included), the reason server side only
+  provider.on('grant.error', (koaCtx: KoaContextWithOIDC, err: any) => {
+    if (!clientCredentialsLimits.has(koaCtx.req)) return
+    const clientId = clientCredentialsLimits.get(koaCtx.req)?.clientId ?? 'unknown client'
+    const reason = [err.error, err.error_description, err.error_detail].filter(Boolean).join(': ')
+    eventsLog.warn('sd.auth.nhi.fail', `nhi client_credentials grant failed for ${clientId}: ${reason}`, { req: koaCtx.req as any })
   })
   return provider
 }

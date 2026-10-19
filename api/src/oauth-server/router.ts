@@ -4,8 +4,8 @@ import config from '#config'
 import { reqIp, reqIsInternal, reqSiteUrl } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { reqI18n } from '#i18n'
-import { internalError } from '@data-fair/lib-node/observer.js'
-import { consumeNhiLimits, refundNhiLimits } from '../nhis/exchange.ts'
+import { consumeNhiLimits } from '../nhis/exchange.ts'
+import { clientCredentialsLimits } from './clients.ts'
 import { reqSite } from '../sites/service.ts'
 import { issuerOfSite } from './issuers.ts'
 import { getProvider } from './providers.ts'
@@ -54,7 +54,8 @@ const clientCredentialsClientId = (body: Record<string, any>): string | undefine
   if (typeof body.client_id === 'string' && body.client_id) return body.client_id
 }
 
-// same limits as the JWT bearer grant: consumed up front, refunded once the token is issued
+// same limits as the JWT bearer grant: consumed up front, refunded once the token is issued (by the
+// provider middleware, see providers.ts)
 const limitClientCredentials = async (req: Request, res: Response): Promise<boolean> => {
   const clientIp = reqIp(req)
   const clientId = clientCredentialsClientId(req.body)
@@ -63,11 +64,7 @@ const limitClientCredentials = async (req: Request, res: Response): Promise<bool
     oauthError(res, 429, 'invalid_request', reqI18n(req).messages.errors.rateLimitAuth)
     return false
   }
-  res.on('finish', () => {
-    if (res.statusCode === 200) {
-      refundNhiLimits(clientIp, clientId).catch(err => internalError('oauth-cc-refund', 'failed to refund the rate limiter', err))
-    }
-  })
+  clientCredentialsLimits.set(req, { clientIp, clientId })
   return true
 }
 
