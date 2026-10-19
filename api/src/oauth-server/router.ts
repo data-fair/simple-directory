@@ -61,7 +61,13 @@ const limitedGrantTypes = ['client_credentials', 'authorization_code', 'refresh_
 // provider middleware, see providers.ts), so only failures count
 const limitTokenRequest = async (req: Request, res: Response, grantType: string): Promise<boolean> => {
   const clientIp = reqIp(req)
-  const clientId = tokenRequestClientId(req.body)
+  let clientId = tokenRequestClientId(req.body)
+  // the client_id of a public client is public (a dashboard ships it in its code): limited per
+  // address, or anyone could lock out every user of the client. An NHI client_id (client_credentials,
+  // private_key_jwt) has a single owner and keeps its own key.
+  if (grantType !== 'client_credentials' && typeof req.body?.client_assertion !== 'string' && clientId !== undefined) {
+    clientId = clientId + ' ' + clientIp
+  }
   if (!await consumeNhiLimits(clientIp, clientId)) {
     if (grantType === 'client_credentials') eventsLog.warn('sd.auth.nhi.rate-limit', 'rate limit error for the client_credentials grant', { req })
     else eventsLog.warn('sd.oauth.rate-limit', `rate limit error for the ${grantType} grant of client ${clientId ?? 'unknown'}`, { req })

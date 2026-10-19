@@ -82,6 +82,17 @@ test.describe('oauth refresh tokens and revocation', () => {
     assertInvalidGrant(await refresh(clientId, tokens.refresh_token), 'refresh without the membership')
   })
 
+  test('a replayed refresh token revokes the grant even when the subject check fails', async () => {
+    const { org, user, adminAx, clientId, flow } = await setup()
+    const { tokens } = await runCodeFlow(flow({ decision: { account: { type: 'organization', id: org.id } } }))
+    const second = await refresh(clientId, tokens.refresh_token)
+    assert.equal(second.status, 200, JSON.stringify(second.data))
+    await adminAx.delete(`/api/organizations/${org.id}/members/${user.id}`, { params: { role: 'user' } })
+    assertInvalidGrant(await refresh(clientId, tokens.refresh_token), 'replay of the consumed token')
+    assert.equal((await grantRecords({ clientId })).length, 0)
+    assert.equal(await withMongo(db => db.collection('oauth-refresh-token').countDocuments({ 'payload.clientId': clientId })), 0)
+  })
+
   test('a narrowed site client narrows the refreshed scope', async () => {
     const { adminAx, clientId, flow } = await setup({ scopes: ['organizations:read', 'organizations'] })
     const { tokens } = await runCodeFlow(flow({ scope: 'organizations:read organizations' }))
@@ -141,21 +152,27 @@ test.describe('oauth refresh tokens and revocation', () => {
     assertInvalidGrant(await refresh(clientId, tokens.refresh_token), 'refresh after the deletion')
   })
 
-  test('failed refreshes are rate limited per client', async () => {
+  test('failed refreshes are rate limited per client and address', async () => {
     const { clientId, flow } = await setup()
     const { tokens } = await runCodeFlow(flow())
     const attempts = (await getServerConfig()).authRateLimit.attempts
-    // a new address for every request: only the client_id key accumulates
+    // a public client_id is public: failures from other addresses must not lock out its users
     let n = 0
     const from = () => { n++; return { 'x-forwarded-for': `10.77.${n >> 8}.${n & 255}` } }
-    for (let i = 0; i < attempts - 1; i++) {
-      assertInvalidGrant(await refresh(clientId, 'bogus-' + i, {}, from()), `failure ${i}`)
+    for (let i = 0; i < attempts + 1; i++) {
+      assertInvalidGrant(await refresh(clientId, 'bogus-' + i, {}, from()), `failure ${i} from another address`)
     }
-    // a success gives its point back
     const ok = await refresh(clientId, tokens.refresh_token, {}, from())
     assert.equal(ok.status, 200, JSON.stringify(ok.data))
-    assertInvalidGrant(await refresh(clientId, 'bogus-last', {}, from()), 'last failure within the budget')
-    const limited = await refresh(clientId, ok.data.refresh_token, {}, from())
+    // from one address: only failures count (a success gives its point back), then 429
+    const same = { 'x-forwarded-for': '10.78.0.1' }
+    for (let i = 0; i < attempts - 1; i++) {
+      assertInvalidGrant(await refresh(clientId, 'bogus-same-' + i, {}, same), `failure ${i} from the same address`)
+    }
+    const ok2 = await refresh(clientId, ok.data.refresh_token, {}, same)
+    assert.equal(ok2.status, 200, JSON.stringify(ok2.data))
+    assertInvalidGrant(await refresh(clientId, 'bogus-last', {}, same), 'last failure within the budget')
+    const limited = await refresh(clientId, ok2.data.refresh_token, {}, same)
     assert.equal(limited.status, 429, JSON.stringify(limited.data))
     assert.equal(limited.data.error, 'invalid_request')
   })

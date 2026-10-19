@@ -7,7 +7,7 @@ import type { IssuerContext } from './issuers.ts'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { refundNhiLimits, updateNhiLogged } from '../nhis/exchange.ts'
 import { tokenLimits } from './clients.ts'
-import { revokeGrantRecord, touchGrantRecord } from './grants.ts'
+import { revokeGrantRecord, touchGrantRecord, type OAuthGrantRecord } from './grants.ts'
 import { internalError } from '@data-fair/lib-node/observer.js'
 
 type CachedProvider = { marker: string, promise: Promise<Provider> }
@@ -62,8 +62,13 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
   provider.on('grant.error', (koaCtx: KoaContextWithOIDC, err: any) => {
     // the provider destroyed the whole grant (grant.revoked follows), a refresh token was replayed
     if (err.error_detail === 'refresh token already used') {
-      const grantId = koaCtx.oidc?.entities?.RefreshToken?.grantId
-      eventsLog.warn('sd.oauth.grant.reused', `refresh token reused for grant ${grantId} of client ${koaCtx.oidc?.client?.clientId}, the grant is revoked`, { req: koaCtx.req as any })
+      // read by findAccount before the provider deleted it
+      const record: OAuthGrantRecord | undefined = koaCtx.state?.sdReusedRecord
+      const grantId = record?._id ?? koaCtx.oidc?.entities?.RefreshToken?.grantId
+      const details = record
+        ? `client ${record.clientId} (${record.clientName}), ${record.subject.type} ${record.subject.id}, account ${record.account.type} ${record.account.id}${record.account.department ? ' / ' + record.account.department : ''}, authorized by ${record.authorizedBy.name} (${record.authorizedBy.id})`
+        : `client ${koaCtx.oidc?.client?.clientId}, subject ${koaCtx.oidc?.entities?.RefreshToken?.accountId}`
+      eventsLog.warn('sd.oauth.grant.reused', `refresh token reused for grant ${grantId} of ${details}, the grant is revoked`, { req: koaCtx.req as any })
       return
     }
     if (koaCtx.oidc?.params?.grant_type !== 'client_credentials' || !tokenLimits.has(koaCtx.req)) return

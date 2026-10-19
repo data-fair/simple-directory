@@ -108,8 +108,14 @@ const accountClaims = (user: User) => async (_use: string, scope: string) => {
 
 // the subject of a code or refresh token, re-checked at every issuance (checkGrantSubject). The
 // resulting claims go to the JWT customizer through the koa state, as for the machine grants.
-const grantSubject = async (ctx: IssuerContext, koaCtx: KoaContextWithOIDC, sub: string, token: { grantId?: string, resource?: string | string[] }) => {
+const grantSubject = async (ctx: IssuerContext, koaCtx: KoaContextWithOIDC, sub: string, token: { kind?: string, consumed?: unknown, grantId?: string, resource?: string | string[] }) => {
   if (!token.grantId) return undefined
+  // a replayed refresh token: the provider revokes the whole grant right after this call and issues
+  // nothing, the checks below must not turn the reuse into a plain failure that keeps the grant
+  if (token.kind === 'RefreshToken' && token.consumed) {
+    koaCtx.state.sdReusedRecord = await getGrantRecord(token.grantId)
+    return { accountId: sub, claims: async () => ({ sub }) }
+  }
   const record = await getGrantRecord(token.grantId)
   if (!record || record.subject.id !== sub || record.clientId !== koaCtx.oidc.client?.clientId) return undefined
   // the provider only accepts a resource of the grant, the record holds the single one granted

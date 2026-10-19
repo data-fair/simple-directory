@@ -71,6 +71,8 @@ export const revokeGrant = async (grantId: string, reason: string, logContext: E
 }
 
 export const revokeGrants = async (filter: GrantFilter, reason: string, logContext?: EventLogContext) => {
+  // an empty filter would revoke every grant of the platform
+  if (!filter.subjectId && !filter.clientId) throw new Error('revokeGrants needs a subjectId or clientId filter')
   let count = 0
   for (const record of await mongo.oauthGrants.find(toMongoFilter(filter), { projection: { _id: 1 } }).toArray()) {
     if (await revokeGrant(record._id, reason, logContext)) count++

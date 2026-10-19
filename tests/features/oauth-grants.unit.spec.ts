@@ -74,4 +74,13 @@ test.describe('oauth grant records', () => {
     assert.equal(await revokeGrants({ clientId: 'site-a' }, 'test'), 2)
     assert.deepEqual((await listGrantRecords({})).map(r => r._id), ['test_g3'])
   })
+
+  test('revokeGrants refuses an empty filter', async () => {
+    const { createGrantRecord, getGrantRecord, revokeGrants } = await import('../../api/src/oauth-server/grants.ts')
+    await createGrantRecord(record('test_g1', 'site-a', 'test_u1'))
+    for (const filter of [{}, { subjectId: '' }, { clientId: '', subjectId: undefined }]) {
+      await assert.rejects(revokeGrants(filter, 'test'), /filter/, JSON.stringify(filter))
+    }
+    assert.ok(await getGrantRecord('test_g1'))
+  })
 })
