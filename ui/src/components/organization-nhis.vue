@@ -70,6 +70,12 @@
           >
             {{ $t('pages.organization.nhiIpBinding') }}
           </v-list-item-subtitle>
+          <v-list-item-subtitle
+            v-if="nhi.scopes?.length"
+            style="white-space:normal;"
+          >
+            {{ $t('pages.organization.nhiScopes') }} = {{ nhi.scopes.join(' ') }}
+          </v-list-item-subtitle>
           <v-list-item-subtitle style="white-space:normal;">
             {{ $t('pages.organization.nhiClientId') }} = {{ nhi.id }}
             <v-btn

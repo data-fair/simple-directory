@@ -89,7 +89,7 @@ resort, because the main site's identity is the operator's, not the owning
 organisation's.
 
 **Never read from the document, whatever the list contains:** `authMode`,
-`authOnlyOtherSite`, `authProviders`, `applications`, `isAccountMain`, `owner`,
+`authOnlyOtherSite`, `authProviders`, `isAccountMain`, `owner`,
 and user scoping. `getPublicSiteInfo` for the main site forces `main: true`,
 `isAccountMain: true` and `authMode: 'onlyLocal'`.
 

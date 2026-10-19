@@ -15,6 +15,7 @@ export default {
         subject: { type: 'string', maxLength: 500 },
         allowedIps: { type: ['array', 'null'], maxItems: 50, items: { type: 'string', maxLength: 50 } },
         ipBinding: { type: 'boolean' },
+        scopes: { type: ['array', 'null'], minItems: 1, maxItems: 50, items: { type: 'string', maxLength: 100 } },
         provider: {
           type: 'object',
           additionalProperties: false,

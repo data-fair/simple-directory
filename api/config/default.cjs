@@ -245,7 +245,6 @@ module.exports = {
     // for identify provider https://samlify.js.org/idp-configuration
     providers: []
   },
-  applications: [],
   oidc: {
     providers: []
   },
@@ -278,11 +277,12 @@ module.exports = {
   // site whose host+path matches publicUrl. Empty means everything comes from
   // env, which is the 8.x default; 9.0 will default to the full list.
   // Never read from that document whatever this contains: authMode,
-  // authOnlyOtherSite, authProviders, applications, isAccountMain, owner,
+  // authOnlyOtherSite, authProviders, isAccountMain, owner,
   // and user scoping. See docs/architecture/main-site-config.md
   mainSiteFromDb: [],
   managePartners: false,
   manageNhis: false,
+  platformScopesUrl: '',
   nhisAllowInsecureIssuers: false,
   manageSessions: true,
   defaultOrg: undefined,

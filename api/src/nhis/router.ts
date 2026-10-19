@@ -8,6 +8,8 @@ import { postUserIdentityWebhook, deleteIdentityWebhook, getOrgLimits, setNbMemb
 import { isOrgAdmin } from '../organizations/service.ts'
 import { checkProvider } from './keys.ts'
 import { checkAllowedIps } from './ips.ts'
+import { checkScopes } from './scopes.ts'
+import { getKnownScopes } from '../scopes/service.ts'
 import { createNhi, getNhi, listNhis } from './service.ts'
 import type { Request } from 'express'
 
@@ -21,6 +23,11 @@ type NhiParams = { organizationId: string, nhiId: string }
 // via the siteAdmin fallback) can administer its non-human identities.
 const assertOrgAdmin = async (req: Request<OrgParams>) => {
   if (!await isOrgAdmin(req)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+}
+
+const knownScopes = (req: Request<any>) => {
+  const { localeCode, messages } = reqI18n(req)
+  return getKnownScopes(localeCode, messages.scopes)
 }
 
 const getOrgAndRoles = async (organizationId: string) => {
@@ -43,6 +50,7 @@ router.post('', async (req: Request<OrgParams>, res) => {
   if (!roles.includes(body.role)) throw httpError(400, 'unknown role')
   await checkProvider(body.provider)
   if (body.allowedIps) checkAllowedIps(body.allowedIps)
+  if (body.scopes) checkScopes(body.scopes, await knownScopes(req))
   logContext.account = { type: 'organization', id: org.id, name: org.name }
   const limits = await getOrgLimits(org)
   if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
@@ -67,7 +75,7 @@ router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
   const patch: any = {}
   if (body.name) patch.name = body.name
   if (body.provider) await checkProvider(body.provider)
-  if (body.subject || body.provider || body.allowedIps !== undefined || body.ipBinding !== undefined) {
+  if (body.subject || body.provider || body.allowedIps !== undefined || body.ipBinding !== undefined || body.scopes !== undefined) {
     // patchUser $sets the whole nhi sub-object, so carry the untouched fields over
     const nhi = { ...user.nhi! }
     if (body.provider) nhi.provider = body.provider
@@ -83,6 +91,13 @@ router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
     if (body.ipBinding !== undefined) {
       if (body.ipBinding) nhi.ipBinding = true
       else delete nhi.ipBinding
+    }
+    if (body.scopes !== undefined) {
+      if (body.scopes === null) delete nhi.scopes
+      else {
+        checkScopes(body.scopes, await knownScopes(req), user.nhi?.scopes ?? [])
+        nhi.scopes = body.scopes
+      }
     }
     patch.nhi = nhi
   }

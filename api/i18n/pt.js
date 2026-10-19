@@ -260,12 +260,7 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       cancelDeletion: 'Cancelar a eliminação do utilizador',
       siteLogo: 'Logótipo do site',
       partnerInvitation: 'Convite de parceiro',
-      changeHost: 'Conta associada ao back-office',
-      authorizeApp: 'Autorizar aplicação',
-      authorizeAppMsg: 'A aplicação {appName} pretende aceder à sua conta. Deseja autorizá-la?',
-      authorizeAppConfirm: 'Autorizar',
-      appRedirected: 'Redirecionado',
-      appRedirectedMsg: 'Pode fechar este separador.'
+      changeHost: 'Conta associada ao back-office'
     },
     siteAdmin: {
       account: 'Conta',
@@ -327,6 +322,8 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       nhiAllowedIpsHint: 'Endereços ou sub-redes CIDR a partir dos quais a troca de token é aceita, por exemplo 203.0.113.5 ou 10.4.0.0/16. Deixe vazio para aceitar qualquer endereço.',
       nhiIpBinding: 'Vincular a sessão ao endereço a partir do qual foi obtida',
       nhiIpBindingHint: 'Um token vazado torna-se inutilizável de qualquer outro lugar. Ative apenas se esta conta de serviço chamar sempre a partir de um endereço estável: um endereço de saída variável (pool NAT, pilha dupla) quebraria suas sessões.',
+      nhiScopes: 'Âmbitos máximos (opcional)',
+      nhiScopesHint: 'Os âmbitos que esta conta de serviço pode solicitar, por exemplo datasets:read ou datasets. Deixe vazio para uma conta sem restrição que age com todos os direitos da sua função.',
       nhiJwks: 'JWKS (opcional, se o provedor não for acessível publicamente)',
       nhiClientId: 'Identificador de cliente (client_id)',
       nhiJwksInvalid: 'JSON inválido para o JWKS: {message}'
@@ -574,5 +571,10 @@ Não hesite em contactar-nos em {contact}.
     acceptedPartnerInvitation: 'A organização {partnerName} ({email}) juntou-se à organização {orgName} como parceiro.',
     addMemberTopic: 'um membro foi adicionado',
     addMember: 'O utilizador {name} ({email}) juntou-se à organização {orgName}.'
+  },
+  // server-side only: simple-directory's own scopes, merged with the platform scopes
+  scopes: {
+    organizations: 'Todos os âmbitos de organizações',
+    'organizations:read': 'Ler as organizações, as suas funções e os seus membros'
   }
 }

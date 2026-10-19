@@ -112,6 +112,21 @@
             name="ipBinding"
             density="compact"
           />
+          <v-autocomplete
+            v-model="scopes"
+            :items="scopeItems"
+            item-props
+            :label="$t('pages.organization.nhiScopes')"
+            :hint="$t('pages.organization.nhiScopesHint')"
+            persistent-hint
+            name="scopes"
+            multiple
+            chips
+            closable-chips
+            clearable
+            density="compact"
+            variant="outlined"
+          />
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -145,6 +160,7 @@ const { orga, nhi } = defineProps({
   nhi: { type: Object as () => any, required: true }
 })
 const { roleItems } = useRoleLabels(() => orga)
+const { scopeItems } = usePlatformScopes()
 const emit = defineEmits(['change'])
 
 const menu = ref(false)
@@ -161,6 +177,7 @@ const editNhi = ref(newEditNhi())
 const jwks = ref(newJwks())
 const allowedIps = ref<string[]>([...(nhi.allowedIps ?? [])])
 const ipBinding = ref(!!nhi.ipBinding)
+const scopes = ref<string[]>([...(nhi.scopes ?? [])])
 
 watch(menu, () => {
   if (!menu.value) return
@@ -168,6 +185,7 @@ watch(menu, () => {
   jwks.value = newJwks()
   allowedIps.value = [...(nhi.allowedIps ?? [])]
   ipBinding.value = !!nhi.ipBinding
+  scopes.value = [...(nhi.scopes ?? [])]
   editForm.value?.reset()
 })
 
@@ -183,9 +201,11 @@ const confirmEdit = useAsyncAction(async () => {
     provider: { issuer: editNhi.value.provider.issuer },
     // null clears the restriction, an empty array is refused by the API on purpose
     allowedIps: allowedIps.value.map(ip => ip.trim()).filter(ip => !!ip),
-    ipBinding: ipBinding.value
+    ipBinding: ipBinding.value,
+    scopes: scopes.value
   }
   if (!body.allowedIps.length) body.allowedIps = null
+  if (!body.scopes.length) body.scopes = null
   if (jwks.value.trim()) {
     try {
       body.provider.jwks = JSON.parse(jwks.value)

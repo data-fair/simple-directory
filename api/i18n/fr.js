@@ -262,12 +262,7 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       cancelDeletion: 'Annuler la suppression de l\'utilisateur',
       siteLogo: 'Logo du site',
       partnerInvitation: 'Invitation partenaire',
-      changeHost: 'Compte associé au back-office',
-      authorizeApp: 'Autoriser l\'application',
-      authorizeAppMsg: 'L\'application {appName} souhaite accéder à votre compte. Voulez-vous l\'autoriser ?',
-      authorizeAppConfirm: 'Autoriser',
-      appRedirected: 'Redirection effectuée',
-      appRedirectedMsg: 'Vous pouvez fermer cet onglet.'
+      changeHost: 'Compte associé au back-office'
     },
     siteAdmin: {
       account: 'Compte',
@@ -329,6 +324,8 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       nhiAllowedIpsHint: "Adresses ou sous-réseaux CIDR depuis lesquels l'échange de jeton est accepté, par exemple 203.0.113.5 ou 10.4.0.0/16. Laissez vide pour accepter toute adresse.",
       nhiIpBinding: "Lier la session à l'adresse depuis laquelle elle a été obtenue",
       nhiIpBindingHint: "Un jeton dérobé devient inutilisable depuis ailleurs. N'activez cette option que si ce compte de service appelle toujours depuis une adresse stable : une adresse de sortie changeante (pool NAT, double pile) casserait ses sessions.",
+      nhiScopes: 'Portées maximales (optionnel)',
+      nhiScopesHint: 'Les portées que ce compte de service peut demander, par exemple datasets:read ou datasets. Laissez vide pour un compte sans restriction qui agit avec tous les droits de son rôle.',
       nhiJwks: 'JWKS (optionnel, si le fournisseur n\'est pas accessible publiquement)',
       nhiClientId: 'Identifiant client (client_id)',
       nhiJwksInvalid: 'JSON invalide pour le JWKS : {message}'
@@ -578,5 +575,10 @@ N'hésitez pas à nous contacter à {contact}.
   mainSite: {
     ignoredField: 'Le champ "{field}" est ignoré sur le site principal : cette configuration provient des variables d\'environnement.',
     ignoredCategory: 'La valeur enregistrée pour "{category}" est ignorée : MAIN_SITE_FROM_DB ne contient pas cette catégorie.'
+  },
+  // server-side only: simple-directory's own scopes, merged with the platform scopes
+  scopes: {
+    organizations: 'Toutes les portées sur les organisations',
+    'organizations:read': 'Lire les organisations, leurs rôles et leurs membres'
   }
 }

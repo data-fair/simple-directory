@@ -262,12 +262,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       cancelDeletion: 'Cancel the deletion of the user',
       siteLogo: 'Site logo',
       partnerInvitation: 'Partner invitation',
-      changeHost: 'Account associated with back-office',
-      authorizeApp: 'Authorize application',
-      authorizeAppMsg: 'The application {appName} wants to access your account. Do you want to authorize it?',
-      authorizeAppConfirm: 'Authorize',
-      appRedirected: 'Redirected',
-      appRedirectedMsg: 'You can close this tab.'
+      changeHost: 'Account associated with back-office'
     },
     siteAdmin: {
       account: 'Account',
@@ -329,6 +324,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       nhiAllowedIpsHint: 'Addresses or CIDR subnets the token exchange is accepted from, for example 203.0.113.5 or 10.4.0.0/16. Leave empty to accept any address.',
       nhiIpBinding: 'Bind the session to the address it was obtained from',
       nhiIpBindingHint: 'A leaked token becomes unusable from anywhere else. Only enable it if this service account always calls from a stable address: a changing egress address (NAT pool, dual-stack) would break its sessions.',
+      nhiScopes: 'Maximum scopes (optional)',
+      nhiScopesHint: 'The scopes this service account may request, for example datasets:read or datasets. Leave empty for an unrestricted account acting with the full rights of its role.',
       nhiJwks: 'JWKS (optional, if the provider is not publicly reachable)',
       nhiClientId: 'Client identifier (client_id)',
       nhiJwksInvalid: 'Invalid JSON for the JWKS: {message}'
@@ -578,5 +575,10 @@ Feel free to contact us at {contact}.
   mainSite: {
     ignoredField: 'The "{field}" field is ignored on the main site: this configuration comes from environment variables.',
     ignoredCategory: 'The stored value for "{category}" is ignored: MAIN_SITE_FROM_DB does not contain this category.'
+  },
+  // server-side only: simple-directory's own scopes, merged with the platform scopes
+  scopes: {
+    organizations: 'All organization scopes',
+    'organizations:read': 'Read organizations, their roles and members'
   }
 }

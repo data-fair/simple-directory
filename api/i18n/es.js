@@ -260,12 +260,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       cancelDeletion: 'Cancelar la eliminación del usuario',
       siteLogo: 'Logotipo del sitio',
       partnerInvitation: 'Invitación de socio',
-      changeHost: 'Cuenta asociada con el back-office',
-      authorizeApp: 'Autorizar aplicación',
-      authorizeAppMsg: 'La aplicación {appName} quiere acceder a su cuenta. ¿Desea autorizarla?',
-      authorizeAppConfirm: 'Autorizar',
-      appRedirected: 'Redirigido',
-      appRedirectedMsg: 'Puede cerrar esta pestaña.'
+      changeHost: 'Cuenta asociada con el back-office'
     },
     siteAdmin: {
       account: 'Cuenta',
@@ -327,6 +322,8 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       nhiAllowedIpsHint: 'Direcciones o subredes CIDR desde las que se acepta el intercambio de token, por ejemplo 203.0.113.5 o 10.4.0.0/16. Déjelo vacío para aceptar cualquier dirección.',
       nhiIpBinding: 'Vincular la sesión a la dirección desde la que se obtuvo',
       nhiIpBindingHint: 'Un token filtrado queda inutilizable desde cualquier otro sitio. Actívelo solo si esta cuenta de servicio llama siempre desde una dirección estable: una dirección de salida cambiante (grupo NAT, doble pila) rompería sus sesiones.',
+      nhiScopes: 'Ámbitos máximos (opcional)',
+      nhiScopesHint: 'Los ámbitos que esta cuenta de servicio puede solicitar, por ejemplo datasets:read o datasets. Déjelo vacío para una cuenta sin restricción que actúa con todos los derechos de su rol.',
       nhiJwks: 'JWKS (opcional, si el proveedor no es accesible públicamente)',
       nhiClientId: 'Identificador de cliente (client_id)',
       nhiJwksInvalid: 'JSON no válido para el JWKS: {message}'
@@ -574,5 +571,10 @@ No dude en contactarnos en {contact}.
     acceptedPartnerInvitation: 'La organización {partnerName} ({email}) se ha unido a la organización {orgName} como socio.',
     addMemberTopic: 'se agregó un miembro',
     addMember: 'El usuario {name} ({email}) se ha unido a la organización {orgName}.'
+  },
+  // server-side only: simple-directory's own scopes, merged with the platform scopes
+  scopes: {
+    organizations: 'Todos los ámbitos de organizaciones',
+    'organizations:read': 'Leer las organizaciones, sus roles y sus miembros'
   }
 }

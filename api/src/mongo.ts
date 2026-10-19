@@ -54,6 +54,10 @@ export class SdMongo {
     return mongo.db.collection<Saml2RelayState>('saml2-relay-states')
   }
 
+  get platformScopes () {
+    return mongo.db.collection<{ _id: string, etag?: string, scopes: Record<string, string> }>('platform-scopes')
+  }
+
   get oidcDiscovery () {
     return mongo.db.collection<{ _id: string, content: any }>('oidc-discovery')
   }

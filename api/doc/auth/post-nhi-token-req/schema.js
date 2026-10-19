@@ -11,7 +11,8 @@ export default {
       required: ['client_id', 'assertion'],
       properties: {
         client_id: { type: 'string', maxLength: 100 },
-        assertion: { type: 'string', maxLength: 10000 }
+        assertion: { type: 'string', maxLength: 10000 },
+        scope: { type: 'string', maxLength: 2000 }
       }
     }
   }

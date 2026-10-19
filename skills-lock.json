@@ -12,6 +12,12 @@
       "sourceType": "github",
       "skillPath": "skills/pr-ready/SKILL.md",
       "computedHash": "dcf190b1d7fb792318b50fa4515a912fdaee01822c6ef158319f8866f5b97655"
+    },
+    "upgrade-scripts": {
+      "source": "data-fair/lib",
+      "sourceType": "github",
+      "skillPath": "skills/upgrade-scripts/SKILL.md",
+      "computedHash": "63005e4b0695c860c24c1d2671fbc001160749533f53cceef67dcd28955eade1"
     }
   }
 }

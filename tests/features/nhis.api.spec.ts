@@ -4,7 +4,7 @@ import { generateKeyPairSync } from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import { MongoClient } from 'mongodb'
 import { RateLimiterMongo } from 'rate-limiter-flexible'
-import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl, getServerConfig, uploadAvatar, testPng } from '../support/axios.ts'
+import { axios, createUser, deleteAllEmails, testEnvAx, devApiUrl, directoryUrl, getServerConfig, uploadAvatar, testPng } from '../support/axios.ts'
 
 const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const publicJwk = { ...publicKey.export({ format: 'jwk' }), kid: 'test-key', alg: 'RS256', use: 'sig' }
@@ -26,6 +26,12 @@ const nhiBody = (overrides: Record<string, any> = {}) => ({
 test.beforeEach(async () => {
   await deleteAllEmails()
   await testEnvAx.delete('/')
+  await testEnvAx.patch('/config', { platformScopesUrl: `${devApiUrl}/api/test-env/platform-scopes` })
+  await testEnvAx.put('/platform-scopes', { scopes: { datasets: 'All dataset scopes', 'datasets:read': 'Read datasets', 'datasets:write': 'Write datasets' } })
+})
+
+test.afterAll(async () => {
+  await testEnvAx.patch('/config', { platformScopesUrl: '' })
 })
 
 test('org admin manages NHIs, member listing excludes them by default', async () => {
@@ -451,6 +457,8 @@ test('an ipBinding nhi session is refused from another ip', async () => {
   const res = await agentAx.post('/api/auth/nhi-token', { client_id: nhi.id, assertion: signAssertion() },
     { headers: { 'x-forwarded-for': '9.9.9.9' } })
   assert.equal((jwt.decode(res.data.access_token) as any).boundIp, '9.9.9.9')
+  const bindIdToken = res.headers['set-cookie']!.find((c: string) => c.startsWith('id_token='))!.split(';')[0].slice('id_token='.length)
+  assert.equal(JSON.parse(Buffer.from(bindIdToken.split('.')[1], 'base64url').toString()).boundIp, '9.9.9.9')
 
   const cookie = res.headers['set-cookie']!.map((c: string) => c.split(';')[0]).join('; ')
   // usable from the address the exchange came from...
@@ -535,4 +543,118 @@ test('only failed nhi token exchanges count against the auth rate limit', async 
   } finally {
     await mongoClient.close()
   }
+})
+
+test('NHI maximum scopes are stored, validated against the platform list and removable', async () => {
+  const { ax } = await createUser('nhi-scopes1@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI scopes org 1' })).data
+  ax.setOrg(org.id)
+
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ scopes: ['datasets:read', 'organizations'] }))).data
+  let listed = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0]
+  assert.deepEqual(listed.scopes, ['datasets:read', 'organizations'])
+
+  // malformed, unlisted (valid name but unknown to the platform), empty
+  for (const bad of [['Datasets:read'], ['datasets:'], ['datasets read'], ['datasets:*'], ['datasets:readAdvanced'], ['processings:read'], ['constructor'], []]) {
+    await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ subject: subject + '-bad', scopes: bad })), (err: any) => err.status === 400)
+    await assert.rejects(ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { scopes: bad }), (err: any) => err.status === 400)
+  }
+
+  await ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { scopes: ['datasets'] })
+  listed = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0]
+  assert.deepEqual(listed.scopes, ['datasets'])
+
+  await ax.patch(`/api/organizations/${org.id}/nhis/${nhi.id}`, { scopes: null })
+  listed = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0]
+  assert.equal(listed.scopes, undefined)
+  // the other nhi fields survived the scope patches
+  assert.equal(listed.subject, subject)
+})
+
+test('an NHI holding a scope the platform no longer lists stays editable, but cannot gain unlisted scopes', async () => {
+  const { ax } = await createUser('nhi-scopes-stale@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI scopes stale org' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ scopes: ['datasets:read', 'organizations'] }))).data
+
+  // the platform drops datasets:read
+  await testEnvAx.put('/platform-scopes', { scopes: { datasets: 'All dataset scopes', 'datasets:write': 'Write datasets' } })
+  await testEnvAx.post('/clear-platform-scopes-cache')
+
+  const url = `/api/organizations/${org.id}/nhis/${nhi.id}`
+  // UI style: the full scopes array is always sent
+  await ax.patch(url, { name: 'Renamed', scopes: ['datasets:read', 'organizations'] })
+  let listed = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0]
+  assert.equal(listed.name, 'Renamed')
+  await ax.patch(url, { scopes: ['datasets:read'] })
+  listed = (await ax.get(`/api/organizations/${org.id}/nhis`)).data.results[0]
+  assert.deepEqual(listed.scopes, ['datasets:read'])
+  // a newly added unlisted scope is still refused, and so is a malformed one
+  await assert.rejects(ax.patch(url, { scopes: ['datasets:read', 'processings:read'] }), (err: any) => err.status === 400)
+  await assert.rejects(ax.patch(url, { scopes: ['datasets:read', 'Bad scope'] }), (err: any) => err.status === 400)
+})
+
+const exchange = async (nhiId: string, scope?: string, sub: string = subject) =>
+  axios().post('/api/auth/nhi-token', { client_id: nhiId, assertion: signAssertion({ sub }), ...(scope !== undefined ? { scope } : {}) })
+
+test('nhi token exchange grants scopes within the stored maximum', async () => {
+  const { ax } = await createUser('nhi-scopes2@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI scopes org 2' })).data
+  ax.setOrg(org.id)
+  const unrestricted = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ subject: subject + '-u' }))).data
+  const limited = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ subject, scopes: ['datasets:read', 'organizations'] }))).data
+
+  // unchanged behavior for an NHI without maximum scopes
+  let res = await exchange(unrestricted.id, undefined, subject + '-u')
+  const decoded = jwt.decode(res.data.access_token, { complete: true }) as any
+  assert.equal(decoded.header.typ, 'at+jwt')
+  // every access token comes from the scoped key set, the unrestricted cookie session does not
+  assert.ok(decoded.header.kid.startsWith('scoped-'))
+  const unrestrictedIdToken = res.headers['set-cookie']!.find((c: string) => c.startsWith('id_token='))!.split(';')[0].slice('id_token='.length)
+  assert.ok(!JSON.parse(Buffer.from(unrestrictedIdToken.split('.')[0], 'base64url').toString()).kid.startsWith('scoped-'))
+  assert.equal(decoded.payload.scope, undefined)
+  // no restriction at all: no scope in the response nor in the cookie session
+  assert.equal(res.data.scope, undefined)
+  assert.ok(!('scope' in JSON.parse(Buffer.from(unrestrictedIdToken.split('.')[1], 'base64url').toString())))
+
+  // an unrestricted NHI may still ask for less
+  res = await exchange(unrestricted.id, 'datasets:read', subject + '-u')
+  assert.equal((jwt.decode(res.data.access_token) as any).scope, 'datasets:read')
+
+  // no request: the maximum is granted
+  res = await exchange(limited.id)
+  assert.equal((jwt.decode(res.data.access_token) as any).scope, 'datasets:read organizations')
+  assert.equal(res.data.scope, 'datasets:read organizations')
+  // the cookie session carries the same restriction
+  // the id_token cookie holds header.payload (the signature is in id_token_sign)
+  const idToken = res.headers['set-cookie']!.find((c: string) => c.startsWith('id_token='))!.split(';')[0].slice('id_token='.length)
+  assert.equal(JSON.parse(Buffer.from(idToken.split('.')[1], 'base64url').toString()).scope, 'datasets:read organizations')
+  // the access token and the cookie session expire together
+  assert.equal(JSON.parse(Buffer.from(idToken.split('.')[1], 'base64url').toString()).exp, (jwt.decode(res.data.access_token) as any).exp)
+  // a scoped cookie session is signed by the scoped key set too
+  assert.ok(JSON.parse(Buffer.from(idToken.split('.')[0], 'base64url').toString()).kid.startsWith('scoped-'))
+
+  // a subset, including through the umbrella
+  res = await exchange(limited.id, 'organizations:read')
+  assert.equal((jwt.decode(res.data.access_token) as any).scope, 'organizations:read')
+
+  // prefix is not coverage, unknown and malformed scopes are refused
+  for (const bad of ['datasets:readAdvanced', 'datasets:write', 'datasets', 'Bad:scope']) {
+    await assert.rejects(exchange(limited.id, bad), (err: any) => err.status === 400, bad)
+  }
+})
+
+test('the nhi access token works as a bearer, a session token does not', async () => {
+  const { ax } = await createUser('nhi-scopes3@test.com')
+  const org = (await ax.post('/api/organizations', { name: 'NHI scopes org 3' })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody())).data
+  const res = await exchange(nhi.id)
+
+  const bearerAx = axios({ headers: { authorization: 'Bearer ' + res.data.access_token } })
+  assert.equal((await bearerAx.get(`/api/organizations/${org.id}`)).data.id, org.id)
+
+  const cookieValue = (name: string) => res.headers['set-cookie']!.find((c: string) => c.startsWith(name + '='))!.split(';')[0].slice(name.length + 1)
+  const sessionToken = cookieValue('id_token') + '.' + cookieValue('id_token_sign')
+  await assert.rejects(axios({ headers: { authorization: 'Bearer ' + sessionToken } }).get(`/api/organizations/${org.id}`), (err: any) => err.status === 401)
 })
