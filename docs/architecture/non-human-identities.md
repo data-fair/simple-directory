@@ -71,7 +71,17 @@ Signature, `iss`, `sub`, `aud`, and `exp`/`nbf` are all checked by `jose`'s
 
 ## The exchange endpoint: `POST /api/auth/nhi-token`
 
-`api/src/auth/router.ts` (route starting at line 288). Body:
+The exchange itself (rate limiting, NHI lookup and site ownership,
+`allowedIps`, assertion verification, `exp` cap, `updateLogged`) lives in
+`api/src/nhis/exchange.ts` and is shared by two entry points: this endpoint,
+whose purpose remains the **cookie session**, and the JWT bearer grant
+(RFC 7523) of the OAuth token endpoint `POST /api/oauth/token`, which returns
+the access token only (see
+[`oauth-authorization-server.md`](oauth-authorization-server.md)). `/nhi-token`
+is marked `deprecated` in the API docs for bearer use. The steps below describe
+the exchange as `/nhi-token` runs it.
+
+`api/src/auth/router.ts`. Body:
 `{ client_id, assertion }`. `client_id` is the NHI's user id
 (`nhi-<nanoid>`, prefixed for log legibility, opaque to services).
 
@@ -163,13 +173,29 @@ Signature, `iss`, `sub`, `aud`, and `exp`/`nbf` are all checked by `jose`'s
    `Authorization: Bearer`. Callers that used to replay it as an `id_token`
    cookie must switch to the bearer header (or use the cookies set by the
    response). It carries the same claims and the same `exp` (and `boundIp`)
-   as the cookie session. Because `setSessionCookies` still sets the browser
+   as the cookie session. The access token also carries the OAuth claims
+   `iss` (the site's issuer), `aud` (the site URL), `sub` and `client_id` (the
+   NHI id) and a `jti`, the same as the token endpoint issues, so a service can
+   verify it with the same audience check. Because `setSessionCookies` still sets the browser
    cookies, and Playwright's `APIRequestContext` shares its cookie jar with
    the browser context, calling this endpoint from
    `context.request.post(...)` leaves the browser authenticated too -- useful
    for e2e automation of NHI-driven flows.
 9. `updateLogged` and `eventsLog.info('sd.auth.nhi.ok', …)` on success for
    observability; the HTML login form is untouched by any of this.
+
+## Grants available per NHI kind
+
+| NHI key binding | JWT bearer (`/api/oauth/token`, `/api/auth/nhi-token`) | `client_credentials` (`private_key_jwt`) |
+| --- | --- | --- |
+| inline `jwks` | yes | yes |
+| issuer discovery | yes | no |
+
+`client_credentials` needs inline JWKS because the OAuth provider authenticates
+the client against the key set stored on the NHI; an NHI that relies on issuer
+discovery (a Kubernetes cluster, typically) has no key set to give it and uses
+the JWT bearer grant, where the assertion is verified by `verifyAssertion`.
+Both grants apply the same org, site, `allowedIps`, scope and `exp` rules.
 
 ## Scopes
 
@@ -579,9 +605,9 @@ narrow, low-value target:
 - Discovery-path integration testing against a real OIDC mock — the unit
   tests cover inline JWKS and the SSRF guard directly; discovery itself is
   exercised in dev/staging, not CI.
-- LDAP/file storages, cross-org or personal NHIs, and a full OAuth token
-  endpoint (`grant_type`, standard OAuth error codes) are all explicitly out
-  of scope for v1.
+- LDAP/file storages and cross-org or personal NHIs are explicitly out of
+  scope for v1. The standard OAuth token endpoint (`grant_type`, OAuth error
+  codes) now exists, see `oauth-authorization-server.md`.
 
 ## Invariants
 
@@ -613,7 +639,9 @@ narrow, low-value target:
    by the route itself), the `access_token` is the only bearer-accepted
    token, and scoped tokens are signed only by the scoped key set.
 9. No endpoint other than the exchange issues a session to an NHI
-   (`token_callback`, `pseudo` refuse it).
+   (`token_callback`, `pseudo` refuse it). The OAuth token endpoint issues
+   access tokens only, through the same exchange (`nhis/exchange.ts`), never
+   cookies.
 
 Violations of #2 or #4 would let a compromised site config or an NHI's own
 session escalate beyond its owning org — the same category of failure this
