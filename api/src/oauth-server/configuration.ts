@@ -1,3 +1,4 @@
+import { errors } from 'oidc-provider'
 import type { Configuration, JWK } from 'oidc-provider'
 import { randomBytes } from 'node:crypto'
 import mongo from '#mongo'
@@ -5,6 +6,7 @@ import config, { jwtDurations } from '#config'
 import { defaultLocale, messages } from '#i18n'
 import { getKnownScopes } from '../scopes/service.ts'
 import { MongoAdapter } from './adapter.ts'
+import { resolveResource, ResourceError } from './issuers.ts'
 import type { IssuerContext } from './issuers.ts'
 
 const cookieKeysId = 'oauth-server-cookie-keys'
@@ -28,7 +30,26 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
     cookies: { keys: await getCookieKeys() },
     features: {
       clientCredentials: { enabled: true },
-      resourceIndicators: { enabled: true },
+      resourceIndicators: {
+        enabled: true,
+        defaultResource: async () => ctx.siteUrl,
+        getResourceServerInfo: async (_koaCtx, resourceIndicator) => {
+          let resource
+          try {
+            resource = await resolveResource(ctx, resourceIndicator)
+          } catch (err) {
+            if (err instanceof ResourceError) throw new errors.InvalidTarget(err.message)
+            throw err
+          }
+          return {
+            scope: Object.keys(knownScopes).join(' '),
+            audience: resource.audience as any,
+            accessTokenFormat: 'jwt',
+            accessTokenTTL: jwtDurations.nhiToken,
+            jwt: { sign: { alg: 'RS256', kid: signingJwk.kid } }
+          }
+        }
+      },
       revocation: { enabled: true },
       devInteractions: { enabled: false },
       introspection: { enabled: false },
@@ -48,6 +69,16 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
       revocation: '/api/oauth/revoke',
       jwks: '/api/oauth/jwks',
       authorization: '/api/oauth/authorize'
+    },
+    formats: {
+      customizers: {
+        // the claims of the platform (sdClaims) are computed by the grant that knows the NHI
+        // and handed over through the koa state; a token without them is left untouched
+        jwt: async (koaCtx, _token, jwt) => {
+          const claims = (koaCtx as any)?.state?.sdClaims
+          if (claims) Object.assign(jwt.payload, claims)
+        }
+      }
     },
     scopes: Object.keys(knownScopes),
     ttl: { ClientCredentials: jwtDurations.nhiToken },
