@@ -1,4 +1,5 @@
 import config from '#config'
+import { internalError } from '@data-fair/lib-node/observer.js'
 import type { Site, User } from '#types'
 import { getSiteByUrl, resolveAccountMainSite, findMainSite } from '../sites/service.ts'
 
@@ -16,9 +17,21 @@ export const mainSiteUrl = () => {
   return url.origin + stripSlash(url.pathname).replace(/\/simple-directory$/, '')
 }
 
+// the site of a request comes from a host + path prefix lookup while its url comes from the request
+// itself: they must agree, or the default audience (siteUrl) could name a site of another realm
+const isCanonicalSiteUrl = (site: Site, siteUrl: string) => {
+  let url: URL
+  try { url = new URL(siteUrl) } catch { return false }
+  return url.host === site.host.toLowerCase() && siteUrl === url.origin + (site.path ?? '')
+}
+
 export const issuerOfSite = async (site: Site | undefined, siteUrl: string): Promise<IssuerContext | null> => {
   siteUrl = stripSlash(siteUrl)
-  if (!site) return { issuer: stripSlash(config.publicUrl), site, siteUrl }
+  if (!site) {
+    if (siteUrl !== mainSiteUrl()) return null
+    return { issuer: stripSlash(config.publicUrl), site, siteUrl }
+  }
+  if (!isCanonicalSiteUrl(site, siteUrl)) return null
   let isIssuer = !!site.isAccountMain
   if (!isIssuer && site.authMode === 'onlyLocal') {
     // a standalone site only: an owner with a designated main site delegates to it
@@ -44,6 +57,8 @@ export const resolveResource = async (ctx: IssuerContext, resource: string | und
     return await doResolveResource(ctx, resource)
   } catch (err) {
     if (err instanceof ResourceError) throw err
+    // fail closed, but an infrastructure error must not pass silently as a client error
+    internalError('oauth-resolve-resource', 'error while resolving an oauth resource', err)
     throw new ResourceError('invalid resource')
   }
 }

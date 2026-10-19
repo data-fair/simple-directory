@@ -44,7 +44,11 @@ test.describe('oauth server', () => {
       assert.equal(discovery[key], undefined, key)
     }
     assert.deepEqual(discovery.code_challenge_methods_supported, ['S256'])
-    assert.ok(discovery.token_endpoint_auth_methods_supported.includes('private_key_jwt'))
+    // only what M1 serves: no DPoP, no revocation, no client secrets, no authorization response modes
+    assert.deepEqual(discovery.token_endpoint_auth_methods_supported, ['private_key_jwt'])
+    for (const key of ['dpop_signing_alg_values_supported', 'revocation_endpoint', 'response_modes_supported', 'authorization_response_iss_parameter_supported']) {
+      assert.equal(discovery[key], undefined, key)
+    }
 
     const oauthDiscovery = (await ax.get('/.well-known/oauth-authorization-server')).data
     assert.deepEqual(oauthDiscovery, discovery)
@@ -90,19 +94,34 @@ test.describe('oauth server', () => {
     assert.equal(discovery.issuer, expectedIssuer)
     assert.equal(discovery.token_endpoint, expectedIssuer + '/api/oauth/token')
     assert.equal(discovery.jwks_uri, expectedIssuer + '/.well-known/scoped-jwks.json')
-    for (const key of ['issuer', 'token_endpoint', 'jwks_uri', 'revocation_endpoint']) {
+    for (const key of ['issuer', 'token_endpoint', 'jwks_uri']) {
       assert.equal(discovery[key].split('/portal/simple-directory').length, 2, `${key} = ${discovery[key]}`)
     }
   })
 
   test('authorize endpoint is 404 in M1', async () => {
-    await assert.rejects(axios().get('/api/oauth/authorize', { params: { client_id: 'x', response_type: 'code' } }),
-      (err: any) => err.status === 404)
+    for (const path of ['/api/oauth/authorize', '/api/oauth/authorize/', '/api/oauth/Authorize']) {
+      await assert.rejects(axios().get(path, { params: { client_id: 'x', response_type: 'code' } }),
+        (err: any) => err.status === 404, path)
+    }
+  })
+
+  test('only the canonical routes that M1 serves reach the provider', async () => {
+    for (const path of ['/api/oauth/jwks', '/api/oauth/revoke', '/api/oauth/token/', '/.well-known/openid-configuration/', '/.well-known/OAuth-Authorization-Server']) {
+      const err = await axios().post(path, 'token=x', { headers: { 'content-type': 'application/x-www-form-urlencoded' } }).catch(err => err)
+      assert.equal(err.status, 404, path)
+      await assert.rejects(axios().get(path), (err: any) => err.status === 404, path)
+    }
   })
 
   test('the provider signs with the current scoped key, also after a rotation', async () => {
     const ax = axios()
-    const providerKid = async () => (await ax.get('/api/oauth/jwks')).data.keys[0].kid
+    const { nhi } = await createNhi('oauth-rotation@test.com')
+    const providerKid = async () => {
+      const res = await ccRequest(nhi.id)
+      assert.equal(res.status, 200, JSON.stringify(res.data))
+      return (jwt.decode(res.data.access_token, { complete: true }) as any).header.kid
+    }
     const scopedKid = async () => (await ax.get('/.well-known/scoped-jwks.json')).data.keys[0].kid
     const kid1 = await scopedKid()
     assert.ok(kid1.startsWith('scoped-'))
@@ -417,6 +436,17 @@ test.describe('oauth server client_credentials grant', () => {
     const res = await ccRequest(nhi.id, {}, { 'x-forwarded-for': '7.7.7.6' })
     assert.equal(res.status, 400)
     assert.equal(res.data.error, 'invalid_grant')
+  })
+
+  test('client_credentials: non canonical token paths are 404', async () => {
+    const { nhi } = await createNhi('oauth-cc-paths@test.com')
+    const params = { grant_type: 'client_credentials', client_assertion_type: clientAssertionType }
+    for (const path of ['/api/oauth/token/', '/api/oauth/Token', '/api/oauth/TOKEN/']) {
+      const res = await tokenRequest({ ...params, client_assertion: clientAssertion(nhi.id) }, {}, path)
+      assert.equal(res.status, 404, path)
+    }
+    const res = await tokenRequest({ ...params, client_assertion: clientAssertion(nhi.id) })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
   })
 
   test('client_credentials: only failures count against the limiter', async () => {

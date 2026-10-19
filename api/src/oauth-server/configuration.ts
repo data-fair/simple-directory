@@ -102,7 +102,10 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
           }
         }
       },
-      revocation: { enabled: true },
+      // M1 issues stateless JWT access tokens only, nothing to revoke (M2 re-enables it)
+      revocation: { enabled: false },
+      // no resource server enforces sender-constrained tokens, they must not be issued
+      dPoP: { enabled: false },
       devInteractions: { enabled: false },
       introspection: { enabled: false },
       registration: { enabled: false },
@@ -113,12 +116,13 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
     },
     responseTypes: ['code'],
     pkce: { required: () => true },
+    // NHI clients authenticate with their keys, no client has a secret and M1 has no public client
+    clientAuthMethods: ['private_key_jwt'],
     enabledJWA: {
       clientAuthSigningAlgValues: ['RS256', 'ES256', 'PS256', 'EdDSA']
     },
     routes: {
       token: '/api/oauth/token',
-      revocation: '/api/oauth/revoke',
       jwks: '/api/oauth/jwks',
       authorization: '/api/oauth/authorize'
     },
@@ -156,6 +160,8 @@ export const discoveryOverrides = (ctx: IssuerContext, body: Record<string, any>
   if (!config.oauthServer?.authorizationCode) {
     // without the authorization code flow the only grants are client_credentials and jwt-bearer
     delete body.authorization_endpoint
+    delete body.response_modes_supported
+    delete body.authorization_response_iss_parameter_supported
     body.response_types_supported = []
     grantTypes = grantTypes.filter(g => !['authorization_code', 'implicit', 'refresh_token'].includes(g))
   }

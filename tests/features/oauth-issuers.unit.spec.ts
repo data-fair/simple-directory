@@ -138,7 +138,7 @@ test.describe('oauth server issuers and resources', () => {
 
   test('non default port and site path match exactly', async () => {
     const pathSite = site('test_path', 'paths.example.org', 'test_orga5', { authMode: 'onlyLocal', isAccountMain: true, path: '/sub' })
-    const portSite = site('test_port', 'port.example.org', 'test_orga6', { authMode: 'onlyLocal', isAccountMain: true })
+    const portSite = site('test_port', 'port.example.org:8443', 'test_orga6', { authMode: 'onlyLocal', isAccountMain: true })
     await seed(pathSite, portSite)
     const { issuerOfSite, resolveResource, ResourceError } = await import('../../api/src/oauth-server/issuers.ts')
     const ctx = (await issuerOfSite(pathSite as any, 'https://paths.example.org/sub'))!
@@ -150,6 +150,26 @@ test.describe('oauth server issuers and resources', () => {
     const pctx = (await issuerOfSite(portSite as any, 'https://port.example.org:8443'))!
     assert.equal(pctx.siteUrl, 'https://port.example.org:8443')
     assert.equal(pctx.issuer, 'https://port.example.org:8443/simple-directory')
+  })
+
+  test('site url must be the canonical url of the site', async () => {
+    const root = site('test_root', 'shared.example.org', 'test_orga8', { authMode: 'onlyLocal', isAccountMain: true })
+    await seed(root, portal)
+    const { issuerOfSite } = await import('../../api/src/oauth-server/issuers.ts')
+    // a path site resolved to the root site of the same host
+    assert.equal(await issuerOfSite(root as any, 'https://shared.example.org/portal'), null)
+    // a url of another host
+    assert.equal(await issuerOfSite(root as any, portalUrl), null)
+    // the matching case still works
+    assert.equal((await issuerOfSite(root as any, 'https://shared.example.org'))?.issuer, 'https://shared.example.org/simple-directory')
+  })
+
+  test('main site issuer only on the main site url', async () => {
+    const { issuerOfSite, mainSiteUrl } = await import('../../api/src/oauth-server/issuers.ts')
+    // the main site reached through another host (unknown host, startsWith quirk)
+    assert.equal(await issuerOfSite(undefined, 'https://unknown.example.org'), null)
+    assert.equal(await issuerOfSite(undefined, mainSiteUrl() + '/portal'), null)
+    assert.ok(await issuerOfSite(undefined, mainSiteUrl()))
   })
 
   test('isAccountMain site without own auth is not an issuer', async () => {

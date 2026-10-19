@@ -68,17 +68,31 @@ const limitClientCredentials = async (req: Request, res: Response): Promise<bool
   return true
 }
 
+const tokenRoute = '/api/oauth/token'
+const authorizeRoute = '/api/oauth/authorize'
+
+// the provider's own router is case insensitive and accepts trailing slashes: only the exact
+// canonical spelling of a route served in M1 is forwarded, so that the checks below cannot be
+// skipped through a variant (revocation and the provider's jwks route are not served, the
+// advertised jwks_uri is SD's scoped jwks)
+const servedRoutes = () => {
+  const routes = [tokenRoute, openidDiscovery, oauthDiscovery]
+  if (config.oauthServer?.authorizationCode) routes.push(authorizeRoute)
+  return routes
+}
+
 router.use(async (req, res, next) => {
   const path = req.path
-  if (!path.startsWith('/api/oauth/') && path !== openidDiscovery && path !== oauthDiscovery) return next()
+  const normalizedPath = path.toLowerCase().replace(/\/+$/, '')
+  if (!normalizedPath.startsWith('/api/oauth/') && normalizedPath !== openidDiscovery && normalizedPath !== oauthDiscovery) return next()
   // internal calls carry no site context, the authorization server is only served publicly
   if (reqIsInternal(req)) return res.status(404).send()
   if (!config.oauthServer?.enabled) return res.status(404).send()
-  if (path === '/api/oauth/authorize' && !config.oauthServer?.authorizationCode) return res.status(404).send()
+  if (!servedRoutes().includes(path)) return res.status(404).send()
 
   const ctx = await issuerOfSite(await reqSite(req), canonicalSiteUrl(reqSiteUrl(req)))
   if (!ctx) return res.status(404).send()
-  if (path === '/api/oauth/token' && req.method === 'POST') {
+  if (path === tokenRoute && req.method === 'POST') {
     await new Promise<void>((resolve, reject) => tokenBodyParser(req, res, err => err ? reject(err) : resolve()))
     if (req.body?.grant_type === jwtBearerGrantType) return handleJwtBearerGrant(req, res, ctx)
     if (req.body?.grant_type === 'client_credentials' && !await limitClientCredentials(req, res)) return
