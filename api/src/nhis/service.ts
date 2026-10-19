@@ -74,11 +74,12 @@ export const listNhis = async (organizationId: string) => {
   }
 }
 
+export const orgRoles = (org: Organization): string[] => org.roles?.length ? org.roles : config.roles.defaults
+
 // the creation checks, shared by the admin POST and the consent screen (inline creation);
 // the caller has already authorized the actor as admin of `org`
 export const validateNewNhi = async (req: Request<any>, org: Organization, body: { name: string, role: string, scopes?: string[], department?: string, provider?: { issuer: string, jwks?: any }, subject?: string, allowedIps?: string[], ipBinding?: boolean }): Promise<void> => {
-  const roles = org.roles?.length ? org.roles : config.roles.defaults
-  if (!roles.includes(body.role)) throw httpError(400, 'unknown role')
+  if (!orgRoles(org).includes(body.role)) throw httpError(400, 'unknown role')
   if (!!body.provider !== !!body.subject) throw httpError(400, 'provider and subject go together')
   if (body.provider) await checkProvider(body.provider)
   if (body.allowedIps) checkAllowedIps(body.allowedIps)

@@ -1,7 +1,6 @@
 import { Router } from 'express'
 import { httpError, reqSessionAuthenticated, type EventLogContext } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
-import config from '#config'
 import storages from '#storages'
 import { reqI18n } from '#i18n'
 import { postUserIdentityWebhook, deleteIdentityWebhook, setNbMembersLimit } from '#services'
@@ -10,7 +9,7 @@ import { checkProvider } from './keys.ts'
 import { checkAllowedIps } from './ips.ts'
 import { checkScopes } from './scopes.ts'
 import { getKnownScopes } from '../scopes/service.ts'
-import { createNhi, getNhi, listNhis, validateNewNhi } from './service.ts'
+import { createNhi, getNhi, listNhis, orgRoles, validateNewNhi } from './service.ts'
 import type { Request } from 'express'
 
 const router = Router({ mergeParams: true })
@@ -33,8 +32,7 @@ const knownScopes = (req: Request<any>) => {
 const getOrgAndRoles = async (organizationId: string) => {
   const org = await storages.globalStorage.getOrganization(organizationId)
   if (!org) throw httpError(404, 'organization not found')
-  const roles = org.roles?.length ? org.roles : config.roles.defaults
-  return { org, roles }
+  return { org, roles: orgRoles(org) }
 }
 
 router.get('', async (req: Request<OrgParams>, res) => {

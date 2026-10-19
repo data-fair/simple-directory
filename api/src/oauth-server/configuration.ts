@@ -64,7 +64,7 @@ const adapterFactory = (ctx: IssuerContext) => (name: string) => {
 // the client already authenticated by the provider (private_key_jwt), so precise errors are fine
 const nhiClientCredentials = async (koaCtx: KoaContextWithOIDC, clientId: string, resource: ResolvedResource) => {
   const user = await storages.globalStorage.getUser(clientId)
-  if (!user?.nhi || user.organizations.length !== 1) throw new errors.InvalidGrant('unknown nhi')
+  if (!user?.nhi?.provider?.jwks || user.organizations.length !== 1) throw new errors.InvalidGrant('unknown nhi')
   // ResourceError, mapped to invalid_target by the caller
   assertNhiMayTarget(user, resource)
   const clientIp = reqIp(koaCtx.req)

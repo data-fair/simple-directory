@@ -177,8 +177,8 @@ export default {
       description: 'Non-human identity: managed by the owning organization admins, authenticates by exchanging a JWT from the bound provider',
       type: 'object',
       additionalProperties: false,
-      // the key binding is optional (an NHI reachable only through OAuth grants has none), but both or neither
-      dependentRequired: { provider: ['subject'], subject: ['provider'] },
+      // the key binding is optional (an NHI reachable only through OAuth grants has none), but both or
+      // neither: this is enforced in code (validateNewNhi, the PATCH route, createNhi), not by this schema
       properties: {
         provider: {
           type: 'object',
