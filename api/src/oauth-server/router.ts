@@ -5,7 +5,7 @@ import { reqIp, reqIsInternal, reqSiteUrl } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { reqI18n } from '#i18n'
 import { consumeNhiLimits } from '../nhis/exchange.ts'
-import { clientCredentialsLimits } from './clients.ts'
+import { tokenLimits } from './clients.ts'
 import { reqSite } from '../sites/service.ts'
 import { issuerOfSite } from './issuers.ts'
 import { getProvider } from './providers.ts'
@@ -42,9 +42,9 @@ export const canonicalSiteUrl = (siteUrl: string) => {
   return url.origin + url.pathname.replace(/\/+$/, '')
 }
 
-// rate limiting key of a client_credentials request, before any verification: the unverified sub
-// of the client assertion (private_key_jwt), or the client_id parameter
-const clientCredentialsClientId = (body: Record<string, any>): string | undefined => {
+// rate limiting key of a token request, before any verification: the unverified sub of the client
+// assertion (private_key_jwt), or the client_id parameter (public clients)
+const tokenRequestClientId = (body: Record<string, any>): string | undefined => {
   if (typeof body.client_assertion === 'string') {
     try {
       const sub = decodeJwt(body.client_assertion).sub
@@ -54,17 +54,21 @@ const clientCredentialsClientId = (body: Record<string, any>): string | undefine
   if (typeof body.client_id === 'string' && body.client_id) return body.client_id
 }
 
+// the grants of the provider that are rate limited per IP and per client
+const limitedGrantTypes = ['client_credentials', 'authorization_code', 'refresh_token']
+
 // same limits as the JWT bearer grant: consumed up front, refunded once the token is issued (by the
-// provider middleware, see providers.ts)
-const limitClientCredentials = async (req: Request, res: Response): Promise<boolean> => {
+// provider middleware, see providers.ts), so only failures count
+const limitTokenRequest = async (req: Request, res: Response, grantType: string): Promise<boolean> => {
   const clientIp = reqIp(req)
-  const clientId = clientCredentialsClientId(req.body)
+  const clientId = tokenRequestClientId(req.body)
   if (!await consumeNhiLimits(clientIp, clientId)) {
-    eventsLog.warn('sd.auth.nhi.rate-limit', 'rate limit error for the client_credentials grant', { req })
+    if (grantType === 'client_credentials') eventsLog.warn('sd.auth.nhi.rate-limit', 'rate limit error for the client_credentials grant', { req })
+    else eventsLog.warn('sd.oauth.rate-limit', `rate limit error for the ${grantType} grant of client ${clientId ?? 'unknown'}`, { req })
     oauthError(res, 429, 'invalid_request', reqI18n(req).messages.errors.rateLimitAuth)
     return false
   }
-  clientCredentialsLimits.set(req, { clientIp, clientId })
+  tokenLimits.set(req, { clientIp, clientId })
   return true
 }
 
@@ -106,7 +110,8 @@ router.use(async (req, res, next) => {
   if (path === tokenRoute && req.method === 'POST') {
     await new Promise<void>((resolve, reject) => tokenBodyParser(req, res, err => err ? reject(err) : resolve()))
     if (req.body?.grant_type === jwtBearerGrantType) return handleJwtBearerGrant(req, res, ctx)
-    if (req.body?.grant_type === 'client_credentials' && !await limitClientCredentials(req, res)) return
+    const grantType = req.body?.grant_type
+    if (limitedGrantTypes.includes(grantType) && !await limitTokenRequest(req, res, grantType)) return
   }
 
   const provider = await getProvider(ctx)

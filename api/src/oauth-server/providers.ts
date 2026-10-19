@@ -6,7 +6,9 @@ import { buildConfiguration, discoveryOverrides, type SdTokenState } from './con
 import type { IssuerContext } from './issuers.ts'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { refundNhiLimits, updateNhiLogged } from '../nhis/exchange.ts'
-import { clientCredentialsLimits } from './clients.ts'
+import { tokenLimits } from './clients.ts'
+import { revokeGrantRecord, touchGrantRecord } from './grants.ts'
+import { internalError } from '@data-fair/lib-node/observer.js'
 
 type CachedProvider = { marker: string, promise: Promise<Provider> }
 
@@ -32,6 +34,9 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
   provider.proxy = true
   provider.use(async (koaCtx, next) => {
     await next()
+    // work started by the provider events of this request, finished before the response is written
+    const pending: Promise<unknown>[] | undefined = koaCtx.state.sdPending
+    if (pending) await Promise.all(pending)
     if (koaCtx.oidc?.route === 'discovery' && koaCtx.status === 200 && koaCtx.body) {
       discoveryOverrides(ctx, koaCtx.body as Record<string, any>)
     }
@@ -42,20 +47,36 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
       const body = koaCtx.body as Record<string, any>
       if (sdToken.scope === undefined) delete body.scope
       else body.scope = sdToken.scope
-      if (koaCtx.oidc.params?.grant_type !== 'client_credentials') return
       // awaited here, before koa writes the response, so the client's next attempt sees the refund
-      const limits = clientCredentialsLimits.get(koaCtx.req)
+      const limits = tokenLimits.get(koaCtx.req)
       if (limits) await refundNhiLimits(limits.clientIp, limits.clientId)
+      if (koaCtx.oidc.params?.grant_type !== 'client_credentials') {
+        if (sdToken.grantId) await touchGrantRecord(sdToken.grantId)
+        return
+      }
       updateNhiLogged(sdToken.user)
       eventsLog.info('sd.auth.nhi.ok', `an NHI access token was issued for ${sdToken.user.id} by the client_credentials grant`, { req: koaCtx.req as any })
     }
   })
   // every failure of the token endpoint (client authentication included), the reason server side only
   provider.on('grant.error', (koaCtx: KoaContextWithOIDC, err: any) => {
-    if (!clientCredentialsLimits.has(koaCtx.req)) return
-    const clientId = clientCredentialsLimits.get(koaCtx.req)?.clientId ?? 'unknown client'
+    // the provider destroyed the whole grant (grant.revoked follows), a refresh token was replayed
+    if (err.error_detail === 'refresh token already used') {
+      const grantId = koaCtx.oidc?.entities?.RefreshToken?.grantId
+      eventsLog.warn('sd.oauth.grant.reused', `refresh token reused for grant ${grantId} of client ${koaCtx.oidc?.client?.clientId}, the grant is revoked`, { req: koaCtx.req as any })
+      return
+    }
+    if (koaCtx.oidc?.params?.grant_type !== 'client_credentials' || !tokenLimits.has(koaCtx.req)) return
+    const clientId = tokenLimits.get(koaCtx.req)?.clientId ?? 'unknown client'
     const reason = [err.error, err.error_description, err.error_detail].filter(Boolean).join(': ')
     eventsLog.warn('sd.auth.nhi.fail', `nhi client_credentials grant failed for ${clientId}: ${reason}`, { req: koaCtx.req as any })
+  })
+  // refresh token reuse, authorization code reuse and the revocation endpoint: the provider already
+  // destroyed its own documents of the grant, only the SD record is left
+  provider.on('grant.revoked', (koaCtx: KoaContextWithOIDC, grantId: string) => {
+    const pending = revokeGrantRecord(grantId, 'provider', { req: koaCtx?.req as any })
+      .catch(err => internalError('oauth-grant-revoked', 'failed to delete the record of a revoked oauth grant', err))
+    if (koaCtx?.state) (koaCtx.state.sdPending ??= []).push(pending)
   })
   return provider
 }

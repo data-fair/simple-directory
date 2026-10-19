@@ -1,7 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import jwt from 'jsonwebtoken'
-import { MongoClient } from 'mongodb'
 import { CookieJar } from 'tough-cookie'
 import { axiosWithCookies } from '@data-fair/lib-node/axios-with-cookies.js'
 import { axios, createUser, testEnvAx, getServerConfig, directoryUrl, passwordLogin } from '../support/axios.ts'
@@ -10,60 +9,9 @@ import {
   runCodeFlow, startAuthorization, openInteraction, getDetails, postDecision, resume, exchangeCode,
   browse, interactionUid, type CodeFlowOptions
 } from '../support/oauth-client.ts'
-
-const siteHost = `127.0.0.1:${process.env.NGINX_PORT2}`
-const siteUrl = `http://${siteHost}`
-const issuer = siteUrl + '/simple-directory'
-const siteId = 'test_oauth_code_site'
-const realmHost = `127.0.0.1:${process.env.NGINX_PORT3}`
-const realmUrl = `http://${realmHost}`
-const redirectUri = 'http://localhost:5999/cb'
-const password = 'TestPasswd01'
-
-const clientBody = (extra: Record<string, any> = {}) => ({
-  name: 'Dash',
-  redirectUris: [redirectUri],
-  scopes: ['organizations:read'],
-  consent: 'explicit',
-  ...extra
-})
-
-const withMongo = async <T>(fn: (db: ReturnType<MongoClient['db']>) => Promise<T>) => {
-  const config = await getServerConfig()
-  const mongoClient = await MongoClient.connect(config.mongo.url)
-  try {
-    return await fn(mongoClient.db())
-  } finally {
-    await mongoClient.close()
-  }
-}
-
-const grantRecords = (filter: Record<string, any>) => withMongo(db => db.collection<any>('oauth-grants').find(filter).toArray())
-
-// issuer site (account main site of an org) with one explicit site client, and a user of the
-// site who is a member of the owner org
-const setup = async (client: Record<string, any> = {}) => {
-  const config = await getServerConfig()
-  const { ax: ownerAx } = await createUser('oauth-code-owner@test.com')
-  const org = (await ownerAx.post('/api/organizations', { name: 'OAuth code org' })).data
-  const owner = { type: 'organization', id: org.id, name: org.name }
-  await axios().post('/api/sites', { _id: siteId, owner, host: siteHost }, { params: { key: config.secretKeys.sites } })
-  const { ax: adminAx } = await createUser('admin@test.com', true)
-  await adminAx.patch('/api/sites/' + siteId, { isAccountMain: true, oauthClients: [clientBody(client)] })
-  await testEnvAx.post('/clear-site-cache')
-  const clientId: string = (await adminAx.get('/api/sites/' + siteId, { params: { showAll: true } })).data.oauthClients[0].id
-  const { ax: userAx, user } = await createUser('oauth-code-user@test.com', false, password, issuer)
-  await testEnvAx.patch('/user/oauth-code-user@test.com', { organizations: [{ id: org.id, name: org.name, role: 'user' }] })
-  const flow = (extra: Partial<CodeFlowOptions> = {}): CodeFlowOptions => ({
-    issuer, clientId, redirectUri, scope: 'organizations:read', browserAx: userAx, ...extra
-  })
-  return { config, org, owner, ownerAx, adminAx, clientId, userAx, user, flow }
-}
-
-const patchClient = async (adminAx: any, clientId: string, extra: Record<string, any>) => {
-  await adminAx.patch('/api/sites/' + siteId, { oauthClients: [{ ...clientBody(), id: clientId, ...extra }] })
-  await testEnvAx.post('/clear-site-cache')
-}
+import {
+  siteHost, siteUrl, issuer, realmHost, realmUrl, redirectUri, password, clientBody, grantRecords, setup, patchClient
+} from '../support/oauth-code-site.ts'
 
 // the authorization request ends at the client with an error
 const authorizeError = async (opts: CodeFlowOptions) => {

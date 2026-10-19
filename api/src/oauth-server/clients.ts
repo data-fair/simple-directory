@@ -27,9 +27,10 @@ export const findNhiClient = async (clientId: string): Promise<ClientMetadata | 
   }
 }
 
-// the rate limiting keys consumed by the router for a client_credentials request, refunded by the
-// provider middleware once the token is issued (before the response is written)
-export const clientCredentialsLimits = new WeakMap<IncomingMessage, { clientIp: string, clientId: string | undefined }>()
+// the rate limiting keys consumed by the router for a client_credentials, authorization_code or
+// refresh_token request, refunded by the provider middleware once the token is issued (before the
+// response is written)
+export const tokenLimits = new WeakMap<IncomingMessage, { clientIp: string, clientId: string | undefined }>()
 
 export type SdClientKind = 'nhi' | 'site' | 'cimd' | 'dcr'
 
@@ -51,6 +52,12 @@ export const getIssuerSiteClients = async (ctx: IssuerContext): Promise<SiteOAut
 export const findSiteClient = async (ctx: IssuerContext, clientId: string): Promise<SiteOAuthClient | undefined> => {
   if (clientKind(clientId) !== 'site') return undefined
   return (await getIssuerSiteClients(ctx)).find(c => c.id === clientId)
+}
+
+// the API resources of a site client: its registered resources, the issuer site by default
+export const siteClientResourceAllowed = (ctx: IssuerContext, client: SiteOAuthClient, resource: { siteUrl: string }) => {
+  const allowed = (client.resources?.length ? client.resources : [ctx.siteUrl]).map(r => r.replace(/\/+$/, ''))
+  return allowed.includes(resource.siteUrl)
 }
 
 export const siteClientMetadata = (client: SiteOAuthClient): ClientMetadata => ({

@@ -53,15 +53,21 @@ export const touchGrantRecord = async (grantId: string) => {
   await mongo.oauthGrants.updateOne({ _id: grantId }, { $set: { lastUsedAt: new Date() } })
 }
 
+// the record part of a revocation, alone when the provider already destroyed its own documents
+// (its grant.revoked event)
+export const revokeGrantRecord = async (grantId: string, reason: string, logContext: EventLogContext = {}) => {
+  const record = await mongo.oauthGrants.findOneAndDelete({ _id: grantId })
+  if (!record) return false
+  eventsLog.info('sd.oauth.grant.revoked', `oauth grant ${grantId} of client ${record.clientId} revoked: ${reason}`, logContext)
+  return true
+}
+
 export const revokeGrant = async (grantId: string, reason: string, logContext: EventLogContext = {}) => {
   for (const model of ['AccessToken', 'RefreshToken', 'AuthorizationCode']) {
     await new MongoAdapter(model).revokeByGrantId(grantId)
   }
   await new MongoAdapter('Grant').destroy(grantId)
-  const record = await mongo.oauthGrants.findOneAndDelete({ _id: grantId })
-  if (!record) return false
-  eventsLog.info('sd.oauth.grant.revoked', `oauth grant ${grantId} of client ${record.clientId} revoked: ${reason}`, logContext)
-  return true
+  return await revokeGrantRecord(grantId, reason, logContext)
 }
 
 export const revokeGrants = async (filter: GrantFilter, reason: string, logContext?: EventLogContext) => {

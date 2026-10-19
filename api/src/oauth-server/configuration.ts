@@ -11,13 +11,17 @@ import { getKnownScopes } from '../scopes/service.ts'
 import { grantedScope, narrowScope } from '../nhis/scopes.ts'
 import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
-import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS } from './clients.ts'
+import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS, siteClientResourceAllowed } from './clients.ts'
 import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts'
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
 import { sdClaims, stripOidcScopes } from './access-token.ts'
 import { jwtBearerGrantType } from './jwt-bearer.ts'
-import { getGrantRecord, dashboardGrantLifetime, type OAuthGrantRecord } from './grants.ts'
+import { getGrantRecord, dashboardGrantLifetime } from './grants.ts'
 import { oidcScopeNames } from './consent.ts'
+import { checkGrantSubject, GrantSubjectError, knownScopeNames } from './grant-subject.ts'
+import Debug from 'debug'
+
+const debug = Debug('oauth-server')
 
 const cookieKeysId = 'oauth-server-cookie-keys'
 
@@ -31,7 +35,7 @@ export const getCookieKeys = async (): Promise<string[]> => {
 }
 
 // what an SD grant computed for the access token, handed to the JWT customizer through the koa state
-export type SdTokenState = { clientId: string, user: User, sub: string, aud: string | string[], scope: string | undefined, claims: Record<string, any> }
+export type SdTokenState = { clientId: string, user: User, sub: string, aud: string | string[], scope: string | undefined, claims: Record<string, any>, grantId?: string }
 
 // claims the provider (or the customizer itself) owns, never taken from sdClaims
 const reservedClaims = new Set(['iss', 'sub', 'aud', 'exp', 'iat', 'nbf', 'jti', 'client_id', 'scope', 'cnf', 'authorization_details'])
@@ -81,8 +85,6 @@ const nhiClientCredentials = async (koaCtx: KoaContextWithOIDC, clientId: string
   return scope
 }
 
-const knownScopeNames = async () => Object.keys(await getKnownScopes(defaultLocale, messages[defaultLocale].scopes))
-
 const requestedPlatformScopes = (scope: unknown) =>
   typeof scope === 'string' ? (stripOidcScopes(scope) ?? '').split(' ').filter(Boolean) : []
 
@@ -91,19 +93,6 @@ const requestedPlatformScopes = (scope: unknown) =>
 export const siteClientRequestScopes = (requestedScope: unknown, clientScopes: string[], known: string[]) => {
   const requested = requestedPlatformScopes(requestedScope)
   return narrowScope(requested.length ? requested : clientScopes, clientScopes, known)
-}
-
-// the platform claims of a code or refresh grant: the organizations claim holds the bound account only
-const boundAccountClaims = (user: User, record: OAuthGrantRecord, resource: ResolvedResource, scope: string) => {
-  const claims = sdClaims(user, resource, { scope })
-  if (record.account.type === 'organization') {
-    const membership = (claims.organizations as any[] ?? []).find(o => o.id === record.account.id && (o.department || undefined) === (record.account.department || undefined))
-    if (!membership) return undefined
-    claims.organizations = [membership]
-  } else {
-    claims.organizations = []
-  }
-  return claims
 }
 
 const accountClaims = (user: User) => async (_use: string, scope: string) => {
@@ -117,36 +106,35 @@ const accountClaims = (user: User) => async (_use: string, scope: string) => {
   return claims
 }
 
-// the subject of a code or refresh token: the grant record, the user and the bound membership
-// must still exist, the scope is narrowed against the current client registration. The resulting
-// claims go to the JWT customizer through the koa state, as for the machine grants.
-// TODO(task 4): replaced by checkGrantSubject (NHI subjects, allowedIps, ipBinding)
-const codeGrantSubject = async (ctx: IssuerContext, koaCtx: KoaContextWithOIDC, sub: string, token: { grantId?: string, resource?: string | string[] }) => {
+// the subject of a code or refresh token, re-checked at every issuance (checkGrantSubject). The
+// resulting claims go to the JWT customizer through the koa state, as for the machine grants.
+const grantSubject = async (ctx: IssuerContext, koaCtx: KoaContextWithOIDC, sub: string, token: { grantId?: string, resource?: string | string[] }) => {
   if (!token.grantId) return undefined
   const record = await getGrantRecord(token.grantId)
-  if (!record || record.subject.id !== sub || record.issuer !== ctx.issuer) return undefined
-  const user = await storages.globalStorage.getUser(sub)
-  if (!user) return undefined
+  if (!record || record.subject.id !== sub || record.clientId !== koaCtx.oidc.client?.clientId) return undefined
+  // the provider only accepts a resource of the grant, the record holds the single one granted
   const resourceParam = koaCtx.oidc.params?.resource ?? token.resource
-  if (typeof resourceParam !== 'string') return undefined
-  let resource: ResolvedResource
+  if (resourceParam !== undefined && resourceParam !== record.resources[0]) return undefined
+  let subject
   try {
-    resource = await resolveResource(ctx, resourceParam)
+    subject = await checkGrantSubject(record, ctx, reqIp(koaCtx.req))
   } catch (err) {
-    if (err instanceof ResourceError) return undefined
+    if (err instanceof GrantSubjectError) {
+      debug(`grant ${record._id} of client ${record.clientId} refused: ${err.message}`)
+      return undefined
+    }
     throw err
   }
-  let max: string[] | undefined
-  if (record.clientKind === 'site') {
-    const siteClient = await findSiteClient(ctx, record.clientId)
-    if (!siteClient) return undefined
-    max = siteClient.scopes
+  const { user, resource, claims } = subject
+  let scope = subject.scope
+  // a refresh may ask for less than the grant (the provider refuses more)
+  const requested = requestedPlatformScopes(koaCtx.oidc.params?.scope)
+  if (requested.length) {
+    scope = scope.split(' ').filter(s => requested.includes(s)).join(' ')
+    if (!scope) throw new errors.InvalidScope('the requested scope is no longer granted', requested.join(' '))
   }
-  const scope = narrowScope(record.scope.split(' '), max, await knownScopeNames()).join(' ')
-  if (!scope) return undefined
-  const claims = boundAccountClaims(user, record, resource, scope)
-  if (!claims) return undefined
-  const state: SdTokenState = { clientId: record.clientId, user, sub: user.id, aud: resource.audience, scope, claims }
+  claims.scope = scope
+  const state: SdTokenState = { clientId: record.clientId, user, sub: user.id, aud: resource.audience, scope, claims, grantId: record._id }
   koaCtx.state.sdToken = state
   return { accountId: user.id, claims: accountClaims(user) }
 }
@@ -158,7 +146,7 @@ const findAccount = (ctx: IssuerContext): FindAccount => async (koaCtx, sub, tok
     if (!user) return undefined
     return { accountId: user.id, claims: accountClaims(user) }
   }
-  return await codeGrantSubject(ctx, koaCtx, sub, token as any)
+  return await grantSubject(ctx, koaCtx, sub, token as any)
 }
 
 // the authorization code flow of a site client (user subject): API resources of the client's
@@ -167,8 +155,7 @@ const siteClientResourceScope = async (ctx: IssuerContext, koaCtx: KoaContextWit
   const siteClient = await findSiteClient(ctx, clientId)
   if (!siteClient) throw new errors.InvalidTarget('unknown client')
   if (resource.kind === 'mcp') throw new errors.InvalidTarget('an mcp resource is reserved to service accounts')
-  const allowed = (siteClient.resources?.length ? siteClient.resources : [ctx.siteUrl]).map(r => r.replace(/\/+$/, ''))
-  if (!allowed.includes(resource.siteUrl)) throw new errors.InvalidTarget('resource not registered for this client')
+  if (!siteClientResourceAllowed(ctx, siteClient, resource)) throw new errors.InvalidTarget('resource not registered for this client')
   const known = await knownScopeNames()
   const route = koaCtx.oidc?.route
   if (route === 'authorization' || route === 'resume') {
@@ -176,7 +163,7 @@ const siteClientResourceScope = async (ctx: IssuerContext, koaCtx: KoaContextWit
     if (!scope.length) throw new errors.InvalidScope('no requested scope is allowed for this client', String(koaCtx.oidc.params?.scope ?? ''))
     return scope.join(' ')
   }
-  // token endpoint: the claims are computed by findAccount (codeGrantSubject)
+  // token endpoint: the claims are computed by findAccount (grantSubject)
   const sdToken: SdTokenState | undefined = koaCtx.state?.sdToken
   return sdToken?.scope ?? narrowScope(siteClient.scopes, undefined, known).join(' ')
 }
@@ -220,7 +207,8 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
         }
       },
       // refresh tokens come with the authorization code flow, revocation with them
-      revocation: { enabled: codeFlow },
+      // a client revokes its own tokens only
+      revocation: { enabled: codeFlow, allowedPolicy: async (_koaCtx, client, token) => token.clientId === client.clientId },
       // no resource server enforces sender-constrained tokens, they must not be issued
       dPoP: { enabled: false },
       devInteractions: { enabled: false },
