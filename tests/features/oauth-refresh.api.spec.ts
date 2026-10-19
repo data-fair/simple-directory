@@ -176,4 +176,19 @@ test.describe('oauth refresh tokens and revocation', () => {
     assert.equal(limited.status, 429, JSON.stringify(limited.data))
     assert.equal(limited.data.error, 'invalid_request')
   })
+
+  test('a junk client assertion does not move a public client back to the per-client key', async () => {
+    const { clientId, flow } = await setup()
+    const { tokens } = await runCodeFlow(flow())
+    const attempts = (await getServerConfig()).authRateLimit.attempts
+    let n = 0
+    const from = () => { n++; return { 'x-forwarded-for': `10.79.${n >> 8}.${n & 255}` } }
+    const junk = { client_assertion: 'x', client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer' }
+    for (let i = 0; i < attempts + 1; i++) {
+      const res = await refresh(clientId, 'bogus-' + i, junk, from())
+      assert.ok(res.status >= 400 && res.status !== 429, `failure ${i}: ${res.status} ${JSON.stringify(res.data)}`)
+    }
+    const ok = await refresh(clientId, tokens.refresh_token, {}, from())
+    assert.equal(ok.status, 200, JSON.stringify(ok.data))
+  })
 })
