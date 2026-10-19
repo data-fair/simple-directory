@@ -1,5 +1,5 @@
-import { errors } from 'oidc-provider'
-import type { ClientMetadata, Configuration, JWK, KoaContextWithOIDC } from 'oidc-provider'
+import { errors, interactionPolicy } from 'oidc-provider'
+import type { ClientMetadata, Configuration, JWK, KoaContextWithOIDC, FindAccount } from 'oidc-provider'
 import { randomBytes } from 'node:crypto'
 import mongo from '#mongo'
 import config, { jwtDurations } from '#config'
@@ -8,7 +8,7 @@ import type { User } from '#types'
 import { defaultLocale, messages } from '#i18n'
 import { reqIp } from '@data-fair/lib-express'
 import { getKnownScopes } from '../scopes/service.ts'
-import { grantedScope } from '../nhis/scopes.ts'
+import { grantedScope, narrowScope } from '../nhis/scopes.ts'
 import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
 import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS } from './clients.ts'
@@ -16,6 +16,8 @@ import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
 import { sdClaims, stripOidcScopes } from './access-token.ts'
 import { jwtBearerGrantType } from './jwt-bearer.ts'
+import { getGrantRecord, dashboardGrantLifetime, type OAuthGrantRecord } from './grants.ts'
+import { oidcScopeNames } from './consent.ts'
 
 const cookieKeysId = 'oauth-server-cookie-keys'
 
@@ -79,7 +81,108 @@ const nhiClientCredentials = async (koaCtx: KoaContextWithOIDC, clientId: string
   return scope
 }
 
+const knownScopeNames = async () => Object.keys(await getKnownScopes(defaultLocale, messages[defaultLocale].scopes))
+
+const requestedPlatformScopes = (scope: unknown) =>
+  typeof scope === 'string' ? (stripOidcScopes(scope) ?? '').split(' ').filter(Boolean) : []
+
+// the platform scopes a site client may be granted for an authorization request: the requested
+// ones within its registration, or its whole registration when it requested none (spec 8.2)
+export const siteClientRequestScopes = (requestedScope: unknown, clientScopes: string[], known: string[]) => {
+  const requested = requestedPlatformScopes(requestedScope)
+  return narrowScope(requested.length ? requested : clientScopes, clientScopes, known)
+}
+
+// the platform claims of a code or refresh grant: the organizations claim holds the bound account only
+const boundAccountClaims = (user: User, record: OAuthGrantRecord, resource: ResolvedResource, scope: string) => {
+  const claims = sdClaims(user, resource, { scope })
+  if (record.account.type === 'organization') {
+    const membership = (claims.organizations as any[] ?? []).find(o => o.id === record.account.id && (o.department || undefined) === (record.account.department || undefined))
+    if (!membership) return undefined
+    claims.organizations = [membership]
+  } else {
+    claims.organizations = []
+  }
+  return claims
+}
+
+const accountClaims = (user: User) => async (_use: string, scope: string) => {
+  const scopes = scope.split(' ')
+  const claims: { sub: string } & Record<string, any> = { sub: user.id }
+  // identity claims are for user subjects only
+  if (!user.nhi) {
+    if (scopes.includes('profile')) claims.name = user.name
+    if (scopes.includes('email')) claims.email = user.email
+  }
+  return claims
+}
+
+// the subject of a code or refresh token: the grant record, the user and the bound membership
+// must still exist, the scope is narrowed against the current client registration. The resulting
+// claims go to the JWT customizer through the koa state, as for the machine grants.
+// TODO(task 4): replaced by checkGrantSubject (NHI subjects, allowedIps, ipBinding)
+const codeGrantSubject = async (ctx: IssuerContext, koaCtx: KoaContextWithOIDC, sub: string, token: { grantId?: string, resource?: string | string[] }) => {
+  if (!token.grantId) return undefined
+  const record = await getGrantRecord(token.grantId)
+  if (!record || record.subject.id !== sub || record.issuer !== ctx.issuer) return undefined
+  const user = await storages.globalStorage.getUser(sub)
+  if (!user) return undefined
+  const resourceParam = koaCtx.oidc.params?.resource ?? token.resource
+  if (typeof resourceParam !== 'string') return undefined
+  let resource: ResolvedResource
+  try {
+    resource = await resolveResource(ctx, resourceParam)
+  } catch (err) {
+    if (err instanceof ResourceError) return undefined
+    throw err
+  }
+  let max: string[] | undefined
+  if (record.clientKind === 'site') {
+    const siteClient = await findSiteClient(ctx, record.clientId)
+    if (!siteClient) return undefined
+    max = siteClient.scopes
+  }
+  const scope = narrowScope(record.scope.split(' '), max, await knownScopeNames()).join(' ')
+  if (!scope) return undefined
+  const claims = boundAccountClaims(user, record, resource, scope)
+  if (!claims) return undefined
+  const state: SdTokenState = { clientId: record.clientId, user, sub: user.id, aud: resource.audience, scope, claims }
+  koaCtx.state.sdToken = state
+  return { accountId: user.id, claims: accountClaims(user) }
+}
+
+const findAccount = (ctx: IssuerContext): FindAccount => async (koaCtx, sub, token) => {
+  // at the authorization request and its resume: the subject chosen by the interaction
+  if (!token) {
+    const user = await storages.globalStorage.getUser(sub)
+    if (!user) return undefined
+    return { accountId: user.id, claims: accountClaims(user) }
+  }
+  return await codeGrantSubject(ctx, koaCtx, sub, token as any)
+}
+
+// the authorization code flow of a site client (user subject): API resources of the client's
+// registration only, never an MCP server
+const siteClientResourceScope = async (ctx: IssuerContext, koaCtx: KoaContextWithOIDC, clientId: string, resource: ResolvedResource) => {
+  const siteClient = await findSiteClient(ctx, clientId)
+  if (!siteClient) throw new errors.InvalidTarget('unknown client')
+  if (resource.kind === 'mcp') throw new errors.InvalidTarget('an mcp resource is reserved to service accounts')
+  const allowed = (siteClient.resources?.length ? siteClient.resources : [ctx.siteUrl]).map(r => r.replace(/\/+$/, ''))
+  if (!allowed.includes(resource.siteUrl)) throw new errors.InvalidTarget('resource not registered for this client')
+  const known = await knownScopeNames()
+  const route = koaCtx.oidc?.route
+  if (route === 'authorization' || route === 'resume') {
+    const scope = siteClientRequestScopes(koaCtx.oidc.params?.scope, siteClient.scopes, known)
+    if (!scope.length) throw new errors.InvalidScope('no requested scope is allowed for this client', String(koaCtx.oidc.params?.scope ?? ''))
+    return scope.join(' ')
+  }
+  // token endpoint: the claims are computed by findAccount (codeGrantSubject)
+  const sdToken: SdTokenState | undefined = koaCtx.state?.sdToken
+  return sdToken?.scope ?? narrowScope(siteClient.scopes, undefined, known).join(' ')
+}
+
 export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): Promise<Configuration> => {
+  const codeFlow = !!config.oauthServer?.authorizationCode
   const knownScopes = await getKnownScopes(defaultLocale, messages[defaultLocale].scopes)
   return {
     adapter: adapterFactory(ctx),
@@ -99,6 +202,8 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
             resource = await resolveResource(ctx, resourceIndicator)
             if (koaCtx.oidc?.params?.grant_type === 'client_credentials') {
               scope = await nhiClientCredentials(koaCtx, client.clientId, resource) ?? scope
+            } else if (codeFlow && clientKind(client.clientId) === 'site') {
+              scope = await siteClientResourceScope(ctx, koaCtx, client.clientId, resource)
             }
           } catch (err) {
             if (err instanceof ResourceError) throw new errors.InvalidTarget(err.message)
@@ -114,8 +219,8 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
           }
         }
       },
-      // M1 issues stateless JWT access tokens only, nothing to revoke (M2 re-enables it)
-      revocation: { enabled: false },
+      // refresh tokens come with the authorization code flow, revocation with them
+      revocation: { enabled: codeFlow },
       // no resource server enforces sender-constrained tokens, they must not be issued
       dPoP: { enabled: false },
       devInteractions: { enabled: false },
@@ -139,15 +244,17 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
       }
     },
     clientBasedCORS: (_koaCtx, origin, client) => sdClientBasedCORS(origin, client as any),
-    // NHI clients authenticate with their keys, no client has a secret and M1 has no public client
-    clientAuthMethods: ['private_key_jwt'],
+    // NHI clients authenticate with their keys, no client has a secret; the code flow clients are
+    // public (PKCE)
+    clientAuthMethods: codeFlow ? ['private_key_jwt', 'none'] : ['private_key_jwt'],
     enabledJWA: {
       clientAuthSigningAlgValues: ['RS256', 'ES256', 'PS256', 'EdDSA']
     },
     routes: {
       token: '/api/oauth/token',
       jwks: '/api/oauth/jwks',
-      authorization: '/api/oauth/authorize'
+      authorization: '/api/oauth/authorize',
+      revocation: '/api/oauth/revoke'
     },
     formats: {
       customizers: {
@@ -171,16 +278,83 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
     },
     scopes: Object.keys(knownScopes),
     ttl: { ClientCredentials: jwtDurations.nhiToken },
-    // accounts and interactions come with the authorization code flow (M2)
-    findAccount: async () => undefined
+    // accounts and interactions come with the authorization code flow
+    findAccount: async () => undefined,
+    ...(codeFlow ? codeFlowConfiguration(ctx, Object.keys(knownScopes)) : {})
   }
 }
+
+const sessionTTL = 10 * 60
+const interactionTTL = 30 * 60
+const authorizationCodeTTL = 60
+const refreshTokenMaxTTL = 7 * 86400
+
+// the provider keeps no login state of its own: SD's session says who is there, through the
+// interaction routes (interaction.ts), on every authorization request
+const forcedInteractionPolicy = () => {
+  const policy = interactionPolicy.base()
+  policy.get('login')!.checks.add(new interactionPolicy.Check('sd_login', 'SD decides who is logged in', (koaCtx) => !koaCtx.oidc.result?.login))
+  policy.get('consent')!.checks.add(new interactionPolicy.Check('sd_consent', 'SD records every consent', (koaCtx) => !koaCtx.oidc.result?.consent))
+  return policy
+}
+
+const codeFlowConfiguration = (ctx: IssuerContext, knownScopes: string[]): Partial<Configuration> => ({
+  scopes: [...knownScopes, ...oidcScopeNames],
+  claims: { openid: ['sub'], profile: ['name'], email: ['email'] },
+  clientDefaults: {
+    token_endpoint_auth_method: 'none',
+    grant_types: ['authorization_code', 'refresh_token'],
+    response_types: ['code']
+  },
+  interactions: {
+    policy: forcedInteractionPolicy(),
+    // absolute: the _interaction cookie path is the pathname of this url, it must keep the
+    // /simple-directory prefix and the site path
+    url: async (_koaCtx, interaction) => `${ctx.issuer}/api/oauth/interaction/${interaction.uid}`
+  },
+  // refresh is the credential of dashboards and agents, offline_access is not required
+  // (called for the authorization_code exchange, the refresh_token grant rotates on its own)
+  issueRefreshToken: async (_koaCtx, client) => client.grantTypeAllowed('refresh_token'),
+  rotateRefreshToken: true,
+  expiresWithSession: async () => false,
+  // only the grant created by SD at consent, never one remembered by the provider session
+  loadExistingGrant: async (koaCtx) => {
+    const grantId = koaCtx.oidc.result?.consent?.grantId
+    return grantId ? await koaCtx.oidc.provider.Grant.find(grantId) : undefined
+  },
+  ttl: {
+    ClientCredentials: jwtDurations.nhiToken,
+    AccessToken: (_koaCtx, token) => token.accountId?.startsWith('nhi-') ? jwtDurations.nhiToken : jwtDurations.idToken,
+    AuthorizationCode: authorizationCodeTTL,
+    // the fallback, SD sets grant.exp itself at consent
+    Grant: dashboardGrantLifetime,
+    IdToken: jwtDurations.idToken,
+    Interaction: interactionTTL,
+    // idles out after 7 days, never outlives its grant
+    RefreshToken: (koaCtx) => {
+      const grantExp = (koaCtx as KoaContextWithOIDC | undefined)?.oidc?.entities?.Grant?.exp
+      if (!grantExp) return refreshTokenMaxTTL
+      return Math.max(1, Math.min(refreshTokenMaxTTL, grantExp - Math.floor(Date.now() / 1000)))
+    },
+    Session: sessionTTL
+  },
+  // errors that cannot be redirected to the client go to the SPA
+  renderError: async (koaCtx, out) => {
+    koaCtx.status = 303
+    koaCtx.redirect(`${ctx.issuer}/oauth/consent?error=${encodeURIComponent(String(out.error ?? 'server_error'))}`)
+  },
+  findAccount: findAccount(ctx)
+})
 
 // discovery values that the provider computes itself and that configuration cannot override
 export const discoveryOverrides = (ctx: IssuerContext, body: Record<string, any>) => {
   body.jwks_uri = ctx.issuer + '/.well-known/scoped-jwks.json'
-  let grantTypes: string[] = body.grant_types_supported ?? []
-  if (!config.oauthServer?.authorizationCode) {
+  let grantTypes: string[] = (body.grant_types_supported ?? []).filter((g: string) => g !== 'implicit')
+  if (config.oauthServer?.authorizationCode) {
+    body.response_types_supported = ['code']
+    body.authorization_response_iss_parameter_supported = true
+    body.token_endpoint_auth_methods_supported = ['none', 'private_key_jwt']
+  } else {
     // without the authorization code flow the only grants are client_credentials and jwt-bearer
     delete body.authorization_endpoint
     delete body.response_modes_supported

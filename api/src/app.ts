@@ -25,6 +25,7 @@ import accounts from './accounts/router.ts'
 import passwordLists from './password-lists/router.ts'
 import { scopeGate } from './utils/scope-gate.ts'
 import oauthServer from './oauth-server/router.ts'
+import oauthInteraction from './oauth-server/interaction.ts'
 import { getSiteExtraParams } from './sites/spa-params.ts'
 
 const app = express()
@@ -94,6 +95,9 @@ app.use('/api/accounts', accounts)
 app.use('/api/scopes', scopes)
 app.use('/api/sites', sites)
 app.use('/api/password-lists', passwordLists)
+// SD's side of the authorization code flow: reads the SD session (the dispatcher above only lets
+// the exact interaction paths through)
+app.use('/api/oauth/interaction', oauthInteraction)
 
 // /api/test-env exposes unauthenticated super-admin primitives (mutate config, seed users, rotate keys, wipe DB).
 // It is gated behind both NODE_ENV ∈ {development,test} *and* an explicit ENABLE_TEST_API=1 opt-in.

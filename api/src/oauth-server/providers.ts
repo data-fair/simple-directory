@@ -1,5 +1,6 @@
 import Provider, { type JWK, type KoaContextWithOIDC } from 'oidc-provider'
 import { createPrivateKey } from 'node:crypto'
+import config from '#config'
 import { getSignatureKeys } from '../tokens/keys-manager.ts'
 import { buildConfiguration, discoveryOverrides, type SdTokenState } from './configuration.ts'
 import type { IssuerContext } from './issuers.ts'
@@ -9,12 +10,14 @@ import { clientCredentialsLimits } from './clients.ts'
 
 type CachedProvider = { marker: string, promise: Promise<Provider> }
 
-// one provider per issuer, rebuilt when the scoped signing key rotates or when the issuer context
-// changes: the provider's hooks read ctx (site, siteUrl) through closures, a stale one must not survive
+// one provider per issuer, rebuilt when the scoped signing key rotates, when the issuer context
+// changes or when a flag changes: the provider's hooks read ctx (site, siteUrl) through closures and
+// the flags shape its configuration, a stale one must not survive
 const providers = new Map<string, CachedProvider>()
 
 const cacheMarker = (ctx: IssuerContext, kid: string) =>
-  JSON.stringify([kid, ctx.siteUrl, ctx.site?._id ?? null, ctx.site?.updatedAt ?? null])
+  JSON.stringify([kid, ctx.siteUrl, ctx.site?._id ?? null, ctx.site?.updatedAt ?? null,
+    !!config.oauthServer?.authorizationCode, !!config.oauthServer?.dynamicClients])
 
 const signingJwk = (privateKeyPem: string, kid: string): JWK => ({
   ...createPrivateKey(privateKeyPem).export({ format: 'jwk' }),
@@ -39,6 +42,7 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
       const body = koaCtx.body as Record<string, any>
       if (sdToken.scope === undefined) delete body.scope
       else body.scope = sdToken.scope
+      if (koaCtx.oidc.params?.grant_type !== 'client_credentials') return
       // awaited here, before koa writes the response, so the client's next attempt sees the refund
       const limits = clientCredentialsLimits.get(koaCtx.req)
       if (limits) await refundNhiLimits(limits.clientIp, limits.clientId)

@@ -37,7 +37,7 @@ const oauthDiscovery = '/.well-known/oauth-authorization-server'
 export const providerOriginalUrl = (issuer: string, url: string) => new URL(issuer).pathname.replace(/\/+$/, '') + url
 
 // canonical form expected by issuerOfSite: origin + path without trailing slash
-const canonicalSiteUrl = (siteUrl: string) => {
+export const canonicalSiteUrl = (siteUrl: string) => {
   const url = new URL(siteUrl)
   return url.origin + url.pathname.replace(/\/+$/, '')
 }
@@ -70,15 +70,24 @@ const limitClientCredentials = async (req: Request, res: Response): Promise<bool
 
 const tokenRoute = '/api/oauth/token'
 const authorizeRoute = '/api/oauth/authorize'
+const revocationRoute = '/api/oauth/revoke'
+// uids of the provider's interactions (nanoid, 43 characters of the url alphabet)
+const uidPattern = '[A-Za-z0-9_-]{43}'
+// the provider's resume of an interaction
+const resumeRoute = new RegExp(`^${authorizeRoute}/${uidPattern}$`)
+// SD's interaction routes (interaction.ts), mounted after the session middleware
+const interactionRoute = new RegExp(`^/api/oauth/interaction/${uidPattern}(/details)?$`)
 
 // the provider's own router is case insensitive and accepts trailing slashes: only the exact
-// canonical spelling of a route served in M1 is forwarded, so that the checks below cannot be
-// skipped through a variant (revocation and the provider's jwks route are not served, the
-// advertised jwks_uri is SD's scoped jwks)
-const servedRoutes = () => {
-  const routes = [tokenRoute, openidDiscovery, oauthDiscovery]
-  if (config.oauthServer?.authorizationCode) routes.push(authorizeRoute)
-  return routes
+// canonical spelling of a served route is forwarded, so that the checks below cannot be skipped
+// through a variant (the provider's jwks route is not served, the advertised jwks_uri is SD's
+// scoped jwks)
+const isServedRoute = (path: string) => {
+  if ([tokenRoute, openidDiscovery, oauthDiscovery].includes(path)) return true
+  if (config.oauthServer?.authorizationCode) {
+    return path === authorizeRoute || path === revocationRoute || resumeRoute.test(path)
+  }
+  return false
 }
 
 router.use(async (req, res, next) => {
@@ -88,7 +97,9 @@ router.use(async (req, res, next) => {
   // internal calls carry no site context, the authorization server is only served publicly
   if (reqIsInternal(req)) return res.status(404).send()
   if (!config.oauthServer?.enabled) return res.status(404).send()
-  if (!servedRoutes().includes(path)) return res.status(404).send()
+  // the interaction routes read the SD session, they are handled further down the app
+  if (config.oauthServer.authorizationCode && interactionRoute.test(path)) return next()
+  if (!isServedRoute(path)) return res.status(404).send()
 
   const ctx = await issuerOfSite(await reqSite(req), canonicalSiteUrl(reqSiteUrl(req)))
   if (!ctx) return res.status(404).send()

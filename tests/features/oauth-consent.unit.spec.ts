@@ -1,0 +1,81 @@
+import { strict as assert } from 'node:assert'
+import { test } from '@playwright/test'
+import '../support/unit.ts'
+
+const consent = () => import('../../api/src/oauth-server/consent.ts')
+const scopes = () => import('../../api/src/nhis/scopes.ts')
+
+const user = (extra: Record<string, any> = {}): any => ({
+  id: 'u1',
+  name: 'User 1',
+  email: 'u1@test.com',
+  organizations: [],
+  ...extra
+})
+
+const siteClient = (extra: Record<string, any> = {}): any => ({
+  id: 'site-abc',
+  name: 'Dash',
+  redirectUris: ['https://dash.example.org/cb'],
+  scopes: ['organizations:read'],
+  consent: 'implicit',
+  ...extra
+})
+
+test.describe('oauth consent rules', () => {
+  test('narrowScope keeps the requested scopes covered by the maximum', async () => {
+    const { narrowScope } = await scopes()
+    assert.deepEqual(narrowScope(['datasets:read', 'organizations:read', 'x:y'], ['datasets', 'organizations:read'], []), ['datasets:read', 'organizations:read'])
+    assert.deepEqual(narrowScope(['a:b', 'c:d'], undefined, ['a:b']), ['a:b'])
+    assert.deepEqual(narrowScope([], ['a:b'], ['a:b']), [])
+    // request order, deduplicated
+    assert.deepEqual(narrowScope(['c:d', 'a:b', 'c:d'], ['a', 'c'], []), ['c:d', 'a:b'])
+  })
+
+  test('implicitConsentAccount binds the owner org of a member', async () => {
+    const { implicitConsentAccount } = await consent()
+    const member = user({ organizations: [{ id: 'o1', name: 'Org 1', role: 'user' }] })
+    const account = implicitConsentAccount(member, siteClient(), { type: 'organization', id: 'o1', name: 'Org 1' })
+    assert.equal(account?.type, 'organization')
+    assert.equal(account?.id, 'o1')
+    // a member of another department of the owner org
+    const depMember = user({ organizations: [{ id: 'o1', name: 'Org 1', role: 'user', department: 'd2' }] })
+    assert.equal(implicitConsentAccount(depMember, siteClient(), { type: 'organization', id: 'o1', name: 'Org 1', department: 'd1' }), undefined)
+    // explicit client
+    assert.equal(implicitConsentAccount(member, siteClient({ consent: 'explicit' }), { type: 'organization', id: 'o1', name: 'Org 1' }), undefined)
+    // not a member, or a user owner
+    assert.equal(implicitConsentAccount(user(), siteClient(), { type: 'organization', id: 'o1', name: 'Org 1' }), undefined)
+    assert.equal(implicitConsentAccount(member, siteClient(), { type: 'user', id: 'u1', name: 'User 1' }), undefined)
+    assert.equal(implicitConsentAccount(member, siteClient(), undefined), undefined)
+  })
+
+  test('refuseConsentUser refuses nhis, scoped sessions and org storage users', async () => {
+    const { refuseConsentUser } = await consent()
+    const session = (u: any, extra: Record<string, any> = {}): any => ({ user: { id: u.id, name: u.name, email: u.email, organizations: [] }, ...extra })
+    const nhi = user({ nhi: { subject: 's', provider: { issuer: 'https://i.example.org' } } })
+    assert.ok(refuseConsentUser(nhi, session(nhi)))
+    assert.ok(refuseConsentUser(user(), session(user(), { scopes: ['organizations:read'] })))
+    assert.ok(refuseConsentUser(user({ orgStorage: true }), session(user())))
+    assert.ok(refuseConsentUser(user(), { user: { ...session(user()).user, os: 1 } } as any))
+    assert.equal(refuseConsentUser(user(), session(user())), undefined)
+  })
+
+  test('isBroadScope', async () => {
+    const { isBroadScope } = await consent()
+    assert.equal(isBroadScope('datasets'), true)
+    assert.equal(isBroadScope('all:read'), true)
+    assert.equal(isBroadScope('datasets:read'), false)
+  })
+
+  test('userConsentAccounts lists the personal account and memberships, default first', async () => {
+    const { userConsentAccounts } = await consent()
+    const u = user({ organizations: [{ id: 'o1', name: 'Org 1', role: 'user' }, { id: 'o2', name: 'Org 2', role: 'admin', department: 'd1', departmentName: 'Dep 1' }] })
+    assert.deepEqual(userConsentAccounts(u).map(a => [a.type, a.id, a.department]), [['user', 'u1', undefined], ['organization', 'o1', undefined], ['organization', 'o2', 'd1']])
+    // on a site of o2 the owner org is the default
+    const onSite = userConsentAccounts(u, { owner: { type: 'organization', id: 'o2', name: 'Org 2' } } as any)
+    assert.deepEqual(onSite.map(a => [a.type, a.id]), [['organization', 'o2'], ['user', 'u1'], ['organization', 'o1']])
+    // no personal account when it is ignored
+    const ipa = userConsentAccounts({ ...u, ignorePersonalAccount: true })
+    assert.deepEqual(ipa.map(a => a.type), ['organization', 'organization'])
+  })
+})

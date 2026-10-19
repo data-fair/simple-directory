@@ -20,6 +20,17 @@ const postSite = async (orgId: string, orgName: string, extra: Record<string, an
   await testEnvAx.post('/clear-site-cache')
 }
 
+// the M1 shape of the server: authorization code flow off (dev and test turn it on)
+const withCodeFlowOff = async (fn: () => Promise<void>) => {
+  const oauthServer = (await testEnvAx.get('/config')).data.oauthServer
+  await testEnvAx.patch('/config', { oauthServer: { ...oauthServer, authorizationCode: false } })
+  try {
+    await fn()
+  } finally {
+    await testEnvAx.patch('/config', { oauthServer })
+  }
+}
+
 const createOrg = async (email: string, name: string) => {
   const { ax } = await createUser(email)
   return (await ax.post('/api/organizations', { name })).data
@@ -30,7 +41,7 @@ test.describe('oauth server', () => {
     await testEnvAx.delete('/')
   })
 
-  test('discovery on the main site', async () => {
+  test('discovery on the main site', async () => withCodeFlowOff(async () => {
     const ax = axios()
     const discovery = (await ax.get('/.well-known/openid-configuration')).data
     assert.equal(discovery.issuer, directoryUrl)
@@ -52,7 +63,7 @@ test.describe('oauth server', () => {
 
     const oauthDiscovery = (await ax.get('/.well-known/oauth-authorization-server')).data
     assert.deepEqual(oauthDiscovery, discovery)
-  })
+  }))
 
   test('discovery on an account main site', async () => {
     const org = await createOrg('oauth-server1@test.com', 'OAuth org 1')
@@ -99,15 +110,23 @@ test.describe('oauth server', () => {
     }
   })
 
-  test('authorize endpoint is 404 in M1', async () => {
+  test('authorize endpoint is 404 without the authorization code flow', async () => withCodeFlowOff(async () => {
     for (const path of ['/api/oauth/authorize', '/api/oauth/authorize/', '/api/oauth/Authorize']) {
       await assert.rejects(axios().get(path, { params: { client_id: 'x', response_type: 'code' } }),
         (err: any) => err.status === 404, path)
     }
-  })
+  }))
 
-  test('only the canonical routes that M1 serves reach the provider', async () => {
+  test('only the canonical routes that M1 serves reach the provider', async () => withCodeFlowOff(async () => {
     for (const path of ['/api/oauth/jwks', '/api/oauth/revoke', '/api/oauth/token/', '/.well-known/openid-configuration/', '/.well-known/OAuth-Authorization-Server']) {
+      const err = await axios().post(path, 'token=x', { headers: { 'content-type': 'application/x-www-form-urlencoded' } }).catch(err => err)
+      assert.equal(err.status, 404, path)
+      await assert.rejects(axios().get(path), (err: any) => err.status === 404, path)
+    }
+  }))
+
+  test('only the canonical routes of the code flow reach the provider', async () => {
+    for (const path of ['/api/oauth/jwks', '/api/oauth/revoke/', '/api/oauth/Revoke', '/api/oauth/authorize/', '/api/oauth/Authorize', '/api/oauth/authorize/x', '/api/oauth/interaction/x']) {
       const err = await axios().post(path, 'token=x', { headers: { 'content-type': 'application/x-www-form-urlencoded' } }).catch(err => err)
       assert.equal(err.status, 404, path)
       await assert.rejects(axios().get(path), (err: any) => err.status === 404, path)
