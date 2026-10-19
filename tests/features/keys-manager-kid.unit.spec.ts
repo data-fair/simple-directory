@@ -12,10 +12,16 @@ test.describe('keys manager kid', () => {
   test('refuses to start when config.kid starts with scoped-', async () => {
     const { default: config } = await import('../../api/src/config.ts')
     const keysManager = await import('../../api/src/tokens/keys-manager.ts')
-    // 'scoped' too: session kids are kid + '-' + uuid, which would start with 'scoped-'
-    for (const kid of ['scoped-x', 'scoped']) {
-      Object.defineProperty(config, 'kid', { value: kid, writable: true, configurable: true })
-      await assert.rejects(keysManager.start(), /kid.*scoped-/)
+    const descriptor = Object.getOwnPropertyDescriptor(config, 'kid')!
+    try {
+      // 'scoped' too: session kids are kid + '-' + uuid, which would start with 'scoped-'
+      for (const kid of ['scoped-x', 'scoped']) {
+        Object.defineProperty(config, 'kid', { value: kid, writable: true, configurable: true })
+        await assert.rejects(keysManager.start(), /kid.*scoped-/)
+      }
+    } finally {
+      // the unit tests share one worker, later ones start the keys manager with the real kid
+      Object.defineProperty(config, 'kid', descriptor)
     }
   })
 })
