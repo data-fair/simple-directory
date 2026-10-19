@@ -1,7 +1,7 @@
 import type { Configuration, JWK } from 'oidc-provider'
 import { randomBytes } from 'node:crypto'
 import mongo from '#mongo'
-import { jwtDurations } from '#config'
+import config, { jwtDurations } from '#config'
 import { defaultLocale, messages } from '#i18n'
 import { getKnownScopes } from '../scopes/service.ts'
 import { MongoAdapter } from './adapter.ts'
@@ -32,8 +32,13 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
       revocation: { enabled: true },
       devInteractions: { enabled: false },
       introspection: { enabled: false },
-      registration: { enabled: false }
+      registration: { enabled: false },
+      // served nowhere by the dispatcher, they must not be advertised
+      rpInitiatedLogout: { enabled: false },
+      userinfo: { enabled: false },
+      pushedAuthorizationRequests: { enabled: false }
     },
+    responseTypes: ['code'],
     pkce: { required: () => true },
     enabledJWA: {
       clientAuthSigningAlgValues: ['RS256', 'ES256', 'PS256', 'EdDSA']
@@ -54,7 +59,13 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
 // discovery values that the provider computes itself and that configuration cannot override
 export const discoveryOverrides = (ctx: IssuerContext, body: Record<string, any>) => {
   body.jwks_uri = ctx.issuer + '/.well-known/scoped-jwks.json'
-  const grantTypes: string[] = body.grant_types_supported ?? []
+  let grantTypes: string[] = body.grant_types_supported ?? []
+  if (!config.oauthServer?.authorizationCode) {
+    // without the authorization code flow the only grants are client_credentials and jwt-bearer
+    delete body.authorization_endpoint
+    body.response_types_supported = []
+    grantTypes = grantTypes.filter(g => !['authorization_code', 'implicit', 'refresh_token'].includes(g))
+  }
   if (!grantTypes.includes(jwtBearerGrantType)) grantTypes.push(jwtBearerGrantType)
   body.grant_types_supported = grantTypes
 }

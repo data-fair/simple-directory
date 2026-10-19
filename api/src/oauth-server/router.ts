@@ -22,6 +22,11 @@ const providerCallback = (provider: Provider) => {
 const openidDiscovery = '/.well-known/openid-configuration'
 const oauthDiscovery = '/.well-known/oauth-authorization-server'
 
+// the provider derives its mount path from the prefix of originalUrl in front of url, the site
+// middleware stripped the site path and service prefix from url: rebuild originalUrl from the issuer
+// path so endpoints are always issuer + route (also after the discovery rewrite)
+export const providerOriginalUrl = (issuer: string, url: string) => new URL(issuer).pathname.replace(/\/+$/, '') + url
+
 // canonical form expected by issuerOfSite: origin + path without trailing slash
 const canonicalSiteUrl = (siteUrl: string) => {
   const url = new URL(siteUrl)
@@ -32,7 +37,7 @@ router.use(async (req, res, next) => {
   const path = req.path
   if (!path.startsWith('/api/oauth/') && path !== openidDiscovery && path !== oauthDiscovery) return next()
   // internal calls carry no site context, the authorization server is only served publicly
-  if (reqIsInternal(req)) return next()
+  if (reqIsInternal(req)) return res.status(404).send()
   if (!config.oauthServer?.enabled) return res.status(404).send()
   if (path === '/api/oauth/authorize' && !config.oauthServer?.authorizationCode) return res.status(404).send()
 
@@ -41,9 +46,6 @@ router.use(async (req, res, next) => {
   const provider = await getProvider(ctx)
 
   if (path === oauthDiscovery) req.url = openidDiscovery + req.url.slice(oauthDiscovery.length)
-  // the provider derives its mount path from the prefix of originalUrl before url, the site middleware
-  // stripped the site path and service prefix from url, rebuild originalUrl from the issuer path so
-  // endpoints are always issuer + route (also after the discovery rewrite above)
-  req.originalUrl = new URL(ctx.issuer).pathname + req.url
+  req.originalUrl = providerOriginalUrl(ctx.issuer, req.url)
   await providerCallback(provider)(req, res)
 })

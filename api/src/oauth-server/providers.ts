@@ -4,10 +4,14 @@ import { getSignatureKeys } from '../tokens/keys-manager.ts'
 import { buildConfiguration, discoveryOverrides } from './configuration.ts'
 import type { IssuerContext } from './issuers.ts'
 
-type CachedProvider = { kid: string, promise: Promise<Provider> }
+type CachedProvider = { marker: string, promise: Promise<Provider> }
 
-// one provider per issuer, rebuilt when the scoped signing key rotates
+// one provider per issuer, rebuilt when the scoped signing key rotates or when the issuer context
+// changes: the provider's hooks read ctx (site, siteUrl) through closures, a stale one must not survive
 const providers = new Map<string, CachedProvider>()
+
+const cacheMarker = (ctx: IssuerContext, kid: string) =>
+  JSON.stringify([kid, ctx.siteUrl, ctx.site?._id ?? null, ctx.site?.updatedAt ?? null])
 
 const signingJwk = (privateKeyPem: string, kid: string): JWK => ({
   ...createPrivateKey(privateKeyPem).export({ format: 'jwk' }),
@@ -32,9 +36,10 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
 export const getProvider = async (ctx: IssuerContext): Promise<Provider> => {
   const keys = await getSignatureKeys('scoped')
   const kid = keys.webKeys[0].kid
+  const marker = cacheMarker(ctx, kid)
   let cached = providers.get(ctx.issuer)
-  if (!cached || cached.kid !== kid) {
-    cached = { kid, promise: buildProvider(ctx, keys.privateKey, kid) }
+  if (!cached || cached.marker !== marker) {
+    cached = { marker, promise: buildProvider(ctx, keys.privateKey, kid) }
     providers.set(ctx.issuer, cached)
     // a failed build must not stay cached
     cached.promise.catch(() => { if (providers.get(ctx.issuer) === cached) providers.delete(ctx.issuer) })

@@ -35,6 +35,11 @@ test.describe('oauth server', () => {
     assert.equal(discovery.jwks_uri, directoryUrl + '/.well-known/scoped-jwks.json')
     assert.ok(discovery.grant_types_supported.includes('client_credentials'))
     assert.ok(discovery.grant_types_supported.includes('urn:ietf:params:oauth:grant-type:jwt-bearer'))
+    // M1 grants exactly, nothing advertised that is not served
+    assert.deepEqual([...discovery.grant_types_supported].sort(), ['client_credentials', 'urn:ietf:params:oauth:grant-type:jwt-bearer'])
+    for (const key of ['end_session_endpoint', 'userinfo_endpoint', 'pushed_authorization_request_endpoint', 'authorization_endpoint']) {
+      assert.equal(discovery[key], undefined, key)
+    }
     assert.deepEqual(discovery.code_challenge_methods_supported, ['S256'])
     assert.ok(discovery.token_endpoint_auth_methods_supported.includes('private_key_jwt'))
 
