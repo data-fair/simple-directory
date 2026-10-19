@@ -285,6 +285,7 @@ Puede ser 'anonymous', 'authenticated' o 'admin'.`,
       errorTitle: 'Autorización imposible',
       errors: {
         interactionExpired: 'La solicitud de autorización ha caducado o ya fue tratada. Vuelva a la aplicación e inténtelo de nuevo.',
+        unauthorized: 'Su sesión ha caducado o no ha iniciado sesión. Vuelva a iniciar sesión y empiece de nuevo desde la aplicación.',
         forbidden: 'Su sesión no puede conceder esta autorización.',
         generic: 'La solicitud de autorización ha fallado (código: {code}).'
       }

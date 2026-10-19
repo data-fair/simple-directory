@@ -44,8 +44,9 @@
           <v-card-title style="white-space: normal;">
             <div class="d-flex align-center">
               <img
-                v-if="details.client.logoUri"
-                :src="details.client.logoUri"
+                v-if="logoUri"
+                :src="logoUri"
+                referrerpolicy="no-referrer"
                 :alt="details.client.name"
                 style="max-width:48px;max-height:48px;"
                 class="mr-3"
@@ -68,6 +69,15 @@
               :accounts="details.accounts"
               class="mt-4"
             />
+            <v-alert
+              v-if="rateLimited"
+              type="warning"
+              variant="tonal"
+              class="mt-4"
+              data-rate-limited
+            >
+              {{ $t('errors.rateLimitAuth') }}
+            </v-alert>
             <p
               class="text-body-medium text-medium-emphasis mt-4 mb-0"
               data-redirect-host
@@ -120,6 +130,12 @@ const loadError = ref<string>()
 const selectedScopes = ref<string[]>([])
 const account = ref<Account>()
 const redirecting = ref(false)
+const rateLimited = ref(false)
+
+// logos of dynamic clients are attacker-controlled: https only
+const logoUri = computed(() => /^https:\/\//i.test(details.value?.client.logoUri ?? '') ? details.value?.client.logoUri : undefined)
+
+const statusOf = (err: any) => err.status ?? err.statusCode ?? err.response?.status
 
 const errorCode = computed(() => queryError.value || loadError.value || (!uid.value ? 'interaction_expired' : undefined))
 const errorMessage = computed(() => {
@@ -127,6 +143,7 @@ const errorMessage = computed(() => {
   if (!code) return ''
   if (code === 'interaction_expired') return t('pages.oauthConsent.errors.interactionExpired')
   if (code === 'forbidden') return t('pages.oauthConsent.errors.forbidden')
+  if (code === 'unauthorized') return t('pages.oauthConsent.errors.unauthorized')
   return t('pages.oauthConsent.errors.generic', { code })
 })
 
@@ -138,8 +155,8 @@ const load = async () => {
     selectedScopes.value = details.value.scopes.map(s => s.name)
     account.value = details.value.accounts[0]
   } catch (err: any) {
-    const status = err.status ?? err.statusCode ?? err.response?.status
-    loadError.value = status === 403 ? 'forbidden' : status === 400 ? 'interaction_expired' : 'server_error'
+    const status = statusOf(err)
+    loadError.value = status === 401 ? 'unauthorized' : status === 403 ? 'forbidden' : status === 400 ? 'interaction_expired' : 'server_error'
   } finally {
     loading.value = false
   }
@@ -152,8 +169,15 @@ const decide = useAsyncAction(async (decision: 'allow' | 'deny') => {
     body.account = { type: account.value.type, id: account.value.id, department: account.value.department }
     body.scopes = selectedScopes.value
   }
-  const { redirectTo } = await $fetch<{ redirectTo: string }>(`${$apiPath}/oauth/interaction/${encodeURIComponent(uid.value!)}`, { method: 'POST', body })
-  redirecting.value = true
-  window.location.href = redirectTo
+  rateLimited.value = false
+  try {
+    const { redirectTo } = await $fetch<{ redirectTo: string }>(`${$apiPath}/oauth/interaction/${encodeURIComponent(uid.value!)}`, { method: 'POST', body })
+    redirecting.value = true
+    window.location.href = redirectTo
+  } catch (err: any) {
+    const status = statusOf(err)
+    if (status === 429) rateLimited.value = true
+    else loadError.value = status === 401 ? 'unauthorized' : status === 403 ? 'forbidden' : status === 400 ? 'interaction_expired' : 'server_error'
+  }
 })
 </script>

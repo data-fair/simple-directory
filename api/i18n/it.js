@@ -285,6 +285,7 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       errorTitle: 'Autorizzazione impossibile',
       errors: {
         interactionExpired: 'La richiesta di autorizzazione è scaduta o è già stata gestita. Torna all\'applicazione e riprova.',
+        unauthorized: 'La tua sessione è scaduta o non hai effettuato l\'accesso. Accedi di nuovo e ricomincia dall\'applicazione.',
         forbidden: 'La tua sessione non può concedere questa autorizzazione.',
         generic: 'La richiesta di autorizzazione non è riuscita (codice: {code}).'
       }

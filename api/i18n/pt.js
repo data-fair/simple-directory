@@ -285,6 +285,7 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       errorTitle: 'Autorização impossível',
       errors: {
         interactionExpired: 'O pedido de autorização expirou ou já foi tratado. Volte à aplicação e tente novamente.',
+        unauthorized: 'A sua sessão expirou ou não iniciou sessão. Inicie sessão novamente e recomece a partir da aplicação.',
         forbidden: 'A sua sessão não pode conceder esta autorização.',
         generic: 'O pedido de autorização falhou (código: {code}).'
       }

@@ -287,6 +287,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       errorTitle: 'Authorization impossible',
       errors: {
         interactionExpired: 'The authorization request has expired or was already handled. Go back to the application and try again.',
+        unauthorized: 'Your session has expired or you are not logged in. Log in again, then start over from the application.',
         forbidden: 'Your session cannot grant this authorization.',
         generic: 'The authorization request failed (code: {code}).'
       }

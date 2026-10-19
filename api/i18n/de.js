@@ -285,6 +285,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       errorTitle: 'Autorisierung nicht möglich',
       errors: {
         interactionExpired: 'Die Autorisierungsanfrage ist abgelaufen oder wurde bereits bearbeitet. Kehren Sie zur Anwendung zurück und versuchen Sie es erneut.',
+        unauthorized: 'Ihre Sitzung ist abgelaufen oder Sie sind nicht angemeldet. Melden Sie sich erneut an und beginnen Sie von der Anwendung aus neu.',
         forbidden: 'Ihre Sitzung kann diese Autorisierung nicht erteilen.',
         generic: 'Die Autorisierungsanfrage ist fehlgeschlagen (Code: {code}).'
       }
