@@ -285,7 +285,7 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
 }
 
 const sessionTTL = 10 * 60
-const interactionTTL = 30 * 60
+export const interactionTTL = 30 * 60
 const authorizationCodeTTL = 60
 const refreshTokenMaxTTL = 7 * 86400
 

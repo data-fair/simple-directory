@@ -57,6 +57,8 @@ test.describe('oauth consent rules', () => {
     assert.ok(refuseConsentUser(user(), session(user(), { scopes: ['organizations:read'] })))
     assert.ok(refuseConsentUser(user({ orgStorage: true }), session(user())))
     assert.ok(refuseConsentUser(user(), { user: { ...session(user()).user, os: 1 } } as any))
+    // a superadmin impersonating the user (asAdmin) never consents in their name
+    assert.ok(refuseConsentUser(user(), { user: { ...session(user()).user, asAdmin: { id: 'admin', name: 'Admin' } } } as any))
     assert.equal(refuseConsentUser(user(), session(user())), undefined)
   })
 

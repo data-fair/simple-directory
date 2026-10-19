@@ -64,6 +64,12 @@ export class SdMongo {
     return mongo.db.collection<OAuthGrantRecord>('oauth-grants')
   }
 
+  // one document per decided interaction of the oauth server: the lock that makes a consent
+  // decision happen once (the provider rewrites its own interaction documents whole)
+  get oauthInteractionDecisions () {
+    return mongo.db.collection<{ _id: string, expiresAt: Date }>('oauth-interaction-decisions')
+  }
+
   get saml2RelayStates () {
     return mongo.db.collection<Saml2RelayState>('saml2-relay-states')
   }
@@ -157,6 +163,9 @@ export class SdMongo {
       'oauth-grants': {
         subject: { 'subject.id': 1 },
         client: { clientId: 1 },
+        ttl: [{ expiresAt: 1 }, { expireAfterSeconds: 0 }]
+      },
+      'oauth-interaction-decisions': {
         ttl: [{ expiresAt: 1 }, { expireAfterSeconds: 0 }]
       },
       'saml2-relay-states': {

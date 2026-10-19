@@ -336,6 +336,85 @@ test.describe('oauth authorization code flow', () => {
     }
   })
 
+  test('an impersonation (asAdmin) session is refused at the interaction', async () => {
+    const config = await getServerConfig()
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const { user: target } = await createUser('oauth-code-target@test.com')
+    const org = (await adminAx.post('/api/organizations', { name: 'OAuth asadmin org' })).data
+    await axios().post('/api/sites',
+      { _id: 'test_oauth_main_site', owner: { type: 'organization', id: org.id, name: org.name }, host: new URL(config.publicUrl).host },
+      { params: { key: config.secretKeys.sites } })
+    await adminAx.patch('/api/sites/test_oauth_main_site', { oauthClients: [clientBody()] })
+    const clientId = (await adminAx.get('/api/sites/test_oauth_main_site', { params: { showAll: true } })).data.oauthClients[0].id
+    await testEnvAx.patch('/config', { mainSiteFromDb: ['oauthClients'] })
+    await testEnvAx.post('/clear-site-cache')
+    try {
+      await adminAx.post('/api/auth/asadmin', { id: target.id })
+      const me = (await adminAx.get('/api/auth/me')).data
+      assert.equal(me.id, target.id)
+      assert.ok(me.asAdmin)
+      const opts: CodeFlowOptions = { issuer: directoryUrl, clientId, redirectUri, scope: 'organizations:read', browserAx: adminAx }
+      const { location } = await startAuthorization(opts)
+      const entry = await browse(adminAx, location)
+      assert.equal(entry.status, 302)
+      assert.equal(entry.headers.location, directoryUrl + '/oauth/consent?error=forbidden')
+      const uid = interactionUid(location)
+      assert.equal((await adminAx.get(`${directoryUrl}/api/oauth/interaction/${uid}/details`, { validateStatus: () => true })).status, 403)
+      assert.equal((await postDecision(opts, uid, { decision: 'allow', account: { type: 'user', id: target.id }, scopes: ['organizations:read'] })).status, 403)
+      assert.equal((await grantRecords({ clientId })).length, 0)
+    } finally {
+      await testEnvAx.patch('/config', { mainSiteFromDb: [] })
+    }
+  })
+
+  test('a user of an organization storage is refused at the interaction', async () => {
+    const { userAx, flow } = await setup()
+    await testEnvAx.patch('/user/oauth-code-user@test.com', { orgStorage: true })
+    const opts = flow()
+    const { location } = await startAuthorization(opts)
+    const entry = await browse(userAx, location)
+    assert.equal(entry.status, 302)
+    assert.equal(entry.headers.location, issuer + '/oauth/consent?error=forbidden')
+  })
+
+  test('a scoped user session (an oauth access token as bearer) is refused at the interaction', async () => {
+    const { userAx, flow } = await setup()
+    const { tokens } = await runCodeFlow(flow())
+    // the browser keeps its interaction cookies, the session comes from the scoped access token
+    const opts = flow()
+    const { location } = await startAuthorization(opts)
+    const entry = await userAx.get(location, { maxRedirects: 0, validateStatus: () => true, headers: { authorization: 'Bearer ' + tokens.access_token } })
+    assert.equal(entry.status, 302)
+    assert.equal(entry.headers.location, issuer + '/oauth/consent?error=forbidden')
+  })
+
+  test('concurrent decisions create a single grant', async () => {
+    const { clientId, flow } = await setup()
+    const opts = flow()
+    const { location } = await startAuthorization(opts)
+    const uid = await openInteraction(opts, location)
+    const details = await getDetails(opts, uid)
+    const decision = { decision: 'allow', account: details.accounts[0], scopes: ['organizations:read'] }
+    const results = await Promise.all([0, 1, 2, 3].map(() => postDecision(opts, uid, decision)))
+    assert.deepEqual(results.map(r => r.status).sort(), [200, 400, 400, 400])
+    assert.equal((await grantRecords({ clientId })).length, 1)
+  })
+
+  test('an error on the implicit path redirects to the consent page', async () => {
+    const { config, owner, adminAx, clientId, userAx, flow } = await setup({ consent: 'implicit' })
+    await axios().post('/api/sites', { _id: 'test_oauth_code_realm', owner, host: realmHost }, { params: { key: config.secretKeys.sites } })
+    await adminAx.patch('/api/sites/test_oauth_code_realm', { authMode: 'onlyOtherSite', authOnlyOtherSite: siteHost })
+    await patchClient(adminAx, clientId, { consent: 'implicit', resources: [siteUrl, realmUrl] })
+    const opts = flow({ resource: realmUrl })
+    const { location } = await startAuthorization(opts)
+    // the resource site disappears between the authorization request and the entry
+    await adminAx.delete('/api/sites/test_oauth_code_realm')
+    await testEnvAx.post('/clear-site-cache')
+    const entry = await browse(userAx, location)
+    assert.equal(entry.status, 302, JSON.stringify(entry.data))
+    assert.equal(entry.headers.location, issuer + '/oauth/consent?error=invalid_target')
+  })
+
   test('decision replayed after completion is 400; another user\'s session is 403', async () => {
     const { clientId, flow, userAx } = await setup()
     // replayed before and after the resume

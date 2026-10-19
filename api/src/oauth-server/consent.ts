@@ -46,10 +46,12 @@ export const findConsentAccount = (accounts: ConsentAccount[], key: { type?: unk
   return accounts.find(a => a.type === key.type && a.id === key.id && sameDepartment(a.department, key.department as string | undefined))
 }
 
-// an NHI or a scoped session never consents (spec 5, mounting pitfalls), and a user of an org
-// storage only exists inside that organization's directory
+// an NHI or a scoped session never consents (spec 5, mounting pitfalls), a superadmin impersonating
+// a user (asAdmin) never obtains a token in their name (spec 2, no token through admin mode), and a
+// user of an org storage only exists inside that organization's directory
 export const refuseConsentUser = (user: User, session: SessionState): string | undefined => {
   if (session.scopes || session.user?.scope !== undefined) return 'scoped session'
+  if (session.user?.asAdmin) return 'impersonation session'
   if (user.nhi || session.user?.nhi) return 'non-human identity'
   if (user.orgStorage || session.user?.os) return 'user of an organization storage'
 }

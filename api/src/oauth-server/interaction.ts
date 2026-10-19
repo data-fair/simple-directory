@@ -19,7 +19,7 @@ import { issuerOfSite, resolveResource, ResourceError, type IssuerContext } from
 import { getProvider } from './providers.ts'
 import { canonicalSiteUrl } from './router.ts'
 import { clientKind, findSiteClient } from './clients.ts'
-import { siteClientRequestScopes } from './configuration.ts'
+import { siteClientRequestScopes, interactionTTL } from './configuration.ts'
 import { dashboardGrantLifetime } from './grants.ts'
 import {
   userConsentAccounts, refuseConsentUser, implicitConsentAccount, createConsentGrant, findConsentAccount,
@@ -104,6 +104,9 @@ const requestedOidcScopes = (interaction: Interaction) =>
 
 type I18n = ReturnType<typeof reqI18n>
 
+// an error of the entry route that goes to the consent page as ?error=<oauthError>
+const entryError = (oauthError: string, message: string) => Object.assign(httpError(400, message), { oauthError })
+
 const resourceParam = (interaction: Interaction): string | undefined => {
   const resource = interaction.params.resource
   return typeof resource === 'string' ? resource : undefined
@@ -116,28 +119,29 @@ const siteClientScopes = async (i18n: I18n, interaction: Interaction, clientScop
 
 const interactionResource = async (ctx: IssuerContext, interaction: Interaction) => {
   const url = resourceParam(interaction)
-  if (!url) throw httpError(400, 'a single resource is required')
+  if (!url) throw entryError('invalid_target', 'a single resource is required')
   try {
     return { url, kind: (await resolveResource(ctx, url)).kind }
   } catch (err) {
-    if (err instanceof ResourceError) throw httpError(400, err.message)
+    if (err instanceof ResourceError) throw entryError('invalid_target', err.message)
     throw err
   }
 }
 
-// a decision is taken once: concurrent requests on the same interaction race for this lock, the
-// winner's interactionResult then marks the interaction as finished (result.login or result.error)
-// and the lock is not needed anymore. Nothing may rewrite the interaction between the lock and
-// interactionResult.
+// a decision is taken once: the first request inserts the lock of the interaction, any other
+// (concurrent or replayed) fails on the duplicate id. Kept outside the provider's interaction
+// document, which the adapter rewrites whole on every save. Lives as long as an interaction may.
 const lockDecision = async (uid: string) => {
-  const result = await mongo.db.collection<any>('oauth-interaction').updateOne(
-    { _id: uid, sdDecision: { $exists: false }, 'payload.result.login': { $exists: false }, 'payload.result.error': { $exists: false } },
-    { $set: { sdDecision: new Date() } }
-  )
-  return result.modifiedCount === 1
+  try {
+    await mongo.oauthInteractionDecisions.insertOne({ _id: uid, expiresAt: new Date(Date.now() + interactionTTL * 1000) })
+    return true
+  } catch (err: any) {
+    if (err.code === 11000) return false
+    throw err
+  }
 }
 const unlockDecision = async (uid: string) => {
-  await mongo.db.collection<any>('oauth-interaction').updateOne({ _id: uid }, { $unset: { sdDecision: 1 } })
+  await mongo.oauthInteractionDecisions.deleteOne({ _id: uid })
 }
 
 // the consent of a user for a site client: the provider Grant and its record, then the result the
@@ -204,7 +208,14 @@ router.get('/:uid', async (req, res) => {
     if (account && scope.length) {
       const fresh = await loadInteraction(ic.provider, req, res, uid)
       if (!fresh) return res.redirect(consentPageUrl(ic.ctx, 'error=interaction_expired'))
-      const returnTo = await finishUserConsent(req, res, ic, fresh, user, account, scope, siteClient.name)
+      let returnTo: string | undefined
+      try {
+        returnTo = await finishUserConsent(req, res, ic, fresh, user, account, scope, siteClient.name)
+      } catch (err: any) {
+        // the entry is a browser navigation: client errors go to the consent page, never raw
+        if (err.status && err.status < 500) return res.redirect(consentPageUrl(ic.ctx, 'error=' + encodeURIComponent(err.oauthError ?? 'invalid_request')))
+        throw err
+      }
       return res.redirect(303, returnTo ?? fresh.returnTo)
     }
   }
