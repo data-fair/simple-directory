@@ -56,7 +56,7 @@ useHead({
 // const embed = useBooleanSearchParam('embed')
 // const showToolbarParam = useBooleanSearchParam('showToolbar')
 
-const isLoginPage = computed(() => route.name === '/login')
+const isLoginPage = computed(() => route.name === '/login' || route.name === '/oauth/consent')
 
 // pages with a table of contents (@data-fair/lib-vuetify/toc.vue) track the scroll of .v-main__scroller
 // and put it in the right panel (layout-navigation-right.vue), the other pages keep the document scroll

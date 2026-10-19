@@ -271,6 +271,24 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       confirmRevokeSessionsMsg: 'Alle Sitzungen dieses Benutzers werden beendet. Bereits geöffnete Seiten bleiben einige Minuten nutzbar, bis ihr Sitzungstoken erneuert werden muss.',
       confirmDeleteMsg: 'Das Konto {email} wird endgültig gelöscht und aus allen Organisationen entfernt, denen es angehört.'
     },
+    oauthConsent: {
+      title: '{client} möchte auf Ihr Konto zugreifen',
+      willBeAble: 'Diese Anwendung kann:',
+      redirectHost: 'Sie werden anschließend zu {host} weitergeleitet.',
+      account: 'Verwendetes Konto',
+      personalAccount: 'Persönliches Konto',
+      organizationAccount: 'Organisation',
+      allow: 'Erlauben',
+      deny: 'Ablehnen',
+      broadScope: 'Weitreichender Zugriff',
+      atLeastOneScope: 'Wählen Sie mindestens eine Berechtigung aus.',
+      errorTitle: 'Autorisierung nicht möglich',
+      errors: {
+        interactionExpired: 'Die Autorisierungsanfrage ist abgelaufen oder wurde bereits bearbeitet. Kehren Sie zur Anwendung zurück und versuchen Sie es erneut.',
+        forbidden: 'Ihre Sitzung kann diese Autorisierung nicht erteilen.',
+        generic: 'Die Autorisierungsanfrage ist fehlgeschlagen (Code: {code}).'
+      }
+    },
     organization: {
       addMember: 'Einen Benutzer zum Beitritt zur Organisation einladen',
       disableInvite: 'Diese Organisation hat ihre maximale Mitgliederzahl erreicht.',

@@ -273,6 +273,24 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       confirmRevokeSessionsMsg: 'All the sessions of this user will be closed. Pages that are already open stay usable for a few minutes, until their session token needs to be renewed.',
       confirmDeleteMsg: 'The account {email} will be deleted permanently, and removed from all the organizations it belongs to.'
     },
+    oauthConsent: {
+      title: '{client} wants to access your account',
+      willBeAble: 'This application will be able to:',
+      redirectHost: 'You will then be sent back to {host}.',
+      account: 'Account to use',
+      personalAccount: 'Personal account',
+      organizationAccount: 'Organization',
+      allow: 'Allow',
+      deny: 'Deny',
+      broadScope: 'Broad access',
+      atLeastOneScope: 'Select at least one permission.',
+      errorTitle: 'Authorization impossible',
+      errors: {
+        interactionExpired: 'The authorization request has expired or was already handled. Go back to the application and try again.',
+        forbidden: 'Your session cannot grant this authorization.',
+        generic: 'The authorization request failed (code: {code}).'
+      }
+    },
     organization: {
       addMember: 'Invite a user to join this organization',
       disableInvite: 'This organization already contains its maximum number of members.',

@@ -273,6 +273,24 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       confirmRevokeSessionsMsg: 'Toutes les sessions de cet utilisateur seront fermées. Les pages déjà ouvertes restent utilisables quelques minutes, jusqu\'au renouvellement de leur jeton de session.',
       confirmDeleteMsg: 'Le compte {email} sera supprimé définitivement, et retiré de toutes les organisations dont il est membre.'
     },
+    oauthConsent: {
+      title: '{client} souhaite accéder à votre compte',
+      willBeAble: 'Cette application pourra :',
+      redirectHost: 'Vous serez ensuite redirigé vers {host}.',
+      account: 'Compte utilisé',
+      personalAccount: 'Compte personnel',
+      organizationAccount: 'Organisation',
+      allow: 'Autoriser',
+      deny: 'Refuser',
+      broadScope: 'Accès étendu',
+      atLeastOneScope: 'Sélectionnez au moins une autorisation.',
+      errorTitle: 'Autorisation impossible',
+      errors: {
+        interactionExpired: 'La demande d\'autorisation a expiré ou a déjà été traitée. Retournez dans l\'application et recommencez.',
+        forbidden: 'Votre session ne permet pas de donner cette autorisation.',
+        generic: 'La demande d\'autorisation a échoué (code : {code}).'
+      }
+    },
     organization: {
       addMember: 'Inviter un utilisateur à rejoindre l\'organisation',
       disableInvite: 'Cette organisation a atteint son nombre maximal de membres.',
