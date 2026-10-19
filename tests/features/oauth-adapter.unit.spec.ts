@@ -7,8 +7,8 @@ test.describe('oauth server mongo adapter', () => {
 
   test.beforeEach(async () => {
     const mongo = (await import('../../api/src/mongo.ts')).default
-    for (const name of ['AccessToken', 'RefreshToken', 'Session']) {
-      await mongo.db.collection('oauth-' + (name === 'AccessToken' ? 'access-token' : name === 'RefreshToken' ? 'refresh-token' : 'session')).deleteMany({})
+    for (const name of ['oauth-access-token', 'oauth-refresh-token', 'oauth-session']) {
+      await mongo.db.collection(name).deleteMany({})
     }
   })
 
@@ -57,5 +57,12 @@ test.describe('oauth server mongo adapter', () => {
     const adapter = new MongoAdapter('Session')
     await adapter.upsert('test_s1', { uid: 'uid-1' }, 60)
     assert.deepEqual(await adapter.findByUid('uid-1'), { uid: 'uid-1' })
+  })
+
+  test('find on Client returns undefined', async () => {
+    const { MongoAdapter } = await import('../../api/src/oauth-server/adapter.ts')
+    const adapter = new MongoAdapter('Client')
+    await adapter.upsert('test_c1', { client_id: 'test_c1' }, 60)
+    assert.equal(await adapter.find('test_c1'), undefined)
   })
 })

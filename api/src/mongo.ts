@@ -9,7 +9,7 @@ import { type Saml2RelayState } from './saml2/service.ts'
 
 const collation = { locale: 'en', strength: 1 }
 
-export // collections of the oidc-provider models stored by the oauth server adapter (Client is never stored)
+// collections of the oidc-provider models stored by the oauth server adapter (Client is never stored)
 const oauthServerModels = ['access-token', 'authorization-code', 'refresh-token', 'device-code', 'client-credentials', 'initial-access-token', 'registration-access-token', 'interaction', 'replay-detection', 'pushed-authorization-request', 'backchannel-authentication-request', 'grant', 'session']
 const oauthServerIndexes = Object.fromEntries(oauthServerModels.map(model => ['oauth-' + model, {
   ttl: [{ expiresAt: 1 }, { expireAfterSeconds: 0 }],
@@ -17,7 +17,7 @@ const oauthServerIndexes = Object.fromEntries(oauthServerModels.map(model => ['o
   uid: { 'payload.uid': 1 }
 }]))
 
-class SdMongo {
+export class SdMongo {
   get client () {
     return mongo.client
   }
