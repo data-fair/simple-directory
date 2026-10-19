@@ -1,4 +1,4 @@
-import config, { superadmin, jwtDurations } from '#config'
+import config, { superadmin } from '#config'
 import mongo from '#mongo'
 import { Router, type RequestHandler } from 'express'
 import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, reqSession, reqSessionAuthenticated, assertReqInternalSecret, reqSitePath } from '@data-fair/lib-express'
@@ -7,16 +7,14 @@ import Cookies from 'cookies'
 import Debug from 'debug'
 import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, is2FARequired, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
-import { siteOwnedByNhiOrg } from '../oauth-server/issuers.ts'
 import type { ActionPayload, ServerSession, Site, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
-import { internalError } from '@data-fair/lib-node/observer.js'
 import emailValidator from 'email-validator'
 import { reqI18n } from '#i18n'
-import limiter, { refundLimiter } from '../utils/limiter.ts'
+import limiter from '../utils/limiter.ts'
 import storages from '#storages'
-import { verifyAssertion } from '../nhis/service.ts'
-import { ipAllowed } from '../nhis/ips.ts'
+import { NhiExchangeError, consumeNhiLimits, refundNhiLimits, loadExchangeNhi, verifyExchangeAssertion, rejectDelay, updateNhiLogged } from '../nhis/exchange.ts'
+import { sdClaims, signAccessToken } from '../oauth-server/access-token.ts'
 import { grantedScope } from '../nhis/scopes.ts'
 
 import { checkPassword, validatePassword, type Password } from '../utils/passwords.ts'
@@ -309,62 +307,42 @@ router.post('/nhi-token', async (req, res) => {
   // before any lookup, so a broken proxy chain rejects every caller identically (no oracle)
   // and the address controls below can never run without a client address
   const clientIp = reqIp(req)
-  if (!await limiter()(clientIp) || !await limiter()(body.client_id)) {
+  if (!await consumeNhiLimits(clientIp, body.client_id)) {
     eventsLog.warn('sd.auth.nhi.rate-limit', 'rate limit error for /auth/nhi-token route', logContext)
     throw httpError(429, reqI18n(req).messages.errors.rateLimitAuth)
   }
-  // uniform failure: same status/body whatever the cause, random delay against timing probes
-  const reject = async (reason: string) => {
-    eventsLog.warn('sd.auth.nhi.fail', `nhi token exchange failed: ${reason}`, logContext)
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000))
-    return httpError(401, 'invalid credentials')
-  }
-  const user = await storages.globalStorage.getUser(body.client_id)
-  if (!user?.nhi || user.organizations.length !== 1) throw await reject('unknown or invalid nhi ' + body.client_id)
-  const userOrg = user.organizations[0]
-  // the exchange is only valid on the main site or on a site owned by the NHI's own org — a
-  // compromised or unrelated site config must not be able to mint a session for an NHI it
-  // doesn't own (same department-tolerant ownership comparison as getDefaultUserOrg above)
   const site = await reqSite(req)
-  if (site && !siteOwnedByNhiOrg(site, userOrg)) {
-    throw await reject('site not owned by nhi org ' + user.id)
-  }
-  // optional per-NHI address control: allowedIps gates the exchange itself, so a captured
-  // assertion replayed from another network is refused before it is even verified
-  if (user.nhi.allowedIps?.length && !ipAllowed(clientIp, user.nhi.allowedIps)) {
-    throw await reject(`ip ${clientIp} not in allowedIps for ` + user.id)
-  }
-  let assertionPayload
+  const siteUrl = reqSiteUrl(req)
+  let user: User
+  let exp: number
   try {
-    assertionPayload = await verifyAssertion(body.assertion, user.nhi.provider, user.nhi.subject, reqSiteUrl(req))
-  } catch (err: any) {
-    throw await reject('assertion rejected for ' + user.id + ': ' + err.message)
+    user = await loadExchangeNhi(body.client_id, site, clientIp)
+    exp = await verifyExchangeAssertion(user, body.assertion, siteUrl)
+  } catch (err) {
+    if (!(err instanceof NhiExchangeError)) throw err
+    // uniform failure: same status/body whatever the cause, random delay against timing probes
+    eventsLog.warn('sd.auth.nhi.fail', `nhi token exchange failed: ${err.message}`, logContext)
+    await rejectDelay()
+    throw httpError(401, 'invalid credentials')
   }
+  const userOrg = user.organizations[0]
   const nowSec = Math.floor(Date.now() / 1000)
-  const exp = Math.min(assertionPayload.exp as number, nowSec + jwtDurations.nhiToken)
   // computed after the assertion is verified: the caller is authenticated, so a precise 400 is
   // not an oracle; it is not refunded to the rate limiter (a misconfigured client keeps counting)
-  const scope = grantedScope(user.nhi.scopes, body.scope)
-  const payload = getTokenPayload(user, site)
-  if (scope !== undefined) payload.scope = scope
+  const scope = grantedScope(user.nhi!.scopes, body.scope)
   // same claim, same enforcement (lib-express Session.req) as an adminMode session's binding —
   // setSessionCookies only stamps boundIp for adminMode, which an NHI never has, so no conflict
-  if (user.nhi.ipBinding) payload.boundIp = clientIp
+  const boundIp = user.nhi!.ipBinding ? clientIp : undefined
+  const payload = getTokenPayload(user, site)
+  if (scope !== undefined) payload.scope = scope
+  if (boundIp !== undefined) payload.boundIp = boundIp
   await setSessionCookies(req, res, reqSitePath(req), payload, 'nhi-session', userOrg, { skipExchangeToken: true, exp })
   // the response token is an RFC 9068 access token (typ at+jwt), the only kind of token the
   // services accept as a bearer; the cookie token above stays a session token
-  const accessToken = await signToken({ ...payload }, exp, undefined, 'at+jwt')
-  // Guarded on `readonly`, like confirmLog on the password path: a read-only storage cannot record a
-  // last-logged date, and FileStorage's updateLogged throws SYNCHRONOUSLY — it is not async — so the
-  // .catch() below never attaches and the rejection became a 500 that failed the whole exchange.
-  // Without the guard an NHI could not obtain a session at all under file storage.
-  if (!storages.globalStorage.readonly) {
-    storages.globalStorage.updateLogged(user.id).catch((err: any) => internalError('nhi-update-logged', 'error while updating logged date', err))
-  }
-  // only failures count: a success proves possession of the signing key, which is exactly what
-  // the limiter guards, so its points are given back. Consume-then-refund (rather than counting
-  // failures after the fact) keeps concurrent in-flight attempts counted against the budget.
-  await Promise.all([refundLimiter(clientIp), refundLimiter(body.client_id)])
+  const claims = sdClaims(user, { kind: 'api', site, siteUrl, audience: siteUrl }, { scope, boundIp })
+  const accessToken = await signAccessToken({ ...claims, iss: siteUrl + '/simple-directory', sub: user.id, client_id: user.id, aud: siteUrl }, exp)
+  updateNhiLogged(user)
+  await refundNhiLimits(clientIp, body.client_id)
   eventsLog.info('sd.auth.nhi.ok', `an NHI session was created for ${user.id}`, logContext)
   res.set('Cache-Control', 'no-store')
   res.send({ access_token: accessToken, token_type: 'Bearer', expires_in: exp - nowSec, ...(scope !== undefined ? { scope } : {}) })

@@ -1,9 +1,10 @@
-import { Router } from 'express'
+import express, { Router } from 'express'
 import config from '#config'
 import { reqIsInternal, reqSiteUrl } from '@data-fair/lib-express'
 import { reqSite } from '../sites/service.ts'
 import { issuerOfSite } from './issuers.ts'
 import { getProvider } from './providers.ts'
+import { handleJwtBearerGrant, jwtBearerGrantType } from './jwt-bearer.ts'
 import type Provider from 'oidc-provider'
 
 const router = Router()
@@ -18,6 +19,9 @@ const providerCallback = (provider: Provider) => {
   }
   return callback
 }
+
+// the provider accepts an already parsed body, so the token endpoint is parsed once here
+const tokenBodyParser = express.urlencoded({ limit: '56kb', extended: false })
 
 const openidDiscovery = '/.well-known/openid-configuration'
 const oauthDiscovery = '/.well-known/oauth-authorization-server'
@@ -43,6 +47,11 @@ router.use(async (req, res, next) => {
 
   const ctx = await issuerOfSite(await reqSite(req), canonicalSiteUrl(reqSiteUrl(req)))
   if (!ctx) return res.status(404).send()
+  if (path === '/api/oauth/token' && req.method === 'POST') {
+    await new Promise<void>((resolve, reject) => tokenBodyParser(req, res, err => err ? reject(err) : resolve()))
+    if (req.body?.grant_type === jwtBearerGrantType) return handleJwtBearerGrant(req, res, ctx)
+  }
+
   const provider = await getProvider(ctx)
 
   if (path === oauthDiscovery) req.url = openidDiscovery + req.url.slice(oauthDiscovery.length)

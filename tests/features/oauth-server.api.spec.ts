@@ -1,6 +1,8 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
+import jwt from 'jsonwebtoken'
 import { axios, createUser, testEnvAx, devApiUrl, directoryUrl, getServerConfig } from '../support/axios.ts'
+import { signAssertion, nhiBody } from '../support/nhi.ts'
 
 const site2Host = `127.0.0.1:${process.env.NGINX_PORT2}`
 const site2Url = `http://${site2Host}`
@@ -117,5 +119,156 @@ test.describe('oauth server', () => {
       { headers: { 'content-type': 'application/x-www-form-urlencoded' } }).catch(err => err)
     assert.ok([400, 401].includes(err.status), `status ${err.status}`)
     assert.ok(err.data?.error, JSON.stringify(err.data))
+  })
+})
+
+const jwtBearer = 'urn:ietf:params:oauth:grant-type:jwt-bearer'
+
+// posts a form-encoded token request, resolves with the response or the error alike
+const tokenRequest = (params: Record<string, string>, headers: Record<string, string> = {}, url = '/api/oauth/token') =>
+  axios().post(url, new URLSearchParams(params).toString(),
+    { headers: { 'content-type': 'application/x-www-form-urlencoded', ...headers } })
+    .then((r: any) => r, (e: any) => e)
+
+const createNhi = async (email: string, extra: Record<string, any> = {}) => {
+  const { ax } = await createUser(email)
+  const org = (await ax.post('/api/organizations', { name: 'NHI ' + email })).data
+  ax.setOrg(org.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody(extra))).data
+  return { ax, org, nhi }
+}
+
+test.describe('oauth server jwt bearer grant', () => {
+  test.beforeEach(async () => {
+    await testEnvAx.delete('/')
+    await testEnvAx.patch('/config', { platformScopesUrl: `${devApiUrl}/api/test-env/platform-scopes` })
+    await testEnvAx.put('/platform-scopes', { scopes: { datasets: 'All dataset scopes', 'datasets:read': 'Read datasets', 'datasets:write': 'Write datasets' } })
+  })
+
+  test.afterAll(async () => {
+    await testEnvAx.patch('/config', { platformScopesUrl: '' })
+  })
+
+  test('jwt bearer grant issues an at+jwt with rfc 9068 claims', async () => {
+    const { nhi, org } = await createNhi('oauth-jwt1@test.com')
+    const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    assert.equal(res.data.token_type, 'Bearer')
+    assert.ok(res.data.expires_in > 0 && res.data.expires_in <= 10 * 60)
+    assert.equal(res.headers['cache-control'], 'no-store')
+    assert.equal(res.headers['set-cookie'], undefined)
+    const decoded = jwt.decode(res.data.access_token, { complete: true }) as any
+    assert.equal(decoded.header.typ, 'at+jwt')
+    assert.ok(decoded.header.kid.startsWith('scoped-'))
+    const payload = decoded.payload
+    assert.equal(payload.iss, directoryUrl)
+    assert.equal(payload.sub, nhi.id)
+    assert.equal(payload.client_id, nhi.id)
+    assert.equal(payload.aud, directoryUrl.replace('/simple-directory', ''))
+    assert.equal(typeof payload.jti, 'string')
+    assert.equal(payload.nhi, 1)
+    assert.equal(payload.organizations.length, 1)
+    assert.equal(payload.organizations[0].id, org.id)
+    assert.equal(payload.isAdmin, undefined)
+    assert.equal(payload.scope, undefined)
+    assert.equal(res.data.scope, undefined)
+  })
+
+  test('jwt bearer grant: requested scope within the maximum', async () => {
+    const { nhi } = await createNhi('oauth-jwt2@test.com', { scopes: ['datasets'] })
+    const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion(), scope: 'datasets:read' })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    assert.equal(res.data.scope, 'datasets:read')
+    assert.equal((jwt.decode(res.data.access_token) as any).scope, 'datasets:read')
+    // nothing requested grants the maximum
+    const max = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() })
+    assert.equal(max.data.scope, 'datasets')
+  })
+
+  test('jwt bearer grant: exceeding scope is invalid_scope', async () => {
+    const { nhi } = await createNhi('oauth-jwt3@test.com', { scopes: ['datasets:read'] })
+    const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion(), scope: 'datasets:write' })
+    assert.equal(res.status, 400)
+    assert.equal(res.data.error, 'invalid_scope')
+  })
+
+  test('jwt bearer grant: openid is stripped', async () => {
+    const { nhi } = await createNhi('oauth-jwt4@test.com', { scopes: ['datasets'] })
+    const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion(), scope: 'openid datasets:read profile' })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    assert.equal(res.data.scope, 'datasets:read')
+    assert.equal((jwt.decode(res.data.access_token) as any).scope, 'datasets:read')
+    // only OIDC values means nothing requested: the maximum
+    const onlyOidc = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion(), scope: 'openid' })
+    assert.equal(onlyOidc.status, 200, JSON.stringify(onlyOidc.data))
+    assert.equal(onlyOidc.data.scope, 'datasets')
+  })
+
+  test('jwt bearer grant: no maximum and nothing requested means no scope claim', async () => {
+    const { nhi } = await createNhi('oauth-jwt5@test.com')
+    const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion(), scope: 'openid offline_access' })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    assert.equal(res.data.scope, undefined)
+    assert.equal(Object.hasOwn(jwt.decode(res.data.access_token) as any, 'scope'), false)
+  })
+
+  test('jwt bearer grant: mcp resource gives two audiences', async () => {
+    const { nhi } = await createNhi('oauth-jwt6@test.com')
+    const siteUrl = directoryUrl.replace('/simple-directory', '')
+    // config.mcpPath default (not exposed by the test-env config route)
+    const mcpPath = '/mcp-server'
+    const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion(), resource: siteUrl + mcpPath + '/datasets' })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    assert.deepEqual((jwt.decode(res.data.access_token) as any).aud, [siteUrl + mcpPath, siteUrl])
+  })
+
+  test('jwt bearer grant: unknown resource is invalid_target', async () => {
+    const { nhi } = await createNhi('oauth-jwt7@test.com')
+    const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion(), resource: 'http://unknown.example.com' })
+    assert.equal(res.status, 400)
+    assert.equal(res.data.error, 'invalid_target')
+  })
+
+  test('jwt bearer grant: wrong audience, unknown client, other org site, ip not allowed all give the same invalid_grant', async () => {
+    const { nhi } = await createNhi('oauth-jwt8@test.com', { allowedIps: ['9.9.9.9', '8.8.8.8'] })
+    const from = { 'x-forwarded-for': '9.9.9.9' }
+    // sanity: the same request with a valid assertion from an allowed ip succeeds
+    const ok = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() }, from)
+    assert.equal(ok.status, 200, JSON.stringify(ok.data))
+
+    const otherOrg = await createOrg('oauth-jwt8-other@test.com', 'Other NHI org')
+    await postSite(otherOrg.id, otherOrg.name, {}, { authMode: 'onlyBackOffice' })
+
+    const failures = [
+      await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion({ aud: 'https://other.example.com' }) }, from),
+      await tokenRequest({ grant_type: jwtBearer, client_id: 'nhi-unknown000', assertion: signAssertion() }, from),
+      await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion(), resource: site2Url }, from),
+      await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() }, { 'x-forwarded-for': '7.7.7.7' })
+    ]
+    for (const res of failures) {
+      assert.equal(res.status, 400)
+      assert.deepEqual(res.data, { error: 'invalid_grant' })
+      assert.equal(res.headers['set-cookie'], undefined)
+    }
+  })
+
+  test('jwt bearer grant: json body is invalid_request', async () => {
+    const { nhi } = await createNhi('oauth-jwt9@test.com')
+    const res = await axios().post('/api/oauth/token', { grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() })
+      .then((r: any) => r, (e: any) => e)
+    assert.equal(res.status, 400)
+    assert.equal(res.data.error, 'invalid_request')
+  })
+
+  test('jwt bearer grant: only failures count against the limiter', async () => {
+    const { nhi } = await createNhi('oauth-jwt10@test.com')
+    const attempts = (await getServerConfig()).authRateLimit.attempts
+    const from = { 'x-forwarded-for': '9.8.7.5' }
+    for (let i = 0; i < attempts + 1; i++) {
+      const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() }, from)
+      assert.equal(res.status, 200, `attempt ${i}: ${JSON.stringify(res.data)}`)
+    }
+    const res = await tokenRequest({ grant_type: jwtBearer, client_id: nhi.id, assertion: signAssertion() }, from)
+    assert.equal(res.status, 200, JSON.stringify(res.data))
   })
 })

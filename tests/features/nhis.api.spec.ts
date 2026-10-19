@@ -1,27 +1,10 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { generateKeyPairSync } from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import { MongoClient } from 'mongodb'
 import { RateLimiterMongo } from 'rate-limiter-flexible'
 import { axios, createUser, deleteAllEmails, testEnvAx, devApiUrl, directoryUrl, getServerConfig, uploadAvatar, testPng } from '../support/axios.ts'
-
-const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
-const publicJwk = { ...publicKey.export({ format: 'jwk' }), kid: 'test-key', alg: 'RS256', use: 'sig' }
-const jwks = { keys: [publicJwk] }
-const privatePem = privateKey.export({ format: 'pem', type: 'pkcs8' }) as string
-const issuer = 'https://test-issuer.example.com'
-const subject = 'system:serviceaccount:agents:my-agent'
-
-// expected audience is the site origin, i.e. directoryUrl without the /simple-directory suffix
-const audience = directoryUrl.replace('/simple-directory', '')
-const signAssertion = (claims: Record<string, any> = {}, opts: jwt.SignOptions = {}) =>
-  jwt.sign({ iss: issuer, sub: subject, aud: audience, ...claims }, privatePem,
-    { algorithm: 'RS256', keyid: 'test-key', expiresIn: '10m', ...opts })
-
-const nhiBody = (overrides: Record<string, any> = {}) => ({
-  name: 'My agent', role: 'user', subject, provider: { issuer, jwks }, ...overrides
-})
+import { jwks, issuer, subject, audience, signAssertion, nhiBody } from '../support/nhi.ts'
 
 test.beforeEach(async () => {
   await deleteAllEmails()
@@ -127,8 +110,21 @@ test('nhi token exchange issues a short-lived org session', async () => {
   assert.equal(payload.isAdmin, undefined)
   assert.equal(payload.organizations.length, 1)
   assert.equal(payload.organizations[0].id, org.id)
+  // nhi-token access token now carries iss aud sub jti client_id (RFC 9068)
+  assert.equal(payload.iss, directoryUrl)
+  assert.equal(payload.aud, audience)
+  assert.equal(payload.sub, nhi.id)
+  assert.equal(payload.client_id, nhi.id)
+  assert.equal(typeof payload.jti, 'string')
 
   const setCookieHeaders = res.headers['set-cookie']!
+  // the cookie token stays a session token, without RFC 9068 claims
+  // (the id_token cookie holds header.payload, the signature is in id_token_sign)
+  const cookieToken = setCookieHeaders.find(c => c.startsWith('id_token='))!.split(';')[0].slice('id_token='.length)
+  const cookiePayload = JSON.parse(Buffer.from(cookieToken.split('.')[1], 'base64url').toString())
+  assert.equal(cookiePayload.id, nhi.id)
+  assert.equal(cookiePayload.aud, undefined)
+  assert.equal(cookiePayload.client_id, undefined)
   const cookies = setCookieHeaders.join(';')
   assert.ok(cookies.includes('id_token='))
   assert.ok(cookies.includes('id_token_org=' + org.id))
