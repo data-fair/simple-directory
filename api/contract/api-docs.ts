@@ -141,8 +141,8 @@ export default {
     '/api/auth/password': {
       post: {
         tags: ['Authentication'],
-        summary: 'To get a JWT from an email',
-        operationId: 'authPasswordless',
+        summary: 'To get a JWT from an email and a password',
+        operationId: 'authPassword',
         parameters: [{
           name: 'redirect',
           in: 'query',
@@ -166,7 +166,7 @@ export default {
                     format: 'email'
                   },
                   password: {
-                    description: 'The main email of the account',
+                    description: 'The password of the account',
                     type: 'string'
                   }
                 }
