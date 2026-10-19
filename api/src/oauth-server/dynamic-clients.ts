@@ -6,7 +6,10 @@ import { isIP } from 'node:net'
 import { errors } from 'oidc-provider'
 import type { KoaContextWithOIDC } from 'oidc-provider'
 import { publicLookup, checkAddress, getSsrfRules } from '@data-fair/lib-node/ssrf.js'
+import { reqIp } from '@data-fair/lib-express'
+import eventsLog from '@data-fair/lib-express/events-log.js'
 import mongo from '#mongo'
+import limiter from '../utils/limiter.ts'
 import { isLoopbackRedirectUri } from './clients.ts'
 import { listGrantRecords } from './grants.ts'
 import Debug from 'debug'
@@ -16,6 +19,7 @@ const debug = Debug('oauth-server')
 const allowedAuthMethods = ['none', 'private_key_jwt']
 const allowedGrantTypes = ['authorization_code', 'refresh_token']
 const allowedResponseTypes = ['code']
+const webUriKeys = ['logo_uri', 'client_uri', 'policy_uri', 'tos_uri', 'jwks_uri']
 const forbiddenSchemes = new Set(['javascript:', 'data:', 'file:', 'vbscript:', 'blob:', 'about:'])
 const loopbackHosts = new Set(['localhost', '127.0.0.1', '[::1]'])
 // RFC 8252 7.1: a private-use scheme is a reverse domain name, so it contains a dot
@@ -62,9 +66,12 @@ export const normalizeDynamicMetadata = (metadata: Record<string, any>): Record<
   if (!stringArray(normalized.response_types, 'response_types').every(r => allowedResponseTypes.includes(r))) {
     throw new errors.InvalidClientMetadata(`response_types can only contain ${allowedResponseTypes.join(', ')}`)
   }
-  // shown on the consent screen: never a mixed content image
-  if (normalized.logo_uri !== undefined && (typeof normalized.logo_uri !== 'string' || URL.parse(normalized.logo_uri)?.protocol !== 'https:')) {
-    throw new errors.InvalidClientMetadata('logo_uri must be an https url')
+  // shown on the consent screen or fetched: https only, as the provider requires of CIMD documents
+  for (const key of webUriKeys) {
+    const value = normalized[key]
+    if (value !== undefined && (typeof value !== 'string' || URL.parse(value)?.protocol !== 'https:')) {
+      throw new errors.InvalidClientMetadata(`${key} must be an https url`)
+    }
   }
 
   const redirectUris = normalized.redirect_uris
@@ -99,6 +106,23 @@ export const allowClient = async (_koaCtx: KoaContextWithOIDC, client: { metadat
   }
 }
 
+// features.clientIdMetadataDocument.allowFetch, called on cache misses only: every fetch counts
+// against the address of the request (never refunded), so SD cannot be used to send GET requests
+// in bulk to arbitrary https urls
+export const allowFetch = async (koaCtx: KoaContextWithOIDC | undefined) => {
+  const clientIp = koaCtx?.req ? reqIp(koaCtx.req as any) : 'unknown'
+  if (await limiter()('oauth-cimd:' + clientIp)) return true
+  eventsLog.warn('sd.oauth.rate-limit', 'rate limit error for client id metadata document fetches', { req: koaCtx?.req as any })
+  return false
+}
+
+// a client chosen value in a log line
+export const logSafeName = (name: unknown) => {
+  if (typeof name !== 'string' || !name) return 'unnamed'
+  // eslint-disable-next-line no-control-regex
+  return name.replace(/[\u0000-\u001f\u007f-\u009f]/g, '').slice(0, 100)
+}
+
 // documents served from memory by the test environment (POST /api/test-env/cimd-fixtures), consulted
 // only when ENABLE_TEST_API=1
 export const cimdFixtures = new Map<string, Record<string, any>>()
@@ -110,7 +134,7 @@ const getSsrfAgent = () => {
   if (!ssrfAgent) {
     // reading the global loads the bundled undici, which registers its global dispatcher
     if (typeof Response !== 'function') throw new Error('fetch is not available')
-    const Agent = (globalThis as any)[Symbol.for('undici.globalDispatcher.1')]?.constructor
+    const Agent = ((globalThis as any)[Symbol.for('undici.globalDispatcher.2')] ?? (globalThis as any)[Symbol.for('undici.globalDispatcher.1')])?.constructor
     if (Agent?.name !== 'Agent') throw new Error('cannot create the SSRF safe dispatcher of the oauth server')
     // publicLookup refuses non public addresses (SSRF_PUBLIC_IPS / SSRF_PRIVATE_IPS apply)
     ssrfAgent = new Agent({ connect: { lookup: publicLookup } })
@@ -118,29 +142,33 @@ const getSsrfAgent = () => {
   return ssrfAgent
 }
 
+// the provider applies the same limits on what we hand back, these only bound what we read
+const cimdMaxBodySize = 5 * 1024
 const maxBodySize = 64 * 1024
 
-const readBody = async (response: Response) => {
+const readBody = async (response: Response, maxBodySize: number) => {
   const chunks: Uint8Array[] = []
   let received = 0
-  if (response.body) {
-    for await (const chunk of response.body) {
-      received += chunk.length
-      if (received > maxBodySize) {
-        await response.body.cancel()
-        throw new Error('response too large')
-      }
-      chunks.push(chunk)
+  if (!response.body) return Buffer.alloc(0)
+  const reader = response.body.getReader()
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    received += value.length
+    if (received > maxBodySize) {
+      await reader.cancel()
+      throw new Error('response too large')
     }
+    chunks.push(value)
   }
   return Buffer.concat(chunks)
 }
 
 // a CIMD document goes through normalizeDynamicMetadata (the loopback fix), anything else (a client's
 // jwks_uri) is handed back untouched. The provider applies its own body limits on the result.
-const normalizeResponse = async (url: string, response: Response): Promise<Response> => {
+const normalizeResponse = async (url: string, response: Response, cimd: boolean): Promise<Response> => {
   if (response.status !== 200) return response
-  const body = await readBody(response)
+  const body = await readBody(response, cimd ? cimdMaxBodySize : maxBodySize)
   const headers = new Headers(response.headers)
   headers.delete('content-length')
   headers.delete('content-encoding')
@@ -156,9 +184,12 @@ const normalizeResponse = async (url: string, response: Response): Promise<Respo
 // signal is kept and redirections are never followed
 export const ssrfFetch = async (url: string | URL, options: RequestInit & { dispatcher?: unknown }): Promise<Response> => {
   const href = String(url)
+  // the provider's CIMD fetch is the only one asking for manual redirects (jwks_uri and
+  // sector_identifier_uri fetches do not)
+  const cimd = options.redirect === 'manual'
   if (process.env.ENABLE_TEST_API === '1' && cimdFixtures.has(href)) {
     const response = new Response(JSON.stringify(cimdFixtures.get(href)), { status: 200, headers: { 'content-type': 'application/json' } })
-    return await normalizeResponse(href, response)
+    return await normalizeResponse(href, response, cimd)
   }
   const target = new URL(href)
   if (target.protocol !== 'https:') throw new Error('only https urls are fetched')
@@ -170,7 +201,7 @@ export const ssrfFetch = async (url: string | URL, options: RequestInit & { disp
   }
   const { dispatcher: _providerDispatcher, ...rest } = options
   const response = await fetch(href, { ...rest, redirect: 'manual', dispatcher: getSsrfAgent() } as RequestInit)
-  return await normalizeResponse(href, response)
+  return await normalizeResponse(href, response, cimd)
 }
 
 const unusedClientAge = 30 * 86400 * 1000

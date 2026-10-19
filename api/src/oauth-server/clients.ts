@@ -39,6 +39,8 @@ export const clientKind = (clientId: string): SdClientKind => {
   if (clientId.startsWith('nhi-')) return 'nhi'
   if (clientId.startsWith('site-')) return 'site'
   if (clientId.startsWith('https://')) return 'cimd'
+  // registered clients get a dcr- prefix (configuration idFactory); any other id is treated as one
+  // too, the most restricted kind
   return 'dcr'
 }
 

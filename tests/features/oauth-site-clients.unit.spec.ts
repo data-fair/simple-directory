@@ -20,6 +20,7 @@ test.describe('oauth site clients', () => {
     assert.equal(clientKind('site-abc'), 'site')
     assert.equal(clientKind('https://claude.ai/oauth/x'), 'cimd')
     assert.equal(clientKind('Xy12abc'), 'dcr')
+    assert.equal(clientKind('dcr-Xy12abc'), 'dcr')
   })
 
   test('siteRedirectUriAllowed', async () => {

@@ -11,7 +11,8 @@ import { getKnownScopes } from '../scopes/service.ts'
 import { grantedScope, narrowScope } from '../nhis/scopes.ts'
 import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
-import { allowClient, ssrfFetch } from './dynamic-clients.ts'
+import { allowClient, allowFetch, ssrfFetch } from './dynamic-clients.ts'
+import { nanoid } from 'nanoid'
 import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS, siteClientResourceAllowed } from './clients.ts'
 import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts'
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
@@ -54,7 +55,7 @@ const adapterFactory = (ctx: IssuerContext) => (name: string) => {
     if (nhiClient) return nhiClient as any
     const siteClient = await findSiteClient(ctx, id)
     if (siteClient) return { ...siteClientMetadata(siteClient), sd_allowed_origins: siteClientOrigins(siteClient) } as any
-    if (!config.oauthServer?.dynamicClients || clientKind(id) !== 'dcr') return undefined
+    if (!config.oauthServer?.authorizationCode || !config.oauthServer?.dynamicClients || clientKind(id) !== 'dcr') return undefined
     return await findStoredClient(id)
   }
   return adapter
@@ -222,12 +223,12 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
       introspection: { enabled: false },
       // open (MCP clients cannot have an initial access token) and rate limited by the router,
       // without management: a registration is final. The router normalizes the body first.
-      registration: { enabled: dynamicClients, initialAccessToken: false, issueRegistrationAccessToken: false },
+      registration: { enabled: dynamicClients, initialAccessToken: false, issueRegistrationAccessToken: false, idFactory: () => 'dcr-' + nanoid() },
       // https ids only (checked by the provider), fetched through ssrfFetch
       clientIdMetadataDocument: {
         enabled: dynamicClients,
         ack: 'draft-02',
-        allowFetch: async () => dynamicClients,
+        allowFetch: async (koaCtx) => dynamicClients && await allowFetch(koaCtx),
         allowClient
       },
       // served nowhere by the dispatcher, they must not be advertised

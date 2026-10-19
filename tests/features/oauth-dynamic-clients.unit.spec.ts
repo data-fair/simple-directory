@@ -67,6 +67,44 @@ test.describe('oauth dynamic clients', () => {
     throwsOAuth(() => normalizeDynamicMetadata({ redirect_uris: ['http://localhost/cb', 'com.example.app:/cb'] }), 'invalid_redirect_uri')
   })
 
+  test('normalizeDynamicMetadata requires https for every web uri', async () => {
+    const { normalizeDynamicMetadata } = await dynamicClients()
+    const base = { redirect_uris: ['https://agent.example.org/cb'] }
+    for (const key of ['logo_uri', 'client_uri', 'policy_uri', 'tos_uri', 'jwks_uri']) {
+      throwsOAuth(() => normalizeDynamicMetadata({ ...base, [key]: 'http://agent.example.org/x' }), 'invalid_client_metadata')
+      throwsOAuth(() => normalizeDynamicMetadata({ ...base, [key]: 'javascript:alert(1)' }), 'invalid_client_metadata')
+      throwsOAuth(() => normalizeDynamicMetadata({ ...base, [key]: 42 }), 'invalid_client_metadata')
+      assert.equal(normalizeDynamicMetadata({ ...base, [key]: 'https://agent.example.org/x' })[key], 'https://agent.example.org/x')
+    }
+  })
+
+  test('logSafeName truncates and strips control characters', async () => {
+    const { logSafeName } = await dynamicClients()
+    assert.equal(logSafeName('Claude\nCode\u0000\u001b[31m'), 'ClaudeCode[31m')
+    assert.equal(logSafeName('x'.repeat(300)).length, 100)
+    assert.equal(logSafeName(undefined), 'unnamed')
+    assert.equal(logSafeName(42), 'unnamed')
+  })
+
+  test('ssrfFetch caps the body of a client id metadata document at 5 KB', async () => {
+    const { ssrfFetch, cimdFixtures } = await dynamicClients()
+    const url = 'https://cimd.test/big'
+    const previous = process.env.ENABLE_TEST_API
+    process.env.ENABLE_TEST_API = '1'
+    cimdFixtures.set(url, { ...claudeCode(), client_id: url, client_name: 'x'.repeat(6 * 1024) })
+    try {
+      // the provider's CIMD fetch is the one with redirect: 'manual'
+      await assert.rejects(ssrfFetch(url, { method: 'GET', redirect: 'manual' }), /too large/)
+      // a jwks_uri fetch keeps the larger limit
+      const res = await ssrfFetch(url, { method: 'GET' })
+      assert.equal(res.status, 200)
+    } finally {
+      cimdFixtures.delete(url)
+      if (previous === undefined) delete process.env.ENABLE_TEST_API
+      else process.env.ENABLE_TEST_API = previous
+    }
+  })
+
   test('normalizeDynamicMetadata keeps the port relaxation to all-loopback clients', async () => {
     const { normalizeDynamicMetadata } = await dynamicClients()
     assert.equal(normalizeDynamicMetadata({ redirect_uris: ['http://localhost/cb'], application_type: 'web' }).application_type, 'native')
@@ -92,8 +130,9 @@ test.describe('oauth dynamic clients', () => {
 
   test('ssrfFetch refuses non public addresses', async () => {
     const { ssrfFetch } = await dynamicClients()
-    for (const url of ['https://127.0.0.1:8443/doc', 'https://[::1]:8443/doc', 'https://localhost:8443/doc', 'https://10.1.2.3/doc']) {
-      await assert.rejects(ssrfFetch(url, { method: 'GET', signal: AbortSignal.timeout(2500) }), (err: any) => /not a public address|fetch failed/.test(err.message), url)
+    // loopback is in SSRF_PUBLIC_IPS for the test run (playwright.config.ts), so other ranges here
+    for (const url of ['https://10.1.2.3/doc', 'https://169.254.169.254/latest', 'https://192.168.1.1:8443/doc', 'https://[fd00::1]/doc', 'https://[::ffff:10.0.0.1]/doc', 'https://0.0.0.0/doc']) {
+      await assert.rejects(ssrfFetch(url, { method: 'GET', signal: AbortSignal.timeout(2500) }), (err: any) => err.code === 'ERR_SSRF_BLOCKED' || err.cause?.code === 'ERR_SSRF_BLOCKED', url)
     }
     await assert.rejects(ssrfFetch('http://example.org/doc', { method: 'GET' }), /https/)
   })

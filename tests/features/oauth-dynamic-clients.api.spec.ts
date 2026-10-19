@@ -57,7 +57,7 @@ test.describe('oauth dynamic clients', () => {
     const res = await register(claudeCode())
     assert.equal(res.status, 201, JSON.stringify(res.data))
     assert.ok(res.data.client_id)
-    assert.ok(!res.data.client_id.startsWith('https://'))
+    assert.match(res.data.client_id, /^dcr-[A-Za-z0-9_-]{20,}$/)
     assert.equal(res.data.registration_access_token, undefined)
     assert.equal(res.data.registration_client_uri, undefined)
     assert.equal(res.data.client_secret, undefined)
@@ -84,6 +84,10 @@ test.describe('oauth dynamic clients', () => {
       [{ ...claudeCode(), redirect_uris: ['javascript:alert(1)'] }, 'invalid_redirect_uri'],
       [{ ...claudeCode(), redirect_uris: ['https://x.org/cb#frag'] }, 'invalid_redirect_uri'],
       [{ ...claudeCode(), logo_uri: 'http://x.org/logo.png' }, 'invalid_client_metadata'],
+      [{ ...claudeCode(), client_uri: 'http://x.org' }, 'invalid_client_metadata'],
+      [{ ...claudeCode(), policy_uri: 'http://x.org/policy' }, 'invalid_client_metadata'],
+      [{ ...claudeCode(), tos_uri: 'http://x.org/tos' }, 'invalid_client_metadata'],
+      [{ ...claudeCode(), token_endpoint_auth_method: 'private_key_jwt', jwks_uri: 'http://x.org/jwks' }, 'invalid_client_metadata'],
       [{ ...claudeCode(), sd_allowed_origins: ['https://evil.example.org'] }, '']
     ]
     for (const [body, error] of cases) {
@@ -173,6 +177,37 @@ test.describe('oauth dynamic clients', () => {
     const machineId = 'https://cimd.test/machine'
     await testEnvAx.post('/cimd-fixtures', { url: machineId, document: { ...claudeCode(), client_id: machineId, grant_types: ['client_credentials'] } })
     assert.equal(await authorizeRenderedError(flow(machineId, 'http://localhost/callback')), 'invalid_client')
+  })
+
+  test('cimd fetches are rate limited per ip on cache misses', async () => {
+    const config = await getServerConfig()
+    const ip = '10.90.0.1'
+    await withMongo(async (db) => {
+      const rateLimiter = new RateLimiterMongo({
+        storeClient: (db as any).client,
+        dbName: db.databaseName,
+        keyPrefix: 'sd-rate-limiter-auth',
+        points: config.authRateLimit.attempts,
+        duration: config.authRateLimit.duration
+      })
+      // one fetch left in this window
+      await rateLimiter.set('oauth-cimd:' + ip, config.authRateLimit.attempts - 1, config.authRateLimit.duration)
+    })
+    // unique per run: the provider caches fetched documents for at least 30 s
+    const run = Date.now().toString(36)
+    const ids = [1, 2, 3].map(i => `https://cimd.test/limited-${run}-${i}`)
+    for (const id of ids) await testEnvAx.post('/cimd-fixtures', { url: id, document: { ...claudeCode(), client_id: id } })
+    const from = (clientId: string, addr: string): CodeFlowOptions => ({
+      ...flow(clientId, 'http://localhost:40123/callback'), browserAx: axios({ headers: { 'x-forwarded-for': addr } })
+    })
+    // the last fetch of the budget succeeds (successes count)
+    await assertReachesInteraction(from(ids[0], ip))
+    // another document is refused without being fetched
+    assert.equal(await authorizeRenderedError(from(ids[1], ip)), 'invalid_client')
+    // a cached document needs no fetch
+    await assertReachesInteraction(from(ids[0], ip))
+    // another address is not affected
+    await assertReachesInteraction(from(ids[2], '10.90.0.2'))
   })
 
   test('a dcr client with an https redirect refuses a different port', async () => {

@@ -9,6 +9,7 @@ import { refundNhiLimits, updateNhiLogged } from '../nhis/exchange.ts'
 import { tokenLimits } from './clients.ts'
 import { revokeGrantRecord, touchGrantRecord, type OAuthGrantRecord } from './grants.ts'
 import { internalError } from '@data-fair/lib-node/observer.js'
+import { logSafeName } from './dynamic-clients.ts'
 
 type CachedProvider = { marker: string, promise: Promise<Provider> }
 
@@ -84,8 +85,8 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
     if (koaCtx?.state) (koaCtx.state.sdPending ??= []).push(pending)
   })
   provider.on('registration_create.success', (koaCtx, client) => {
-    const hosts = [...new Set((client.redirectUris ?? []).map(uri => URL.parse(uri)?.host || uri))].join(', ')
-    eventsLog.info('sd.oauth.client.registered', `dynamic oauth client ${client.clientId} (${client.clientName ?? 'unnamed'}) registered on ${ctx.issuer}, redirect hosts ${hosts}`, { req: koaCtx.req as any })
+    const hosts = [...new Set((client.redirectUris ?? []).map(uri => URL.parse(uri)?.host || logSafeName(uri)))].join(', ')
+    eventsLog.info('sd.oauth.client.registered', `dynamic oauth client ${client.clientId} (${logSafeName(client.clientName)}) registered on ${ctx.issuer}, redirect hosts ${hosts}`, { req: koaCtx.req as any })
   })
   return provider
 }
