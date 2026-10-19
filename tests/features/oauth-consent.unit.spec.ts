@@ -80,4 +80,52 @@ test.describe('oauth consent rules', () => {
     const ipa = userConsentAccounts({ ...u, ignorePersonalAccount: true })
     assert.deepEqual(ipa.map(a => a.type), ['organization', 'organization'])
   })
+
+  test('consentAdminOrgs keeps real org admins, departments only with depAdminIsOrgAdmin', async () => {
+    const { consentAdminOrgs } = await consent()
+    const { default: config } = await import('../../api/src/config.ts')
+    const u = user({
+      isAdmin: true,
+      adminMode: true,
+      organizations: [
+        { id: 'o1', name: 'Org 1', role: 'admin' },
+        { id: 'o2', name: 'Org 2', role: 'user' },
+        { id: 'o3', name: 'Org 3', role: 'admin', department: 'd1', departmentName: 'Dep 1' },
+        { id: 'o1', name: 'Org 1', role: 'admin' }
+      ]
+    })
+    const previous = config.depAdminIsOrgAdmin
+    try {
+      config.depAdminIsOrgAdmin = false
+      assert.deepEqual(consentAdminOrgs(u), [{ type: 'organization', id: 'o1', name: 'Org 1' }])
+      config.depAdminIsOrgAdmin = true
+      assert.deepEqual(consentAdminOrgs(u).map(a => [a.id, a.department]), [['o1', undefined], ['o3', 'd1']])
+    } finally {
+      config.depAdminIsOrgAdmin = previous
+    }
+  })
+
+  test('createConsentGrant refuses an mcp resource for a user and a subject that does not match the client kind', async () => {
+    const { createConsentGrant } = await consent()
+    // the guards run before the provider is touched
+    const provider: any = {}
+    const opts: any = {
+      ctx: { issuer: 'https://x.org/simple-directory', siteUrl: 'https://x.org' },
+      interaction: { params: { client_id: 'dcr-x', scope: 'organizations:read' } },
+      subject: { type: 'nhi', id: 'nhi-1' },
+      account: { type: 'organization', id: 'o1', name: 'Org 1' },
+      clientKind: 'dcr',
+      clientName: 'x',
+      scope: ['organizations:read'],
+      oidcScopes: [],
+      resource: 'https://x.org/mcp-server/mcp',
+      resourceKind: 'mcp',
+      lifetime: 60,
+      authorizedBy: { id: 'u1', name: 'User 1' }
+    }
+    await assert.rejects(createConsentGrant(provider, { ...opts, subject: { type: 'user', id: 'u1' } }), /an mcp resource requires an nhi subject/)
+    await assert.rejects(createConsentGrant(provider, { ...opts, subject: { type: 'user', id: 'u1' }, resourceKind: 'api', resource: 'https://x.org' }), /does not match the client kind/)
+    await assert.rejects(createConsentGrant(provider, { ...opts, clientKind: 'site', resourceKind: 'api', resource: 'https://x.org' }), /does not match the client kind/)
+    await assert.rejects(createConsentGrant(provider, { ...opts, scope: [] }), /at least one platform scope/)
+  })
 })

@@ -175,6 +175,31 @@ const siteClientResourceScope = async (ctx: IssuerContext, koaCtx: KoaContextWit
   return sdToken?.scope ?? narrowScope(siteClient.scopes, undefined, known).join(' ')
 }
 
+// the platform scopes a dynamic client may be granted for an authorization request, before the
+// NHI is chosen: the requested ones among the known scopes (the widest NHI maximum), or every
+// known scope when it requested none (the consent screen then preselects nothing, spec 8.2). The
+// NHI maximum is applied by the consent decision and re-applied at every issuance.
+export const dynamicClientRequestScopes = (requestedScope: unknown, known: string[]) => {
+  const requested = requestedPlatformScopes(requestedScope)
+  return requested.length ? narrowScope(requested, undefined, known) : known
+}
+
+// the authorization code flow of a dynamic client (NHI subject, spec 7.3): any resource of the
+// realm including the MCP server, the NHI's own targets are checked at consent and issuance
+const dynamicClientResourceScope = async (koaCtx: KoaContextWithOIDC) => {
+  const known = await knownScopeNames()
+  const route = koaCtx.oidc?.route
+  if (route === 'authorization' || route === 'resume') {
+    const scope = dynamicClientRequestScopes(koaCtx.oidc.params?.scope, known)
+    if (!scope.length) throw new errors.InvalidScope('no requested scope is known', String(koaCtx.oidc.params?.scope ?? ''))
+    return scope.join(' ')
+  }
+  // token endpoint: the scope re-narrowed against the NHI by findAccount (grantSubject), the
+  // provider itself never issues more than the grant's resource scopes
+  const sdToken: SdTokenState | undefined = koaCtx.state?.sdToken
+  return sdToken?.scope ?? known.join(' ')
+}
+
 export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): Promise<Configuration> => {
   const codeFlow = !!config.oauthServer?.authorizationCode
   const dynamicClients = codeFlow && !!config.oauthServer?.dynamicClients
@@ -199,6 +224,8 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
               scope = await nhiClientCredentials(koaCtx, client.clientId, resource) ?? scope
             } else if (codeFlow && clientKind(client.clientId) === 'site') {
               scope = await siteClientResourceScope(ctx, koaCtx, client.clientId, resource)
+            } else if (dynamicClients && ['cimd', 'dcr'].includes(clientKind(client.clientId))) {
+              scope = await dynamicClientResourceScope(koaCtx)
             }
           } catch (err) {
             if (err instanceof ResourceError) throw new errors.InvalidTarget(err.message)

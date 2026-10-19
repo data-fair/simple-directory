@@ -4,6 +4,7 @@ import type Provider from 'oidc-provider'
 import type { Interaction } from 'oidc-provider'
 import type { Account, SessionState } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import config from '#config'
 import type { Site, SiteOAuthClient, User } from '#types'
 import { getDefaultUserOrg } from '../tokens/service.ts'
 import { createGrantRecord, type OAuthGrantRecord } from './grants.ts'
@@ -44,6 +45,26 @@ export const findConsentAccount = (accounts: ConsentAccount[], key: { type?: unk
   if (!key || typeof key.type !== 'string' || typeof key.id !== 'string') return undefined
   if (key.department !== undefined && typeof key.department !== 'string') return undefined
   return accounts.find(a => a.type === key.type && a.id === key.id && sameDepartment(a.department, key.department as string | undefined))
+}
+
+// spec 9.3: the organizations where a user may bind a dynamic client to an NHI. Real org admins
+// only: the memberships themselves, never admin mode nor the isSiteAdminOf fallback of the NHI page
+// (consent phishing surface); a department admin counts only when depAdminIsOrgAdmin is set, as it
+// does for the organization itself (acceptDepAsRoot).
+export const consentAdminOrgs = (user: User): ConsentAccount[] => {
+  const accounts: ConsentAccount[] = []
+  for (const membership of user.organizations ?? []) {
+    if (membership.role !== 'admin') continue
+    if (membership.department && !config.depAdminIsOrgAdmin) continue
+    if (accounts.some(a => a.id === membership.id && sameDepartment(a.department, membership.department))) continue
+    const account: ConsentAccount = { type: 'organization', id: membership.id, name: membership.name }
+    if (membership.department) {
+      account.department = membership.department
+      if (membership.departmentName) account.departmentName = membership.departmentName
+    }
+    accounts.push(account)
+  }
+  return accounts
 }
 
 // an NHI or a scoped session never consents (spec 5, mounting pitfalls), a superadmin impersonating
@@ -95,7 +116,18 @@ export const createConsentGrant = async (provider: Provider, opts: ConsentGrantO
   if (!opts.scope.length) throw new Error('a consent grant needs at least one platform scope')
   // spec anti-goal: a user subject never gets a token for an MCP server
   if (opts.resourceKind === 'mcp' && opts.subject.type !== 'nhi') throw new Error('an mcp resource requires an nhi subject')
+  // spec 7: a site client's grant has a user subject, a dynamic client's grant an NHI subject
+  // (checkGrantSubject refuses any other pair at every issuance)
+  if ((opts.subject.type === 'nhi') === (opts.clientKind === 'site')) throw new Error('the subject type does not match the client kind')
   const clientId = opts.interaction.params.client_id as string
+  // a request without any platform scope (the screen proposed the registration or, for a dynamic
+  // client, let the admin pick): the provider only issues the scopes of the request (a request
+  // without scope at all ends in access_denied), so the chosen ones join the interaction's request
+  const requestedParam = String(opts.interaction.params.scope ?? '').split(' ').filter(Boolean)
+  if (!opts.scope.some(s => requestedParam.includes(s))) {
+    opts.interaction.params.scope = [...requestedParam, ...opts.scope].join(' ')
+    await opts.interaction.persist()
+  }
   const grant = new provider.Grant({ accountId: opts.subject.id, clientId })
   // the consent prompt re-prompts until every requested scope was encountered: each one is
   // either granted or rejected. Platform scopes are both OIDC scopes (the provider's scopes list)
