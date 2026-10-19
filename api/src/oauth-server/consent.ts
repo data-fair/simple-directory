@@ -7,7 +7,7 @@ import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-l
 import config from '#config'
 import type { Site, SiteOAuthClient, User } from '#types'
 import { getDefaultUserOrg } from '../tokens/service.ts'
-import { createGrantRecord, type OAuthGrantRecord } from './grants.ts'
+import { createGrantRecord, revokeGrant, type OAuthGrantRecord } from './grants.ts'
 import type { IssuerContext } from './issuers.ts'
 
 export type ConsentAccount = { type: 'user' | 'organization', id: string, department?: string, name: string, departmentName?: string }
@@ -122,12 +122,12 @@ export const createConsentGrant = async (provider: Provider, opts: ConsentGrantO
   const clientId = opts.interaction.params.client_id as string
   // a request without any platform scope (the screen proposed the registration or, for a dynamic
   // client, let the admin pick): the provider only issues the scopes of the request (a request
-  // without scope at all ends in access_denied), so the chosen ones join the interaction's request
+  // without scope at all ends in access_denied), so the chosen ones join the interaction's request.
+  // Persisted only once the grant is saved; a caller failing later restores it (restoreRequestScope).
   const requestedParam = String(opts.interaction.params.scope ?? '').split(' ').filter(Boolean)
-  if (!opts.scope.some(s => requestedParam.includes(s))) {
-    opts.interaction.params.scope = [...requestedParam, ...opts.scope].join(' ')
-    await opts.interaction.persist()
-  }
+  const mergeScope = !opts.scope.some(s => requestedParam.includes(s))
+  const originalScope = opts.interaction.params.scope
+  if (mergeScope) opts.interaction.params.scope = [...requestedParam, ...opts.scope].join(' ')
   const grant = new provider.Grant({ accountId: opts.subject.id, clientId })
   // the consent prompt re-prompts until every requested scope was encountered: each one is
   // either granted or rejected. Platform scopes are both OIDC scopes (the provider's scopes list)
@@ -149,9 +149,34 @@ export const createConsentGrant = async (provider: Provider, opts: ConsentGrantO
   const now = Date.now()
   // Grant.save takes no ttl: the expiry is exp when set
   grant.exp = Math.floor(now / 1000) + opts.lifetime
-  await grant.save()
-  const grantId = grant.jti
+  let grantId: string | undefined
+  try {
+    await grant.save()
+    grantId = grant.jti
+    await saveConsentRecord(opts, grantId, clientId, now, grant.exp)
+    if (mergeScope) await opts.interaction.persist()
+  } catch (err) {
+    restoreScopeInMemory(opts.interaction, originalScope)
+    if (grantId) await revokeGrant(grantId, 'consent failed').catch(() => {})
+    throw err
+  }
+  eventsLog.info('sd.oauth.grant.created', `oauth grant ${grantId} created for client ${clientId} (${opts.clientName}), ${opts.subject.type} ${opts.subject.id}, scope ${opts.scope.join(' ')}`, opts.logContext ?? {})
+  return grantId
+}
 
+const restoreScopeInMemory = (interaction: Interaction, originalScope: unknown) => {
+  if (originalScope === undefined) delete interaction.params.scope
+  else interaction.params.scope = originalScope
+}
+
+// undoes the request scope merged by createConsentGrant when the decision fails after it
+export const restoreRequestScope = async (interaction: Interaction, originalScope: unknown) => {
+  if (interaction.params.scope === originalScope) return
+  restoreScopeInMemory(interaction, originalScope)
+  await interaction.persist()
+}
+
+const saveConsentRecord = async (opts: ConsentGrantOptions, grantId: string, clientId: string, now: number, exp: number) => {
   const account: OAuthGrantRecord['account'] = { type: opts.account.type, id: opts.account.id }
   if (opts.account.department) account.department = opts.account.department
   await createGrantRecord({
@@ -167,8 +192,6 @@ export const createConsentGrant = async (provider: Provider, opts: ConsentGrantO
     resources: [opts.resource],
     authorizedBy: opts.authorizedBy,
     createdAt: new Date(now),
-    expiresAt: new Date(grant.exp * 1000)
+    expiresAt: new Date(exp * 1000)
   })
-  eventsLog.info('sd.oauth.grant.created', `oauth grant ${grantId} created for client ${clientId} (${opts.clientName}), ${opts.subject.type} ${opts.subject.id}, scope ${opts.scope.join(' ')}`, opts.logContext ?? {})
-  return grantId
 }

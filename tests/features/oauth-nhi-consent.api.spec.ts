@@ -214,6 +214,8 @@ test.describe('oauth nhi consent', () => {
     const opts = dynamicFlow({ scope: 'organizations' })
     const started = await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations'], lifetime: '30d' }))
     assert.deepEqual(started.details.scopes.map((s: any) => s.name), ['organizations'])
+    // an nhi that could be granted none of the requested scopes is not offered
+    assert.ok(!started.details.nhis[org.id].some((n: any) => n.id === nhi.id))
     assert.equal(started.decided.status, 400, JSON.stringify(started.decided.data))
     // nor an empty scope, nor one that was not requested
     for (const scopes of [[], ['organizations:read'], 'organizations']) {

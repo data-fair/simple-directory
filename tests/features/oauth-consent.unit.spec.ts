@@ -128,4 +128,35 @@ test.describe('oauth consent rules', () => {
     await assert.rejects(createConsentGrant(provider, { ...opts, clientKind: 'site', resourceKind: 'api', resource: 'https://x.org' }), /does not match the client kind/)
     await assert.rejects(createConsentGrant(provider, { ...opts, scope: [] }), /at least one platform scope/)
   })
+
+  test('createConsentGrant keeps the request scope of the interaction when the grant cannot be saved', async () => {
+    const { createConsentGrant } = await consent()
+    let persisted = 0
+    const interaction: any = { params: { client_id: 'site-x' }, persist: async () => { persisted++ } }
+    const provider: any = {
+      Grant: class {
+        addOIDCScope () {}
+        rejectOIDCScope () {}
+        addResourceScope () {}
+        rejectResourceScope () {}
+        async save () { throw new Error('boom') }
+      }
+    }
+    await assert.rejects(createConsentGrant(provider, {
+      ctx: { issuer: 'https://x.org/simple-directory', siteUrl: 'https://x.org', site: undefined },
+      interaction,
+      subject: { type: 'user', id: 'u1' },
+      account: { type: 'user', id: 'u1', name: 'User 1' },
+      clientKind: 'site',
+      clientName: 'x',
+      scope: ['organizations:read'],
+      oidcScopes: [],
+      resource: 'https://x.org',
+      resourceKind: 'api',
+      lifetime: 60,
+      authorizedBy: { id: 'u1', name: 'User 1' }
+    }), /boom/)
+    assert.equal(interaction.params.scope, undefined)
+    assert.equal(persisted, 0)
+  })
 })

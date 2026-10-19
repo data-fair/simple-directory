@@ -15,7 +15,8 @@ import eventsLog from '@data-fair/lib-express/events-log.js'
 import limiter, { refundLimiter } from '../utils/limiter.ts'
 import { getKnownScopes } from '../scopes/service.ts'
 import { reqSite, getMainSiteDoc } from '../sites/service.ts'
-import { postUserIdentityWebhook, setNbMembersLimit } from '#services'
+import { postUserIdentityWebhook, deleteIdentityWebhook, setNbMembersLimit } from '#services'
+import { internalError } from '@data-fair/lib-node/observer.js'
 import { createNhi, listNhis, validateNewNhi } from '../nhis/service.ts'
 import { narrowScope } from '../nhis/scopes.ts'
 import { issuerOfSite, resolveResource, assertNhiMayTarget, siteOwnedByNhiOrg, ResourceError, type IssuerContext, type ResolvedResource } from './issuers.ts'
@@ -23,10 +24,10 @@ import { getProvider } from './providers.ts'
 import { canonicalSiteUrl } from './router.ts'
 import { clientKind, findSiteClient } from './clients.ts'
 import { siteClientRequestScopes, dynamicClientRequestScopes, interactionTTL } from './configuration.ts'
-import { dashboardGrantLifetime, grantLifetimes } from './grants.ts'
+import { dashboardGrantLifetime, grantLifetimes, revokeGrant } from './grants.ts'
 import { logSafeName } from './dynamic-clients.ts'
 import {
-  userConsentAccounts, consentAdminOrgs, refuseConsentUser, implicitConsentAccount, createConsentGrant, findConsentAccount,
+  userConsentAccounts, consentAdminOrgs, refuseConsentUser, restoreRequestScope, implicitConsentAccount, createConsentGrant, findConsentAccount,
   isBroadScope, oidcScopeNames, type ConsentAccount
 } from './consent.ts'
 
@@ -159,31 +160,41 @@ const finishUserConsent = async (req: Request, res: Response, ic: InteractionCon
   const resource = await interactionResource(ic.ctx, interaction)
   await detachForeignSession(ic.provider, interaction, user.id)
   if (!await lockDecision(interaction.uid)) return undefined
+  const originalScope = interaction.params.scope
+  let grantId: string | undefined
   try {
-    return await createUserGrant(req, res, ic, interaction, user, account, scope, clientName, resource)
+    grantId = await createConsentGrant(ic.provider, {
+      ctx: ic.ctx,
+      interaction,
+      subject: { type: 'user', id: user.id },
+      account,
+      clientKind: 'site',
+      clientName,
+      scope,
+      oidcScopes: requestedOidcScopes(interaction),
+      resource: resource.url,
+      resourceKind: resource.kind,
+      lifetime: dashboardGrantLifetime,
+      authorizedBy: { id: user.id, name: user.name },
+      logContext: { req }
+    })
+    return await ic.provider.interactionResult(req, res, { login: { accountId: user.id }, consent: { grantId } })
   } catch (err) {
-    await unlockDecision(interaction.uid)
+    await undoDecision(req, interaction, originalScope, grantId)
     throw err
   }
 }
 
-const createUserGrant = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, account: ConsentAccount, scope: string[], clientName: string, resource: { url: string, kind: 'api' | 'mcp' }) => {
-  const grantId = await createConsentGrant(ic.provider, {
-    ctx: ic.ctx,
-    interaction,
-    subject: { type: 'user', id: user.id },
-    account,
-    clientKind: 'site',
-    clientName,
-    scope,
-    oidcScopes: requestedOidcScopes(interaction),
-    resource: resource.url,
-    resourceKind: resource.kind,
-    lifetime: dashboardGrantLifetime,
-    authorizedBy: { id: user.id, name: user.name },
-    logContext: { req }
-  })
-  return await ic.provider.interactionResult(req, res, { login: { accountId: user.id }, consent: { grantId } })
+// a decision that failed after the lock: nothing of it may survive, best effort (the original
+// error is what the caller reports). The NHI consent also removes an NHI it created inline.
+const undoDecision = async (req: Request, interaction: Interaction, originalScope: unknown, grantId: string | undefined, inlineNhi?: User) => {
+  const attempt = async (what: string, fn: () => Promise<unknown>) => {
+    try { await fn() } catch (err) { internalError('oauth-consent-undo', `failed to undo ${what} of a failed consent decision`, err) }
+  }
+  if (grantId) await attempt('the grant', () => revokeGrant(grantId, 'consent failed', { req }))
+  if (inlineNhi) await attempt('the inline nhi', () => deleteInlineNhi(req, inlineNhi))
+  await attempt('the request scope', () => restoreRequestScope(interaction, originalScope))
+  await attempt('the decision lock', () => unlockDecision(interaction.uid))
 }
 
 // --- NHI consent of dynamic clients (spec 9.3) ---
@@ -215,10 +226,12 @@ const dynamicClientInfo = async (ic: InteractionContext, interaction: Interactio
 
 // the NHIs of an organization that may be bound to this resource: no ipBinding (the token endpoint
 // caller is not the API caller, spec 8.3), a target the NHI may reach. Names and maximum scopes only.
-const bindableNhis = async (orgId: string, resource: ResolvedResource) => {
+const bindableNhis = async (orgId: string, resource: ResolvedResource, requested: string[], known: string[]) => {
   const { results } = await listNhis(orgId)
   return results
     .filter(n => !n.ipBinding && membershipMayTarget({ id: orgId, department: n.department }, resource))
+    // an NHI that could be granted none of the requested scopes is not a choice
+    .filter(n => narrowScope(requested, n.scopes, known).length > 0)
     .map(n => ({ id: n.id, name: n.name, ...(n.scopes ? { scopes: n.scopes } : {}) }))
 }
 
@@ -227,13 +240,15 @@ const dynamicClientDetails = async (req: Request, ic: InteractionContext, intera
   const { url, resolved } = await resolveInteractionResource(ic.ctx, interaction)
   const descriptions = await knownScopes(reqI18n(req))
   // the requested scopes, nothing preselected; each NHI's maximum narrows them on the screen
-  const scopes = dynamicClientRequestScopes(interaction.params.scope, Object.keys(descriptions))
+  const known = Object.keys(descriptions)
+  const requested = dynamicClientRequestScopes(interaction.params.scope, known)
+  const scopes = requested
     .map(name => ({ name, description: descriptions[name] ?? name, broad: isBroadScope(name) }))
   const organizations = consentAdminOrgs(user).filter(a => membershipMayTarget(a, resolved))
   // keyed by organization id: the NHIs belong to the organization, whatever the department
   const nhis: Record<string, { id: string, name: string, scopes?: string[] }[]> = {}
   for (const account of organizations) {
-    nhis[account.id] ??= await bindableNhis(account.id, resolved)
+    nhis[account.id] ??= await bindableNhis(account.id, resolved, requested, known)
   }
   return {
     client,
@@ -307,9 +322,12 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
   }
 
   if (!await lockDecision(interaction.uid)) throw httpError(400, 'the interaction is already finished')
+  const originalScope = interaction.params.scope
+  let created: User | undefined
+  let grantId: string | undefined
   try {
-    let nhi = existing
-    if (inline) nhi = await createInlineNhi(req, inline.org, inline.body, adminAccount.department, user)
+    if (inline) created = await createInlineNhi(req, inline.org, inline.body, adminAccount.department, user)
+    const nhi = created ?? existing
     if (!nhi) throw new Error('no nhi')
     // re-checked on the stored NHI, as every issuance will
     try {
@@ -322,7 +340,7 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
     const nhiMembership = nhi.organizations[0]
     const account: ConsentAccount = { type: 'organization', id: nhiMembership.id, name: nhiMembership.name }
     if (nhiMembership.department) account.department = nhiMembership.department
-    const grantId = await createConsentGrant(ic.provider, {
+    grantId = await createConsentGrant(ic.provider, {
       ctx: ic.ctx,
       interaction,
       subject: { type: 'nhi', id: nhi.id },
@@ -339,9 +357,19 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
     })
     return await ic.provider.interactionResult(req, res, { login: { accountId: nhi.id }, consent: { grantId } })
   } catch (err) {
-    await unlockDecision(interaction.uid)
+    await undoDecision(req, interaction, originalScope, grantId, created)
     throw err
   }
+}
+
+// the inverse of createInlineNhi, for a decision that failed after creating it: same side effects
+// as DELETE /nhis/:id (deleteUser also revokes the grants of the subject)
+const deleteInlineNhi = async (req: Request, nhi: User) => {
+  const org = nhi.organizations[0]
+  await storages.globalStorage.deleteUser(nhi.id)
+  await setNbMembersLimit(org.id)
+  eventsLog.info('sd.nhi.delete', `an NHI was deleted ${nhi.id}, the consent that created it failed`, { req, account: { type: 'organization', id: org.id, name: org.name } })
+  deleteIdentityWebhook('user', nhi.id)
 }
 
 // same side effects as POST /nhis: member count, event, identity webhook; the admin is the creator
