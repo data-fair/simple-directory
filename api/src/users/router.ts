@@ -11,6 +11,7 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
+import oauthGrants from '../oauth-server/grants-router.ts'
 import { isSiteAdminOf, isSiteAdminOfUser } from '../utils/site-admin.ts'
 import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, setNbMembersLimits, deleteIdentityLimits, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
 
@@ -534,5 +535,7 @@ router.delete('/:userId/sessions/:sessionId', async (req, res, next) => {
   await keepalive(req, res)
   res.status(204).send()
 })
+
+router.use('/:userId/oauth-grants', oauthGrants)
 
 export default router

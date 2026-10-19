@@ -46,7 +46,7 @@ const toMongoFilter = (filter: GrantFilter) => {
 }
 
 export const listGrantRecords = async (filter: GrantFilter) => {
-  return mongo.oauthGrants.find(toMongoFilter(filter)).sort({ createdAt: -1 }).toArray()
+  return mongo.oauthGrants.find({ ...toMongoFilter(filter), expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 }).toArray()
 }
 
 export const touchGrantRecord = async (grantId: string) => {

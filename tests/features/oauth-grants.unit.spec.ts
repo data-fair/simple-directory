@@ -36,7 +36,7 @@ test.describe('oauth grant records', () => {
     await createGrantRecord(record('test_g4', 'site-a', 'test_u1', { expiresAt: new Date(Date.now() - 1000), createdAt: new Date(Date.now() - 5000) }))
     const list = await listGrantRecords({ subjectId: 'test_u1' })
     assert.deepEqual(list.map(r => r._id).slice(0, 2), ['test_g2', 'test_g1'])
-    assert.equal(list.length, 3)
+    assert.equal(list.length, 2, 'expired records are not listed')
     assert.equal((await getGrantRecord('test_g1'))?.clientId, 'site-a')
     assert.equal(await getGrantRecord('test_g4'), undefined)
   })

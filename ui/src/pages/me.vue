@@ -228,6 +228,8 @@
         </v-list>
       </template>
 
+      <oauth-connected-applications v-if="!user?.nhi" />
+
       <h2 class="text-headline-medium mt-10 mb-4">
         <v-icon
           size="small"

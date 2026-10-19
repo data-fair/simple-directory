@@ -373,7 +373,16 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       sessions: 'Your sessions',
       deleteSession: 'Delete the session on {deviceName}?',
       deleteSessionWarning: 'Deleting a session may take up to {duration} to be fully applied.',
-      settings: 'Your settings'
+      settings: 'Your settings',
+      connectedApplications: 'Connected applications',
+      revokeApplication: 'Revoke access',
+      revokeApplicationTitle: 'Revoke the access of {name}?',
+      revokeApplicationWarning: 'The application will no longer be able to use your account. Access tokens already issued stay valid for up to {duration}.',
+      applicationGrantedOn: 'Authorized on {date}',
+      applicationLastUsed: 'last used on {date}',
+      applicationNeverUsed: 'never used',
+      applicationExpires: 'expires on {date}',
+      applicationPersonalAccount: 'Personal account'
     },
     colorsPreview: {
       title: 'Preview of color rendering',

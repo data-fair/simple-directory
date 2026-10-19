@@ -371,7 +371,16 @@ Pode ser 'anónimo', 'autenticado' ou 'administrador'.`,
       sessions: 'As suas sessões',
       deleteSession: 'Eliminar a sessão em {deviceName}?',
       deleteSessionWarning: 'A eliminação de uma sessão pode levar um tempo máximo de {duration} para ser totalmente aplicada.',
-      settings: 'As suas configurações'
+      settings: 'As suas configurações',
+      connectedApplications: 'Aplicações ligadas',
+      revokeApplication: 'Revogar o acesso',
+      revokeApplicationTitle: 'Revogar o acesso de {name}?',
+      revokeApplicationWarning: 'A aplicação deixará de poder usar a sua conta. Os tokens de acesso já emitidos continuam válidos durante até {duration}.',
+      applicationGrantedOn: 'Autorizada em {date}',
+      applicationLastUsed: 'última utilização em {date}',
+      applicationNeverUsed: 'nunca utilizada',
+      applicationExpires: 'expira em {date}',
+      applicationPersonalAccount: 'Conta pessoal'
     },
     colorsPreview: {
       title: 'Pré-visualização do render das cores',

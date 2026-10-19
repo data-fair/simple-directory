@@ -373,7 +373,16 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       sessions: 'Vos sessions',
       deleteSession: 'Supprimer la session sur {deviceName} ?',
       deleteSessionWarning: 'La suppression de session peut mettre un délai maximal de {duration} à être entièrement appliquée.',
-      settings: 'Vos paramètres'
+      settings: 'Vos paramètres',
+      connectedApplications: 'Applications connectées',
+      revokeApplication: 'Révoquer l\'accès',
+      revokeApplicationTitle: 'Révoquer l\'accès de {name} ?',
+      revokeApplicationWarning: 'L\'application ne pourra plus utiliser votre compte. Ses jetons d\'accès déjà émis restent valables jusqu\'à {duration}.',
+      applicationGrantedOn: 'Autorisée le {date}',
+      applicationLastUsed: 'dernière utilisation le {date}',
+      applicationNeverUsed: 'jamais utilisée',
+      applicationExpires: 'expire le {date}',
+      applicationPersonalAccount: 'Compte personnel'
     },
     colorsPreview: {
       title: 'Aperçu du rendu des couleurs',

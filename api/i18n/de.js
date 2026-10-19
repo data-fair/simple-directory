@@ -371,7 +371,16 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       sessions: 'Ihre Sitzungen',
       deleteSession: 'Sitzung auf {deviceName} löschen?',
       deleteSessionWarning: 'Das Löschen einer Sitzung kann maximal {duration} dauern, bis es vollständig angewendet wird.',
-      settings: 'Ihre Einstellungen'
+      settings: 'Ihre Einstellungen',
+      connectedApplications: 'Verbundene Anwendungen',
+      revokeApplication: 'Zugriff widerrufen',
+      revokeApplicationTitle: 'Zugriff von {name} widerrufen?',
+      revokeApplicationWarning: 'Die Anwendung kann Ihr Konto nicht mehr nutzen. Bereits ausgestellte Zugriffstoken bleiben bis zu {duration} gültig.',
+      applicationGrantedOn: 'Autorisiert am {date}',
+      applicationLastUsed: 'zuletzt verwendet am {date}',
+      applicationNeverUsed: 'nie verwendet',
+      applicationExpires: 'läuft ab am {date}',
+      applicationPersonalAccount: 'Persönliches Konto'
     },
     colorsPreview: {
       title: 'Vorschau der Farbdarstellung',
