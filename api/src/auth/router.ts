@@ -7,6 +7,7 @@ import Cookies from 'cookies'
 import Debug from 'debug'
 import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, is2FARequired, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
 import type { SdStorage } from '../storages/interface.ts'
+import { siteOwnedByNhiOrg } from '../oauth-server/issuers.ts'
 import type { ActionPayload, ServerSession, Site, User } from '#types'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { internalError } from '@data-fair/lib-node/observer.js'
@@ -325,7 +326,7 @@ router.post('/nhi-token', async (req, res) => {
   // compromised or unrelated site config must not be able to mint a session for an NHI it
   // doesn't own (same department-tolerant ownership comparison as getDefaultUserOrg above)
   const site = await reqSite(req)
-  if (site && !(site.owner.type === 'organization' && site.owner.id === userOrg.id && (!userOrg.department || !site.owner.department || userOrg.department === site.owner.department))) {
+  if (site && !siteOwnedByNhiOrg(site, userOrg)) {
     throw await reject('site not owned by nhi org ' + user.id)
   }
   // optional per-NHI address control: allowedIps gates the exchange itself, so a captured
