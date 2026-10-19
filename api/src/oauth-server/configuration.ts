@@ -136,7 +136,7 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
       if (origin === 'null') return false
       const allowed = (client as any)['sd_allowed_origins'] as string[] | undefined
       if (allowed) return allowed.includes(origin)
-      return client.clientAuthMethod === 'none' && client.redirectUris.some(uri => URL.parse(uri)?.origin === origin)
+      return client.clientAuthMethod === 'none' && !!client.redirectUris?.some(uri => URL.parse(uri)?.origin === origin)
     },
     // NHI clients authenticate with their keys, no client has a secret and M1 has no public client
     clientAuthMethods: ['private_key_jwt'],
