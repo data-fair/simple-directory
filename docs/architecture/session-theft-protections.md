@@ -47,7 +47,9 @@ a stolen one is its short lifetime (the minimum of the assertion `exp` and
 `jwtDurations.nhiToken`), the optional `boundIp` of the NHI, and the scoped key
 set, which keeps it from being accepted as a cookie session (and session tokens
 from being accepted as bearers). NHIs cannot convert it, nor their cookie, into
-a renewable session: `token_callback` and the keepalive refuse them.
+a renewable session: `token_callback` refuses them (403), and the keepalive lets
+them through but stays inert (204, no new session), since an NHI session has no
+exchange token to renew from.
 
 ## IP binding of superadmin sessions
 
