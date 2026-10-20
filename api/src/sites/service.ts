@@ -9,9 +9,19 @@ import { ownerFilter } from '../utils/owner-filter.ts'
 
 const debugRedirectSite = Debug('redirect-site')
 
+// a site path matches whole segments only (/portal does not match /portal2)
+const sitePathPrefix = (site: Site) => (site.path ?? '').replace(/\/+$/, '')
+const sitePathMatches = (site: Site, path: string) => {
+  const prefix = sitePathPrefix(site)
+  return prefix === '' || path === prefix || path.startsWith(prefix + '/')
+}
+
 export const getSiteByHost = memoize(async (host: string, path: string) => {
   const sites = await mongo.sites.find({ host }).toArray()
-  return sites.find(s => path.startsWith(s.path ?? ''))
+  // several sites can share a host, the longest matching path wins
+  return sites
+    .filter(s => sitePathMatches(s, path))
+    .sort((a, b) => sitePathPrefix(b).length - sitePathPrefix(a).length)[0]
 }, {
   promise: true,
   maxAge: 2000 // 2s
