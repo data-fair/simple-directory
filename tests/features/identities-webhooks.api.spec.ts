@@ -77,6 +77,21 @@ test.describe('identities webhooks', () => {
     assert.deepEqual(withoutPartner.body.partners, [])
   })
 
+  test('should send a user rename only when the name changes, whoever patches', async () => {
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const { user } = await createUser('test-webhooks-user@test.com')
+    received.length = 0
+    const isUserWebhook = (r: Received) => r.method === 'POST' && r.path.endsWith('/identities/user/' + user.id)
+
+    await adminAx.patch(`/api/users/${user.id}`, { maxCreatedOrgs: 5 })
+    await new Promise(resolve => setTimeout(resolve, 500))
+    assert.ok(!received.find(isUserWebhook))
+
+    await adminAx.patch(`/api/users/${user.id}`, { lastName: 'Renamed' })
+    const renamed = await waitForWebhook(isUserWebhook)
+    assert.ok(renamed.body.name.includes('Renamed'))
+  })
+
   test('should send the deletion of an organization', async () => {
     const { ax: adminAx } = await createUser('admin@test.com', true)
     const org = (await adminAx.post('/api/organizations', { name: 'Deleted org' })).data
