@@ -218,7 +218,12 @@ no registration at all. Both go through `normalizeDynamicMetadata`:
 
 An unverified dynamic client is never given a logo on the consent screen: its
 self-declared name, its id URL (CIMD) or the fact that it registered itself
-(DCR), and the host the code goes to.
+(DCR), and the host the code goes to. Against display spoofing, the name is
+stripped of control characters, bidi controls (U+202A-U+202E, U+2066-U+2069,
+U+200E, U+200F, U+061C) and zero-width characters (U+200B-U+200D, U+2060,
+U+FEFF) and truncated (`logSafeName`), and the id URL and the redirect host are
+shown in their WHATWG serialization, so an internationalized host appears
+punycoded (`xn--...`).
 
 ### Redirect URIs
 
@@ -285,7 +290,15 @@ Consequences and rules:
   request, so the scopes chosen at consent are added to the stored request.
 - **Errors.** Provider errors that cannot be redirected to the client, and
   errors of the entry route, go to `<issuer>/oauth/consent?error=<code>`; the
-  details and decision routes answer JSON.
+  details and decision routes answer JSON. The page shows an `error` value only
+  if it looks like a code (`^[a-z_]{1,64}$`), anything else gets the generic
+  message with a fixed code, so the parameter cannot put arbitrary text on an
+  SD page.
+- **The consent page cannot be framed.** The SPA serves `/oauth/consent` (and
+  the spellings the UI router accepts: any case, trailing slash) with
+  `frame-ancestors 'none'` and `X-Frame-Options: DENY`, not the `'self'` /
+  `SAMEORIGIN` of the other pages, so not even a same-origin page (portal
+  content on the shared host) can frame the decision (`api/src/app.ts`).
 
 **Consent of a user for a site client.** The user chooses the account the
 grant is bound to: the personal account (unless `ignorePersonalAccount`) or one
@@ -410,12 +423,18 @@ needs the grant. This is the bound to reason with when a grant must be cut.
 
 Shared limiter (`api/src/utils/limiter.ts`), keys prefixed:
 
-- token endpoint: `client_credentials` per IP and per `client_id` (an NHI has
-  one owner); `authorization_code` and `refresh_token` per IP and per
-  (`client_id` + IP), whatever the request claims about client authentication,
-  because the id of a public client is public and a per-id bucket would let
-  anyone lock out its users. Consumed up front and refunded on success, so
-  only failures count;
+- token endpoint: `client_credentials` (and the JWT bearer grant) per raw IP
+  and per `client_id` (an NHI has one owner), the keys of `/nhi-token`;
+  `authorization_code` and `refresh_token` in their own namespace,
+  `oauth-token-ip:<ip>` and `oauth-token-client:<client_id> <ip>`, whatever the
+  request claims about client authentication. Their own namespace because
+  routine failures (a grant that ended, an idle refresh token, a lost
+  membership) of many users behind one office address must not lock that
+  address out of password login, 2FA, anonymous actions and the NHI exchange,
+  which share the raw IP key; per client and address because the id of a
+  public client is public and a per-id bucket would let anyone lock out its
+  users. Same budget (`authRateLimit`), consumed up front and refunded on
+  success, so only failures count;
 - registration: `oauth-dcr:<ip>`, successes count (never refunded);
 - CIMD fetches: `oauth-cimd:<ip>` on cache misses, successes count;
 - consent decision: `oauth-consent:<userId>`, refunded on success.
@@ -423,8 +442,11 @@ Shared limiter (`api/src/utils/limiter.ts`), keys prefixed:
 Events (`eventsLog`): `sd.oauth.grant.created`, `sd.oauth.grant.revoked`
 (info), `sd.oauth.grant.reused` (warn), `sd.oauth.client.registered`,
 `sd.oauth.consent.denied` (info), `sd.oauth.rate-limit` (warn). Token
-issuance stays at debug level. Client chosen strings are control-character
-stripped and truncated before they reach a log line.
+issuance stays at debug level. Client chosen strings go through `logSafeName`
+(control, bidi and zero-width characters stripped, truncated) before they reach
+a log line. When the global fetch dispatcher is not undici's `Agent` (a proxy
+dispatcher), CIMD and `jwks_uri` fetches fail closed and an `internalError`
+(`oauth-ssrf-dispatcher`) is logged once.
 
 ## Errors
 
