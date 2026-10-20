@@ -21,6 +21,7 @@
       v-model:page="page"
       v-model:items-per-page="itemsPerPage"
       v-model:sort-by="sortBy"
+      :search="validQ"
       :headers="headers"
       :items="users.data.value?.results"
       :items-length="users.data.value?.count || 0"

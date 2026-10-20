@@ -267,12 +267,13 @@ router.patch('/:userId', async (req, res, next) => {
   const logContext: EventLogContext = { req }
 
   const session = reqSessionAuthenticated(req)
+  const user = await storages.globalStorage.getUser(req.params.userId)
   let siteAdminPatch = false
   if (!session.user?.adminMode && session.user.id !== req.params.userId) {
     // site admins can only reset the 2FA of the accounts of their site
     const keys = Object.keys(req.body ?? {})
     const is2FAReset = keys.length === 1 && keys[0] === '2FA' && req.body['2FA'] === null
-    if (!is2FAReset || !await isSiteAdminOfUser(req, await storages.globalStorage.getUser(req.params.userId))) {
+    if (!is2FAReset || !await isSiteAdminOfUser(req, user)) {
       throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     }
     siteAdminPatch = true
@@ -283,7 +284,7 @@ router.patch('/:userId', async (req, res, next) => {
   const adminKey = Object.keys(req.body).find(key => adminKeys.includes(key))
   if (adminKey && !session.user?.adminMode && !siteAdminPatch) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
 
-  if (session.user?.idp && Object.keys(req.body).find(key => !coreIDPKeys.includes(key))) {
+  if (user?.coreIdProvider && Object.keys(req.body).find(key => !coreIDPKeys.includes(key))) {
     throw httpError(403, 'Invalid patch for user with a core identity provider')
   }
 
@@ -297,7 +298,7 @@ router.patch('/:userId', async (req, res, next) => {
 
   const patchedUser = await storages.globalStorage.patchUser(req.params.userId, patch, session.user)
 
-  if (patchedUser.name !== session.user.name) {
+  if (patchedUser.name !== user?.name) {
     postUserIdentityWebhook(patchedUser)
   }
 
