@@ -5,7 +5,8 @@ import { readFileSync } from 'node:fs'
 import type { Page } from '@playwright/test'
 import { test, expect } from '../support/e2e-fixtures.ts'
 import { axios, testEnvAx } from '../support/axios.ts'
-import { authorizeUrl, pkcePair } from '../support/oauth-client.ts'
+import { authorizeUrl, pkcePair, startAuthorization, openInteraction, getDetails, postDecision, resume, exchangeCode, type CodeFlowOptions } from '../support/oauth-client.ts'
+import { nhiBody, subject as nhiSubject } from '../support/nhi.ts'
 import { issuer, password, setup, siteHost, siteUrl } from '../support/oauth-code-site.ts'
 
 const callbackOrigin = 'http://localhost:40321'
@@ -92,5 +93,40 @@ test.describe('OAuth NHI consent page', () => {
     await expect(page.locator('[data-unverified]')).toBeVisible({ timeout: 15_000 })
     await expect(page.locator('[data-scope="organizations"] .v-icon[title]')).toBeVisible()
     await expect(page.locator('[data-scope="organizations:read"] .v-icon[title]')).toHaveCount(0)
+  })
+
+  test('the nhi row lists the connections of a client and revokes them', async ({ page }) => {
+    const { org, ownerAx } = await setup().then(async (base) => {
+      await testEnvAx.patch('/config', { mainSiteFromDb: [] })
+      await testEnvAx.patch('/user/oauth-code-user@test.com', { organizations: [{ id: base.org.id, name: base.org.name, role: 'admin' }] })
+      base.ownerAx.setOrg(base.org.id)
+      const registered = await axios().post(issuer + '/api/oauth/register', claudeCode())
+      const nhi = (await base.ownerAx.post(`/api/organizations/${base.org.id}/nhis`, nhiBody({ name: 'Connected agent', subject: nhiSubject }))).data
+      const opts: CodeFlowOptions = {
+        issuer, clientId: registered.data.client_id, redirectUri: callbackOrigin + '/callback', scope: 'organizations:read', resource: siteUrl + '/mcp-server/mcp', browserAx: base.userAx
+      }
+      const { pkce, location } = await startAuthorization(opts)
+      const uid = await openInteraction(opts, location)
+      await getDetails(opts, uid)
+      const decided = await postDecision(opts, uid, {
+        decision: 'allow', account: { type: 'organization', id: base.org.id }, nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d'
+      })
+      const callback = await resume(opts, decided.data.redirectTo)
+      await exchangeCode(opts, callback.searchParams.get('code')!, pkce.verifier)
+      return base
+    })
+    await loginOnSite(page, 'oauth-code-user@test.com')
+    await page.goto(`${issuer}/organization/${org.id}`)
+
+    const connections = page.locator('[data-nhi-connections]')
+    await expect(connections.getByText('Claude Code')).toBeVisible({ timeout: 15_000 })
+    await connections.getByRole('button', { name: /Révoquer|Revoke/ }).click()
+    // the menu is still opening when it first shows: a click on Ok at that moment is lost
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Ok' }).click({ timeout: 2000 })
+      await expect(connections).toBeHidden({ timeout: 2000 })
+    }).toPass({ timeout: 15_000 })
+    const list = (await ownerAx.get(`/api/organizations/${org.id}/nhis`)).data.results
+    assert.equal((await ownerAx.get(`/api/organizations/${org.id}/nhis/${list[0].id}/oauth-grants`)).data.results.length, 0)
   })
 })

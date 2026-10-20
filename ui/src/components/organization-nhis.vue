@@ -95,6 +95,11 @@
             />
           </v-list-item-subtitle>
 
+          <nhi-connections
+            :org-id="orga.id"
+            :nhi-id="nhi.id"
+          />
+
           <template #append>
             <v-list-item-action v-if="adminMode">
               <edit-nhi-menu
