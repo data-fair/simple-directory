@@ -24,12 +24,13 @@ const pageAuthorizeUrl = (opts: CodeFlowOptions) => authorizeUrl(opts.issuer, {
   code_challenge_method: 'S256'
 })
 
-const captureCallback = async (page: Page) => {
+// the callback is reached through a redirect, which page.route does not intercept: the request
+// is observed instead (the refused connection then shows as an error page, which is fine)
+const captureCallback = (page: Page) => {
   let _resolve: (url: URL) => void
   const captured = new Promise<URL>(resolve => { _resolve = resolve })
-  await page.route('http://localhost:5999/**', async (route) => {
-    _resolve(new URL(route.request().url()))
-    await route.fulfill({ status: 200, body: 'callback' })
+  page.on('request', (request) => {
+    if (request.url().startsWith('http://localhost:5999/')) _resolve(new URL(request.url()))
   })
   return captured
 }
@@ -38,7 +39,7 @@ test.describe('OAuth consent page', () => {
   test('allow: shows the client and the scopes, picks the org and returns a code', async ({ page }) => {
     const { org, flow } = await setup()
     await loginOnSite(page, 'oauth-code-user@test.com')
-    const captured = await captureCallback(page)
+    const captured = captureCallback(page)
 
     await page.goto(pageAuthorizeUrl(flow()))
 
@@ -47,7 +48,8 @@ test.describe('OAuth consent page', () => {
     await expect(page.locator('[data-redirect-host]')).toContainText('localhost:5999')
     await expect(page.locator('[data-scope="organizations:read"] input')).toBeChecked()
 
-    await page.getByRole('combobox', { name: /Compte|Account/ }).click()
+    // the native input of a v-select is covered by its field
+    await page.locator('.v-select .v-field').click()
     await page.getByRole('option', { name: new RegExp(org.name) }).click()
     await page.getByRole('button', { name: /Autoriser|Allow/ }).click()
 
@@ -59,7 +61,7 @@ test.describe('OAuth consent page', () => {
   test('deny returns access_denied', async ({ page }) => {
     const { flow } = await setup()
     await loginOnSite(page, 'oauth-code-user@test.com')
-    const captured = await captureCallback(page)
+    const captured = captureCallback(page)
     await page.goto(pageAuthorizeUrl(flow()))
     await page.getByRole('button', { name: /Refuser|Deny/ }).click()
     const callback = await captured

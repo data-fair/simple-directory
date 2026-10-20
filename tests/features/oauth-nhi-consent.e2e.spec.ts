@@ -17,15 +17,19 @@ const loginOnSite = async (page: Page, email: string) => {
   await page.waitForURL(new RegExp(siteHost))
 }
 
-const captureCallback = async (page: Page) => {
+// the callback is reached through a redirect, which page.route does not intercept: the request
+// is observed instead (the refused connection then shows as an error page, which is fine)
+const captureCallback = (page: Page) => {
   let _resolve: (url: URL) => void
   const captured = new Promise<URL>(resolve => { _resolve = resolve })
-  await page.route(callbackOrigin + '/**', async (route) => {
-    _resolve(new URL(route.request().url()))
-    await route.fulfill({ status: 200, body: 'callback' })
+  page.on('request', (request) => {
+    if (request.url().startsWith(callbackOrigin + '/')) _resolve(new URL(request.url()))
   })
   return captured
 }
+
+// the native input of a v-select is covered by its field: open it through the field
+const selectOf = (page: Page, name: RegExp) => page.locator('.v-select', { has: page.getByRole('combobox', { name }) })
 
 const prepare = async (page: Page, scope: string) => {
   const { org, ownerAx } = await setup()
@@ -36,7 +40,7 @@ const prepare = async (page: Page, scope: string) => {
   const registered = await axios().post(issuer + '/api/oauth/register', claudeCode(), { validateStatus: () => true })
   assert.equal(registered.status, 201, JSON.stringify(registered.data))
   await loginOnSite(page, 'oauth-code-user@test.com')
-  const captured = await captureCallback(page)
+  const captured = captureCallback(page)
   const url = authorizeUrl(issuer, {
     client_id: registered.data.client_id,
     response_type: 'code',
@@ -64,13 +68,13 @@ test.describe('OAuth NHI consent page', () => {
     const allow = page.getByRole('button', { name: /Autoriser|Allow/ })
     await expect(allow).toBeDisabled()
 
-    await page.getByRole('combobox', { name: /Compte|Account/ }).click()
+    await selectOf(page, /Compte|Account/).locator('.v-field').click()
     await page.getByRole('option', { name: new RegExp(org.name) }).click()
     await page.locator('input[name="nhiName"]').fill('Claude agent')
-    await page.getByRole('combobox', { name: /Rôle|Role/ }).click()
+    await selectOf(page, /Rôle|Role/).locator('.v-field').click()
     await page.getByRole('option').last().click()
     await page.locator('[data-scope="organizations:read"] input').check()
-    await expect(page.getByRole('combobox', { name: /Durée|Duration/ })).toContainText(/30/)
+    await expect(selectOf(page, /Durée|Duration/)).toContainText(/30/)
     await expect(allow).toBeEnabled()
     await allow.click()
 
@@ -86,7 +90,7 @@ test.describe('OAuth NHI consent page', () => {
     const { url } = await prepare(page, 'organizations organizations:read')
     await page.goto(url)
     await expect(page.locator('[data-unverified]')).toBeVisible({ timeout: 15_000 })
-    await expect(page.locator('[data-scope="organizations"] .mdi-shield-alert, [data-scope="organizations"] svg')).toBeVisible()
-    await expect(page.locator('[data-scope="organizations:read"] svg')).toHaveCount(0)
+    await expect(page.locator('[data-scope="organizations"] .v-icon[title]')).toBeVisible()
+    await expect(page.locator('[data-scope="organizations:read"] .v-icon[title]')).toHaveCount(0)
   })
 })
