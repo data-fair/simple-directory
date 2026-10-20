@@ -25,7 +25,7 @@ import { canonicalSiteUrl } from './router.ts'
 import { clientKind, findSiteClient } from './clients.ts'
 import { siteClientRequestScopes, dynamicClientRequestScopes, interactionTTL } from './configuration.ts'
 import { dashboardGrantLifetime, grantLifetimes, revokeGrant } from './grants.ts'
-import { logSafeName } from './dynamic-clients.ts'
+import { displayIdUrl, logSafeName } from './dynamic-clients.ts'
 import {
   userConsentAccounts, consentAdminOrgs, refuseConsentUser, restoreRequestScope, implicitConsentAccount, createConsentGrant, findConsentAccount,
   isBroadScope, oidcScopeNames, type ConsentAccount
@@ -219,7 +219,7 @@ const dynamicClientInfo = async (ic: InteractionContext, interaction: Interactio
   // an unverified client: its self-declared name only (no logo), its id url or the fact that it
   // registered itself, and where the code goes
   const info: Record<string, any> = { id: clientId, name: logSafeName(client.clientName), kind, verified: false, redirectHost }
-  if (kind === 'cimd') info.idUrl = clientId
+  if (kind === 'cimd') info.idUrl = displayIdUrl(clientId)
   else info.registeredAutomatically = true
   return info
 }
@@ -476,7 +476,14 @@ router.post('/:uid', async (req, res) => {
   const clientId = interaction.params.client_id as string
   if (body.decision === 'deny') {
     if (!await lockDecision(uid)) throw httpError(400, 'the interaction is already finished')
-    const redirectTo = await ic.provider.interactionResult(req, res, { error: 'access_denied', error_description: 'the end-user denied the request' }, { mergeWithLastSubmission: false })
+    let redirectTo: string
+    try {
+      redirectTo = await ic.provider.interactionResult(req, res, { error: 'access_denied', error_description: 'the end-user denied the request' }, { mergeWithLastSubmission: false })
+    } catch (err) {
+      // like the allow path: a failed decision must not leave the interaction undecidable
+      await unlockDecision(uid).catch(unlockErr => internalError('oauth-consent-undo', 'failed to undo the decision lock of a failed consent denial', unlockErr))
+      throw err
+    }
     eventsLog.info('sd.oauth.consent.denied', `consent denied to oauth client ${clientId}`, { req })
     await refundLimiter(limiterKey)
     return res.send({ redirectTo })

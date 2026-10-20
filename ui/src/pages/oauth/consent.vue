@@ -174,7 +174,13 @@ const canAllow = computed(() => isDynamic.value ? !!nhiDecision.value : !!select
 
 const statusOf = (err: any) => err.status ?? err.statusCode ?? err.response?.status
 
-const errorCode = computed(() => queryError.value || loadError.value || (!uid.value ? 'interaction_expired' : undefined))
+// ?error= is anyone's text on an SD page: only an error code is shown, anything else gets the
+// generic message with a fixed code
+const safeQueryError = computed(() => {
+  if (!queryError.value) return undefined
+  return /^[a-z_]{1,64}$/.test(queryError.value) ? queryError.value : 'server_error'
+})
+const errorCode = computed(() => safeQueryError.value || loadError.value || (!uid.value ? 'interaction_expired' : undefined))
 const errorMessage = computed(() => {
   const code = errorCode.value
   if (!code) return ''

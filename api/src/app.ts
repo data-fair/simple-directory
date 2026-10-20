@@ -6,7 +6,7 @@ import express, { type RequestHandler } from 'express'
 import helmet from 'helmet'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
-import { session, errorHandler, createSiteMiddleware, createSpaMiddleware, setReqUser, httpError } from '@data-fair/lib-express'
+import { session, errorHandler, createSiteMiddleware, createSpaMiddleware, defaultNonceCSPDirectives, setReqUser, httpError } from '@data-fair/lib-express'
 import admin from './admin/router.ts'
 import anonymousAction from './anonymous-action/router.ts'
 import auth from './auth/router.ts'
@@ -121,9 +121,25 @@ app.use('/api/', (req, res) => {
 })
 app.use(tokens)
 
+// the OAuth consent page must not be framed, not even by a same-origin page (clickjacking of the
+// decision): same paths as the UI router, which matches case insensitively with an optional
+// trailing slash
+const isConsentPage = (path: string) => {
+  try {
+    return /^\/oauth\/consent\/?$/i.test(decodeURIComponent(path))
+  } catch {
+    return false
+  }
+}
+const consentCSPDirectives = { ...defaultNonceCSPDirectives, 'frame-ancestors': "'none'" }
+
 if (process.env.NODE_ENV !== 'test') {
+  app.use((req, res, next) => {
+    if (isConsentPage(req.path)) res.setHeader('X-Frame-Options', 'DENY')
+    next()
+  })
   app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig, {
-    csp: { nonce: true, header: true },
+    csp: { nonce: true, header: (req) => isConsentPage(req.path) ? consentCSPDirectives : true },
     getSiteExtraParams
   }))
 }

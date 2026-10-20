@@ -3,7 +3,7 @@ import { test } from '@playwright/test'
 import jwt from 'jsonwebtoken'
 import { CookieJar } from 'tough-cookie'
 import { axiosWithCookies } from '@data-fair/lib-node/axios-with-cookies.js'
-import { axios, createUser, testEnvAx, getServerConfig, directoryUrl, passwordLogin } from '../support/axios.ts'
+import { axios, createUser, testEnvAx, getServerConfig, directoryUrl, devApiUrl, passwordLogin } from '../support/axios.ts'
 import { signAssertion, nhiBody } from '../support/nhi.ts'
 import {
   runCodeFlow, startAuthorization, openInteraction, getDetails, postDecision, resume, exchangeCode,
@@ -403,6 +403,26 @@ test.describe('oauth authorization code flow', () => {
     await passwordLogin(userAx as any, 'oauth-code-user@test.com', password)
     const third = await runCodeFlow(flow())
     assert.equal((jwt.decode(third.tokens.access_token) as jwt.JwtPayload).sub, user.id)
+  })
+
+  test('the consent page cannot be framed, other pages keep the default framing rules', async () => {
+    // the dev nginx proxies the pages to the dev UI (vite): ask the API's SPA middleware directly
+    const spa = axios({ baseURL: devApiUrl, headers: { 'x-forwarded-host': new URL(directoryUrl).host, 'x-forwarded-proto': 'http' } })
+    // the router of the UI matches case insensitively and accepts a trailing slash
+    for (const path of ['/simple-directory/oauth/consent', '/simple-directory/oauth/consent/', '/simple-directory/OAuth/Consent']) {
+      const res = await spa.get(path, { params: { error: 'access_denied' } })
+      assert.equal(res.status, 200, path)
+      assert.match(res.headers['content-security-policy'], /frame-ancestors 'none'/, path)
+      assert.doesNotMatch(res.headers['content-security-policy'], /frame-ancestors 'self'/, path)
+      assert.match(res.headers['content-security-policy'], /script-src 'nonce-/, path)
+      assert.equal(res.headers['x-frame-options'], 'DENY', path)
+    }
+    for (const path of ['/simple-directory/login', '/simple-directory/oauth/consent-other', '/simple-directory/me']) {
+      const res = await spa.get(path)
+      assert.equal(res.status, 200, path)
+      assert.match(res.headers['content-security-policy'], /frame-ancestors 'self'/, path)
+      assert.equal(res.headers['x-frame-options'], 'SAMEORIGIN', path)
+    }
   })
 
   test('discovery advertises the code flow', async () => {

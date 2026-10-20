@@ -86,6 +86,46 @@ test.describe('oauth dynamic clients', () => {
     assert.equal(logSafeName(42), 'unnamed')
   })
 
+  test('logSafeName strips bidi controls and zero-width characters', async () => {
+    const { logSafeName } = await dynamicClients()
+    const bidi = ['\u202a', '\u202b', '\u202c', '\u202d', '\u202e', '\u2066', '\u2067', '\u2068', '\u2069', '\u200e', '\u200f', '\u061c']
+    const zeroWidth = ['\u200b', '\u200c', '\u200d', '\u2060', '\ufeff']
+    for (const c of [...bidi, ...zeroWidth]) {
+      assert.equal(logSafeName(`Cla${c}ude`), 'Claude', 'U+' + c.codePointAt(0)!.toString(16))
+    }
+    // a right-to-left override that would display "Claude Code (txt.exe)" reversed
+    assert.equal(logSafeName('Claude\u202eedoC\u202c'), 'ClaudeedoC')
+    // other non-ASCII text is kept
+    assert.equal(logSafeName('Agent Ünïcode 日本'), 'Agent Ünïcode 日本')
+  })
+
+  test('displayIdUrl shows the punycoded form of a client id url', async () => {
+    const { displayIdUrl } = await dynamicClients()
+    // a cyrillic "а" in place of the latin "a"
+    assert.equal(displayIdUrl('https://\u0430pple.com/client.json'), 'https://xn--pple-43d.com/client.json')
+    assert.equal(displayIdUrl('https://claude.ai/oauth/claude-code-client-metadata'), 'https://claude.ai/oauth/claude-code-client-metadata')
+    assert.equal(displayIdUrl('https://example.org/\u202ex'), 'https://example.org/%E2%80%AEx')
+  })
+
+  test('ssrfFetch refuses non public ip literals', async () => {
+    const { ssrfFetch } = await dynamicClients()
+    const refused = async (url: string) => {
+      await assert.rejects(ssrfFetch(url, {}), (err: any) => err.code === 'ERR_SSRF_BLOCKED', url)
+    }
+    // the test configuration declares loopback public (playwright.config.ts): private ranges it
+    // does not cover are still refused
+    for (const url of ['https://10.0.0.1/', 'https://[::ffff:10.0.0.1]/', 'https://169.254.169.254/', 'https://[fd00::1]/']) await refused(url)
+    // and loopback with the default rules (read from the environment at every call)
+    const previous = process.env.SSRF_PUBLIC_IPS
+    delete process.env.SSRF_PUBLIC_IPS
+    try {
+      for (const url of ['https://127.0.0.1/', 'https://[::ffff:127.0.0.1]/', 'https://[::1]/']) await refused(url)
+    } finally {
+      if (previous === undefined) delete process.env.SSRF_PUBLIC_IPS
+      else process.env.SSRF_PUBLIC_IPS = previous
+    }
+  })
+
   test('ssrfFetch caps the body of a client id metadata document at 5 KB', async () => {
     const { ssrfFetch, cimdFixtures } = await dynamicClients()
     const url = 'https://cimd.test/big'

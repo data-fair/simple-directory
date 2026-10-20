@@ -13,6 +13,7 @@ import limiter from '../utils/limiter.ts'
 import { isLoopbackRedirectUri } from './clients.ts'
 import { listGrantRecords } from './grants.ts'
 import Debug from 'debug'
+import { internalError } from '@data-fair/lib-node/observer.js'
 
 const debug = Debug('oauth-server')
 
@@ -116,12 +117,17 @@ export const allowFetch = async (koaCtx: KoaContextWithOIDC | undefined) => {
   return false
 }
 
-// a client chosen value in a log line
+// a client chosen value in a log line or on the consent screen: no control characters, and no bidi
+// controls or zero-width characters that could make it display as something else
 export const logSafeName = (name: unknown) => {
   if (typeof name !== 'string' || !name) return 'unnamed'
   // eslint-disable-next-line no-control-regex
-  return name.replace(/[\u0000-\u001f\u007f-\u009f]/g, '').slice(0, 100)
+  return name.replace(/[\u0000-\u001f\u007f-\u009f\u061c\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ufeff]/g, '').slice(0, 100)
 }
+
+// the id url of a CIMD client as shown on the consent screen: the WHATWG serialization punycodes
+// the host and percent-encodes the rest, so a lookalike host shows as what it is
+export const displayIdUrl = (clientId: string) => new URL(clientId).href
 
 // documents served from memory by the test environment (POST /api/test-env/cimd-fixtures), consulted
 // only when ENABLE_TEST_API=1
@@ -130,12 +136,22 @@ export const cimdFixtures = new Map<string, Record<string, any>>()
 // Node's bundled undici (the one behind the global fetch): the same lookup oidc-provider does for
 // its own dispatcher, no undici dependency of our own to keep in line with Node's
 let ssrfAgent: any
+let missingAgentLogged = false
 const getSsrfAgent = () => {
   if (!ssrfAgent) {
     // reading the global loads the bundled undici, which registers its global dispatcher
     if (typeof Response !== 'function') throw new Error('fetch is not available')
     const Agent = ((globalThis as any)[Symbol.for('undici.globalDispatcher.2')] ?? (globalThis as any)[Symbol.for('undici.globalDispatcher.1')])?.constructor
-    if (Agent?.name !== 'Agent') throw new Error('cannot create the SSRF safe dispatcher of the oauth server')
+    if (Agent?.name !== 'Agent') {
+      // fails closed (a proxy dispatcher, NODE_USE_ENV_PROXY...): every CIMD and jwks_uri fetch
+      // fails, which the provider only reports as a fetch error to the client
+      const err = new Error('cannot create the SSRF safe dispatcher of the oauth server, the global dispatcher is a ' + (Agent?.name ?? 'missing'))
+      if (!missingAgentLogged) {
+        missingAgentLogged = true
+        internalError('oauth-ssrf-dispatcher', 'client id metadata documents cannot be fetched', err)
+      }
+      throw err
+    }
     // publicLookup refuses non public addresses (SSRF_PUBLIC_IPS / SSRF_PRIVATE_IPS apply)
     ssrfAgent = new Agent({ connect: { lookup: publicLookup } })
   }
