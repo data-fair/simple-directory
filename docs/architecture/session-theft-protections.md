@@ -157,7 +157,7 @@ protections is weakened by them:
 exchange tokens. A refresh token is rotated on every use, and presenting one
 that was already used means two copies are in circulation. There is no grace
 window, unlike `exchangeTokenGrace`: the whole grant is destroyed
-(`sd.oauth.grant.reused` alert with the client, subject and account), the
+(`sd.oauth.grant.reused`, warn level, with the client, subject and account), the
 newest token is then `invalid_grant` too, and the person authorizes the
 application again. Reuse is checked before the other re-checks of the grant, so
 it is detected even when the subject no longer qualifies. The price is that a

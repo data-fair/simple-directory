@@ -200,10 +200,13 @@ no registration at all. Both go through `normalizeDynamicMetadata`:
   only. `client_credentials` is not available to a dynamic client;
 - `sd_*` metadata and `sector_identifier_uri` are stripped; `logo_uri`,
   `client_uri`, `policy_uri`, `tos_uri` and `jwks_uri` must be `https`;
-- `application_type: native` (which makes the provider ignore the port of a
-  loopback redirect URI, RFC 8252 7.3) is set only when **every** redirect URI
-  is loopback. Loopback together with `https` makes a web client (exact match,
-  port included); loopback together with a private-use scheme is refused;
+- `application_type: native` is set when every redirect URI is loopback or
+  every one is a private-use scheme; otherwise (`https`, or loopback with
+  `https`) the client is web. The provider ignores the port of a loopback
+  redirect URI (RFC 8252 7.3) only for native clients, so the port relaxation
+  applies only when **every** redirect URI is loopback. Loopback together with
+  `https` makes a web client (exact match, port included); loopback together
+  with a private-use scheme is refused;
 - a CIMD document is fetched by the provider through `ssrfFetch` (lib-node
   SSRF rules, IP literals checked, no redirect followed, 2.5 s, 5 KB), the
   result is normalized by the same function and `allowClient` re-checks it on
@@ -338,8 +341,9 @@ Revocation (`revokeGrant`) removes the access tokens, refresh tokens and codes
 of the grant, the provider `Grant`, then the record, and logs
 `sd.oauth.grant.revoked`. It happens on:
 
-- the user revoking from the account page (`GET`/`DELETE
-  /api/users/:userId/oauth-grants`, the user's own site client grants; a
+- the user revoking from the account page (`GET
+  /api/users/:userId/oauth-grants` and `DELETE
+  /api/users/:userId/oauth-grants/:grantId`, the user's own site client grants; a
   superadmin in admin mode may act for others; an NHI session may not);
 - an org admin revoking the grants of an NHI, per client or one by one
   (`/api/organizations/:orgId/nhis/:nhiId/oauth-grants`);
