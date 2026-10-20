@@ -33,6 +33,7 @@
       v-model:page="page"
       v-model:items-per-page="itemsPerPage"
       v-model:sort-by="sortBy"
+      :search="validQ"
       :headers="headers"
       :items="organizations.data.value?.results"
       :items-length="organizations.data.value?.count || 0"
