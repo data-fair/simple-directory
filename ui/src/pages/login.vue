@@ -159,6 +159,7 @@
                     :label="$t('pages.login.2FACode')"
                     :error-messages="twoFAError"
                     name="2fa"
+                    autocomplete="one-time-code"
                     variant="outlined"
                     density="compact"
                     rounded
@@ -176,6 +177,10 @@
                         <template #activator="{props}">
                           <v-icon
                             v-bind="props"
+                            :aria-label="$t('pages.login.2FAInfo')"
+                            aria-hidden="false"
+                            role="img"
+                            tabindex="0"
                             color="info"
                             :icon="mdiInformation"
                           />
@@ -587,6 +592,8 @@
                 <v-text-field
                   v-model="configure2FACode"
                   :label="$t('pages.login.configure2FACode')"
+                  autocomplete="one-time-code"
+                  inputmode="numeric"
                   density="compact"
                   variant="outlined"
                   rounded
@@ -681,6 +688,7 @@
                   :label="$t('common.organizationName')"
                   :rules="[v => !!v || '']"
                   name="organizationName"
+                  autocomplete="organization"
                   required
                   variant="outlined"
                   density="compact"

@@ -18,6 +18,7 @@
         :disabled="token.loading.value"
         :label="$t('pages.contact.from')"
         name="email"
+        autocomplete="email"
         required
       />
       <v-text-field
