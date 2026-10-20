@@ -107,19 +107,17 @@ test.describe('oauth dynamic clients', () => {
     assert.equal(displayIdUrl('https://example.org/\u202ex'), 'https://example.org/%E2%80%AEx')
   })
 
-  test('ssrfFetch refuses non public ip literals', async () => {
+  test('ssrfFetch refuses loopback ip literals with the default rules', async () => {
     const { ssrfFetch } = await dynamicClients()
-    const refused = async (url: string) => {
-      await assert.rejects(ssrfFetch(url, {}), (err: any) => err.code === 'ERR_SSRF_BLOCKED', url)
-    }
-    // the test configuration declares loopback public (playwright.config.ts): private ranges it
-    // does not cover are still refused
-    for (const url of ['https://10.0.0.1/', 'https://[::ffff:10.0.0.1]/', 'https://169.254.169.254/', 'https://[fd00::1]/']) await refused(url)
-    // and loopback with the default rules (read from the environment at every call)
+    // the test run declares loopback public (playwright.config.ts, private ranges are covered by
+    // 'ssrfFetch refuses non public addresses'): the rules are read from the environment at every
+    // call, so loopback is checked here with the default rules
     const previous = process.env.SSRF_PUBLIC_IPS
     delete process.env.SSRF_PUBLIC_IPS
     try {
-      for (const url of ['https://127.0.0.1/', 'https://[::ffff:127.0.0.1]/', 'https://[::1]/']) await refused(url)
+      for (const url of ['https://127.0.0.1/', 'https://[::ffff:127.0.0.1]/', 'https://[::1]/']) {
+        await assert.rejects(ssrfFetch(url, {}), (err: any) => err.code === 'ERR_SSRF_BLOCKED', url)
+      }
     } finally {
       if (previous === undefined) delete process.env.SSRF_PUBLIC_IPS
       else process.env.SSRF_PUBLIC_IPS = previous
