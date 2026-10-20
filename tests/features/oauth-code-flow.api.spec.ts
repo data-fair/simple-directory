@@ -148,6 +148,27 @@ test.describe('oauth authorization code flow', () => {
     assert.equal((jwt.decode(result.tokens.access_token) as jwt.JwtPayload).scope, 'organizations:read')
   })
 
+  test('a site client matches its redirect uris exactly', async () => {
+    const { adminAx, clientId, flow } = await setup()
+    const httpsUri = 'https://dash.example.org:8443/cb'
+    await patchClient(adminAx, clientId, { redirectUris: [httpsUri, redirectUri] })
+    for (const uri of [httpsUri, redirectUri]) {
+      const { location } = await startAuthorization(flow({ redirectUri: uri }))
+      interactionUid(location)
+    }
+    const variants = [
+      'https://dash.example.org:9443/cb', 'https://dash.example.org/cb', 'https://dash.example.org:8443/cb/',
+      'https://dash.example.org:8443/cb?x=1', 'https://dash.example.org:8443/CB',
+      'http://localhost:6000/cb', 'http://localhost:5999/cb/', 'http://localhost:5999/cb?x=1', 'http://127.0.0.1:5999/cb'
+    ]
+    for (const variant of variants) {
+      const { location } = await startAuthorization(flow({ redirectUri: variant }))
+      const url = new URL(location)
+      assert.ok(url.pathname.endsWith('/oauth/consent'), `${variant} not refused: ${location}`)
+      assert.equal(url.searchParams.get('error'), 'invalid_redirect_uri', variant)
+    }
+  })
+
   test('the mcp resource is refused for a site client', async () => {
     const { flow } = await setup()
     assert.equal(await authorizeError(flow({ resource: siteUrl + '/mcp-server/mcp' })), 'invalid_target')

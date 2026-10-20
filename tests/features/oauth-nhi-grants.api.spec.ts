@@ -124,6 +124,24 @@ test.describe('oauth nhi connections', () => {
     await assert.rejects(memberAx.delete(base, { params: { clientId } }), { status: 403 })
   })
 
+  test('an admin of another org cannot reach the nhi through their own org path', async () => {
+    const { createNhi, connect, refresh } = await setupGrants()
+    const nhi = await createNhi('Agent')
+    const clientId = await registerClient()
+    const tokens = await connect(clientId, nhi.id)
+    const [grant] = await grantRecords({ 'subject.id': nhi.id })
+    const { ax: otherAx } = await createUser('oauth-other-admin@test.com', false, password)
+    const otherOrg = (await otherAx.post('/api/organizations', { name: 'Other org' })).data
+    otherAx.setOrg(otherOrg.id)
+    const base = `/api/organizations/${otherOrg.id}/nhis/${nhi.id}/oauth-grants`
+    await assert.rejects(otherAx.get(base), { status: 404 })
+    await assert.rejects(otherAx.delete(base, { params: { clientId } }), { status: 404 })
+    await assert.rejects(otherAx.delete(`${base}/${grant._id}`), { status: 404 })
+    assert.equal((await grantRecords({ 'subject.id': nhi.id })).length, 1)
+    const r = await refresh(clientId, tokens.refresh_token)
+    assert.equal(r.status, 200, JSON.stringify(r.data))
+  })
+
   test('deleting the nhi removes its grants', async () => {
     const { org, ownerAx, createNhi, connect, refresh } = await setupGrants()
     const nhi = await createNhi('Agent')
