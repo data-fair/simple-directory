@@ -14,6 +14,7 @@ test.describe('connected applications on the account page', () => {
     const section = page.locator('[data-connected-applications]')
     await expect(section.getByText('Dash')).toBeVisible({ timeout: 15_000 })
     await section.getByRole('button', { name: /Révoquer|Revoke/ }).click()
+    await expect(page.getByText(/Révoquer l'accès de Dash|Revoke the access of Dash/)).toBeVisible()
     await page.getByRole('button', { name: 'Ok' }).click()
     await expect(section.getByText('Dash')).toBeHidden()
   })
