@@ -50,7 +50,7 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
       else body.scope = sdToken.scope
       // awaited here, before koa writes the response, so the client's next attempt sees the refund
       const limits = tokenLimits.get(koaCtx.req)
-      if (limits) await refundNhiLimits(limits.clientIp, limits.clientId)
+      if (limits) await refundNhiLimits(limits.ipKey, limits.clientKey)
       if (koaCtx.oidc.params?.grant_type !== 'client_credentials') {
         if (sdToken.grantId) await touchGrantRecord(sdToken.grantId)
         return

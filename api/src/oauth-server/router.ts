@@ -60,25 +60,31 @@ const tokenRequestClientId = (body: Record<string, any>): string | undefined => 
 // the grants of the provider that are rate limited per IP and per client
 const limitedGrantTypes = ['client_credentials', 'authorization_code', 'refresh_token']
 
-// same limits as the JWT bearer grant: consumed up front, refunded once the token is issued (by the
+// same budget as the JWT bearer grant: consumed up front, refunded once the token is issued (by the
 // provider middleware, see providers.ts), so only failures count
 const limitTokenRequest = async (req: Request, res: Response, grantType: string): Promise<boolean> => {
   const clientIp = reqIp(req)
-  let clientId = tokenRequestClientId(req.body)
-  // the client_id of a public client is public (a dashboard ships it in its code): limited per
-  // address, or anyone could lock out every user of the client. Whatever the request claims about
-  // its authentication (an unverified client_assertion proves nothing here), the code and refresh
-  // grants are keyed per address; only client_credentials (an NHI, single owner) keeps its own key.
-  if (grantType !== 'client_credentials' && clientId !== undefined) {
-    clientId = clientId + ' ' + clientIp
+  const clientId = tokenRequestClientId(req.body)
+  let ipKey = clientIp
+  let clientKey = clientId
+  // the code and refresh grants of public clients have their own namespace: routine failures (a
+  // grant that ended, an idle refresh token, a lost membership) of many users behind one address
+  // must not lock that address out of password login, 2FA or the NHI exchange (raw address key).
+  // The client_id of a public client is public (a dashboard ships it in its code): limited per
+  // address too, or anyone could lock out every user of the client. Whatever the request claims
+  // about its authentication (an unverified client_assertion proves nothing here), these grants
+  // are keyed so; only client_credentials (an NHI, single owner) keeps M1's keys.
+  if (grantType !== 'client_credentials') {
+    ipKey = 'oauth-token-ip:' + clientIp
+    clientKey = clientId === undefined ? undefined : `oauth-token-client:${clientId} ${clientIp}`
   }
-  if (!await consumeNhiLimits(clientIp, clientId)) {
+  if (!await consumeNhiLimits(ipKey, clientKey)) {
     if (grantType === 'client_credentials') eventsLog.warn('sd.auth.nhi.rate-limit', 'rate limit error for the client_credentials grant', { req })
     else eventsLog.warn('sd.oauth.rate-limit', `rate limit error for the ${grantType} grant of client ${clientId ?? 'unknown'}`, { req })
     oauthError(res, 429, 'invalid_request', reqI18n(req).messages.errors.rateLimitAuth)
     return false
   }
-  tokenLimits.set(req, { clientIp, clientId })
+  tokenLimits.set(req, { ipKey, clientKey, clientId })
   return true
 }
 

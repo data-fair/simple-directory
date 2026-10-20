@@ -1,9 +1,11 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import jwt from 'jsonwebtoken'
-import { axios, testEnvAx, getServerConfig } from '../support/axios.ts'
+import { MongoClient } from 'mongodb'
+import { RateLimiterMongo } from 'rate-limiter-flexible'
+import { axios, testEnvAx, getServerConfig, directoryUrl } from '../support/axios.ts'
 import { runCodeFlow, tokenRequest } from '../support/oauth-client.ts'
-import { issuer, siteId, withMongo, grantRecords, setup, patchClient } from '../support/oauth-code-site.ts'
+import { issuer, siteId, withMongo, grantRecords, setup, patchClient, password } from '../support/oauth-code-site.ts'
 
 const refresh = (clientId: string, refreshToken: string, extra: Record<string, string | undefined> = {}, headers: Record<string, string> = {}) =>
   tokenRequest(issuer, { grant_type: 'refresh_token', refresh_token: refreshToken, client_id: clientId, ...extra }, headers)
@@ -175,6 +177,47 @@ test.describe('oauth refresh tokens and revocation', () => {
     const limited = await refresh(clientId, ok2.data.refresh_token, {}, same)
     assert.equal(limited.status, 429, JSON.stringify(limited.data))
     assert.equal(limited.data.error, 'invalid_request')
+  })
+
+  // the owner of the site's org was created on the main site by setup()
+  const passwordLoginStatus = async (ip: string) => (await axios({ baseURL: directoryUrl }).post('/api/auth/password',
+    { email: 'oauth-code-owner@test.com', password }, { headers: { 'x-forwarded-for': ip }, validateStatus: () => true })).status
+
+  test('failed refreshes do not spend the password login budget of the address', async () => {
+    const { clientId, flow } = await setup()
+    await runCodeFlow(flow())
+    const attempts = (await getServerConfig()).authRateLimit.attempts
+    const ip = '10.80.0.1'
+    for (let i = 0; i < attempts; i++) {
+      assertInvalidGrant(await refresh(clientId, 'bogus-' + i, {}, { 'x-forwarded-for': ip }), `failure ${i}`)
+    }
+    const limited = await refresh(clientId, 'bogus-last', {}, { 'x-forwarded-for': ip })
+    assert.equal(limited.status, 429, JSON.stringify(limited.data))
+    assert.equal(await passwordLoginStatus(ip), 200)
+  })
+
+  test('failed password logins do not spend the refresh budget of the address', async () => {
+    const { clientId, flow } = await setup()
+    const { tokens } = await runCodeFlow(flow())
+    const cfg = await getServerConfig()
+    const ip = '10.81.0.1'
+    const mongoClient = await MongoClient.connect(cfg.mongo.url)
+    try {
+      // the raw address key spent by password logins, 2FA, anonymous actions and the NHI exchange
+      const rateLimiter = new RateLimiterMongo({
+        storeClient: mongoClient,
+        dbName: mongoClient.db().databaseName,
+        keyPrefix: 'sd-rate-limiter-auth',
+        points: cfg.authRateLimit.attempts,
+        duration: cfg.authRateLimit.duration
+      })
+      await rateLimiter.set(ip, cfg.authRateLimit.attempts, cfg.authRateLimit.duration)
+    } finally {
+      await mongoClient.close()
+    }
+    assert.equal(await passwordLoginStatus(ip), 429)
+    const ok = await refresh(clientId, tokens.refresh_token, {}, { 'x-forwarded-for': ip })
+    assert.equal(ok.status, 200, JSON.stringify(ok.data))
   })
 
   test('a junk client assertion does not move a public client back to the per-client key', async () => {

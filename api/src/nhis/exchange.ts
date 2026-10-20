@@ -15,15 +15,16 @@ export class NhiExchangeError extends Error {}
 // every call consumes a point by caller IP and by client_id up front, so concurrent in-flight
 // attempts are counted against the budget
 // (clientId is missing only from a malformed client_credentials request, the IP is still counted)
-export const consumeNhiLimits = async (clientIp: string, clientId: string | undefined): Promise<boolean> => {
-  return !!(await limiter()(clientIp)) && (clientId === undefined || !!(await limiter()(clientId)))
+// The token endpoint passes its own keys for the code and refresh grants (see limitTokenRequest).
+export const consumeNhiLimits = async (ipKey: string, clientKey: string | undefined): Promise<boolean> => {
+  return !!(await limiter()(ipKey)) && (clientKey === undefined || !!(await limiter()(clientKey)))
 }
 
 // only failures count: a success proves possession of the signing key, which is exactly what
 // the limiter guards, so its points are given back. Consume-then-refund (rather than counting
 // failures after the fact) keeps concurrent in-flight attempts counted against the budget.
-export const refundNhiLimits = async (clientIp: string, clientId: string | undefined): Promise<void> => {
-  await Promise.all([refundLimiter(clientIp), clientId !== undefined && refundLimiter(clientId)])
+export const refundNhiLimits = async (ipKey: string, clientKey: string | undefined): Promise<void> => {
+  await Promise.all([refundLimiter(ipKey), clientKey !== undefined && refundLimiter(clientKey)])
 }
 
 // random delay against timing probes, applied to every failure
