@@ -269,8 +269,8 @@ module.exports = {
   manageNhis: true,
   oauthServer: {
     enabled: true,
-    authorizationCode: true,
-    dynamicClients: true
+    siteClients: true,
+    agentClients: true
   },
   // the dev mock OIDC providers are plain http on localhost
   nhisAllowInsecureIssuers: true,

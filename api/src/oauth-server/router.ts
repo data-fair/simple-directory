@@ -5,7 +5,7 @@ import { reqIp, reqIsInternal, reqSiteUrl } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { reqI18n } from '#i18n'
 import { consumeNhiLimits } from '../nhis/exchange.ts'
-import { tokenLimits } from './clients.ts'
+import { tokenLimits, codeFlowEnabled, agentClientsEnabled } from './clients.ts'
 import { reqSite } from '../sites/service.ts'
 import { issuerOfSite } from './issuers.ts'
 import { getProvider } from './providers.ts'
@@ -144,8 +144,8 @@ const interactionRoute = new RegExp(`^/api/oauth/interaction/${uidPattern}(/deta
 // scoped jwks)
 const isServedRoute = (path: string) => {
   if ([tokenRoute, openidDiscovery, oauthDiscovery].includes(path)) return true
-  if (!config.oauthServer?.authorizationCode) return false
-  if (path === registrationRoute) return !!config.oauthServer.dynamicClients
+  if (!codeFlowEnabled()) return false
+  if (path === registrationRoute) return agentClientsEnabled()
   return path === authorizeRoute || path === revocationRoute || resumeRoute.test(path)
 }
 
@@ -157,7 +157,7 @@ router.use(async (req, res, next) => {
   if (reqIsInternal(req)) return res.status(404).send()
   if (!config.oauthServer?.enabled) return res.status(404).send()
   // the interaction routes read the SD session, they are handled further down the app
-  if (config.oauthServer.authorizationCode && interactionRoute.test(path)) return next()
+  if (codeFlowEnabled() && interactionRoute.test(path)) return next()
   if (!isServedRoute(path)) return res.status(404).send()
 
   const ctx = await issuerOfSite(await reqSite(req), canonicalSiteUrl(reqSiteUrl(req)))

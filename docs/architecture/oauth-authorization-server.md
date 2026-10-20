@@ -10,8 +10,8 @@ confinement or the session protections. Two parts:
 - M2, the authorization code flow with PKCE, SD-owned consent screens, rotating
   refresh tokens and revocable grants, for site clients (dashboards, user
   subject) and dynamic clients (MCP agents, always bound to an NHI chosen by an
-  org admin). Off unless `oauthServer.authorizationCode` (and for dynamic
-  clients `oauthServer.dynamicClients`) are on.
+  org admin). Site clients need `oauthServer.siteClients`, dynamic clients
+  `oauthServer.agentClients`; the flow is served when either is on.
 
 Required reading for changes under `api/src/oauth-server/`, the token
 endpoint, the consent screens or discovery.
@@ -473,14 +473,15 @@ dispatcher), CIMD and `jwks_uri` fetches fail closed and an `internalError`
 
 | Config | Effect |
 | --- | --- |
-| `oauthServer.enabled` | Master switch: everything under `/api/oauth/` and the discovery documents is 404 when off. |
-| `oauthServer.authorizationCode` | The authorization code flow: authorization, resume, revocation, the interaction routes, refresh tokens, site clients, consent and the connected applications. Off: those routes are 404 and discovery drops the authorization endpoint and the code and refresh grants. |
-| `oauthServer.dynamicClients` | Client id metadata documents (CIMD), dynamic client registration (DCR) and the NHI consent that goes with them. Only effective together with `authorizationCode`. Off: the registration route is 404, CIMD is disabled. |
-| `mcpPath` | Path segment marking an MCP resource. |
+| `oauthServer.enabled` (`OAUTH_SERVER_ENABLED`) | Master switch: everything under `/api/oauth/` and the discovery documents is 404 when off. |
+| `oauthServer.siteClients` (`OAUTH_SERVER_SITE_CLIENTS`) | Site clients: applications registered in the site settings (dashboards), acting for a user after the user's consent. Off: site clients are unknown to the provider, at authorization as at refresh. |
+| `oauthServer.agentClients` (`OAUTH_SERVER_AGENT_CLIENTS`) | Agent clients: unregistered applications, through a client id metadata document (CIMD) or dynamic client registration (DCR), acting as an NHI after an org admin's consent. Off: the registration route is 404, CIMD is disabled and registered clients are unknown. |
+| either of the two | The authorization code flow they share: authorization, resume, revocation, the interaction routes, refresh tokens and consent. Both off: those routes are 404 and discovery drops the authorization endpoint and the code and refresh grants. |
+| `mcpPath` (`MCP_PATH`) | Path segment marking an MCP resource, default `/mcp-server` (where the platform routes the mcp service). |
 | `manageNhis` | Both machine grants. Off: discovery advertises neither `client_credentials` nor the JWT bearer grant. |
 | `mainSiteFromDb` containing `oauthClients` | Site clients of the main site are read from its document (see [`main-site-config.md`](main-site-config.md)). Without it the main issuer has no site client. |
 
-Both M2 flags are `false` in `default.cjs` and on in `development.cjs` and
+Both client flags are `false` in `default.cjs` and on in `development.cjs` and
 `test.cjs`. A provider is cached with the flags in its cache key, so a flag
 change rebuilds it.
 
@@ -508,13 +509,13 @@ trailing slashes, so variants are 404 before they reach it):
 | --- | --- | --- |
 | token | `POST /api/oauth/token` | enabled |
 | discovery | `/.well-known/openid-configuration`, `/.well-known/oauth-authorization-server` | enabled |
-| authorization | `/api/oauth/authorize` | authorizationCode |
-| resume | `GET /api/oauth/authorize/<uid>` (the provider's) | authorizationCode |
-| revocation | `POST /api/oauth/revoke` | authorizationCode |
-| registration | `POST /api/oauth/register` (no management routes) | dynamicClients |
-| interaction entry | `GET /api/oauth/interaction/<uid>` (SD route) | authorizationCode |
-| interaction details | `GET /api/oauth/interaction/<uid>/details` (SD route) | authorizationCode |
-| interaction decision | `POST /api/oauth/interaction/<uid>` (SD route) | authorizationCode |
+| authorization | `/api/oauth/authorize` | siteClients or agentClients |
+| resume | `GET /api/oauth/authorize/<uid>` (the provider's) | siteClients or agentClients |
+| revocation | `POST /api/oauth/revoke` | siteClients or agentClients |
+| registration | `POST /api/oauth/register` (no management routes) | agentClients |
+| interaction entry | `GET /api/oauth/interaction/<uid>` (SD route) | siteClients or agentClients |
+| interaction details | `GET /api/oauth/interaction/<uid>/details` (SD route) | siteClients or agentClients |
+| interaction decision | `POST /api/oauth/interaction/<uid>` (SD route) | siteClients or agentClients |
 
 `<uid>` is a 43 character url-safe nanoid. The three interaction routes are
 Express routes of SD mounted **after** the session middleware (they read the

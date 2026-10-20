@@ -138,25 +138,26 @@ test.describe('oauth dynamic clients', () => {
     assert.equal((await register(claudeCode())).status, 201)
   })
 
-  test('dcr and cimd are 404 / not advertised without dynamicClients', async () => {
+  test('dcr and cimd are 404 / not advertised without agentClients', async () => {
     const on = (await axios().get(issuer + '/.well-known/openid-configuration')).data
     assert.equal(on.registration_endpoint, issuer + '/api/oauth/register')
     assert.equal(on.client_id_metadata_document_supported, true)
 
     await testEnvAx.post('/cimd-fixtures', { url: 'https://cimd.test/claude-code', document: { ...claudeCode(), client_id: 'https://cimd.test/claude-code' } })
-    await withOAuthServer({ dynamicClients: false }, async () => {
+    await withOAuthServer({ agentClients: false }, async () => {
       const discovery = (await axios().get(issuer + '/.well-known/openid-configuration')).data
       assert.equal(discovery.registration_endpoint, undefined)
       assert.equal(discovery.client_id_metadata_document_supported, undefined)
       assert.equal((await register(claudeCode())).status, 404)
       assert.equal(await authorizeRenderedError(flow('https://cimd.test/claude-code', 'http://localhost/callback')), 'invalid_client')
     })
-    // dynamicClients needs the authorization code flow
-    await withOAuthServer({ authorizationCode: false }, async () => {
+    // agent clients do not depend on site clients
+    await withOAuthServer({ siteClients: false }, async () => {
       const discovery = (await axios().get(issuer + '/.well-known/openid-configuration')).data
-      assert.equal(discovery.registration_endpoint, undefined)
-      assert.equal(discovery.client_id_metadata_document_supported, undefined)
-      assert.equal((await register(claudeCode())).status, 404)
+      assert.equal(discovery.registration_endpoint, issuer + '/api/oauth/register')
+      assert.equal(discovery.client_id_metadata_document_supported, true)
+      assert.equal((await register(claudeCode())).status, 201)
+      await assertReachesInteraction(flow('https://cimd.test/claude-code', 'http://localhost/callback'))
     })
   })
 

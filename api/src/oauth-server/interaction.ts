@@ -22,7 +22,7 @@ import { narrowScope } from '../nhis/scopes.ts'
 import { issuerOfSite, resolveResource, assertNhiMayTarget, siteOwnedByNhiOrg, ResourceError, type IssuerContext, type ResolvedResource } from './issuers.ts'
 import { getProvider } from './providers.ts'
 import { canonicalSiteUrl } from './router.ts'
-import { clientKind, findSiteClient } from './clients.ts'
+import { clientKind, findSiteClient, codeFlowEnabled } from './clients.ts'
 import { siteClientRequestScopes, dynamicClientRequestScopes, interactionTTL } from './configuration.ts'
 import { dashboardGrantLifetime, grantLifetimes, revokeGrant } from './grants.ts'
 import { displayIdUrl, logSafeName } from './dynamic-clients.ts'
@@ -38,7 +38,7 @@ router.use(express.json({ limit: '10kb' }))
 
 // the flags are also checked by the dispatcher, this router must not serve anything without them
 router.use((req, res, next) => {
-  if (!config.oauthServer?.enabled || !config.oauthServer.authorizationCode) return res.status(404).send()
+  if (!config.oauthServer?.enabled || !codeFlowEnabled()) return res.status(404).send()
   // the session is read here whatever its scopes, a scoped session is refused explicitly below
   markScopeChecked(req)
   next()

@@ -20,10 +20,10 @@ const postSite = async (orgId: string, orgName: string, extra: Record<string, an
   await testEnvAx.post('/clear-site-cache')
 }
 
-// the M1 shape of the server: authorization code flow off (dev and test turn it on)
+// the M1 shape of the server: no site nor agent clients, so no authorization code flow (dev and test turn them on)
 const withCodeFlowOff = async (fn: () => Promise<void>) => {
   const oauthServer = (await testEnvAx.get('/config')).data.oauthServer
-  await testEnvAx.patch('/config', { oauthServer: { ...oauthServer, authorizationCode: false } })
+  await testEnvAx.patch('/config', { oauthServer: { ...oauthServer, siteClients: false, agentClients: false } })
   try {
     await fn()
   } finally {

@@ -230,8 +230,8 @@
       "type": "object",
       "properties": {
         "enabled": { "type": "boolean" },
-        "authorizationCode": { "type": "boolean" },
-        "dynamicClients": { "type": "boolean" }
+        "siteClients": { "type": "boolean" },
+        "agentClients": { "type": "boolean" }
       }
     },
     "mcpPath": {

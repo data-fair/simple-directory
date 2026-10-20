@@ -1,6 +1,6 @@
 // OAuth clients of the authorization server: NHIs (synthesized from the NHI record on every lookup),
-// site clients (read from the issuer site document) and, later, dynamic clients. The adapter's own
-// Client collection only holds the dynamic ones.
+// site clients (read from the issuer site document) and agent clients (CIMD and DCR, dynamic-clients.ts).
+// The adapter's own Client collection only holds the DCR ones.
 import type { IncomingMessage } from 'node:http'
 import type { ClientMetadata } from 'oidc-provider'
 import config from '#config'
@@ -34,6 +34,14 @@ export const tokenLimits = new WeakMap<IncomingMessage, { ipKey: string, clientK
 
 export type SdClientKind = 'nhi' | 'site' | 'cimd' | 'dcr'
 
+// The two kinds of clients of the authorization code flow, each behind its own flag: site clients
+// (dashboards registered in the site settings, acting for a user) and agent clients (unregistered,
+// CIMD or DCR, acting as an NHI). The flow itself (authorization, consent, refresh, revocation) is
+// served when either is on.
+export const siteClientsEnabled = () => !!config.oauthServer?.siteClients
+export const agentClientsEnabled = () => !!config.oauthServer?.agentClients
+export const codeFlowEnabled = () => siteClientsEnabled() || agentClientsEnabled()
+
 // the kind is derived from the shape of the id and nothing else
 export const clientKind = (clientId: string): SdClientKind => {
   if (clientId.startsWith('nhi-')) return 'nhi'
@@ -52,7 +60,7 @@ export const getIssuerSiteClients = async (ctx: IssuerContext): Promise<SiteOAut
 }
 
 export const findSiteClient = async (ctx: IssuerContext, clientId: string): Promise<SiteOAuthClient | undefined> => {
-  if (clientKind(clientId) !== 'site') return undefined
+  if (clientKind(clientId) !== 'site' || !siteClientsEnabled()) return undefined
   return (await getIssuerSiteClients(ctx)).find(c => c.id === clientId)
 }
 

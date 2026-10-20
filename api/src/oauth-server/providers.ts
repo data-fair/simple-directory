@@ -1,12 +1,11 @@
 import Provider, { type JWK, type KoaContextWithOIDC } from 'oidc-provider'
 import { createPrivateKey } from 'node:crypto'
-import config from '#config'
 import { getSignatureKeys } from '../tokens/keys-manager.ts'
 import { buildConfiguration, discoveryOverrides, type SdTokenState } from './configuration.ts'
 import type { IssuerContext } from './issuers.ts'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { refundNhiLimits, updateNhiLogged } from '../nhis/exchange.ts'
-import { tokenLimits } from './clients.ts'
+import { tokenLimits, siteClientsEnabled, agentClientsEnabled } from './clients.ts'
 import { revokeGrantRecord, touchGrantRecord, type OAuthGrantRecord } from './grants.ts'
 import { internalError } from '@data-fair/lib-node/observer.js'
 import { logSafeName } from './dynamic-clients.ts'
@@ -20,7 +19,7 @@ const providers = new Map<string, CachedProvider>()
 
 const cacheMarker = (ctx: IssuerContext, kid: string) =>
   JSON.stringify([kid, ctx.siteUrl, ctx.site?._id ?? null, ctx.site?.updatedAt ?? null,
-    !!config.oauthServer?.authorizationCode, !!config.oauthServer?.dynamicClients])
+    siteClientsEnabled(), agentClientsEnabled()])
 
 const signingJwk = (privateKeyPem: string, kid: string): JWK => ({
   ...createPrivateKey(privateKeyPem).export({ format: 'jwk' }),

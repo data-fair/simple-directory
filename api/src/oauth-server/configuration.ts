@@ -13,7 +13,7 @@ import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
 import { allowClient, allowFetch, ssrfFetch } from './dynamic-clients.ts'
 import { nanoid } from 'nanoid'
-import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS, siteClientResourceAllowed } from './clients.ts'
+import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS, siteClientResourceAllowed, siteClientsEnabled, agentClientsEnabled, codeFlowEnabled } from './clients.ts'
 import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts'
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
 import { sdClaims, stripOidcScopes } from './access-token.ts'
@@ -55,7 +55,7 @@ const adapterFactory = (ctx: IssuerContext) => (name: string) => {
     if (nhiClient) return nhiClient as any
     const siteClient = await findSiteClient(ctx, id)
     if (siteClient) return { ...siteClientMetadata(siteClient), sd_allowed_origins: siteClientOrigins(siteClient) } as any
-    if (!config.oauthServer?.authorizationCode || !config.oauthServer?.dynamicClients || clientKind(id) !== 'dcr') return undefined
+    if (!agentClientsEnabled() || clientKind(id) !== 'dcr') return undefined
     return await findStoredClient(id)
   }
   return adapter
@@ -201,8 +201,8 @@ const dynamicClientResourceScope = async (koaCtx: KoaContextWithOIDC) => {
 }
 
 export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): Promise<Configuration> => {
-  const codeFlow = !!config.oauthServer?.authorizationCode
-  const dynamicClients = codeFlow && !!config.oauthServer?.dynamicClients
+  const codeFlow = codeFlowEnabled()
+  const agentClients = agentClientsEnabled()
   const knownScopes = await getKnownScopes(defaultLocale, messages[defaultLocale].scopes)
   return {
     adapter: adapterFactory(ctx),
@@ -222,9 +222,9 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
             resource = await resolveResource(ctx, resourceIndicator)
             if (koaCtx.oidc?.params?.grant_type === 'client_credentials') {
               scope = await nhiClientCredentials(koaCtx, client.clientId, resource) ?? scope
-            } else if (codeFlow && clientKind(client.clientId) === 'site') {
+            } else if (siteClientsEnabled() && clientKind(client.clientId) === 'site') {
               scope = await siteClientResourceScope(ctx, koaCtx, client.clientId, resource)
-            } else if (dynamicClients && ['cimd', 'dcr'].includes(clientKind(client.clientId))) {
+            } else if (agentClients && ['cimd', 'dcr'].includes(clientKind(client.clientId))) {
               scope = await dynamicClientResourceScope(koaCtx)
             }
           } catch (err) {
@@ -250,12 +250,12 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
       introspection: { enabled: false },
       // open (MCP clients cannot have an initial access token) and rate limited by the router,
       // without management: a registration is final. The router normalizes the body first.
-      registration: { enabled: dynamicClients, initialAccessToken: false, issueRegistrationAccessToken: false, idFactory: () => 'dcr-' + nanoid() },
+      registration: { enabled: agentClients, initialAccessToken: false, issueRegistrationAccessToken: false, idFactory: () => 'dcr-' + nanoid() },
       // https ids only (checked by the provider), fetched through ssrfFetch
       clientIdMetadataDocument: {
-        enabled: dynamicClients,
+        enabled: agentClients,
         ack: 'draft-02',
-        allowFetch: async (koaCtx) => dynamicClients && await allowFetch(koaCtx),
+        allowFetch: async (koaCtx) => agentClients && await allowFetch(koaCtx),
         allowClient
       },
       // served nowhere by the dispatcher, they must not be advertised
@@ -386,7 +386,7 @@ const codeFlowConfiguration = (ctx: IssuerContext, knownScopes: string[]): Parti
 export const discoveryOverrides = (ctx: IssuerContext, body: Record<string, any>) => {
   body.jwks_uri = ctx.issuer + '/.well-known/scoped-jwks.json'
   let grantTypes: string[] = (body.grant_types_supported ?? []).filter((g: string) => g !== 'implicit')
-  if (config.oauthServer?.authorizationCode) {
+  if (codeFlowEnabled()) {
     body.response_types_supported = ['code']
     body.authorization_response_iss_parameter_supported = true
     body.token_endpoint_auth_methods_supported = ['none', 'private_key_jwt']

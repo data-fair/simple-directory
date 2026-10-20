@@ -327,8 +327,8 @@ module.exports = {
   manageNhis: 'MANAGE_NHIS',
   oauthServer: {
     enabled: 'OAUTH_SERVER_ENABLED',
-    authorizationCode: 'OAUTH_SERVER_AUTHORIZATION_CODE',
-    dynamicClients: 'OAUTH_SERVER_DYNAMIC_CLIENTS'
+    siteClients: 'OAUTH_SERVER_SITE_CLIENTS',
+    agentClients: 'OAUTH_SERVER_AGENT_CLIENTS'
   },
   mcpPath: 'MCP_PATH',
   platformScopesUrl: 'PLATFORM_SCOPES_URL',

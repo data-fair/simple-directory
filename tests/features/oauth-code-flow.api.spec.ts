@@ -7,7 +7,7 @@ import { axios, createUser, testEnvAx, getServerConfig, directoryUrl, devApiUrl,
 import { signAssertion, nhiBody } from '../support/nhi.ts'
 import {
   runCodeFlow, startAuthorization, openInteraction, getDetails, postDecision, resume, exchangeCode,
-  browse, interactionUid, type CodeFlowOptions
+  browse, interactionUid, tokenRequest, type CodeFlowOptions
 } from '../support/oauth-client.ts'
 import {
   siteHost, siteUrl, issuer, realmHost, realmUrl, redirectUri, password, clientBody, grantRecords, setup, patchClient
@@ -21,15 +21,17 @@ const authorizeError = async (opts: CodeFlowOptions) => {
   return url.searchParams.get('error')
 }
 
-const withCodeFlowOff = async (fn: () => Promise<void>) => {
+const withOAuthServer = async (patch: Record<string, any>, fn: () => Promise<void>) => {
   const oauthServer = (await testEnvAx.get('/config')).data.oauthServer
-  await testEnvAx.patch('/config', { oauthServer: { ...oauthServer, authorizationCode: false } })
+  await testEnvAx.patch('/config', { oauthServer: { ...oauthServer, ...patch } })
   try {
     await fn()
   } finally {
     await testEnvAx.patch('/config', { oauthServer })
   }
 }
+
+const withCodeFlowOff = (fn: () => Promise<void>) => withOAuthServer({ siteClients: false, agentClients: false }, fn)
 
 test.describe('oauth authorization code flow', () => {
   test.beforeEach(async () => {
@@ -485,6 +487,23 @@ test.describe('oauth authorization code flow', () => {
         const res = await browse(opts.browserAx, issuer + path)
         assert.equal(res.status, 404, path)
       }
+    })
+  })
+
+  test('site clients follow their own flag, the flow stays served for agent clients', async () => {
+    const { org, clientId, flow } = await setup()
+    const { tokens } = await runCodeFlow(flow({ decision: { account: { type: 'organization', id: org.id } } }))
+    await withOAuthServer({ siteClients: false }, async () => {
+      const discovery = (await axios().get(issuer + '/.well-known/openid-configuration')).data
+      assert.equal(discovery.authorization_endpoint, issuer + '/api/oauth/authorize')
+      assert.ok(discovery.grant_types_supported.includes('refresh_token'))
+      // the site client is unknown: the error goes to the consent page, not to the client
+      const { location } = await startAuthorization(flow())
+      assert.equal(new URL(location).searchParams.get('error'), 'invalid_client')
+      // and its grants cannot be refreshed
+      const res = await tokenRequest(issuer, { grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: clientId })
+      assert.equal(res.status, 401)
+      assert.equal(res.data.error, 'invalid_client')
     })
   })
 })

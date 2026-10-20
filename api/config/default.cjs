@@ -284,8 +284,8 @@ module.exports = {
   manageNhis: false,
   oauthServer: {
     enabled: false,
-    authorizationCode: false,
-    dynamicClients: false
+    siteClients: false,
+    agentClients: false
   },
   mcpPath: '/mcp-server',
   platformScopesUrl: '',

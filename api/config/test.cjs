@@ -100,8 +100,8 @@ module.exports = {
   manageNhis: true,
   oauthServer: {
     enabled: true,
-    authorizationCode: true,
-    dynamicClients: true
+    siteClients: true,
+    agentClients: true
   },
   nhisAllowInsecureIssuers: true,
   cipherPassword: 'test',
