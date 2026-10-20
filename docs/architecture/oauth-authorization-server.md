@@ -184,7 +184,13 @@ has a name, optional `https` logo, redirect URIs, `allowedOrigins`, `scopes`,
 bare origins of the same kinds (they default to the origins of the redirect
 URIs) and are the CORS origins of the token and revocation endpoints, a
 privilege reserved to site clients (`sd_allowed_origins` is rejected on any
-other kind); `scopes` are checked against the known scopes. Removing a client
+other kind); `scopes` are checked against the known scopes. With its token, a
+dashboard calls the APIs from the browser. Every API route of SD answers
+those calls from any origin, without credentials, when they carry an
+`Authorization` header (`api/src/utils/bearer-cors.ts`): a bearer token is not
+ambient, so the origin adds nothing to it, and a call without that header gets
+no CORS header. `/api/oauth/*` is excluded, it keeps the per-client rule above.
+Data-fair answers CORS on every route with `*` and no credentials. Removing a client
 from the list, or deleting the site, revokes all its grants. The main site's
 clients are read from its document only when `MAIN_SITE_FROM_DB` contains
 `oauthClients`.

@@ -24,6 +24,7 @@ import sites from './sites/router.ts'
 import accounts from './accounts/router.ts'
 import passwordLists from './password-lists/router.ts'
 import { scopeGate } from './utils/scope-gate.ts'
+import { bearerCors } from './utils/bearer-cors.ts'
 import oauthServer from './oauth-server/router.ts'
 import oauthInteraction from './oauth-server/interaction.ts'
 import { getSiteExtraParams } from './sites/spa-params.ts'
@@ -52,6 +53,7 @@ app.use(cookieParser())
 app.use(createSiteMiddleware('simple-directory'))
 // the authorization server answers before any session handling, it authenticates its clients itself
 app.use(oauthServer)
+app.use(bearerCors)
 // the oidc provider parses its own request bodies
 const jsonParser = bodyParser.json({ limit: '100kb' })
 app.use((req, res, next) => /^\/api\/oauth\//.test(req.url) ? next() : jsonParser(req, res, next))
