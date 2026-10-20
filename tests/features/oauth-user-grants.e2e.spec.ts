@@ -15,7 +15,10 @@ test.describe('connected applications on the account page', () => {
     await expect(section.getByText('Dash')).toBeVisible({ timeout: 15_000 })
     await section.getByRole('button', { name: /Révoquer|Revoke/ }).click()
     await expect(page.getByText(/Révoquer l'accès de Dash|Revoke the access of Dash/)).toBeVisible()
-    await page.getByRole('button', { name: 'Ok' }).click()
-    await expect(section.getByText('Dash')).toBeHidden()
+    // the menu is still opening when it first shows: a click on Ok at that moment is lost
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Ok' }).click({ timeout: 2000 })
+      await expect(section.getByText('Dash')).toBeHidden({ timeout: 2000 })
+    }).toPass({ timeout: 15_000 })
   })
 })
