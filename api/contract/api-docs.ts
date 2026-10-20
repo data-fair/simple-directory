@@ -22,6 +22,11 @@ const authenticationParams = [{
   }
 }]
 
+const oauthScopes = {
+  organizations: 'All organization scopes',
+  'organizations:read': 'Read organizations, their roles and members'
+}
+
 export default {
   openapi: '3.0.0',
   info: Object.assign({
@@ -35,16 +40,21 @@ export default {
     securitySchemes: {
       oauth2: {
         type: 'oauth2',
-        description: 'Access tokens issued by simple-directory. A token without scope claim is an unrestricted first party session. The token endpoint (RFC 6749) never takes a client secret. A non-human identity obtains a token either with the JWT bearer grant (grant_type urn:ietf:params:oauth:grant-type:jwt-bearer, client_id = the NHI id and assertion = a JWT signed by the identity provider declared on the NHI, RFC 7523) or, when the NHI declares inline jwks, with client_credentials authenticated by a private_key_jwt client assertion. Both accept an optional space-delimited scope and a resource indicator (RFC 8707). Disabled unless the deployment enables the authorization server.',
+        description: 'Access tokens issued by simple-directory. A token without scope claim is an unrestricted first party session. The token endpoint (RFC 6749) never takes a client secret. A non-human identity obtains a token either with the JWT bearer grant (grant_type urn:ietf:params:oauth:grant-type:jwt-bearer, client_id = the NHI id and assertion = a JWT signed by the identity provider declared on the NHI, RFC 7523) or, when the NHI declares inline jwks, with client_credentials authenticated by a private_key_jwt client assertion. Both accept an optional space-delimited scope and a resource indicator (RFC 8707). A person authorizes an application with the authorization code flow and PKCE (S256, required), on the consent screen of simple-directory, and the application refreshes its token with a rotating refresh token. Disabled unless the deployment enables the authorization server.',
         flows: {
           // OpenAPI has no jwt-bearer flow, clientCredentials is the closest entry. The endpoint is an
           // RFC 7523 assertion exchange: do not send a client secret.
           clientCredentials: {
             tokenUrl: '/simple-directory/api/oauth/token',
-            scopes: {
-              organizations: 'All organization scopes',
-              'organizations:read': 'Read organizations, their roles and members'
-            }
+            scopes: oauthScopes
+          },
+          // clients are public (PKCE is required, no client secret): the site clients of dashboards and
+          // the dynamic clients (client id metadata document or registration) of MCP agents
+          authorizationCode: {
+            authorizationUrl: '/simple-directory/api/oauth/authorize',
+            tokenUrl: '/simple-directory/api/oauth/token',
+            refreshUrl: '/simple-directory/api/oauth/token',
+            scopes: oauthScopes
           }
         }
       }

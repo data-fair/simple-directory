@@ -128,3 +128,39 @@ Consequences to keep in mind when changing this code:
   reports the loser's token as a theft;
 - sessions created before this mechanism have no `jti`, they are tolerated and
   get one at their next keepalive.
+
+## OAuth tokens are not cookie credentials
+
+The OAuth authorization server (see
+[`oauth-authorization-server.md`](oauth-authorization-server.md)) issues
+bearer access tokens and refresh tokens to clients. They are a different
+credential family from the two cookies above, and none of the cookie
+protections is weakened by them:
+
+- OAuth **never sets an SD cookie session** and never creates a server session.
+  A client holding a token cannot turn it into an `id_token` / exchange token
+  pair, and the bearer `at+jwt` is checked against its audience (the request
+  site) by the lib.
+- No OAuth token carries `isAdmin`, `adminMode` or `asAdmin`, so the IP
+  binding and the hard expiry of superadmin sessions are never needed for, nor
+  reachable through, a token. A superadmin or an impersonation (`asAdmin`)
+  session never consents in the name of the impersonated user; a superadmin
+  consents as the plain user.
+- The consent routes read the cookie session but a scoped (NHI) session cannot
+  consent, and a decision is accepted only from the user who opened the
+  interaction, once.
+- A user access token is short lived (15 minutes, `jwtDurations.idToken`) like
+  the `id_token`; the long lived credential is the refresh token, bound to a
+  revocable grant that the user lists and revokes from their account page.
+
+**Refresh reuse detection** is the OAuth counterpart of the single use
+exchange tokens. A refresh token is rotated on every use, and presenting one
+that was already used means two copies are in circulation. There is no grace
+window, unlike `exchangeTokenGrace`: the whole grant is destroyed
+(`sd.oauth.grant.reused` alert with the client, subject and account), the
+newest token is then `invalid_grant` too, and the person authorizes the
+application again. Reuse is checked before the other re-checks of the grant, so
+it is detected even when the subject no longer qualifies. The price is that a
+client which loses a refresh response must authorize again, which is the
+intended outcome for a copied token. The access tokens already issued live out
+their lifetime (revocation of JWT access tokens is unsupported).

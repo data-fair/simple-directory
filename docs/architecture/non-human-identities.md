@@ -655,3 +655,33 @@ human SSO.
 ## OAuth-bound NHIs (no key binding)
 
 `nhi.provider` and `nhi.subject` are optional, both or neither (enforced in code: `validateNewNhi`, the PATCH route and `createNhi`, not by the schema). An NHI without them is reachable only through OAuth grants: `loadExchangeNhi` / `verifyExchangeAssertion` refuse it with the uniform exchange error (401 on `/nhi-token`, `invalid_grant` on the jwt-bearer grant), and `findNhiClient` yields no client for it (`invalid_client`). `POST /nhis` still requires a key binding; creation checks live in `validateNewNhi` (`api/src/nhis/service.ts`), reusable by the consent screen. A patch may add a binding to such an NHI only whole.
+
+### Grants per NHI and client
+
+A dynamic OAuth client (an MCP agent, see
+[`oauth-authorization-server.md`](oauth-authorization-server.md)) never acts
+as the person who authorized it: its authorization code grant is bound to an
+NHI, and the token subject is that NHI. The binding is chosen at the consent
+screen by an **organization admin** (a real membership with role `admin`;
+department admins only with `depAdminIsOrgAdmin`; never admin mode nor the
+site-admin fallback used elsewhere on the NHI page), either an existing NHI of
+the organization or a new one created inline (same checks as `POST /nhis`, no
+key binding, the admin recorded as creator). The NHI must have no `ipBinding`:
+the caller of the token endpoint is not the API caller, so a bound session
+would be unusable. This is why OAuth-bound NHIs exist without key binding.
+
+What this adds to the confinement above:
+
+- each consent is one grant record, per NHI and client, with a lifetime chosen by
+  the admin (`1d` to `1y`), listed and revocable by org admins on the NHI page
+  (`/api/organizations/:orgId/nhis/:nhiId/oauth-grants`, per client or one by
+  one), and revoked when the NHI is deleted;
+- every token issuance re-checks the NHI as the exchange does: single
+  organization, `allowedIps`, `assertNhiMayTarget`, and its **current** maximum
+  scopes, so shrinking an NHI's scopes narrows its existing grants at the next
+  refresh;
+- an NHI subject never receives identity claims: ID tokens carry `sub` only;
+- the MCP audience is reserved to NHI subjects, in the code flow as in the
+  machine grants;
+- an NHI session cannot consent (it cannot authorize a client), and it cannot
+  list or revoke user grants.
