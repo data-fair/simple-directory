@@ -57,18 +57,45 @@
             </div>
           </v-card-title>
           <v-card-text>
-            <p class="text-body-large mb-2">
-              {{ $t('pages.oauthConsent.willBeAble') }}
-            </p>
-            <consent-scopes
-              v-model="selectedScopes"
-              :scopes="details.scopes"
-            />
-            <consent-account
-              v-model="account"
-              :accounts="details.accounts"
-              class="mt-4"
-            />
+            <template v-if="isDynamic">
+              <v-alert
+                type="warning"
+                variant="tonal"
+                class="mb-4"
+                data-unverified
+              >
+                <div class="font-weight-bold">
+                  {{ $t('pages.oauthConsent.unverifiedTitle') }}
+                </div>
+                {{ details.client.idUrl
+                  ? $t('pages.oauthConsent.unverifiedCimd', { client: details.client.name, url: details.client.idUrl })
+                  : $t('pages.oauthConsent.unverifiedDcr', { client: details.client.name }) }}
+              </v-alert>
+              <p
+                class="text-body-large mb-4"
+                data-resource
+              >
+                {{ details.resource.kind === 'mcp' ? $t('pages.oauthConsent.resourceMcp') : $t('pages.oauthConsent.resourceApi') }}
+              </p>
+              <consent-nhi
+                v-model="nhiDecision"
+                :details="details"
+              />
+            </template>
+            <template v-else>
+              <p class="text-body-large mb-2">
+                {{ $t('pages.oauthConsent.willBeAble') }}
+              </p>
+              <consent-scopes
+                v-model="selectedScopes"
+                :scopes="details.scopes"
+              />
+              <consent-account
+                v-model="account"
+                :accounts="details.accounts!"
+                class="mt-4"
+              />
+            </template>
             <v-alert
               v-if="rateLimited"
               type="warning"
@@ -95,7 +122,7 @@
               {{ $t('pages.oauthConsent.deny') }}
             </v-btn>
             <v-btn
-              :disabled="!selectedScopes.length || !account || redirecting"
+              :disabled="!canAllow || redirecting"
               :loading="decide.loading.value || redirecting"
               color="primary"
               variant="flat"
@@ -111,13 +138,19 @@
 </template>
 
 <script lang="ts" setup>
+import type { NhiDecision } from '../../components/oauth/nhi-decision.ts'
+
 type Account = { type: 'user' | 'organization', id: string, department?: string, departmentName?: string, name: string }
 type Details = {
-  client: { id: string, name: string, logoUri?: string, kind: string, verified: boolean, redirectHost: string },
+  client: { id: string, name: string, logoUri?: string, kind: string, verified: boolean, redirectHost: string, idUrl?: string, registeredAutomatically?: boolean },
   resource: { url: string, kind: 'api' | 'mcp' },
   scopes: { name: string, description: string, broad: boolean }[],
   oidcScopes: string[],
-  accounts: Account[]
+  accounts?: Account[],
+  organizations: Account[],
+  nhis: Record<string, { id: string, name: string, scopes?: string[] }[]>,
+  lifetimes: string[],
+  defaultLifetime: string
 }
 
 const { t } = useI18n()
@@ -129,11 +162,15 @@ const loading = ref(false)
 const loadError = ref<string>()
 const selectedScopes = ref<string[]>([])
 const account = ref<Account>()
+const nhiDecision = ref<NhiDecision>()
 const redirecting = ref(false)
 const rateLimited = ref(false)
 
 // logos of dynamic clients are attacker-controlled: https only
 const logoUri = computed(() => /^https:\/\//i.test(details.value?.client.logoUri ?? '') ? details.value?.client.logoUri : undefined)
+
+const isDynamic = computed(() => details.value?.client.kind === 'cimd' || details.value?.client.kind === 'dcr')
+const canAllow = computed(() => isDynamic.value ? !!nhiDecision.value : !!selectedScopes.value.length && !!account.value)
 
 const statusOf = (err: any) => err.status ?? err.statusCode ?? err.response?.status
 
@@ -152,8 +189,11 @@ const load = async () => {
   loading.value = true
   try {
     details.value = await $fetch<Details>(`${$apiPath}/oauth/interaction/${encodeURIComponent(uid.value)}/details`)
-    selectedScopes.value = details.value.scopes.map(s => s.name)
-    account.value = details.value.accounts[0]
+    // nothing is preselected for a dynamic client: its identity is unverified
+    if (!isDynamic.value) {
+      selectedScopes.value = details.value.scopes.map(s => s.name)
+      account.value = details.value.accounts![0]
+    }
   } catch (err: any) {
     const status = statusOf(err)
     loadError.value = status === 401 ? 'unauthorized' : status === 403 ? 'forbidden' : status === 400 ? 'interaction_expired' : 'server_error'
@@ -165,7 +205,9 @@ onMounted(load)
 
 const decide = useAsyncAction(async (decision: 'allow' | 'deny') => {
   const body: Record<string, any> = { decision }
-  if (decision === 'allow' && account.value) {
+  if (decision === 'allow' && isDynamic.value && nhiDecision.value) {
+    Object.assign(body, nhiDecision.value)
+  } else if (decision === 'allow' && account.value) {
     body.account = { type: account.value.type, id: account.value.id, department: account.value.department }
     body.scopes = selectedScopes.value
   }
