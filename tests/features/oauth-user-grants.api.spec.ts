@@ -14,6 +14,17 @@ const assertRefresh = async (clientId: string, refreshToken: string, expected: n
   assert.equal(res.status, expected, `${label}: ${JSON.stringify(res.data)}`)
 }
 
+// a copy of the exchange cookie, then two keepalives: the copy is neither the current nor the
+// previous exchange token of the session, as a stolen cookie the owner kept using
+const staleExchangeCookie = async (ax: any) => {
+  const origin = new URL(issuer).origin
+  const copy = (await ax.cookieJar.getCookies(issuer + '/')).find((c: any) => c.key === 'id_token_ex')
+  assert.ok(copy, 'no exchange cookie')
+  await ax.post('/api/auth/keepalive')
+  await ax.post('/api/auth/keepalive')
+  ax.cookieJar.setCookieSync(`id_token_ex=${copy.value}; Path=${copy.path}`, origin)
+}
+
 // a second browser of the same user: a second server session
 const secondLogin = () => axiosAuth({ email: 'oauth-code-user@test.com', password, directoryUrl: issuer, axiosOpts: { baseURL: issuer } })
 
@@ -70,6 +81,23 @@ test.describe('oauth connected applications', () => {
     const entry = await browse(userAx, location)
     assert.equal(entry.status, 302)
     assert.equal(new URL(entry.headers.location).searchParams.get('error'), 'forbidden')
+  })
+
+  test('consent with a rotated-out exchange token is refused', async () => {
+    const { userAx, flow } = await setup()
+    await staleExchangeCookie(userAx)
+    const { location } = await startAuthorization(flow())
+    const entry = await browse(userAx, location)
+    assert.equal(entry.status, 302)
+    assert.equal(new URL(entry.headers.location).searchParams.get('error'), 'forbidden')
+  })
+
+  test('exchange token reuse at keepalive revokes the grants of the session', async () => {
+    const { userAx, clientId, flow } = await setup()
+    const { tokens } = await runCodeFlow(flow())
+    await staleExchangeCookie(userAx)
+    await assert.rejects(userAx.post('/api/auth/keepalive'), status(401))
+    await assertRefresh(clientId, tokens.refresh_token, 400, 'after the exchange token reuse')
   })
 
   test('revoking all sessions revokes the grants', async () => {

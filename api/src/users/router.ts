@@ -533,7 +533,7 @@ router.delete('/:userId/sessions/:sessionId', async (req, res, next) => {
 
   if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   await storages.globalStorage.deleteUserSession(req.params.userId, req.params.sessionId)
-  await revokeGrants({ sessionId: req.params.sessionId }, 'session revoked', logContext)
+  await revokeGrants({ sessionId: req.params.sessionId, authorizedById: req.params.userId }, 'session revoked', logContext)
   eventsLog.info('sd.user.cancelDeleteSession', 'user cancelled a session', logContext)
   await keepalive(req, res)
   res.status(204).send()
