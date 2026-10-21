@@ -18,6 +18,7 @@ import { postUserIdentityWebhook, deleteIdentityWebhook, setNbMembersLimit } fro
 import { internalError } from '@data-fair/lib-node/observer.js'
 import { createNhi, listNhis, validateNewNhi } from '../nhis/service.ts'
 import { narrowScope } from '../nhis/scopes.ts'
+import type { PostOauthConsentReq } from '#doc/oauth/post-consent-req/index.ts'
 import { reqIssuer, resolveResource, nhiMayTarget, ResourceError, type IssuerContext, type ResolvedResource } from './issuers.ts'
 import { getProvider } from './providers.ts'
 import { clientKind, findSiteClient } from './clients.ts'
@@ -268,29 +269,17 @@ const dynamicClientDetails = async (req: Request, ic: InteractionContext, intera
   }
 }
 
+type ConsentDecision = PostOauthConsentReq['body']
 type InlineNhi = { name: string, role: string, scopes: string[] }
-
-const parseInlineNhi = (create: any): InlineNhi => {
-  if (!create || typeof create !== 'object') throw httpError(400, 'nhi.create must be an object')
-  const name = typeof create.name === 'string' ? create.name.trim() : ''
-  if (!name || name.length > 150) throw httpError(400, 'nhi.create.name is required')
-  if (typeof create.role !== 'string' || !create.role || create.role.length > 100) throw httpError(400, 'nhi.create.role is required')
-  const scopes = create.scopes
-  if (!Array.isArray(scopes) || !scopes.length || scopes.length > 50 || scopes.some((s: unknown) => typeof s !== 'string' || s.length > 100)) {
-    throw httpError(400, 'nhi.create.scopes must be a non-empty list of scopes')
-  }
-  return { name, role: create.role, scopes: [...new Set(scopes as string[])] }
-}
 
 // the decision of an org admin for a dynamic client: the account, the NHI (existing or created
 // inline), the scopes within the request and the NHI maximum, the lifetime. Returns the url the
 // browser resumes the authorization with.
-const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, clientId: string, kind: 'cimd' | 'dcr', body: Record<string, any>) => {
+const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, clientId: string, kind: 'cimd' | 'dcr', body: ConsentDecision) => {
   const client = await dynamicClientInfo(ic, interaction, user, clientId, kind)
   const adminAccount = findConsentAccount(consentAdminOrgs(user), body.account)
   if (!adminAccount || adminAccount.type !== 'organization') throw httpError(403, 'account is not an organization administered by the user')
   const lifetime = body.lifetime ?? defaultNhiLifetime
-  if (typeof lifetime !== 'string' || !nhiLifetimes.includes(lifetime as any)) throw httpError(400, 'unknown lifetime')
   const { url, resolved } = await resolveInteractionResource(ic.ctx, interaction)
 
   // the NHI: its membership and maximum, before anything is created
@@ -298,15 +287,17 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
   let inline: { body: InlineNhi, org: Organization } | undefined
   let membership: { id: string, department?: string }
   let max: string[] | undefined
-  if (body.nhi && typeof body.nhi === 'object' && typeof body.nhi.id === 'string' && body.nhi.create === undefined) {
+  if (!body.nhi) throw httpError(400, 'nhi must be { id } or { create }')
+  if ('id' in body.nhi) {
     const nhi = await storages.globalStorage.getUser(body.nhi.id)
     if (!nhi?.nhi || nhi.organizations?.length !== 1 || nhi.organizations[0].id !== adminAccount.id) throw httpError(400, 'unknown nhi')
     if (nhi.nhi.ipBinding) throw httpError(400, 'an ip bound nhi cannot be bound to an oauth client')
     existing = nhi
     membership = nhi.organizations[0]
     max = nhi.nhi.scopes
-  } else if (body.nhi && typeof body.nhi === 'object' && body.nhi.id === undefined && body.nhi.create !== undefined) {
-    const nhiBody = parseInlineNhi(body.nhi.create)
+  } else {
+    const nhiBody = { ...body.nhi.create, name: body.nhi.create.name.trim(), scopes: [...new Set(body.nhi.create.scopes)] }
+    if (!nhiBody.name) throw httpError(400, 'nhi.create.name is required')
     const org = await storages.globalStorage.getOrganization(adminAccount.id)
     if (!org) throw httpError(400, 'unknown organization')
     // the same checks as POST /nhis (role, known scopes, member limit with 429); the NHI acts in
@@ -315,15 +306,13 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
     inline = { body: nhiBody, org }
     membership = { id: org.id, ...(adminAccount.department ? { department: adminAccount.department } : {}) }
     max = nhiBody.scopes
-  } else {
-    throw httpError(400, 'nhi must be { id } or { create }')
   }
   if (!nhiMayTarget(membership, resolved)) throw httpError(400, 'the resource is not reachable by this nhi')
 
   const known = await knownScopeNames()
   const allowed = narrowScope(dynamicClientRequestScopes(interaction.params.scope, known), max, known)
   const scope = body.scopes
-  if (!Array.isArray(scope) || !scope.length || scope.some((s: unknown) => typeof s !== 'string' || !allowed.includes(s))) {
+  if (!scope?.every(s => allowed.includes(s))) {
     throw httpError(400, 'scopes must be a non-empty subset of the requested scopes within the nhi maximum')
   }
 
@@ -342,11 +331,11 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
       account,
       clientKind: kind,
       clientName: client.name,
-      scope: [...new Set(scope as string[])],
+      scope: [...new Set(scope)],
       oidcScopes: nhiOidcScopes(interaction),
       resource: url,
       resourceKind: resolved.kind,
-      lifetime: grantLifetimes[lifetime as keyof typeof grantLifetimes],
+      lifetime: grantLifetimes[lifetime],
       authorizedBy: { id: user.id, name: user.name },
       sessionId: serverSessionId
     })
@@ -463,8 +452,7 @@ router.get('/:uid/details', async (req, res) => {
 router.post('/:uid', async (req, res) => {
   const { ic, interaction, user, serverSessionId } = await decisionContext(req, res)
   const uid = interaction.uid
-  const body = req.body ?? {}
-  if (body.decision !== 'allow' && body.decision !== 'deny') throw httpError(400, 'decision must be allow or deny')
+  const { body } = (await import('#doc/oauth/post-consent-req/index.ts')).returnValid(req, { name: 'req' })
   const limiterKey = 'oauth-consent:' + user.id
   if (!await limiter()(limiterKey)) throw httpError(429, reqI18n(req).messages.errors.rateLimitAuth)
 
@@ -490,10 +478,8 @@ router.post('/:uid', async (req, res) => {
   if (!account) throw httpError(400, 'account is not one of the accounts of the user')
   const allowed = await siteClientScopes(interaction, siteClient.scopes)
   const scope = body.scopes ?? allowed
-  if (!Array.isArray(scope) || !scope.length || scope.some((s: unknown) => typeof s !== 'string' || !allowed.includes(s))) {
-    throw httpError(400, 'scopes must be a non-empty subset of the proposed scopes')
-  }
-  const redirectTo = await finishUserConsent(req, res, ic, interaction, user, serverSessionId, account, [...new Set(scope as string[])], siteClient.name)
+  if (!scope.every(s => allowed.includes(s))) throw httpError(400, 'scopes must be a non-empty subset of the proposed scopes')
+  const redirectTo = await finishUserConsent(req, res, ic, interaction, user, serverSessionId, account, [...new Set(scope)], siteClient.name)
   if (!redirectTo) throw httpError(400, 'the interaction is already finished')
   await refundLimiter(limiterKey)
   res.send({ redirectTo })

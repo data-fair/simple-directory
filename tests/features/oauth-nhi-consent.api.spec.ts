@@ -87,6 +87,30 @@ test.describe('oauth nhi consent', () => {
     assert.equal(res.data.error, 'invalid_grant')
   })
 
+  test('malformed decision bodies are refused before the decision is taken', async () => {
+    const { org, dynamicFlow, createNhi } = await setupNhiConsent()
+    const nhi = await createNhi({ scopes: ['organizations:read'] })
+    const opts = dynamicFlow()
+    const { pkce, state, location } = await startAuthorization(opts)
+    const uid = await openInteraction(opts, location)
+    const valid = { decision: 'allow', account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'] }
+    const malformed = [
+      { decision: 'maybe' },
+      { ...valid, nhi: { id: nhi.id, create: { name: 'x', role: 'user', scopes: ['organizations:read'] } } },
+      { ...valid, nhi: {} },
+      { ...valid, scopes: 'organizations:read' },
+      { ...valid, scopes: [] },
+      { ...valid, lifetime: '2y' },
+      { ...valid, account: { type: 'organization' } }
+    ]
+    for (const body of malformed) {
+      const res = await postDecision(opts, uid, body)
+      assert.equal(res.status, 400, JSON.stringify(body) + ' ' + JSON.stringify(res.data))
+    }
+    // validated before the lock: the interaction can still be decided
+    await finish(opts, { uid, details: undefined, decided: await postDecision(opts, uid, valid), pkce, state })
+  })
+
   test('admin binds an existing nhi and the client gets an nhi token for the mcp', async () => {
     const { org, user, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
     const nhi = await createNhi({ name: 'Bound agent', scopes: ['organizations:read'] })

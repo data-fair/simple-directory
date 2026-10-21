@@ -46,11 +46,8 @@ export const userConsentAccounts = (user: User, site?: Pick<Site, 'owner'>): Con
   return accounts
 }
 
-export const findConsentAccount = (accounts: ConsentAccount[], key: { type?: unknown, id?: unknown, department?: unknown } | undefined) => {
-  if (!key || typeof key.type !== 'string' || typeof key.id !== 'string') return undefined
-  if (key.department !== undefined && typeof key.department !== 'string') return undefined
-  return accounts.find(a => a.type === key.type && a.id === key.id && sameDepartment(a.department, key.department as string | undefined))
-}
+export const findConsentAccount = (accounts: ConsentAccount[], key: { type: string, id: string, department?: string } | undefined) =>
+  key && accounts.find(a => a.type === key.type && a.id === key.id && sameDepartment(a.department, key.department))
 
 // spec 9.3: the organizations where a user may bind a dynamic client to an NHI. Real org admins
 // only: the memberships themselves, never admin mode nor the isSiteAdminOf fallback of the NHI page
