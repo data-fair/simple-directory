@@ -1,7 +1,7 @@
 // oidc-provider adapter: one mongo collection per model, documents are { _id, payload, expiresAt }.
 // https://github.com/panva/node-oidc-provider/blob/main/docs/README.md#adapter
 import { errors, type Adapter, type AdapterPayload } from 'oidc-provider'
-import type { Collection } from 'mongodb'
+import type { Collection, UpdateFilter } from 'mongodb'
 import mongo from '#mongo'
 
 // scope: extra fields written on upsert and required on find (the issuer of a registered client)
@@ -22,12 +22,16 @@ export class MongoAdapter implements Adapter {
     return mongo.db.collection<OAuthDoc>('oauth-' + kebabCase(this.name))
   }
 
+  // a partial update: SD's fields on a document (the grant record of a Grant, grants.ts) survive
+  // the provider's saves
   async upsert (id: string, payload: AdapterPayload, expiresIn: number) {
-    const doc: OAuthDoc = { _id: id, payload, ...this.scope }
-    if (expiresIn) doc.expiresAt = new Date(Date.now() + expiresIn * 1000)
+    const $set: Partial<OAuthDoc> = { payload, ...this.scope }
+    if (expiresIn) $set.expiresAt = new Date(Date.now() + expiresIn * 1000)
+    const update: UpdateFilter<OAuthDoc> = { $set }
+    if (!expiresIn) update.$unset = { expiresAt: '' }
     // registered clients: the age of an unused one decides its cleanup (dynamic-clients.ts)
-    if (this.name === 'Client') doc.createdAt = new Date()
-    await this.collection.replaceOne({ _id: id }, doc, { upsert: true })
+    if (this.name === 'Client') update.$setOnInsert = { createdAt: new Date() }
+    await this.collection.updateOne({ _id: id }, update, { upsert: true })
   }
 
   async find (id: string) {

@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { MongoClient } from 'mongodb'
 import { axios, createUser, testEnvAx, getServerConfig } from '../support/axios.ts'
+import { grantDoc } from '../support/oauth-code-site.ts'
 
 const siteHost = `127.0.0.1:${process.env.NGINX_PORT2}`
 const siteId = 'test_oauth_clients_site'
@@ -76,15 +77,15 @@ test.describe('oauth site clients api', () => {
     })
     const mongoClient = await MongoClient.connect(config.mongo.url)
     try {
-      const grants = mongoClient.db().collection<any>('oauth-grants')
-      await grants.insertMany([record('test_g1', clients[0].id), record('test_g2', clients[1].id)])
+      const grants = mongoClient.db().collection<any>('oauth-grant')
+      await grants.insertMany([grantDoc(record('test_g1', clients[0].id)), grantDoc(record('test_g2', clients[1].id))])
       await adminAx.patch('/api/sites/' + siteId, { oauthClients: [clients[1]] })
       assert.equal(await grants.countDocuments({ _id: 'test_g1' }), 0)
       assert.equal(await grants.countDocuments({ _id: 'test_g2' }), 1)
       await adminAx.patch('/api/sites/' + siteId, { oauthClients: [] })
       assert.equal(await grants.countDocuments({ _id: 'test_g2' }), 0)
     } finally {
-      await mongoClient.db().collection<any>('oauth-grants').deleteMany({ _id: /^test_g/ })
+      await mongoClient.db().collection<any>('oauth-grant').deleteMany({ _id: /^test_g/ })
       await mongoClient.close()
     }
   })
@@ -104,8 +105,8 @@ test.describe('oauth site clients api', () => {
     const clientId = (await adminAx.get('/api/sites/' + siteId, { params: { showAll: true } })).data.oauthClients[0].id
     const mongoClient = await MongoClient.connect(config.mongo.url)
     try {
-      const grants = mongoClient.db().collection<any>('oauth-grants')
-      await grants.insertOne({
+      const grants = mongoClient.db().collection<any>('oauth-grant')
+      await grants.insertOne(grantDoc({
         _id: 'test_g_del',
         issuer: 'http://' + siteHost + '/simple-directory',
         siteId,
@@ -119,11 +120,11 @@ test.describe('oauth site clients api', () => {
         authorizedBy: { id: 'test_u1', name: 'U1' },
         createdAt: new Date(),
         expiresAt: new Date(Date.now() + 60000)
-      })
+      }))
       await adminAx.delete('/api/sites/' + siteId)
       assert.equal(await grants.countDocuments({ _id: 'test_g_del' }), 0)
     } finally {
-      await mongoClient.db().collection<any>('oauth-grants').deleteMany({ _id: /^test_g/ })
+      await mongoClient.db().collection<any>('oauth-grant').deleteMany({ _id: /^test_g/ })
       await mongoClient.close()
     }
   })

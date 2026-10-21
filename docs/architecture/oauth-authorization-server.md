@@ -350,16 +350,18 @@ issuance. `openid`, `profile` and `email` are honoured for user subjects only.
 
 ### Grant records and revocation
 
-At consent SD creates the provider `Grant` itself and writes a matching record
-in `oauth-grants` with the same id: issuer, site, client (id, name, kind),
-subject (`user` or `nhi`), the bound account, scope, the single resource,
-`authorizedBy`, `createdAt`, `expiresAt` (TTL index) and `lastUsedAt`. The
-record is what people see, audit and revoke; the provider `Grant` is what its
-tokens hang on. A grant has exactly one resource.
+At consent SD creates the provider `Grant` itself and writes its record in the
+`sd` field of the same `oauth-grant` document: issuer, site, client (id, name,
+kind), subject (`user` or `nhi`), the bound account, scope, the single
+resource, `authorizedBy`, `createdAt`, `expiresAt` and `lastUsedAt`. The adapter
+updates documents partially, so the provider's own saves keep the record, and
+whatever destroys the `Grant` (revocation, reuse detection, expiry) removes the
+record with it. The record is what people see, audit and revoke; the provider
+`Grant` is what its tokens hang on. A grant has exactly one resource.
 
-Revocation (`revokeGrant`) removes the access tokens, refresh tokens and codes
-of the grant, the provider `Grant`, then the record, and logs
-`sd.oauth.grant.revoked`. It happens on:
+Revocation (`revokeGrant`) removes the refresh tokens and codes of the grant
+(access tokens are JWTs, never stored), then the `Grant` document with its
+record, and logs `sd.oauth.grant.revoked`. It happens on:
 
 - the user revoking from the account page (`GET
   /api/users/:userId/oauth-grants` and `DELETE
@@ -368,7 +370,7 @@ of the grant, the provider `Grant`, then the record, and logs
 - an org admin revoking the grants of an NHI, per client or one by one
   (`/api/organizations/:orgId/nhis/:nhiId/oauth-grants`);
 - a client calling `POST /api/oauth/revoke` with its own refresh token (the
-  provider destroys the grant and SD removes the record on `grant.revoked`);
+  provider destroys the grant, its record with it);
 - removing a site client, deleting a site, deleting a user or an NHI (mongo
   storage; the LDAP and file storages are read-only, their deletion is
   noticed lazily by the failing re-check at refresh);
@@ -398,12 +400,16 @@ exists and still registers the resource, the bound membership still exists
   `refresh_token` (`offline_access` is not required) and **rotated on every
   use**. A refresh token lives `min(7 days, grant expiry - now)`.
 - **Reuse revokes the whole grant, with no grace window.** Presenting an
-  already used refresh token makes the provider destroy the grant; SD logs
+  already used refresh token makes the provider destroy the grant (SD logs
   `sd.oauth.grant.reused` (warn) with the client, subject, account and
-  authorizing person, removes the record, and the newest token is then
+  authorizing person from `findAccount`, which the provider calls just before
+  its consumed check), and the newest token is then
   `invalid_grant` too. Reuse is detected before the subject re-checks, so it
   is still detected when those fail first. A client that loses a refresh
-  response has to authorize again.
+  response has to authorize again. Consuming a code or a refresh token is a
+  conditional update in the adapter: of two concurrent uses one wins, the
+  other gets `invalid_grant`, and the next presentation of the old token is a
+  reuse.
 - Every successful exchange touches `lastUsedAt` of the record.
 
 ### The revocation gap of JWT access tokens

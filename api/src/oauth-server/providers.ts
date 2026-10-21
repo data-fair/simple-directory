@@ -6,8 +6,7 @@ import type { IssuerContext } from './issuers.ts'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { refundNhiLimits, updateNhiLogged } from '../nhis/exchange.ts'
 import { tokenLimits, siteClientsEnabled, agentClientsEnabled } from './clients.ts'
-import { revokeGrantRecord, touchGrantRecord, type OAuthGrantRecord } from './grants.ts'
-import { internalError } from '@data-fair/lib-node/observer.js'
+import { touchGrantRecord } from './grants.ts'
 import { logSafeName } from './dynamic-clients.ts'
 
 type CachedProvider = { marker: string, promise: Promise<Provider> }
@@ -34,9 +33,6 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
   provider.proxy = true
   provider.use(async (koaCtx, next) => {
     await next()
-    // work started by the provider events of this request, finished before the response is written
-    const pending: Promise<unknown>[] | undefined = koaCtx.state.sdPending
-    if (pending) await Promise.all(pending)
     if (koaCtx.oidc?.route === 'discovery' && koaCtx.status === 200 && koaCtx.body) {
       discoveryOverrides(ctx, koaCtx.body as Record<string, any>)
     }
@@ -58,30 +54,17 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
       eventsLog.info('sd.auth.nhi.ok', `an NHI access token was issued for ${sdToken.user.id} by the client_credentials grant`, { req: koaCtx.req as any })
     }
   })
-  // every failure of the token endpoint (client authentication included), the reason server side only
+  // every failure of the client_credentials grant (client authentication included), the reason server side only
   provider.on('grant.error', (koaCtx: KoaContextWithOIDC, err: any) => {
-    // the provider destroyed the whole grant (grant.revoked follows), a refresh token was replayed
-    if (err.error_detail === 'refresh token already used') {
-      // read by findAccount before the provider deleted it
-      const record: OAuthGrantRecord | undefined = koaCtx.state?.sdReusedRecord
-      const grantId = record?._id ?? koaCtx.oidc?.entities?.RefreshToken?.grantId
-      const details = record
-        ? `client ${record.clientId} (${record.clientName}), ${record.subject.type} ${record.subject.id}, account ${record.account.type} ${record.account.id}${record.account.department ? ' / ' + record.account.department : ''}, authorized by ${record.authorizedBy.name} (${record.authorizedBy.id})`
-        : `client ${koaCtx.oidc?.client?.clientId}, subject ${koaCtx.oidc?.entities?.RefreshToken?.accountId}`
-      eventsLog.warn('sd.oauth.grant.reused', `refresh token reused for grant ${grantId} of ${details}, the grant is revoked`, { req: koaCtx.req as any })
-      return
-    }
     if (koaCtx.oidc?.params?.grant_type !== 'client_credentials' || !tokenLimits.has(koaCtx.req)) return
     const clientId = tokenLimits.get(koaCtx.req)?.clientId ?? 'unknown client'
     const reason = [err.error, err.error_description, err.error_detail].filter(Boolean).join(': ')
     eventsLog.warn('sd.auth.nhi.fail', `nhi client_credentials grant failed for ${clientId}: ${reason}`, { req: koaCtx.req as any })
   })
-  // refresh token reuse, authorization code reuse and the revocation endpoint: the provider already
-  // destroyed its own documents of the grant, only the SD record is left
+  // refresh token reuse, authorization code reuse and the revocation endpoint: the provider
+  // destroyed the Grant document, its SD record with it
   provider.on('grant.revoked', (koaCtx: KoaContextWithOIDC, grantId: string) => {
-    const pending = revokeGrantRecord(grantId, 'provider', { req: koaCtx?.req as any })
-      .catch(err => internalError('oauth-grant-revoked', 'failed to delete the record of a revoked oauth grant', err))
-    if (koaCtx?.state) (koaCtx.state.sdPending ??= []).push(pending)
+    eventsLog.info('sd.oauth.grant.revoked', `oauth grant ${grantId} revoked by the provider`, { req: koaCtx?.req as any })
   })
   provider.on('registration_create.success', (koaCtx, client) => {
     const hosts = [...new Set((client.redirectUris ?? []).map(uri => URL.parse(uri)?.host || logSafeName(uri)))].join(', ')

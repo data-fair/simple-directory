@@ -7,6 +7,7 @@ import storages from '#storages'
 import type { User } from '#types'
 import { defaultLocale, messages } from '#i18n'
 import { reqIp } from '@data-fair/lib-express'
+import eventsLog from '@data-fair/lib-express/events-log.js'
 import { getKnownScopes } from '../scopes/service.ts'
 import { grantedScope, narrowScope } from '../nhis/scopes.ts'
 import { ipAllowed } from '../nhis/ips.ts'
@@ -111,10 +112,15 @@ const accountClaims = (user: User) => async (_use: string, scope: string) => {
 // resulting claims go to the JWT customizer through the koa state, as for the machine grants.
 const grantSubject = async (ctx: IssuerContext, koaCtx: KoaContextWithOIDC, sub: string, token: { kind?: string, consumed?: unknown, grantId?: string, resource?: string | string[] }) => {
   if (!token.grantId) return undefined
-  // a replayed refresh token: the provider revokes the whole grant right after this call and issues
-  // nothing, the checks below must not turn the reuse into a plain failure that keeps the grant
+  // a replayed refresh token: the provider calls findAccount before its consumed check and revokes
+  // the whole grant right after it, the checks below must not turn the reuse into a plain failure
+  // that keeps the grant. Logged here, while the record still exists.
   if (token.kind === 'RefreshToken' && token.consumed) {
-    koaCtx.state.sdReusedRecord = await getGrantRecord(token.grantId)
+    const record = await getGrantRecord(token.grantId)
+    const details = record
+      ? `client ${record.clientId} (${record.clientName}), ${record.subject.type} ${record.subject.id}, account ${record.account.type} ${record.account.id}${record.account.department ? ' / ' + record.account.department : ''}, authorized by ${record.authorizedBy.name} (${record.authorizedBy.id})`
+      : `client ${koaCtx.oidc.client?.clientId}, subject ${sub}`
+    eventsLog.warn('sd.oauth.grant.reused', `refresh token reused for grant ${token.grantId} of ${details}, the grant is revoked`, { req: koaCtx.req as any })
     return { accountId: sub, claims: async () => ({ sub }) }
   }
   const record = await getGrantRecord(token.grantId)

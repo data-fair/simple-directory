@@ -31,7 +31,15 @@ export const withMongo = async <T>(fn: (db: ReturnType<MongoClient['db']>) => Pr
   }
 }
 
-export const grantRecords = (filter: Record<string, any>) => withMongo(db => db.collection<any>('oauth-grants').find(filter).toArray())
+// the SD records of grants, stored on the provider's Grant documents: filter keys are record paths
+export const grantRecords = (filter: Record<string, any>) => withMongo(async db => {
+  const query = Object.fromEntries(Object.entries(filter).map(([key, value]) => ['sd.' + key, value]))
+  const docs = await db.collection<any>('oauth-grant').find({ sd: { $exists: true }, ...query }).toArray()
+  return docs.map(doc => ({ _id: doc._id, ...doc.sd }))
+})
+
+// a provider Grant document carrying an SD record, as a consent creates it
+export const grantDoc = ({ _id, ...record }: Record<string, any>) => ({ _id, payload: {}, expiresAt: record.expiresAt, sd: record })
 
 export const setup = async (client: Record<string, any> = {}) => {
   const config = await getServerConfig()

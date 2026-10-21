@@ -6,16 +6,24 @@ import mongo from '@data-fair/lib-node/mongo.js'
 import config from './config.ts'
 import { type OAuthRelayState } from './oauth/service.ts'
 import { type Saml2RelayState } from './saml2/service.ts'
-import { type OAuthGrantRecord } from './oauth-server/grants.ts'
 
 const collation = { locale: 'en', strength: 1 }
 
-// collections of the oidc-provider models stored by the oauth server adapter (Client is never stored)
-const oauthServerModels = ['access-token', 'authorization-code', 'refresh-token', 'device-code', 'client-credentials', 'initial-access-token', 'registration-access-token', 'interaction', 'replay-detection', 'pushed-authorization-request', 'backchannel-authentication-request', 'grant', 'session']
+// collections of the oidc-provider models stored by the oauth server adapter: JWT access tokens are
+// never stored, oauth-client (the registered DCR clients) needs no index, the other features are disabled
+// the SD record of a grant (grants.ts)
+const grantRecordIndexes = {
+  subject: { 'sd.subject.id': 1 },
+  client: { 'sd.clientId': 1 },
+  authorizedBy: { 'sd.authorizedBy.id': 1 },
+  session: { 'sd.sessionId': 1 }
+}
+const oauthServerModels = ['authorization-code', 'refresh-token', 'interaction', 'replay-detection', 'grant', 'session']
 const oauthServerIndexes = Object.fromEntries(oauthServerModels.map(model => ['oauth-' + model, {
   ttl: [{ expiresAt: 1 }, { expireAfterSeconds: 0 }],
   grantId: { 'payload.grantId': 1 },
-  uid: { 'payload.uid': 1 }
+  uid: { 'payload.uid': 1 },
+  ...(model === 'grant' ? grantRecordIndexes : {})
 }]))
 
 export class SdMongo {
@@ -57,11 +65,6 @@ export class SdMongo {
 
   get oauthRelayStates () {
     return mongo.db.collection<OAuthRelayState>('oauth-relay-states')
-  }
-
-  // SD-owned record of each authorization granted to an OAuth client (the provider Grant is keyed by the same id)
-  get oauthGrants () {
-    return mongo.db.collection<OAuthGrantRecord>('oauth-grants')
   }
 
   // one document per decided interaction of the oauth server: the lock that makes a consent
@@ -160,11 +163,6 @@ export class SdMongo {
         ttl: [{ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 }]
       },
       ...oauthServerIndexes,
-      'oauth-grants': {
-        subject: { 'subject.id': 1 },
-        client: { clientId: 1 },
-        ttl: [{ expiresAt: 1 }, { expireAfterSeconds: 0 }]
-      },
       'oauth-interaction-decisions': {
         ttl: [{ expiresAt: 1 }, { expireAfterSeconds: 0 }]
       },

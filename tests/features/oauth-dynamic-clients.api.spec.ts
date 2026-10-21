@@ -8,7 +8,7 @@ import { test } from '@playwright/test'
 import { RateLimiterMongo } from 'rate-limiter-flexible'
 import { axios, testEnvAx, getServerConfig, directoryUrl } from '../support/axios.ts'
 import { startAuthorization, interactionUid, type CodeFlowOptions } from '../support/oauth-client.ts'
-import { withMongo } from '../support/oauth-code-site.ts'
+import { withMongo, grantDoc } from '../support/oauth-code-site.ts'
 
 const issuer = directoryUrl
 const claudeCode = () => JSON.parse(readFileSync(new URL('../fixtures/claude-code-client-metadata.json', import.meta.url), 'utf8'))
@@ -239,7 +239,7 @@ test.describe('oauth dynamic clients', () => {
     const old = new Date(Date.now() - 31 * 86400000)
     await withMongo(async (db) => {
       await db.collection<any>('oauth-client').updateMany({ _id: { $in: [oldUnused, oldGranted] } }, { $set: { createdAt: old } })
-      await db.collection<any>('oauth-grants').insertOne({
+      await db.collection<any>('oauth-grant').insertOne(grantDoc({
         _id: 'test_dcr_grant',
         issuer,
         clientId: oldGranted,
@@ -252,7 +252,7 @@ test.describe('oauth dynamic clients', () => {
         authorizedBy: { id: 'x', name: 'x' },
         createdAt: old,
         expiresAt: new Date(Date.now() + 86400000)
-      })
+      }))
     })
     await testEnvAx.post('/run-user-cleanup')
     const remaining = await withMongo(db => db.collection<any>('oauth-client').find({}, { projection: { _id: 1 } }).toArray())

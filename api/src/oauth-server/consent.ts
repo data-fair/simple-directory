@@ -7,7 +7,7 @@ import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-l
 import config from '#config'
 import type { Site, SiteOAuthClient, User } from '#types'
 import { getDefaultUserOrg } from '../tokens/service.ts'
-import { createGrantRecord, revokeGrant, type OAuthGrantRecord } from './grants.ts'
+import { saveGrantRecord, revokeGrant, type OAuthGrantRecord } from './grants.ts'
 import type { IssuerContext } from './issuers.ts'
 
 export type ConsentAccount = { type: 'user' | 'organization', id: string, department?: string, name: string, departmentName?: string }
@@ -111,7 +111,7 @@ export type ConsentGrantOptions = {
   logContext?: EventLogContext
 }
 
-// the provider Grant of a consent and its SD record, same id
+// the provider Grant of a consent and its SD record on the same document
 export const createConsentGrant = async (provider: Provider, opts: ConsentGrantOptions): Promise<string> => {
   if (!opts.scope.length) throw new Error('a consent grant needs at least one platform scope')
   // spec anti-goal: a user subject never gets a token for an MCP server
@@ -179,8 +179,7 @@ export const restoreRequestScope = async (interaction: Interaction, originalScop
 const saveConsentRecord = async (opts: ConsentGrantOptions, grantId: string, clientId: string, now: number, exp: number) => {
   const account: OAuthGrantRecord['account'] = { type: opts.account.type, id: opts.account.id }
   if (opts.account.department) account.department = opts.account.department
-  await createGrantRecord({
-    _id: grantId,
+  await saveGrantRecord(grantId, {
     issuer: opts.ctx.issuer,
     ...(opts.ctx.site ? { siteId: opts.ctx.site._id } : {}),
     clientId,
