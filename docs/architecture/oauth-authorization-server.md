@@ -92,7 +92,7 @@ CIMD itself.
 | Kind | Id | Subject | Authentication | Resources | Consent |
 | --- | --- | --- | --- | --- | --- |
 | NHI | `nhi-<id>` | the NHI, `client_credentials` only | `private_key_jwt` against its inline `jwks` | realm | none |
-| site client | `site-<nanoid>` | a **user** | none (PKCE) | its registered `resources` (default the issuer site), never MCP | the user, or implicit |
+| site client | `site-<nanoid>` | a **user** | none (PKCE) | its registered `resources` (default the issuer site), never MCP | the user |
 | CIMD | its https document URL | an **NHI** | none or `private_key_jwt` | realm, MCP included | an org admin |
 | DCR | `dcr-<nanoid>` | an **NHI** | none or `private_key_jwt` | realm, MCP included | an org admin |
 
@@ -168,8 +168,7 @@ at a consent decision (`loadExistingGrant` loads that one only).
    S256), resource and scope, then the interaction entry.
 2. `GET /api/oauth/interaction/<uid>`: no session → the site login; a session
    that may not consent → `/oauth/consent?error=forbidden`; otherwise the user
-   is recorded on the interaction and, for an implicit site client, the
-   decision is taken at once; else the SPA consent page.
+   is recorded on the interaction and the browser goes to the SPA consent page.
 3. `GET …/details`: client, resource, scopes (broad ones flagged), accounts or
    organizations and NHIs.
 4. `POST …/<uid>`: the decision, validated by `#doc/oauth/post-consent-req`,
@@ -180,7 +179,9 @@ an organization storage user, or an impersonation (`asAdmin`); a superadmin
 consents as the plain user. The request must also carry the exchange token of a
 **live and current server session** of that user (`reqServerSessionId`, the
 check keepalive applies): a copied `id_token` alone, or a rotated-out exchange
-cookie, cannot authorize a client. The grant records that session.
+cookie, cannot authorize a client. A user's grant records that session and is
+revoked with it; an NHI grant does not, it does not act as the admin who
+authorized it.
 
 **One decision per interaction.** A lock in `oauth-interaction-decisions`: a
 replay or a concurrent decision is 400 and creates nothing; a decision by
@@ -191,11 +192,8 @@ stays); the person restarts from the client.
 **A user for a site client.** The user binds the grant to their personal
 account (unless `ignorePersonalAccount`) or one of their memberships, the
 site's default account first; the screen lists the requested scopes within the
-registration. `consent: implicit` skips the screen for a member of the issuer
-site's owner organization (bound to that membership) and **reuses** a live
-grant of the same client, user, account, resource, scope and server session whose provider
-Grant already covers every requested scope (the provider's own consent checks),
-so visits do not pile up grants; `prompt=consent` forces the screen. 30 days.
+registration. Every authorization shows the screen (no implicit consent).
+30 days.
 
 **An org admin for a dynamic client.** Only a real admin membership (department
 admins with `depAdminIsOrgAdmin`), never admin mode nor the site-admin
@@ -259,8 +257,8 @@ Revocation removes the refresh tokens, codes and the Grant with its record:
 | user, account page (`/api/users/:id/oauth-grants`; a superadmin in admin mode for others, never an NHI session) | the chosen one |
 | org admin, NHI page (`/api/organizations/:org/nhis/:nhi/oauth-grants`) | per client or one |
 | client, `POST /api/oauth/revoke` with its refresh token (an access token is `unsupported_token_type`) | its own grant |
-| revoke all sessions of a user | the user's grants and the NHI grants they authorized |
-| revoke one session, or exchange token reuse at keepalive | the grants consented from that session (implicit reuse stays within a session) |
+| revoke all sessions of a user | the user's grants |
+| revoke one session, or exchange token reuse at keepalive | the user's grants consented from that session |
 | site client removed, site deleted, user or NHI deleted | theirs (LDAP and file deletions are noticed at the next refresh) |
 | refresh token reuse | that grant |
 
@@ -300,8 +298,9 @@ unless noted:
   `oauth-token-client:<client_id> <ip>`, their own namespace so routine
   failures of many users behind one address do not lock out password login, and
   per address because a public client id is public;
-- registration `oauth-dcr:<ip>` and CIMD fetches `oauth-cimd:<ip>` (or
-  `oauth-cimd:user:<id>` from the consent routes): never refunded;
+- registration `oauth-dcr:<ip>` and CIMD fetches of an authorization request
+  `oauth-cimd:<ip>`: never refunded. The consent routes' lookups of an
+  interaction's client are not counted, the authorization request admitted it;
 - consent decision `oauth-consent:<userId>`.
 
 Events: `sd.oauth.grant.created`, `sd.oauth.grant.revoked`,

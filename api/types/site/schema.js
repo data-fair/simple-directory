@@ -344,7 +344,7 @@ export default {
       type: 'object',
       additionalProperties: false,
       required: ['name', 'redirectUris', 'scopes'],
-      layout: { children: ['id', 'name', 'logoUri', 'redirectUris', 'allowedOrigins', 'scopes', 'resources', 'consent'] },
+      layout: { children: ['id', 'name', 'logoUri', 'redirectUris', 'allowedOrigins', 'scopes', 'resources'] },
       properties: {
         id: {
           title: 'Identifiant (client_id)',
@@ -439,23 +439,6 @@ export default {
           },
           type: 'array',
           items: { type: 'string' },
-        },
-        consent: {
-          title: 'Consentement',
-          'x-i18n-title': {
-            fr: 'Consentement',
-            en: 'Consent',
-            es: 'Consentimiento',
-            it: 'Consenso',
-            pt: 'Consentimento',
-            de: 'Zustimmung'
-          },
-          type: 'string',
-          default: 'explicit',
-          oneOf: [
-            { const: 'explicit', title: 'Explicite' },
-            { const: 'implicit', title: 'Implicite' }
-          ],
         }
       }
     },

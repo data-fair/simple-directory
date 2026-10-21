@@ -2,10 +2,10 @@
 // bound, and the creation of the provider Grant with its SD record. No Express here.
 import type Provider from 'oidc-provider'
 import type { Interaction } from 'oidc-provider'
-import type { Account, SessionState } from '@data-fair/lib-express'
+import type { SessionState } from '@data-fair/lib-express'
 import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
 import config from '#config'
-import type { Site, SiteOAuthClient, User } from '#types'
+import type { Site, User } from '#types'
 import { getDefaultUserOrg } from '../tokens/service.ts'
 import { saveGrantRecord, revokeGrant, type OAuthGrantRecord } from './grants.ts'
 import type { IssuerContext } from './issuers.ts'
@@ -74,18 +74,6 @@ export const refuseConsentUser = (user: User, session: SessionState): string | u
   if (user.orgStorage || session.user?.os) return 'user of an organization storage'
 }
 
-// no consent screen when the client is implicit and the user is a member of the site
-// owner org (department tolerant), the grant is then bound to that org
-export const implicitConsentAccount = (user: User, client: SiteOAuthClient, owner: Account | undefined): ConsentAccount | undefined => {
-  if (client.consent !== 'implicit' || owner?.type !== 'organization') return undefined
-  const memberships = (user.organizations ?? []).filter(o => o.id === owner.id &&
-    (!o.department || !owner.department || o.department === owner.department))
-  // the membership of the owner department itself when the user has several in this org
-  const membership = memberships.find(o => sameDepartment(o.department, owner.department)) ?? memberships[0]
-  if (!membership) return undefined
-  return membershipAccount(membership)
-}
-
 export type ConsentGrantOptions = {
   ctx: IssuerContext,
   interaction: Interaction,
@@ -103,8 +91,9 @@ export type ConsentGrantOptions = {
   // seconds
   lifetime: number,
   authorizedBy: { id: string, name: string },
-  // the server session of the consent
-  sessionId: string,
+  // the server session of a user's consent: their grant is revoked with it (an NHI grant is not,
+  // it does not act as the admin who authorized it)
+  sessionId?: string,
   logContext?: EventLogContext
 }
 
@@ -170,7 +159,7 @@ const saveConsentRecord = async (opts: ConsentGrantOptions, grantId: string, cli
     scope: opts.scope.join(' '),
     resources: [opts.resource],
     authorizedBy: opts.authorizedBy,
-    sessionId: opts.sessionId,
+    ...(opts.sessionId ? { sessionId: opts.sessionId } : {}),
     createdAt: new Date(now),
     expiresAt: new Date(exp * 1000)
   })

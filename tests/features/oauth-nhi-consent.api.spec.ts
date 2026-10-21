@@ -65,15 +65,16 @@ test.describe('oauth nhi consent', () => {
     await testEnvAx.patch('/config', { mainSiteFromDb: [] })
   })
 
-  test('revoking the sessions of the authorizing admin revokes the nhi grants they authorized', async () => {
+  test('the nhi grants do not depend on the sessions of the authorizing admin', async () => {
     const { org, user, adminAx, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
     const nhi = await createNhi({ scopes: ['organizations:read'] })
     const opts = dynamicFlow()
     const tokens = await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'] })))
+    const [record] = await grantRecords({ clientId: dynamicClientId })
+    assert.equal(record.sessionId, undefined)
     await adminAx.delete(`/api/users/${user.id}/sessions`)
     const res = await tokenRequest(issuer, { grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: dynamicClientId })
-    assert.equal(res.status, 400, JSON.stringify(res.data))
-    assert.equal((await grantRecords({ 'subject.id': nhi.id })).length, 0)
+    assert.equal(res.status, 200, JSON.stringify(res.data))
   })
 
   test('demoting the authorizing admin stops the refresh', async () => {

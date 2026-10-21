@@ -15,7 +15,6 @@ const collation = { locale: 'en', strength: 1 }
 const grantRecordIndexes = {
   subject: { 'sd.subject.id': 1 },
   client: { 'sd.clientId': 1 },
-  authorizedBy: { 'sd.authorizedBy.id': 1 },
   session: { 'sd.sessionId': 1 }
 }
 const oauthServerModels = ['authorization-code', 'refresh-token', 'interaction', 'replay-detection', 'grant', 'session']

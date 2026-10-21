@@ -22,12 +22,12 @@ import { reqIssuer, resolveResource, nhiMayTarget, ResourceError, type IssuerCon
 import { getProvider } from './providers.ts'
 import { clientKind, findSiteClient } from './clients.ts'
 import { siteClientRequestScopes, dynamicClientRequestScopes, interactionTTL } from './configuration.ts'
-import { dashboardGrantLifetime, grantLifetimes, listGrantRecords, revokeGrant } from './grants.ts'
-import { displayIdUrl, logSafeName, findDynamicClient } from './dynamic-clients.ts'
+import { dashboardGrantLifetime, grantLifetimes, revokeGrant } from './grants.ts'
+import { displayIdUrl, logSafeName } from './dynamic-clients.ts'
 import { reqServerSessionId } from '../tokens/service.ts'
 import {
-  userConsentAccounts, consentAdminOrgs, refuseConsentUser, implicitConsentAccount, createConsentGrant, findConsentAccount,
-  isBroadScope, oidcScopeNames, sameDepartment, membershipAccount, type ConsentAccount, type ConsentGrantOptions
+  userConsentAccounts, consentAdminOrgs, refuseConsentUser, createConsentGrant, findConsentAccount,
+  isBroadScope, oidcScopeNames, membershipAccount, type ConsentAccount, type ConsentGrantOptions
 } from './consent.ts'
 
 const router = Router()
@@ -103,10 +103,6 @@ const consentSessionUser = async (req: Request): Promise<SessionUser | { refused
   return { session, user, serverSessionId }
 }
 
-// the owner of the issuer site, for the default account and the implicit consent (the main site
-// document's owner for the main issuer)
-const issuerSiteOwner = async (ctx: IssuerContext) => ctx.site?.owner ?? (await getMainSiteDoc())?.owner
-
 const requestedOidcScopes = (interaction: Interaction) =>
   String(interaction.params.scope ?? '').split(' ').filter(s => oidcScopeNames.includes(s))
 
@@ -163,37 +159,12 @@ const grantAndResume = async (req: Request, res: Response, ic: InteractionContex
   }
 }
 
-// a live grant of the same client, user, account, resource, scope and server session (grants follow
-// the session that consented, its revocation must reach them), whose provider
-// Grant already encountered every scope of the request: the checks of the provider's own consent
-// prompt (rs_scopes_missing, op_scopes_missing), so resuming with it cannot prompt again
-const reusableGrantId = async (ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, account: ConsentAccount, scope: string[], resource: string) => {
-  const requested = String(interaction.params.scope ?? '').split(' ').filter(Boolean)
-  const requestedPlatform = requested.filter(s => !oidcScopeNames.includes(s))
-  // without a platform scope in the request the grant's scopes join the request (createConsentGrant)
-  if (!requestedPlatform.length) return undefined
-  const records = await listGrantRecords({ subjectId: user.id, clientId: interaction.params.client_id as string })
-  for (const record of records) {
-    if (record.subject.type !== 'user' || record.sessionId !== serverSessionId || record.resources[0] !== resource || record.scope !== scope.join(' ')) continue
-    if (record.account.type !== account.type || record.account.id !== account.id || !sameDepartment(record.account.department, account.department)) continue
-    const grant = await ic.provider.Grant.find(record._id)
-    if (!grant || grant.accountId !== user.id) continue
-    const oidcEncountered = grant.getOIDCScopeEncountered().split(' ')
-    const resourceEncountered = grant.getResourceScopeEncountered(resource).split(' ')
-    const requestedOidc = requested.filter(s => oidcScopeNames.includes(s))
-    if (requestedOidc.every(s => oidcEncountered.includes(s)) && requestedPlatform.every(s => resourceEncountered.includes(s))) return record._id
-  }
-}
-
-// the consent of a user for a site client, an implicit one reusing a live grant when it can (each
-// visit of a dashboard must not pile up grants). Returns undefined when another decision on this
+// the consent of a user for a site client. Returns undefined when another decision on this
 // interaction won the race.
-export const finishUserConsent = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, account: ConsentAccount, scope: string[], clientName: string, reuseLiveGrant = false) => {
+export const finishUserConsent = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, account: ConsentAccount, scope: string[], clientName: string) => {
   const { url, resolved } = await resolveInteractionResource(ic.ctx, interaction)
   await detachForeignSession(ic.provider, interaction, user.id)
   if (!await lockDecision(interaction.uid)) return undefined
-  const liveGrantId = reuseLiveGrant ? await reusableGrantId(ic, interaction, user, serverSessionId, account, scope, url) : undefined
-  if (liveGrantId) return await ic.provider.interactionResult(req, res, { login: { accountId: user.id }, consent: { grantId: liveGrantId } })
   return await grantAndResume(req, res, ic, interaction, {
     subject: { type: 'user', id: user.id },
     account,
@@ -218,7 +189,7 @@ const defaultNhiLifetime = '30d'
 const nhiOidcScopes = (interaction: Interaction) => requestedOidcScopes(interaction).filter(s => s === 'openid' || s === 'offline_access')
 
 const dynamicClientInfo = async (ic: InteractionContext, interaction: Interaction, user: User, clientId: string, kind: 'cimd' | 'dcr') => {
-  const client = await findDynamicClient(ic.provider, clientId, 'user:' + user.id)
+  const client = await ic.provider.Client.find(clientId)
   if (!client) throw httpError(400, 'unknown client')
   const redirectUri = (interaction.params.redirect_uri as string | undefined) ?? client.redirectUris?.[0]
   let redirectHost = ''
@@ -273,7 +244,7 @@ type ConsentDecision = PostOauthConsentReq['body']
 // the decision of an org admin for a dynamic client: the account, an NHI of the organization
 // (managed on the organization page), the scopes within the request and the NHI maximum, the
 // lifetime. Returns the url the browser resumes the authorization with.
-const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, clientId: string, kind: 'cimd' | 'dcr', body: ConsentDecision) => {
+const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, clientId: string, kind: 'cimd' | 'dcr', body: ConsentDecision) => {
   const client = await dynamicClientInfo(ic, interaction, user, clientId, kind)
   const adminAccount = findConsentAccount(consentAdminOrgs(user), body.account)
   if (!adminAccount || adminAccount.type !== 'organization') throw httpError(403, 'account is not an organization administered by the user')
@@ -304,8 +275,7 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
     resource: url,
     resourceKind: resolved.kind,
     lifetime: grantLifetimes[lifetime],
-    authorizedBy: { id: user.id, name: user.name },
-    sessionId: serverSessionId
+    authorizedBy: { id: user.id, name: user.name }
   })
 }
 
@@ -320,7 +290,7 @@ router.get('/:uid', async (req, res) => {
   const sessionUser = await consentSessionUser(req)
   if (!sessionUser) return res.redirect(`${ic.ctx.issuer}/login?redirect=${encodeURIComponent(entryUrl(ic.ctx, uid))}`)
   if ('refused' in sessionUser) return res.redirect(consentPageUrl(ic.ctx, 'error=forbidden'))
-  const { user, serverSessionId } = sessionUser
+  const { user } = sessionUser
 
   if (Array.isArray(interaction.params.resource)) {
     const returnTo = await ic.provider.interactionResult(req, res, { error: 'invalid_target', error_description: 'only one resource indicator is accepted' }, { mergeWithLastSubmission: false })
@@ -330,27 +300,6 @@ router.get('/:uid', async (req, res) => {
   // the decision routes only accept this user from now on (a later entry by another user rebinds it)
   await ic.provider.interactionResult(req, res, { sd: { userId: user.id } } as any, { mergeWithLastSubmission: false })
 
-  const clientId = interaction.params.client_id as string
-  if (clientKind(clientId) === 'site') {
-    const siteClient = await findSiteClient(ic.ctx, clientId)
-    if (!siteClient) return res.redirect(consentPageUrl(ic.ctx, 'error=invalid_client'))
-    const forced = String(interaction.params.prompt ?? '').split(' ').includes('consent')
-    const account = !forced && implicitConsentAccount(user, siteClient, await issuerSiteOwner(ic.ctx))
-    const scope = await siteClientScopes(interaction, siteClient.scopes)
-    if (account && scope.length) {
-      const fresh = await loadInteraction(ic.provider, req, res, uid)
-      if (!fresh) return res.redirect(consentPageUrl(ic.ctx, 'error=interaction_expired'))
-      let returnTo: string | undefined
-      try {
-        returnTo = await finishUserConsent(req, res, ic, fresh, user, serverSessionId, account, scope, siteClient.name, true)
-      } catch (err: any) {
-        // the entry is a browser navigation: client errors go to the consent page, never raw
-        if (err.status && err.status < 500) return res.redirect(consentPageUrl(ic.ctx, 'error=' + encodeURIComponent(err.oauthError ?? 'invalid_request')))
-        throw err
-      }
-      return res.redirect(303, returnTo ?? fresh.returnTo)
-    }
-  }
   res.redirect(consentPageUrl(ic.ctx, 'uid=' + encodeURIComponent(uid)))
 })
 
@@ -410,7 +359,7 @@ router.post('/:uid', async (req, res) => {
 
   const kind = clientKind(clientId)
   if (kind === 'cimd' || kind === 'dcr') {
-    const redirectTo = await nhiConsentDecision(req, res, ic, interaction, user, serverSessionId, clientId, kind, body)
+    const redirectTo = await nhiConsentDecision(req, res, ic, interaction, user, clientId, kind, body)
     await refundLimiter(limiterKey)
     return res.send({ redirectTo })
   }

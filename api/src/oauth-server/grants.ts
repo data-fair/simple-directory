@@ -18,7 +18,7 @@ export type OAuthGrantRecord = {
   scope: string,
   resources: string[],
   authorizedBy: { id: string, name: string },
-  // the server session of the consent, revoked with it
+  // the server session of a user's consent, revoked with it (never on an NHI grant)
   sessionId?: string,
   createdAt: Date,
   expiresAt: Date,
@@ -27,7 +27,7 @@ export type OAuthGrantRecord = {
 
 type GrantDoc = { _id: string, payload: Record<string, unknown>, expiresAt?: Date, sd?: Omit<OAuthGrantRecord, '_id'> }
 
-export type GrantFilter = { subjectId?: string, clientId?: string, authorizedById?: string, sessionId?: string }
+export type GrantFilter = { subjectId?: string, clientId?: string, sessionId?: string }
 
 export const grantLifetimes = { '1d': 86400, '7d': 604800, '30d': 2592000, '90d': 7776000, '1y': 31557600 }
 export const dashboardGrantLifetime = grantLifetimes['30d']
@@ -51,7 +51,6 @@ export const getGrantRecord = async (grantId: string) => toRecord(await grantDoc
 const filterKeys: Record<keyof GrantFilter, string> = {
   subjectId: 'sd.subject.id',
   clientId: 'sd.clientId',
-  authorizedById: 'sd.authorizedBy.id',
   sessionId: 'sd.sessionId'
 }
 
@@ -94,7 +93,3 @@ export const revokeGrants = async (filter: GrantFilter, reason: string, logConte
   }
   return count
 }
-
-// everything a user can lose control of: their own grants and the NHI grants they authorized
-export const revokeUserGrants = async (userId: string, reason: string, logContext?: EventLogContext) =>
-  await revokeGrants({ subjectId: userId }, reason, logContext) + await revokeGrants({ authorizedById: userId }, reason, logContext)

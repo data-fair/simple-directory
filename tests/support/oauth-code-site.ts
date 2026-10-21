@@ -17,7 +17,6 @@ export const clientBody = (extra: Record<string, any> = {}) => ({
   name: 'Dash',
   redirectUris: [redirectUri],
   scopes: ['organizations:read'],
-  consent: 'explicit',
   ...extra
 })
 

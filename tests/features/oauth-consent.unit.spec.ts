@@ -13,15 +13,6 @@ const user = (extra: Record<string, any> = {}): any => ({
   ...extra
 })
 
-const siteClient = (extra: Record<string, any> = {}): any => ({
-  id: 'site-abc',
-  name: 'Dash',
-  redirectUris: ['https://dash.example.org/cb'],
-  scopes: ['organizations:read'],
-  consent: 'implicit',
-  ...extra
-})
-
 test.describe('oauth consent rules', () => {
   test('narrowScope keeps the requested scopes covered by the maximum', async () => {
     const { narrowScope } = await scopes()
@@ -30,23 +21,6 @@ test.describe('oauth consent rules', () => {
     assert.deepEqual(narrowScope([], ['a:b'], ['a:b']), [])
     // request order, deduplicated
     assert.deepEqual(narrowScope(['c:d', 'a:b', 'c:d'], ['a', 'c'], []), ['c:d', 'a:b'])
-  })
-
-  test('implicitConsentAccount binds the owner org of a member', async () => {
-    const { implicitConsentAccount } = await consent()
-    const member = user({ organizations: [{ id: 'o1', name: 'Org 1', role: 'user' }] })
-    const account = implicitConsentAccount(member, siteClient(), { type: 'organization', id: 'o1', name: 'Org 1' })
-    assert.equal(account?.type, 'organization')
-    assert.equal(account?.id, 'o1')
-    // a member of another department of the owner org
-    const depMember = user({ organizations: [{ id: 'o1', name: 'Org 1', role: 'user', department: 'd2' }] })
-    assert.equal(implicitConsentAccount(depMember, siteClient(), { type: 'organization', id: 'o1', name: 'Org 1', department: 'd1' }), undefined)
-    // explicit client
-    assert.equal(implicitConsentAccount(member, siteClient({ consent: 'explicit' }), { type: 'organization', id: 'o1', name: 'Org 1' }), undefined)
-    // not a member, or a user owner
-    assert.equal(implicitConsentAccount(user(), siteClient(), { type: 'organization', id: 'o1', name: 'Org 1' }), undefined)
-    assert.equal(implicitConsentAccount(member, siteClient(), { type: 'user', id: 'u1', name: 'User 1' }), undefined)
-    assert.equal(implicitConsentAccount(member, siteClient(), undefined), undefined)
   })
 
   test('refuseConsentUser refuses nhis, scoped sessions and org storage users', async () => {

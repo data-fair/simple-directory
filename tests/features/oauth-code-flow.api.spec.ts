@@ -235,79 +235,11 @@ test.describe('oauth authorization code flow', () => {
     }
   })
 
-  test('an implicit client skips the consent screen for a member of the owner org, unless prompt=consent', async () => {
-    const { org, user, userAx, clientId, flow } = await setup({ consent: 'implicit' })
+  test('a site client always shows the consent screen, there is no implicit consent', async () => {
+    const { adminAx, clientId, flow } = await setup()
+    await assert.rejects(patchClient(adminAx, clientId, { consent: 'implicit' }), (err: any) => err.status === 400)
+    // a member of the site owner org gets the screen
     const opts = flow()
-    const { pkce, location } = await startAuthorization(opts)
-    const entry = await browse(userAx, location)
-    assert.equal(entry.status, 303, JSON.stringify(entry.headers))
-    const callback = await resume(opts, entry.headers.location)
-    const tokens = (await exchangeCode(opts, callback.searchParams.get('code')!, pkce.verifier)).data
-    const payload = jwt.decode(tokens.access_token) as jwt.JwtPayload
-    assert.equal(payload.sub, user.id)
-    assert.deepEqual(payload.organizations.map((o: any) => o.id), [org.id])
-    const records = await grantRecords({ clientId })
-    assert.equal(records.length, 1)
-    assert.equal(records[0].account.id, org.id)
-    // prompt=consent forces the screen
-    const forced = flow({ extraParams: { prompt: 'consent' } })
-    const { location: forcedLocation } = await startAuthorization(forced)
-    assert.ok(await openInteraction(forced, forcedLocation))
-  })
-
-  // a second browser of the oauth code user: a second server session
-  const axiosWithLogin = async () => (await import('../support/axios.ts')).axiosAuth({ email: 'oauth-code-user@test.com', password, directoryUrl: issuer, axiosOpts: { baseURL: issuer } })
-
-  // the whole implicit flow of a member of the owner org, no consent screen
-  const implicitFlow = async (opts: CodeFlowOptions) => {
-    const { pkce, location } = await startAuthorization(opts)
-    const entry = await browse(opts.browserAx, location)
-    assert.equal(entry.status, 303, JSON.stringify(entry.headers))
-    const callback = await resume(opts, entry.headers.location)
-    const res = await exchangeCode(opts, callback.searchParams.get('code')!, pkce.verifier)
-    assert.equal(res.status, 200, JSON.stringify(res.data))
-    return res.data
-  }
-
-  const refreshWorks = async (opts: CodeFlowOptions, refreshToken: string) => {
-    const res = await tokenRequest(opts.issuer, { grant_type: 'refresh_token', refresh_token: refreshToken, client_id: opts.clientId })
-    assert.equal(res.status, 200, JSON.stringify(res.data))
-  }
-
-  test('implicit consent reuses the live grant', async () => {
-    const { clientId, flow } = await setup({ consent: 'implicit' })
-    const first = await implicitFlow(flow())
-    const second = await implicitFlow(flow())
-    assert.equal((await grantRecords({ clientId })).length, 1)
-    await refreshWorks(flow(), first.refresh_token)
-    await refreshWorks(flow(), second.refresh_token)
-  })
-
-  test('implicit consent reuses a grant of the same server session only', async () => {
-    const { user, adminAx, clientId, flow } = await setup({ consent: 'implicit' })
-    const first = await implicitFlow(flow())
-    const otherAx = await axiosWithLogin()
-    const second = await implicitFlow(flow({ browserAx: otherAx }))
-    const records = (await grantRecords({ clientId })).sort((a, b) => a.createdAt - b.createdAt)
-    assert.equal(records.length, 2, 'one grant per server session')
-    await adminAx.delete(`/api/users/${user.id}/sessions/${records[1].sessionId}`)
-    await refreshWorks(flow(), first.refresh_token)
-    const res = await tokenRequest(issuer, { grant_type: 'refresh_token', refresh_token: second.refresh_token, client_id: clientId })
-    assert.equal(res.status, 400, JSON.stringify(res.data))
-  })
-
-  test('implicit consent with a new scope gets a new grant', async () => {
-    const { clientId, flow } = await setup({ consent: 'implicit' })
-    await implicitFlow(flow())
-    const tokens = await implicitFlow(flow({ scope: 'openid profile organizations:read' }))
-    assert.ok(tokens.id_token, 'the new scope was granted')
-    assert.equal((await grantRecords({ clientId })).length, 2)
-  })
-
-  test('an implicit client shows the consent screen to a user outside the owner org', async () => {
-    const { flow } = await setup({ consent: 'implicit' })
-    const { ax: outsiderAx } = await createUser('oauth-code-outsider@test.com', false, password, issuer)
-    const opts = flow({ browserAx: outsiderAx })
     const { location } = await startAuthorization(opts)
     assert.ok(await openInteraction(opts, location))
   })
@@ -418,21 +350,6 @@ test.describe('oauth authorization code flow', () => {
     const results = await Promise.all([0, 1, 2, 3].map(() => postDecision(opts, uid, decision)))
     assert.deepEqual(results.map(r => r.status).sort(), [200, 400, 400, 400])
     assert.equal((await grantRecords({ clientId })).length, 1)
-  })
-
-  test('an error on the implicit path redirects to the consent page', async () => {
-    const { config, owner, adminAx, clientId, userAx, flow } = await setup({ consent: 'implicit' })
-    await axios().post('/api/sites', { _id: 'test_oauth_code_realm', owner, host: realmHost }, { params: { key: config.secretKeys.sites } })
-    await adminAx.patch('/api/sites/test_oauth_code_realm', { authMode: 'onlyOtherSite', authOnlyOtherSite: siteHost })
-    await patchClient(adminAx, clientId, { consent: 'implicit', resources: [siteUrl, realmUrl] })
-    const opts = flow({ resource: realmUrl })
-    const { location } = await startAuthorization(opts)
-    // the resource site disappears between the authorization request and the entry
-    await adminAx.delete('/api/sites/test_oauth_code_realm')
-    await testEnvAx.post('/clear-site-cache')
-    const entry = await browse(userAx, location)
-    assert.equal(entry.status, 302, JSON.stringify(entry.data))
-    assert.equal(entry.headers.location, issuer + '/oauth/consent?error=invalid_target')
   })
 
   test('decision replayed after completion is 400; another user\'s session is 403', async () => {

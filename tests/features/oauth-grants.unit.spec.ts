@@ -98,14 +98,12 @@ test.describe('oauth grant records', () => {
     assert.equal(await getGrantRecord('test_g1'), undefined)
   })
 
-  test('revokeGrants by authorizedById and sessionId', async () => {
+  test('revokeGrants by sessionId', async () => {
     const { listGrantRecords, revokeGrants } = await import('../../api/src/oauth-server/grants.ts')
-    await createGrant(record('test_g1', 'site-a', 'test_u1', { authorizedBy: { id: 'test_admin', name: 'A' } }))
-    await createGrant(record('test_g2', 'site-a', 'test_u2', { sessionId: 's1' }))
-    await createGrant(record('test_g3', 'site-b', 'test_u3'))
-    assert.equal(await revokeGrants({ authorizedById: 'test_admin' }, 'test'), 1)
+    await createGrant(record('test_g1', 'site-a', 'test_u1', { sessionId: 's1' }))
+    await createGrant(record('test_g2', 'site-b', 'test_u2'))
     assert.equal(await revokeGrants({ sessionId: 's1' }, 'test'), 1)
-    assert.deepEqual((await listGrantRecords({})).map(r => r._id), ['test_g3'])
+    assert.deepEqual((await listGrantRecords({})).map(r => r._id), ['test_g2'])
   })
 
   test('revokeGrants refuses an empty filter', async () => {

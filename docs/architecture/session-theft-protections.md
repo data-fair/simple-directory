@@ -149,11 +149,12 @@ protections is weakened by them:
 - The consent routes read the cookie session but a scoped (NHI) session cannot
   consent, and a decision is accepted only from the user who opened the
   interaction, once. A consent also needs the exchange token of a live server
-  session, recorded on the grant: a stolen `id_token` alone cannot authorize a
-  client. Revoking one session or detecting an exchange token reuse revokes the
-  grants consented from that session; revoking all the sessions of a user
-  revokes all their grants and the NHI grants they authorized. A password
-  change keeps the grants, as it keeps the sessions.
+  session: a stolen `id_token` alone cannot authorize a client. A user's grant
+  records that session: revoking it or detecting an exchange token reuse
+  revokes the grants consented from it, revoking all the sessions of a user
+  revokes all their grants. An NHI grant authorized by an admin does not depend
+  on the admin's sessions (it is revoked on the NHI page). A password change
+  keeps the grants, as it keeps the sessions.
 - A user access token is short lived (15 minutes, `jwtDurations.idToken`) like
   the `id_token`; the long lived credential is the refresh token, bound to a
   revocable grant that the user lists and revokes from their account page.

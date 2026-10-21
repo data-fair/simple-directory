@@ -19,24 +19,22 @@ const throwsOAuth = (fn: () => unknown, error: string) =>
   assert.throws(fn, (err: any) => err.error === error && err.status === 400)
 
 test.describe('oauth dynamic clients', () => {
-  test('allowFetch outside of the provider without a key refuses', async () => {
+  test('the cimd fetches of the provider count against the request ip', async () => {
     await initMongo()
     const { allowFetch } = await dynamicClients()
-    assert.equal(await allowFetch(undefined), false)
+    const suffix = Math.floor(Math.random() * 200)
+    const fromIp = (ip: string) => allowFetch({ req: { headers: { 'x-forwarded-for': ip } } } as any)
+    let allowed = true
+    for (let i = 0; i <= 100 && allowed; i++) allowed = await fromIp(`10.9.${suffix}.1`)
+    assert.equal(allowed, false, 'the budget of an address runs out')
+    assert.equal(await fromIp(`10.9.${suffix}.2`), true, 'another address keeps its budget')
   })
 
-  test('the cimd fetches of a consent route count against the user', async () => {
+  test('a cimd fetch outside a provider request is not counted', async () => {
     await initMongo()
-    const { allowFetch, findDynamicClient } = await dynamicClients()
-    const suffix = Math.random().toString(36).slice(2)
-    // a provider whose client lookup misses its cache: the fetch decision is taken outside the
-    // provider's own request context, as from SD's interaction routes
-    const provider: any = { Client: { find: async () => await allowFetch(undefined) } }
-    const fetchAllowed = async (key: string) => (await findDynamicClient(provider, 'https://agent.example.org/c.json', key)) as unknown as boolean
-    let allowed = true
-    for (let i = 0; i <= 100 && allowed; i++) allowed = await fetchAllowed('user:a-' + suffix)
-    assert.equal(allowed, false, 'the budget of a user runs out')
-    assert.equal(await fetchAllowed('user:b-' + suffix), true, 'another user keeps their budget')
+    const { allowFetch } = await dynamicClients()
+    // SD's interaction routes look up the client of an interaction its authorization request created
+    assert.equal(await allowFetch(undefined), true)
   })
 
   test('dynamicRedirectUriAllowed', async () => {

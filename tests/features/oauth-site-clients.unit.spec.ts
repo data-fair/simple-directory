@@ -9,7 +9,6 @@ const client = (extra: Record<string, any> = {}) => ({
   name: 'Dash',
   redirectUris: ['https://dash.example.org/cb?x=1'] as [string],
   scopes: ['organizations:read'] as [string],
-  consent: 'explicit' as const,
   ...extra
 })
 
