@@ -81,7 +81,7 @@ export const siteClientMetadata = (client: SiteOAuthClient): ClientMetadata => (
   application_type: 'web'
 })
 
-const loopbackHosts = new Set(['localhost', '127.0.0.1', '[::1]'])
+export const loopbackHosts = new Set(['localhost', '127.0.0.1', '[::1]'])
 
 export const isLoopbackRedirectUri = (uri: string): boolean => {
   try {

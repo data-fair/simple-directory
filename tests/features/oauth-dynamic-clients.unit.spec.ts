@@ -8,6 +8,13 @@ const dynamicClients = () => import('../../api/src/oauth-server/dynamic-clients.
 // a copy of https://claude.ai/oauth/claude-code-client-metadata
 const claudeCode = () => JSON.parse(readFileSync(new URL('../fixtures/claude-code-client-metadata.json', import.meta.url), 'utf8'))
 
+// checkDynamicMetadata works in place, as on the provider's schema instance
+const checked = async (metadata: Record<string, any>) => {
+  const { checkDynamicMetadata } = await dynamicClients()
+  checkDynamicMetadata(metadata)
+  return metadata
+}
+
 const throwsOAuth = (fn: () => unknown, error: string) =>
   assert.throws(fn, (err: any) => err.error === error && err.status === 400)
 
@@ -57,45 +64,57 @@ test.describe('oauth dynamic clients', () => {
     for (const [uri, expected] of table) assert.equal(dynamicRedirectUriAllowed(uri), expected, uri)
   })
 
-  test('normalizeDynamicMetadata applies the loopback fix to the claude code document', async () => {
-    const { normalizeDynamicMetadata } = await dynamicClients()
-    const normalized = normalizeDynamicMetadata(claudeCode())
-    assert.equal(normalized.application_type, 'native')
-    assert.equal(normalized.token_endpoint_auth_method, 'none')
-    assert.deepEqual(normalized.grant_types, ['authorization_code', 'refresh_token'])
-    assert.deepEqual(normalized.response_types, ['code'])
+  test('checkDynamicMetadata applies the loopback fix to the claude code document', async () => {
+    const metadata = await checked(claudeCode())
+    assert.equal(metadata.application_type, 'native')
+    assert.equal(metadata.token_endpoint_auth_method, 'none')
+    assert.deepEqual(metadata.grant_types, ['authorization_code', 'refresh_token'])
+    assert.deepEqual(metadata.response_types, ['code'])
   })
 
-  test('normalizeDynamicMetadata defaults and refusals', async () => {
-    const { normalizeDynamicMetadata } = await dynamicClients()
-    const base = { redirect_uris: ['https://agent.example.org/cb'] }
-    const normalized = normalizeDynamicMetadata(base)
-    assert.equal(normalized.token_endpoint_auth_method, 'none')
-    assert.deepEqual(normalized.grant_types, ['authorization_code', 'refresh_token'])
-    assert.deepEqual(normalized.response_types, ['code'])
-    assert.equal(normalized.application_type, undefined)
+  test('checkDynamicMetadata defaults and refusals', async () => {
+    const { checkDynamicMetadata } = await dynamicClients()
+    const base = () => ({ redirect_uris: ['https://agent.example.org/cb'] })
+    const metadata = await checked(base())
+    assert.equal(metadata.token_endpoint_auth_method, 'none')
+    assert.deepEqual(metadata.grant_types, ['authorization_code', 'refresh_token'])
+    assert.deepEqual(metadata.response_types, ['code'])
+    assert.equal(metadata.application_type, 'web')
 
-    throwsOAuth(() => normalizeDynamicMetadata({ ...claudeCode(), grant_types: ['client_credentials'] }), 'invalid_client_metadata')
-    throwsOAuth(() => normalizeDynamicMetadata({ ...base, grant_types: ['authorization_code', 'implicit'] }), 'invalid_client_metadata')
-    throwsOAuth(() => normalizeDynamicMetadata({ ...base, token_endpoint_auth_method: 'client_secret_basic' }), 'invalid_client_metadata')
-    throwsOAuth(() => normalizeDynamicMetadata({ ...base, response_types: ['code id_token'] }), 'invalid_client_metadata')
-    throwsOAuth(() => normalizeDynamicMetadata({ ...claudeCode(), redirect_uris: ['http://example.org/cb'] }), 'invalid_redirect_uri')
-    throwsOAuth(() => normalizeDynamicMetadata({ redirect_uris: [] }), 'invalid_redirect_uri')
-    throwsOAuth(() => normalizeDynamicMetadata({}), 'invalid_redirect_uri')
-    throwsOAuth(() => normalizeDynamicMetadata({ ...base, logo_uri: 'http://agent.example.org/logo.png' }), 'invalid_client_metadata')
+    throwsOAuth(() => checkDynamicMetadata({ ...claudeCode(), grant_types: ['client_credentials'] }), 'invalid_client_metadata')
+    throwsOAuth(() => checkDynamicMetadata({ ...base(), grant_types: ['authorization_code', 'implicit'] }), 'invalid_client_metadata')
+    throwsOAuth(() => checkDynamicMetadata({ ...base(), token_endpoint_auth_method: 'client_secret_basic' }), 'invalid_client_metadata')
+    throwsOAuth(() => checkDynamicMetadata({ ...base(), response_types: ['code id_token'] }), 'invalid_client_metadata')
+    throwsOAuth(() => checkDynamicMetadata({ ...claudeCode(), redirect_uris: ['http://example.org/cb'] }), 'invalid_redirect_uri')
+    throwsOAuth(() => checkDynamicMetadata({ redirect_uris: [] }), 'invalid_redirect_uri')
+    throwsOAuth(() => checkDynamicMetadata({}), 'invalid_redirect_uri')
+    throwsOAuth(() => checkDynamicMetadata({ ...base(), logo_uri: 'http://agent.example.org/logo.png' }), 'invalid_client_metadata')
     // a mix with loopback uris would get the port relaxation for its other uris too
-    throwsOAuth(() => normalizeDynamicMetadata({ redirect_uris: ['http://localhost/cb', 'com.example.app:/cb'] }), 'invalid_redirect_uri')
+    throwsOAuth(() => checkDynamicMetadata({ redirect_uris: ['http://localhost/cb', 'com.example.app:/cb'] }), 'invalid_redirect_uri')
+    // validated by an outbound fetch: an open registration must not make SD call arbitrary urls
+    throwsOAuth(() => checkDynamicMetadata({ ...base(), sector_identifier_uri: 'https://x.org/sector' }), 'invalid_client_metadata')
   })
 
-  test('normalizeDynamicMetadata requires https for every web uri', async () => {
-    const { normalizeDynamicMetadata } = await dynamicClients()
+  test('checkDynamicMetadata requires https for every web uri', async () => {
+    const { checkDynamicMetadata } = await dynamicClients()
     const base = { redirect_uris: ['https://agent.example.org/cb'] }
     for (const key of ['logo_uri', 'client_uri', 'policy_uri', 'tos_uri', 'jwks_uri']) {
-      throwsOAuth(() => normalizeDynamicMetadata({ ...base, [key]: 'http://agent.example.org/x' }), 'invalid_client_metadata')
-      throwsOAuth(() => normalizeDynamicMetadata({ ...base, [key]: 'javascript:alert(1)' }), 'invalid_client_metadata')
-      throwsOAuth(() => normalizeDynamicMetadata({ ...base, [key]: 42 }), 'invalid_client_metadata')
-      assert.equal(normalizeDynamicMetadata({ ...base, [key]: 'https://agent.example.org/x' })[key], 'https://agent.example.org/x')
+      throwsOAuth(() => checkDynamicMetadata({ ...base, [key]: 'http://agent.example.org/x' }), 'invalid_client_metadata')
+      throwsOAuth(() => checkDynamicMetadata({ ...base, [key]: 'javascript:alert(1)' }), 'invalid_client_metadata')
+      throwsOAuth(() => checkDynamicMetadata({ ...base, [key]: 42 }), 'invalid_client_metadata')
+      assert.equal((await checked({ ...base, [key]: 'https://agent.example.org/x' }))[key], 'https://agent.example.org/x')
     }
+  })
+
+  test('checkDynamicMetadata sets the application type from the parsed redirect uris', async () => {
+    assert.equal((await checked({ redirect_uris: ['http://localhost/cb'], application_type: 'web' })).application_type, 'native')
+    // a loopback uri next to an https one is matched exactly
+    assert.equal((await checked({ redirect_uris: ['http://localhost/cb', 'https://x.org/cb'], application_type: 'native' })).application_type, 'web')
+    // all https: a client sent native is web, whatever the case of the scheme
+    assert.equal((await checked({ redirect_uris: ['https://x.org/cb'], application_type: 'native' })).application_type, 'web')
+    assert.equal((await checked({ redirect_uris: ['HTTPS://x.org/cb'] })).application_type, 'web')
+    // private-use schemes are only accepted by the provider for native clients
+    assert.equal((await checked({ redirect_uris: ['com.example.app:/cb'] })).application_type, 'native')
   })
 
   test('logSafeName truncates and strips control characters', async () => {
@@ -142,48 +161,6 @@ test.describe('oauth dynamic clients', () => {
       if (previous === undefined) delete process.env.SSRF_PUBLIC_IPS
       else process.env.SSRF_PUBLIC_IPS = previous
     }
-  })
-
-  test('ssrfFetch caps the body of a client id metadata document at 5 KB', async () => {
-    const { ssrfFetch, cimdFixtures } = await dynamicClients()
-    const url = 'https://cimd.test/big'
-    const previous = process.env.ENABLE_TEST_API
-    process.env.ENABLE_TEST_API = '1'
-    cimdFixtures.set(url, { ...claudeCode(), client_id: url, client_name: 'x'.repeat(6 * 1024) })
-    try {
-      // the provider's CIMD fetch is the one with redirect: 'manual'
-      await assert.rejects(ssrfFetch(url, { method: 'GET', redirect: 'manual' }), /too large/)
-      // a jwks_uri fetch keeps the larger limit
-      const res = await ssrfFetch(url, { method: 'GET' })
-      assert.equal(res.status, 200)
-    } finally {
-      cimdFixtures.delete(url)
-      if (previous === undefined) delete process.env.ENABLE_TEST_API
-      else process.env.ENABLE_TEST_API = previous
-    }
-  })
-
-  test('normalizeDynamicMetadata keeps the port relaxation to all-loopback clients', async () => {
-    const { normalizeDynamicMetadata } = await dynamicClients()
-    assert.equal(normalizeDynamicMetadata({ redirect_uris: ['http://localhost/cb'], application_type: 'web' }).application_type, 'native')
-    // a loopback uri next to an https one is matched exactly
-    assert.equal(normalizeDynamicMetadata({ redirect_uris: ['http://localhost/cb', 'https://x.org/cb'], application_type: 'native' }).application_type, 'web')
-    // private-use schemes are only accepted by the provider for native clients
-    assert.equal(normalizeDynamicMetadata({ redirect_uris: ['com.example.app:/cb'] }).application_type, 'native')
-  })
-
-  test('normalizeDynamicMetadata strips sd_ metadata and outbound fetch triggers', async () => {
-    const { normalizeDynamicMetadata } = await dynamicClients()
-    const normalized = normalizeDynamicMetadata({
-      ...claudeCode(),
-      sd_allowed_origins: ['https://evil.example.org'],
-      sd_other: 1,
-      sector_identifier_uri: 'https://x.org/sector'
-    })
-    assert.equal(normalized.sd_allowed_origins, undefined)
-    assert.equal(normalized.sd_other, undefined)
-    assert.equal(normalized.sector_identifier_uri, undefined)
-    assert.equal(normalized.client_name, 'Claude Code')
   })
 
   test('ssrfFetch refuses non public addresses', async () => {

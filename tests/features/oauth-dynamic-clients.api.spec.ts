@@ -88,18 +88,13 @@ test.describe('oauth dynamic clients', () => {
       [{ ...claudeCode(), policy_uri: 'http://x.org/policy' }, 'invalid_client_metadata'],
       [{ ...claudeCode(), tos_uri: 'http://x.org/tos' }, 'invalid_client_metadata'],
       [{ ...claudeCode(), token_endpoint_auth_method: 'private_key_jwt', jwks_uri: 'http://x.org/jwks' }, 'invalid_client_metadata'],
-      [{ ...claudeCode(), sd_allowed_origins: ['https://evil.example.org'] }, '']
+      // reserved to site clients
+      [{ ...claudeCode(), sd_allowed_origins: ['https://evil.example.org'] }, 'invalid_client_metadata'],
+      // validated by an outbound fetch
+      [{ ...claudeCode(), sector_identifier_uri: 'https://x.org/sector' }, 'invalid_client_metadata']
     ]
     for (const [body, error] of cases) {
       const res = await register(body)
-      if (!error) {
-        // sd_ metadata is stripped, never stored
-        assert.equal(res.status, 201, JSON.stringify(res.data))
-        assert.equal(res.data.sd_allowed_origins, undefined)
-        const stored = await withMongo(db => db.collection<any>('oauth-client').findOne({ _id: res.data.client_id }))
-        assert.equal(stored.payload.sd_allowed_origins, undefined)
-        continue
-      }
       assert.equal(res.status, 400, JSON.stringify(body) + ' ' + JSON.stringify(res.data))
       assert.equal(res.data.error, error, JSON.stringify(body))
     }
@@ -110,8 +105,7 @@ test.describe('oauth dynamic clients', () => {
     const array = await register([claudeCode()])
     assert.equal(array.status, 400)
     assert.equal(array.data.error, 'invalid_request')
-    // only the stripped sd_ case registered a client
-    assert.equal(await withMongo(db => db.collection('oauth-client').countDocuments()), 1)
+    assert.equal(await withMongo(db => db.collection('oauth-client').countDocuments()), 0)
   })
 
   test('dcr is rate limited per ip', async () => {
@@ -170,14 +164,14 @@ test.describe('oauth dynamic clients', () => {
     // but the path is exact
     assert.equal(await authorizeRenderedError(flow(clientId, 'http://localhost:40123/other')), 'invalid_redirect_uri')
 
-    // a document breaking the redirect rule is refused
+    // a document breaking the redirect rule is refused, with the same errors as a registration
     const badId = 'https://cimd.test/bad'
     await testEnvAx.post('/cimd-fixtures', { url: badId, document: { ...claudeCode(), client_id: badId, redirect_uris: ['http://example.org/callback'] } })
-    assert.equal(await authorizeRenderedError(flow(badId, 'http://example.org/callback')), 'invalid_client')
+    assert.equal(await authorizeRenderedError(flow(badId, 'http://example.org/callback')), 'invalid_redirect_uri')
     // and so is one asking for client_credentials
     const machineId = 'https://cimd.test/machine'
     await testEnvAx.post('/cimd-fixtures', { url: machineId, document: { ...claudeCode(), client_id: machineId, grant_types: ['client_credentials'] } })
-    assert.equal(await authorizeRenderedError(flow(machineId, 'http://localhost/callback')), 'invalid_client')
+    assert.equal(await authorizeRenderedError(flow(machineId, 'http://localhost/callback')), 'invalid_client_metadata')
   })
 
   test('cimd fetches are rate limited per ip on cache misses', async () => {

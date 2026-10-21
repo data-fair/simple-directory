@@ -200,24 +200,27 @@ clients are read from its document only when `MAIN_SITE_FROM_DB` contains
 hand. Registration (`POST /api/oauth/register`) is open (no initial access
 token, no registration access token, no management route: a registration is
 final) and CIMD (a client whose id is an https URL serving its metadata) needs
-no registration at all. Both go through `normalizeDynamicMetadata`:
+no registration at all. Both go through `checkDynamicMetadata`, run by the
+provider's `extraClientMetadata.validator` on every client it builds (a
+registration, a CIMD document, a stored client), the single place of these
+rules:
 
 - token endpoint authentication `none` (default) or `private_key_jwt`; grant
   types `authorization_code` and `refresh_token` only; response type `code`
   only. `client_credentials` is not available to a dynamic client;
-- `sd_*` metadata and `sector_identifier_uri` are stripped; `logo_uri`,
+- `sd_allowed_origins` and `sector_identifier_uri` are refused, other `sd_*`
+  metadata is unrecognized and dropped by the provider; `logo_uri`,
   `client_uri`, `policy_uri`, `tos_uri` and `jwks_uri` must be `https`;
-- `application_type: native` is set when every redirect URI is loopback or
-  every one is a private-use scheme; otherwise (`https`, or loopback with
-  `https`) the client is web. The provider ignores the port of a loopback
+- `application_type` is always set from the parsed redirect URIs: `native`
+  when every one is loopback or none is `https` (private-use schemes);
+  otherwise (`https`, or loopback with `https`) `web`, whatever the client sent. The provider ignores the port of a loopback
   redirect URI (RFC 8252 7.3) only for native clients, so the port relaxation
   applies only when **every** redirect URI is loopback. Loopback together with
   `https` makes a web client (exact match, port included); loopback together
   with a private-use scheme is refused;
 - a CIMD document is fetched by the provider through `ssrfFetch` (lib-node
-  SSRF rules, IP literals checked, no redirect followed, 2.5 s, 5 KB), the
-  result is normalized by the same function and `allowClient` re-checks it on
-  every use. A test-only fixture hook serves documents from memory and exists
+  SSRF rules, IP literals checked, no redirect followed; the provider's 2.5 s
+  timeout and 5 KB body limit) and validated like a registration. A test-only fixture hook serves documents from memory and exists
   only with `ENABLE_TEST_API=1`;
 - a DCR client is stored per issuer with a `dcr-` id. Stored clients older than
   30 days with no live grant record are deleted by the users worker (there is

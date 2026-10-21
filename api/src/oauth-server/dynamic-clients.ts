@@ -12,7 +12,7 @@ import { reqIp } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import mongo from '#mongo'
 import limiter from '../utils/limiter.ts'
-import { isLoopbackRedirectUri } from './clients.ts'
+import { isLoopbackRedirectUri, loopbackHosts } from './clients.ts'
 import { listGrantRecords } from './grants.ts'
 import Debug from 'debug'
 import { internalError } from '@data-fair/lib-node/observer.js'
@@ -24,7 +24,6 @@ const allowedGrantTypes = ['authorization_code', 'refresh_token']
 const allowedResponseTypes = ['code']
 const webUriKeys = ['logo_uri', 'client_uri', 'policy_uri', 'tos_uri', 'jwks_uri']
 const forbiddenSchemes = new Set(['javascript:', 'data:', 'file:', 'vbscript:', 'blob:', 'about:'])
-const loopbackHosts = new Set(['localhost', '127.0.0.1', '[::1]'])
 // RFC 8252 7.1: a private-use scheme is a reverse domain name, so it contains a dot
 const privateUseScheme = /^[a-z][a-z0-9+-]*\.[a-z0-9+.-]+:$/
 
@@ -45,68 +44,45 @@ const stringArray = (value: unknown, key: string): string[] => {
   return value
 }
 
-// the metadata of a DCR body or of a CIMD document, before the provider sees it. Throws the
-// provider's errors (invalid_client_metadata, invalid_redirect_uri).
-export const normalizeDynamicMetadata = (metadata: Record<string, any>): Record<string, any> => {
-  const normalized: Record<string, any> = {}
-  for (const [key, value] of Object.entries(metadata)) {
-    // SD's own metadata (sd_allowed_origins...) is reserved to site clients
-    if (key.startsWith('sd_')) continue
-    normalized[key] = value
-  }
+// SD's rules for a DCR body or a CIMD document, run by the provider's extraClientMetadata.validator
+// on its own schema instance (configuration.ts): checks in place and sets application_type. Throws
+// the provider's errors (invalid_client_metadata, invalid_redirect_uri).
+export const checkDynamicMetadata = (metadata: Record<string, any>) => {
   // validated by an outbound fetch: an open registration must not make SD call arbitrary urls
-  delete normalized.sector_identifier_uri
+  if (metadata.sector_identifier_uri !== undefined) throw new errors.InvalidClientMetadata('sector_identifier_uri is not supported')
 
-  normalized.token_endpoint_auth_method ??= 'none'
-  if (!allowedAuthMethods.includes(normalized.token_endpoint_auth_method)) {
+  metadata.token_endpoint_auth_method ??= 'none'
+  if (!allowedAuthMethods.includes(metadata.token_endpoint_auth_method)) {
     throw new errors.InvalidClientMetadata(`token_endpoint_auth_method must be one of ${allowedAuthMethods.join(', ')}`)
   }
-  normalized.grant_types ??= [...allowedGrantTypes]
-  if (!stringArray(normalized.grant_types, 'grant_types').every(g => allowedGrantTypes.includes(g))) {
+  metadata.grant_types ??= [...allowedGrantTypes]
+  if (!stringArray(metadata.grant_types, 'grant_types').every(g => allowedGrantTypes.includes(g))) {
     throw new errors.InvalidClientMetadata(`grant_types can only contain ${allowedGrantTypes.join(', ')}`)
   }
-  normalized.response_types ??= [...allowedResponseTypes]
-  if (!stringArray(normalized.response_types, 'response_types').every(r => allowedResponseTypes.includes(r))) {
+  metadata.response_types ??= [...allowedResponseTypes]
+  if (!stringArray(metadata.response_types, 'response_types').every(r => allowedResponseTypes.includes(r))) {
     throw new errors.InvalidClientMetadata(`response_types can only contain ${allowedResponseTypes.join(', ')}`)
   }
   // shown on the consent screen or fetched: https only, as the provider requires of CIMD documents
   for (const key of webUriKeys) {
-    const value = normalized[key]
+    const value = metadata[key]
     if (value !== undefined && (typeof value !== 'string' || URL.parse(value)?.protocol !== 'https:')) {
       throw new errors.InvalidClientMetadata(`${key} must be an https url`)
     }
   }
 
-  const redirectUris = normalized.redirect_uris
+  const redirectUris = metadata.redirect_uris
   if (!Array.isArray(redirectUris) || !redirectUris.length) throw new errors.InvalidRedirectUri('redirect_uris must be a non empty array')
   for (const uri of redirectUris) {
     if (!dynamicRedirectUriAllowed(uri)) throw new errors.InvalidRedirectUri(`redirect uri not allowed for a dynamic client: ${String(uri)}`)
   }
   // the provider ignores the port of a loopback redirect uri only for native clients (RFC 8252
-  // 7.3), and for all of their redirect uris: only an all-loopback client gets it
+  // 7.3), and for all of their redirect uris: only an all-loopback client gets it. Private-use
+  // schemes require a native client, so they cannot be mixed with loopback uris.
   const loopbacks = redirectUris.filter(isLoopbackRedirectUri).length
-  const privateUse = redirectUris.filter(uri => !uri.startsWith('https:') && !isLoopbackRedirectUri(uri)).length
-  if (loopbacks === redirectUris.length) {
-    normalized.application_type = 'native'
-  } else if (loopbacks) {
-    // private-use schemes require a native client, which would relax its loopback ports
-    if (privateUse) throw new errors.InvalidRedirectUri('loopback redirect uris cannot be mixed with private-use scheme ones')
-    normalized.application_type = 'web'
-  } else if (privateUse) {
-    normalized.application_type = 'native'
-  }
-  return normalized
-}
-
-// features.clientIdMetadataDocument.allowClient: the resolved client follows the same rules as a
-// registered one (the fetch already normalized the document, this is the last word)
-export const allowClient = async (_koaCtx: KoaContextWithOIDC, client: { metadata: () => Record<string, any>, applicationType?: string }) => {
-  try {
-    const metadata = client.metadata()
-    return normalizeDynamicMetadata(metadata).application_type === metadata.application_type
-  } catch {
-    return false
-  }
+  const privateUse = redirectUris.filter(uri => URL.parse(uri)?.protocol !== 'https:' && !isLoopbackRedirectUri(uri)).length
+  if (loopbacks && privateUse) throw new errors.InvalidRedirectUri('loopback redirect uris cannot be mixed with private-use scheme ones')
+  metadata.application_type = loopbacks === redirectUris.length || privateUse ? 'native' : 'web'
 }
 
 // the rate limiting key of CIMD fetches started outside the provider's own request handling (SD's
@@ -169,54 +145,13 @@ const getSsrfAgent = () => {
   return ssrfAgent
 }
 
-// the provider applies the same limits on what we hand back, these only bound what we read
-const cimdMaxBodySize = 5 * 1024
-const maxBodySize = 64 * 1024
-
-const readBody = async (response: Response, maxBodySize: number) => {
-  const chunks: Uint8Array[] = []
-  let received = 0
-  if (!response.body) return Buffer.alloc(0)
-  const reader = response.body.getReader()
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    received += value.length
-    if (received > maxBodySize) {
-      await reader.cancel()
-      throw new Error('response too large')
-    }
-    chunks.push(value)
-  }
-  return Buffer.concat(chunks)
-}
-
-// a CIMD document goes through normalizeDynamicMetadata (the loopback fix), anything else (a client's
-// jwks_uri) is handed back untouched. The provider applies its own body limits on the result.
-const normalizeResponse = async (url: string, response: Response, cimd: boolean): Promise<Response> => {
-  if (response.status !== 200) return response
-  const body = await readBody(response, cimd ? cimdMaxBodySize : maxBodySize)
-  const headers = new Headers(response.headers)
-  headers.delete('content-length')
-  headers.delete('content-encoding')
-  let document: unknown
-  try { document = JSON.parse(body.toString()) } catch {}
-  if (document && typeof document === 'object' && !Array.isArray(document) && (document as Record<string, any>).client_id === url) {
-    return new Response(JSON.stringify(normalizeDynamicMetadata(document as Record<string, any>)), { status: 200, headers })
-  }
-  return new Response(body, { status: response.status, headers })
-}
-
 // the provider's fetch option: its dispatcher is replaced by lib-node's SSRF rules, its timeout
-// signal is kept and redirections are never followed
+// signal is kept and redirections are never followed. The provider applies its own body limits
+// (fetchResponseBodyLimits) and validates CIMD documents (checkDynamicMetadata).
 export const ssrfFetch = async (url: string | URL, options: RequestInit & { dispatcher?: unknown }): Promise<Response> => {
   const href = String(url)
-  // the provider's CIMD fetch is the only one asking for manual redirects (jwks_uri and
-  // sector_identifier_uri fetches do not)
-  const cimd = options.redirect === 'manual'
   if (process.env.ENABLE_TEST_API === '1' && cimdFixtures.has(href)) {
-    const response = new Response(JSON.stringify(cimdFixtures.get(href)), { status: 200, headers: { 'content-type': 'application/json' } })
-    return await normalizeResponse(href, response, cimd)
+    return new Response(JSON.stringify(cimdFixtures.get(href)), { status: 200, headers: { 'content-type': 'application/json' } })
   }
   const target = new URL(href)
   if (target.protocol !== 'https:') throw new Error('only https urls are fetched')
@@ -227,8 +162,7 @@ export const ssrfFetch = async (url: string | URL, options: RequestInit & { disp
     if (ssrfError) throw ssrfError
   }
   const { dispatcher: _providerDispatcher, ...rest } = options
-  const response = await fetch(href, { ...rest, redirect: 'manual', dispatcher: getSsrfAgent() } as RequestInit)
-  return await normalizeResponse(href, response, cimd)
+  return await fetch(href, { ...rest, redirect: 'manual', dispatcher: getSsrfAgent() } as RequestInit)
 }
 
 const unusedClientAge = 30 * 86400 * 1000

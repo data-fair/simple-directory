@@ -12,7 +12,7 @@ import { getKnownScopes } from '../scopes/service.ts'
 import { grantedScope, narrowScope } from '../nhis/scopes.ts'
 import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
-import { allowClient, allowFetch, ssrfFetch } from './dynamic-clients.ts'
+import { allowFetch, checkDynamicMetadata, ssrfFetch } from './dynamic-clients.ts'
 import { nanoid } from 'nanoid'
 import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS, siteClientResourceAllowed, siteClientsEnabled, agentClientsEnabled, codeFlowEnabled } from './clients.ts'
 import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts'
@@ -255,14 +255,13 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
       devInteractions: { enabled: false },
       introspection: { enabled: false },
       // open (MCP clients cannot have an initial access token) and rate limited by the router,
-      // without management: a registration is final. The router normalizes the body first.
+      // without management: a registration is final. SD's rules apply in extraClientMetadata.
       registration: { enabled: agentClients, initialAccessToken: false, issueRegistrationAccessToken: false, idFactory: () => 'dcr-' + nanoid() },
       // https ids only (checked by the provider), fetched through ssrfFetch
       clientIdMetadataDocument: {
         enabled: agentClients,
         ack: 'draft-02',
-        allowFetch: async (koaCtx) => agentClients && await allowFetch(koaCtx),
-        allowClient
+        allowFetch: async (koaCtx) => agentClients && await allowFetch(koaCtx)
       },
       // served nowhere by the dispatcher, they must not be advertised
       rpInitiatedLogout: { enabled: false },
@@ -271,14 +270,17 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
     },
     responseTypes: ['code'],
     pkce: { required: () => true },
-    // carries the allowed CORS origins of a site client, see adapterFactory
+    // carries the allowed CORS origins of a site client (see adapterFactory). The validator runs on
+    // every client the provider builds (registration, CIMD document, adapter lookup): the place of
+    // SD's rules for dynamic clients
     extraClientMetadata: {
       properties: ['sd_allowed_origins'],
-      // reserved to site clients: a dynamic client must not be able to widen its own CORS origins
       validator: (_koaCtx, key, value, metadata) => {
-        if (key === 'sd_allowed_origins' && value !== undefined && clientKind(metadata.client_id as string) !== 'site') {
-          (metadata as any).invalidate('sd_allowed_origins is reserved to site clients')
-        }
+        const kind = clientKind(metadata.client_id as string)
+        if (kind === 'site' || kind === 'nhi') return
+        // a dynamic client must not be able to widen its own CORS origins
+        if (key === 'sd_allowed_origins' && value !== undefined) (metadata as any).invalidate('sd_allowed_origins is reserved to site clients')
+        checkDynamicMetadata(metadata)
       }
     },
     clientBasedCORS: (_koaCtx, origin, client) => sdClientBasedCORS(origin, client as any),

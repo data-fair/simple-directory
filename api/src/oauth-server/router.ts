@@ -10,10 +10,8 @@ import { reqSite } from '../sites/service.ts'
 import { issuerOfSite } from './issuers.ts'
 import { getProvider } from './providers.ts'
 import { handleJwtBearerGrant, jwtBearerGrantType, oauthError } from './jwt-bearer.ts'
-import { errors } from 'oidc-provider'
 import type Provider from 'oidc-provider'
 import limiter from '../utils/limiter.ts'
-import { normalizeDynamicMetadata } from './dynamic-clients.ts'
 
 const router = Router()
 export default router
@@ -88,43 +86,13 @@ const limitTokenRequest = async (req: Request, res: Response, grantType: string)
   return true
 }
 
-// the registration body is parsed here (the dispatcher skips the global JSON parser) so that SD's
-// rules apply before the provider sees it
-const registrationBodyParser = express.json({ limit: '56kb', strict: false })
-
-// open registration: every attempt counts (never refunded), then SD's rules for dynamic clients.
-// The provider then validates the rest and stores the client.
-const preRegistration = async (req: Request, res: Response): Promise<boolean> => {
-  const clientIp = reqIp(req)
-  if (!await limiter()('oauth-dcr:' + clientIp)) {
-    eventsLog.warn('sd.oauth.rate-limit', 'rate limit error for the dynamic client registration', { req })
-    oauthError(res, 429, 'invalid_request', reqI18n(req).messages.errors.rateLimitAuth)
-    return false
-  }
-  if (!req.is('application/json')) {
-    oauthError(res, 400, 'invalid_request', 'only application/json bodies are accepted')
-    return false
-  }
-  try {
-    await new Promise<void>((resolve, reject) => registrationBodyParser(req, res, err => err ? reject(err) : resolve()))
-  } catch {
-    oauthError(res, 400, 'invalid_request', 'failed to parse the request body')
-    return false
-  }
-  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
-    oauthError(res, 400, 'invalid_request', 'client registration request must be a JSON object')
-    return false
-  }
-  try {
-    req.body = normalizeDynamicMetadata(req.body)
-  } catch (err: any) {
-    if (err instanceof errors.OIDCProviderError) {
-      oauthError(res, err.statusCode, err.error, err.error_description)
-      return false
-    }
-    throw err
-  }
-  return true
+// open registration: every attempt counts (never refunded). The provider parses the body and
+// applies SD's rules for dynamic clients (configuration.ts extraClientMetadata).
+const limitRegistration = async (req: Request, res: Response): Promise<boolean> => {
+  if (await limiter()('oauth-dcr:' + reqIp(req))) return true
+  eventsLog.warn('sd.oauth.rate-limit', 'rate limit error for the dynamic client registration', { req })
+  oauthError(res, 429, 'invalid_request', reqI18n(req).messages.errors.rateLimitAuth)
+  return false
 }
 
 const tokenRoute = '/api/oauth/token'
@@ -172,7 +140,7 @@ router.use(async (req, res, next) => {
   if (path === registrationRoute) {
     // registration management is off, only the creation is served
     if (req.method !== 'POST') return res.status(404).send()
-    if (!await preRegistration(req, res)) return
+    if (!await limitRegistration(req, res)) return
   }
 
   const provider = await getProvider(ctx)
