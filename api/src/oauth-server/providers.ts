@@ -1,5 +1,6 @@
 import Provider, { type JWK, type KoaContextWithOIDC } from 'oidc-provider'
 import { createPrivateKey } from 'node:crypto'
+import config from '#config'
 import { getSignatureKeys } from '../tokens/keys-manager.ts'
 import { buildConfiguration, discoveryOverrides, type SdTokenState } from './configuration.ts'
 import type { IssuerContext } from './issuers.ts'
@@ -17,7 +18,7 @@ type CachedProvider = { marker: string, promise: Promise<Provider> }
 const providers = new Map<string, CachedProvider>()
 
 export const cacheMarker = (ctx: IssuerContext, kid: string) =>
-  JSON.stringify([kid, ctx.issuer, ctx.siteUrl, ctx.site?._id ?? null, siteClientsEnabled(), agentClientsEnabled()])
+  JSON.stringify([kid, ctx.issuer, ctx.siteUrl, ctx.site?._id ?? null, siteClientsEnabled(), agentClientsEnabled(), !!config.manageNhis])
 
 const signingJwk = (privateKeyPem: string, kid: string): JWK => ({
   ...createPrivateKey(privateKeyPem).export({ format: 'jwk' }),

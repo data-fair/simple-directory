@@ -12,7 +12,7 @@ import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
 import { allowFetch, checkDynamicMetadata, ssrfFetch } from './dynamic-clients.ts'
 import { nanoid } from 'nanoid'
-import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS, siteClientResourceAllowed, siteClientsEnabled, agentClientsEnabled, codeFlowEnabled } from './clients.ts'
+import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS, siteClientResourceAllowed, agentClientsEnabled, codeFlowEnabled } from './clients.ts'
 import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts'
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
 import { sdClaims, stripOidcScopes } from './access-token.ts'
@@ -38,9 +38,13 @@ export const getCookieKeys = async (): Promise<string[]> => {
 // what an SD grant computed for the access token, handed to the JWT customizer through the koa state
 export type SdTokenState = { clientId: string, user: User, sub: string, aud: string | string[], scope: string | undefined, claims: Record<string, any>, grantId?: string }
 
-// claims the provider (or the customizer itself) owns, never taken from sdClaims
-const reservedClaims = new Set(['iss', 'sub', 'aud', 'exp', 'iat', 'nbf', 'jti', 'client_id', 'scope', 'cnf', 'authorization_details'])
 const adminClaims = ['isAdmin', 'adminMode', 'asAdmin']
+
+// the SD state of the token being issued, only for the client it was computed for
+const sdTokenOf = (koaCtx: KoaContextWithOIDC | undefined, token: unknown): SdTokenState | undefined => {
+  const sdToken: SdTokenState | undefined = (koaCtx as any)?.state?.sdToken
+  return sdToken && sdToken.clientId === (token as any).clientId ? sdToken : undefined
+}
 
 // the clients are NHIs synthesized from their record, site clients read from the issuer site and
 // dynamic clients registered on this issuer (DCR), the other models are stored in mongo. CIMD
@@ -212,7 +216,8 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
     jwks: { keys: [signingJwk] },
     cookies: { keys: await getCookieKeys() },
     features: {
-      clientCredentials: { enabled: true },
+      // both machine grants are for NHIs only
+      clientCredentials: { enabled: !!config.manageNhis },
       resourceIndicators: {
         enabled: true,
         defaultResource: async () => ctx.siteUrl,
@@ -225,9 +230,9 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
             resource = await resolveResource(ctx, resourceIndicator)
             if (koaCtx.oidc?.params?.grant_type === 'client_credentials') {
               scope = await nhiClientCredentials(koaCtx, client.clientId, resource) ?? scope
-            } else if (siteClientsEnabled() && clientKind(client.clientId) === 'site') {
+            } else if (clientKind(client.clientId) === 'site') {
               scope = await siteClientResourceScope(ctx, koaCtx, client.clientId, resource)
-            } else if (agentClients && ['cimd', 'dcr'].includes(clientKind(client.clientId))) {
+            } else if (['cimd', 'dcr'].includes(clientKind(client.clientId))) {
               scope = await dynamicClientResourceScope(koaCtx)
             }
           } catch (err) {
@@ -239,7 +244,6 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
             // the provider only accepts a string, an mcp resource gets its full audience in the customizer
             audience: Array.isArray(resource.audience) ? resource.audience[0] : resource.audience,
             accessTokenFormat: 'jwt',
-            accessTokenTTL: jwtDurations.nhiToken,
             jwt: { sign: { alg: 'RS256', kid: signingJwk.kid } }
           }
         }
@@ -258,14 +262,14 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
       clientIdMetadataDocument: {
         enabled: agentClients,
         ack: 'draft-02',
-        allowFetch: async (koaCtx) => agentClients && await allowFetch(koaCtx)
+        allowFetch
       },
       // served nowhere by the dispatcher, they must not be advertised
       rpInitiatedLogout: { enabled: false },
       userinfo: { enabled: false },
       pushedAuthorizationRequests: { enabled: false }
     },
-    responseTypes: ['code'],
+    responseTypes: codeFlow ? ['code'] : [],
     pkce: { required: () => true },
     // carries the allowed CORS origins of a site client (see adapterFactory). The validator runs on
     // every client the provider builds (registration, CIMD document, adapter lookup): the place of
@@ -289,7 +293,6 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
     },
     routes: {
       token: '/api/oauth/token',
-      jwks: '/api/oauth/jwks',
       authorization: '/api/oauth/authorize',
       revocation: '/api/oauth/revoke',
       registration: '/api/oauth/register'
@@ -297,31 +300,34 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
     // CIMD documents and the jwks_uri of a registered client
     fetch: ssrfFetch as Configuration['fetch'],
     fetchResponseBodyLimits: { 'client_id metadata document': 5 * 1024, jwks_uri: 64 * 1024, sector_identifier_uri: 64 * 1024 },
+    // the claims of the platform (sdClaims) are computed by the grant that knows the subject and
+    // handed over through the koa state; the provider writes its own claims (iss, sub, jti...) over them
+    extraTokenClaims: async (koaCtx, token) => {
+      const sdToken = sdTokenOf(koaCtx, token)
+      if (!sdToken) return undefined
+      const claims = { ...sdToken.claims }
+      // an access token never carries an admin role
+      for (const key of adminClaims) delete claims[key]
+      return claims
+    },
     formats: {
       customizers: {
-        // the claims of the platform (sdClaims) are computed by the grant that knows the NHI
-        // and handed over through the koa state
+        // what the provider writes itself but SD decides: the full audience of an mcp resource
+        // (getResourceServerInfo only takes a string) and the scope of the SD grant
         jwt: async (koaCtx, token, jwt) => {
-          const sdToken: SdTokenState | undefined = (koaCtx as any)?.state?.sdToken
-          if (sdToken && sdToken.clientId === (token as any).clientId) {
-            for (const [key, value] of Object.entries(sdToken.claims)) {
-              if (!reservedClaims.has(key)) jwt.payload[key] = value
-            }
-            jwt.payload.sub = sdToken.sub
-            jwt.payload.aud = sdToken.aud
-            if (sdToken.scope === undefined) delete jwt.payload.scope
-            else jwt.payload.scope = sdToken.scope
-          }
-          // an access token never carries an admin role
-          for (const key of adminClaims) delete jwt.payload[key]
+          const sdToken = sdTokenOf(koaCtx, token)
+          if (!sdToken) return
+          jwt.payload.aud = sdToken.aud
+          if (sdToken.scope === undefined) delete jwt.payload.scope
+          else jwt.payload.scope = sdToken.scope
         }
       }
     },
     // the OIDC scopes only: platform scopes are resource scopes (getResourceServerInfo), read live
     scopes: oidcScopeNames,
-    ttl: { ClientCredentials: jwtDurations.nhiToken },
+    ttl: { ClientCredentials: jwtDurations.nhiToken, ...(codeFlow ? codeFlowTtl : {}) },
     // accounts and interactions come with the authorization code flow
-    findAccount: async () => undefined,
+    findAccount: codeFlow ? findAccount(ctx) : async () => undefined,
     ...(codeFlow ? codeFlowConfiguration(ctx) : {})
   }
 }
@@ -363,53 +369,43 @@ const codeFlowConfiguration = (ctx: IssuerContext): Partial<Configuration> => ({
     const grantId = koaCtx.oidc.result?.consent?.grantId
     return grantId ? await koaCtx.oidc.provider.Grant.find(grantId) : undefined
   },
-  ttl: {
-    ClientCredentials: jwtDurations.nhiToken,
-    AccessToken: (_koaCtx, token) => token.accountId?.startsWith('nhi-') ? jwtDurations.nhiToken : jwtDurations.idToken,
-    AuthorizationCode: authorizationCodeTTL,
-    // the fallback, SD sets grant.exp itself at consent
-    Grant: dashboardGrantLifetime,
-    IdToken: jwtDurations.idToken,
-    Interaction: interactionTTL,
-    // idles out after 7 days, never outlives its grant
-    RefreshToken: (koaCtx) => {
-      const grantExp = (koaCtx as KoaContextWithOIDC | undefined)?.oidc?.entities?.Grant?.exp
-      if (!grantExp) return refreshTokenMaxTTL
-      return Math.max(1, Math.min(refreshTokenMaxTTL, grantExp - Math.floor(Date.now() / 1000)))
-    },
-    Session: sessionTTL
-  },
   // errors that cannot be redirected to the client go to the SPA
   renderError: async (koaCtx, out) => {
     koaCtx.status = 303
     koaCtx.redirect(`${ctx.issuer}/oauth/consent?error=${encodeURIComponent(String(out.error ?? 'server_error'))}`)
-  },
-  findAccount: findAccount(ctx)
+  }
 })
 
-// discovery values that the provider computes itself and that configuration cannot override
+const codeFlowTtl: Configuration['ttl'] = {
+  AccessToken: (_koaCtx, token) => token.accountId?.startsWith('nhi-') ? jwtDurations.nhiToken : jwtDurations.idToken,
+  AuthorizationCode: authorizationCodeTTL,
+  // the fallback, SD sets grant.exp itself at consent
+  Grant: dashboardGrantLifetime,
+  IdToken: jwtDurations.idToken,
+  Interaction: interactionTTL,
+  // idles out after 7 days, never outlives its grant
+  RefreshToken: (koaCtx) => {
+    const grantExp = (koaCtx as KoaContextWithOIDC | undefined)?.oidc?.entities?.Grant?.exp
+    if (!grantExp) return refreshTokenMaxTTL
+    return Math.max(1, Math.min(refreshTokenMaxTTL, grantExp - Math.floor(Date.now() / 1000)))
+  },
+  Session: sessionTTL
+}
+
+// discovery values that configuration cannot express: SD's scoped jwks, the platform scopes (resource
+// scopes, unknown to the provider's static list), the JWT bearer grant served by SD itself, and
+// without the code flow the authorization endpoint the provider always lists (the dispatcher does
+// not serve it)
 export const discoveryOverrides = async (ctx: IssuerContext, body: Record<string, any>) => {
   body.jwks_uri = ctx.issuer + '/.well-known/scoped-jwks.json'
-  // the platform scopes are resource scopes, unknown to the provider's static list
   body.scopes_supported = [...(codeFlowEnabled() ? oidcScopeNames : []), ...await knownScopeNames()]
-  let grantTypes: string[] = (body.grant_types_supported ?? []).filter((g: string) => g !== 'implicit')
-  if (codeFlowEnabled()) {
-    body.response_types_supported = ['code']
-    body.authorization_response_iss_parameter_supported = true
-    body.token_endpoint_auth_methods_supported = ['none', 'private_key_jwt']
-  } else {
-    // without the authorization code flow the only grants are client_credentials and jwt-bearer
+  let grantTypes: string[] = body.grant_types_supported ?? []
+  if (!codeFlowEnabled()) {
     delete body.authorization_endpoint
     delete body.response_modes_supported
     delete body.authorization_response_iss_parameter_supported
-    body.response_types_supported = []
-    grantTypes = grantTypes.filter(g => !['authorization_code', 'implicit', 'refresh_token'].includes(g))
+    grantTypes = grantTypes.filter(g => g !== 'refresh_token')
   }
-  if (config.manageNhis) {
-    if (!grantTypes.includes(jwtBearerGrantType)) grantTypes.push(jwtBearerGrantType)
-  } else {
-    // both machine grants are for NHIs only
-    grantTypes = grantTypes.filter(g => g !== 'client_credentials' && g !== jwtBearerGrantType)
-  }
+  if (config.manageNhis) grantTypes = [...grantTypes, jwtBearerGrantType]
   body.grant_types_supported = grantTypes
 }

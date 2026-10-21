@@ -5,7 +5,6 @@
 // paths /api/oauth/interaction/<uid> and /api/oauth/interaction/<uid>/details.
 import express, { Router, type Request, type Response } from 'express'
 import Provider, { errors, type Interaction } from 'oidc-provider'
-import config from '#config'
 import storages from '#storages'
 import mongo from '#mongo'
 import type { Organization, User } from '#types'
@@ -22,7 +21,7 @@ import { narrowScope } from '../nhis/scopes.ts'
 import { issuerOfSite, resolveResource, assertNhiMayTarget, siteOwnedByNhiOrg, ResourceError, type IssuerContext, type ResolvedResource } from './issuers.ts'
 import { getProvider } from './providers.ts'
 import { canonicalSiteUrl } from './router.ts'
-import { clientKind, findSiteClient, codeFlowEnabled } from './clients.ts'
+import { clientKind, findSiteClient } from './clients.ts'
 import { siteClientRequestScopes, dynamicClientRequestScopes, interactionTTL } from './configuration.ts'
 import { dashboardGrantLifetime, grantLifetimes, listGrantRecords, revokeGrant } from './grants.ts'
 import { displayIdUrl, logSafeName, findDynamicClient } from './dynamic-clients.ts'
@@ -37,10 +36,10 @@ export default router
 
 router.use(express.json({ limit: '10kb' }))
 
-// the flags are also checked by the dispatcher, this router must not serve anything without them
+// reached only through the dispatcher (router.ts), which serves the exact interaction paths when
+// the code flow is on. The session is read here whatever its scopes, a scoped session is refused
+// explicitly below.
 router.use((req, res, next) => {
-  if (!config.oauthServer?.enabled || !codeFlowEnabled()) return res.status(404).send()
-  // the session is read here whatever its scopes, a scoped session is refused explicitly below
   markScopeChecked(req)
   next()
 })
