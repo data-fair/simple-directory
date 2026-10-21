@@ -164,17 +164,18 @@ const grantAndResume = async (req: Request, res: Response, ic: InteractionContex
   }
 }
 
-// a live grant of the same client, user, account and resource with the same scope, whose provider
+// a live grant of the same client, user, account, resource, scope and server session (grants follow
+// the session that consented, its revocation must reach them), whose provider
 // Grant already encountered every scope of the request: the checks of the provider's own consent
 // prompt (rs_scopes_missing, op_scopes_missing), so resuming with it cannot prompt again
-const reusableGrantId = async (ic: InteractionContext, interaction: Interaction, user: User, account: ConsentAccount, scope: string[], resource: string) => {
+const reusableGrantId = async (ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, account: ConsentAccount, scope: string[], resource: string) => {
   const requested = String(interaction.params.scope ?? '').split(' ').filter(Boolean)
   const requestedPlatform = requested.filter(s => !oidcScopeNames.includes(s))
   // without a platform scope in the request the grant's scopes join the request (createConsentGrant)
   if (!requestedPlatform.length) return undefined
   const records = await listGrantRecords({ subjectId: user.id, clientId: interaction.params.client_id as string })
   for (const record of records) {
-    if (record.subject.type !== 'user' || record.resources[0] !== resource || record.scope !== scope.join(' ')) continue
+    if (record.subject.type !== 'user' || record.sessionId !== serverSessionId || record.resources[0] !== resource || record.scope !== scope.join(' ')) continue
     if (record.account.type !== account.type || record.account.id !== account.id || !sameDepartment(record.account.department, account.department)) continue
     const grant = await ic.provider.Grant.find(record._id)
     if (!grant || grant.accountId !== user.id) continue
@@ -192,7 +193,7 @@ export const finishUserConsent = async (req: Request, res: Response, ic: Interac
   const { url, resolved } = await resolveInteractionResource(ic.ctx, interaction)
   await detachForeignSession(ic.provider, interaction, user.id)
   if (!await lockDecision(interaction.uid)) return undefined
-  const liveGrantId = reuseLiveGrant ? await reusableGrantId(ic, interaction, user, account, scope, url) : undefined
+  const liveGrantId = reuseLiveGrant ? await reusableGrantId(ic, interaction, user, serverSessionId, account, scope, url) : undefined
   if (liveGrantId) return await ic.provider.interactionResult(req, res, { login: { accountId: user.id }, consent: { grantId: liveGrantId } })
   return await grantAndResume(req, res, ic, interaction, {
     subject: { type: 'user', id: user.id },

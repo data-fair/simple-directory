@@ -255,6 +255,9 @@ test.describe('oauth authorization code flow', () => {
     assert.ok(await openInteraction(forced, forcedLocation))
   })
 
+  // a second browser of the oauth code user: a second server session
+  const axiosWithLogin = async () => (await import('../support/axios.ts')).axiosAuth({ email: 'oauth-code-user@test.com', password, directoryUrl: issuer, axiosOpts: { baseURL: issuer } })
+
   // the whole implicit flow of a member of the owner org, no consent screen
   const implicitFlow = async (opts: CodeFlowOptions) => {
     const { pkce, location } = await startAuthorization(opts)
@@ -278,6 +281,19 @@ test.describe('oauth authorization code flow', () => {
     assert.equal((await grantRecords({ clientId })).length, 1)
     await refreshWorks(flow(), first.refresh_token)
     await refreshWorks(flow(), second.refresh_token)
+  })
+
+  test('implicit consent reuses a grant of the same server session only', async () => {
+    const { user, adminAx, clientId, flow } = await setup({ consent: 'implicit' })
+    const first = await implicitFlow(flow())
+    const otherAx = await axiosWithLogin()
+    const second = await implicitFlow(flow({ browserAx: otherAx }))
+    const records = (await grantRecords({ clientId })).sort((a, b) => a.createdAt - b.createdAt)
+    assert.equal(records.length, 2, 'one grant per server session')
+    await adminAx.delete(`/api/users/${user.id}/sessions/${records[1].sessionId}`)
+    await refreshWorks(flow(), first.refresh_token)
+    const res = await tokenRequest(issuer, { grant_type: 'refresh_token', refresh_token: second.refresh_token, client_id: clientId })
+    assert.equal(res.status, 400, JSON.stringify(res.data))
   })
 
   test('implicit consent with a new scope gets a new grant', async () => {
