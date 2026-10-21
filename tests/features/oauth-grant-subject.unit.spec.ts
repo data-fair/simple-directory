@@ -15,6 +15,9 @@ const nhiUser = (nhi: Record<string, any> = {}, extra: Record<string, any> = {})
   ...extra
 })
 
+// the org admin who authorized the grant, present unless a test replaces it
+const adminUser = (role = 'admin') => ({ id: 'test_gs_admin', name: 'Admin', email: 'admin@gs.local', organizations: [{ ...nhiOrg, role }] })
+
 const nhiRecord = (resource: string, extra: Record<string, any> = {}) => ({
   _id: 'test_gs_grant',
   issuer: '',
@@ -37,7 +40,8 @@ test.describe('oauth grant subject re-checks', () => {
   const withUsers = async (users: Record<string, any>, fn: () => Promise<void>) => {
     const storages = (await import('../../api/src/storages/index.ts')).default as any
     const previous = storages._globalStorage
-    storages._globalStorage = { getUser: async (id: string) => users[id] }
+    const all: Record<string, any> = { test_gs_admin: adminUser(), ...users }
+    storages._globalStorage = { getUser: async (id: string) => all[id] ?? undefined }
     try {
       await fn()
     } finally {
@@ -74,6 +78,23 @@ test.describe('oauth grant subject re-checks', () => {
     })
     await withUsers({ 'nhi-test_gs': nhiUser({ scopes: ['other:x'] }) }, async () => {
       await refused(checkGrantSubject(record, ctx, '10.0.0.1'), /no scope left/)
+    })
+  })
+
+  test('an nhi grant ends with the admin role of its authorizer', async () => {
+    const { checkGrantSubject } = await import('../../api/src/oauth-server/grant-subject.ts')
+    const ctx = await mainIssuer()
+    const record = nhiRecord(ctx.siteUrl, { issuer: ctx.issuer })
+    await withUsers({ 'nhi-test_gs': nhiUser(), test_gs_admin: adminUser('user') }, async () => {
+      await refused(checkGrantSubject(record, ctx, '10.0.0.1'), /authorizer/)
+    })
+    await withUsers({ 'nhi-test_gs': nhiUser(), test_gs_admin: undefined }, async () => {
+      await refused(checkGrantSubject(record, ctx, '10.0.0.1'), /authorizer/)
+    })
+    // an admin of the whole org covers an nhi of one of its departments
+    const depRecord = { ...record, account: { ...record.account, department: 'dep1' } }
+    await withUsers({ 'nhi-test_gs': nhiUser({}, { organizations: [{ ...nhiOrg, department: 'dep1' }] }) }, async () => {
+      assert.ok(await checkGrantSubject(depRecord, ctx, '10.0.0.1'))
     })
   })
 

@@ -394,7 +394,8 @@ subject (`checkGrantSubject`) and rebuild the claims from them; any failure is
 exists and is not expired, same issuer, subject type versus client kind, the
 user or NHI exists and has not changed type, the resource still resolves in
 the realm, for an NHI its organization binding, `ipBinding` absent,
-`allowedIps` and `assertNhiMayTarget`, for a user subject the site client still
+`allowedIps`, `assertNhiMayTarget` and the admin who authorized the grant
+still being an admin of the organization (same rule as the consent), for a user subject the site client still
 exists and still registers the resource, the bound membership still exists
 (department matched strictly), and the scope still narrows to something.
 

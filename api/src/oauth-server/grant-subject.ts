@@ -12,6 +12,7 @@ import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
 import { sdClaims } from './access-token.ts'
 import type { OAuthGrantRecord } from './grants.ts'
+import { consentAdminOrgs } from './consent.ts'
 
 // the reason is for the server logs, the client only sees invalid_grant
 export class GrantSubjectError extends Error {}
@@ -85,5 +86,13 @@ export const checkGrantSubject = async (record: OAuthGrantRecord, ctx: IssuerCon
   const scope = narrowScope(record.scope.split(' '), max, await knownScopeNames()).join(' ')
   if (!scope) throw new GrantSubjectError('no scope left')
   const claims = boundAccountClaims(user, record, resource, scope)
+  if (user.nhi) {
+    // the admin who bound the client to the NHI must still be one (same rule as the consent): a
+    // demoted, removed or deleted admin must not keep an agent acting for the organization
+    const authorizer = await storages.globalStorage.getUser(record.authorizedBy.id)
+    if (!authorizer || !consentAdminOrgs(authorizer).some(a => a.id === record.account.id)) {
+      throw new GrantSubjectError('the authorizer is no longer an admin of the organization')
+    }
+  }
   return { user, scope, resource, claims }
 }
