@@ -88,8 +88,6 @@ test.describe('oauth dynamic clients', () => {
       [{ ...claudeCode(), policy_uri: 'http://x.org/policy' }, 'invalid_client_metadata'],
       [{ ...claudeCode(), tos_uri: 'http://x.org/tos' }, 'invalid_client_metadata'],
       [{ ...claudeCode(), token_endpoint_auth_method: 'private_key_jwt', jwks_uri: 'http://x.org/jwks' }, 'invalid_client_metadata'],
-      // reserved to site clients
-      [{ ...claudeCode(), sd_allowed_origins: ['https://evil.example.org'] }, 'invalid_client_metadata'],
       // validated by an outbound fetch
       [{ ...claudeCode(), sector_identifier_uri: 'https://x.org/sector' }, 'invalid_client_metadata']
     ]

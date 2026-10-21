@@ -12,7 +12,7 @@ import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
 import { allowFetch, checkDynamicMetadata, ssrfFetch } from './dynamic-clients.ts'
 import { nanoid } from 'nanoid'
-import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS, siteClientResourceAllowed, agentClientsEnabled, codeFlowEnabled } from './clients.ts'
+import { findNhiClient, findSiteClient, siteClientMetadata, clientKind, redirectUriCORS, agentClientsEnabled, codeFlowEnabled } from './clients.ts'
 import { resolveResource, ResourceError, nhiMayTarget } from './issuers.ts'
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
 import { sdClaims, stripOidcScopes } from './access-token.ts'
@@ -58,7 +58,7 @@ const adapterFactory = (ctx: IssuerContext) => (name: string) => {
     const nhiClient = await findNhiClient(id)
     if (nhiClient) return nhiClient as any
     const siteClient = await findSiteClient(ctx, id)
-    if (siteClient) return { ...siteClientMetadata(siteClient), sd_allowed_origins: siteClientOrigins(siteClient) } as any
+    if (siteClient) return siteClientMetadata(siteClient)
     if (!agentClientsEnabled() || clientKind(id) !== 'dcr') return undefined
     return await findStoredClient(id)
   }
@@ -164,13 +164,13 @@ const findAccount = (ctx: IssuerContext): FindAccount => async (koaCtx, sub, tok
   return await grantSubject(ctx, koaCtx, sub, token as any)
 }
 
-// the authorization code flow of a site client (user subject): API resources of the client's
-// registration only, never an MCP server
+// the authorization code flow of a site client (user subject): the API of its own site only,
+// never an MCP server
 const siteClientResourceScope = async (ctx: IssuerContext, koaCtx: KoaContextWithOIDC, clientId: string, resource: ResolvedResource) => {
   const siteClient = await findSiteClient(ctx, clientId)
   if (!siteClient) throw new errors.InvalidTarget('unknown client')
   if (resource.kind === 'mcp') throw new errors.InvalidTarget('an mcp resource is reserved to service accounts')
-  if (!siteClientResourceAllowed(ctx, siteClient, resource)) throw new errors.InvalidTarget('resource not registered for this client')
+  if (resource.siteUrl !== ctx.siteUrl) throw new errors.InvalidTarget('a site client only targets its own site')
   const known = await knownScopeNames()
   const route = koaCtx.oidc?.route
   if (route === 'authorization' || route === 'resume') {
@@ -271,20 +271,18 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
     },
     responseTypes: codeFlow ? ['code'] : [],
     pkce: { required: () => true },
-    // carries the allowed CORS origins of a site client (see adapterFactory). The validator runs on
-    // every client the provider builds (registration, CIMD document, adapter lookup): the place of
+    // the validator runs on every client the provider builds (registration, CIMD document, adapter
+    // lookup), once per listed property: client_id, which every client has, makes it the place of
     // SD's rules for dynamic clients
     extraClientMetadata: {
-      properties: ['sd_allowed_origins'],
-      validator: (_koaCtx, key, value, metadata) => {
+      properties: ['client_id'],
+      validator: (_koaCtx, _key, _value, metadata) => {
         const kind = clientKind(metadata.client_id as string)
         if (kind === 'site' || kind === 'nhi') return
-        // a dynamic client must not be able to widen its own CORS origins
-        if (key === 'sd_allowed_origins' && value !== undefined) (metadata as any).invalidate('sd_allowed_origins is reserved to site clients')
         checkDynamicMetadata(metadata)
       }
     },
-    clientBasedCORS: (_koaCtx, origin, client) => sdClientBasedCORS(origin, client as any),
+    clientBasedCORS: (_koaCtx, origin, client) => redirectUriCORS(origin, client),
     // NHI clients authenticate with their keys, no client has a secret; the code flow clients are
     // public (PKCE)
     clientAuthMethods: codeFlow ? ['private_key_jwt', 'none'] : ['private_key_jwt'],

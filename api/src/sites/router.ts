@@ -209,9 +209,6 @@ router.patch('/:id', async (req, res, next) => {
       for (const uri of client.redirectUris) {
         if (!siteRedirectUriAllowed(uri)) throw httpError(400, 'redirect uri must be https (or http on a loopback host), without fragment or credentials: ' + uri)
       }
-      for (const origin of client.allowedOrigins ?? []) {
-        if (!siteRedirectUriAllowed(origin) || new URL(origin).origin !== origin) throw httpError(400, 'allowed origin must be a bare https (or loopback http) origin: ' + origin)
-      }
       const { localeCode, messages } = reqI18n(req)
       checkScopes(client.scopes, await getKnownScopes(localeCode, messages.scopes), (site.oauthClients ?? []).find(c => c.id === client.id)?.scopes)
     }

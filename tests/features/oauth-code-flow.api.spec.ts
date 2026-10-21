@@ -176,15 +176,14 @@ test.describe('oauth authorization code flow', () => {
     assert.equal(await authorizeError(flow({ resource: siteUrl + '/mcp-server/mcp' })), 'invalid_target')
   })
 
-  test('a realm site outside the client\'s resources is invalid_target; listed in resources it works', async () => {
-    const { config, owner, adminAx, clientId, flow } = await setup()
+  test('a site client only targets its own site', async () => {
+    const { config, owner, adminAx, flow } = await setup()
     await axios().post('/api/sites', { _id: 'test_oauth_code_realm', owner, host: realmHost }, { params: { key: config.secretKeys.sites } })
     await adminAx.patch('/api/sites/test_oauth_code_realm', { authMode: 'onlyOtherSite', authOnlyOtherSite: siteHost })
     await testEnvAx.post('/clear-site-cache')
     assert.equal(await authorizeError(flow({ resource: realmUrl })), 'invalid_target')
-    await patchClient(adminAx, clientId, { resources: [siteUrl, realmUrl] })
-    const result = await runCodeFlow(flow({ resource: realmUrl }))
-    assert.equal((jwt.decode(result.tokens.access_token) as jwt.JwtPayload).aud, realmUrl)
+    const result = await runCodeFlow(flow({ resource: siteUrl }))
+    assert.equal((jwt.decode(result.tokens.access_token) as jwt.JwtPayload).aud, siteUrl)
   })
 
   test('main site clients need the oauthClients category', async () => {

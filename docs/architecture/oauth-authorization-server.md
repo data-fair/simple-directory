@@ -92,7 +92,7 @@ CIMD itself.
 | Kind | Id | Subject | Authentication | Resources | Consent |
 | --- | --- | --- | --- | --- | --- |
 | NHI | `nhi-<id>` | the NHI, `client_credentials` only | `private_key_jwt` against its inline `jwks` | realm | none |
-| site client | `site-<nanoid>` | a **user** | none (PKCE) | its registered `resources` (default the issuer site), never MCP | the user |
+| site client | `site-<nanoid>` | a **user** | none (PKCE) | its own site's API, never MCP | the user |
 | CIMD | its https document URL | an **NHI** | none or `private_key_jwt` | realm, MCP included | an org admin |
 | DCR | `dcr-<nanoid>` | an **NHI** | none or `private_key_jwt` | realm, MCP included | an org admin |
 
@@ -100,9 +100,9 @@ CIMD itself.
 superadmins only; the id is generated once and never moves between sites.
 Redirect URIs are `https` (or `http` on a loopback host), without fragment or
 credentials, matched exactly; `scopes` are checked against the known scopes on
-save. `allowedOrigins` (bare origins of the same kinds, default: the origins of the
-redirect URIs) are the CORS origins of the token and revocation endpoints, a
-privilege reserved to site clients. With its token a dashboard calls the APIs
+save. A site client only targets its own site's API. The token and revocation
+endpoints answer CORS from the origins of a public client's redirect URIs (the
+provider's default rule, `redirectUriCORS`). With its token a dashboard calls the APIs
 from the browser: every scope-aware service answers bearer calls from any
 origin without credentials (lib-express `session.bearerCors()`, mounted after
 the authorization server in `app.ts`). Removing a client or deleting its site
@@ -111,12 +111,13 @@ revokes its grants.
 **Dynamic clients** are agents nobody registered by hand: open registration (no
 initial or registration access token, a registration is final) and CIMD. Their
 rules live in one place, `checkDynamicMetadata`, run by the provider's
-`extraClientMetadata.validator` on every client it builds (registration, CIMD
+`extraClientMetadata.validator` (listed on `client_id`, so it runs once per
+client) on every client it builds (registration, CIMD
 document, stored client):
 
 - authentication `none` or `private_key_jwt`; grant types `authorization_code`
   and `refresh_token`; response type `code`;
-- `sd_allowed_origins` and `sector_identifier_uri` refused; `logo_uri`,
+- `sector_identifier_uri` refused; `logo_uri`,
   `client_uri`, `policy_uri`, `tos_uri`, `jwks_uri` `https` only;
 - redirect URIs: `https` (not a loopback host), loopback `http`, or a
   private-use scheme with a dot (RFC 8252 7.1); never `javascript:`, `data:`,
@@ -333,7 +334,6 @@ go through `logSafeName`.
 12. **No redirect URI is matched by prefix or wildcard**, the loopback port of
     an all-loopback dynamic client excepted.
 13. **No scope wider than the request, the registration or the NHI maximum.**
-14. **Custom CORS origins are reserved to site clients** (`sdClientBasedCORS`).
 
 ## Known accepted surfaces
 

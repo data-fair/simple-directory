@@ -6,7 +6,7 @@ import type { User } from '#types'
 import { knownScopeNames } from '../scopes/service.ts'
 import { narrowScope } from '../nhis/scopes.ts'
 import { ipAllowed } from '../nhis/ips.ts'
-import { findSiteClient, siteClientResourceAllowed } from './clients.ts'
+import { findSiteClient } from './clients.ts'
 import { resolveResource, ResourceError, nhiMayTarget } from './issuers.ts'
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
 import { sdClaims } from './access-token.ts'
@@ -67,7 +67,7 @@ export const checkGrantSubject = async (record: OAuthGrantRecord, ctx: IssuerCon
     if (resource.kind === 'mcp') throw new GrantSubjectError('an mcp resource requires an nhi subject')
     const siteClient = await findSiteClient(ctx, record.clientId)
     if (!siteClient) throw new GrantSubjectError('the site client no longer exists')
-    if (!siteClientResourceAllowed(ctx, siteClient, resource)) throw new GrantSubjectError('resource no longer registered for this client')
+    if (resource.siteUrl !== ctx.siteUrl) throw new GrantSubjectError('a site client only targets its own site')
     max = siteClient.scopes
   }
 

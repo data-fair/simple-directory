@@ -344,7 +344,7 @@ export default {
       type: 'object',
       additionalProperties: false,
       required: ['name', 'redirectUris', 'scopes'],
-      layout: { children: ['id', 'name', 'logoUri', 'redirectUris', 'allowedOrigins', 'scopes', 'resources'] },
+      layout: { children: ['id', 'name', 'logoUri', 'redirectUris', 'scopes'] },
       properties: {
         id: {
           title: 'Identifiant (client_id)',
@@ -400,19 +400,6 @@ export default {
           minItems: 1,
           items: { type: 'string', pattern: '^https?://' },
         },
-        allowedOrigins: {
-          title: 'Origines autorisées (CORS)',
-          'x-i18n-title': {
-            fr: 'Origines autorisées (CORS)',
-            en: 'Allowed origins (CORS)',
-            es: 'Orígenes permitidos (CORS)',
-            it: 'Origini consentite (CORS)',
-            pt: 'Origens permitidas (CORS)',
-            de: 'Erlaubte Origins (CORS)'
-          },
-          type: 'array',
-          items: { type: 'string', pattern: '^https?://' },
-        },
         scopes: {
           title: 'Permissions maximales',
           'x-i18n-title': {
@@ -425,19 +412,6 @@ export default {
           },
           type: 'array',
           minItems: 1,
-          items: { type: 'string' },
-        },
-        resources: {
-          title: 'Ressources',
-          'x-i18n-title': {
-            fr: 'Ressources',
-            en: 'Resources',
-            es: 'Recursos',
-            it: 'Risorse',
-            pt: 'Recursos',
-            de: 'Ressourcen'
-          },
-          type: 'array',
           items: { type: 'string' },
         }
       }

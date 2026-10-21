@@ -58,12 +58,6 @@ export const findSiteClient = async (ctx: IssuerContext, clientId: string): Prom
   return (await getIssuerSiteClients(ctx)).find(c => c.id === clientId)
 }
 
-// the API resources of a site client: its registered resources, the issuer site by default
-export const siteClientResourceAllowed = (ctx: IssuerContext, client: SiteOAuthClient, resource: { siteUrl: string }) => {
-  const allowed = (client.resources?.length ? client.resources : [ctx.siteUrl]).map(r => r.replace(/\/+$/, ''))
-  return allowed.includes(resource.siteUrl)
-}
-
 export const siteClientMetadata = (client: SiteOAuthClient): ClientMetadata => ({
   client_id: client.id!,
   client_name: client.name,
@@ -95,22 +89,7 @@ export const siteRedirectUriAllowed = (uri: string): boolean => {
   return url.protocol === 'https:' || isLoopbackRedirectUri(uri)
 }
 
-export const siteClientOrigins = (client: SiteOAuthClient): string[] => {
-  if (client.allowedOrigins?.length) return client.allowedOrigins
-  const origins = new Set<string>()
-  for (const uri of client.redirectUris) {
-    try { origins.add(new URL(uri).origin) } catch { /* refused at registration */ }
-  }
-  return [...origins]
-}
-
-// only a site client may name its CORS origins (sd_allowed_origins), whatever other kinds carry;
-// the others keep the provider default (an origin of a registered redirect uri, public clients only)
-export const sdClientBasedCORS = (origin: string, client: { clientId: string, clientAuthMethod?: string, redirectUris?: string[] } & Record<string, any>): boolean => {
-  if (origin === 'null') return false
-  if (clientKind(client.clientId) === 'site') {
-    const allowed = client.sd_allowed_origins as string[] | undefined
-    return !!allowed?.includes(origin)
-  }
-  return client.clientAuthMethod === 'none' && !!client.redirectUris?.some(uri => URL.parse(uri)?.origin === origin)
-}
+// the provider's default rule, without its notice: a public client (PKCE, every code flow client)
+// from an origin of one of its redirect uris
+export const redirectUriCORS = (origin: string, client: { clientAuthMethod?: string, redirectUris?: readonly string[] }): boolean =>
+  origin !== 'null' && client.clientAuthMethod === 'none' && !!client.redirectUris?.some(uri => URL.parse(uri)?.origin === origin)

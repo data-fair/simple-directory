@@ -89,13 +89,12 @@ test.describe('oauth site clients api', () => {
     }
   })
 
-  test('invalid allowed origins and unknown scopes are refused', async () => {
+  test('unknown scopes, and the removed allowedOrigins and resources options, are refused', async () => {
     const { adminAx } = await setup()
-    for (const allowedOrigins of [['https://'], ['http://dash.example.org'], ['https://dash.example.org/path']]) {
-      await assert.rejects(adminAx.patch('/api/sites/' + siteId, { oauthClients: [clientBody({ allowedOrigins })] }), (err: any) => err.status === 400, JSON.stringify(allowedOrigins))
-    }
     await assert.rejects(adminAx.patch('/api/sites/' + siteId, { oauthClients: [clientBody({ scopes: ['nothing:known'] })] }), (err: any) => err.status === 400)
-    await adminAx.patch('/api/sites/' + siteId, { oauthClients: [clientBody({ allowedOrigins: ['https://dash.example.org'] })] })
+    await assert.rejects(adminAx.patch('/api/sites/' + siteId, { oauthClients: [clientBody({ allowedOrigins: ['https://dash.example.org'] })] }), (err: any) => err.status === 400)
+    await assert.rejects(adminAx.patch('/api/sites/' + siteId, { oauthClients: [clientBody({ resources: ['https://other.example.org'] })] }), (err: any) => err.status === 400)
+    await adminAx.patch('/api/sites/' + siteId, { oauthClients: [clientBody()] })
   })
 
   test('deleting a site revokes the grants of its clients', async () => {

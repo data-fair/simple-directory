@@ -139,7 +139,7 @@ test.describe('oauth refresh tokens and revocation', () => {
     assert.equal((await grantRecords({ clientId })).length, 1)
   })
 
-  test('cors on the token endpoint follows allowedOrigins', async () => {
+  test('cors on the token endpoint follows the origins of the redirect uris', async () => {
     const { clientId, flow } = await setup({ redirectUris: ['http://localhost:5999/cb', 'https://dash.example.org/cb'] })
     const { tokens } = await runCodeFlow(flow())
     const allowed = await refresh(clientId, tokens.refresh_token, {}, { origin: 'https://dash.example.org' })
