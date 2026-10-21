@@ -1,4 +1,4 @@
-// The NHI consent of dynamic clients (spec 9.3): an org admin binds an MCP agent (here a DCR client
+// The NHI consent of dynamic clients: an org admin binds an MCP agent (here a DCR client
 // registered with Claude Code's metadata) to an NHI of the org, existing or created inline.
 import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'

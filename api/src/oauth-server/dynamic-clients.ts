@@ -1,7 +1,7 @@
 // Dynamic clients of the authorization server (MCP and other agents): client id metadata documents
 // (CIMD, fetched by the provider, cached in its LRU, never stored) and dynamic client registration
 // (DCR, stored in the oauth-client collection, scoped to the issuer). Both follow the same rules.
-// A dynamic client's grant is always bound to an NHI (spec section 7.3, NHI consent).
+// A dynamic client's grant is always bound to an NHI, chosen at the consent of an org admin.
 import { isIP } from 'node:net'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { errors } from 'oidc-provider'

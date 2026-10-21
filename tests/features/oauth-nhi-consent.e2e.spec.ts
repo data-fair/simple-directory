@@ -1,4 +1,4 @@
-// The consent page for a dynamic client (spec 9.3): an org admin binds an unverified MCP agent
+// The consent page for a dynamic client: an org admin binds an unverified MCP agent
 // (a DCR client registered through the API) to an NHI created inline.
 import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'

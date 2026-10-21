@@ -1,4 +1,4 @@
-// SD's side of the authorization code flow (spec 9.1): the interaction entry reads the SD session,
+// SD's side of the authorization code flow: the interaction entry reads the SD session,
 // the consent page (SPA) reads the details and posts the decision. The provider keeps no login
 // state of its own, these routes tell it who consented to what (interactionResult).
 // Mounted after the session middleware; the dispatcher (router.ts) only lets through the exact
@@ -209,7 +209,7 @@ export const finishUserConsent = async (req: Request, res: Response, ic: Interac
   })
 }
 
-// --- NHI consent of dynamic clients (spec 9.3) ---
+// --- NHI consent of dynamic clients ---
 
 const nhiLifetimes = Object.keys(grantLifetimes) as (keyof typeof grantLifetimes)[]
 const defaultNhiLifetime = '30d'
@@ -232,7 +232,7 @@ const dynamicClientInfo = async (ic: InteractionContext, interaction: Interactio
 }
 
 // the NHIs of an organization that may be bound to this resource: no ipBinding (the token endpoint
-// caller is not the API caller, spec 8.3), a target the NHI may reach. Names and maximum scopes only.
+// caller is not the API caller), a target the NHI may reach. Names and maximum scopes only.
 const bindableNhis = async (orgId: string, resource: ResolvedResource, requested: string[], known: string[]) => {
   const { results } = await listNhis(orgId)
   return results

@@ -1,620 +1,348 @@
 # OAuth authorization server
 
-How simple-directory issues OAuth 2.0 access tokens at `/api/oauth/token`,
-which site is the issuer of those tokens, which resources a token can target,
-and the invariants that keep the server from becoming a way around the NHI
-confinement or the session protections. Two parts:
+How simple-directory issues OAuth 2.0 access tokens, for whom, for which
+resources, and the invariants that keep it from becoming a way around the NHI
+confinement or the session protections. Required reading for changes under
+`api/src/oauth-server/`, the token endpoint, the consent screens or discovery.
 
-- M1, the machine grants for non-human identities (NHIs): always available
-  when `oauthServer.enabled` and `manageNhis` are on.
-- M2, the authorization code flow with PKCE, SD-owned consent screens, rotating
-  refresh tokens and revocable grants, for site clients (dashboards, user
-  subject) and dynamic clients (MCP agents, always bound to an NHI chosen by an
-  org admin). Site clients need `oauthServer.siteClients`, dynamic clients
-  `oauthServer.agentClients`; the flow is served when either is on.
-
-Required reading for changes under `api/src/oauth-server/`, the token
-endpoint, the consent screens or discovery.
-
-See also [`non-human-identities.md`](non-human-identities.md) (the NHI model
-and the assertion exchange this endpoint reuses) and
-[`email-trust-and-site-isolation.md`](email-trust-and-site-isolation.md)
-(site isolation). `api/src/oauth/` is the unrelated SD-as-client code for
-external identity providers; the server lives in `api/src/oauth-server/`.
+See also [`non-human-identities.md`](non-human-identities.md) (the NHI model and
+the assertion exchange the machine grants reuse),
+[`session-theft-protections.md`](session-theft-protections.md) and
+[`email-trust-and-site-isolation.md`](email-trust-and-site-isolation.md).
+`api/src/oauth/` is the unrelated SD-as-client code for external identity
+providers.
 
 ## Shape
 
-`oidc-provider` (node-oidc-provider) does the protocol work (discovery,
-`client_credentials`, private_key_jwt client authentication, resource
-indicators). SD wraps it:
+`oidc-provider` does the protocol work; SD plugs into its extension points
+rather than around them:
 
-- `router.ts` is a dispatcher mounted on `/api/oauth/*` and the two
-  `/.well-known/{openid-configuration,oauth-authorization-server}` documents.
-  It forwards only an allowlist of exact canonical routes (see
-  [Routes](#routes)); every other path under
-  `/api/oauth/` or variant spelling of a discovery document is 404. The
-  provider's own router is case insensitive and accepts trailing slashes, so
-  without the allowlist `/api/oauth/Token/` would reach the token endpoint
-  past the rate limiter and the failure log. The provider's own jwks route is
-  not forwarded: discovery advertises the scoped key set instead. The
-  dispatcher then resolves the issuer from the request site, answers the JWT
-  bearer grant itself, and hands everything else to the provider of that
-  issuer.
-- `providers.ts` caches one provider per issuer, rebuilt when the scoped
-  signing key rotates or the issuer context (site, site `updatedAt`) changes,
-  because the provider's hooks read the context through closures.
-- `configuration.ts` holds the provider configuration, the resource hook and
-  the discovery overrides; `access-token.ts` the claims; `issuers.ts` the
-  issuer and resource rules; `clients.ts` the client lookup; `adapter.ts` the
-  mongo storage of provider models.
-- M2 adds `interaction.ts` (the Express routes of the login handoff and the
-  consent), `consent.ts` (who may consent, which accounts a grant can be bound
-  to, creation of the provider `Grant`), `grants.ts` (the SD grant records and
-  their revocation), `grant-subject.ts` (the re-check at every issuance),
-  `grants-router.ts` (connected applications of a user) and
-  `dynamic-clients.ts` (CIMD, DCR, SSRF safe fetch).
-- Tokens are signed with the **scoped** key set (the one behind
-  `/.well-known/scoped-jwks.json`), never with the session keys.
+| File | Role |
+| --- | --- |
+| `router.ts` | dispatcher: an allowlist of exact canonical routes (the provider's router is case insensitive and tolerates trailing slashes, a variant would skip SD's checks), the issuer of the request, rate limits, the JWT bearer grant |
+| `providers.ts` | one provider per issuer, rebuilt on a scoped key rotation or a flag change; provider events and the response middleware |
+| `configuration.ts` | the provider configuration: adapter chain, `getResourceServerInfo`, `findAccount`, `extraClientMetadata.validator`, `extraTokenClaims`, interaction policy, discovery overrides |
+| `issuers.ts` | issuers, realm, resource resolution, the NHI site rule |
+| `clients.ts`, `dynamic-clients.ts` | client kinds, site clients, CIMD/DCR rules, the SSRF safe fetch |
+| `interaction.ts`, `consent.ts` | SD's login handoff and consent (Express routes, after the session middleware) |
+| `grants.ts`, `grant-subject.ts`, `grants-router.ts` | grant records, revocation, the re-check at every issuance, connected applications |
+| `adapter.ts`, `access-token.ts`, `jwt-bearer.ts` | mongo storage of provider models, claims, the JWT bearer grant |
 
-## Issuer sites and realm
+Tokens are RFC 9068 `at+jwt` signed with the **scoped** key set (discovery's
+`jwks_uri` is `/.well-known/scoped-jwks.json`), never with the session keys.
 
-The issuer of a request is derived from its site (`issuerOfSite`):
+## Flags
+
+| Config | Serves |
+| --- | --- |
+| `oauthServer.enabled` | everything under `/api/oauth/` and the two discovery documents (404 when off) |
+| `manageNhis` | the machine grants (`client_credentials`, JWT bearer) |
+| `oauthServer.siteClients` | site clients: dashboards registered in the site settings, acting for a user |
+| `oauthServer.agentClients` | agent clients: CIMD and DCR, acting as an NHI; the registration route |
+| either client flag | the code flow they share: authorize, resume, revoke, the interaction routes, refresh tokens |
+| `mcpPath` | the path segment of an MCP resource (default `/mcp-server`) |
+| `mainSiteFromDb` with `oauthClients` | site clients of the main site, read from its document ([`main-site-config.md`](main-site-config.md)) |
+
+A flag off makes its clients unknown, at authorization as at refresh. The
+client flags are off in `default.cjs`, on in development and test. Discovery
+advertises only what is served: it is computed by the provider from this
+configuration, plus `discoveryOverrides` for what configuration cannot say (the
+scoped jwks, the live platform scopes, the JWT bearer grant, and without the
+code flow the removal of the authorization endpoint the provider always lists).
+Disabled in the provider: userinfo, introspection, PAR, logout, registration
+management, device flow, DPoP. Internal requests (no site context) get 404.
+
+The served routes: `POST /api/oauth/token`, the discovery documents, and with
+the code flow `/api/oauth/authorize` (and the provider's resume
+`/api/oauth/authorize/<uid>`), `POST /api/oauth/revoke`, `POST
+/api/oauth/register` (agent clients) and SD's interaction routes
+`/api/oauth/interaction/<uid>` and `/api/oauth/interaction/<uid>/details`.
+
+## Issuers, realm and resources
 
 | Request site | Issuer |
 | --- | --- |
 | main site | `config.publicUrl` |
-| an account main site (`isAccountMain`), or a standalone `onlyLocal` site whose owner has no designated main site | `<site url>/simple-directory` |
-| anything else | no issuer: 404 |
+| an account main site, or a standalone `onlyLocal` site whose owner has no designated main site | `<site url>/simple-directory` |
+| anything else | none: 404 |
 
-The site URL of the request must also be the canonical URL of the site that
-was resolved for it (same host, path equal to the site path), and the main
-issuer is only reached through the main site URL. The site lookup is a host
-plus path prefix match, so a request on a path site can resolve to the root
-site of the same host (or an unknown host to the main site); without this
-guard, the default audience (the request site URL) would name a site of
-another realm. Such a request has no issuer: 404.
+The request URL must be the canonical URL of the resolved site (the site lookup
+is a host plus path prefix match, the default audience must not name a site of
+another realm), and an issuer site must be its own account main site (a flag
+alone does not make an issuer). The **realm** of an issuer is the set of sites
+whose account main site it is.
 
-An issuer site must additionally be **its own account main site**
-(`resolveAccountMainSite(site)._id === site._id`). A site flagged
-`isAccountMain` but left in `onlyBackOffice` resolves to another site, so it is
-not an issuer: a site cannot declare itself an issuer by flag alone.
+A `resource` (RFC 8707) is parsed strictly (same scheme as the site, no query,
+fragment, userinfo or `//`) and reduced to origin plus path. Without it the
+target is the issuer site.
 
-The **realm** of an issuer is the set of sites whose account main site is that
-issuer (the main site for the main issuer). A token issued by an issuer can
-only target resources inside its realm, so one issuer never vouches for users
-or NHIs of another realm.
+- **API resource**: a site of the realm; `aud` is its URL.
+- **MCP resource**: a URL containing `<mcpPath>/`; `aud` is `[<site><mcpPath>,
+  <site>]`, the MCP server and the API it fronts. Reserved to NHI subjects.
+- Unknown or outside the realm: `invalid_target`.
+- An NHI may only target the main site or a site owned by its organization
+  (`nhiMayTarget`, department tolerant, the rule of `/nhi-token`).
+
+## Clients
+
+A client id is classified by its shape alone (`clientKind`). The adapter's
+`Client.find` chains NHI, site client, stored DCR client; the provider resolves
+CIMD itself.
+
+| Kind | Id | Subject | Authentication | Resources | Consent |
+| --- | --- | --- | --- | --- | --- |
+| NHI | `nhi-<id>` | the NHI, `client_credentials` only | `private_key_jwt` against its inline `jwks` | realm | none |
+| site client | `site-<nanoid>` | a **user** | none (PKCE) | its registered `resources` (default the issuer site), never MCP | the user, or implicit |
+| CIMD | its https document URL | an **NHI** | none or `private_key_jwt` | realm, MCP included | an org admin |
+| DCR | `dcr-<nanoid>` | an **NHI** | none or `private_key_jwt` | realm, MCP included | an org admin |
+
+**Site clients** live in the `oauthClients` list of an issuer site, edited by
+superadmins only; the id is generated once and never moves between sites.
+Redirect URIs are `https` (or `http` on a loopback host), without fragment or
+credentials, matched exactly. `allowedOrigins` (default: the origins of the
+redirect URIs) are the CORS origins of the token and revocation endpoints, a
+privilege reserved to site clients. With its token a dashboard calls the APIs
+from the browser: every scope-aware service answers bearer calls from any
+origin without credentials (lib-express `session.bearerCors()`, mounted after
+the authorization server in `app.ts`). Removing a client or deleting its site
+revokes its grants.
+
+**Dynamic clients** are agents nobody registered by hand: open registration (no
+initial or registration access token, a registration is final) and CIMD. Their
+rules live in one place, `checkDynamicMetadata`, run by the provider's
+`extraClientMetadata.validator` on every client it builds (registration, CIMD
+document, stored client):
+
+- authentication `none` or `private_key_jwt`; grant types `authorization_code`
+  and `refresh_token`; response type `code`;
+- `sd_allowed_origins` and `sector_identifier_uri` refused; `logo_uri`,
+  `client_uri`, `policy_uri`, `tos_uri`, `jwks_uri` `https` only;
+- redirect URIs: `https` (not a loopback host), loopback `http`, or a
+  private-use scheme with a dot (RFC 8252 7.1); never `javascript:`, `data:`,
+  `file:`, `vbscript:`, `blob:`, `about:`, a fragment or credentials. Loopback
+  mixed with a private-use scheme is refused;
+- `application_type` is set from the parsed URIs, whatever the client sent:
+  `native` when they are all loopback or include a private-use scheme, `web`
+  otherwise. The provider ignores the port of a loopback URI only for native
+  clients, so the port relaxation applies only to an all-loopback client;
+- a CIMD document is fetched through `ssrfFetch` (lib-node SSRF rules, IP
+  literals checked, no redirect followed, the provider's timeout and 5 KB
+  limit). When the global dispatcher is not undici's `Agent`, fetches fail
+  closed (`internalError` `oauth-ssrf-dispatcher`, logged once);
+- DCR clients are stored per issuer; those older than 30 days without a live
+  grant are deleted by the users worker.
+
+On the consent screen an unverified client never has a logo: its self-declared
+name (control, bidi and zero-width characters stripped, truncated:
+`logSafeName`), its id URL (CIMD) or the fact that it registered itself, and the
+redirect host, in WHATWG serialization (a lookalike host shows punycoded).
 
 ## Machine grants
 
-Both grants are for NHIs only and exist only when `manageNhis` is on. The
-`client_id` is the NHI user id.
+Both are for NHIs only (`manageNhis`), `client_id` the NHI id.
 
-**JWT bearer (RFC 7523 §2.1)** -- `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer`,
-`client_id`, `assertion`, optional `scope` and `resource`. Works for every NHI
-whatever its key binding (inline `jwks` or issuer discovery). It runs the
-exchange of `/api/auth/nhi-token` (`api/src/nhis/exchange.ts`: rate limit,
-site ownership, `allowedIps`, assertion verification, `exp` cap) without
-cookies.
+- **JWT bearer (RFC 7523 2.1)**, answered by SD ahead of the provider: a
+  provider client has one authentication method, and a cluster-issued
+  assertion (a Kubernetes service account token) cannot be a `private_key_jwt`
+  client assertion. It runs the exchange of `/api/auth/nhi-token`
+  (`nhis/exchange.ts`: rate limit, site ownership, `allowedIps`, assertion
+  verification, `exp` cap) without cookies. Every identification failure is a
+  uniform `invalid_grant` after a random delay; an unknown resource is
+  `invalid_target`, checked before the NHI is loaded.
+- **`client_credentials` with `private_key_jwt`**: NHIs with inline `jwks` only
+  (`findNhiClient`, synthesized on every lookup). The provider rejects replayed
+  client assertions; the client is authenticated, so errors are precise.
 
-**`client_credentials` with `private_key_jwt`** -- the NHI authenticates with a
-client assertion signed by its own key. The provider authenticates the client
-against the NHI's inline `jwks`, so only NHIs whose key binding has inline
-`jwks` are clients (`findNhiClient`, synthesized from the NHI record on every
-lookup, never stored). NHIs relying on issuer discovery use the JWT bearer
-grant only. The provider rejects a replayed client assertion.
+## Authorization code flow
 
-### Why the JWT bearer grant bypasses the provider
+The provider keeps no login state: SD's cookie session decides. The
+interaction policy forces the login and consent prompts (`sd_login`,
+`sd_consent`), so **every** authorization goes through SD once and
+`prompt=none` is always `login_required`. A grant exists only if SD created it
+at a consent decision (`loadExistingGrant` loads that one only).
 
-SD answers the JWT bearer grant ahead of the provider, on the same endpoint.
-A provider client has exactly one token endpoint authentication method. A
-Kubernetes projected service account token is a JWT bearer *assertion* issued
-by the cluster, it cannot be a `private_key_jwt` client assertion (its `iss`,
-`sub` and `aud` are not the client's), so it cannot authenticate through the
-provider. Handling the grant in `jwt-bearer.ts` also keeps the credential
-checks, the uniform failure and the rate limiting of the NHI exchange in one
-place (`exchange.ts`, shared with `/nhi-token`).
+1. `GET /api/oauth/authorize` (provider): client, redirect URI, PKCE (required,
+   S256), resource and scope, then the interaction entry.
+2. `GET /api/oauth/interaction/<uid>`: no session → the site login; a session
+   that may not consent → `/oauth/consent?error=forbidden`; otherwise the user
+   is recorded on the interaction and, for an implicit site client, the
+   decision is taken at once; else the SPA consent page.
+3. `GET …/details`: client, resource, scopes (broad ones flagged), accounts or
+   organizations and NHIs.
+4. `POST …/<uid>`: the decision, validated by `#doc/oauth/post-consent-req`,
+   answers `{ redirectTo }`, the provider's resume.
 
-## Resources and audiences
+**Who may consent.** A plain user session only: never a scoped or NHI session,
+an organization storage user, or an impersonation (`asAdmin`); a superadmin
+consents as the plain user. The request must also carry the exchange token of a
+**live and current server session** of that user (`reqServerSessionId`, the
+check keepalive applies): a copied `id_token` alone, or a rotated-out exchange
+cookie, cannot authorize a client. The grant records that session.
 
-A `resource` (RFC 8707) names where the token will be used. `resolveResource`
-parses it strictly: scheme equal to the site's, no query, fragment or
-userinfo, no `//` in the path; it is reduced to its canonical origin plus
-pathname without trailing slash. Without `resource` the target is the issuer
-site itself.
+**One decision per interaction.** A lock in `oauth-interaction-decisions`: a
+replay or a concurrent decision is 400 and creates nothing; a decision by
+another user than the one who opened the interaction is 403. A decision that
+fails after the lock ends the interaction (its grant and an inline NHI are
+removed, the lock stays); the person restarts from the client.
 
-- **API resource** -- the URL of a site in the realm. Token `aud` is that site
-  URL, which is what the lib audience check compares with the request site.
-- **MCP resource** -- a URL containing `config.mcpPath` (default `/mcp-server`)
-  followed by `/`: the part before it is the site, the full path is the MCP
-  server. Token `aud` is **two audiences**, `[<site url><mcpPath>, <site url>]`:
-  the MCP server itself and the site API it fronts.
-- An unknown resource or one outside the realm is `invalid_target`.
-- For an NHI, the target site must be the main site or a site owned by the
-  NHI's organization (`assertNhiMayTarget`, same department-tolerant rule as
-  `/nhi-token`).
+**A user for a site client.** The user binds the grant to their personal
+account (unless `ignorePersonalAccount`) or one of their memberships, the
+site's default account first; the screen lists the requested scopes within the
+registration. `consent: implicit` skips the screen for a member of the issuer
+site's owner organization (bound to that membership) and **reuses** a live
+grant of the same client, user, account, resource and scope whose provider
+Grant already covers every requested scope (the provider's own consent checks),
+so visits do not pile up grants; `prompt=consent` forces the screen. 30 days.
 
-## Claims
+**An org admin for a dynamic client.** Only a real admin membership (department
+admins with `depAdminIsOrgAdmin`), never admin mode nor the site-admin
+fallback. The admin binds the client to an existing NHI of the organization
+without `ipBinding` (the token endpoint caller is not the API caller), or to a
+new NHI created inline (the checks of `POST /nhis`, no key binding). Nothing is
+preselected; NHIs that could get none of the requested scopes are not offered;
+the lifetime is `1d`, `7d`, `30d` (default), `90d` or `1y`. The subject is the
+NHI, the admin is `authorizedBy`. An NHI gets no identity claim.
 
-The access token is an RFC 9068 `at+jwt` (30 minutes at most, `jwtDurations.nhiToken`,
-and never past the assertion `exp`):
+**Scopes.** Platform scopes are resource scopes, read live (`knownScopeNames`,
+refreshed from data-fair); the provider's static list holds the OIDC ones.
+`narrowScope(requested, maximum)` drops what the maximum (site client
+registration, NHI scopes) does not cover; empty is `invalid_scope`. A request
+without a platform scope gets the chosen scopes merged into its stored request.
+`openid`, `profile`, `email` are honoured for users only and never appear in an
+access token's `scope`.
 
-- `iss` the issuer, `sub` and `client_id` the NHI id, `aud` as above, `jti`,
-  `iat`, `exp`;
-- `scope`: the NHI's granted scope. OIDC identity scopes (`openid`, `profile`,
-  `email`, `offline_access`) are dropped, a machine grant has no end user;
-- the SD token payload of the NHI for the target site (`getTokenPayload`:
-  `organizations`, `name`, ...), minus every admin claim;
-- `boundIp` when the NHI has `ipBinding`.
+**Subject switch.** When the provider session belongs to another account, SD
+destroys it before resuming (`detachForeignSession`), so user A then user B, or
+a user grant then an NHI grant, work in one browser.
 
-The claims are computed by the grant that knows the NHI and handed to the
-provider's JWT customizer through the koa state, so both grants produce the
-same token shape. The code and refresh grants of M2 use the same path: the
-claims are rebuilt from the grant record and the current user or NHI at every
-issuance, with `sub` and `client_id` the user or NHI, `scope` the narrowed
-platform scope, `organizations` the bound account only and 15 minutes for a
-user subject. A user subject never gets the MCP audience, and no token carries
-`isAdmin`, `adminMode` or `asAdmin`. An ID token (user subjects, with `openid`)
-carries `sub`, plus `name` for `profile` and `email` for `email`.
+**Errors and framing.** Errors that cannot go back to the client land on
+`<issuer>/oauth/consent?error=<code>`; the page shows only values matching
+`^[a-z_]{1,64}$`. `/oauth/consent` (every spelling the UI router accepts) is
+served with `frame-ancestors 'none'` and `X-Frame-Options: DENY`.
 
-## Authorization code flow (M2)
+## Grants, refresh and revocation
 
-### Client families
+The SD record of a grant is the `sd` field of the provider's own `oauth-grant`
+document: issuer, client, subject, bound account, scope, the single resource,
+`authorizedBy`, the consenting `sessionId`, dates. The adapter updates
+documents partially, so provider saves keep it, and whatever destroys the
+Grant removes it.
 
-A client id is classified by its shape and nothing else (`clientKind`). The
-adapter's `Client.find` runs the chain NHI client, site client, stored DCR
-client; the provider's own CIMD fetch comes last.
+At the code exchange and every refresh `findAccount` re-checks the grant
+(`checkGrantSubject`): record live, same issuer, subject type matching the
+client kind, subject still existing with the same type, resource still in the
+realm; for an NHI its single organization, no `ipBinding`, `allowedIps`,
+`nhiMayTarget` and its authorizing admin still an admin of the organization;
+for a user the site client and its resource registration, and the bound
+membership (department exact). The scope can only narrow; empty or any failure
+is `invalid_grant` (reason in the debug log). The `organizations` claim holds
+the bound account only (`[]` for the personal account). A refresh may ask for a
+narrower platform `scope`; one asking only OIDC scopes keeps the grant's.
+Every successful exchange touches the record's `lastUsedAt`.
 
-| Kind | Client id | Subject of its grants | Authentication | Resources |
-| --- | --- | --- | --- | --- |
-| NHI | `nhi-<nanoid>` | the NHI (`client_credentials` only, M1) | `private_key_jwt` | realm, per NHI |
-| site client | `site-<nanoid>` | a **user** | none (public, PKCE) | the client's registered `resources`, default the issuer site; never an MCP server |
-| CIMD | the https URL of the document | an **NHI** | none or `private_key_jwt` | any resource of the realm, including MCP |
-| DCR | `dcr-<nanoid>` | an **NHI** | none or `private_key_jwt` | same as CIMD |
+Refresh tokens come with every code exchange of a client allowed
+`refresh_token` and **rotate on every use**. Presenting a used one revokes the
+whole grant, no grace window, even when the subject checks would fail
+(`findAccount` logs `sd.oauth.grant.reused` before the provider's consumed
+check). Consuming a code or refresh token is a conditional update: of two
+concurrent uses one wins, the other gets `invalid_grant`.
 
-A site client's grant never has an NHI subject, a dynamic client's grant never
-has a user subject; `createConsentGrant` refuses the other pairs and
-`checkGrantSubject` refuses them again at every issuance.
+Revocation removes the refresh tokens, codes and the Grant with its record:
 
-**Site clients** are entries of the `oauthClients` list of an issuer site
-document, edited by superadmins only (site PATCH requires admin mode). The id
-is generated on first save and never changes or moves between sites. A client
-has a name, optional `https` logo, redirect URIs, `allowedOrigins`, `scopes`,
-`resources` and a `consent` mode. On save: redirect URIs must be `https` (or
-`http` on a loopback host) without fragment or credentials; `allowedOrigins`
-bare origins of the same kinds (they default to the origins of the redirect
-URIs) and are the CORS origins of the token and revocation endpoints, a
-privilege reserved to site clients (`sd_allowed_origins` is rejected on any
-other kind); `scopes` are checked against the known scopes. With its token, a
-dashboard calls the APIs from the browser. Every scope-aware service, SD
-included, answers those calls from any origin, without credentials, when they
-carry a bearer token: lib-express `session.bearerCors()`, mounted in
-`api/src/app.ts` after the authorization server. A bearer token is not ambient,
-so the origin adds nothing to it, and a call without one gets no CORS header.
-`/api/oauth/*` is answered before it, with the per-client rule above.
-Data-fair answers CORS on every route with `*` and no credentials. Removing a client
-from the list, or deleting the site, revokes all its grants. The main site's
-clients are read from its document only when `MAIN_SITE_FROM_DB` contains
-`oauthClients`.
-
-**Dynamic clients** are for agents (MCP clients) that nobody registered by
-hand. Registration (`POST /api/oauth/register`) is open (no initial access
-token, no registration access token, no management route: a registration is
-final) and CIMD (a client whose id is an https URL serving its metadata) needs
-no registration at all. Both go through `checkDynamicMetadata`, run by the
-provider's `extraClientMetadata.validator` on every client it builds (a
-registration, a CIMD document, a stored client), the single place of these
-rules:
-
-- token endpoint authentication `none` (default) or `private_key_jwt`; grant
-  types `authorization_code` and `refresh_token` only; response type `code`
-  only. `client_credentials` is not available to a dynamic client;
-- `sd_allowed_origins` and `sector_identifier_uri` are refused, other `sd_*`
-  metadata is unrecognized and dropped by the provider; `logo_uri`,
-  `client_uri`, `policy_uri`, `tos_uri` and `jwks_uri` must be `https`;
-- `application_type` is always set from the parsed redirect URIs: `native`
-  when every one is loopback or none is `https` (private-use schemes);
-  otherwise (`https`, or loopback with `https`) `web`, whatever the client sent. The provider ignores the port of a loopback
-  redirect URI (RFC 8252 7.3) only for native clients, so the port relaxation
-  applies only when **every** redirect URI is loopback. Loopback together with
-  `https` makes a web client (exact match, port included); loopback together
-  with a private-use scheme is refused;
-- a CIMD document is fetched by the provider through `ssrfFetch` (lib-node
-  SSRF rules, IP literals checked, no redirect followed; the provider's 2.5 s
-  timeout and 5 KB body limit) and validated like a registration. A test-only fixture hook serves documents from memory and exists
-  only with `ENABLE_TEST_API=1`;
-- a DCR client is stored per issuer with a `dcr-` id. Stored clients older than
-  30 days with no live grant record are deleted by the users worker (there is
-  no `lastGrantAt`, a client with a grant is kept).
-
-An unverified dynamic client is never given a logo on the consent screen: its
-self-declared name, its id URL (CIMD) or the fact that it registered itself
-(DCR), and the host the code goes to. Against display spoofing, the name is
-stripped of control characters, bidi controls (U+202A-U+202E, U+2066-U+2069,
-U+200E, U+200F, U+061C) and zero-width characters (U+200B-U+200D, U+2060,
-U+FEFF) and truncated (`logSafeName`), and the id URL and the redirect host are
-shown in their WHATWG serialization, so an internationalized host appears
-punycoded (`xn--...`).
-
-### Redirect URIs
-
-Redirect URIs are matched exactly by the provider: no prefix, no wildcard, no
-normalization (trailing slash, path case, extra query and another port are all
-refused). The one exception is the port of a loopback `http` URI for a dynamic
-client whose redirect URIs are all loopback (above). A site client never gets
-the loopback port rule.
-
-| Kind | Allowed redirect URIs |
+| Event | Grants revoked |
 | --- | --- |
-| site client | `https`; `http` on `localhost`, `127.0.0.1`, `[::1]` |
-| dynamic client | `https` (not a loopback host); loopback `http`; private-use schemes with a dot (reverse domain name, RFC 8252 7.1). `javascript:`, `data:`, `file:`, `vbscript:`, `blob:`, `about:` and anything with a fragment or credentials are refused |
+| user, account page (`/api/users/:id/oauth-grants`) | the chosen one |
+| org admin, NHI page (`/api/organizations/:org/nhis/:nhi/oauth-grants`) | per client or one |
+| client, `POST /api/oauth/revoke` | its own grant |
+| revoke all sessions of a user | the user's grants and the NHI grants they authorized |
+| revoke one session, or exchange token reuse at keepalive | the grants consented from that session |
+| site client removed, site deleted, user or NHI deleted | theirs (LDAP and file deletions are noticed at the next refresh) |
+| refresh token reuse | that grant |
 
-### The login handoff and the consent
+A logout or a password change keeps the grants (they keep the sessions too; a
+dashboard outlives the browser session that authorized it).
 
-The provider keeps no login state of its own: SD's cookie session is the only
-source of who is there. The interaction policy adds a check to the login prompt
-(`!result.login`) and to the consent prompt (`!result.consent`), so **every**
-authorization request goes through SD's interaction, once, whatever the
-provider session remembers. The provider interaction URL is the absolute
-`<issuer>/api/oauth/interaction/<uid>` (the `_interaction` cookie path is its
-pathname, which must keep the `/simple-directory` prefix and the site path).
+## Tokens
 
-1. `GET /api/oauth/authorize` (provider): validates the client, redirect URI,
-   PKCE, `resource` and scope, then redirects to the interaction entry.
-2. `GET /api/oauth/interaction/<uid>` (SD): without a session, redirects to the
-   site login with the entry URL as `redirect`. With a session that may not
-   consent (below), redirects to `/oauth/consent?error=forbidden`. Otherwise it
-   records the user who opened the interaction (`result.sd.userId`) and, for a
-   site client of implicit consent, finishes right away; in every other case it
-   redirects to the SPA consent page with `uid`.
-3. `GET /api/oauth/interaction/<uid>/details` (SD, JSON): what the page shows
-   (client, resource, scopes with broad ones flagged, accounts or NHIs).
-4. `POST /api/oauth/interaction/<uid>` (SD, JSON): the decision (`allow` or
-   `deny`). It creates the grant and answers `{ redirectTo }`, the provider's
-   resume URL, which issues the code to the client's redirect URI.
-
-Consequences and rules:
-
-- **`prompt=none` always yields `login_required`.** The interaction is forced,
-  so there is no silent re-authorization, even for an implicit site client.
-- **A session may consent only if it is a plain user session.** Refused: a
-  scoped session, an NHI, a user of an organization storage, and an
-  impersonation (`asAdmin`) session, which never obtains a token in the name of
-  the impersonated user. A superadmin in admin mode consents as the plain user;
-  no admin claim reaches any token.
-- **One decision per interaction.** The decision takes a lock in
-  `oauth-interaction-decisions` (TTL = the interaction's); a replay or a
-  concurrent second request is refused (400) and creates no second grant. A
-  decision by another logged-in user than the one who opened the interaction is
-  refused (403). A decision that fails after the lock ends the interaction:
-  its grant and an NHI created inline for it are removed, the lock stays, and
-  the person starts the authorization again from the client.
-- **Switching subject in one browser works.** User A then user B, or a user
-  grant then an NHI grant: when the provider session belongs to another
-  account, SD destroys it and detaches the interaction before resuming
-  (`detachForeignSession`), so the provider does not render its end-session
-  form and each token has the right `sub`. The remaining case is a two-tab race:
-  if another subject finishes an authorization in the same browser between the
-  start of an interaction and its decision, the provider may still show its
-  end-session form. No token goes to the wrong subject, the user restarts.
-- **Scopeless requests.** A request without a `scope` parameter (or without any
-  platform scope) is accepted by the provider only if the grant covers its
-  request, so the scopes chosen at consent are added to the stored request.
-- **Errors.** Provider errors that cannot be redirected to the client, and
-  errors of the entry route, go to `<issuer>/oauth/consent?error=<code>`; the
-  details and decision routes answer JSON. The page shows an `error` value only
-  if it looks like a code (`^[a-z_]{1,64}$`), anything else gets the generic
-  message with a fixed code, so the parameter cannot put arbitrary text on an
-  SD page.
-- **The consent page cannot be framed.** The SPA serves `/oauth/consent` (and
-  the spellings the UI router accepts: any case, trailing slash) with
-  `frame-ancestors 'none'` and `X-Frame-Options: DENY`, not the `'self'` /
-  `SAMEORIGIN` of the other pages, so not even a same-origin page (portal
-  content on the shared host) can frame the decision (`api/src/app.ts`).
-
-**Consent of a user for a site client.** The user chooses the account the
-grant is bound to: the personal account (unless `ignorePersonalAccount`) or one
-of their memberships (department included), the default account of the site
-first. The consent screen lists the scopes within the client's registration and
-the request, nothing hidden, whole-resource and `all:*` scopes flagged. A client
-with `consent: implicit` skips the screen for a user who is a member of the
-owner organization of the issuer site (the grant is bound to that
-membership); `prompt=consent` forces the screen. The grant lasts 30 days.
-
-**Consent of an org admin for a dynamic client.** The consenting user must be a
-real admin of an organization: the memberships themselves, never admin mode nor
-the site-admin fallback of the NHI page (department admins only with
-`depAdminIsOrgAdmin`). The admin binds the client to:
-
-- an existing NHI of the organization without `ipBinding` (the caller of the
-  token endpoint is not the API caller, so a bound session would be unusable),
-  whose maximum scopes bound the grant, or
-- a new NHI created inline, with the same validations as `POST /nhis` (role,
-  known scopes, member limit; no key binding; the admin recorded as creator; an
-  empty maximum means the ticked scopes).
-
-Nothing is preselected, broad scopes are flagged, NHIs that could not be
-granted any requested scope are not offered, and the lifetime is one of `1d`,
-`7d`, `30d` (default), `90d`, `1y`. The token subject is the NHI, the admin is
-recorded as `authorizedBy`. An MCP resource requires this NHI subject. ID
-tokens carry `sub` only for an NHI: `profile` and `email` are rejected. Scope
-narrowing is literal: an umbrella requested scope is not split by a narrower
-NHI maximum. The member-limit check has the same race as `POST /nhis`.
-
-### Scopes
-
-The OIDC values `openid`, `profile`, `email` and `offline_access` are stripped
-from the platform scope: they never appear in the `scope` of an access token.
-The platform scope is `narrowScope(requested, maximum)`: requested scopes the
-maximum does not cover are dropped silently, an empty result is
-`invalid_scope` at the authorization step and an error on the decision. The
-maximum is the registration of a site client, or the `scopes` of the NHI (every
-known scope when it is unrestricted). The token's scope is never wider than the
-grant record's, and it is re-narrowed against the current maximum at every
-issuance. `openid`, `profile` and `email` are honoured for user subjects only.
-
-### Grant records and revocation
-
-At consent SD creates the provider `Grant` itself and writes its record in the
-`sd` field of the same `oauth-grant` document: issuer, site, client (id, name,
-kind), subject (`user` or `nhi`), the bound account, scope, the single
-resource, `authorizedBy`, `createdAt`, `expiresAt` and `lastUsedAt`. The adapter
-updates documents partially, so the provider's own saves keep the record, and
-whatever destroys the `Grant` (revocation, reuse detection, expiry) removes the
-record with it. The record is what people see, audit and revoke; the provider
-`Grant` is what its tokens hang on. A grant has exactly one resource.
-
-Revocation (`revokeGrant`) removes the refresh tokens and codes of the grant
-(access tokens are JWTs, never stored), then the `Grant` document with its
-record, and logs `sd.oauth.grant.revoked`. It happens on:
-
-- the user revoking from the account page (`GET
-  /api/users/:userId/oauth-grants` and `DELETE
-  /api/users/:userId/oauth-grants/:grantId`, the user's own site client grants; a
-  superadmin in admin mode may act for others; an NHI session may not);
-- an org admin revoking the grants of an NHI, per client or one by one
-  (`/api/organizations/:orgId/nhis/:nhiId/oauth-grants`);
-- a client calling `POST /api/oauth/revoke` with its own refresh token (the
-  provider destroys the grant, its record with it);
-- revoking the server sessions of a user (`DELETE /api/users/:userId/sessions`):
-  every grant of that user and every NHI grant they authorized (a password
-  change keeps the grants, as it keeps the sessions);
-- revoking one server session (`DELETE /api/users/:userId/sessions/:sessionId`)
-  or detecting a reused exchange token at keepalive: the grants consented
-  from that session. A consent needs a live server session (the
-  `id_token_ex` cookie of the user, its session still listed): a copied
-  `id_token` alone cannot authorize a client, and the grant records the
-  session it came from. A normal logout keeps the grants, a dashboard
-  outlives the browser session that authorized it;
-- removing a site client, deleting a site, deleting a user or an NHI (mongo
-  storage; the LDAP and file storages are read-only, their deletion is
-  noticed lazily by the failing re-check at refresh);
-- refresh token reuse (below).
-
-### Token issuance, refresh and reuse
-
-The code exchange and every refresh re-read the grant record and the current
-subject (`checkGrantSubject`) and rebuild the claims from them; any failure is
-`invalid_grant` and the reason stays in the debug log. Re-checked: the record
-exists and is not expired, same issuer, subject type versus client kind, the
-user or NHI exists and has not changed type, the resource still resolves in
-the realm, for an NHI its organization binding, `ipBinding` absent,
-`allowedIps`, `assertNhiMayTarget` and the admin who authorized the grant
-still being an admin of the organization (same rule as the consent), for a user subject the site client still
-exists and still registers the resource, the bound membership still exists
-(department matched strictly), and the scope still narrows to something.
-
-- The `organizations` claim holds at most the one account bound at consent;
-  `[]` is the user's personal account.
-- A refresh with a narrower platform `scope` gets that narrower scope. A
-  refresh requesting only OIDC scopes (for example `openid`) keeps the full
-  platform scope of the grant.
-- A user who lost the bound membership gets `invalid_grant`; a site client
-  whose scopes shrank gets a narrower scope, never an empty one (empty is
-  `invalid_grant`).
-- Refresh tokens are issued for every code exchange of a client allowed
-  `refresh_token` (`offline_access` is not required) and **rotated on every
-  use**. A refresh token lives `min(7 days, grant expiry - now)`.
-- **Reuse revokes the whole grant, with no grace window.** Presenting an
-  already used refresh token makes the provider destroy the grant (SD logs
-  `sd.oauth.grant.reused` (warn) with the client, subject, account and
-  authorizing person from `findAccount`, which the provider calls just before
-  its consumed check), and the newest token is then
-  `invalid_grant` too. Reuse is detected before the subject re-checks, so it
-  is still detected when those fail first. A client that loses a refresh
-  response has to authorize again. Consuming a code or a refresh token is a
-  conditional update in the adapter: of two concurrent uses one wins, the
-  other gets `invalid_grant`, and the next presentation of the old token is a
-  reuse.
-- Every successful exchange touches `lastUsedAt` of the record.
-
-### The revocation gap of JWT access tokens
-
-Access tokens are stateless JWTs. The revocation endpoint rejects them
-(`unsupported_token_type`), and revoking a grant does not invalidate access
-tokens already issued: they live out their lifetime, 15 minutes for a user
-subject (`jwtDurations.idToken`), 30 minutes for an NHI
-(`jwtDurations.nhiToken`). Everything else stops at once, since a refresh
-needs the grant. This is the bound to reason with when a grant must be cut.
-
-### Lifetimes
+Claims: `iss`, `sub` and `client_id` (the user or NHI), `aud` as above, `jti`,
+`iat`, `exp`, `scope` (the narrowed platform scope), and the SD payload of the
+subject for the target site (`getTokenPayload`) handed over by
+`extraTokenClaims`, minus `isAdmin`, `adminMode`, `asAdmin`; `boundIp` for an
+NHI with `ipBinding` (machine grants). ID tokens: `sub`, plus `name` and
+`email` for a user with `profile` / `email`.
 
 | Object | Lifetime |
 | --- | --- |
-| access token | 15 min (user subject), 30 min (NHI subject) |
-| grant | 30 days (site client); `1d`, `7d`, `30d`, `90d` or `1y` chosen at consent (dynamic client); set as `grant.exp` before saving |
-| refresh token | `min(7 days, grant expiry - now)`, rotated on every use |
-| authorization code | 60 s |
-| provider session | 10 min (it is a technical artefact, SD's session decides) |
-| interaction | 30 min |
+| access token | 15 min (user), 30 min (NHI, never past the assertion `exp`) |
+| grant | 30 days (site client), chosen at consent (dynamic client) |
+| refresh token | `min(7 days, grant expiry)`, rotated |
+| code / interaction / provider session | 60 s / 30 min / 10 min |
 
-### Rate limits and events
+Access tokens are stateless JWTs: revoking a grant stops renewals at once, the
+tokens already issued live out their lifetime.
 
-Shared limiter (`api/src/utils/limiter.ts`), keys prefixed:
+## Rate limits and events
 
-- token endpoint: `client_credentials` (and the JWT bearer grant) per raw IP
-  and per `client_id` (an NHI has one owner), the keys of `/nhi-token`;
-  `authorization_code` and `refresh_token` in their own namespace,
-  `oauth-token-ip:<ip>` and `oauth-token-client:<client_id> <ip>`, whatever the
-  request claims about client authentication. Their own namespace because
-  routine failures (a grant that ended, an idle refresh token, a lost
-  membership) of many users behind one office address must not lock that
-  address out of password login, 2FA, anonymous actions and the NHI exchange,
-  which share the raw IP key; per client and address because the id of a
-  public client is public and a per-id bucket would let anyone lock out its
-  users. Same budget (`authRateLimit`), consumed up front and refunded on
-  success, so only failures count;
-- registration: `oauth-dcr:<ip>`, successes count (never refunded);
-- CIMD fetches: `oauth-cimd:<ip>` on cache misses, `oauth-cimd:user:<id>` for the
-  lookups of the consent routes (outside the provider, no address is known), successes count;
-- consent decision: `oauth-consent:<userId>`, refunded on success.
+Shared limiter (`utils/limiter.ts`), consumed up front and refunded on success
+unless noted:
 
-Events (`eventsLog`): `sd.oauth.grant.created`, `sd.oauth.grant.revoked`
-(info), `sd.oauth.grant.reused` (warn), `sd.oauth.client.registered`,
-`sd.oauth.consent.denied` (info), `sd.oauth.rate-limit` (warn). Token
-issuance stays at debug level. Client chosen strings go through `logSafeName`
-(control, bidi and zero-width characters stripped, truncated) before they reach
-a log line. When the global fetch dispatcher is not undici's `Agent` (a proxy
-dispatcher), CIMD and `jwks_uri` fetches fail closed and an `internalError`
-(`oauth-ssrf-dispatcher`) is logged once.
+- `client_credentials` and JWT bearer: the `/nhi-token` keys (raw IP and
+  `client_id`);
+- `authorization_code` and `refresh_token`: `oauth-token-ip:<ip>` and
+  `oauth-token-client:<client_id> <ip>`, their own namespace so routine
+  failures of many users behind one address do not lock out password login, and
+  per address because a public client id is public;
+- registration `oauth-dcr:<ip>` and CIMD fetches `oauth-cimd:<ip>` (or
+  `oauth-cimd:user:<id>` from the consent routes): never refunded;
+- consent decision `oauth-consent:<userId>`.
 
-## Errors
-
-- JWT bearer, any failure to identify or verify the NHI (unknown client, wrong
-  site, `allowedIps`, bad assertion, NHI may not target that site): a uniform
-  `400 invalid_grant` after a random delay, the real cause only in the
-  `sd.auth.nhi.fail` log.
-- Unknown or out-of-realm resource: `invalid_target`, checked before the NHI is
-  loaded so it reveals nothing about the NHI.
-- Bad `scope`: `invalid_scope`. Malformed or repeated parameters:
-  `invalid_request`. Rate limit: 429.
-- `client_credentials`: the client is already authenticated by the provider,
-  so precise errors are not an oracle. An NHI not allowed on a known site is
-  `invalid_target`.
-
-## Flags
-
-| Config | Effect |
-| --- | --- |
-| `oauthServer.enabled` (`OAUTH_SERVER_ENABLED`) | Master switch: everything under `/api/oauth/` and the discovery documents is 404 when off. |
-| `oauthServer.siteClients` (`OAUTH_SERVER_SITE_CLIENTS`) | Site clients: applications registered in the site settings (dashboards), acting for a user after the user's consent. Off: site clients are unknown to the provider, at authorization as at refresh. |
-| `oauthServer.agentClients` (`OAUTH_SERVER_AGENT_CLIENTS`) | Agent clients: unregistered applications, through a client id metadata document (CIMD) or dynamic client registration (DCR), acting as an NHI after an org admin's consent. Off: the registration route is 404, CIMD is disabled and registered clients are unknown. |
-| either of the two | The authorization code flow they share: authorization, resume, revocation, the interaction routes, refresh tokens and consent. Both off: those routes are 404 and discovery drops the authorization endpoint and the code and refresh grants. |
-| `mcpPath` (`MCP_PATH`) | Path segment marking an MCP resource, default `/mcp-server` (where the platform routes the mcp service). |
-| `manageNhis` | Both machine grants. Off: discovery advertises neither `client_credentials` nor the JWT bearer grant. |
-| `mainSiteFromDb` containing `oauthClients` | Site clients of the main site are read from its document (see [`main-site-config.md`](main-site-config.md)). Without it the main issuer has no site client. |
-
-Both client flags are `false` in `default.cjs` and on in `development.cjs` and
-`test.cjs`. A provider is cached with the flags in its cache key, so a flag
-change rebuilds it.
-
-Discovery advertises only what is served: endpoints that are not routed
-(userinfo, introspection, PAR, logout, registration management) are disabled
-in the provider configuration, and `grant_types_supported` is filtered by the
-flags above (no `implicit`). DPoP is disabled (no resource server enforces
-sender-constrained tokens). Revocation is enabled with the code flow, and a
-client can revoke its own tokens only. `response_types_supported` is `code`,
-PKCE is required for every client, and the client authentication methods are
-`private_key_jwt` (NHI clients, dynamic clients that registered a key) and
-`none` (public clients) once the code flow is on, `private_key_jwt` only
-before. Without the authorization code flow, `response_modes_supported` and
-`authorization_response_iss_parameter_supported` are dropped too. `jwks_uri`
-points to the scoped key set. Internal requests (no site
-context) get 404 on all of it.
-
-## Routes
-
-The dispatcher forwards exactly these canonical paths and nothing else under
-`/api/oauth/` (the provider's router is case insensitive and tolerates
-trailing slashes, so variants are 404 before they reach it):
-
-| Endpoint | Path | Flag |
-| --- | --- | --- |
-| token | `POST /api/oauth/token` | enabled |
-| discovery | `/.well-known/openid-configuration`, `/.well-known/oauth-authorization-server` | enabled |
-| authorization | `/api/oauth/authorize` | siteClients or agentClients |
-| resume | `GET /api/oauth/authorize/<uid>` (the provider's) | siteClients or agentClients |
-| revocation | `POST /api/oauth/revoke` | siteClients or agentClients |
-| registration | `POST /api/oauth/register` (no management routes) | agentClients |
-| interaction entry | `GET /api/oauth/interaction/<uid>` (SD route) | siteClients or agentClients |
-| interaction details | `GET /api/oauth/interaction/<uid>/details` (SD route) | siteClients or agentClients |
-| interaction decision | `POST /api/oauth/interaction/<uid>` (SD route) | siteClients or agentClients |
-
-`<uid>` is a 43 character url-safe nanoid. The three interaction routes are
-Express routes of SD mounted **after** the session middleware (they read the
-cookie session), so the dispatcher lets them through with `next()` instead of
-handing them to the provider. The consent page itself is an SPA page,
-`<issuer>/oauth/consent`.
+Events: `sd.oauth.grant.created`, `sd.oauth.grant.revoked`,
+`sd.oauth.grant.reused` (warn), `sd.oauth.client.registered`,
+`sd.oauth.consent.denied`, `sd.oauth.rate-limit` (warn); client chosen strings
+go through `logSafeName`.
 
 ## Invariants
 
-1. **No cookies from OAuth.** The token endpoint never sets a session cookie
-   and never creates a server session; the output is a bearer token only. The
-   consent routes read the cookie session but the authorization flow never
-   writes one.
-2. **No superadmin claims.** `isAdmin`, `adminMode` and `asAdmin` are removed
-   in `sdClaims` and again in the provider customizer, whatever the user is.
-   An impersonation session never consents.
-3. **An MCP audience means an NHI subject.** Enforced three times: the
-   resource hook refuses an MCP resource to a site client, `createConsentGrant`
-   refuses to record a user grant for one, and `checkGrantSubject` refuses it at
-   every issuance.
-4. **Realm confinement.** A resource must belong to the realm of the issuer,
-   and an issuer site is its own account main site.
-5. **The NHI site rule.** An NHI is only issued a token for the main site or a
-   site owned by its own organization, in every grant (`assertNhiMayTarget`),
-   as in `/nhi-token`.
-6. **One exchange.** Rate limiting, `allowedIps`, assertion verification and the
-   `exp` cap are those of `nhis/exchange.ts`, not reimplemented per grant.
-7. **Only what is served is advertised.** Discovery follows the flags.
-8. **A dynamic client is always bound to an NHI chosen by an org admin.** The
-   subject of its grants is that NHI, never the person who clicked; the NHI
-   has no `ipBinding`; the token is never wider than the NHI maximum, the
-   request and the chosen scopes.
-9. **Every authorization goes through SD's interaction.** The login and
-   consent prompts are forced, so there is no silent re-authorization
-   (`prompt=none` is `login_required`), and a grant exists only if SD created
-   it at a consent decision.
-10. **Subject and scope are re-read at every issuance.** The grant record, the
-    user or NHI, the bound membership, the client registration and the
-    maximum are checked as they are now; the scope can only narrow.
-11. **A reused refresh token revokes its grant.**
-12. **No redirect URI is matched by prefix or wildcard.** The only relaxation
-    is the port of a loopback redirect URI of an all-loopback dynamic client.
-13. **No scope wider than the request, the client's registration or the NHI
-    maximum.**
-14. **Reserved to site clients:** custom CORS origins (`sd_allowed_origins`)
-    and the user subject. Reserved to dynamic clients: the NHI subject.
+1. **No cookies from OAuth.** The token endpoint never sets a cookie nor
+   creates a server session (`router.ts`, `jwt-bearer.ts`).
+2. **No admin claims.** Stripped in `sdClaims` and `extraTokenClaims`; an
+   impersonation session never consents (`refuseConsentUser`).
+3. **An MCP audience means an NHI subject**: the resource hook, then
+   `createConsentGrant`, then `checkGrantSubject`.
+4. **Realm confinement**: resources inside the issuer's realm, an issuer is its
+   own account main site (`issuers.ts`).
+5. **The NHI site rule** in every grant (`nhiMayTarget`), as in `/nhi-token`.
+6. **One exchange** for the machine grants (`nhis/exchange.ts`).
+7. **Only what is served is advertised** (dispatcher allowlist, provider
+   configuration, `discoveryOverrides`).
+8. **Every authorization goes through SD's interaction**, forced prompts, and
+   a consent needs a live, current server session.
+9. **A dynamic client is always bound to an NHI chosen by an org admin**, still
+   an admin at every issuance; site clients have user subjects only.
+10. **Subject and scope are re-read at every issuance**; the scope only
+    narrows.
+11. **Refresh reuse revokes the grant**; consumption is atomic.
+12. **No redirect URI is matched by prefix or wildcard**, the loopback port of
+    an all-loopback dynamic client excepted.
+13. **No scope wider than the request, the registration or the NHI maximum.**
+14. **Custom CORS origins are reserved to site clients** (`sdClientBasedCORS`).
 
 ## Known accepted surfaces
 
-- JWT access tokens cannot be revoked individually; the 15 minute (user) or
-  30 minute (NHI) lifetime is the bound (disabling the NHI or revoking the
-  grant stops renewals).
-- The rate limiter of the machine grants is keyed on a `client_id` that is not
-  verified at that point, so a caller can drain an NHI's bucket from many IPs.
-  Pre-existing with `/nhi-token`. The code and refresh grants are keyed per
-  address for that reason.
-- The JWT bearer grant has no assertion replay store (as `/nhi-token`, see
-  `non-human-identities.md`); `client_credentials` assertions are
-  replay-protected by the provider.
-- The two-tab race of the subject switch (above) can show the provider's
-  end-session form; the user restarts the authorization.
-- The member-limit check of an NHI created inline at consent has the same race
-  as `POST /nhis`.
+- JWT access tokens cannot be revoked individually (15 or 30 minutes).
+- The machine grants' limiter is keyed on an unverified `client_id`, so an
+  NHI's bucket can be drained from many addresses (as `/nhi-token`).
+- The JWT bearer grant has no assertion replay store (as `/nhi-token`).
+- A two-tab race between subjects in one browser can show the provider's
+  end-session form; the user restarts.
+- An NHI created inline at consent has the member-limit race of `POST /nhis`.
 - Open registration and CIMD are bounded by rate limits, the SSRF safe fetch
-  and the consent of an org admin, not by an initial access token.
+  and an org admin's consent, not by an initial access token.
 
 ## Dependency on the lib
 
-Services accept these tokens through `@data-fair/lib-express`. Its bearer
-audience check -- `aud` must contain the request's site URL, and an internal
-request without `x-forwarded-host` is refused -- is released separately in the
-lib; services upgrade it only after this server is deployed.
-
-SD itself runs the strict lib, which has two visible effects on upgrade:
-
-- a bearer access token is refused (401) on an internal request, one without
-  `x-forwarded-host`: internal callers must use the public URL or a session;
-- access tokens returned by `/api/auth/nhi-token` before the upgrade carry no
-  `aud` and are refused, for at most their 30 minute lifetime. The NHI only
-  has to request a new one.
+Services accept these tokens through `@data-fair/lib-express`, whose bearer
+check requires `aud` to contain the request's site URL and refuses internal
+requests (no `x-forwarded-host`). Upgrading SD to it means a bearer token on an
+internal request is 401, and `/api/auth/nhi-token` tokens issued before the
+upgrade (no `aud`) are refused for at most their 30 minutes.

@@ -49,7 +49,7 @@ export const userConsentAccounts = (user: User, site?: Pick<Site, 'owner'>): Con
 export const findConsentAccount = (accounts: ConsentAccount[], key: { type: string, id: string, department?: string } | undefined) =>
   key && accounts.find(a => a.type === key.type && a.id === key.id && sameDepartment(a.department, key.department))
 
-// spec 9.3: the organizations where a user may bind a dynamic client to an NHI. Real org admins
+// the organizations where a user may bind a dynamic client to an NHI. Real org admins
 // only: the memberships themselves, never admin mode nor the isSiteAdminOf fallback of the NHI page
 // (consent phishing surface); a department admin counts only when depAdminIsOrgAdmin is set, as it
 // does for the organization itself (acceptDepAsRoot).
@@ -64,8 +64,8 @@ export const consentAdminOrgs = (user: User): ConsentAccount[] => {
   return accounts
 }
 
-// an NHI or a scoped session never consents (spec 5, mounting pitfalls), a superadmin impersonating
-// a user (asAdmin) never obtains a token in their name (spec 2, no token through admin mode), and a
+// an NHI or a scoped session never consents, a superadmin impersonating
+// a user (asAdmin) never obtains a token in their name (no token through admin mode), and a
 // user of an org storage only exists inside that organization's directory
 export const refuseConsentUser = (user: User, session: SessionState): string | undefined => {
   if (session.scopes || session.user?.scope !== undefined) return 'scoped session'
@@ -74,7 +74,7 @@ export const refuseConsentUser = (user: User, session: SessionState): string | u
   if (user.orgStorage || session.user?.os) return 'user of an organization storage'
 }
 
-// spec 7.2: no consent screen when the client is implicit and the user is a member of the site
+// no consent screen when the client is implicit and the user is a member of the site
 // owner org (department tolerant), the grant is then bound to that org
 export const implicitConsentAccount = (user: User, client: SiteOAuthClient, owner: Account | undefined): ConsentAccount | undefined => {
   if (client.consent !== 'implicit' || owner?.type !== 'organization') return undefined
@@ -113,7 +113,7 @@ export const createConsentGrant = async (provider: Provider, opts: ConsentGrantO
   if (!opts.scope.length) throw new Error('a consent grant needs at least one platform scope')
   // spec anti-goal: a user subject never gets a token for an MCP server
   if (opts.resourceKind === 'mcp' && opts.subject.type !== 'nhi') throw new Error('an mcp resource requires an nhi subject')
-  // spec 7: a site client's grant has a user subject, a dynamic client's grant an NHI subject
+  // a site client's grant has a user subject, a dynamic client's grant an NHI subject
   // (checkGrantSubject refuses any other pair at every issuance)
   if ((opts.subject.type === 'nhi') === (opts.clientKind === 'site')) throw new Error('the subject type does not match the client kind')
   const clientId = opts.interaction.params.client_id as string

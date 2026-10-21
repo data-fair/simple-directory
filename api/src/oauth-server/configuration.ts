@@ -93,7 +93,7 @@ const requestedPlatformScopes = (scope: unknown) =>
   typeof scope === 'string' ? (stripOidcScopes(scope) ?? '').split(' ').filter(Boolean) : []
 
 // the platform scopes a site client may be granted for an authorization request: the requested
-// ones within its registration, or its whole registration when it requested none (spec 8.2)
+// ones within its registration, or its whole registration when it requested none
 export const siteClientRequestScopes = (requestedScope: unknown, clientScopes: string[], known: string[]) => {
   const requested = requestedPlatformScopes(requestedScope)
   return narrowScope(requested.length ? requested : clientScopes, clientScopes, known)
@@ -185,14 +185,14 @@ const siteClientResourceScope = async (ctx: IssuerContext, koaCtx: KoaContextWit
 
 // the platform scopes a dynamic client may be granted for an authorization request, before the
 // NHI is chosen: the requested ones among the known scopes (the widest NHI maximum), or every
-// known scope when it requested none (the consent screen then preselects nothing, spec 8.2). The
+// known scope when it requested none (the consent screen then preselects nothing). The
 // NHI maximum is applied by the consent decision and re-applied at every issuance.
 export const dynamicClientRequestScopes = (requestedScope: unknown, known: string[]) => {
   const requested = requestedPlatformScopes(requestedScope)
   return requested.length ? narrowScope(requested, undefined, known) : known
 }
 
-// the authorization code flow of a dynamic client (NHI subject, spec 7.3): any resource of the
+// the authorization code flow of a dynamic client (NHI subject): any resource of the
 // realm including the MCP server, the NHI's own targets are checked at consent and issuance
 const dynamicClientResourceScope = async (koaCtx: KoaContextWithOIDC) => {
   const known = await knownScopeNames()

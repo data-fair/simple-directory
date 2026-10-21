@@ -1,4 +1,4 @@
-// The subject of a code or refresh grant, re-checked at every token issuance (spec 8.3): the grant
+// The subject of a code or refresh grant, re-checked at every token issuance: the grant
 // record, the user or NHI, the bound membership, the client and the scope as they are now. Any
 // failure means invalid_grant; the scope can only narrow.
 import storages from '#storages'
@@ -37,7 +37,7 @@ export type GrantSubject = { user: User, scope: string, resource: ResolvedResour
 export const checkGrantSubject = async (record: OAuthGrantRecord, ctx: IssuerContext, clientIp: string): Promise<GrantSubject> => {
   if (record.expiresAt.getTime() <= Date.now()) throw new GrantSubjectError('grant expired')
   if (record.issuer !== ctx.issuer) throw new GrantSubjectError('grant of another issuer')
-  // spec 7: a site client's grant has a user subject, a dynamic client's grant an NHI subject
+  // a site client's grant has a user subject, a dynamic client's grant an NHI subject
   const nhiSubject = record.subject.type === 'nhi'
   if (nhiSubject === (record.clientKind === 'site')) throw new GrantSubjectError('subject type does not match the client kind')
   const user = await storages.globalStorage.getUser(record.subject.id)
@@ -57,7 +57,7 @@ export const checkGrantSubject = async (record: OAuthGrantRecord, ctx: IssuerCon
   if (user.nhi) {
     if (user.organizations.length !== 1) throw new GrantSubjectError('invalid nhi')
     if (record.account.type !== 'organization') throw new GrantSubjectError('an nhi grant is bound to its organization')
-    // the token endpoint caller is not the API caller, a bound session would be unusable (spec 8.3)
+    // the token endpoint caller is not the API caller, a bound session would be unusable
     if (user.nhi.ipBinding) throw new GrantSubjectError('an ip bound nhi cannot hold an oauth grant')
     if (user.nhi.allowedIps?.length && !ipAllowed(clientIp, user.nhi.allowedIps)) {
       throw new GrantSubjectError(`ip ${clientIp} not in allowedIps`)
