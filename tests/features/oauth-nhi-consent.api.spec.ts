@@ -65,6 +65,17 @@ test.describe('oauth nhi consent', () => {
     await testEnvAx.patch('/config', { mainSiteFromDb: [] })
   })
 
+  test('revoking the sessions of the authorizing admin revokes the nhi grants they authorized', async () => {
+    const { org, user, adminAx, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
+    const nhi = await createNhi({ scopes: ['organizations:read'] })
+    const opts = dynamicFlow()
+    const tokens = await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'] })))
+    await adminAx.delete(`/api/users/${user.id}/sessions`)
+    const res = await tokenRequest(issuer, { grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: dynamicClientId })
+    assert.equal(res.status, 400, JSON.stringify(res.data))
+    assert.equal((await grantRecords({ 'subject.id': nhi.id })).length, 0)
+  })
+
   test('admin binds an existing nhi and the client gets an nhi token for the mcp', async () => {
     const { org, user, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
     const nhi = await createNhi({ name: 'Bound agent', scopes: ['organizations:read'] })

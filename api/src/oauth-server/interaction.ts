@@ -26,6 +26,7 @@ import { clientKind, findSiteClient, codeFlowEnabled } from './clients.ts'
 import { siteClientRequestScopes, dynamicClientRequestScopes, interactionTTL } from './configuration.ts'
 import { dashboardGrantLifetime, grantLifetimes, revokeGrant } from './grants.ts'
 import { displayIdUrl, logSafeName } from './dynamic-clients.ts'
+import { reqServerSessionId } from '../tokens/service.ts'
 import {
   userConsentAccounts, consentAdminOrgs, refuseConsentUser, restoreRequestScope, implicitConsentAccount, createConsentGrant, findConsentAccount,
   isBroadScope, oidcScopeNames, type ConsentAccount
@@ -84,7 +85,7 @@ const detachForeignSession = async (provider: Provider, interaction: Interaction
   await interaction.persist()
 }
 
-type SessionUser = { session: SessionState, user: User }
+type SessionUser = { session: SessionState, user: User, serverSessionId: string }
 
 // the SD session of the request and its user, or the reason it may not consent
 const consentSessionUser = async (req: Request): Promise<SessionUser | { refused: string } | undefined> => {
@@ -97,7 +98,11 @@ const consentSessionUser = async (req: Request): Promise<SessionUser | { refused
   if (!user) return { refused: 'unknown user' }
   const refusal = refuseConsentUser(user, session)
   if (refusal) return { refused: refusal }
-  return { session, user }
+  // a consent is bound to a live server session (revoked with it): a copied id_token cookie alone
+  // must not be enough to authorize a client for weeks
+  const serverSessionId = await reqServerSessionId(req, user)
+  if (!serverSessionId) return { refused: 'no server session' }
+  return { session, user, serverSessionId }
 }
 
 // the owner of the issuer site, for the default account and the implicit consent (the main site
@@ -156,7 +161,7 @@ const unlockDecision = async (uid: string) => {
 
 // the consent of a user for a site client: the provider Grant and its record, then the result the
 // provider resumes with. Returns undefined when another decision on this interaction won the race.
-const finishUserConsent = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, account: ConsentAccount, scope: string[], clientName: string) => {
+const finishUserConsent = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, account: ConsentAccount, scope: string[], clientName: string) => {
   const resource = await interactionResource(ic.ctx, interaction)
   await detachForeignSession(ic.provider, interaction, user.id)
   if (!await lockDecision(interaction.uid)) return undefined
@@ -176,6 +181,7 @@ const finishUserConsent = async (req: Request, res: Response, ic: InteractionCon
       resourceKind: resource.kind,
       lifetime: dashboardGrantLifetime,
       authorizedBy: { id: user.id, name: user.name },
+      sessionId: serverSessionId,
       logContext: { req }
     })
     return await ic.provider.interactionResult(req, res, { login: { accountId: user.id }, consent: { grantId } })
@@ -279,7 +285,7 @@ const parseInlineNhi = (create: any): InlineNhi => {
 // the decision of an org admin for a dynamic client: the account, the NHI (existing or created
 // inline), the scopes within the request and the NHI maximum, the lifetime. Returns the url the
 // browser resumes the authorization with.
-const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, clientId: string, kind: 'cimd' | 'dcr', body: Record<string, any>) => {
+const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, clientId: string, kind: 'cimd' | 'dcr', body: Record<string, any>) => {
   const client = await dynamicClientInfo(ic, interaction, clientId, kind)
   const adminAccount = findConsentAccount(consentAdminOrgs(user), body.account)
   if (!adminAccount || adminAccount.type !== 'organization') throw httpError(403, 'account is not an organization administered by the user')
@@ -353,6 +359,7 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
       resourceKind: resolved.kind,
       lifetime: grantLifetimes[lifetime as keyof typeof grantLifetimes],
       authorizedBy: { id: user.id, name: user.name },
+      sessionId: serverSessionId,
       logContext: { req }
     })
     return await ic.provider.interactionResult(req, res, { login: { accountId: nhi.id }, consent: { grantId } })
@@ -393,7 +400,7 @@ router.get('/:uid', async (req, res) => {
   const sessionUser = await consentSessionUser(req)
   if (!sessionUser) return res.redirect(`${ic.ctx.issuer}/login?redirect=${encodeURIComponent(entryUrl(ic.ctx, uid))}`)
   if ('refused' in sessionUser) return res.redirect(consentPageUrl(ic.ctx, 'error=forbidden'))
-  const { user } = sessionUser
+  const { user, serverSessionId } = sessionUser
 
   if (Array.isArray(interaction.params.resource)) {
     const returnTo = await ic.provider.interactionResult(req, res, { error: 'invalid_target', error_description: 'only one resource indicator is accepted' }, { mergeWithLastSubmission: false })
@@ -415,7 +422,7 @@ router.get('/:uid', async (req, res) => {
       if (!fresh) return res.redirect(consentPageUrl(ic.ctx, 'error=interaction_expired'))
       let returnTo: string | undefined
       try {
-        returnTo = await finishUserConsent(req, res, ic, fresh, user, account, scope, siteClient.name)
+        returnTo = await finishUserConsent(req, res, ic, fresh, user, serverSessionId, account, scope, siteClient.name)
       } catch (err: any) {
         // the entry is a browser navigation: client errors go to the consent page, never raw
         if (err.status && err.status < 500) return res.redirect(consentPageUrl(ic.ctx, 'error=' + encodeURIComponent(err.oauthError ?? 'invalid_request')))
@@ -466,7 +473,7 @@ router.get('/:uid/details', async (req, res) => {
 })
 
 router.post('/:uid', async (req, res) => {
-  const { ic, interaction, user } = await decisionContext(req, res)
+  const { ic, interaction, user, serverSessionId } = await decisionContext(req, res)
   const uid = interaction.uid
   const body = req.body ?? {}
   if (body.decision !== 'allow' && body.decision !== 'deny') throw httpError(400, 'decision must be allow or deny')
@@ -491,7 +498,7 @@ router.post('/:uid', async (req, res) => {
 
   const kind = clientKind(clientId)
   if (kind === 'cimd' || kind === 'dcr') {
-    const redirectTo = await nhiConsentDecision(req, res, ic, interaction, user, clientId, kind, body)
+    const redirectTo = await nhiConsentDecision(req, res, ic, interaction, user, serverSessionId, clientId, kind, body)
     await refundLimiter(limiterKey)
     return res.send({ redirectTo })
   }
@@ -505,7 +512,7 @@ router.post('/:uid', async (req, res) => {
   if (!Array.isArray(scope) || !scope.length || scope.some((s: unknown) => typeof s !== 'string' || !allowed.includes(s))) {
     throw httpError(400, 'scopes must be a non-empty subset of the proposed scopes')
   }
-  const redirectTo = await finishUserConsent(req, res, ic, interaction, user, account, [...new Set(scope as string[])], siteClient.name)
+  const redirectTo = await finishUserConsent(req, res, ic, interaction, user, serverSessionId, account, [...new Set(scope as string[])], siteClient.name)
   if (!redirectTo) throw httpError(400, 'the interaction is already finished')
   await refundLimiter(limiterKey)
   res.send({ redirectTo })

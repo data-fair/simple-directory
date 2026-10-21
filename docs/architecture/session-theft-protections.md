@@ -148,7 +148,10 @@ protections is weakened by them:
   consents as the plain user.
 - The consent routes read the cookie session but a scoped (NHI) session cannot
   consent, and a decision is accepted only from the user who opened the
-  interaction, once.
+  interaction, once. A consent also needs the exchange token of a live server
+  session, recorded on the grant: a stolen `id_token` alone cannot authorize a
+  client, and revoking a session (one, all of them, or at exchange token reuse)
+  or changing the password revokes the grants that came from it.
 - A user access token is short lived (15 minutes, `jwtDurations.idToken`) like
   the `id_token`; the long lived credential is the refresh token, bound to a
   revocable grant that the user lists and revokes from their account page.

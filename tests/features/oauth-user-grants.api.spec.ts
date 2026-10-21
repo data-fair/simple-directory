@@ -1,10 +1,21 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, createUser, testEnvAx } from '../support/axios.ts'
-import { runCodeFlow, tokenRequest } from '../support/oauth-client.ts'
+import { axios, axiosAuth, createUser, testEnvAx, waitForMail } from '../support/axios.ts'
+import { runCodeFlow, tokenRequest, startAuthorization, browse } from '../support/oauth-client.ts'
 import { issuer, password, grantRecords, setup } from '../support/oauth-code-site.ts'
 
 const status = (code: number) => (err: any) => { assert.equal(err.status, code); return true }
+
+const refresh = (clientId: string, refreshToken: string) =>
+  tokenRequest(issuer, { grant_type: 'refresh_token', refresh_token: refreshToken, client_id: clientId })
+
+const assertRefresh = async (clientId: string, refreshToken: string, expected: number, label: string) => {
+  const res = await refresh(clientId, refreshToken)
+  assert.equal(res.status, expected, `${label}: ${JSON.stringify(res.data)}`)
+}
+
+// a second browser of the same user: a second server session
+const secondLogin = () => axiosAuth({ email: 'oauth-code-user@test.com', password, directoryUrl: issuer, axiosOpts: { baseURL: issuer } })
 
 test.describe('oauth connected applications', () => {
   test.beforeEach(async () => {
@@ -50,6 +61,54 @@ test.describe('oauth connected applications', () => {
     const { user, adminAx, flow } = await setup()
     await runCodeFlow(flow())
     assert.equal((await adminAx.get(`/api/users/${user.id}/oauth-grants`)).data.results.length, 1)
+  })
+
+  test('consent without the exchange cookie is refused', async () => {
+    const { userAx, flow } = await setup()
+    ;(userAx as any).cookieJar.setCookieSync('id_token_ex=; Path=/simple-directory/; Expires=Thu, 01 Jan 1970 00:00:00 GMT', new URL(issuer).origin)
+    const { location } = await startAuthorization(flow())
+    const entry = await browse(userAx, location)
+    assert.equal(entry.status, 302)
+    assert.equal(new URL(entry.headers.location).searchParams.get('error'), 'forbidden')
+  })
+
+  test('revoking all sessions revokes the grants', async () => {
+    const { user, adminAx, clientId, flow } = await setup()
+    const { tokens } = await runCodeFlow(flow())
+    await adminAx.delete(`/api/users/${user.id}/sessions`)
+    await assertRefresh(clientId, tokens.refresh_token, 400, 'after revoking the sessions')
+  })
+
+  test('revoking the consenting session revokes its grants only', async () => {
+    const { user, adminAx, clientId, flow } = await setup()
+    const first = await runCodeFlow(flow())
+    const second = await runCodeFlow(flow({ browserAx: await secondLogin() }))
+    const records = (await grantRecords({ clientId })).sort((a, b) => a.createdAt - b.createdAt)
+    assert.equal(records.length, 2)
+    assert.ok(records[0].sessionId && records[1].sessionId && records[0].sessionId !== records[1].sessionId, 'each grant records its server session')
+    await adminAx.delete(`/api/users/${user.id}/sessions/${records[0].sessionId}`)
+    await assertRefresh(clientId, first.tokens.refresh_token, 400, 'grant of the deleted session')
+    await assertRefresh(clientId, second.tokens.refresh_token, 200, 'grant of the other session')
+  })
+
+  test('logout keeps the grants', async () => {
+    const { userAx, clientId, flow } = await setup()
+    const { tokens } = await runCodeFlow(flow())
+    await userAx.delete('/api/auth')
+    await assertRefresh(clientId, tokens.refresh_token, 200, 'after logout')
+  })
+
+  test('a password change revokes the grants', async () => {
+    const { user, clientId, flow } = await setup()
+    const { tokens } = await runCodeFlow(flow())
+    const anonymAx = axios({ baseURL: issuer })
+    const mail = await waitForMail(
+      () => anonymAx.post('/api/auth/action', { email: 'oauth-code-user@test.com', action: 'changePassword', target: issuer + '/login' }),
+      (m: any) => m.to === 'oauth-code-user@test.com' && m.link?.includes('action_token')
+    )
+    const actionToken = new URL(mail.link).searchParams.get('action_token')
+    await anonymAx.post(`/api/users/${user.id}/password`, { password: 'TestPasswd02' }, { params: { action_token: actionToken } })
+    await assertRefresh(clientId, tokens.refresh_token, 400, 'after the password change')
   })
 
   test('anonymous requests are refused', async () => {

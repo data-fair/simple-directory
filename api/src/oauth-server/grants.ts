@@ -94,3 +94,7 @@ export const revokeGrants = async (filter: GrantFilter, reason: string, logConte
   }
   return count
 }
+
+// everything a user can lose control of: their own grants and the NHI grants they authorized
+export const revokeUserGrants = async (userId: string, reason: string, logContext?: EventLogContext) =>
+  await revokeGrants({ subjectId: userId }, reason, logContext) + await revokeGrants({ authorizedById: userId }, reason, logContext)

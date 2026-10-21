@@ -371,6 +371,16 @@ record, and logs `sd.oauth.grant.revoked`. It happens on:
   (`/api/organizations/:orgId/nhis/:nhiId/oauth-grants`);
 - a client calling `POST /api/oauth/revoke` with its own refresh token (the
   provider destroys the grant, its record with it);
+- revoking the server sessions of a user (`DELETE /api/users/:userId/sessions`)
+  or changing their password: every grant of that user and every NHI grant
+  they authorized;
+- revoking one server session (`DELETE /api/users/:userId/sessions/:sessionId`)
+  or detecting a reused exchange token at keepalive: the grants consented
+  from that session. A consent needs a live server session (the
+  `id_token_ex` cookie of the user, its session still listed): a copied
+  `id_token` alone cannot authorize a client, and the grant records the
+  session it came from. A normal logout keeps the grants, a dashboard
+  outlives the browser session that authorized it;
 - removing a site client, deleting a site, deleting a user or an NHI (mongo
   storage; the LDAP and file storages are read-only, their deletion is
   noticed lazily by the failing re-check at refresh);

@@ -108,6 +108,8 @@ export type ConsentGrantOptions = {
   // seconds
   lifetime: number,
   authorizedBy: { id: string, name: string },
+  // the server session of the consent
+  sessionId: string,
   logContext?: EventLogContext
 }
 
@@ -190,6 +192,7 @@ const saveConsentRecord = async (opts: ConsentGrantOptions, grantId: string, cli
     scope: opts.scope.join(' '),
     resources: [opts.resource],
     authorizedBy: opts.authorizedBy,
+    sessionId: opts.sessionId,
     createdAt: new Date(now),
     expiresAt: new Date(exp * 1000)
   })

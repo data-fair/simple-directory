@@ -154,7 +154,8 @@ test.describe('oauth consent rules', () => {
       resource: 'https://x.org',
       resourceKind: 'api',
       lifetime: 60,
-      authorizedBy: { id: 'u1', name: 'User 1' }
+      authorizedBy: { id: 'u1', name: 'User 1' },
+      sessionId: 's1'
     }), /boom/)
     assert.equal(interaction.params.scope, undefined)
     assert.equal(persisted, 0)

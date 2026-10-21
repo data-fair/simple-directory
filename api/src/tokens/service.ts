@@ -13,6 +13,7 @@ import storages from '#storages'
 import { getSignatureKeys } from './keys-manager.ts'
 import { getDefaultLoginRedirect, getRedirectSite, reqSite } from '#services'
 import { lastIpInfo } from '../utils/ip-info.ts'
+import { revokeGrants } from '../oauth-server/grants.ts'
 
 // delay during which the previous exchange token is still accepted, so that concurrent
 // keepalives (multiple tabs) do not look like a stolen token being replayed.
@@ -121,6 +122,21 @@ export const logout = async (req: Request, res: Response) => {
     const serverSessionInfo = decodeToken(exchangeToken) as SessionInfoPayload | undefined
     if (serverSessionInfo?.session) await storage.deleteUserSession(sessionState.user.id, serverSessionInfo.session)
   }
+}
+
+// the server session of the request's exchange token, when it is a live session of this user: the
+// id_token alone (short lived, readable by scripts) does not identify one
+export const reqServerSessionId = async (req: Request, user: User): Promise<string | undefined> => {
+  const exchangeToken = req.cookies?.id_token_ex
+  if (typeof exchangeToken !== 'string' || !exchangeToken) return undefined
+  let info: SessionInfoPayload
+  try {
+    info = await session.verifyToken(exchangeToken) as SessionInfoPayload
+  } catch {
+    return undefined
+  }
+  if (info.user !== user.id || !info.session || !user.sessions?.some(s => s.id === info.session)) return undefined
+  return info.session
 }
 
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
@@ -386,6 +402,8 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
       keepExchangeJti = serverSession.jti
     } else {
       await logout(req, res)
+      // a copy of the session may have authorized oauth clients
+      await revokeGrants({ sessionId: serverSession.id }, 'exchange token reused', logContext)
       eventsLog.alert('sd.auth.keepalive.reuse', 'an already used exchange token was presented, the session was destroyed', logContext)
       throw httpError(401, 'Session interrompue')
     }
