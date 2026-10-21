@@ -212,8 +212,11 @@ refreshed from data-fair); the provider's static list holds the OIDC ones.
 registration, NHI scopes) does not cover; empty is `invalid_scope`. A request
 without a platform scope gets the chosen scopes merged into its stored request.
 `openid`, `profile`, `email` are honoured for users only and never appear in an
-access token's `scope`. Narrowing is literal: an umbrella requested scope is not
-split by a narrower NHI maximum.
+access token's `scope`. Coverage is `maxCovers`: a global tier scope of the
+maximum covers the lower tiers (an NHI with `all:read` can be granted
+`datasets:read`), but an umbrella requested scope is not split by a narrower NHI
+maximum, and without a maximum the known list is matched as names. A refresh
+asking for less stays literal: it keeps only scopes named in the grant.
 
 **Subject switch.** When the provider session belongs to another account, SD
 destroys it before resuming (`detachForeignSession`), so user A then user B, or

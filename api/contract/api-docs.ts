@@ -3,6 +3,7 @@ import JWK from './JWK.ts'
 import user from '#types/user/schema.js'
 import organization from '#types/organization/schema.js'
 import mail from '#types/mail/schema.js'
+import { vocabulary } from '../src/scopes/vocabulary.ts'
 
 const authenticationParams = [{
   name: 'Authorization',
@@ -22,10 +23,7 @@ const authenticationParams = [{
   }
 }]
 
-const oauthScopes = {
-  organizations: 'All organization scopes',
-  'organizations:read': 'Read organizations, their roles and members'
-}
+const oauthScopes = vocabulary.scopeDescriptions('en')
 
 export default {
   openapi: '3.0.0',
@@ -272,7 +270,8 @@ export default {
       get: {
         tags: ['Organizations'],
         summary: 'Retrieve a list of organizations',
-        security: [{ oauth2: ['organizations:read'] }, { oauth2: ['organizations'] }],
+        // one alternative per accepted scope (the scopes of one requirement are all needed)
+        security: vocabulary.acceptedScopes('organizations', 'read').map(scope => ({ oauth2: [scope] })),
         parameters: authenticationParams.concat([{
           name: 'ids',
           in: 'query',

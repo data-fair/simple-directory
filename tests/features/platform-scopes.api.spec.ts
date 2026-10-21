@@ -17,8 +17,9 @@ test('without a platform scopes url, only the simple-directory scopes are listed
   await testEnvAx.patch('/config', { platformScopesUrl: '' })
   const { ax } = await createUser('scopes-list1@test.com')
   const scopes = (await ax.get('/api/scopes')).data.scopes
-  assert.deepEqual(Object.keys(scopes).sort(), ['organizations', 'organizations:read'])
+  assert.deepEqual(Object.keys(scopes).sort(), ['all:admin', 'all:read', 'all:write', 'organizations', 'organizations:read'])
   assert.ok(scopes['organizations:read'].length > 0)
+  assert.ok(scopes['all:read'].length > 0)
 })
 
 test('the platform scopes are merged with the simple-directory scopes', async () => {
@@ -26,7 +27,7 @@ test('the platform scopes are merged with the simple-directory scopes', async ()
   await testEnvAx.put('/platform-scopes', { scopes: { datasets: 'All dataset scopes', 'datasets:read': 'Read datasets', 'Bad name': 'ignored' } })
   const { ax } = await createUser('scopes-list2@test.com')
   const scopes = (await ax.get('/api/scopes')).data.scopes
-  assert.deepEqual(Object.keys(scopes).sort(), ['datasets', 'datasets:read', 'organizations', 'organizations:read'])
+  assert.deepEqual(Object.keys(scopes).sort(), ['all:admin', 'all:read', 'all:write', 'datasets', 'datasets:read', 'organizations', 'organizations:read'])
   assert.equal(scopes['datasets:read'], 'Read datasets')
 })
 

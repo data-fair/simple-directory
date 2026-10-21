@@ -206,8 +206,13 @@ Both grants apply the same org, site, `allowedIps`, scope and `exp` rules.
 An NHI may store maximum scopes (`nhi.scopes`, names `resource:class` or a bare `resource`
 umbrella), validated at create/patch time against the platform list served by
 `GET /api/scopes` (`api/src/scopes/service.ts`; the list comes from `PLATFORM_SCOPES_URL`, a
-soft dependency). The exchange accepts `scope` (space-delimited); each requested scope must be
-covered by the maximum, exactly or through the umbrella, never by prefix. A request without `scope` grants the
+soft dependency). simple-directory's own vocabulary (`api/src/scopes/vocabulary.ts`, built with
+`defineScopes` from lib-common-types like the other services) always adds the global tier scopes
+`all:read`, `all:write`, `all:admin`, so they are known even when the platform list is not.
+The exchange accepts `scope` (space-delimited); each requested scope must be
+covered by the maximum (`maxCovers` in `api/src/nhis/scopes.ts`): exactly, through the umbrella,
+or through a global tier scope at or above its tier (`all:write` covers `all:read`,
+`datasets:write`, `datasets:read`, never the bare `datasets` umbrella), never by prefix. A request without `scope` grants the
 maximum. An NHI without maximum scopes is unrestricted unless it asks for less: this keeps
 NHIs created before scopes working unchanged.
 
@@ -228,8 +233,9 @@ simple-directory is scope-aware: `api/src/utils/scope-gate.ts` is an explicit li
 matched on the lowercased path, anchored. It lists the session machinery (`POST
 /api/auth/keepalive`, `DELETE /api/auth` with or without trailing slash, `GET /api/auth/me`,
 `GET /api/auth/my-session`, `POST /api/auth/nhi-token`), public resources (`/.well-known/`, the
-UI shell, avatars) and the `organizations:read` (or `organizations`) rules for reading
-organizations, their roles and members. Everything else is unmarked and
+UI shell, avatars) and the rules for reading
+organizations, their roles and members, which accept `acceptedScopes('organizations', 'read')`
+(`organizations:read`, `organizations`, `all:read`, `all:write`, `all:admin`). Everything else is unmarked and
 refused to scoped sessions, whatever the role of the NHI. Adding a rule is a security decision.
 The OpenAPI contract declares the `oauth2` client credentials scheme and the scopes on
 `GET /api/organizations`.

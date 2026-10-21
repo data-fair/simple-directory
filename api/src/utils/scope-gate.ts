@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express'
 import { assertReqScope, markScopeChecked } from '@data-fair/lib-express'
+import { vocabulary } from '../scopes/vocabulary.ts'
 
 // Deny by default: a scope-restricted session (an NHI token issued with scopes) only reaches the
 // routes listed here, whatever the role of its identity. Unrestricted sessions are not concerned.
@@ -7,7 +8,8 @@ import { assertReqScope, markScopeChecked } from '@data-fair/lib-express'
 //
 // Paths are matched lowercased (express routes case-insensitively, so /API/... reaches the API
 // router) and exactly (anchored regexes): keep every regex lowercase and anchored.
-const organizationsRead = ['organizations:read', 'organizations']
+// organizations:read, the organizations umbrella or a global tier scope (all:read and above)
+const organizationsRead = vocabulary.acceptedScopes('organizations', 'read')
 
 type Rule = { method: 'GET' | 'POST' | 'DELETE', path: RegExp, scopes: string[] | 'any' }
 const rules: Rule[] = [

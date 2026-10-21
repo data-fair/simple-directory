@@ -23,6 +23,32 @@ test.describe('oauth consent rules', () => {
     assert.deepEqual(narrowScope(['c:d', 'a:b', 'c:d'], ['a', 'c'], []), ['c:d', 'a:b'])
   })
 
+  test('a global tier scope of the maximum covers the tiers at or below its own', async () => {
+    const { maxCovers, narrowScope, grantedScope } = await scopes()
+    for (const scope of ['all:read', 'datasets:read', 'organizations:read']) assert.ok(maxCovers(['all:read'], scope), scope)
+    for (const scope of ['all:write', 'datasets:write', 'datasets', 'all', 'datasets:readAdvanced']) assert.ok(!maxCovers(['all:read'], scope), scope)
+    for (const scope of ['all:read', 'all:write', 'datasets:read', 'datasets:write']) assert.ok(maxCovers(['all:write'], scope), scope)
+    assert.ok(!maxCovers(['all:write'], 'webhooks:admin'))
+    assert.ok(maxCovers(['all:admin'], 'webhooks:admin'))
+    // a bare umbrella stays out of reach of the global tier scopes
+    assert.ok(!maxCovers(['all:admin'], 'datasets'))
+    assert.deepEqual(narrowScope(['datasets:read', 'datasets:write', 'all:read'], ['all:read'], []), ['datasets:read', 'all:read'])
+    assert.equal(grantedScope(['all:write'], 'organizations:read datasets:write'), 'organizations:read datasets:write')
+    assert.throws(() => grantedScope(['all:read'], 'datasets:write'), /exceeds/)
+    // without a maximum, the known list is matched as names
+    assert.deepEqual(narrowScope(['unknown:read', 'all:read'], undefined, ['all:admin', 'all:read']), ['all:read'])
+  })
+
+  test('every locale describes exactly the scope vocabulary', async () => {
+    const { vocabulary } = await import('../../api/src/scopes/vocabulary.ts')
+    const names = Object.keys(vocabulary.scopeDescriptions('en')).sort()
+    assert.ok(names.includes('all:read'))
+    for (const locale of ['fr', 'en', 'de', 'es', 'it', 'pt']) {
+      const messages = (await import(`../../api/i18n/${locale}.js`)).default
+      assert.deepEqual(Object.keys(messages.scopes).sort(), names, locale)
+    }
+  })
+
   test('refuseConsentUser refuses nhis, scoped sessions and org storage users', async () => {
     const { refuseConsentUser } = await consent()
     const session = (u: any, extra: Record<string, any> = {}): any => ({ user: { id: u.id, name: u.name, email: u.email, organizations: [] }, ...extra })
