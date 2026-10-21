@@ -24,6 +24,9 @@ const rules: Rule[] = [
   // the UI shell: everything that is not the API (api itself excluded, whatever the case)
   { method: 'GET', path: /^\/(?!api(\/|$))/, scopes: 'any' },
   { method: 'GET', path: /^\/api\/avatars\//, scopes: 'any' },
+  // the sites of its own account (the route refuses another account's): public configuration
+  // every visitor of those sites sees, read by the agents service to know an agent's portals
+  { method: 'GET', path: /^\/api\/sites\/?$/, scopes: 'any' },
   // the list, one organization, its roles, its members
   { method: 'GET', path: /^\/api\/organizations(\/[^/]+(\/roles|\/members)?)?\/?$/, scopes: organizationsRead }
 ]
