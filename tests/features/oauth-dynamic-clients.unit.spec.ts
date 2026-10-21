@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 import { test } from '@playwright/test'
-import '../support/unit.ts'
+import { initMongo } from '../support/unit.ts'
 
 const dynamicClients = () => import('../../api/src/oauth-server/dynamic-clients.ts')
 
@@ -12,6 +12,26 @@ const throwsOAuth = (fn: () => unknown, error: string) =>
   assert.throws(fn, (err: any) => err.error === error && err.status === 400)
 
 test.describe('oauth dynamic clients', () => {
+  test('allowFetch outside of the provider without a key refuses', async () => {
+    await initMongo()
+    const { allowFetch } = await dynamicClients()
+    assert.equal(await allowFetch(undefined), false)
+  })
+
+  test('the cimd fetches of a consent route count against the user', async () => {
+    await initMongo()
+    const { allowFetch, findDynamicClient } = await dynamicClients()
+    const suffix = Math.random().toString(36).slice(2)
+    // a provider whose client lookup misses its cache: the fetch decision is taken outside the
+    // provider's own request context, as from SD's interaction routes
+    const provider: any = { Client: { find: async () => await allowFetch(undefined) } }
+    const fetchAllowed = async (key: string) => (await findDynamicClient(provider, 'https://agent.example.org/c.json', key)) as unknown as boolean
+    let allowed = true
+    for (let i = 0; i <= 100 && allowed; i++) allowed = await fetchAllowed('user:a-' + suffix)
+    assert.equal(allowed, false, 'the budget of a user runs out')
+    assert.equal(await fetchAllowed('user:b-' + suffix), true, 'another user keeps their budget')
+  })
+
   test('dynamicRedirectUriAllowed', async () => {
     const { dynamicRedirectUriAllowed } = await dynamicClients()
     const table: [string, boolean][] = [

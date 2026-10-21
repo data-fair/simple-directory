@@ -3,7 +3,9 @@
 // (DCR, stored in the oauth-client collection, scoped to the issuer). Both follow the same rules.
 // A dynamic client's grant is always bound to an NHI (spec section 7.3, NHI consent).
 import { isIP } from 'node:net'
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { errors } from 'oidc-provider'
+import type Provider from 'oidc-provider'
 import type { KoaContextWithOIDC } from 'oidc-provider'
 import { publicLookup, checkAddress, getSsrfRules } from '@data-fair/lib-node/ssrf.js'
 import { reqIp } from '@data-fair/lib-express'
@@ -107,12 +109,21 @@ export const allowClient = async (_koaCtx: KoaContextWithOIDC, client: { metadat
   }
 }
 
+// the rate limiting key of CIMD fetches started outside the provider's own request handling (SD's
+// interaction routes): the provider then hands allowFetch no context
+const cimdFetchKey = new AsyncLocalStorage<string>()
+
+// the provider's client lookup, with the CIMD fetches it may start counted against limiterKey
+export const findDynamicClient = (provider: Provider, clientId: string, limiterKey: string) =>
+  cimdFetchKey.run(limiterKey, () => provider.Client.find(clientId))
+
 // features.clientIdMetadataDocument.allowFetch, called on cache misses only: every fetch counts
-// against the address of the request (never refunded), so SD cannot be used to send GET requests
-// in bulk to arbitrary https urls
+// against the address of the request, or the key of findDynamicClient (never refunded), so SD
+// cannot be used to send GET requests in bulk to arbitrary https urls
 export const allowFetch = async (koaCtx: KoaContextWithOIDC | undefined) => {
-  const clientIp = koaCtx?.req ? reqIp(koaCtx.req as any) : 'unknown'
-  if (await limiter()('oauth-cimd:' + clientIp)) return true
+  const key = koaCtx?.req ? reqIp(koaCtx.req as any) : cimdFetchKey.getStore()
+  if (!key) return false
+  if (await limiter()('oauth-cimd:' + key)) return true
   eventsLog.warn('sd.oauth.rate-limit', 'rate limit error for client id metadata document fetches', { req: koaCtx?.req as any })
   return false
 }

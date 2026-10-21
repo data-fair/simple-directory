@@ -25,7 +25,7 @@ import { canonicalSiteUrl } from './router.ts'
 import { clientKind, findSiteClient, codeFlowEnabled } from './clients.ts'
 import { siteClientRequestScopes, dynamicClientRequestScopes, interactionTTL } from './configuration.ts'
 import { dashboardGrantLifetime, grantLifetimes, revokeGrant } from './grants.ts'
-import { displayIdUrl, logSafeName } from './dynamic-clients.ts'
+import { displayIdUrl, logSafeName, findDynamicClient } from './dynamic-clients.ts'
 import { reqServerSessionId } from '../tokens/service.ts'
 import {
   userConsentAccounts, consentAdminOrgs, refuseConsentUser, restoreRequestScope, implicitConsentAccount, createConsentGrant, findConsentAccount,
@@ -216,8 +216,8 @@ const nhiOidcScopes = (interaction: Interaction) => requestedOidcScopes(interact
 const membershipMayTarget = (membership: { id: string, department?: string }, resource: ResolvedResource) =>
   !resource.site || siteOwnedByNhiOrg(resource.site, membership)
 
-const dynamicClientInfo = async (ic: InteractionContext, interaction: Interaction, clientId: string, kind: 'cimd' | 'dcr') => {
-  const client = await ic.provider.Client.find(clientId)
+const dynamicClientInfo = async (ic: InteractionContext, interaction: Interaction, user: User, clientId: string, kind: 'cimd' | 'dcr') => {
+  const client = await findDynamicClient(ic.provider, clientId, 'user:' + user.id)
   if (!client) throw httpError(400, 'unknown client')
   const redirectUri = (interaction.params.redirect_uri as string | undefined) ?? client.redirectUris?.[0]
   let redirectHost = ''
@@ -242,7 +242,7 @@ const bindableNhis = async (orgId: string, resource: ResolvedResource, requested
 }
 
 const dynamicClientDetails = async (req: Request, ic: InteractionContext, interaction: Interaction, user: User, clientId: string, kind: 'cimd' | 'dcr') => {
-  const client = await dynamicClientInfo(ic, interaction, clientId, kind)
+  const client = await dynamicClientInfo(ic, interaction, user, clientId, kind)
   const { url, resolved } = await resolveInteractionResource(ic.ctx, interaction)
   const descriptions = await knownScopes(reqI18n(req))
   // the requested scopes, nothing preselected; each NHI's maximum narrows them on the screen
@@ -286,7 +286,7 @@ const parseInlineNhi = (create: any): InlineNhi => {
 // inline), the scopes within the request and the NHI maximum, the lifetime. Returns the url the
 // browser resumes the authorization with.
 const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, clientId: string, kind: 'cimd' | 'dcr', body: Record<string, any>) => {
-  const client = await dynamicClientInfo(ic, interaction, clientId, kind)
+  const client = await dynamicClientInfo(ic, interaction, user, clientId, kind)
   const adminAccount = findConsentAccount(consentAdminOrgs(user), body.account)
   if (!adminAccount || adminAccount.type !== 'organization') throw httpError(403, 'account is not an organization administered by the user')
   const lifetime = body.lifetime ?? defaultNhiLifetime

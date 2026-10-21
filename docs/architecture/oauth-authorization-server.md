@@ -460,7 +460,8 @@ Shared limiter (`api/src/utils/limiter.ts`), keys prefixed:
   users. Same budget (`authRateLimit`), consumed up front and refunded on
   success, so only failures count;
 - registration: `oauth-dcr:<ip>`, successes count (never refunded);
-- CIMD fetches: `oauth-cimd:<ip>` on cache misses, successes count;
+- CIMD fetches: `oauth-cimd:<ip>` on cache misses, `oauth-cimd:user:<id>` for the
+  lookups of the consent routes (outside the provider, no address is known), successes count;
 - consent decision: `oauth-consent:<userId>`, refunded on success.
 
 Events (`eventsLog`): `sd.oauth.grant.created`, `sd.oauth.grant.revoked`
