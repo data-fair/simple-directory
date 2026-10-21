@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { generateKeyPairSync } from 'node:crypto'
 import jwt from 'jsonwebtoken'
-import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl, devApiUrl } from '../support/axios.ts'
+import { axios, createUser, deleteAllEmails, testEnvAx, directoryUrl, devApiUrl, getServerConfig } from '../support/axios.ts'
 
 const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const jwks = { keys: [{ ...publicKey.export({ format: 'jwk' }), kid: 'test-key', alg: 'RS256', use: 'sig' }] }
@@ -57,7 +57,6 @@ test('a scoped NHI with the admin role is refused outside the gate', async () =>
     await assert.rejects(ax.patch(`/api/organizations/${org.id}`, { description: 'changed' }), is403)
     await assert.rejects(ax.get(`/api/users/${nhi.id}`), is403)
     await assert.rejects(ax.get(`/api/organizations/${org.id}/nhis`), is403)
-    await assert.rejects(ax.get('/api/sites'), is403)
   }
 })
 
@@ -69,6 +68,27 @@ test('a scope that does not cover organizations reads nothing in SD', async () =
   await assert.rejects(cookieAx.get('/api/accounts'), is403)
   await assert.rejects(bearerAx.get('/api/organizations'), is403)
   await assert.rejects(bearerAx.get('/api/accounts'), is403)
+})
+
+// the agents service lists an agent's portals as the agent itself, whatever its scopes
+test('a scoped NHI session lists its organization\'s sites', async () => {
+  const { org, cookieAx, bearerAx } = await scopedNhi('nhi-gate5@test.com', ['datasets:read'])
+  const config = await getServerConfig()
+  await axios().post('/api/sites',
+    { _id: 'test_scoped_sites', owner: { type: 'organization', id: org.id, name: org.name }, host: 'scoped-sites.example.com', theme: { primaryColor: '#FF0000' } },
+    { params: { key: config.secretKeys.sites } })
+  for (const ax of [cookieAx, bearerAx]) {
+    const { data } = await ax.get('/api/sites', { params: { owner: `organization:${org.id}`, tmp: false } })
+    assert.deepEqual(data.results.map((s: any) => s.host), ['scoped-sites.example.com'])
+  }
+})
+
+test('a scoped NHI session is refused another organization\'s sites', async () => {
+  const { cookieAx } = await scopedNhi('nhi-gate6@test.com', ['datasets:read'])
+  const { org: other } = await scopedNhi('nhi-gate6b@test.com', ['datasets:read'])
+  const is403 = (err: any) => err.status === 403
+  await assert.rejects(cookieAx.get('/api/sites', { params: { owner: `organization:${other.id}` } }), is403)
+  await assert.rejects(cookieAx.get('/api/sites', { params: { showAll: true } }), is403)
 })
 
 test('keepalive stays inert for a scoped NHI session', async () => {

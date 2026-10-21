@@ -35,5 +35,7 @@ export async function isSiteAdminOf (req: Request, resource: { host?: string, pa
 export async function isSiteAdminOfUser (req: Request, user: User | null | undefined) {
   if (!user || user.nhi) return false
   if (user.id === reqSession(req).user?.id) return false
+  // with ADMIN_MODE_ON_SITES a superadmin can be hosted on a site, never let the site admin manage it
+  if (config.admins.includes(user.email?.toLowerCase() ?? '')) return false
   return isSiteAdminOf(req, user)
 }

@@ -133,6 +133,17 @@ test.describe('site admin api', () => {
     await assert.rejects(siteAdminAx.patch(`/api/users/${siteAdminUser.id}`, { '2FA': null }), { status: 403 })
   })
 
+  test('should not act on a superadmin account hosted on the site', async () => {
+    const { siteAdminAx } = await setup()
+    // admin@test.com is listed in ADMINS, with ADMIN_MODE_ON_SITES this account is a superadmin
+    const { user: superadmin } = await createUser('admin@test.com', false, 'TestPasswd01', siteDirectoryUrl)
+
+    await assert.rejects(siteAdminAx.delete(`/api/users/${superadmin.id}/sessions`), { status: 403 })
+    await assert.rejects(siteAdminAx.delete(`/api/users/${superadmin.id}/plannedDeletion`), { status: 403 })
+    await assert.rejects(siteAdminAx.patch(`/api/users/${superadmin.id}`, { '2FA': null }), { status: 403 })
+    await assert.rejects(siteAdminAx.delete(`/api/users/${superadmin.id}`), { status: 403 })
+  })
+
   test('should not administer another site by sending the session through its host', async () => {
     const { adminAx, siteAdminAx } = await setup()
     const config = await getServerConfig()
