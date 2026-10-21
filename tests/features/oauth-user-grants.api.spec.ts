@@ -98,7 +98,7 @@ test.describe('oauth connected applications', () => {
     await assertRefresh(clientId, tokens.refresh_token, 200, 'after logout')
   })
 
-  test('a password change revokes the grants', async () => {
+  test('a password change keeps the grants', async () => {
     const { user, clientId, flow } = await setup()
     const { tokens } = await runCodeFlow(flow())
     const anonymAx = axios({ baseURL: issuer })
@@ -108,7 +108,7 @@ test.describe('oauth connected applications', () => {
     )
     const actionToken = new URL(mail.link).searchParams.get('action_token')
     await anonymAx.post(`/api/users/${user.id}/password`, { password: 'TestPasswd02' }, { params: { action_token: actionToken } })
-    await assertRefresh(clientId, tokens.refresh_token, 400, 'after the password change')
+    await assertRefresh(clientId, tokens.refresh_token, 200, 'after the password change')
   })
 
   test('anonymous requests are refused', async () => {

@@ -375,9 +375,9 @@ record, and logs `sd.oauth.grant.revoked`. It happens on:
   (`/api/organizations/:orgId/nhis/:nhiId/oauth-grants`);
 - a client calling `POST /api/oauth/revoke` with its own refresh token (the
   provider destroys the grant, its record with it);
-- revoking the server sessions of a user (`DELETE /api/users/:userId/sessions`)
-  or changing their password: every grant of that user and every NHI grant
-  they authorized;
+- revoking the server sessions of a user (`DELETE /api/users/:userId/sessions`):
+  every grant of that user and every NHI grant they authorized (a password
+  change keeps the grants, as it keeps the sessions);
 - revoking one server session (`DELETE /api/users/:userId/sessions/:sessionId`)
   or detecting a reused exchange token at keepalive: the grants consented
   from that session. A consent needs a live server session (the

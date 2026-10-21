@@ -408,7 +408,6 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
   await storage.patchUser(req.params.userId, { password: newStoredPassword, 'passwordUpdate.last': new Date().toISOString(), 'passwordUpdate.force': null })
 
   eventsLog.info('sd.user.change-password', `user changed password ${req.params.userId}`, logContext)
-  await revokeUserGrants(req.params.userId, 'password changed', logContext)
 
   res.status(204).send()
 })
