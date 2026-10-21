@@ -155,6 +155,15 @@ test.describe('oauth dynamic clients', () => {
     })
   })
 
+  test('a platform scope in the client metadata is accepted, as the mcp sdk sends it', async () => {
+    const res = await register({ ...claudeCode(), scope: 'organizations:read' })
+    assert.equal(res.status, 201, JSON.stringify(res.data))
+    await assertReachesInteraction(flow(res.data.client_id, 'http://localhost:40123/callback'))
+    const cimdId = 'https://cimd.test/scoped'
+    await testEnvAx.post('/cimd-fixtures', { url: cimdId, document: { ...claudeCode(), client_id: cimdId, scope: 'openid organizations:read' } })
+    await assertReachesInteraction(flow(cimdId, 'http://localhost:40123/callback'))
+  })
+
   test('a cimd client from a fixture reaches the consent entry', async () => {
     const clientId = 'https://cimd.test/claude-code'
     await testEnvAx.post('/cimd-fixtures', { url: clientId, document: { ...claudeCode(), client_id: clientId } })

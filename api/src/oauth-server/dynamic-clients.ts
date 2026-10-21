@@ -14,6 +14,7 @@ import mongo from '#mongo'
 import limiter from '../utils/limiter.ts'
 import { isLoopbackRedirectUri, loopbackHosts } from './clients.ts'
 import { listGrantRecords } from './grants.ts'
+import { oidcScopeNames } from './consent.ts'
 import Debug from 'debug'
 import { internalError } from '@data-fair/lib-node/observer.js'
 
@@ -50,6 +51,13 @@ const stringArray = (value: unknown, key: string): string[] => {
 export const checkDynamicMetadata = (metadata: Record<string, any>) => {
   // validated by an outbound fetch: an open registration must not make SD call arbitrary urls
   if (metadata.sector_identifier_uri !== undefined) throw new errors.InvalidClientMetadata('sector_identifier_uri is not supported')
+  // the provider only accepts its static (OIDC) scopes here, platform scopes are resource scopes:
+  // the MCP SDK sends the scopes it wants at registration, they are a request, not a restriction
+  if (typeof metadata.scope === 'string') {
+    const oidcScope = metadata.scope.split(' ').filter((s: string) => oidcScopeNames.includes(s)).join(' ')
+    if (oidcScope) metadata.scope = oidcScope
+    else delete metadata.scope
+  }
 
   metadata.token_endpoint_auth_method ??= 'none'
   if (!allowedAuthMethods.includes(metadata.token_endpoint_auth_method)) {
