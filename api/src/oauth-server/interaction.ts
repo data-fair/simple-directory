@@ -181,7 +181,8 @@ const reusableGrantId = async (ic: InteractionContext, interaction: Interaction,
     if (!grant || grant.accountId !== user.id) continue
     const oidcEncountered = grant.getOIDCScopeEncountered().split(' ')
     const resourceEncountered = grant.getResourceScopeEncountered(resource).split(' ')
-    if (requested.every(s => oidcEncountered.includes(s)) && requestedPlatform.every(s => resourceEncountered.includes(s))) return record._id
+    const requestedOidc = requested.filter(s => oidcScopeNames.includes(s))
+    if (requestedOidc.every(s => oidcEncountered.includes(s)) && requestedPlatform.every(s => resourceEncountered.includes(s))) return record._id
   }
 }
 

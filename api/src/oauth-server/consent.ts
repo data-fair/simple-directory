@@ -131,8 +131,7 @@ export const createConsentGrant = async (provider: Provider, opts: ConsentGrantO
   if (mergeScope) opts.interaction.params.scope = [...requestedParam, ...opts.scope].join(' ')
   const grant = new provider.Grant({ accountId: opts.subject.id, clientId })
   // the consent prompt re-prompts until every requested scope was encountered: each one is
-  // either granted or rejected. Platform scopes are both OIDC scopes (the provider's scopes list)
-  // and resource scopes.
+  // either granted or rejected, OIDC scopes as such, platform scopes as resource scopes
   const requested = new Set(String(opts.interaction.params.scope ?? '').split(' ').filter(Boolean))
   for (const scope of opts.scope) requested.add(scope)
   for (const scope of requested) {
@@ -140,10 +139,8 @@ export const createConsentGrant = async (provider: Provider, opts: ConsentGrantO
       if (opts.oidcScopes.includes(scope)) grant.addOIDCScope(scope)
       else grant.rejectOIDCScope(scope)
     } else if (opts.scope.includes(scope)) {
-      grant.addOIDCScope(scope)
       grant.addResourceScope(opts.resource, scope)
     } else {
-      grant.rejectOIDCScope(scope)
       grant.rejectResourceScope(opts.resource, scope)
     }
   }

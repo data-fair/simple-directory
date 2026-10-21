@@ -11,14 +11,13 @@ import { logSafeName } from './dynamic-clients.ts'
 
 type CachedProvider = { marker: string, promise: Promise<Provider> }
 
-// one provider per issuer, rebuilt when the scoped signing key rotates, when the issuer context
-// changes or when a flag changes: the provider's hooks read ctx (site, siteUrl) through closures and
-// the flags shape its configuration, a stale one must not survive
+// one provider per issuer, rebuilt when the scoped signing key rotates or a flag changes (the flags
+// shape its configuration). The hooks only read the issuer, the site url and the site id from their
+// closures, everything else (site clients, resources, scopes) is read fresh: a site update keeps it.
 const providers = new Map<string, CachedProvider>()
 
-const cacheMarker = (ctx: IssuerContext, kid: string) =>
-  JSON.stringify([kid, ctx.siteUrl, ctx.site?._id ?? null, ctx.site?.updatedAt ?? null,
-    siteClientsEnabled(), agentClientsEnabled()])
+export const cacheMarker = (ctx: IssuerContext, kid: string) =>
+  JSON.stringify([kid, ctx.issuer, ctx.siteUrl, ctx.site?._id ?? null, siteClientsEnabled(), agentClientsEnabled()])
 
 const signingJwk = (privateKeyPem: string, kid: string): JWK => ({
   ...createPrivateKey(privateKeyPem).export({ format: 'jwk' }),
@@ -34,7 +33,7 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
   provider.use(async (koaCtx, next) => {
     await next()
     if (koaCtx.oidc?.route === 'discovery' && koaCtx.status === 200 && koaCtx.body) {
-      discoveryOverrides(ctx, koaCtx.body as Record<string, any>)
+      await discoveryOverrides(ctx, koaCtx.body as Record<string, any>)
     }
     // the provider reports the requested scope, an SD grant may have granted a different one
     // (the NHI's maximum when nothing was requested): the response must match the token

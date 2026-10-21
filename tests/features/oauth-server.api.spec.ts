@@ -434,6 +434,18 @@ test.describe('oauth server client_credentials grant', () => {
     assert.equal(res.data.error, 'invalid_client')
   })
 
+  test('a platform scope published after the provider was built is requestable and advertised', async () => {
+    const { nhi } = await createNhi('oauth-cc-live@test.com')
+    assert.equal((await ccRequest(nhi.id)).status, 200)
+    await testEnvAx.put('/platform-scopes', { scopes: { datasets: 'All dataset scopes', 'datasets:read': 'Read datasets', 'datasets:write': 'Write datasets', 'maps:read': 'Read maps' } })
+    await testEnvAx.post('/clear-platform-scopes-cache')
+    const res = await ccRequest(nhi.id, { scope: 'maps:read' })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    assert.equal(res.data.scope, 'maps:read')
+    const discovery = (await axios().get('/.well-known/openid-configuration')).data
+    assert.ok(discovery.scopes_supported.includes('maps:read'), JSON.stringify(discovery.scopes_supported))
+  })
+
   test('client_credentials: scope within the maximum', async () => {
     const { nhi } = await createNhi('oauth-cc8@test.com', { scopes: ['datasets'] })
     const res = await ccRequest(nhi.id, { scope: 'openid datasets:read' })

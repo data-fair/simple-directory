@@ -5,10 +5,8 @@ import mongo from '#mongo'
 import config, { jwtDurations } from '#config'
 import storages from '#storages'
 import type { User } from '#types'
-import { defaultLocale, messages } from '#i18n'
 import { reqIp } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
-import { getKnownScopes } from '../scopes/service.ts'
 import { grantedScope, narrowScope } from '../nhis/scopes.ts'
 import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
@@ -209,7 +207,6 @@ const dynamicClientResourceScope = async (koaCtx: KoaContextWithOIDC) => {
 export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): Promise<Configuration> => {
   const codeFlow = codeFlowEnabled()
   const agentClients = agentClientsEnabled()
-  const knownScopes = await getKnownScopes(defaultLocale, messages[defaultLocale].scopes)
   return {
     adapter: adapterFactory(ctx),
     jwks: { keys: [signingJwk] },
@@ -222,8 +219,8 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
         getResourceServerInfo: async (koaCtx, resourceIndicator, client) => {
           let resource: ResolvedResource
           // the provider filters the requested scopes by this list: the NHI's granted scope, or
-          // every known scope for an unrestricted one
-          let scope = Object.keys(knownScopes).join(' ')
+          // every known scope (read live, platform scopes refresh) for an unrestricted one
+          let scope = (await knownScopeNames()).join(' ')
           try {
             resource = await resolveResource(ctx, resourceIndicator)
             if (koaCtx.oidc?.params?.grant_type === 'client_credentials') {
@@ -320,11 +317,12 @@ export const buildConfiguration = async (ctx: IssuerContext, signingJwk: JWK): P
         }
       }
     },
-    scopes: Object.keys(knownScopes),
+    // the OIDC scopes only: platform scopes are resource scopes (getResourceServerInfo), read live
+    scopes: oidcScopeNames,
     ttl: { ClientCredentials: jwtDurations.nhiToken },
     // accounts and interactions come with the authorization code flow
     findAccount: async () => undefined,
-    ...(codeFlow ? codeFlowConfiguration(ctx, Object.keys(knownScopes)) : {})
+    ...(codeFlow ? codeFlowConfiguration(ctx) : {})
   }
 }
 
@@ -342,8 +340,7 @@ const forcedInteractionPolicy = () => {
   return policy
 }
 
-const codeFlowConfiguration = (ctx: IssuerContext, knownScopes: string[]): Partial<Configuration> => ({
-  scopes: [...knownScopes, ...oidcScopeNames],
+const codeFlowConfiguration = (ctx: IssuerContext): Partial<Configuration> => ({
   claims: { openid: ['sub'], profile: ['name'], email: ['email'] },
   clientDefaults: {
     token_endpoint_auth_method: 'none',
@@ -391,8 +388,10 @@ const codeFlowConfiguration = (ctx: IssuerContext, knownScopes: string[]): Parti
 })
 
 // discovery values that the provider computes itself and that configuration cannot override
-export const discoveryOverrides = (ctx: IssuerContext, body: Record<string, any>) => {
+export const discoveryOverrides = async (ctx: IssuerContext, body: Record<string, any>) => {
   body.jwks_uri = ctx.issuer + '/.well-known/scoped-jwks.json'
+  // the platform scopes are resource scopes, unknown to the provider's static list
+  body.scopes_supported = [...(codeFlowEnabled() ? oidcScopeNames : []), ...await knownScopeNames()]
   let grantTypes: string[] = (body.grant_types_supported ?? []).filter((g: string) => g !== 'implicit')
   if (codeFlowEnabled()) {
     body.response_types_supported = ['code']
