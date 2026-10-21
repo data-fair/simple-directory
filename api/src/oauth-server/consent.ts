@@ -17,7 +17,7 @@ export const oidcScopeNames = ['openid', 'profile', 'email', 'offline_access']
 // what the consent screen flags: a whole resource family (no action part) or an all:* scope
 export const isBroadScope = (scope: string) => !scope.includes(':') || scope.startsWith('all:')
 
-const sameDepartment = (a: string | undefined, b: string | undefined) => (a || undefined) === (b || undefined)
+export const sameDepartment = (a: string | undefined, b: string | undefined) => (a || undefined) === (b || undefined)
 
 // the personal account (unless ignored) and every membership, the default account of the user on
 // the site first (getDefaultUserOrg: owner org of the site, then the user's default org)

@@ -255,6 +255,39 @@ test.describe('oauth authorization code flow', () => {
     assert.ok(await openInteraction(forced, forcedLocation))
   })
 
+  // the whole implicit flow of a member of the owner org, no consent screen
+  const implicitFlow = async (opts: CodeFlowOptions) => {
+    const { pkce, location } = await startAuthorization(opts)
+    const entry = await browse(opts.browserAx, location)
+    assert.equal(entry.status, 303, JSON.stringify(entry.headers))
+    const callback = await resume(opts, entry.headers.location)
+    const res = await exchangeCode(opts, callback.searchParams.get('code')!, pkce.verifier)
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+    return res.data
+  }
+
+  const refreshWorks = async (opts: CodeFlowOptions, refreshToken: string) => {
+    const res = await tokenRequest(opts.issuer, { grant_type: 'refresh_token', refresh_token: refreshToken, client_id: opts.clientId })
+    assert.equal(res.status, 200, JSON.stringify(res.data))
+  }
+
+  test('implicit consent reuses the live grant', async () => {
+    const { clientId, flow } = await setup({ consent: 'implicit' })
+    const first = await implicitFlow(flow())
+    const second = await implicitFlow(flow())
+    assert.equal((await grantRecords({ clientId })).length, 1)
+    await refreshWorks(flow(), first.refresh_token)
+    await refreshWorks(flow(), second.refresh_token)
+  })
+
+  test('implicit consent with a new scope gets a new grant', async () => {
+    const { clientId, flow } = await setup({ consent: 'implicit' })
+    await implicitFlow(flow())
+    const tokens = await implicitFlow(flow({ scope: 'openid profile organizations:read' }))
+    assert.ok(tokens.id_token, 'the new scope was granted')
+    assert.equal((await grantRecords({ clientId })).length, 2)
+  })
+
   test('an implicit client shows the consent screen to a user outside the owner org', async () => {
     const { flow } = await setup({ consent: 'implicit' })
     const { ax: outsiderAx } = await createUser('oauth-code-outsider@test.com', false, password, issuer)
