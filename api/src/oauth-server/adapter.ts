@@ -1,6 +1,6 @@
 // oidc-provider adapter: one mongo collection per model, documents are { _id, payload, expiresAt }.
 // https://github.com/panva/node-oidc-provider/blob/main/docs/README.md#adapter
-import type { Adapter, AdapterPayload } from 'oidc-provider'
+import { errors, type Adapter, type AdapterPayload } from 'oidc-provider'
 import type { Collection } from 'mongodb'
 import mongo from '#mongo'
 
@@ -42,8 +42,11 @@ export class MongoAdapter implements Adapter {
     return this.toPayload(await this.collection.findOne({ 'payload.userCode': userCode }))
   }
 
+  // the provider checks consumed on the copy it read: the conditional update closes the race of two
+  // concurrent uses, the loser's next attempt meets the provider's own reuse detection
   async consume (id: string) {
-    await this.collection.updateOne({ _id: id }, { $set: { 'payload.consumed': Math.floor(Date.now() / 1000) } })
+    const { matchedCount } = await this.collection.updateOne({ _id: id, 'payload.consumed': { $exists: false } }, { $set: { 'payload.consumed': Math.floor(Date.now() / 1000) } })
+    if (!matchedCount) throw new errors.InvalidGrant('grant already used')
   }
 
   async destroy (id: string) {

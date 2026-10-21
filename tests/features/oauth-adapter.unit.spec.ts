@@ -36,6 +36,15 @@ test.describe('oauth server mongo adapter', () => {
     assert.equal(typeof found?.consumed, 'number')
   })
 
+  test('consume is single use', async () => {
+    const { MongoAdapter } = await import('../../api/src/oauth-server/adapter.ts')
+    const adapter = new MongoAdapter('RefreshToken')
+    await adapter.upsert('test_rt2', { grantId: 'g2' }, 60)
+    await adapter.consume('test_rt2')
+    await assert.rejects(adapter.consume('test_rt2'), (err: any) => err.error === 'invalid_grant')
+    assert.equal(typeof (await adapter.find('test_rt2'))?.consumed, 'number')
+  })
+
   test('revokeByGrantId deletes every document of the grant', async () => {
     const { MongoAdapter } = await import('../../api/src/oauth-server/adapter.ts')
     const access = new MongoAdapter('AccessToken')

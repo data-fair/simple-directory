@@ -77,6 +77,17 @@ test.describe('oauth refresh tokens and revocation', () => {
     assert.equal((await grantRecords({ clientId })).length, 0)
   })
 
+  test('concurrent refresh with the same token: one wins, the replay revokes', async () => {
+    const { clientId, flow } = await setup()
+    const { tokens } = await runCodeFlow(flow())
+    const results = await Promise.all([refresh(clientId, tokens.refresh_token), refresh(clientId, tokens.refresh_token)])
+    const winners = results.filter(r => r.status === 200)
+    assert.equal(winners.length, 1, JSON.stringify(results.map(r => r.data)))
+    assertInvalidGrant(results.find(r => r.status !== 200)!, 'the concurrent loser')
+    assertInvalidGrant(await refresh(clientId, tokens.refresh_token), 'the replay of the original token')
+    assertInvalidGrant(await refresh(clientId, winners[0].data.refresh_token), 'the winner token after the replay')
+  })
+
   test('losing the membership fails the refresh', async () => {
     const { org, user, adminAx, clientId, flow } = await setup()
     const { tokens } = await runCodeFlow(flow({ decision: { account: { type: 'organization', id: org.id } } }))
