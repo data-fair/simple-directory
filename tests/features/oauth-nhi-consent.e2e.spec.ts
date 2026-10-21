@@ -87,7 +87,9 @@ test.describe('OAuth NHI consent page', () => {
   })
 
   test('a broad requested scope shows a warning', async ({ page }) => {
-    const { url } = await prepare(page, 'organizations organizations:read')
+    const { org, ownerAx, url } = await prepare(page, 'organizations organizations:read')
+    // the scopes are listed once the organization has a service account to bind
+    await ownerAx.post(`/api/organizations/${org.id}/nhis`, { name: 'Agent', role: 'user' })
     await page.goto(url)
     await expect(page.locator('[data-unverified]')).toBeVisible({ timeout: 15_000 })
     await expect(page.locator('[data-scope="organizations"] .v-icon[title]')).toBeVisible()
