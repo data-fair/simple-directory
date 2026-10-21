@@ -18,8 +18,8 @@ export class GrantSubjectError extends Error {}
 
 // the platform claims of the grant: the organizations claim holds the bound account only, [] for
 // the personal account
-const boundAccountClaims = (user: User, record: OAuthGrantRecord, resource: ResolvedResource, scope: string) => {
-  const claims = sdClaims(user, resource, { scope })
+const boundAccountClaims = (user: User, record: OAuthGrantRecord, resource: ResolvedResource, scope: string, boundIp?: string) => {
+  const claims = sdClaims(user, resource, { scope, boundIp })
   if (record.account.type === 'organization') {
     // same strict department match as the consent (findConsentAccount)
     const membership = (claims.organizations as any[] ?? []).find(o => o.id === record.account.id && sameDepartment(o.department, record.account.department))
@@ -57,8 +57,6 @@ export const checkGrantSubject = async (record: OAuthGrantRecord, ctx: IssuerCon
   if (user.nhi) {
     if (user.organizations.length !== 1) throw new GrantSubjectError('invalid nhi')
     if (record.account.type !== 'organization') throw new GrantSubjectError('an nhi grant is bound to its organization')
-    // the token endpoint caller is not the API caller, a bound session would be unusable
-    if (user.nhi.ipBinding) throw new GrantSubjectError('an ip bound nhi cannot hold an oauth grant')
     if (user.nhi.allowedIps?.length && !ipAllowed(clientIp, user.nhi.allowedIps)) {
       throw new GrantSubjectError(`ip ${clientIp} not in allowedIps`)
     }
@@ -75,7 +73,9 @@ export const checkGrantSubject = async (record: OAuthGrantRecord, ctx: IssuerCon
 
   const scope = narrowScope(record.scope.split(' '), max, await knownScopeNames()).join(' ')
   if (!scope) throw new GrantSubjectError('no scope left')
-  const claims = boundAccountClaims(user, record, resource, scope)
+  // ipBinding: each token is bound to the ip of its token request, as for the machine grants
+  // (a relaying mcp server forwards the caller ip as a trusted forwarder)
+  const claims = boundAccountClaims(user, record, resource, scope, user.nhi?.ipBinding ? clientIp : undefined)
   if (user.nhi) {
     // the admin who bound the client to the NHI must still be one (same rule as the consent): a
     // demoted, removed or deleted admin must not keep an agent acting for the organization

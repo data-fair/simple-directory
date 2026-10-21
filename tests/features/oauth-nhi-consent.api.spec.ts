@@ -31,12 +31,12 @@ const decide = async (opts: CodeFlowOptions, choose: (details: any) => Record<st
 }
 
 // the rest of the flow after an accepted decision
-const finish = async (opts: CodeFlowOptions, started: Awaited<ReturnType<typeof decide>>) => {
+const finish = async (opts: CodeFlowOptions, started: Awaited<ReturnType<typeof decide>>, headers: Record<string, string> = {}) => {
   assert.equal(started.decided.status, 200, JSON.stringify(started.decided.data))
   const callback = await resume(opts, started.decided.data.redirectTo)
   assert.equal(callback.searchParams.get('state'), started.state)
   assert.ok(callback.searchParams.get('code'), 'no code in the callback: ' + callback.href)
-  const tokenRes = await exchangeCode(opts, callback.searchParams.get('code')!, started.pkce.verifier)
+  const tokenRes = await exchangeCode(opts, callback.searchParams.get('code')!, started.pkce.verifier, headers)
   assert.equal(tokenRes.status, 200, JSON.stringify(tokenRes.data))
   return tokenRes.data
 }
@@ -114,7 +114,6 @@ test.describe('oauth nhi consent', () => {
   test('admin binds an existing nhi and the client gets an nhi token for the mcp', async () => {
     const { org, user, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
     const nhi = await createNhi({ name: 'Bound agent', scopes: ['organizations:read'] })
-    await createNhi({ name: 'Ip bound agent', ipBinding: true })
     const opts = dynamicFlow({ scope: 'openid profile email organizations:read' })
     const started = await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' }))
 
@@ -130,7 +129,7 @@ test.describe('oauth nhi consent', () => {
     assert.deepEqual(details.lifetimes, ['1d', '7d', '30d', '90d', '1y'])
     assert.equal(details.defaultLifetime, '30d')
     assert.deepEqual(details.scopes.map((s: any) => s.name), ['organizations:read'])
-    // an ip bound nhi is not offered, no key material is exposed
+    // no key material is exposed
     assert.deepEqual(details.nhis[org.id], [{ id: nhi.id, name: 'Bound agent', scopes: ['organizations:read'] }])
     // no identity claim for an nhi subject
     assert.deepEqual(details.oidcScopes, ['openid'])
@@ -235,12 +234,27 @@ test.describe('oauth nhi consent', () => {
     }
   })
 
-  test('an nhi with ipBinding cannot be bound', async () => {
+  test('an ip bound nhi gets tokens bound to the ip of each token request', async () => {
     const { org, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
-    const nhi = await createNhi({ ipBinding: true })
-    const started = await decide(dynamicFlow(), () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' }))
-    assert.equal(started.decided.status, 400, JSON.stringify(started.decided.data))
-    assert.equal((await grantRecords({ clientId: dynamicClientId })).length, 0)
+    const nhi = await createNhi({ name: 'Ip bound agent', ipBinding: true })
+    const opts = dynamicFlow()
+    const started = await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' }))
+    assert.ok(started.details.nhis[org.id].some((n: any) => n.id === nhi.id))
+    const tokens = await finish(opts, started, { 'x-forwarded-for': '9.9.9.5' })
+    assert.equal((jwt.decode(tokens.access_token) as jwt.JwtPayload).boundIp, '9.9.9.5')
+
+    // usable from that address (the mcp server relays the caller ip), refused from any other
+    const call = (ip: string) => axios().get(`${issuer}/api/organizations/${org.id}`,
+      { headers: { authorization: 'Bearer ' + tokens.access_token, 'x-forwarded-for': ip }, validateStatus: () => true })
+    assert.equal((await call('9.9.9.5')).status, 200)
+    assert.equal((await call('8.8.8.8')).status, 401)
+
+    // a refresh binds the new token to the ip of the refresh
+    const refreshed = await tokenRequest(issuer, {
+      grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: dynamicClientId
+    }, { 'x-forwarded-for': '9.9.9.6' })
+    assert.equal(refreshed.status, 200, JSON.stringify(refreshed.data))
+    assert.equal((jwt.decode(refreshed.data.access_token) as jwt.JwtPayload).boundIp, '9.9.9.6')
   })
 
   test('an nhi of another org cannot be bound', async () => {

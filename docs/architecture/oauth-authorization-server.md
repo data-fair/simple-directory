@@ -199,9 +199,8 @@ so visits do not pile up grants; `prompt=consent` forces the screen. 30 days.
 
 **An org admin for a dynamic client.** Only a real admin membership (department
 admins with `depAdminIsOrgAdmin`), never admin mode nor the site-admin
-fallback. The admin binds the client to an existing NHI of the organization
-without `ipBinding` (the token endpoint caller is not the API caller), or to a
-new NHI created inline (the checks of `POST /nhis`, no key binding). Nothing is
+fallback. The admin binds the client to an existing NHI of the organization, or
+to a new NHI created inline (the checks of `POST /nhis`, no key binding). Nothing is
 preselected; NHIs that could get none of the requested scopes are not offered;
 the lifetime is `1d`, `7d`, `30d` (default), `90d` or `1y`. The subject is the
 NHI, the admin is `authorizedBy`. An NHI gets no identity claim.
@@ -235,7 +234,7 @@ Grant removes it.
 At the code exchange and every refresh `findAccount` re-checks the grant
 (`checkGrantSubject`): record live, same issuer, subject type matching the
 client kind, subject still existing with the same type, resource still in the
-realm; for an NHI its single organization, no `ipBinding`, `allowedIps`,
+realm; for an NHI its single organization, `allowedIps`,
 `nhiMayTarget` and its authorizing admin still an admin of the organization;
 for a user the site client and its resource registration, and the bound
 membership (department exact). The scope can only narrow; empty or any failure
@@ -273,7 +272,9 @@ the machine grants), `aud` as above, `jti`,
 `iat`, `exp`, `scope` (the narrowed platform scope), and the SD payload of the
 subject for the target site (`getTokenPayload`) handed over by
 `extraTokenClaims`, minus `isAdmin`, `adminMode`, `asAdmin`; `boundIp` for an
-NHI with `ipBinding` (machine grants). ID tokens: `sub`, plus `name` and
+NHI with `ipBinding`, the IP of each token request (code exchange and refresh
+included: an MCP server relays its caller's IP as a trusted forwarder, so the
+agent that got the token is the address the API sees). ID tokens: `sub`, plus `name` and
 `email` for a user with `profile` / `email`.
 
 | Object | Lifetime |

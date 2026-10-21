@@ -232,12 +232,12 @@ const dynamicClientInfo = async (ic: InteractionContext, interaction: Interactio
   return info
 }
 
-// the NHIs of an organization that may be bound to this resource: no ipBinding (the token endpoint
-// caller is not the API caller), a target the NHI may reach. Names and maximum scopes only.
+// the NHIs of an organization that may be bound to this resource: a target the NHI may reach.
+// Names and maximum scopes only.
 const bindableNhis = async (orgId: string, resource: ResolvedResource, requested: string[], known: string[]) => {
   const { results } = await listNhis(orgId)
   return results
-    .filter(n => !n.ipBinding && nhiMayTarget({ id: orgId, department: n.department }, resource))
+    .filter(n => nhiMayTarget({ id: orgId, department: n.department }, resource))
     // an NHI that could be granted none of the requested scopes is not a choice
     .filter(n => narrowScope(requested, n.scopes, known).length > 0)
     .map(n => ({ id: n.id, name: n.name, ...(n.scopes ? { scopes: n.scopes } : {}) }))
@@ -292,7 +292,6 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
   if ('id' in body.nhi) {
     const nhi = await storages.globalStorage.getUser(body.nhi.id)
     if (!nhi?.nhi || nhi.organizations?.length !== 1 || nhi.organizations[0].id !== adminAccount.id) throw httpError(400, 'unknown nhi')
-    if (nhi.nhi.ipBinding) throw httpError(400, 'an ip bound nhi cannot be bound to an oauth client')
     existing = nhi
     membership = nhi.organizations[0]
     max = nhi.nhi.scopes

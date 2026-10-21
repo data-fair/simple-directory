@@ -660,8 +660,8 @@ human SSO.
 
 A dynamic OAuth client (an MCP agent) never acts as the person who authorized
 it: its grant is bound to an NHI chosen by an organization admin at the
-consent screen, an existing NHI without `ipBinding` or one created inline
-without key binding (this is why OAuth-bound NHIs exist). The consent rules,
+consent screen, an existing NHI (with `ipBinding`, each token is bound to the IP
+of its code exchange or refresh) or one created inline without key binding (this is why OAuth-bound NHIs exist). The consent rules,
 grant records and re-checks are in
 [`oauth-authorization-server.md`](oauth-authorization-server.md); what they add
 to the confinement above:

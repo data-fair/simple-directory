@@ -97,14 +97,14 @@ export const tokenRequest = (issuer: string, params: Record<string, string | und
     { headers: { 'content-type': 'application/x-www-form-urlencoded', ...headers }, validateStatus: () => true })
 }
 
-export const exchangeCode = (opts: CodeFlowOptions, code: string, verifier: string) =>
+export const exchangeCode = (opts: CodeFlowOptions, code: string, verifier: string, headers: Record<string, string> = {}) =>
   tokenRequest(opts.issuer, {
     grant_type: 'authorization_code',
     code,
     redirect_uri: opts.redirectUri,
     client_id: opts.clientId,
     code_verifier: verifier
-  })
+  }, headers)
 
 // the whole flow with the default decision (or opts.decision), up to the token response
 export const runCodeFlow = async (opts: CodeFlowOptions) => {

@@ -108,12 +108,12 @@ test.describe('oauth grant subject re-checks', () => {
     })
   })
 
-  test('an ip bound nhi never holds an oauth grant', async () => {
+  test('an ip bound nhi gets claims bound to the ip of the token request', async () => {
     const { checkGrantSubject } = await import('../../api/src/oauth-server/grant-subject.ts')
     const ctx = await mainIssuer()
     const record = nhiRecord(ctx.siteUrl, { issuer: ctx.issuer })
     await withUsers({ 'nhi-test_gs': nhiUser({ ipBinding: true }) }, async () => {
-      await refused(checkGrantSubject(record, ctx, '10.0.0.1'), /ip bound/)
+      assert.equal((await checkGrantSubject(record, ctx, '10.0.0.1')).claims.boundIp, '10.0.0.1')
     })
   })
 
