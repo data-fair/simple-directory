@@ -1,15 +1,15 @@
 import express, { Router, type Request, type Response } from 'express'
 import { decodeJwt } from 'jose'
 import config from '#config'
-import { reqIp, reqIsInternal, reqSiteUrl } from '@data-fair/lib-express'
+import { reqIp, reqIsInternal } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { reqI18n } from '#i18n'
 import { consumeNhiLimits } from '../nhis/exchange.ts'
-import { tokenLimits, codeFlowEnabled, agentClientsEnabled } from './clients.ts'
-import { reqSite } from '../sites/service.ts'
-import { issuerOfSite } from './issuers.ts'
-import { getProvider } from './providers.ts'
-import { handleJwtBearerGrant, jwtBearerGrantType, oauthError } from './jwt-bearer.ts'
+import { codeFlowEnabled, agentClientsEnabled } from './clients.ts'
+import { reqIssuer } from './issuers.ts'
+import { getProvider, tokenLimits } from './providers.ts'
+import { handleJwtBearerGrant, jwtBearerGrantType } from './jwt-bearer.ts'
+import { oauthError } from './access-token.ts'
 import type Provider from 'oidc-provider'
 import limiter from '../utils/limiter.ts'
 
@@ -36,12 +36,6 @@ const oauthDiscovery = '/.well-known/oauth-authorization-server'
 // middleware stripped the site path and service prefix from url: rebuild originalUrl from the issuer
 // path so endpoints are always issuer + route (also after the discovery rewrite)
 export const providerOriginalUrl = (issuer: string, url: string) => new URL(issuer).pathname.replace(/\/+$/, '') + url
-
-// canonical form expected by issuerOfSite: origin + path without trailing slash
-export const canonicalSiteUrl = (siteUrl: string) => {
-  const url = new URL(siteUrl)
-  return url.origin + url.pathname.replace(/\/+$/, '')
-}
 
 // rate limiting key of a token request, before any verification: the unverified sub of the client
 // assertion (private_key_jwt), or the client_id parameter (public clients)
@@ -128,7 +122,7 @@ router.use(async (req, res, next) => {
   if (codeFlowEnabled() && interactionRoute.test(path)) return next()
   if (!isServedRoute(path)) return res.status(404).send()
 
-  const ctx = await issuerOfSite(await reqSite(req), canonicalSiteUrl(reqSiteUrl(req)))
+  const ctx = await reqIssuer(req)
   if (!ctx) return res.status(404).send()
   if (path === tokenRoute && req.method === 'POST') {
     await new Promise<void>((resolve, reject) => tokenBodyParser(req, res, err => err ? reject(err) : resolve()))

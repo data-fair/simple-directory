@@ -9,18 +9,17 @@ import storages from '#storages'
 import mongo from '#mongo'
 import type { Organization, User } from '#types'
 import { reqI18n } from '#i18n'
-import { reqSession, reqSiteUrl, markScopeChecked, httpError, type SessionState, type EventLogContext } from '@data-fair/lib-express'
+import { reqSession, markScopeChecked, httpError, type SessionState, type EventLogContext } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import limiter, { refundLimiter } from '../utils/limiter.ts'
-import { getKnownScopes } from '../scopes/service.ts'
-import { reqSite, getMainSiteDoc } from '../sites/service.ts'
+import { getKnownScopes, knownScopeNames } from '../scopes/service.ts'
+import { getMainSiteDoc } from '../sites/service.ts'
 import { postUserIdentityWebhook, deleteIdentityWebhook, setNbMembersLimit } from '#services'
 import { internalError } from '@data-fair/lib-node/observer.js'
 import { createNhi, listNhis, validateNewNhi } from '../nhis/service.ts'
 import { narrowScope } from '../nhis/scopes.ts'
-import { issuerOfSite, resolveResource, assertNhiMayTarget, siteOwnedByNhiOrg, ResourceError, type IssuerContext, type ResolvedResource } from './issuers.ts'
+import { reqIssuer, resolveResource, nhiMayTarget, ResourceError, type IssuerContext, type ResolvedResource } from './issuers.ts'
 import { getProvider } from './providers.ts'
-import { canonicalSiteUrl } from './router.ts'
 import { clientKind, findSiteClient } from './clients.ts'
 import { siteClientRequestScopes, dynamicClientRequestScopes, interactionTTL } from './configuration.ts'
 import { dashboardGrantLifetime, grantLifetimes, listGrantRecords, revokeGrant } from './grants.ts'
@@ -28,7 +27,7 @@ import { displayIdUrl, logSafeName, findDynamicClient } from './dynamic-clients.
 import { reqServerSessionId } from '../tokens/service.ts'
 import {
   userConsentAccounts, consentAdminOrgs, refuseConsentUser, implicitConsentAccount, createConsentGrant, findConsentAccount,
-  isBroadScope, oidcScopeNames, sameDepartment, type ConsentAccount, type ConsentGrantOptions
+  isBroadScope, oidcScopeNames, sameDepartment, membershipAccount, type ConsentAccount, type ConsentGrantOptions
 } from './consent.ts'
 
 const router = Router()
@@ -47,7 +46,7 @@ router.use((req, res, next) => {
 type InteractionContext = { ctx: IssuerContext, provider: Provider }
 
 const interactionContext = async (req: Request): Promise<InteractionContext> => {
-  const ctx = await issuerOfSite(await reqSite(req), canonicalSiteUrl(reqSiteUrl(req)))
+  const ctx = await reqIssuer(req)
   if (!ctx) throw httpError(404)
   return { ctx, provider: await getProvider(ctx) }
 }
@@ -123,8 +122,8 @@ const resourceParam = (interaction: Interaction): string | undefined => {
 
 const knownScopes = (i18n: I18n) => getKnownScopes(i18n.localeCode, i18n.messages.scopes)
 
-const siteClientScopes = async (i18n: I18n, interaction: Interaction, clientScopes: string[]) =>
-  siteClientRequestScopes(interaction.params.scope, clientScopes, Object.keys(await knownScopes(i18n)))
+const siteClientScopes = async (interaction: Interaction, clientScopes: string[]) =>
+  siteClientRequestScopes(interaction.params.scope, clientScopes, await knownScopeNames())
 
 const resolveInteractionResource = async (ctx: IssuerContext, interaction: Interaction) => {
   const url = resourceParam(interaction)
@@ -217,11 +216,6 @@ const defaultNhiLifetime = '30d'
 // an NHI subject gets no identity claim: profile and email are rejected on its grant
 const nhiOidcScopes = (interaction: Interaction) => requestedOidcScopes(interaction).filter(s => s === 'openid' || s === 'offline_access')
 
-// a site resource must be owned by the organization of the NHI (assertNhiMayTarget), the main site
-// is open to every organization
-const membershipMayTarget = (membership: { id: string, department?: string }, resource: ResolvedResource) =>
-  !resource.site || siteOwnedByNhiOrg(resource.site, membership)
-
 const dynamicClientInfo = async (ic: InteractionContext, interaction: Interaction, user: User, clientId: string, kind: 'cimd' | 'dcr') => {
   const client = await findDynamicClient(ic.provider, clientId, 'user:' + user.id)
   if (!client) throw httpError(400, 'unknown client')
@@ -241,7 +235,7 @@ const dynamicClientInfo = async (ic: InteractionContext, interaction: Interactio
 const bindableNhis = async (orgId: string, resource: ResolvedResource, requested: string[], known: string[]) => {
   const { results } = await listNhis(orgId)
   return results
-    .filter(n => !n.ipBinding && membershipMayTarget({ id: orgId, department: n.department }, resource))
+    .filter(n => !n.ipBinding && nhiMayTarget({ id: orgId, department: n.department }, resource))
     // an NHI that could be granted none of the requested scopes is not a choice
     .filter(n => narrowScope(requested, n.scopes, known).length > 0)
     .map(n => ({ id: n.id, name: n.name, ...(n.scopes ? { scopes: n.scopes } : {}) }))
@@ -256,7 +250,7 @@ const dynamicClientDetails = async (req: Request, ic: InteractionContext, intera
   const requested = dynamicClientRequestScopes(interaction.params.scope, known)
   const scopes = requested
     .map(name => ({ name, description: descriptions[name] ?? name, broad: isBroadScope(name) }))
-  const organizations = consentAdminOrgs(user).filter(a => membershipMayTarget(a, resolved))
+  const organizations = consentAdminOrgs(user).filter(a => nhiMayTarget(a, resolved))
   // keyed by organization id: the NHIs belong to the organization, whatever the department
   const nhis: Record<string, { id: string, name: string, scopes?: string[] }[]> = {}
   for (const account of organizations) {
@@ -324,9 +318,9 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
   } else {
     throw httpError(400, 'nhi must be { id } or { create }')
   }
-  if (!membershipMayTarget(membership, resolved)) throw httpError(400, 'the resource is not reachable by this nhi')
+  if (!nhiMayTarget(membership, resolved)) throw httpError(400, 'the resource is not reachable by this nhi')
 
-  const known = Object.keys(await knownScopes(reqI18n(req)))
+  const known = await knownScopeNames()
   const allowed = narrowScope(dynamicClientRequestScopes(interaction.params.scope, known), max, known)
   const scope = body.scopes
   if (!Array.isArray(scope) || !scope.length || scope.some((s: unknown) => typeof s !== 'string' || !allowed.includes(s))) {
@@ -339,16 +333,10 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
     const nhi = created || existing
     if (!nhi) throw new Error('no nhi')
     // re-checked on the stored NHI, as every issuance will
-    try {
-      assertNhiMayTarget(nhi, resolved)
-    } catch (err) {
-      if (err instanceof ResourceError) throw httpError(400, err.message)
-      throw err
-    }
+    if (!nhiMayTarget(nhi.organizations[0], resolved)) throw httpError(400, 'the resource is not reachable by this nhi')
     await detachForeignSession(ic.provider, interaction, nhi.id)
     const nhiMembership = nhi.organizations[0]
-    const account: ConsentAccount = { type: 'organization', id: nhiMembership.id, name: nhiMembership.name }
-    if (nhiMembership.department) account.department = nhiMembership.department
+    const account = membershipAccount(nhiMembership)
     return await grantAndResume(req, res, ic, interaction, {
       subject: { type: 'nhi', id: nhi.id },
       account,
@@ -416,7 +404,7 @@ router.get('/:uid', async (req, res) => {
     if (!siteClient) return res.redirect(consentPageUrl(ic.ctx, 'error=invalid_client'))
     const forced = String(interaction.params.prompt ?? '').split(' ').includes('consent')
     const account = !forced && implicitConsentAccount(user, siteClient, await issuerSiteOwner(ic.ctx))
-    const scope = await siteClientScopes(reqI18n(req), interaction, siteClient.scopes)
+    const scope = await siteClientScopes(interaction, siteClient.scopes)
     if (account && scope.length) {
       const fresh = await loadInteraction(ic.provider, req, res, uid)
       if (!fresh) return res.redirect(consentPageUrl(ic.ctx, 'error=interaction_expired'))
@@ -459,7 +447,7 @@ router.get('/:uid/details', async (req, res) => {
   const { url, resolved } = await resolveInteractionResource(ic.ctx, interaction)
   const i18n = reqI18n(req)
   const descriptions = await knownScopes(i18n)
-  const scopes = (await siteClientScopes(i18n, interaction, siteClient.scopes)).map(name => ({ name, description: descriptions[name] ?? name, broad: isBroadScope(name) }))
+  const scopes = (await siteClientScopes(interaction, siteClient.scopes)).map(name => ({ name, description: descriptions[name] ?? name, broad: isBroadScope(name) }))
   const redirectUri = (interaction.params.redirect_uri as string | undefined) ?? siteClient.redirectUris[0]
   const client: Record<string, any> = { id: clientId, name: siteClient.name, kind, verified: true, redirectHost: new URL(redirectUri).host }
   if (siteClient.logoUri) client.logoUri = siteClient.logoUri
@@ -500,7 +488,7 @@ router.post('/:uid', async (req, res) => {
   if (!siteClient) throw httpError(400, 'unknown client')
   const account = findConsentAccount(userConsentAccounts(user), body.account)
   if (!account) throw httpError(400, 'account is not one of the accounts of the user')
-  const allowed = await siteClientScopes(reqI18n(req), interaction, siteClient.scopes)
+  const allowed = await siteClientScopes(interaction, siteClient.scopes)
   const scope = body.scopes ?? allowed
   if (!Array.isArray(scope) || !scope.length || scope.some((s: unknown) => typeof s !== 'string' || !allowed.includes(s))) {
     throw httpError(400, 'scopes must be a non-empty subset of the proposed scopes')

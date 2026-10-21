@@ -1,15 +1,21 @@
 import { nanoid } from 'nanoid'
 import type { User } from '#types'
 import { getTokenPayload, signToken } from '../tokens/service.ts'
+import type { Response } from 'express'
 import type { ResolvedResource } from './issuers.ts'
-
-const oidcScopes = new Set(['openid', 'profile', 'email', 'offline_access'])
+import { oidcScopeNames } from './consent.ts'
 
 // machine grants have no end user: OIDC identity scopes make no sense and are dropped
 // '' means "nothing requested" once they are removed
 export const stripOidcScopes = (scope: string | undefined): string | undefined => {
   if (scope === undefined) return undefined
-  return scope.split(' ').filter(s => s && !oidcScopes.has(s)).join(' ')
+  return scope.split(' ').filter(s => s && !oidcScopeNames.includes(s)).join(' ')
+}
+
+// an OAuth error response of the token endpoint, for the requests SD answers itself
+export const oauthError = (res: Response, status: number, error: string, description?: string) => {
+  res.set('Cache-Control', 'no-store')
+  res.status(status).send({ error, ...(description ? { error_description: description } : {}) })
 }
 
 export const sdClaims = (user: User, resource: ResolvedResource, opts: { scope?: string, boundIp?: string }): Record<string, any> => {

@@ -19,6 +19,16 @@ export const isBroadScope = (scope: string) => !scope.includes(':') || scope.sta
 
 export const sameDepartment = (a: string | undefined, b: string | undefined) => (a || undefined) === (b || undefined)
 
+// the organization account of a membership
+export const membershipAccount = (membership: { id: string, name: string, department?: string, departmentName?: string }): ConsentAccount => {
+  const account: ConsentAccount = { type: 'organization', id: membership.id, name: membership.name }
+  if (membership.department) {
+    account.department = membership.department
+    if (membership.departmentName) account.departmentName = membership.departmentName
+  }
+  return account
+}
+
 // the personal account (unless ignored) and every membership, the default account of the user on
 // the site first (getDefaultUserOrg: owner org of the site, then the user's default org)
 export const userConsentAccounts = (user: User, site?: Pick<Site, 'owner'>): ConsentAccount[] => {
@@ -26,12 +36,7 @@ export const userConsentAccounts = (user: User, site?: Pick<Site, 'owner'>): Con
   if (!user.ignorePersonalAccount) accounts.push({ type: 'user', id: user.id, name: user.name })
   for (const membership of user.organizations ?? []) {
     if (accounts.some(a => a.type === 'organization' && a.id === membership.id && sameDepartment(a.department, membership.department))) continue
-    const account: ConsentAccount = { type: 'organization', id: membership.id, name: membership.name }
-    if (membership.department) {
-      account.department = membership.department
-      if (membership.departmentName) account.departmentName = membership.departmentName
-    }
-    accounts.push(account)
+    accounts.push(membershipAccount(membership))
   }
   const defaultOrg = getDefaultUserOrg(user, site as Site | undefined)
   if (defaultOrg) {
@@ -57,12 +62,7 @@ export const consentAdminOrgs = (user: User): ConsentAccount[] => {
     if (membership.role !== 'admin') continue
     if (membership.department && !config.depAdminIsOrgAdmin) continue
     if (accounts.some(a => a.id === membership.id && sameDepartment(a.department, membership.department))) continue
-    const account: ConsentAccount = { type: 'organization', id: membership.id, name: membership.name }
-    if (membership.department) {
-      account.department = membership.department
-      if (membership.departmentName) account.departmentName = membership.departmentName
-    }
-    accounts.push(account)
+    accounts.push(membershipAccount(membership))
   }
   return accounts
 }
@@ -86,9 +86,7 @@ export const implicitConsentAccount = (user: User, client: SiteOAuthClient, owne
   // the membership of the owner department itself when the user has several in this org
   const membership = memberships.find(o => sameDepartment(o.department, owner.department)) ?? memberships[0]
   if (!membership) return undefined
-  const account: ConsentAccount = { type: 'organization', id: membership.id, name: membership.name }
-  if (membership.department) account.department = membership.department
-  return account
+  return membershipAccount(membership)
 }
 
 export type ConsentGrantOptions = {

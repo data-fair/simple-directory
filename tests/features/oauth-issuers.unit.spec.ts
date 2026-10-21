@@ -203,12 +203,12 @@ test.describe('oauth server issuers and resources', () => {
   })
 
   test('nhi of another org cannot target an org-owned site', async () => {
-    const { assertNhiMayTarget, ResourceError } = await import('../../api/src/oauth-server/issuers.ts')
-    const nhi: any = { id: 'test_nhi', nhi: {}, organizations: [{ id: 'test_orga' }] }
+    const { nhiMayTarget } = await import('../../api/src/oauth-server/issuers.ts')
     const mk = (s: any) => ({ kind: 'api' as const, site: s, siteUrl: 'x', audience: 'x' })
-    assertNhiMayTarget(nhi, mk(undefined))
-    assertNhiMayTarget(nhi, mk(portal))
-    assert.throws(() => assertNhiMayTarget({ ...nhi, organizations: [{ id: 'test_other' }] }, mk(portal)), ResourceError)
+    assert.ok(nhiMayTarget({ id: 'test_orga' }, mk(undefined)))
+    assert.ok(nhiMayTarget({ id: 'test_orga' }, mk(portal)))
+    assert.ok(!nhiMayTarget({ id: 'test_other' }, mk(portal)))
+    assert.ok(!nhiMayTarget(undefined, mk(portal)))
   })
 
   test('department-tolerant ownership', async () => {

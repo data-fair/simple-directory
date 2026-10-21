@@ -3,23 +3,18 @@
 // failure means invalid_grant; the scope can only narrow.
 import storages from '#storages'
 import type { User } from '#types'
-import { defaultLocale, messages } from '#i18n'
-import { getKnownScopes } from '../scopes/service.ts'
+import { knownScopeNames } from '../scopes/service.ts'
 import { narrowScope } from '../nhis/scopes.ts'
 import { ipAllowed } from '../nhis/ips.ts'
 import { findSiteClient, siteClientResourceAllowed } from './clients.ts'
-import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts'
+import { resolveResource, ResourceError, nhiMayTarget } from './issuers.ts'
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
 import { sdClaims } from './access-token.ts'
 import type { OAuthGrantRecord } from './grants.ts'
-import { consentAdminOrgs } from './consent.ts'
+import { consentAdminOrgs, sameDepartment } from './consent.ts'
 
 // the reason is for the server logs, the client only sees invalid_grant
 export class GrantSubjectError extends Error {}
-
-export const knownScopeNames = async () => Object.keys(await getKnownScopes(defaultLocale, messages[defaultLocale].scopes))
-
-const sameDepartment = (a: string | undefined, b: string | undefined) => (a || undefined) === (b || undefined)
 
 // the platform claims of the grant: the organizations claim holds the bound account only, [] for
 // the personal account
@@ -67,12 +62,7 @@ export const checkGrantSubject = async (record: OAuthGrantRecord, ctx: IssuerCon
     if (user.nhi.allowedIps?.length && !ipAllowed(clientIp, user.nhi.allowedIps)) {
       throw new GrantSubjectError(`ip ${clientIp} not in allowedIps`)
     }
-    try {
-      assertNhiMayTarget(user, resource)
-    } catch (err) {
-      if (err instanceof ResourceError) throw new GrantSubjectError(err.message)
-      throw err
-    }
+    if (!nhiMayTarget(user.organizations[0], resource)) throw new GrantSubjectError('site not owned by the nhi organization')
     max = user.nhi.scopes
   } else {
     // spec anti-goal: no user-subject token for an MCP server

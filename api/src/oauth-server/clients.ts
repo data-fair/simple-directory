@@ -1,7 +1,6 @@
 // OAuth clients of the authorization server: NHIs (synthesized from the NHI record on every lookup),
 // site clients (read from the issuer site document) and agent clients (CIMD and DCR, dynamic-clients.ts).
 // The adapter's own Client collection only holds the DCR ones.
-import type { IncomingMessage } from 'node:http'
 import type { ClientMetadata } from 'oidc-provider'
 import config from '#config'
 import storages from '#storages'
@@ -26,11 +25,6 @@ export const findNhiClient = async (clientId: string): Promise<ClientMetadata | 
     jwks: user.nhi.provider.jwks as unknown as ClientMetadata['jwks']
   }
 }
-
-// the rate limiting keys consumed by the router for a client_credentials, authorization_code or
-// refresh_token request, refunded by the provider middleware once the token is issued (before the
-// response is written)
-export const tokenLimits = new WeakMap<IncomingMessage, { ipKey: string, clientKey: string | undefined, clientId: string | undefined }>()
 
 export type SdClientKind = 'nhi' | 'site' | 'cimd' | 'dcr'
 

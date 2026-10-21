@@ -13,13 +13,14 @@ import { MongoAdapter } from './adapter.ts'
 import { allowFetch, checkDynamicMetadata, ssrfFetch } from './dynamic-clients.ts'
 import { nanoid } from 'nanoid'
 import { findNhiClient, findSiteClient, siteClientMetadata, siteClientOrigins, clientKind, sdClientBasedCORS, siteClientResourceAllowed, agentClientsEnabled, codeFlowEnabled } from './clients.ts'
-import { resolveResource, ResourceError, assertNhiMayTarget } from './issuers.ts'
+import { resolveResource, ResourceError, nhiMayTarget } from './issuers.ts'
 import type { IssuerContext, ResolvedResource } from './issuers.ts'
 import { sdClaims, stripOidcScopes } from './access-token.ts'
 import { jwtBearerGrantType } from './jwt-bearer.ts'
 import { getGrantRecord, dashboardGrantLifetime } from './grants.ts'
 import { oidcScopeNames } from './consent.ts'
-import { checkGrantSubject, GrantSubjectError, knownScopeNames } from './grant-subject.ts'
+import { checkGrantSubject, GrantSubjectError } from './grant-subject.ts'
+import { knownScopeNames } from '../scopes/service.ts'
 import Debug from 'debug'
 
 const debug = Debug('oauth-server')
@@ -69,8 +70,7 @@ const adapterFactory = (ctx: IssuerContext) => (name: string) => {
 const nhiClientCredentials = async (koaCtx: KoaContextWithOIDC, clientId: string, resource: ResolvedResource) => {
   const user = await storages.globalStorage.getUser(clientId)
   if (!user?.nhi?.provider?.jwks || user.organizations.length !== 1) throw new errors.InvalidGrant('unknown nhi')
-  // ResourceError, mapped to invalid_target by the caller
-  assertNhiMayTarget(user, resource)
+  if (!nhiMayTarget(user.organizations[0], resource)) throw new errors.InvalidTarget('site not owned by the nhi organization')
   const clientIp = reqIp(koaCtx.req)
   if (user.nhi.allowedIps?.length && !ipAllowed(clientIp, user.nhi.allowedIps)) {
     throw new errors.InvalidGrant(`ip ${clientIp} not in allowedIps`)

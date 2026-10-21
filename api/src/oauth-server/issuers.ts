@@ -1,7 +1,9 @@
 import config from '#config'
 import { internalError } from '@data-fair/lib-node/observer.js'
-import type { Site, User } from '#types'
-import { getSiteByUrl, resolveAccountMainSite, findMainSite } from '../sites/service.ts'
+import type { Request } from 'express'
+import type { Site } from '#types'
+import { reqSiteUrl } from '@data-fair/lib-express'
+import { getSiteByUrl, resolveAccountMainSite, findMainSite, reqSite } from '../sites/service.ts'
 
 export type IssuerContext = { issuer: string, site: Site | undefined, siteUrl: string }
 export type ResolvedResource = { kind: 'api' | 'mcp', site: Site | undefined, siteUrl: string, audience: string | string[] }
@@ -42,6 +44,15 @@ export const issuerOfSite = async (site: Site | undefined, siteUrl: string): Pro
   if ((await resolveAccountMainSite(site))?._id !== site._id) return null
   return { issuer: siteUrl + '/simple-directory', site, siteUrl }
 }
+
+// canonical form expected by issuerOfSite: origin + path without trailing slash
+export const canonicalSiteUrl = (siteUrl: string) => {
+  const url = new URL(siteUrl)
+  return url.origin + url.pathname.replace(/\/+$/, '')
+}
+
+// the issuer of a request's site, null when the site is not an issuer
+export const reqIssuer = async (req: Request) => await issuerOfSite(await reqSite(req), canonicalSiteUrl(reqSiteUrl(req)))
 
 // undefined = main site, null = unknown
 const findSite = async (url: string): Promise<Site | undefined | null> => {
@@ -103,10 +114,6 @@ export const siteOwnedByNhiOrg = (site: Site, userOrg: { id: string, department?
   site.owner.type === 'organization' && site.owner.id === userOrg.id &&
   (!userOrg.department || !site.owner.department || userOrg.department === site.owner.department)
 
-// the resource site must be the main site or a site owned by the nhi's org
-export const assertNhiMayTarget = (nhi: User, resource: ResolvedResource) => {
-  const userOrg = nhi.organizations[0]
-  if (resource.site && (!userOrg || !siteOwnedByNhiOrg(resource.site, userOrg))) {
-    throw new ResourceError('site not owned by the nhi organization')
-  }
-}
+// an NHI (by its membership) may target the main site or a site owned by its organization
+export const nhiMayTarget = (membership: { id: string, department?: string } | undefined, resource: ResolvedResource) =>
+  !resource.site || (!!membership && siteOwnedByNhiOrg(resource.site, membership))

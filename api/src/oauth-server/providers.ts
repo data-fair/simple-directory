@@ -1,14 +1,20 @@
 import Provider, { type JWK, type KoaContextWithOIDC } from 'oidc-provider'
 import { createPrivateKey } from 'node:crypto'
+import type { IncomingMessage } from 'node:http'
 import config from '#config'
 import { getSignatureKeys } from '../tokens/keys-manager.ts'
 import { buildConfiguration, discoveryOverrides, type SdTokenState } from './configuration.ts'
 import type { IssuerContext } from './issuers.ts'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import { refundNhiLimits, updateNhiLogged } from '../nhis/exchange.ts'
-import { tokenLimits, siteClientsEnabled, agentClientsEnabled } from './clients.ts'
+import { siteClientsEnabled, agentClientsEnabled } from './clients.ts'
 import { touchGrantRecord } from './grants.ts'
 import { logSafeName } from './dynamic-clients.ts'
+
+// the rate limiting keys consumed by the router for a client_credentials, authorization_code or
+// refresh_token request, refunded by the provider middleware below once the token is issued
+// (before the response is written)
+export const tokenLimits = new WeakMap<IncomingMessage, { ipKey: string, clientKey: string | undefined, clientId: string | undefined }>()
 
 type CachedProvider = { marker: string, promise: Promise<Provider> }
 

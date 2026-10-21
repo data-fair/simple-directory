@@ -9,15 +9,10 @@ import { reqI18n } from '#i18n'
 import type { User } from '#types'
 import { NhiExchangeError, consumeNhiLimits, refundNhiLimits, loadExchangeNhi, verifyExchangeAssertion, rejectDelay, updateNhiLogged } from '../nhis/exchange.ts'
 import { grantedScope } from '../nhis/scopes.ts'
-import { type IssuerContext, type ResolvedResource, ResourceError, resolveResource, assertNhiMayTarget } from './issuers.ts'
-import { sdClaims, signAccessToken, stripOidcScopes } from './access-token.ts'
+import { type IssuerContext, type ResolvedResource, ResourceError, resolveResource, nhiMayTarget } from './issuers.ts'
+import { sdClaims, signAccessToken, stripOidcScopes, oauthError } from './access-token.ts'
 
 export const jwtBearerGrantType = 'urn:ietf:params:oauth:grant-type:jwt-bearer'
-
-export const oauthError = (res: Response, status: number, error: string, description?: string) => {
-  res.set('Cache-Control', 'no-store')
-  res.status(status).send({ error, ...(description ? { error_description: description } : {}) })
-}
 
 export const handleJwtBearerGrant = async (req: Request, res: Response, ctx: IssuerContext): Promise<void> => {
   const logContext: EventLogContext = { req }
@@ -52,12 +47,7 @@ export const handleJwtBearerGrant = async (req: Request, res: Response, ctx: Iss
   try {
     user = await loadExchangeNhi(clientId, target.site, clientIp)
     // an identity check, so part of the uniform invalid_grant (an unknown resource was invalid_target above)
-    try {
-      assertNhiMayTarget(user, target)
-    } catch (err) {
-      if (err instanceof ResourceError) throw new NhiExchangeError(err.message + ' ' + user.id)
-      throw err
-    }
+    if (!nhiMayTarget(user.organizations[0], target)) throw new NhiExchangeError('site not owned by the nhi organization ' + user.id)
     // same audience as /nhi-token on the issuer site
     exp = await verifyExchangeAssertion(user, assertion, ctx.siteUrl)
   } catch (err) {
