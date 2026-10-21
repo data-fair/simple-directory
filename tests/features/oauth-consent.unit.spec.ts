@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import '../support/unit.ts'
+import { initMongo } from '../support/unit.ts'
 
 const consent = () => import('../../api/src/oauth-server/consent.ts')
 const scopes = () => import('../../api/src/nhis/scopes.ts')
@@ -129,35 +129,31 @@ test.describe('oauth consent rules', () => {
     await assert.rejects(createConsentGrant(provider, { ...opts, scope: [] }), /at least one platform scope/)
   })
 
-  test('createConsentGrant keeps the request scope of the interaction when the grant cannot be saved', async () => {
-    const { createConsentGrant } = await consent()
-    let persisted = 0
-    const interaction: any = { params: { client_id: 'site-x' }, persist: async () => { persisted++ } }
+  test('a failed consent decision ends the interaction', async () => {
+    await initMongo()
+    const { finishUserConsent } = await import('../../api/src/oauth-server/interaction.ts')
+    const { issuerOfSite, mainSiteUrl } = await import('../../api/src/oauth-server/issuers.ts')
+    const ctx = await issuerOfSite(undefined, mainSiteUrl())
+    assert.ok(ctx)
+    let saved = 0
     const provider: any = {
       Grant: class {
         addOIDCScope () {}
         rejectOIDCScope () {}
         addResourceScope () {}
         rejectResourceScope () {}
-        async save () { throw new Error('boom') }
+        async save () { saved++; throw new Error('boom') }
       }
     }
-    await assert.rejects(createConsentGrant(provider, {
-      ctx: { issuer: 'https://x.org/simple-directory', siteUrl: 'https://x.org', site: undefined },
-      interaction,
-      subject: { type: 'user', id: 'u1' },
-      account: { type: 'user', id: 'u1', name: 'User 1' },
-      clientKind: 'site',
-      clientName: 'x',
-      scope: ['organizations:read'],
-      oidcScopes: [],
-      resource: 'https://x.org',
-      resourceKind: 'api',
-      lifetime: 60,
-      authorizedBy: { id: 'u1', name: 'User 1' },
-      sessionId: 's1'
-    }), /boom/)
-    assert.equal(interaction.params.scope, undefined)
-    assert.equal(persisted, 0)
+    const interaction: any = {
+      uid: 'test_failed_' + Math.random().toString(36).slice(2),
+      params: { client_id: 'site-x', scope: 'organizations:read', resource: ctx.siteUrl },
+      persist: async () => {}
+    }
+    const decide = () => finishUserConsent({} as any, {} as any, { ctx, provider }, interaction, user(), 's1', { type: 'user', id: 'u1', name: 'User 1' }, ['organizations:read'], 'Dash')
+    await assert.rejects(decide(), /boom/)
+    // the decision lock stays: the interaction cannot be decided again, the person starts over
+    assert.equal(await decide(), undefined)
+    assert.equal(saved, 1)
   })
 })

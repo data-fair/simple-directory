@@ -285,8 +285,9 @@ Consequences and rules:
   `oauth-interaction-decisions` (TTL = the interaction's); a replay or a
   concurrent second request is refused (400) and creates no second grant. A
   decision by another logged-in user than the one who opened the interaction is
-  refused (403). A decision that fails after the lock undoes the grant, the
-  scope merge, an inline NHI and the lock.
+  refused (403). A decision that fails after the lock ends the interaction:
+  its grant and an NHI created inline for it are removed, the lock stays, and
+  the person starts the authorization again from the client.
 - **Switching subject in one browser works.** User A then user B, or a user
   grant then an NHI grant: when the provider session belongs to another
   account, SD destroys it and detaches the interaction before resuming

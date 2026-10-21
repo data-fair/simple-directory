@@ -125,10 +125,9 @@ export const createConsentGrant = async (provider: Provider, opts: ConsentGrantO
   // a request without any platform scope (the screen proposed the registration or, for a dynamic
   // client, let the admin pick): the provider only issues the scopes of the request (a request
   // without scope at all ends in access_denied), so the chosen ones join the interaction's request.
-  // Persisted only once the grant is saved; a caller failing later restores it (restoreRequestScope).
+  // Persisted only once the grant is saved; a decision that fails ends the interaction anyway.
   const requestedParam = String(opts.interaction.params.scope ?? '').split(' ').filter(Boolean)
   const mergeScope = !opts.scope.some(s => requestedParam.includes(s))
-  const originalScope = opts.interaction.params.scope
   if (mergeScope) opts.interaction.params.scope = [...requestedParam, ...opts.scope].join(' ')
   const grant = new provider.Grant({ accountId: opts.subject.id, clientId })
   // the consent prompt re-prompts until every requested scope was encountered: each one is
@@ -158,24 +157,11 @@ export const createConsentGrant = async (provider: Provider, opts: ConsentGrantO
     await saveConsentRecord(opts, grantId, clientId, now, grant.exp)
     if (mergeScope) await opts.interaction.persist()
   } catch (err) {
-    restoreScopeInMemory(opts.interaction, originalScope)
     if (grantId) await revokeGrant(grantId, 'consent failed').catch(() => {})
     throw err
   }
   eventsLog.info('sd.oauth.grant.created', `oauth grant ${grantId} created for client ${clientId} (${opts.clientName}), ${opts.subject.type} ${opts.subject.id}, scope ${opts.scope.join(' ')}`, opts.logContext ?? {})
   return grantId
-}
-
-const restoreScopeInMemory = (interaction: Interaction, originalScope: unknown) => {
-  if (originalScope === undefined) delete interaction.params.scope
-  else interaction.params.scope = originalScope
-}
-
-// undoes the request scope merged by createConsentGrant when the decision fails after it
-export const restoreRequestScope = async (interaction: Interaction, originalScope: unknown) => {
-  if (interaction.params.scope === originalScope) return
-  restoreScopeInMemory(interaction, originalScope)
-  await interaction.persist()
 }
 
 const saveConsentRecord = async (opts: ConsentGrantOptions, grantId: string, clientId: string, now: number, exp: number) => {

@@ -28,8 +28,8 @@ import { dashboardGrantLifetime, grantLifetimes, revokeGrant } from './grants.ts
 import { displayIdUrl, logSafeName, findDynamicClient } from './dynamic-clients.ts'
 import { reqServerSessionId } from '../tokens/service.ts'
 import {
-  userConsentAccounts, consentAdminOrgs, refuseConsentUser, restoreRequestScope, implicitConsentAccount, createConsentGrant, findConsentAccount,
-  isBroadScope, oidcScopeNames, type ConsentAccount
+  userConsentAccounts, consentAdminOrgs, refuseConsentUser, implicitConsentAccount, createConsentGrant, findConsentAccount,
+  isBroadScope, oidcScopeNames, type ConsentAccount, type ConsentGrantOptions
 } from './consent.ts'
 
 const router = Router()
@@ -138,14 +138,10 @@ const resolveInteractionResource = async (ctx: IssuerContext, interaction: Inter
   }
 }
 
-const interactionResource = async (ctx: IssuerContext, interaction: Interaction) => {
-  const { url, resolved } = await resolveInteractionResource(ctx, interaction)
-  return { url, kind: resolved.kind }
-}
-
 // a decision is taken once: the first request inserts the lock of the interaction, any other
-// (concurrent or replayed) fails on the duplicate id. Kept outside the provider's interaction
-// document, which the adapter rewrites whole on every save. Lives as long as an interaction may.
+// (concurrent or replayed) fails on the duplicate id. A failed decision keeps its lock, the
+// interaction is over and the person starts the authorization again. Kept outside the provider's
+// interaction document, which the provider rewrites on every save. Lives as long as an interaction may.
 const lockDecision = async (uid: string) => {
   try {
     await mongo.oauthInteractionDecisions.insertOne({ _id: uid, expiresAt: new Date(Date.now() + interactionTTL * 1000) })
@@ -155,52 +151,39 @@ const lockDecision = async (uid: string) => {
     throw err
   }
 }
-const unlockDecision = async (uid: string) => {
-  await mongo.oauthInteractionDecisions.deleteOne({ _id: uid })
-}
 
-// the consent of a user for a site client: the provider Grant and its record, then the result the
-// provider resumes with. Returns undefined when another decision on this interaction won the race.
-const finishUserConsent = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, account: ConsentAccount, scope: string[], clientName: string) => {
-  const resource = await interactionResource(ic.ctx, interaction)
-  await detachForeignSession(ic.provider, interaction, user.id)
-  if (!await lockDecision(interaction.uid)) return undefined
-  const originalScope = interaction.params.scope
-  let grantId: string | undefined
+// the provider Grant of a decision and its record, then the result the provider resumes with; the
+// grant does not outlive a failure
+const grantAndResume = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, opts: Omit<ConsentGrantOptions, 'ctx' | 'interaction' | 'logContext'>) => {
+  const grantId = await createConsentGrant(ic.provider, { ...opts, ctx: ic.ctx, interaction, logContext: { req } })
   try {
-    grantId = await createConsentGrant(ic.provider, {
-      ctx: ic.ctx,
-      interaction,
-      subject: { type: 'user', id: user.id },
-      account,
-      clientKind: 'site',
-      clientName,
-      scope,
-      oidcScopes: requestedOidcScopes(interaction),
-      resource: resource.url,
-      resourceKind: resource.kind,
-      lifetime: dashboardGrantLifetime,
-      authorizedBy: { id: user.id, name: user.name },
-      sessionId: serverSessionId,
-      logContext: { req }
-    })
-    return await ic.provider.interactionResult(req, res, { login: { accountId: user.id }, consent: { grantId } })
+    return await ic.provider.interactionResult(req, res, { login: { accountId: opts.subject.id }, consent: { grantId } })
   } catch (err) {
-    await undoDecision(req, interaction, originalScope, grantId)
+    await revokeGrant(grantId, 'consent failed', { req })
+      .catch(revokeErr => internalError('oauth-consent-undo', 'failed to revoke the grant of a failed consent decision', revokeErr))
     throw err
   }
 }
 
-// a decision that failed after the lock: nothing of it may survive, best effort (the original
-// error is what the caller reports). The NHI consent also removes an NHI it created inline.
-const undoDecision = async (req: Request, interaction: Interaction, originalScope: unknown, grantId: string | undefined, inlineNhi?: User) => {
-  const attempt = async (what: string, fn: () => Promise<unknown>) => {
-    try { await fn() } catch (err) { internalError('oauth-consent-undo', `failed to undo ${what} of a failed consent decision`, err) }
-  }
-  if (grantId) await attempt('the grant', () => revokeGrant(grantId, 'consent failed', { req }))
-  if (inlineNhi) await attempt('the inline nhi', () => deleteInlineNhi(req, inlineNhi))
-  await attempt('the request scope', () => restoreRequestScope(interaction, originalScope))
-  await attempt('the decision lock', () => unlockDecision(interaction.uid))
+// the consent of a user for a site client. Returns undefined when another decision on this
+// interaction won the race.
+export const finishUserConsent = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, account: ConsentAccount, scope: string[], clientName: string) => {
+  const { url, resolved } = await resolveInteractionResource(ic.ctx, interaction)
+  await detachForeignSession(ic.provider, interaction, user.id)
+  if (!await lockDecision(interaction.uid)) return undefined
+  return await grantAndResume(req, res, ic, interaction, {
+    subject: { type: 'user', id: user.id },
+    account,
+    clientKind: 'site',
+    clientName,
+    scope,
+    oidcScopes: requestedOidcScopes(interaction),
+    resource: url,
+    resourceKind: resolved.kind,
+    lifetime: dashboardGrantLifetime,
+    authorizedBy: { id: user.id, name: user.name },
+    sessionId: serverSessionId
+  })
 }
 
 // --- NHI consent of dynamic clients (spec 9.3) ---
@@ -328,12 +311,9 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
   }
 
   if (!await lockDecision(interaction.uid)) throw httpError(400, 'the interaction is already finished')
-  const originalScope = interaction.params.scope
-  let created: User | undefined
-  let grantId: string | undefined
+  const created = inline && await createInlineNhi(req, inline.org, inline.body, adminAccount.department, user)
   try {
-    if (inline) created = await createInlineNhi(req, inline.org, inline.body, adminAccount.department, user)
-    const nhi = created ?? existing
+    const nhi = created || existing
     if (!nhi) throw new Error('no nhi')
     // re-checked on the stored NHI, as every issuance will
     try {
@@ -346,9 +326,7 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
     const nhiMembership = nhi.organizations[0]
     const account: ConsentAccount = { type: 'organization', id: nhiMembership.id, name: nhiMembership.name }
     if (nhiMembership.department) account.department = nhiMembership.department
-    grantId = await createConsentGrant(ic.provider, {
-      ctx: ic.ctx,
-      interaction,
+    return await grantAndResume(req, res, ic, interaction, {
       subject: { type: 'nhi', id: nhi.id },
       account,
       clientKind: kind,
@@ -359,12 +337,11 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
       resourceKind: resolved.kind,
       lifetime: grantLifetimes[lifetime as keyof typeof grantLifetimes],
       authorizedBy: { id: user.id, name: user.name },
-      sessionId: serverSessionId,
-      logContext: { req }
+      sessionId: serverSessionId
     })
-    return await ic.provider.interactionResult(req, res, { login: { accountId: nhi.id }, consent: { grantId } })
   } catch (err) {
-    await undoDecision(req, interaction, originalScope, grantId, created)
+    // an NHI created for a decision that failed must not survive it
+    if (created) await deleteInlineNhi(req, created).catch(deleteErr => internalError('oauth-consent-undo', 'failed to delete the inline nhi of a failed consent decision', deleteErr))
     throw err
   }
 }
@@ -456,7 +433,7 @@ router.get('/:uid/details', async (req, res) => {
   if (kind !== 'site') throw httpError(400, 'unknown client')
   const siteClient = await findSiteClient(ic.ctx, clientId)
   if (!siteClient) throw httpError(400, 'unknown client')
-  const resource = await interactionResource(ic.ctx, interaction)
+  const { url, resolved } = await resolveInteractionResource(ic.ctx, interaction)
   const i18n = reqI18n(req)
   const descriptions = await knownScopes(i18n)
   const scopes = (await siteClientScopes(i18n, interaction, siteClient.scopes)).map(name => ({ name, description: descriptions[name] ?? name, broad: isBroadScope(name) }))
@@ -465,7 +442,7 @@ router.get('/:uid/details', async (req, res) => {
   if (siteClient.logoUri) client.logoUri = siteClient.logoUri
   res.send({
     client,
-    resource,
+    resource: { url, kind: resolved.kind },
     scopes,
     oidcScopes: requestedOidcScopes(interaction),
     accounts: userConsentAccounts(user, ic.ctx.site ?? (await getMainSiteDoc()) ?? undefined)
@@ -483,14 +460,7 @@ router.post('/:uid', async (req, res) => {
   const clientId = interaction.params.client_id as string
   if (body.decision === 'deny') {
     if (!await lockDecision(uid)) throw httpError(400, 'the interaction is already finished')
-    let redirectTo: string
-    try {
-      redirectTo = await ic.provider.interactionResult(req, res, { error: 'access_denied', error_description: 'the end-user denied the request' }, { mergeWithLastSubmission: false })
-    } catch (err) {
-      // like the allow path: a failed decision must not leave the interaction undecidable
-      await unlockDecision(uid).catch(unlockErr => internalError('oauth-consent-undo', 'failed to undo the decision lock of a failed consent denial', unlockErr))
-      throw err
-    }
+    const redirectTo = await ic.provider.interactionResult(req, res, { error: 'access_denied', error_description: 'the end-user denied the request' }, { mergeWithLastSubmission: false })
     eventsLog.info('sd.oauth.consent.denied', `consent denied to oauth client ${clientId}`, { req })
     await refundLimiter(limiterKey)
     return res.send({ redirectTo })
