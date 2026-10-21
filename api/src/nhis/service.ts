@@ -56,6 +56,7 @@ export const listNhis = async (organizationId: string) => {
       role: d.organizations[0].role,
       department: d.organizations[0].department,
       departmentName: d.organizations[0].departmentName,
+      // absent for an NHI without key binding (used by OAuth clients only)
       subject: d.nhi!.subject,
       provider: d.nhi!.provider,
       allowedIps: d.nhi!.allowedIps,
@@ -67,7 +68,7 @@ export const listNhis = async (organizationId: string) => {
   }
 }
 
-export const createNhi = async (org: Organization, body: { name: string, role: string, department?: string, subject: string, provider: { issuer: string, jwks?: any }, allowedIps?: string[], ipBinding?: boolean, scopes?: string[] }, byUser: { id: string, name: string }): Promise<User> => {
+export const createNhi = async (org: Organization, body: { name: string, role: string, department?: string, subject?: string, provider?: { issuer: string, jwks?: any }, allowedIps?: string[], ipBinding?: boolean, scopes?: string[] }, byUser: { id: string, name: string }): Promise<User> => {
   const membership: User['organizations'][0] = { id: org.id, name: org.name, role: body.role, createdAt: new Date().toISOString() }
   if (body.department) {
     const dep = org.departments?.find(d => d.id === body.department)
@@ -83,8 +84,7 @@ export const createNhi = async (org: Organization, body: { name: string, role: s
     ignorePersonalAccount: true,
     organizations: [membership],
     nhi: {
-      provider: body.provider,
-      subject: body.subject,
+      ...(body.provider && body.subject ? { provider: body.provider, subject: body.subject } : {}),
       ...(body.allowedIps ? { allowedIps: body.allowedIps } : {}),
       ...(body.ipBinding ? { ipBinding: true } : {}),
       ...(body.scopes ? { scopes: body.scopes } : {})

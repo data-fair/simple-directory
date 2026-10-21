@@ -56,6 +56,11 @@ router.delete('/', async (req, res) => {
   // site as the one fixture a test run removes)
   await mongo.sites.deleteMany({})
   await mongo.oauthTokens.deleteMany()
+  // oidc-provider adapter collections (oauth-tokens and oauth-relay-states are SD as an OAuth client)
+  for (const { name } of await mongo.db.listCollections({ name: { $regex: /^oauth-/ } }, { nameOnly: true }).toArray()) {
+    if (name === 'oauth-tokens' || name === 'oauth-relay-states') continue
+    await mongo.db.collection(name).deleteMany({})
+  }
   await mongo.ldapUserSessions.deleteMany()
   await mongo.fileUserSessions.deleteMany()
   await mongo.ldapMembersOverwrite.deleteMany()
@@ -86,6 +91,8 @@ router.delete('/', async (req, res) => {
   const { resetForTests: resetSaml } = await import('./saml2/service.ts')
   await resetSaml()
   mockPlatformScopes = { scopes: {} }
+  const { cimdFixtures } = await import('./oauth-server/dynamic-clients.ts')
+  cimdFixtures.clear()
   await mongo.platformScopes.deleteMany({})
   const { clearPlatformScopesCache } = await import('./scopes/service.ts')
   clearPlatformScopesCache()
@@ -178,6 +185,15 @@ router.post('/run-user-cleanup', async (req, res) => {
   res.status(200).send('ok')
 })
 
+// POST /api/test-env/cimd-fixtures — serve a client id metadata document from memory instead of
+// fetching its url (oauth-server/dynamic-clients.ts ssrfFetch)
+// Body: { url: string, document: object }
+router.post('/cimd-fixtures', express.json(), async (req, res) => {
+  const { cimdFixtures } = await import('./oauth-server/dynamic-clients.ts')
+  cimdFixtures.set(req.body.url, req.body.document)
+  res.status(200).send('ok')
+})
+
 // POST /api/test-env/clear-site-cache — clear the memoized site lookups and
 // the derived main-site resources
 router.post('/clear-site-cache', async (req, res) => {
@@ -198,6 +214,7 @@ router.get('/config', (req, res) => {
     mongo: { url: config.mongo.url },
     authRateLimit: config.authRateLimit,
     mailsRateLimit: config.mailsRateLimit,
+    oauthServer: config.oauthServer,
     // already converted to seconds by config.ts, so tests can assert on token durations
     // without duplicating the ms() parsing of the raw config strings
     jwtDurations

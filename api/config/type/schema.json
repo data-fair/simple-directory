@@ -217,7 +217,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["theme", "title", "mails", "registration"]
+        "enum": ["theme", "title", "mails", "registration", "oauthClients"]
       }
     },
     "managePartners": {
@@ -225,6 +225,17 @@
     },
     "manageNhis": {
       "type": "boolean"
+    },
+    "oauthServer": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "siteClients": { "type": "boolean" },
+        "agentClients": { "type": "boolean" }
+      }
+    },
+    "mcpPath": {
+      "type": "string"
     },
     "platformScopesUrl": {
       "type": "string"

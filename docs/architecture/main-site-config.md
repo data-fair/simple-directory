@@ -68,8 +68,9 @@ When `config.manageSites` is false there is never a main site document.
 ## `MAIN_SITE_FROM_DB`
 
 `config.mainSiteFromDb` lists which categories come from the document.
-Environment: `MAIN_SITE_FROM_DB='["theme","title","mails","registration"]'`. The
-items are constrained by an `enum` in `api/config/type/schema.json`, so an
+Environment:
+`MAIN_SITE_FROM_DB='["theme","title","mails","registration","oauthClients"]'`.
+The items are constrained by an `enum` in `api/config/type/schema.json`, so an
 unknown category refuses to start.
 
 | Category | Site fields | Env fallback |
@@ -78,6 +79,28 @@ unknown category refuses to start.
 | `title` | `title` | `'Simple Directory'` |
 | `mails` | `mails.from`, `mails.contact` | `config.mails.from`, `config.contact` |
 | `registration` | `tosMessage`, `reducedPersonalInfoAtCreation` | none |
+| `oauthClients` | `oauthClients` | none (no site client) |
+
+`oauthClients` is the first category that is **security relevant** rather than
+presentation: it lists the dashboards (site clients) the main site's OAuth
+authorization server accepts. Consequently it is never overlaid by
+`getEffectiveMainSite()` (which stays presentation only and feeds the public
+caches) and is read only through the dedicated `getMainSiteOAuthClients()`,
+which returns `[]` unless the category is enabled and a main site document
+exists. `reqSite()` still returns `undefined` on the main host. Any new
+security relevant category must follow the same rule: its own accessor, no
+overlay.
+
+Because it is security relevant, a main site client exists only while the
+category is enabled **and** the document lists it: disabling the category or
+removing the client makes the client unknown to the authorization server at its
+next request, so its existing grants fail at the next refresh
+(`invalid_grant`) and its access tokens expire within 15 minutes. Removing a
+client through the site PATCH also deletes its grants; turning the category off
+does not, so the grants come back to life if it is turned on again before they
+expire. The users of an issuer other than the main site have their clients in
+their own site document, which is unaffected by this list. See
+[`oauth-authorization-server.md`](oauth-authorization-server.md).
 
 Fallback is per-category, not per-key: a document's `theme` is already
 `fillTheme`'d against `config.theme` when written, so a stored theme is always

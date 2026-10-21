@@ -8,7 +8,8 @@ export default {
     body: {
       type: 'object',
       additionalProperties: false,
-      required: ['name', 'role', 'subject', 'provider'],
+      // subject and provider together (the key binding) or neither (an NHI for OAuth clients only)
+      required: ['name', 'role'],
       properties: {
         name: { type: 'string', maxLength: 150 },
         role: { type: 'string', maxLength: 100 },

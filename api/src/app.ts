@@ -6,7 +6,7 @@ import express, { type RequestHandler } from 'express'
 import helmet from 'helmet'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
-import { session, errorHandler, createSiteMiddleware, createSpaMiddleware, setReqUser, httpError } from '@data-fair/lib-express'
+import { session, errorHandler, createSiteMiddleware, createSpaMiddleware, defaultNonceCSPDirectives, setReqUser, httpError } from '@data-fair/lib-express'
 import admin from './admin/router.ts'
 import anonymousAction from './anonymous-action/router.ts'
 import auth from './auth/router.ts'
@@ -24,6 +24,8 @@ import sites from './sites/router.ts'
 import accounts from './accounts/router.ts'
 import passwordLists from './password-lists/router.ts'
 import { scopeGate } from './utils/scope-gate.ts'
+import oauthServer from './oauth-server/router.ts'
+import oauthInteraction from './oauth-server/interaction.ts'
 import { getSiteExtraParams } from './sites/spa-params.ts'
 
 const app = express()
@@ -47,8 +49,15 @@ app.set('query parser', 'simple')
 app.set('json spaces', 2)
 
 app.use(cookieParser())
-app.use(bodyParser.json({ limit: '100kb' }))
 app.use(createSiteMiddleware('simple-directory'))
+// the authorization server answers before any session handling, it authenticates its clients itself
+app.use(oauthServer)
+// scoped operations answer bearer calls from any origin, without credentials (dashboards on other
+// domains); /api/oauth/* was answered above, with the per-client CORS of the authorization server
+app.use(session.bearerCors())
+// the oidc provider parses its own request bodies
+const jsonParser = bodyParser.json({ limit: '100kb' })
+app.use((req, res, next) => /^\/api\/oauth\//.test(req.url) ? next() : jsonParser(req, res, next))
 app.use(session.middleware())
 app.use(scopeGate)
 
@@ -89,6 +98,9 @@ app.use('/api/accounts', accounts)
 app.use('/api/scopes', scopes)
 app.use('/api/sites', sites)
 app.use('/api/password-lists', passwordLists)
+// SD's side of the authorization code flow: reads the SD session (the dispatcher above only lets
+// the exact interaction paths through)
+app.use('/api/oauth/interaction', oauthInteraction)
 
 // /api/test-env exposes unauthenticated super-admin primitives (mutate config, seed users, rotate keys, wipe DB).
 // It is gated behind both NODE_ENV ∈ {development,test} *and* an explicit ENABLE_TEST_API=1 opt-in.
@@ -112,9 +124,25 @@ app.use('/api/', (req, res) => {
 })
 app.use(tokens)
 
+// the OAuth consent page must not be framed, not even by a same-origin page (clickjacking of the
+// decision): same paths as the UI router, which matches case insensitively with an optional
+// trailing slash
+const isConsentPage = (path: string) => {
+  try {
+    return /^\/oauth\/consent\/?$/i.test(decodeURIComponent(path))
+  } catch {
+    return false
+  }
+}
+const consentCSPDirectives = { ...defaultNonceCSPDirectives, 'frame-ancestors': "'none'" }
+
 if (process.env.NODE_ENV !== 'test') {
+  app.use((req, res, next) => {
+    if (isConsentPage(req.path)) res.setHeader('X-Frame-Options', 'DENY')
+    next()
+  })
   app.use(await createSpaMiddleware(resolve(import.meta.dirname, '../../ui/dist'), uiConfig, {
-    csp: { nonce: true, header: true },
+    csp: { nonce: true, header: (req) => isConsentPage(req.path) ? consentCSPDirectives : true },
     getSiteExtraParams
   }))
 }

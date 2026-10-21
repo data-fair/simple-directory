@@ -71,19 +71,20 @@
             <v-text-field
               v-model="editNhi.provider.issuer"
               :label="$t('pages.organization.nhiIssuer')"
-              :rules="[v => !!v || '']"
+              :hint="$t('pages.organization.nhiKeyBindingHint')"
+              persistent-hint
+              :rules="[v => !!v || !editNhi.subject || '']"
               name="issuer"
-              required
               density="compact"
               variant="outlined"
               autocomplete="off"
+              class="mb-2"
             />
             <v-text-field
               v-model="editNhi.subject"
               :label="$t('pages.organization.nhiSubject')"
-              :rules="[v => !!v || '']"
+              :rules="[v => !!v || !editNhi.provider.issuer || '']"
               name="subject"
-              required
               density="compact"
               variant="outlined"
               autocomplete="off"
@@ -193,18 +194,18 @@ const confirmCreate = useAsyncAction(async () => {
   await createForm.value?.validate()
   if (!createForm.value?.isValid) return
 
-  const body: any = {
-    name: editNhi.value.name,
-    role: editNhi.value.role,
-    subject: editNhi.value.subject,
-    provider: { issuer: editNhi.value.provider.issuer }
+  const body: any = { name: editNhi.value.name, role: editNhi.value.role }
+  // the key binding comes whole or not at all (an account for OAuth applications only)
+  if (editNhi.value.provider.issuer) {
+    body.subject = editNhi.value.subject
+    body.provider = { issuer: editNhi.value.provider.issuer }
   }
   if (editNhi.value.department) body.department = editNhi.value.department
   const ips = allowedIps.value.map(ip => ip.trim()).filter(ip => !!ip)
   if (ips.length) body.allowedIps = ips
   if (ipBinding.value) body.ipBinding = true
   if (scopes.value.length) body.scopes = scopes.value
-  if (jwks.value.trim()) {
+  if (body.provider && jwks.value.trim()) {
     try {
       body.provider.jwks = JSON.parse(jwks.value)
     } catch (err: any) {

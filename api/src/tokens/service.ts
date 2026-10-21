@@ -13,6 +13,7 @@ import storages from '#storages'
 import { getSignatureKeys } from './keys-manager.ts'
 import { getDefaultLoginRedirect, getRedirectSite, reqSite } from '#services'
 import { lastIpInfo } from '../utils/ip-info.ts'
+import { revokeGrants } from '../oauth-server/grants.ts'
 
 // delay during which the previous exchange token is still accepted, so that concurrent
 // keepalives (multiple tabs) do not look like a stolen token being replayed.
@@ -121,6 +122,33 @@ export const logout = async (req: Request, res: Response) => {
     const serverSessionInfo = decodeToken(exchangeToken) as SessionInfoPayload | undefined
     if (serverSessionInfo?.session) await storage.deleteUserSession(sessionState.user.id, serverSessionInfo.session)
   }
+}
+
+// single use exchange token: presenting anything else than the last one issued means a copy of the
+// cookie is in circulation. The previous token is tolerated for a short delay, the time for
+// concurrent keepalives (multiple tabs of the same browser) to converge on the new one. Without
+// this time bound a thief and the owner would both keep converging on the current token and never
+// be detected. Sessions created before this mechanism have no jti yet, they get one at keepalive.
+export const exchangeTokenCurrent = (serverSession: ServerSession, jti: string | undefined) => {
+  if (!serverSession.jti || jti === serverSession.jti) return true
+  const inGraceWindow = !!serverSession.rotatedAt && (Date.now() - new Date(serverSession.rotatedAt).getTime()) < exchangeTokenGrace
+  return !!jti && jti === serverSession.previousJti && inGraceWindow
+}
+
+// the server session of the request's exchange token, when it is a live and current session of this
+// user: the id_token alone (short lived, readable by scripts) does not identify one
+export const reqServerSessionId = async (req: Request, user: User): Promise<string | undefined> => {
+  const exchangeToken = req.cookies?.id_token_ex
+  if (typeof exchangeToken !== 'string' || !exchangeToken) return undefined
+  let info: SessionInfoPayload
+  try {
+    info = await session.verifyToken(exchangeToken) as SessionInfoPayload
+  } catch {
+    return undefined
+  }
+  const serverSession = info.user === user.id ? user.sessions?.find(s => s.id === info.session) : undefined
+  if (!serverSession || !exchangeTokenCurrent(serverSession, info.jti)) return undefined
+  return info.session
 }
 
 // Split JWT strategy, the signature is in a httpOnly cookie for XSS prevention
@@ -373,23 +401,18 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     }
   }
 
-  // single use exchange token: presenting anything else than the last one issued means a copy
-  // of the cookie is in circulation, the session is destroyed and its owner must authenticate again.
-  // the previous token is tolerated for a short delay, the time for concurrent keepalives
-  // (multiple tabs of the same browser) to converge on the new one. Without this time bound a
-  // thief and the owner would both keep converging on the current token and never be detected.
-  // sessions created before this mechanism have no jti yet, they get one at this keepalive
-  let keepExchangeJti: string | undefined
-  if (serverSession.jti && serverSessionInfo.jti !== serverSession.jti) {
-    const inGraceWindow = serverSession.rotatedAt && (Date.now() - new Date(serverSession.rotatedAt).getTime()) < exchangeTokenGrace
-    if (serverSessionInfo.jti && serverSessionInfo.jti === serverSession.previousJti && inGraceWindow) {
-      keepExchangeJti = serverSession.jti
-    } else {
-      await logout(req, res)
-      eventsLog.alert('sd.auth.keepalive.reuse', 'an already used exchange token was presented, the session was destroyed', logContext)
-      throw httpError(401, 'Session interrompue')
-    }
+  // a copy of the exchange cookie in circulation (exchangeTokenCurrent): the session is destroyed
+  // and its owner must authenticate again
+  if (!exchangeTokenCurrent(serverSession, serverSessionInfo.jti)) {
+    await logout(req, res)
+    eventsLog.alert('sd.auth.keepalive.reuse', 'an already used exchange token was presented, the session was destroyed', logContext)
+    // a copy of the session may have authorized oauth clients
+    await revokeGrants({ sessionId: serverSession.id }, 'exchange token reused', logContext)
+      .catch(err => internalError('keepalive-revoke-grants', 'failed to revoke the oauth grants of a reused session', err))
+    throw httpError(401, 'Session interrompue')
   }
+  // the previous token within the grace window: re-issued as is, without rotating
+  const keepExchangeJti = serverSession.jti && serverSessionInfo.jti !== serverSession.jti ? serverSession.jti : undefined
 
   const site = await reqSite(req)
   const payload = getTokenPayload(user, site)

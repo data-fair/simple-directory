@@ -8,6 +8,7 @@ import { httpError, type UserRef } from '@data-fair/lib-express'
 import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
 import mongo from '#mongo'
 import { deleteAvatars } from '../avatars/service.ts'
+import { revokeGrants } from '../oauth-server/grants.ts'
 import type { Password } from '../utils/passwords.ts'
 import dayjs from 'dayjs'
 import { nanoid } from 'nanoid'
@@ -168,6 +169,8 @@ class MongodbStorage implements SdStorage {
   async deleteUser (userId: string) {
     await mongo.users.deleteOne({ _id: userId })
     await mongo.oauthTokens.deleteMany({ 'user.id': userId })
+    // the authorizations given to OAuth clients by this user (or NHI): refresh tokens die with them
+    await revokeGrants({ subjectId: userId }, 'subject deleted')
     await deleteAvatars({ type: 'user', id: userId })
   }
 

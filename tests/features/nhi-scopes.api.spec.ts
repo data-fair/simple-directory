@@ -105,9 +105,10 @@ test('the gate matches paths case-insensitively', async () => {
   const is403 = (err: any) => err.status === 403
   const bearer = String((bearerAx.defaults.headers as any).authorization ?? (bearerAx.defaults.headers as any).common?.authorization)
   for (const headers of [{ authorization: bearer }, { cookie }]) {
-    const direct = axios({ baseURL: devApiUrl, headers })
-    await assert.rejects(direct.get(`/API/organizations/${org.id}/nhis`), is403)
-    await assert.rejects(direct.get(`/Api/users/${nhi.id}`), is403)
+    // a bearer's audience is checked against the forwarded site: an internal request has none
+    const direct = axios({ baseURL: devApiUrl, headers: { ...headers, 'x-forwarded-host': new URL(directoryUrl).host, 'x-forwarded-proto': 'http' } })
+    await assert.rejects(direct.get(`/simple-directory/API/organizations/${org.id}/nhis`), is403)
+    await assert.rejects(direct.get(`/simple-directory/Api/users/${nhi.id}`), is403)
   }
 })
 

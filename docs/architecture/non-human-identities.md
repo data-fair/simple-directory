@@ -71,7 +71,17 @@ Signature, `iss`, `sub`, `aud`, and `exp`/`nbf` are all checked by `jose`'s
 
 ## The exchange endpoint: `POST /api/auth/nhi-token`
 
-`api/src/auth/router.ts` (route starting at line 288). Body:
+The exchange itself (rate limiting, NHI lookup and site ownership,
+`allowedIps`, assertion verification, `exp` cap, `updateLogged`) lives in
+`api/src/nhis/exchange.ts` and is shared by two entry points: this endpoint,
+whose purpose remains the **cookie session**, and the JWT bearer grant
+(RFC 7523) of the OAuth token endpoint `POST /api/oauth/token`, which returns
+the access token only (see
+[`oauth-authorization-server.md`](oauth-authorization-server.md)). `/nhi-token`
+is marked `deprecated` in the API docs for bearer use. The steps below describe
+the exchange as `/nhi-token` runs it.
+
+`api/src/auth/router.ts`. Body:
 `{ client_id, assertion }`. `client_id` is the NHI's user id
 (`nhi-<nanoid>`, prefixed for log legibility, opaque to services).
 
@@ -163,13 +173,33 @@ Signature, `iss`, `sub`, `aud`, and `exp`/`nbf` are all checked by `jose`'s
    `Authorization: Bearer`. Callers that used to replay it as an `id_token`
    cookie must switch to the bearer header (or use the cookies set by the
    response). It carries the same claims and the same `exp` (and `boundIp`)
-   as the cookie session. Because `setSessionCookies` still sets the browser
-   cookies, and Playwright's `APIRequestContext` shares its cookie jar with
-   the browser context, calling this endpoint from
-   `context.request.post(...)` leaves the browser authenticated too -- useful
-   for e2e automation of NHI-driven flows.
+   as the cookie session. The access token also carries the OAuth claims
+   `iss`, `aud` (the site URL), `sub` and `client_id` (the NHI id) and a
+   `jti`, so a service can verify it with the same audience check as the
+   tokens of the token endpoint. `iss` is `<site url>/simple-directory` on
+   every site: a legacy alias, not the OAuth issuer. Only issuer sites (see
+   [`oauth-authorization-server.md`](oauth-authorization-server.md)) serve
+   discovery there, and on the main site it can differ from
+   `config.publicUrl`, the issuer of the token endpoint. Because
+   `setSessionCookies` still sets the browser cookies, and Playwright's
+   `APIRequestContext` shares its cookie jar with the browser context,
+   calling this endpoint from `context.request.post(...)` leaves the browser
+   authenticated too -- useful for e2e automation of NHI-driven flows.
 9. `updateLogged` and `eventsLog.info('sd.auth.nhi.ok', …)` on success for
    observability; the HTML login form is untouched by any of this.
+
+## Grants available per NHI kind
+
+| NHI key binding | JWT bearer (`/api/oauth/token`, `/api/auth/nhi-token`) | `client_credentials` (`private_key_jwt`) |
+| --- | --- | --- |
+| inline `jwks` | yes | yes |
+| issuer discovery | yes | no |
+
+`client_credentials` needs inline JWKS because the OAuth provider authenticates
+the client against the key set stored on the NHI; an NHI that relies on issuer
+discovery (a Kubernetes cluster, typically) has no key set to give it and uses
+the JWT bearer grant, where the assertion is verified by `verifyAssertion`.
+Both grants apply the same org, site, `allowedIps`, scope and `exp` rules.
 
 ## Scopes
 
@@ -579,9 +609,9 @@ narrow, low-value target:
 - Discovery-path integration testing against a real OIDC mock — the unit
   tests cover inline JWKS and the SSRF guard directly; discovery itself is
   exercised in dev/staging, not CI.
-- LDAP/file storages, cross-org or personal NHIs, and a full OAuth token
-  endpoint (`grant_type`, standard OAuth error codes) are all explicitly out
-  of scope for v1.
+- LDAP/file storages and cross-org or personal NHIs are explicitly out of
+  scope for v1. The standard OAuth token endpoint (`grant_type`, OAuth error
+  codes) now exists, see `oauth-authorization-server.md`.
 
 ## Invariants
 
@@ -613,9 +643,40 @@ narrow, low-value target:
    by the route itself), the `access_token` is the only bearer-accepted
    token, and scoped tokens are signed only by the scoped key set.
 9. No endpoint other than the exchange issues a session to an NHI
-   (`token_callback`, `pseudo` refuse it).
+   (`token_callback`, `pseudo` refuse it). The OAuth token endpoint issues
+   access tokens only, through the same exchange (`nhis/exchange.ts`), never
+   cookies.
 
 Violations of #2 or #4 would let a compromised site config or an NHI's own
 session escalate beyond its owning org — the same category of failure this
 document's sibling, `email-trust-and-site-isolation.md`, guards against for
 human SSO.
+
+## NHIs without key binding
+
+`nhi.provider` and `nhi.subject` are optional, both or neither (enforced in code by the POST and
+PATCH routes, not by the schema). An admin creates such an NHI on the organization page for the
+OAuth clients they will bind to it: it is reachable only through OAuth grants.
+`loadExchangeNhi` / `verifyExchangeAssertion` refuse it with the uniform exchange error (401 on
+`/nhi-token`, `invalid_grant` on the jwt-bearer grant), and `findNhiClient` yields no client for
+it (`invalid_client`). A patch may add a binding to such an NHI only whole.
+
+### Grants per NHI and client
+
+A dynamic OAuth client (an MCP agent) never acts as the person who authorized
+it: its grant is bound to an NHI chosen by an organization admin at the
+consent screen among those managed on the organization page (with `ipBinding`,
+each token is bound to the IP of its code exchange or refresh). The consent rules,
+grant records and re-checks are in
+[`oauth-authorization-server.md`](oauth-authorization-server.md); what they add
+to the confinement above:
+
+- each consent is one grant per NHI and client, with a lifetime chosen by the
+  admin, listed and revocable by org admins on the NHI page
+  (`/api/organizations/:orgId/nhis/:nhiId/oauth-grants`) and revoked with the
+  NHI;
+- every issuance re-checks the NHI as the exchange does (single organization,
+  `allowedIps`, `nhiMayTarget`, its **current** maximum scopes) and that the
+  admin who authorized it is still an admin of the organization;
+- an NHI subject never receives identity claims, and an NHI session cannot
+  consent nor manage user grants.

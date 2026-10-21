@@ -10,6 +10,7 @@ import { checkProvider } from './keys.ts'
 import { checkAllowedIps } from './ips.ts'
 import { checkScopes } from './scopes.ts'
 import { getKnownScopes } from '../scopes/service.ts'
+import { getGrantRecord, listGrantRecords, revokeGrant, revokeGrants } from '../oauth-server/grants.ts'
 import { createNhi, getNhi, listNhis } from './service.ts'
 import type { Request } from 'express'
 
@@ -48,7 +49,9 @@ router.post('', async (req: Request<OrgParams>, res) => {
   const logContext: EventLogContext = { req }
   const { org, roles } = await getOrgAndRoles(req.params.organizationId)
   if (!roles.includes(body.role)) throw httpError(400, 'unknown role')
-  await checkProvider(body.provider)
+  // no key binding: the NHI is only usable by the OAuth clients an admin binds to it
+  if (!!body.provider !== !!body.subject) throw httpError(400, 'provider and subject go together')
+  if (body.provider) await checkProvider(body.provider)
   if (body.allowedIps) checkAllowedIps(body.allowedIps)
   if (body.scopes) checkScopes(body.scopes, await knownScopes(req))
   logContext.account = { type: 'organization', id: org.id, name: org.name }
@@ -80,6 +83,8 @@ router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
     const nhi = { ...user.nhi! }
     if (body.provider) nhi.provider = body.provider
     if (body.subject) nhi.subject = body.subject
+    // an NHI without key binding may be given one, but only whole
+    if (!!nhi.provider !== !!nhi.subject) throw httpError(400, 'provider and subject go together')
     if (body.allowedIps !== undefined) {
       if (body.allowedIps === null) delete nhi.allowedIps
       else {
@@ -135,5 +140,49 @@ router.delete('/:nhiId', async (req: Request<NhiParams>, res) => {
   await setNbMembersLimit(req.params.organizationId)
   eventsLog.info('sd.nhi.delete', `an NHI was deleted ${user.id}`, logContext)
   deleteIdentityWebhook('user', user.id)
+  res.status(204).send()
+})
+
+// OAuth connections of an NHI: the grants dynamic clients (MCP agents) hold on its behalf
+router.get('/:nhiId/oauth-grants', async (req: Request<NhiParams>, res) => {
+  await assertOrgAdmin(req)
+  const nhi = await getNhi(req.params.organizationId, req.params.nhiId)
+  const records = await listGrantRecords({ subjectId: nhi.id })
+  res.json({
+    results: records.filter(r => r.subject.type === 'nhi').map(r => ({
+      id: r._id,
+      clientId: r.clientId,
+      clientName: r.clientName,
+      clientKind: r.clientKind,
+      scope: r.scope,
+      resources: r.resources,
+      authorizedBy: r.authorizedBy,
+      createdAt: r.createdAt,
+      expiresAt: r.expiresAt,
+      lastUsedAt: r.lastUsedAt
+    }))
+  })
+})
+
+router.delete('/:nhiId/oauth-grants', async (req: Request<NhiParams>, res) => {
+  await assertOrgAdmin(req)
+  const nhi = await getNhi(req.params.organizationId, req.params.nhiId)
+  // both filters: never revoke the client's grants of other subjects
+  const clientId = req.query.clientId
+  if (typeof clientId !== 'string' || !clientId) throw httpError(400, 'clientId is required')
+  const logContext: EventLogContext = { req }
+  logContext.account = { type: 'organization', id: req.params.organizationId, name: nhi.organizations[0]?.name }
+  await revokeGrants({ subjectId: nhi.id, clientId }, 'org-admin', logContext)
+  res.status(204).send()
+})
+
+router.delete('/:nhiId/oauth-grants/:grantId', async (req: Request<NhiParams & { grantId: string }>, res) => {
+  await assertOrgAdmin(req)
+  const nhi = await getNhi(req.params.organizationId, req.params.nhiId)
+  const record = await getGrantRecord(req.params.grantId)
+  if (!record || record.subject.type !== 'nhi' || record.subject.id !== nhi.id) throw httpError(404, 'grant not found')
+  const logContext: EventLogContext = { req }
+  logContext.account = { type: 'organization', id: req.params.organizationId, name: nhi.organizations[0]?.name }
+  await revokeGrant(record._id, 'org-admin', logContext)
   res.status(204).send()
 })

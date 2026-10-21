@@ -3,7 +3,7 @@ import SiteSchema from '#types/site/schema.js'
 
 const schema = jsonSchema(SiteSchema)
   .removeReadonlyProperties()
-  .pickProperties(['title', 'isAccountMain', 'theme', 'reducedPersonalInfoAtCreation', 'tosMessage', 'mails', 'authMode', 'authOnlyOtherSite', 'authProviders'])
+  .pickProperties(['title', 'isAccountMain', 'theme', 'reducedPersonalInfoAtCreation', 'tosMessage', 'mails', 'authMode', 'authOnlyOtherSite', 'authProviders', 'oauthClients'])
   .appendTitle(' patch')
   .schema
 
@@ -42,7 +42,8 @@ schema.layout = {
         es: 'Gestión de usuarios'
       },
       children: ['reducedPersonalInfoAtCreation', 'tosMessage', 'authMode', 'authOnlyOtherSite', 'authProviders']
-    }
+    },
+    { key: 'oauthClients' }
   ]
 }
 

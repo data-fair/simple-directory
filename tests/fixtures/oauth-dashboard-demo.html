@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OAuth dashboard demo</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#222}
+h1{font-size:1.4em}h2{font-size:1.1em;margin-top:1.6em}h3{font-size:1em}
+pre{background:#f4f4f4;padding:10px;overflow:auto;font-size:12px;border-radius:4px}
+button{background:#1e88e5;color:#fff;border:0;padding:8px 14px;border-radius:4px;cursor:pointer;font-size:14px;margin-right:6px}
+.secondary{background:#757575}.ok{color:#2e7d32}.ko{color:#c62828}
+table{border-collapse:collapse;width:100%;font-size:14px}td,th{border-bottom:1px solid #ddd;padding:6px;text-align:left}
+</style>
+</head>
+<body>
+<h1>OAuth dashboard demo <small style="color:#888">(static page on another domain)</small></h1>
+<div id="app">Loading…</div>
+<script type="module">
+// A dashboard on another domain, without any backend: authorization code + PKCE in the browser as a
+// public site client of simple-directory, then cross-origin API calls with the bearer token.
+// Config: the defaults below, overridden by a config.json next to this page.
+const defaults = {
+  issuer: 'https://staging-koumoul.com/simple-directory',
+  dataFairUrl: 'https://staging-koumoul.com/data-fair',
+  clientId: '',
+  scope: 'datasets:read organizations:read'
+}
+const config = { ...defaults, ...await fetch('config.json').then(r => r.ok ? r.json() : {}).catch(() => ({})) }
+const redirectUri = location.origin + location.pathname
+const app = document.getElementById('app')
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const json = v => esc(JSON.stringify(v, null, 2))
+const b64url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+const random = () => b64url(crypto.getRandomValues(new Uint8Array(32)))
+const decodeJwt = jwt => JSON.parse(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+
+// tokens live in sessionStorage for the demo (a tab-scoped session); a real dashboard should keep
+// them in memory and accept a new authorization after a reload
+const store = {
+  get: key => JSON.parse(sessionStorage.getItem('oauth-demo-' + key) ?? 'null'),
+  set: (key, value) => value === null ? sessionStorage.removeItem('oauth-demo-' + key) : sessionStorage.setItem('oauth-demo-' + key, JSON.stringify(value))
+}
+
+let discovery
+const getDiscovery = async () => {
+  discovery = discovery ?? await (await fetch(config.issuer + '/.well-known/openid-configuration')).json()
+  return discovery
+}
+
+const tokenRequest = async params => {
+  const res = await fetch((await getDiscovery()).token_endpoint, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: config.clientId, ...params })
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(`token endpoint ${res.status}: ${JSON.stringify(body)}`)
+  return body
+}
+
+const login = async () => {
+  const d = await getDiscovery()
+  const verifier = random()
+  const state = random()
+  store.set('pending', { verifier, state })
+  const challenge = b64url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))))
+  const url = new URL(d.authorization_endpoint)
+  url.search = new URLSearchParams({
+    client_id: config.clientId,
+    response_type: 'code',
+    redirect_uri: redirectUri,
+    scope: config.scope,
+    state,
+    code_challenge: challenge,
+    code_challenge_method: 'S256'
+  })
+  location.assign(url.href)
+}
+
+const handleCallback = async params => {
+  history.replaceState(null, '', redirectUri)
+  if (params.get('error')) throw new Error(`authorization refused: ${params.get('error')} ${params.get('error_description') ?? ''}`)
+  const pending = store.get('pending')
+  store.set('pending', null)
+  if (!pending || pending.state !== params.get('state')) throw new Error('unknown or reused state')
+  if (params.get('iss') && params.get('iss') !== (await getDiscovery()).issuer) throw new Error('unexpected issuer')
+  store.set('tokens', await tokenRequest({ grant_type: 'authorization_code', code: params.get('code'), code_verifier: pending.verifier, redirect_uri: redirectUri }))
+}
+
+const refresh = async () => {
+  store.set('tokens', await tokenRequest({ grant_type: 'refresh_token', refresh_token: store.get('tokens').refresh_token }))
+  render()
+}
+
+const logout = async () => {
+  const tokens = store.get('tokens')
+  store.set('tokens', null)
+  // revoking the refresh token ends the grant (it leaves the user's "connected applications")
+  await fetch((await getDiscovery()).revocation_endpoint, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: config.clientId, token: tokens.refresh_token, token_type_hint: 'refresh_token' })
+  }).catch(() => {})
+  render()
+}
+
+const api = async (url, token) => {
+  try {
+    const res = await fetch(url, { headers: { authorization: 'Bearer ' + token } })
+    const text = await res.text()
+    let body
+    try { body = JSON.parse(text) } catch { body = text.slice(0, 500) }
+    return { status: res.status, body }
+  } catch (err) {
+    // a CORS refusal or a network failure: the browser does not tell which
+    return { status: 0, body: String(err) }
+  }
+}
+
+const callBlock = (label, url, { status, body }, summary) => `<h3>${esc(label)} <code>GET ${esc(url)}</code> →
+  <span data-status="${status}" class="${status && status < 300 ? 'ok' : 'ko'}">${status || 'network / CORS error'}</span></h3>${summary ?? `<pre>${json(body)}</pre>`}`
+
+const render = async () => {
+  const tokens = store.get('tokens')
+  if (!config.clientId) {
+    app.innerHTML = '<p class="ko">No client id configured (config.json).</p>'
+    return
+  }
+  if (!tokens) {
+    app.innerHTML = `<p>This page has no backend. It runs on <code>${esc(location.origin)}</code> and asks
+      <a href="${esc(config.issuer)}">simple-directory</a> for a token with the scopes <code>${esc(config.scope)}</code>,
+      then calls the APIs from the browser.</p><button id="login">Connect with my Koumoul staging account</button>`
+    document.getElementById('login').onclick = () => login().catch(showError)
+    return
+  }
+  const token = tokens.access_token
+  const claims = decodeJwt(token)
+  const org = claims.organizations?.[0]
+  const owner = org ? `organization:${org.id}` : `user:${claims.id}`
+  app.innerHTML = `<p>Connected as <b>${esc(claims.name ?? claims.id)}</b>, acting for
+    <b>${esc(org ? (org.name ?? org.id) : 'the personal account')}</b>. Access token valid until ${new Date(claims.exp * 1000).toLocaleTimeString()}.</p>
+    <button id="refresh">Refresh the token</button><button id="logout" class="secondary">Disconnect (revoke)</button>
+    <div id="calls"><p>Calling the APIs…</p></div>
+    <h2>Access token claims</h2><pre>${json(claims)}</pre>`
+  document.getElementById('refresh').onclick = () => refresh().catch(showError)
+  document.getElementById('logout').onclick = () => logout().catch(showError)
+
+  const meUrl = `${config.issuer}/api/auth/me`
+  const usersUrl = `${config.issuer}/api/users?size=1`
+  const [me, users] = await Promise.all([api(meUrl, token), api(usersUrl, token)])
+  let datasetsBlock = ''
+  if (config.dataFairUrl) {
+    const datasetsUrl = `${config.dataFairUrl}/api/v1/datasets?owner=${encodeURIComponent(owner)}&size=10&select=id,title,visibility,count,updatedAt`
+    const datasets = await api(datasetsUrl, token)
+    const datasetsTable = datasets.status === 200
+      ? `<p>${datasets.body.count} datasets, private ones included.</p><table><tr><th>Title</th><th>Visibility</th><th>Lines</th><th>Updated</th></tr>${
+        datasets.body.results.map(d => `<tr><td>${esc(d.title ?? d.id)}</td><td>${esc(d.visibility ?? '')}</td><td>${esc(d.count ?? '')}</td><td>${esc(d.updatedAt ?? '')}</td></tr>`).join('')}</table>`
+      : undefined
+    datasetsBlock = callBlock('data-fair: datasets of the account (datasets:read)', datasetsUrl, datasets, datasetsTable)
+  }
+  document.getElementById('calls').innerHTML = `<h2>Cross-origin API calls with the access token</h2>
+    ${datasetsBlock}
+    <div data-call="me">${callBlock('simple-directory: who am I', meUrl, me)}</div>
+    <div data-call="users">${callBlock('simple-directory: users list, not granted by the scopes (403 expected)', usersUrl, users)}</div>`
+}
+
+const showError = err => {
+  app.insertAdjacentHTML('afterbegin', `<p class="ko">${esc(err.message ?? err)}</p>`)
+}
+
+const params = new URLSearchParams(location.search)
+if (params.has('code') || params.has('error')) await handleCallback(params).catch(showError)
+await render().catch(showError)
+</script>
+</body>
+</html>

@@ -63,34 +63,36 @@
             density="compact"
             variant="outlined"
           />
-          <v-text-field
-            v-model="editNhi.provider.issuer"
-            :label="$t('pages.organization.nhiIssuer')"
-            :rules="[v => !!v || '']"
-            name="issuer"
-            required
-            density="compact"
-            variant="outlined"
-            autocomplete="off"
-          />
-          <v-text-field
-            v-model="editNhi.subject"
-            :label="$t('pages.organization.nhiSubject')"
-            :rules="[v => !!v || '']"
-            name="subject"
-            required
-            density="compact"
-            variant="outlined"
-            autocomplete="off"
-          />
-          <v-textarea
-            v-model="jwks"
-            :label="$t('pages.organization.nhiJwks')"
-            name="jwks"
-            rows="4"
-            density="compact"
-            variant="outlined"
-          />
+          <template v-if="nhi.provider">
+            <v-text-field
+              v-model="editNhi.provider.issuer"
+              :label="$t('pages.organization.nhiIssuer')"
+              :rules="[v => !!v || '']"
+              name="issuer"
+              required
+              density="compact"
+              variant="outlined"
+              autocomplete="off"
+            />
+            <v-text-field
+              v-model="editNhi.subject"
+              :label="$t('pages.organization.nhiSubject')"
+              :rules="[v => !!v || '']"
+              name="subject"
+              required
+              density="compact"
+              variant="outlined"
+              autocomplete="off"
+            />
+            <v-textarea
+              v-model="jwks"
+              :label="$t('pages.organization.nhiJwks')"
+              name="jwks"
+              rows="4"
+              density="compact"
+              variant="outlined"
+            />
+          </template>
           <v-combobox
             v-model="allowedIps"
             :label="$t('pages.organization.nhiAllowedIps')"
@@ -172,6 +174,7 @@ const newEditNhi = () => ({
   subject: nhi.subject,
   provider: { issuer: nhi.provider?.issuer }
 })
+// an nhi without key binding has none to edit
 const newJwks = () => (nhi.provider?.jwks ? JSON.stringify(nhi.provider.jwks, null, 2) : '')
 const editNhi = ref(newEditNhi())
 const jwks = ref(newJwks())
@@ -197,8 +200,6 @@ const confirmEdit = useAsyncAction(async () => {
     name: editNhi.value.name,
     role: editNhi.value.role,
     department: editNhi.value.department || '',
-    subject: editNhi.value.subject,
-    provider: { issuer: editNhi.value.provider.issuer },
     // null clears the restriction, an empty array is refused by the API on purpose
     allowedIps: allowedIps.value.map(ip => ip.trim()).filter(ip => !!ip),
     ipBinding: ipBinding.value,
@@ -206,7 +207,11 @@ const confirmEdit = useAsyncAction(async () => {
   }
   if (!body.allowedIps.length) body.allowedIps = null
   if (!body.scopes.length) body.scopes = null
-  if (jwks.value.trim()) {
+  if (nhi.provider) {
+    body.subject = editNhi.value.subject
+    body.provider = { issuer: editNhi.value.provider.issuer }
+  }
+  if (nhi.provider && jwks.value.trim()) {
     try {
       body.provider.jwks = JSON.parse(jwks.value)
     } catch (err: any) {

@@ -21,3 +21,16 @@ export const grantedScope = (maxScopes: string[] | undefined, requested: string 
   }
   return requestedList.join(' ')
 }
+
+// The scopes of an OAuth grant: the requested scopes covered by the maximum (undefined = every
+// known scope), in request order and deduplicated. Unlike grantedScope, a scope beyond the maximum
+// is dropped silently: the client asked, the consent screen only offers what may be granted.
+export const narrowScope = (requested: string[], max: string[] | undefined, known: string[]): string[] => {
+  const effectiveMax = max ?? known
+  const narrowed: string[] = []
+  for (const scope of requested) {
+    if (!scope || narrowed.includes(scope) || !scopeRegexp.test(scope)) continue
+    if (scopeCovers(effectiveMax, scope)) narrowed.push(scope)
+  }
+  return narrowed
+}

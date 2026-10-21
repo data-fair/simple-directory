@@ -11,6 +11,8 @@ import storages from '#storages'
 import mongo from '#mongo'
 import emailValidator from 'email-validator'
 import type { FindUsersParams } from '../storages/interface.ts'
+import oauthGrants from '../oauth-server/grants-router.ts'
+import { revokeGrants } from '../oauth-server/grants.ts'
 import { isSiteAdminOf, isSiteAdminOfUser } from '../utils/site-admin.ts'
 import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, setNbMembersLimits, deleteIdentityLimits, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
 
@@ -520,6 +522,7 @@ router.delete('/:userId/sessions', async (req, res, next) => {
   if (!session.user?.adminMode && !await isSiteAdminOfUser(req, user)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   if (!user) throw httpError(404)
   await storages.globalStorage.deleteUserSessions(req.params.userId)
+  await revokeGrants({ subjectId: req.params.userId }, 'sessions revoked', logContext)
   if (session.user?.adminMode) eventsLog.info('sd.user.revoke-sessions', `admin revoked all the sessions of user ${user.name} (${user.id})`, logContext)
   else eventsLog.info('sd.site-admin.user.revoke-sessions', `site admin revoked all the sessions of user ${user.name} (${user.id})`, logContext)
   res.status(204).send()
@@ -531,9 +534,12 @@ router.delete('/:userId/sessions/:sessionId', async (req, res, next) => {
 
   if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   await storages.globalStorage.deleteUserSession(req.params.userId, req.params.sessionId)
+  await revokeGrants({ sessionId: req.params.sessionId, subjectId: req.params.userId }, 'session revoked', logContext)
   eventsLog.info('sd.user.cancelDeleteSession', 'user cancelled a session', logContext)
   await keepalive(req, res)
   res.status(204).send()
 })
+
+router.use('/:userId/oauth-grants', oauthGrants)
 
 export default router

@@ -325,6 +325,12 @@ module.exports = {
   mainSiteFromDb: jsonEnv('MAIN_SITE_FROM_DB'),
   managePartners: 'MANAGE_PARTNERS',
   manageNhis: 'MANAGE_NHIS',
+  oauthServer: {
+    enabled: 'OAUTH_SERVER_ENABLED',
+    siteClients: 'OAUTH_SERVER_SITE_CLIENTS',
+    agentClients: 'OAUTH_SERVER_AGENT_CLIENTS'
+  },
+  mcpPath: 'MCP_PATH',
   platformScopesUrl: 'PLATFORM_SCOPES_URL',
   nhisAllowInsecureIssuers: 'NHIS_ALLOW_INSECURE_ISSUERS',
   manageSessions: 'MANAGE_SESSIONS',

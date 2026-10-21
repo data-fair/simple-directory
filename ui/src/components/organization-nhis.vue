@@ -52,12 +52,20 @@
             <span v-if="nhi.department">{{ orga.departmentLabel || $t('common.department') }} = {{ nhi.departmentName || nhi.department }}, </span>
             <span>{{ $t('common.role') }} = {{ roleLabel(nhi.role) }}</span>
           </v-list-item-subtitle>
-          <v-list-item-subtitle style="white-space:normal;">
-            {{ $t('pages.organization.nhiSubject') }} = {{ nhi.subject }}
+          <v-list-item-subtitle
+            v-if="!nhi.provider"
+            style="white-space:normal;"
+          >
+            {{ $t('pages.organization.nhiOauthOnly') }}
           </v-list-item-subtitle>
-          <v-list-item-subtitle style="white-space:normal;">
-            {{ $t('pages.organization.nhiIssuer') }} = {{ nhi.provider?.issuer }}
-          </v-list-item-subtitle>
+          <template v-else>
+            <v-list-item-subtitle style="white-space:normal;">
+              {{ $t('pages.organization.nhiSubject') }} = {{ nhi.subject }}
+            </v-list-item-subtitle>
+            <v-list-item-subtitle style="white-space:normal;">
+              {{ $t('pages.organization.nhiIssuer') }} = {{ nhi.provider?.issuer }}
+            </v-list-item-subtitle>
+          </template>
           <v-list-item-subtitle
             v-if="nhi.allowedIps?.length"
             style="white-space:normal;"
@@ -86,6 +94,11 @@
               @click="copy(nhi.id)"
             />
           </v-list-item-subtitle>
+
+          <nhi-connections
+            :org-id="orga.id"
+            :nhi-id="nhi.id"
+          />
 
           <template #append>
             <v-list-item-action v-if="adminMode">

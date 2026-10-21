@@ -22,6 +22,11 @@ const authenticationParams = [{
   }
 }]
 
+const oauthScopes = {
+  organizations: 'All organization scopes',
+  'organizations:read': 'Read organizations, their roles and members'
+}
+
 export default {
   openapi: '3.0.0',
   info: Object.assign({
@@ -35,16 +40,21 @@ export default {
     securitySchemes: {
       oauth2: {
         type: 'oauth2',
-        description: 'Access tokens issued by simple-directory. A token without scope claim is an unrestricted first party session. The token endpoint is not a client secret grant: POST client_id (the NHI id) and assertion, a JWT signed by the identity provider declared on the non-human identity (RFC 7523 JWT bearer assertion), with an optional space-delimited scope. No client secret is involved.',
+        description: 'Access tokens issued by simple-directory. A token without scope claim is an unrestricted first party session. The token endpoint (RFC 6749) never takes a client secret. A non-human identity obtains a token either with the JWT bearer grant (grant_type urn:ietf:params:oauth:grant-type:jwt-bearer, client_id = the NHI id and assertion = a JWT signed by the identity provider declared on the NHI, RFC 7523) or, when the NHI declares inline jwks, with client_credentials authenticated by a private_key_jwt client assertion. Both accept an optional space-delimited scope and a resource indicator (RFC 8707). A person authorizes an application with the authorization code flow and PKCE (S256, required), on the consent screen of simple-directory, and the application refreshes its token with a rotating refresh token. Disabled unless the deployment enables the authorization server.',
         flows: {
           // OpenAPI has no jwt-bearer flow, clientCredentials is the closest entry. The endpoint is an
           // RFC 7523 assertion exchange: do not send a client secret.
           clientCredentials: {
-            tokenUrl: '/simple-directory/api/auth/nhi-token',
-            scopes: {
-              organizations: 'All organization scopes',
-              'organizations:read': 'Read organizations, their roles and members'
-            }
+            tokenUrl: '/simple-directory/api/oauth/token',
+            scopes: oauthScopes
+          },
+          // clients are public (PKCE is required, no client secret): the site clients of dashboards and
+          // the dynamic clients (client id metadata document or registration) of MCP agents
+          authorizationCode: {
+            authorizationUrl: '/simple-directory/api/oauth/authorize',
+            tokenUrl: '/simple-directory/api/oauth/token',
+            refreshUrl: '/simple-directory/api/oauth/token',
+            scopes: oauthScopes
           }
         }
       }
@@ -176,6 +186,35 @@ export default {
           404: {
             description: 'There is no user associated with this email'
           }
+        }
+      }
+    },
+    '/api/auth/nhi-token': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Exchange a non-human identity assertion for a session',
+        deprecated: true,
+        description: 'Deprecated for bearer use, prefer the JWT bearer grant of /api/oauth/token. Its purpose remains the cookie session: it sets the session cookies in addition to returning an access token.',
+        operationId: 'authNhiToken',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['client_id', 'assertion'],
+                properties: {
+                  client_id: { type: 'string', description: 'The id of the non-human identity' },
+                  assertion: { type: 'string', description: 'A JWT signed by the identity provider declared on the NHI' },
+                  scope: { type: 'string', description: 'Space-delimited scopes' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: { description: 'The session cookies are set, the body contains an access_token, token_type and expires_in' },
+          401: { description: 'Invalid credentials (uniform for every failure cause)' }
         }
       }
     },

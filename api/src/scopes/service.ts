@@ -1,5 +1,6 @@
 import config from '#config'
 import mongo from '#mongo'
+import { defaultLocale, messages } from '#i18n'
 import { scopeRegexp } from '@data-fair/lib-express'
 import { privateAxiosInstance } from '@data-fair/lib-node/axios.js'
 import { internalError } from '@data-fair/lib-node/observer.js'
@@ -68,6 +69,9 @@ const fetchPlatformScopes = async (localeCode: string): Promise<ScopesMap> => {
 }
 
 // own scopes win over a platform entry with the same name
+// the names of the known scopes, for the rules that do not show them
+export const knownScopeNames = async () => Object.keys(await getKnownScopes(defaultLocale, messages[defaultLocale].scopes))
+
 export const getKnownScopes = async (localeCode: string, ownScopes: ScopesMap): Promise<ScopesMap> => {
   return { ...await fetchPlatformScopes(localeCode), ...ownScopes }
 }

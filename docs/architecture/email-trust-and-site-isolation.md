@@ -246,6 +246,38 @@ privilege is computed from the session's `siteRole` (derived from the token's
   impersonation: `asAdmin` is superadmin-only, and changing an email stays
   superadmin-only too (it would be an account takeover).
 
+## OAuth site clients and the realm rule
+
+The OAuth authorization server (see
+[`oauth-authorization-server.md`](oauth-authorization-server.md)) lets a site
+register **site clients** (dashboards) whose users authorize on SD's consent
+screen. The site document is a trust boundary here as everywhere else, so the
+rules are confined the same way:
+
+- Only a **superadmin in admin mode** edits `oauthClients` (the site PATCH
+  requires admin mode); an organization that owns a site does not.
+- Only a site that is **its own account main site** is an issuer, and the
+  issuer of a request is derived from the site the request resolved to, whose
+  canonical URL must match the request (`issuerOfSite`). A site cannot declare
+  itself an issuer by a flag, and one issuer never vouches for users or NHIs
+  outside its **realm** (the sites whose account main site is that issuer).
+  A token can only target a resource inside the realm.
+- A site client's grant has a **user** subject and cannot target an MCP
+  server. Its resources default to the issuer site; a client of one site
+  cannot obtain a token for a site of another realm.
+- The token carries the user's claims for the grant's site and at most the one
+  bound account in `organizations`, never an admin claim, so a compromised
+  site config (a client with a malicious redirect URI) can at worst obtain a
+  user-consented, scope-limited, short-lived token. It cannot escalate to
+  superadmin or reach another site: redirect URIs are matched exactly
+  (`https`, loopback `http`), and the consent screen shows the host the code
+  goes to.
+- Clients of the **main** site come from its database document only when
+  `MAIN_SITE_FROM_DB` contains `oauthClients`, through a dedicated accessor
+  that is not part of the presentation overlay (see
+  [`main-site-config.md`](main-site-config.md)).
+- Removing a client or deleting a site revokes the grants of its clients.
+
 ## Invariants
 
 1. A secondary-site user **record** never carries admin status (storage rule,
@@ -270,6 +302,9 @@ privilege is computed from the session's `siteRole` (derived from the token's
 8. The outgoing requests of a site-level auth provider (discovery, userinfo,
    token exchange and refresh) never use the private agents: only an
    operator's `SSRF_PUBLIC_IPS` can open a private address to them.
+9. An OAuth site client is defined by a superadmin only, is confined to the
+   realm of its issuer site, and its users' grants never reach an MCP server
+   nor carry an admin claim.
 
 Violations re-open an exploit path in the C-0 family from
 `docs/security-review-2026-04.md`.

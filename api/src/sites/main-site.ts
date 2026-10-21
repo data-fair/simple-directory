@@ -1,14 +1,14 @@
 import config from '#config'
-import { type Site } from '#types'
+import { type Site, type SiteOAuthClient } from '#types'
 import { getMessage } from '#i18n'
 import { getMainSiteDoc } from './service.ts'
 import { type EffectiveSite, envMainSite, clearPublicSiteInfoHashCache } from '../utils/public-site-info.ts'
 import { clearThemeCssHashCache } from '../utils/theme.ts'
 import { clearOverriddenSitesCache } from '../utils/theme-override.ts'
 
-type MainSiteCategory = 'theme' | 'title' | 'mails' | 'registration'
+type MainSiteCategory = 'theme' | 'title' | 'mails' | 'registration' | 'oauthClients'
 
-const mainSiteCategories: MainSiteCategory[] = ['theme', 'title', 'mails', 'registration']
+const mainSiteCategories: MainSiteCategory[] = ['theme', 'title', 'mails', 'registration', 'oauthClients']
 
 // Fields of a site document that are never honoured on the main host, whatever
 // config.mainSiteFromDb contains. They are inert here, not refused: the API
@@ -20,7 +20,8 @@ const mainSiteCategoryFields: Record<MainSiteCategory, (keyof Site)[]> = {
   theme: ['theme'],
   title: ['title'],
   mails: ['mails'],
-  registration: ['tosMessage', 'reducedPersonalInfoAtCreation']
+  registration: ['tosMessage', 'reducedPersonalInfoAtCreation'],
+  oauthClients: ['oauthClients']
 }
 
 // read config at call time, not at module load: tests mutate it through
@@ -74,6 +75,13 @@ export const getEffectiveMainSite = async (): Promise<EffectiveSite> => {
     site.updatedAt = doc.updatedAt
   }
   return site
+}
+
+// The OAuth clients of the main site. Security relevant, so deliberately not part of
+// getEffectiveMainSite (presentation only): the one reader is the authorization server.
+export const getMainSiteOAuthClients = async (): Promise<SiteOAuthClient[]> => {
+  if (!enabled('oauthClients')) return []
+  return (await getMainSiteDoc())?.oauthClients ?? []
 }
 
 // Only needed by tests, which flip config.mainSiteFromDb at runtime — the

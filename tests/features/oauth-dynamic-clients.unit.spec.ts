@@ -1,0 +1,172 @@
+import { strict as assert } from 'node:assert'
+import { readFileSync } from 'node:fs'
+import { test } from '@playwright/test'
+import { initMongo } from '../support/unit.ts'
+
+const dynamicClients = () => import('../../api/src/oauth-server/dynamic-clients.ts')
+
+// a copy of https://claude.ai/oauth/claude-code-client-metadata
+const claudeCode = () => JSON.parse(readFileSync(new URL('../fixtures/claude-code-client-metadata.json', import.meta.url), 'utf8'))
+
+// checkDynamicMetadata works in place, as on the provider's schema instance
+const checked = async (metadata: Record<string, any>) => {
+  const { checkDynamicMetadata } = await dynamicClients()
+  checkDynamicMetadata(metadata)
+  return metadata
+}
+
+const throwsOAuth = (fn: () => unknown, error: string) =>
+  assert.throws(fn, (err: any) => err.error === error && err.status === 400)
+
+test.describe('oauth dynamic clients', () => {
+  test('the cimd fetches of the provider count against the request ip', async () => {
+    await initMongo()
+    const { allowFetch } = await dynamicClients()
+    const suffix = Math.floor(Math.random() * 200)
+    const fromIp = (ip: string) => allowFetch({ req: { headers: { 'x-forwarded-for': ip } } } as any)
+    let allowed = true
+    for (let i = 0; i <= 100 && allowed; i++) allowed = await fromIp(`10.9.${suffix}.1`)
+    assert.equal(allowed, false, 'the budget of an address runs out')
+    assert.equal(await fromIp(`10.9.${suffix}.2`), true, 'another address keeps its budget')
+  })
+
+  test('a cimd fetch outside a provider request is not counted', async () => {
+    await initMongo()
+    const { allowFetch } = await dynamicClients()
+    // SD's interaction routes look up the client of an interaction its authorization request created
+    assert.equal(await allowFetch(undefined), true)
+  })
+
+  test('dynamicRedirectUriAllowed', async () => {
+    const { dynamicRedirectUriAllowed } = await dynamicClients()
+    const table: [string, boolean][] = [
+      ['https://claude.ai/api/mcp/auth_callback', true],
+      ['http://localhost:33418/callback', true],
+      ['http://127.0.0.1/cb', true],
+      ['http://[::1]:8080/cb', true],
+      ['com.example.app:/cb', true],
+      ['http://example.org/cb', false],
+      ['javascript:alert(1)', false],
+      ['data:text/html,x', false],
+      ['file:///etc/passwd', false],
+      ['vbscript:x', false],
+      ['blob:https://x.org/1', false],
+      ['about:blank', false],
+      ['myapp:/cb', false],
+      ['https://x.org/cb#f', false],
+      ['https://x.org/cb#', false],
+      ['https://user:pw@x.org/cb', false],
+      ['https://localhost/cb', false],
+      ['not a url', false]
+    ]
+    for (const [uri, expected] of table) assert.equal(dynamicRedirectUriAllowed(uri), expected, uri)
+  })
+
+  test('checkDynamicMetadata applies the loopback fix to the claude code document', async () => {
+    const metadata = await checked(claudeCode())
+    assert.equal(metadata.application_type, 'native')
+    assert.equal(metadata.token_endpoint_auth_method, 'none')
+    assert.deepEqual(metadata.grant_types, ['authorization_code', 'refresh_token'])
+    assert.deepEqual(metadata.response_types, ['code'])
+  })
+
+  test('checkDynamicMetadata defaults and refusals', async () => {
+    const { checkDynamicMetadata } = await dynamicClients()
+    const base = () => ({ redirect_uris: ['https://agent.example.org/cb'] })
+    const metadata = await checked(base())
+    assert.equal(metadata.token_endpoint_auth_method, 'none')
+    assert.deepEqual(metadata.grant_types, ['authorization_code', 'refresh_token'])
+    assert.deepEqual(metadata.response_types, ['code'])
+    assert.equal(metadata.application_type, 'web')
+
+    throwsOAuth(() => checkDynamicMetadata({ ...claudeCode(), grant_types: ['client_credentials'] }), 'invalid_client_metadata')
+    throwsOAuth(() => checkDynamicMetadata({ ...base(), grant_types: ['authorization_code', 'implicit'] }), 'invalid_client_metadata')
+    throwsOAuth(() => checkDynamicMetadata({ ...base(), token_endpoint_auth_method: 'client_secret_basic' }), 'invalid_client_metadata')
+    throwsOAuth(() => checkDynamicMetadata({ ...base(), response_types: ['code id_token'] }), 'invalid_client_metadata')
+    throwsOAuth(() => checkDynamicMetadata({ ...claudeCode(), redirect_uris: ['http://example.org/cb'] }), 'invalid_redirect_uri')
+    throwsOAuth(() => checkDynamicMetadata({ redirect_uris: [] }), 'invalid_redirect_uri')
+    throwsOAuth(() => checkDynamicMetadata({}), 'invalid_redirect_uri')
+    throwsOAuth(() => checkDynamicMetadata({ ...base(), logo_uri: 'http://agent.example.org/logo.png' }), 'invalid_client_metadata')
+    // a mix with loopback uris would get the port relaxation for its other uris too
+    throwsOAuth(() => checkDynamicMetadata({ redirect_uris: ['http://localhost/cb', 'com.example.app:/cb'] }), 'invalid_redirect_uri')
+    // validated by an outbound fetch: an open registration must not make SD call arbitrary urls
+    throwsOAuth(() => checkDynamicMetadata({ ...base(), sector_identifier_uri: 'https://x.org/sector' }), 'invalid_client_metadata')
+  })
+
+  test('checkDynamicMetadata requires https for every web uri', async () => {
+    const { checkDynamicMetadata } = await dynamicClients()
+    const base = { redirect_uris: ['https://agent.example.org/cb'] }
+    for (const key of ['logo_uri', 'client_uri', 'policy_uri', 'tos_uri', 'jwks_uri']) {
+      throwsOAuth(() => checkDynamicMetadata({ ...base, [key]: 'http://agent.example.org/x' }), 'invalid_client_metadata')
+      throwsOAuth(() => checkDynamicMetadata({ ...base, [key]: 'javascript:alert(1)' }), 'invalid_client_metadata')
+      throwsOAuth(() => checkDynamicMetadata({ ...base, [key]: 42 }), 'invalid_client_metadata')
+      assert.equal((await checked({ ...base, [key]: 'https://agent.example.org/x' }))[key], 'https://agent.example.org/x')
+    }
+  })
+
+  test('checkDynamicMetadata sets the application type from the parsed redirect uris', async () => {
+    assert.equal((await checked({ redirect_uris: ['http://localhost/cb'], application_type: 'web' })).application_type, 'native')
+    // a loopback uri next to an https one is matched exactly
+    assert.equal((await checked({ redirect_uris: ['http://localhost/cb', 'https://x.org/cb'], application_type: 'native' })).application_type, 'web')
+    // all https: a client sent native is web, whatever the case of the scheme
+    assert.equal((await checked({ redirect_uris: ['https://x.org/cb'], application_type: 'native' })).application_type, 'web')
+    assert.equal((await checked({ redirect_uris: ['HTTPS://x.org/cb'] })).application_type, 'web')
+    // private-use schemes are only accepted by the provider for native clients
+    assert.equal((await checked({ redirect_uris: ['com.example.app:/cb'] })).application_type, 'native')
+  })
+
+  test('logSafeName truncates and strips control characters', async () => {
+    const { logSafeName } = await dynamicClients()
+    assert.equal(logSafeName('Claude\nCode\u0000\u001b[31m'), 'ClaudeCode[31m')
+    assert.equal(logSafeName('x'.repeat(300)).length, 100)
+    assert.equal(logSafeName(undefined), 'unnamed')
+    assert.equal(logSafeName(42), 'unnamed')
+  })
+
+  test('logSafeName strips bidi controls and zero-width characters', async () => {
+    const { logSafeName } = await dynamicClients()
+    const bidi = ['\u202a', '\u202b', '\u202c', '\u202d', '\u202e', '\u2066', '\u2067', '\u2068', '\u2069', '\u200e', '\u200f', '\u061c']
+    const zeroWidth = ['\u200b', '\u200c', '\u200d', '\u2060', '\ufeff']
+    for (const c of [...bidi, ...zeroWidth]) {
+      assert.equal(logSafeName(`Cla${c}ude`), 'Claude', 'U+' + c.codePointAt(0)!.toString(16))
+    }
+    // a right-to-left override that would display "Claude Code (txt.exe)" reversed
+    assert.equal(logSafeName('Claude\u202eedoC\u202c'), 'ClaudeedoC')
+    // other non-ASCII text is kept
+    assert.equal(logSafeName('Agent Ünïcode 日本'), 'Agent Ünïcode 日本')
+  })
+
+  test('displayIdUrl shows the punycoded form of a client id url', async () => {
+    const { displayIdUrl } = await dynamicClients()
+    // a cyrillic "а" in place of the latin "a"
+    assert.equal(displayIdUrl('https://\u0430pple.com/client.json'), 'https://xn--pple-43d.com/client.json')
+    assert.equal(displayIdUrl('https://claude.ai/oauth/claude-code-client-metadata'), 'https://claude.ai/oauth/claude-code-client-metadata')
+    assert.equal(displayIdUrl('https://example.org/\u202ex'), 'https://example.org/%E2%80%AEx')
+  })
+
+  test('ssrfFetch refuses loopback ip literals with the default rules', async () => {
+    const { ssrfFetch } = await dynamicClients()
+    // the test run declares loopback public (playwright.config.ts, private ranges are covered by
+    // 'ssrfFetch refuses non public addresses'): the rules are read from the environment at every
+    // call, so loopback is checked here with the default rules
+    const previous = process.env.SSRF_PUBLIC_IPS
+    delete process.env.SSRF_PUBLIC_IPS
+    try {
+      for (const url of ['https://127.0.0.1/', 'https://[::ffff:127.0.0.1]/', 'https://[::1]/']) {
+        await assert.rejects(ssrfFetch(url, {}), (err: any) => err.code === 'ERR_SSRF_BLOCKED', url)
+      }
+    } finally {
+      if (previous === undefined) delete process.env.SSRF_PUBLIC_IPS
+      else process.env.SSRF_PUBLIC_IPS = previous
+    }
+  })
+
+  test('ssrfFetch refuses non public addresses', async () => {
+    const { ssrfFetch } = await dynamicClients()
+    // loopback is in SSRF_PUBLIC_IPS for the test run (playwright.config.ts), so other ranges here
+    for (const url of ['https://10.1.2.3/doc', 'https://169.254.169.254/latest', 'https://192.168.1.1:8443/doc', 'https://[fd00::1]/doc', 'https://[::ffff:10.0.0.1]/doc', 'https://0.0.0.0/doc']) {
+      await assert.rejects(ssrfFetch(url, { method: 'GET', signal: AbortSignal.timeout(2500) }), (err: any) => err.code === 'ERR_SSRF_BLOCKED' || err.cause?.code === 'ERR_SSRF_BLOCKED', url)
+    }
+    await assert.rejects(ssrfFetch('http://example.org/doc', { method: 'GET' }), /https/)
+  })
+})
