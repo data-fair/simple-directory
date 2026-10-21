@@ -185,8 +185,8 @@ cookie, cannot authorize a client. The grant records that session.
 **One decision per interaction.** A lock in `oauth-interaction-decisions`: a
 replay or a concurrent decision is 400 and creates nothing; a decision by
 another user than the one who opened the interaction is 403. A decision that
-fails after the lock ends the interaction (its grant and an inline NHI are
-removed, the lock stays); the person restarts from the client.
+fails after the lock ends the interaction (its grant is removed, the lock
+stays); the person restarts from the client.
 
 **A user for a site client.** The user binds the grant to their personal
 account (unless `ignorePersonalAccount`) or one of their memberships, the
@@ -199,8 +199,10 @@ so visits do not pile up grants; `prompt=consent` forces the screen. 30 days.
 
 **An org admin for a dynamic client.** Only a real admin membership (department
 admins with `depAdminIsOrgAdmin`), never admin mode nor the site-admin
-fallback. The admin binds the client to an existing NHI of the organization, or
-to a new NHI created inline (the checks of `POST /nhis`, no key binding). Nothing is
+fallback. The admin binds the client to an NHI of the organization; NHIs are
+only created and managed on the organization page (`POST /nhis`, a key binding
+optional), never at consent, so the list stays the one admins curate. The
+screen says so and links there when the organization has none. Nothing is
 preselected; NHIs that could get none of the requested scopes are not offered;
 the lifetime is `1d`, `7d`, `30d` (default), `90d` or `1y`. The subject is the
 NHI, the admin is `authorizedBy`. An NHI gets no identity claim.
@@ -342,7 +344,6 @@ go through `logSafeName`.
 - The JWT bearer grant has no assertion replay store (as `/nhi-token`).
 - A two-tab race between subjects in one browser can show the provider's
   end-session form; the user restarts.
-- An NHI created inline at consent has the member-limit race of `POST /nhis`.
 - Open registration and CIMD are bounded by rate limits, the SSRF safe fetch
   and an org admin's consent, not by an initial access token.
 

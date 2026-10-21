@@ -6,13 +6,7 @@ import config from '#config'
 import mongo from '#mongo'
 import storages from '#storages'
 import type { Organization, User, UserWritable } from '#types'
-import eventsLog from '@data-fair/lib-express/events-log.js'
-import { reqI18n } from '#i18n'
-import { getOrgLimits } from '#services'
-import { getKeyResolver, checkProvider } from './keys.ts'
-import { checkAllowedIps } from './ips.ts'
-import { checkScopes } from './scopes.ts'
-import { getKnownScopes } from '../scopes/service.ts'
+import { getKeyResolver } from './keys.ts'
 
 // Deterministic, operator-controlled synthetic email for a non-human identity, derived from the
 // public URL host (e.g. `nhi-x@nhi.example.com`). It is stored on the user record so the user
@@ -62,7 +56,7 @@ export const listNhis = async (organizationId: string) => {
       role: d.organizations[0].role,
       department: d.organizations[0].department,
       departmentName: d.organizations[0].departmentName,
-      // absent for an OAuth-bound NHI, which has no key binding
+      // absent for an NHI without key binding (used by OAuth clients only)
       subject: d.nhi!.subject,
       provider: d.nhi!.provider,
       allowedIps: d.nhi!.allowedIps,
@@ -71,26 +65,6 @@ export const listNhis = async (organizationId: string) => {
       created: d.created,
       logged: d.logged
     }))
-  }
-}
-
-export const orgRoles = (org: Organization): string[] => org.roles?.length ? org.roles : config.roles.defaults
-
-// the creation checks, shared by the admin POST and the consent screen (inline creation);
-// the caller has already authorized the actor as admin of `org`
-export const validateNewNhi = async (req: Request<any>, org: Organization, body: { name: string, role: string, scopes?: string[], department?: string, provider?: { issuer: string, jwks?: any }, subject?: string, allowedIps?: string[], ipBinding?: boolean }): Promise<void> => {
-  if (!orgRoles(org).includes(body.role)) throw httpError(400, 'unknown role')
-  if (!!body.provider !== !!body.subject) throw httpError(400, 'provider and subject go together')
-  if (body.provider) await checkProvider(body.provider)
-  if (body.allowedIps) checkAllowedIps(body.allowedIps)
-  if (body.scopes) {
-    const { localeCode, messages } = reqI18n(req)
-    checkScopes(body.scopes, await getKnownScopes(localeCode, messages.scopes))
-  }
-  const limits = await getOrgLimits(org)
-  if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
-    eventsLog.info('sd.nhi.limit', `limit error for NHI creation in org ${org.id}`, { req, account: { type: 'organization', id: org.id, name: org.name } })
-    throw httpError(429, reqI18n(req).messages.errors.maxNbMembers)
   }
 }
 

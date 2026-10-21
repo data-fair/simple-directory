@@ -655,23 +655,25 @@ test('the nhi access token works as a bearer, a session token does not', async (
   await assert.rejects(axios({ headers: { authorization: 'Bearer ' + sessionToken } }).get(`/api/organizations/${org.id}`), (err: any) => err.status === 401)
 })
 
-test('POST /nhis still requires a key binding', async () => {
+test('POST /nhis accepts an nhi without key binding, never a half binding', async () => {
   const { ax } = await createUser('nhi-admin-nb1@test.com')
   const org = (await ax.post('/api/organizations', { name: 'NHI org nb1' })).data
   ax.setOrg(org.id)
-  const { provider, subject: _s, ...noProvider } = nhiBody()
+  const { provider: _p, subject: _s, ...noBinding } = nhiBody()
+  const created = await ax.post(`/api/organizations/${org.id}/nhis`, noBinding)
+  assert.equal(created.status, 201)
+  assert.equal(created.data.nhi.provider, undefined)
+  const { provider: _p2, ...noProvider } = nhiBody()
   await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, noProvider), (err: any) => err.status === 400)
   const { subject: _s2, ...noSubject } = nhiBody()
   await assert.rejects(ax.post(`/api/organizations/${org.id}/nhis`, noSubject), (err: any) => err.status === 400)
-  assert.ok(provider)
 })
 
 test('GET /nhis lists an nhi without binding, which cannot be half bound by a patch', async () => {
   const { ax } = await createUser('nhi-admin-nb2@test.com')
   const org = (await ax.post('/api/organizations', { name: 'NHI org nb2' })).data
   ax.setOrg(org.id)
-  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, nhiBody({ scopes: ['datasets:read'] }))).data
-  await unbindNhi(nhi.id)
+  const nhi = (await ax.post(`/api/organizations/${org.id}/nhis`, { name: 'Agent', role: 'user', scopes: ['datasets:read'] })).data
   const list = (await ax.get(`/api/organizations/${org.id}/nhis`)).data
   assert.equal(list.count, 1)
   assert.equal(list.results[0].id, nhi.id)

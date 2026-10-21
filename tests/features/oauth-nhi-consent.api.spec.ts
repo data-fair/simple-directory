@@ -1,5 +1,5 @@
 // The NHI consent of dynamic clients: an org admin binds an MCP agent (here a DCR client
-// registered with Claude Code's metadata) to an NHI of the org, existing or created inline.
+// registered with Claude Code's metadata) to an NHI managed on the organization page.
 import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 import { test } from '@playwright/test'
@@ -97,6 +97,7 @@ test.describe('oauth nhi consent', () => {
     const malformed = [
       { decision: 'maybe' },
       { ...valid, nhi: { id: nhi.id, create: { name: 'x', role: 'user', scopes: ['organizations:read'] } } },
+      { ...valid, nhi: undefined },
       { ...valid, nhi: {} },
       { ...valid, scopes: 'organizations:read' },
       { ...valid, scopes: [] },
@@ -167,39 +168,13 @@ test.describe('oauth nhi consent', () => {
     assert.equal((jwt.decode(refreshed.data.access_token) as jwt.JwtPayload).sub, nhi.id)
   })
 
-  test('admin creates an nhi inline', async () => {
-    const { org, user, ownerAx, dynamicClientId, dynamicFlow } = await setupNhiConsent()
+  test('an nhi without key binding is bound like any other', async () => {
+    const { org, ownerAx, dynamicClientId, dynamicFlow } = await setupNhiConsent()
+    const nhi = (await ownerAx.post(`/api/organizations/${org.id}/nhis`, { name: 'Claude agent', role: 'user', scopes: ['organizations:read'] })).data
     const opts = dynamicFlow()
-    const started = await decide(opts, () => ({
-      account: orgAccount(org), nhi: { create: { name: 'Claude agent', role: 'user', scopes: ['organizations:read'] } }, scopes: ['organizations:read'], lifetime: '30d'
-    }))
-    const tokens = await finish(opts, started)
-    const sub = (jwt.decode(tokens.access_token) as jwt.JwtPayload).sub!
-    assert.ok(sub.startsWith('nhi-'))
-
-    const listed = (await ownerAx.get(`/api/organizations/${org.id}/nhis`)).data.results.find((n: any) => n.id === sub)
-    assert.ok(listed, 'the inline nhi is listed')
-    assert.equal(listed.name, 'Claude agent')
-    assert.equal(listed.role, 'user')
-    assert.deepEqual(listed.scopes, ['organizations:read'])
-    // no key binding
-    assert.equal(listed.subject, undefined)
-    assert.equal(listed.provider, undefined)
-
-    const records = await grantRecords({ clientId: dynamicClientId })
-    assert.deepEqual(records[0].subject, { type: 'nhi', id: sub })
-    assert.equal(records[0].authorizedBy.id, user.id)
-  })
-
-  test('inline creation respects the member limit', async () => {
-    const { org, adminAx, ownerAx, dynamicClientId, dynamicFlow } = await setupNhiConsent()
-    await adminAx.post(`/api/limits/organization/${org.id}`, { store_nb_members: { limit: 2, consumption: 2 }, lastUpdate: new Date().toISOString() })
-    const started = await decide(dynamicFlow(), () => ({
-      account: orgAccount(org), nhi: { create: { name: 'Over limit', role: 'user', scopes: ['organizations:read'] } }, scopes: ['organizations:read'], lifetime: '30d'
-    }))
-    assert.equal(started.decided.status, 429, JSON.stringify(started.decided.data))
-    assert.equal((await ownerAx.get(`/api/organizations/${org.id}/nhis`)).data.count, 0)
-    assert.equal((await grantRecords({ clientId: dynamicClientId })).length, 0)
+    const tokens = await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' })))
+    assert.equal((jwt.decode(tokens.access_token) as jwt.JwtPayload).sub, nhi.id)
+    assert.deepEqual((await grantRecords({ clientId: dynamicClientId }))[0].subject, { type: 'nhi', id: nhi.id })
   })
 
   test('a non-admin member cannot consent for an org', async () => {

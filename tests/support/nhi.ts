@@ -22,8 +22,8 @@ export const nhiBody = (overrides: Record<string, any> = {}) => ({
   name: 'My agent', role: 'user', subject, provider: { issuer, jwks }, ...overrides
 })
 
-// turns a key bound NHI into an OAuth-bound one (no provider, no subject), the way the consent
-// screen will create them; the API itself always requires a key binding
+// removes the key binding of an NHI (no provider, no subject), to compare the same NHI before and
+// after; the API only adds or replaces a binding
 export const unbindNhi = async (nhiId: string) => {
   const mongoClient = await MongoClient.connect((await getServerConfig()).mongo.url)
   try {

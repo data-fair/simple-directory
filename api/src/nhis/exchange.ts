@@ -33,7 +33,7 @@ export const rejectDelay = (): Promise<void> => new Promise(resolve => setTimeou
 export const loadExchangeNhi = async (clientId: string, targetSite: Site | undefined, clientIp: string): Promise<User> => {
   const user = await storages.globalStorage.getUser(clientId)
   if (!user?.nhi || user.organizations.length !== 1) throw new NhiExchangeError('unknown or invalid nhi ' + clientId)
-  // an OAuth-bound NHI has no key binding: it can only act through OAuth grants
+  // an NHI without key binding can only act through OAuth grants
   if (!user.nhi.provider || !user.nhi.subject) throw new NhiExchangeError('nhi without key binding ' + clientId)
   const userOrg = user.organizations[0]
   // the exchange is only valid on the main site or on a site owned by the NHI's own org — a

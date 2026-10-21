@@ -1,5 +1,5 @@
 // The consent page for a dynamic client: an org admin binds an unverified MCP agent
-// (a DCR client registered through the API) to an NHI created inline.
+// (a DCR client registered through the API) to a service account of the organization.
 import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 import type { Page } from '@playwright/test'
@@ -56,7 +56,7 @@ const prepare = async (page: Page, scope: string) => {
 }
 
 test.describe('OAuth NHI consent page', () => {
-  test('an org admin creates an identity inline and authorizes the client', async ({ page }) => {
+  test('an org admin picks a service account of the organization and authorizes the client', async ({ page }) => {
     const { org, ownerAx, captured, url } = await prepare(page, 'organizations:read')
     await page.goto(url)
 
@@ -64,16 +64,19 @@ test.describe('OAuth NHI consent page', () => {
     await expect(page.locator('[data-unverified]')).toContainText(/automatiquement|automatically/)
     await expect(page.locator('[data-resource]')).toContainText(/MCP/)
     await expect(page.locator('[data-redirect-host]')).toContainText('localhost:40321')
+    // no service account yet: the page says where they are managed
+    await expect(page.locator('[data-no-nhi] a')).toHaveAttribute('href', new RegExp(`/organization/${org.id}#nhis`))
+
+    // created on the organization page (here through its API), then picked
+    await ownerAx.post(`/api/organizations/${org.id}/nhis`, { name: 'Claude agent', role: 'user', scopes: ['organizations:read'] })
+    await page.reload()
     // nothing preselected, so no confirmation yet
-    await expect(page.locator('[data-scope="organizations:read"] input')).not.toBeChecked()
+    await expect(page.locator('[data-scope="organizations:read"] input')).not.toBeChecked({ timeout: 15_000 })
     const allow = page.getByRole('button', { name: /Autoriser|Allow/ })
     await expect(allow).toBeDisabled()
 
-    await selectOf(page, /Compte|Account/).locator('.v-field').click()
-    await page.getByRole('option', { name: new RegExp(org.name) }).click()
-    await page.locator('input[name="nhiName"]').fill('Claude agent')
-    await selectOf(page, /Rôle|Role/).locator('.v-field').click()
-    await page.getByRole('option').last().click()
+    await selectOf(page, /Identité|Identity/).locator('.v-field').click()
+    await page.getByRole('option', { name: 'Claude agent' }).click()
     await page.locator('[data-scope="organizations:read"] input').check()
     await expect(selectOf(page, /Durée|Duration/)).toContainText(/30/)
     await expect(allow).toBeEnabled()
@@ -81,10 +84,6 @@ test.describe('OAuth NHI consent page', () => {
 
     const callback = await captured
     assert.ok(callback.searchParams.get('code'), callback.href)
-    const nhis = (await ownerAx.get(`/api/organizations/${org.id}/nhis`)).data.results
-    const created = nhis.find((n: any) => n.name === 'Claude agent')
-    assert.ok(created, 'the inline nhi is listed')
-    assert.deepEqual(created.scopes, ['organizations:read'])
   })
 
   test('a broad requested scope shows a warning', async ({ page }) => {

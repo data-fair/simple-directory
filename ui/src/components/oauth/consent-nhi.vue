@@ -14,75 +14,54 @@
         :accounts="details.organizations"
       />
 
-      <v-select
-        v-model="nhiChoice"
-        :items="nhiItems"
-        :label="$t('pages.oauthConsent.nhi')"
-        density="comfortable"
-        variant="outlined"
-        rounded
-        hide-details
+      <v-alert
+        v-if="!orgNhis.length"
+        type="info"
+        variant="tonal"
         class="mt-4"
-        name="nhi"
-      />
-
-      <template v-if="nhiChoice === createKey">
-        <v-text-field
-          v-model="newName"
-          :label="$t('pages.oauthConsent.nhiName')"
-          density="comfortable"
-          variant="outlined"
-          class="mt-4"
-          hide-details
-          name="nhiName"
-          autocomplete="off"
-        />
+        data-no-nhi
+      >
+        {{ $t('pages.oauthConsent.noNhi') }}
+        <div class="mt-2">
+          <router-link :to="nhisPage">
+            {{ $t('pages.oauthConsent.manageNhis') }}
+          </router-link>
+        </div>
+      </v-alert>
+      <template v-else>
         <v-select
-          v-model="newRole"
-          :items="roleItems"
-          :label="$t('pages.oauthConsent.nhiRole')"
-          density="comfortable"
-          variant="outlined"
-          class="mt-4"
-          hide-details
-          name="nhiRole"
-        />
-        <v-autocomplete
-          v-model="newMaxScopes"
-          :items="scopeItems"
-          item-props
-          :label="$t('pages.oauthConsent.nhiScopes')"
-          :hint="$t('pages.oauthConsent.nhiScopesHint')"
+          v-model="nhiChoice"
+          :items="nhiItems"
+          :label="$t('pages.oauthConsent.nhi')"
+          :hint="$t('pages.oauthConsent.nhiHint')"
           persistent-hint
-          multiple
-          chips
-          closable-chips
           density="comfortable"
           variant="outlined"
+          rounded
           class="mt-4"
-          name="nhiScopes"
+          name="nhi"
+        />
+
+        <p class="text-body-large mt-4 mb-2">
+          {{ $t('pages.oauthConsent.permissions') }}
+        </p>
+        <consent-scopes
+          v-model="selectedScopes"
+          :scopes="availableScopes"
+        />
+
+        <v-select
+          v-model="lifetime"
+          :items="lifetimeItems"
+          :label="$t('pages.oauthConsent.lifetime')"
+          density="comfortable"
+          variant="outlined"
+          rounded
+          hide-details
+          class="mt-4"
+          name="lifetime"
         />
       </template>
-
-      <p class="text-body-large mt-4 mb-2">
-        {{ $t('pages.oauthConsent.permissions') }}
-      </p>
-      <consent-scopes
-        v-model="selectedScopes"
-        :scopes="availableScopes"
-      />
-
-      <v-select
-        v-model="lifetime"
-        :items="lifetimeItems"
-        :label="$t('pages.oauthConsent.lifetime')"
-        density="comfortable"
-        variant="outlined"
-        rounded
-        hide-details
-        class="mt-4"
-        name="lifetime"
-      />
     </template>
   </div>
 </template>
@@ -105,46 +84,22 @@ const props = defineProps<{
 const decision = defineModel<NhiDecision | undefined>({ required: true })
 
 const { t } = useI18n()
-const { scopeItems } = usePlatformScopes()
 
-const createKey = '__create__'
 const account = ref<Account | undefined>(props.details.organizations[0])
-const nhiChoice = ref<string>(createKey)
-const newName = ref('')
-const newRole = ref('')
-const newMaxScopes = ref<string[]>([])
+// the service accounts are managed on the organization page, the consent only picks one
+const nhiChoice = ref<string>()
 // nothing is preselected for a dynamic client
 const selectedScopes = ref<string[]>([])
 const lifetime = ref(props.details.defaultLifetime)
 
 const orgNhis = computed(() => account.value ? props.details.nhis[account.value.id] ?? [] : [])
-const nhiItems = computed(() => [
-  ...orgNhis.value.map(n => ({ value: n.id, title: n.name })),
-  { value: createKey, title: t('pages.oauthConsent.nhiCreate') }
-])
+const nhiItems = computed(() => orgNhis.value.map(n => ({ value: n.id, title: n.name })))
+const nhisPage = computed(() => `/organization/${account.value?.id}#nhis`)
 const lifetimeItems = computed(() => props.details.lifetimes.map(value => ({ value, title: t(`pages.oauthConsent.lifetime${value}`) })))
+watch(() => account.value?.id, () => { nhiChoice.value = undefined })
 
-// the roles are those of the chosen organization
-const orga = ref<Organization>()
-const { roleItems } = useRoleLabels(orga)
-watch(() => account.value?.id, async (id) => {
-  orga.value = undefined
-  newRole.value = ''
-  nhiChoice.value = createKey
-  if (!id) return
-  try {
-    const fetched = await $fetch<Organization>(`organizations/${id}`)
-    if (account.value?.id === id) orga.value = fetched
-  } catch (err) {
-    console.error(err)
-  }
-}, { immediate: true })
-
-// the identity caps the permissions: an existing one by its scopes, a new one by the maximum entered
-const maxScopes = computed(() => {
-  if (nhiChoice.value === createKey) return newMaxScopes.value.length ? newMaxScopes.value : undefined
-  return orgNhis.value.find(n => n.id === nhiChoice.value)?.scopes
-})
+// the identity caps the permissions by its maximum scopes
+const maxScopes = computed(() => orgNhis.value.find(n => n.id === nhiChoice.value)?.scopes)
 const availableScopes = computed(() => maxScopes.value ? props.details.scopes.filter(s => maxScopes.value!.includes(s.name)) : props.details.scopes)
 watch(availableScopes, (scopes) => {
   selectedScopes.value = selectedScopes.value.filter(s => scopes.some(a => a.name === s))
@@ -152,24 +107,15 @@ watch(availableScopes, (scopes) => {
 
 watchEffect(() => {
   const acc = account.value
-  if (acc?.type !== 'organization' || !selectedScopes.value.length) {
+  if (acc?.type !== 'organization' || !nhiChoice.value || !selectedScopes.value.length) {
     decision.value = undefined
     return
   }
-  const base = {
+  decision.value = {
     account: { type: 'organization' as const, id: acc.id, ...(acc.department ? { department: acc.department } : {}) },
+    nhi: { id: nhiChoice.value },
     scopes: [...selectedScopes.value],
     lifetime: lifetime.value
-  }
-  if (nhiChoice.value === createKey) {
-    if (!newName.value.trim() || !newRole.value) {
-      decision.value = undefined
-      return
-    }
-    // without an explicit maximum, the new identity gets exactly the permissions ticked
-    decision.value = { ...base, nhi: { create: { name: newName.value.trim(), role: newRole.value, scopes: newMaxScopes.value.length ? [...newMaxScopes.value] : [...selectedScopes.value] } } }
-  } else {
-    decision.value = { ...base, nhi: { id: nhiChoice.value } }
   }
 })
 </script>

@@ -7,16 +7,15 @@ import express, { Router, type Request, type Response } from 'express'
 import Provider, { errors, type Interaction } from 'oidc-provider'
 import storages from '#storages'
 import mongo from '#mongo'
-import type { Organization, User } from '#types'
+import type { User } from '#types'
 import { reqI18n } from '#i18n'
-import { reqSession, markScopeChecked, httpError, type SessionState, type EventLogContext } from '@data-fair/lib-express'
+import { reqSession, markScopeChecked, httpError, type SessionState } from '@data-fair/lib-express'
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import limiter, { refundLimiter } from '../utils/limiter.ts'
 import { getKnownScopes, knownScopeNames } from '../scopes/service.ts'
 import { getMainSiteDoc } from '../sites/service.ts'
-import { postUserIdentityWebhook, deleteIdentityWebhook, setNbMembersLimit } from '#services'
 import { internalError } from '@data-fair/lib-node/observer.js'
-import { createNhi, listNhis, validateNewNhi } from '../nhis/service.ts'
+import { listNhis } from '../nhis/service.ts'
 import { narrowScope } from '../nhis/scopes.ts'
 import type { PostOauthConsentReq } from '#doc/oauth/post-consent-req/index.ts'
 import { reqIssuer, resolveResource, nhiMayTarget, ResourceError, type IssuerContext, type ResolvedResource } from './issuers.ts'
@@ -271,11 +270,9 @@ const dynamicClientDetails = async (req: Request, ic: InteractionContext, intera
 }
 
 type ConsentDecision = PostOauthConsentReq['body']
-type InlineNhi = { name: string, role: string, scopes: string[] }
-
-// the decision of an org admin for a dynamic client: the account, the NHI (existing or created
-// inline), the scopes within the request and the NHI maximum, the lifetime. Returns the url the
-// browser resumes the authorization with.
+// the decision of an org admin for a dynamic client: the account, an NHI of the organization
+// (managed on the organization page), the scopes within the request and the NHI maximum, the
+// lifetime. Returns the url the browser resumes the authorization with.
 const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, serverSessionId: string, clientId: string, kind: 'cimd' | 'dcr', body: ConsentDecision) => {
   const client = await dynamicClientInfo(ic, interaction, user, clientId, kind)
   const adminAccount = findConsentAccount(consentAdminOrgs(user), body.account)
@@ -283,87 +280,33 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
   const lifetime = body.lifetime ?? defaultNhiLifetime
   const { url, resolved } = await resolveInteractionResource(ic.ctx, interaction)
 
-  // the NHI: its membership and maximum, before anything is created
-  let existing: User | undefined
-  let inline: { body: InlineNhi, org: Organization } | undefined
-  let membership: { id: string, department?: string }
-  let max: string[] | undefined
-  if (!body.nhi) throw httpError(400, 'nhi must be { id } or { create }')
-  if ('id' in body.nhi) {
-    const nhi = await storages.globalStorage.getUser(body.nhi.id)
-    if (!nhi?.nhi || nhi.organizations?.length !== 1 || nhi.organizations[0].id !== adminAccount.id) throw httpError(400, 'unknown nhi')
-    existing = nhi
-    membership = nhi.organizations[0]
-    max = nhi.nhi.scopes
-  } else {
-    const nhiBody = { ...body.nhi.create, name: body.nhi.create.name.trim(), scopes: [...new Set(body.nhi.create.scopes)] }
-    if (!nhiBody.name) throw httpError(400, 'nhi.create.name is required')
-    const org = await storages.globalStorage.getOrganization(adminAccount.id)
-    if (!org) throw httpError(400, 'unknown organization')
-    // the same checks as POST /nhis (role, known scopes, member limit with 429); the NHI acts in
-    // the account the admin chose, its department included
-    await validateNewNhi(req, org, { ...nhiBody, ...(adminAccount.department ? { department: adminAccount.department } : {}) })
-    inline = { body: nhiBody, org }
-    membership = { id: org.id, ...(adminAccount.department ? { department: adminAccount.department } : {}) }
-    max = nhiBody.scopes
-  }
-  if (!nhiMayTarget(membership, resolved)) throw httpError(400, 'the resource is not reachable by this nhi')
+  if (!body.nhi) throw httpError(400, 'nhi is required')
+  const nhi = await storages.globalStorage.getUser(body.nhi.id)
+  if (!nhi?.nhi || nhi.organizations?.length !== 1 || nhi.organizations[0].id !== adminAccount.id) throw httpError(400, 'unknown nhi')
+  if (!nhiMayTarget(nhi.organizations[0], resolved)) throw httpError(400, 'the resource is not reachable by this nhi')
 
   const known = await knownScopeNames()
-  const allowed = narrowScope(dynamicClientRequestScopes(interaction.params.scope, known), max, known)
+  const allowed = narrowScope(dynamicClientRequestScopes(interaction.params.scope, known), nhi.nhi.scopes, known)
   const scope = body.scopes
   if (!scope?.every(s => allowed.includes(s))) {
     throw httpError(400, 'scopes must be a non-empty subset of the requested scopes within the nhi maximum')
   }
 
   if (!await lockDecision(interaction.uid)) throw httpError(400, 'the interaction is already finished')
-  const created = inline && await createInlineNhi(req, inline.org, inline.body, adminAccount.department, user)
-  try {
-    const nhi = created || existing
-    if (!nhi) throw new Error('no nhi')
-    // re-checked on the stored NHI, as every issuance will
-    if (!nhiMayTarget(nhi.organizations[0], resolved)) throw httpError(400, 'the resource is not reachable by this nhi')
-    await detachForeignSession(ic.provider, interaction, nhi.id)
-    const nhiMembership = nhi.organizations[0]
-    const account = membershipAccount(nhiMembership)
-    return await grantAndResume(req, res, ic, interaction, {
-      subject: { type: 'nhi', id: nhi.id },
-      account,
-      clientKind: kind,
-      clientName: client.name,
-      scope: [...new Set(scope)],
-      oidcScopes: nhiOidcScopes(interaction),
-      resource: url,
-      resourceKind: resolved.kind,
-      lifetime: grantLifetimes[lifetime],
-      authorizedBy: { id: user.id, name: user.name },
-      sessionId: serverSessionId
-    })
-  } catch (err) {
-    // an NHI created for a decision that failed must not survive it
-    if (created) await deleteInlineNhi(req, created).catch(deleteErr => internalError('oauth-consent-undo', 'failed to delete the inline nhi of a failed consent decision', deleteErr))
-    throw err
-  }
-}
-
-// the inverse of createInlineNhi, for a decision that failed after creating it: same side effects
-// as DELETE /nhis/:id (deleteUser also revokes the grants of the subject)
-const deleteInlineNhi = async (req: Request, nhi: User) => {
-  const org = nhi.organizations[0]
-  await storages.globalStorage.deleteUser(nhi.id)
-  await setNbMembersLimit(org.id)
-  eventsLog.info('sd.nhi.delete', `an NHI was deleted ${nhi.id}, the consent that created it failed`, { req, account: { type: 'organization', id: org.id, name: org.name } })
-  deleteIdentityWebhook('user', nhi.id)
-}
-
-// same side effects as POST /nhis: member count, event, identity webhook; the admin is the creator
-const createInlineNhi = async (req: Request, org: Organization, body: InlineNhi, department: string | undefined, admin: User) => {
-  const nhi = await createNhi(org, { ...body, ...(department ? { department } : {}) }, { id: admin.id, name: admin.name })
-  await setNbMembersLimit(org.id)
-  const logContext: EventLogContext = { req, account: { type: 'organization', id: org.id, name: org.name } }
-  eventsLog.info('sd.nhi.create', `an NHI was created ${nhi.id} in org ${org.id} at the consent of an oauth client`, logContext)
-  postUserIdentityWebhook(nhi)
-  return nhi
+  await detachForeignSession(ic.provider, interaction, nhi.id)
+  return await grantAndResume(req, res, ic, interaction, {
+    subject: { type: 'nhi', id: nhi.id },
+    account: membershipAccount(nhi.organizations[0]),
+    clientKind: kind,
+    clientName: client.name,
+    scope: [...new Set(scope)],
+    oidcScopes: nhiOidcScopes(interaction),
+    resource: url,
+    resourceKind: resolved.kind,
+    lifetime: grantLifetimes[lifetime],
+    authorizedBy: { id: user.id, name: user.name },
+    sessionId: serverSessionId
+  })
 }
 
 router.get('/:uid', async (req, res) => {

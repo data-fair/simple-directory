@@ -1,5 +1,3 @@
-const scopes = { type: 'array', minItems: 1, maxItems: 50, items: { type: 'string', maxLength: 100 } }
-
 // the decision posted by the consent page; the rules that depend on the interaction (scopes within
 // the request, an NHI of the organization) are checked in code
 export default {
@@ -28,31 +26,13 @@ export default {
             departmentName: { type: 'string' }
           }
         },
-        scopes,
+        scopes: { type: 'array', minItems: 1, maxItems: 50, items: { type: 'string', maxLength: 100 } },
         lifetime: { type: 'string', enum: ['1d', '7d', '30d', '90d', '1y'] },
         nhi: {
-          oneOf: [{
-            type: 'object',
-            additionalProperties: false,
-            required: ['id'],
-            properties: { id: { type: 'string', maxLength: 100 } }
-          }, {
-            type: 'object',
-            additionalProperties: false,
-            required: ['create'],
-            properties: {
-              create: {
-                type: 'object',
-                additionalProperties: false,
-                required: ['name', 'role', 'scopes'],
-                properties: {
-                  name: { type: 'string', minLength: 1, maxLength: 150 },
-                  role: { type: 'string', minLength: 1, maxLength: 100 },
-                  scopes
-                }
-              }
-            }
-          }]
+          type: 'object',
+          additionalProperties: false,
+          required: ['id'],
+          properties: { id: { type: 'string', maxLength: 100 } }
         }
       }
     }

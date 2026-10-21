@@ -174,7 +174,7 @@ const newEditNhi = () => ({
   subject: nhi.subject,
   provider: { issuer: nhi.provider?.issuer }
 })
-// an OAuth-bound nhi has no key binding to edit
+// an nhi without key binding has none to edit
 const newJwks = () => (nhi.provider?.jwks ? JSON.stringify(nhi.provider.jwks, null, 2) : '')
 const editNhi = ref(newEditNhi())
 const jwks = ref(newJwks())

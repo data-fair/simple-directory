@@ -652,16 +652,21 @@ session escalate beyond its owning org — the same category of failure this
 document's sibling, `email-trust-and-site-isolation.md`, guards against for
 human SSO.
 
-## OAuth-bound NHIs (no key binding)
+## NHIs without key binding
 
-`nhi.provider` and `nhi.subject` are optional, both or neither (enforced in code: `validateNewNhi`, the PATCH route and `createNhi`, not by the schema). An NHI without them is reachable only through OAuth grants: `loadExchangeNhi` / `verifyExchangeAssertion` refuse it with the uniform exchange error (401 on `/nhi-token`, `invalid_grant` on the jwt-bearer grant), and `findNhiClient` yields no client for it (`invalid_client`). `POST /nhis` still requires a key binding; creation checks live in `validateNewNhi` (`api/src/nhis/service.ts`), reusable by the consent screen. A patch may add a binding to such an NHI only whole.
+`nhi.provider` and `nhi.subject` are optional, both or neither (enforced in code by the POST and
+PATCH routes, not by the schema). An admin creates such an NHI on the organization page for the
+OAuth clients they will bind to it: it is reachable only through OAuth grants.
+`loadExchangeNhi` / `verifyExchangeAssertion` refuse it with the uniform exchange error (401 on
+`/nhi-token`, `invalid_grant` on the jwt-bearer grant), and `findNhiClient` yields no client for
+it (`invalid_client`). A patch may add a binding to such an NHI only whole.
 
 ### Grants per NHI and client
 
 A dynamic OAuth client (an MCP agent) never acts as the person who authorized
 it: its grant is bound to an NHI chosen by an organization admin at the
-consent screen, an existing NHI (with `ipBinding`, each token is bound to the IP
-of its code exchange or refresh) or one created inline without key binding (this is why OAuth-bound NHIs exist). The consent rules,
+consent screen among those managed on the organization page (with `ipBinding`,
+each token is bound to the IP of its code exchange or refresh). The consent rules,
 grant records and re-checks are in
 [`oauth-authorization-server.md`](oauth-authorization-server.md); what they add
 to the confinement above:
