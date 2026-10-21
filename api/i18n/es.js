@@ -631,6 +631,9 @@ No dude en contactarnos en {contact}.
   // server-side only: simple-directory's own scopes, merged with the platform scopes
   scopes: {
     organizations: 'Todos los ámbitos de organizaciones',
-    'organizations:read': 'Leer las organizaciones, sus roles y sus miembros'
+    'organizations:read': 'Leer las organizaciones, sus roles y sus miembros',
+    'all:read': 'Leer todo lo que permite el rol, en todos los servicios',
+    'all:write': 'Leer y modificar todo lo que permite el rol, en todos los servicios',
+    'all:admin': 'Todos los derechos que permite el rol, en todos los servicios'
   }
 }

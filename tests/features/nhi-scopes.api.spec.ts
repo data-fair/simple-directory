@@ -60,6 +60,19 @@ test('a scoped NHI with the admin role is refused outside the gate', async () =>
   }
 })
 
+test('the global tier scopes are known to SD and read organizations', async () => {
+  const { org, nhi, cookieAx, bearerAx } = await scopedNhi('nhi-gate-all@test.com', ['all:read'])
+  for (const ax of [cookieAx, bearerAx]) {
+    assert.equal((await ax.get(`/api/organizations/${org.id}`)).data.id, org.id)
+    assert.ok((await ax.get(`/api/organizations/${org.id}/members`)).data.count >= 1)
+  }
+  // the exchange grants a narrower scope within the global tier, never a higher tier
+  const assertion = () => jwt.sign({ iss: issuer, sub: 'scoped:nhi-gate-all@test.com', aud: audience }, privatePem, { algorithm: 'RS256', keyid: 'test-key', expiresIn: '10m' })
+  const res = await axios().post('/api/auth/nhi-token', { client_id: nhi.id, assertion: assertion(), scope: 'organizations:read datasets:read' })
+  assert.equal(res.data.scope, 'organizations:read datasets:read')
+  await assert.rejects(axios().post('/api/auth/nhi-token', { client_id: nhi.id, assertion: assertion(), scope: 'datasets:write' }), (err: any) => err.status === 400)
+})
+
 test('a scope that does not cover organizations reads nothing in SD', async () => {
   const { org, cookieAx } = await scopedNhi('nhi-gate3@test.com', ['datasets:read'])
   const { bearerAx } = await scopedNhi('nhi-gate3b@test.com', ['datasets:read'])

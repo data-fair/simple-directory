@@ -635,6 +635,9 @@ Feel free to contact us at {contact}.
   // server-side only: simple-directory's own scopes, merged with the platform scopes
   scopes: {
     organizations: 'All organization scopes',
-    'organizations:read': 'Read organizations, their roles and members'
+    'organizations:read': 'Read organizations, their roles and members',
+    'all:read': 'Read everything the role allows, across services',
+    'all:write': 'Read and edit everything the role allows, across services',
+    'all:admin': 'Every right the role allows, across services'
   }
 }
