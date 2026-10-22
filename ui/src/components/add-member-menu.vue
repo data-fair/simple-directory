@@ -46,6 +46,8 @@
             <v-text-field
               id="id"
               v-model="invitation.email"
+              hide-details="auto"
+              class="mb-2"
               :label="$t('pages.organization.inviteEmail')"
               :rules="[v => !!v || '']"
               name="email"
@@ -56,6 +58,8 @@
             />
             <v-select
               v-model="invitation.role"
+              hide-details="auto"
+              class="mb-2"
               :items="roleItems"
               :label="$t('common.role')"
               :rules="[v => !!v || '']"
@@ -66,6 +70,8 @@
             <v-autocomplete
               v-if="$uiConfig.manageDepartments && orga.departments && orga.departments.length && !department"
               v-model="invitation.departments"
+              hide-details
+              class="mb-2"
               :items="orga.departments"
               :label="orga.departmentLabel || $t('common.departments')"
               item-value="id"
@@ -79,6 +85,7 @@
             <v-select
               v-if="redirects && redirects.length > 1"
               v-model="invitation.redirect"
+              hide-details
               :label="$t('common.redirectSite')"
               :items="redirects"
               item-value="value"

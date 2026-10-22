@@ -29,6 +29,8 @@
         <template v-if="!link">
           <v-text-field
             v-model="invitation.email"
+            hide-details
+            class="mb-2"
             :label="$t('pages.organization.inviteEmail')"
             name="email"
             disabled
@@ -37,6 +39,8 @@
           />
           <v-select
             v-model="invitation.role"
+            hide-details
+            class="mb-2"
             :items="roleItems"
             :label="$t('common.role')"
             disabled
@@ -46,6 +50,8 @@
           <v-select
             v-if="invitation.departments?.length"
             v-model="invitation.departments"
+            hide-details
+            class="mb-2"
             :items="orga.departments"
             :label="orga.departmentLabel || $t('common.departments')"
             item-value="id"
@@ -57,6 +63,7 @@
           <v-select
             v-if="redirects && redirects.length > 1"
             v-model="invitationRedirect"
+            hide-details
             :label="$t('common.redirectSite')"
             :items="redirects"
             item-value="value"

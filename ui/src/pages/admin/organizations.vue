@@ -72,26 +72,44 @@
             <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
             <td>
               <div class="d-flex">
-                <v-btn
-                  :loading="!limits[props.item.id]"
-                  :color="!limits[props.item.id] ? 'default' : (limits[props.item.id].store_nb_members.consumption >= limits[props.item.id].store_nb_members.limit ? 'warning' : 'primary')"
-                  size="small"
-                  rounded
-                  class="mt-3 text-lowercase"
-                  @click="currentOrganization = props.item;currentLimits = JSON.parse(JSON.stringify(limits[props.item.id]));limitOrganizationDialog = true"
+                <confirm-menu
+                  :title="$t('pages.admin.organizations.limitOrganizationTitle', {name: props.item.name})"
+                  yes-color="warning"
+                  @update:model-value="(open: boolean) => { if (open) currentLimits = JSON.parse(JSON.stringify(limits[props.item.id])) }"
+                  @confirm="saveLimits.execute(props.item, currentLimits)"
                 >
-                  <template v-if="limits[props.item.id]">
-                    <template v-if="!limits[props.item.id].store_nb_members || !limits[props.item.id].store_nb_members.consumption">
-                      {{ $t('common.missingInfo') }}
-                    </template>
-                    <template v-else-if="limits[props.item.id].store_nb_members.limit === 0">
-                      {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
-                    </template>
-                    <template v-else>
-                      {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} / {{ limits[props.item.id].store_nb_members.limit.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
-                    </template>
+                  <template #activator="{props: activatorProps}">
+                    <v-btn
+                      :loading="!limits[props.item.id]"
+                      :color="!limits[props.item.id] ? 'default' : (isOverLimit(limits[props.item.id]) ? 'warning' : 'primary')"
+                      size="small"
+                      rounded
+                      class="mt-3 text-lowercase"
+                      v-bind="activatorProps"
+                    >
+                      <template v-if="limits[props.item.id]">
+                        <template v-if="!limits[props.item.id].store_nb_members || !limits[props.item.id].store_nb_members.consumption">
+                          {{ $t('common.missingInfo') }}
+                        </template>
+                        <template v-else-if="limits[props.item.id].store_nb_members.limit === 0">
+                          {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
+                        </template>
+                        <template v-else>
+                          {{ limits[props.item.id].store_nb_members.consumption.toLocaleString() }} / {{ limits[props.item.id].store_nb_members.limit.toLocaleString() }} {{ $t('pages.admin.organizations.members') }}
+                        </template>
+                      </template>
+                    </v-btn>
                   </template>
-                </v-btn>
+                  <v-text-field
+                    v-if="currentLimits"
+                    v-model.number="currentLimits.store_nb_members.limit"
+                    :label="$t('pages.admin.organizations.nbMembers')"
+                    type="number"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                  />
+                </confirm-menu>
                 <v-btn
                   :title="$t('common.editTitle', {name: props.item.name})"
                   :aria-label="$t('common.editTitle', {name: props.item.name})"
@@ -99,16 +117,23 @@
                   :icon="mdiPencil"
                   variant="text"
                 />
-                <v-btn
-                  :title="$t('common.delete')"
-                  :aria-label="$t('common.delete')"
-                  color="warning"
-                  :icon="mdiDelete"
-                  variant="text"
-                  @click="currentOrganization = props.item;deleteOrganizationDialog = true"
+                <confirm-menu
+                  :title="$t('common.confirmDeleteTitle', {name: props.item.name})"
+                  yes-color="warning"
+                  @confirm="deleteOrganization.execute(props.item)"
                 >
-                  <v-icon />
-                </v-btn>
+                  <template #activator="{props: activatorProps}">
+                    <v-btn
+                      :title="$t('common.delete')"
+                      :aria-label="$t('common.delete')"
+                      color="warning"
+                      :icon="mdiDelete"
+                      variant="text"
+                      v-bind="activatorProps"
+                    />
+                  </template>
+                  {{ $t('common.confirmDeleteMsg') }}
+                </confirm-menu>
               </div>
             </td>
           </template>
@@ -128,68 +153,6 @@
         </tr>
       </template>
     </v-data-table-server>
-
-    <v-dialog
-      v-model="deleteOrganizationDialog"
-      max-width="500px"
-    >
-      <v-card v-if="currentOrganization">
-        <v-card-title>
-          {{ $t('common.confirmDeleteTitle', {name: currentOrganization.name}) }}
-        </v-card-title>
-        <v-card-text>
-          {{ $t('common.confirmDeleteMsg') }}
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="deleteOrganizationDialog = false"
-          >
-            {{ $t('common.confirmCancel') }}
-          </v-btn>
-          <v-btn
-            color="warning"
-            @click="deleteOrganizationDialog = false;deleteOrganization.execute(currentOrganization)"
-          >
-            {{ $t('common.confirmOk') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog
-      v-model="limitOrganizationDialog"
-      max-width="500px"
-    >
-      <v-card v-if="currentOrganization && currentLimits">
-        <v-card-title>
-          {{ $t('pages.admin.organizations.limitOrganizationTitle', {name: currentOrganization.name}) }}
-        </v-card-title>
-        <v-card-text v-if="currentLimits">
-          <v-text-field
-            v-model.number="currentLimits.store_nb_members.limit"
-            :label="$t('pages.admin.organizations.nbMembers')"
-            type="number"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="limitOrganizationDialog = false"
-          >
-            {{ $t('common.confirmCancel') }}
-          </v-btn>
-          <v-btn
-            color="warning"
-            @click="limitOrganizationDialog = false;saveLimits.execute(currentOrganization, currentLimits)"
-          >
-            {{ $t('common.confirmOk') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-container>
 </template>
 
@@ -209,9 +172,6 @@ const sort = computed(() => {
 const organizationsQuery = computed(() => ({ q: validQ.value, allFields: true, page: page.value, size: itemsPerPage.value, sort: sort.value }))
 const organizations = useFetch<{ count: number, results: Organization[], fromCache?: string }>($apiPath + '/organizations', { query: organizationsQuery })
 
-const deleteOrganizationDialog = ref(false)
-const currentOrganization = ref<Organization | null>(null)
-const limitOrganizationDialog = ref(false)
 const currentLimits = ref<Limits | null>(null)
 
 const deleteOrganization = useAsyncAction(async (org) => {
@@ -230,10 +190,13 @@ const fetchLimits = useAsyncAction(async () => {
 })
 if (!$uiConfig.readonly) watch(organizations.data, () => fetchLimits.execute())
 
-const saveLimits = useAsyncAction(async (org: Organization, limits: Limits) => {
-  if (!limits.store_nb_members.limit) limits.store_nb_members.limit = 0
-  await $fetch(`limits/organization/${org.id}`, { body: limits, method: 'POST' })
-  delete limits[org.id]
+// a limit of 0 means no limit
+const isOverLimit = (orgLimits: Limits) => !!orgLimits.store_nb_members.limit && orgLimits.store_nb_members.consumption >= orgLimits.store_nb_members.limit
+
+const saveLimits = useAsyncAction(async (org: Organization, newLimits: Limits | null) => {
+  if (!newLimits) return
+  if (!newLimits.store_nb_members.limit) newLimits.store_nb_members.limit = 0
+  limits[org.id] = await $fetch(`limits/organization/${org.id}`, { body: newLimits, method: 'POST' })
 })
 
 const headers: { title: string, value?: string, sortable?: boolean }[] = []

@@ -29,6 +29,7 @@
         >
           <v-autocomplete
             v-model="selectedOrg"
+            hide-details="auto"
             :label="$t('common.organization')"
             :items="orgItems"
             :loading="search.loading.value"

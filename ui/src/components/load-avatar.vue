@@ -42,7 +42,7 @@
         >
           <template #activator="{props}">
             <v-btn
-              color="error"
+              color="warning"
               variant="text"
               size="small"
               :icon="mdiDelete"

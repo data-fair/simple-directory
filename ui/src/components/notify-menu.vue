@@ -3,7 +3,6 @@
   <v-menu
     v-if="$uiConfig.useEvents"
     :close-on-content-click="false"
-    location="top"
   >
     <template #activator="{props}">
       <v-btn

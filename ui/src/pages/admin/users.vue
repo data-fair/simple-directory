@@ -67,15 +67,33 @@
             />
           </td><td class="text-no-wrap">
             {{ props.item.email }}
-            <v-btn
+            <confirm-menu
               v-if="!$uiConfig.readonly"
               :title="$t('pages.admin.users.editUserEmailTitle', {name: props.item.name})"
-              :aria-label="$t('pages.admin.users.editUserEmailTitle', {name: props.item.name})"
-              :icon="mdiPencil"
-              size="small"
-              variant="text"
-              @click="showEditUserEmailDialog(props.item)"
-            />
+              :alert="$t('pages.admin.users.editUserEmailText')"
+              yes-color="warning"
+              @update:model-value="(open: boolean) => { if (open) email = props.item.email }"
+              @confirm="saveUserEmail.execute(props.item)"
+            >
+              <template #activator="{props: activatorProps}">
+                <v-btn
+                  :title="$t('pages.admin.users.editUserEmailTitle', {name: props.item.name})"
+                  :aria-label="$t('pages.admin.users.editUserEmailTitle', {name: props.item.name})"
+                  :icon="mdiPencil"
+                  size="small"
+                  variant="text"
+                  v-bind="activatorProps"
+                />
+              </template>
+              <v-text-field
+                v-model="email"
+                :label="$t('common.email')"
+                variant="outlined"
+                density="compact"
+                hide-details
+                class="mt-4"
+              />
+            </confirm-menu>
           </td>
           <td class="text-no-wrap">
             {{ props.item.name }}
@@ -92,14 +110,23 @@
           <td>
             <template v-if="props.item['2FA'] && props.item['2FA'].active">
               {{ $t('common.yes') }}
-              <v-btn
+              <confirm-menu
                 :title="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
-                :aria-label="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
-                :icon="mdiDelete"
-                size="small"
-                variant="text"
-                @click="showDrop2FADialog(props.item)"
-              />
+                :alert="$t('pages.admin.users.drop2FAExplain')"
+                yes-color="warning"
+                @confirm="drop2FA.execute(props.item)"
+              >
+                <template #activator="{props: activatorProps}">
+                  <v-btn
+                    :title="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
+                    :aria-label="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
+                    :icon="mdiDelete"
+                    size="small"
+                    variant="text"
+                    v-bind="activatorProps"
+                  />
+                </template>
+              </confirm-menu>
             </template>
             <span v-else>{{ $t('common.no') }}</span>
           </td>
@@ -121,15 +148,43 @@
           <td v-if="$uiConfig.quotas.defaultMaxCreatedOrgs !== -1 && !$uiConfig.readonly">
             <div class="d-flex">
               <span class="mt-2">{{ props.item.maxCreatedOrgs }}</span>
-              <v-btn
+              <confirm-menu
                 v-if="$uiConfig.quotas.defaultMaxCreatedOrgs !== -1"
-                :title="$t('common.editTitle', {name: $t('common.maxCreatedOrgs').toLowerCase()})"
-                :aria-label="$t('common.editTitle', {name: $t('common.maxCreatedOrgs').toLowerCase()})"
-                :icon="mdiPencil"
-                size="small"
-                variant="text"
-                @click="showEditMaxCreatedOrgsDialog(props.item)"
-              />
+                :title="$t('common.editTitle', {name: props.item.name})"
+                yes-color="warning"
+                @update:model-value="(open: boolean) => { if (open) initMaxCreatedOrgs(props.item) }"
+                @confirm="saveMaxCreatedOrgs.execute(props.item)"
+              >
+                <template #activator="{props: activatorProps}">
+                  <v-btn
+                    :title="$t('common.editTitle', {name: $t('common.maxCreatedOrgs').toLowerCase()})"
+                    :aria-label="$t('common.editTitle', {name: $t('common.maxCreatedOrgs').toLowerCase()})"
+                    :icon="mdiPencil"
+                    size="small"
+                    variant="text"
+                    v-bind="activatorProps"
+                  />
+                </template>
+                <p class="mb-3">
+                  {{ $t('pages.admin.users.explainLimit', {defaultMaxCreatedOrgs: $uiConfig.quotas.defaultMaxCreatedOrgs}) }}
+                </p>
+                <p
+                  v-if="nbCreatedOrgs !== undefined"
+                  class="mb-3"
+                >
+                  {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
+                </p>
+                <v-text-field
+                  id="maxCreatedOrgs"
+                  v-model.number="newMaxCreatedOrgs"
+                  :label="$t('common.maxCreatedOrgs')"
+                  name="maxCreatedOrgs"
+                  type="number"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                />
+              </confirm-menu>
             </div>
           </td>
           <template v-if="!$uiConfig.readonly">
@@ -139,15 +194,37 @@
               class="text-no-wrap"
             >
               {{ props.item.host && (props.item.host + (props.item.path ?? '')) }}
-              <v-btn
+              <confirm-menu
                 v-if="!props.item.isAdmin"
-                :title="$t('common.transfer')"
-                :aria-label="$t('common.transfer')"
-                :icon="mdiSwapHorizontal"
-                size="small"
-                variant="text"
-                @click="showTransferDialog(props.item)"
-              />
+                :title="$t('pages.admin.users.transferTitle', {name: props.item.name})"
+                :alert="$t('pages.admin.users.transferText')"
+                yes-color="warning"
+                :disabled="!transferTarget"
+                @update:model-value="(open: boolean) => { if (open) transferTarget = undefined }"
+                @confirm="transferUser.execute(props.item)"
+              >
+                <template #activator="{props: activatorProps}">
+                  <v-btn
+                    :title="$t('common.transfer')"
+                    :aria-label="$t('common.transfer')"
+                    :icon="mdiSwapHorizontal"
+                    size="small"
+                    variant="text"
+                    v-bind="activatorProps"
+                  />
+                </template>
+                <v-autocomplete
+                  v-model="transferTarget"
+                  :items="transferSiteItems"
+                  :label="$t('pages.admin.users.transferTargetSite')"
+                  item-title="title"
+                  return-object
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  class="mt-4"
+                />
+              </confirm-menu>
             </td>
             <td>{{ props.item.updated && $d(new Date(props.item.updated.date)) }}</td>
             <td>{{ props.item.logged && $d(new Date(props.item.logged)) }}</td>
@@ -163,14 +240,23 @@
                   variant="text"
                   @click="asAdmin(props.item)"
                 />
-                <v-btn
-                  :title="$t('common.delete')"
-                  :aria-label="$t('common.delete')"
-                  color="warning"
-                  :icon="mdiDelete"
-                  variant="text"
-                  @click="currentUser = props.item;deleteUserDialog = true"
-                />
+                <confirm-menu
+                  :title="$t('common.confirmDeleteTitle', {name: props.item.name})"
+                  yes-color="warning"
+                  @confirm="deleteUser.execute(props.item)"
+                >
+                  <template #activator="{props: activatorProps}">
+                    <v-btn
+                      :title="$t('common.delete')"
+                      :aria-label="$t('common.delete')"
+                      color="warning"
+                      :icon="mdiDelete"
+                      variant="text"
+                      v-bind="activatorProps"
+                    />
+                  </template>
+                  {{ $t('common.confirmDeleteMsg') }}
+                </confirm-menu>
               </div>
             </td>
           </template>
@@ -191,198 +277,6 @@
         </tr>
       </template>
     </v-data-table-server>
-
-    <v-dialog
-      v-model="deleteUserDialog"
-      max-width="500px"
-    >
-      <v-card v-if="currentUser">
-        <v-card-title class="text-wrap">
-          {{ $t('common.confirmDeleteTitle', {name: currentUser.name}) }}
-        </v-card-title>
-        <v-card-text>
-          {{ $t('common.confirmDeleteMsg') }}
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="deleteUserDialog = false"
-          >
-            {{ $t('common.confirmCancel') }}
-          </v-btn>
-          <v-btn
-            color="warning"
-            variant="flat"
-            @click="deleteUserDialog = false;deleteUser.execute(currentUser)"
-          >
-            {{ $t('common.confirmOk') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog
-      v-model="editUserEmailDialog"
-      max-width="500px"
-    >
-      <v-card v-if="currentUser">
-        <v-card-title class="text-wrap">
-          {{ $t('pages.admin.users.editUserEmailTitle', {name: currentUser.name}) }}
-        </v-card-title>
-        <v-card-text>
-          <v-alert
-            :value="true"
-            type="warning"
-            class="mb-3"
-          >
-            {{ $t('pages.admin.users.editUserEmailText') }}
-          </v-alert>
-          <v-text-field v-model="email" />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="editUserEmailDialog = false"
-          >
-            {{ $t('common.confirmCancel') }}
-          </v-btn>
-          <v-btn
-            color="warning"
-            variant="flat"
-            @click="editUserEmailDialog = false;saveCurrentUserEmail.execute()"
-          >
-            {{ $t('common.confirmOk') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog
-      v-model="editMaxCreatedOrgsDialog"
-      max-width="500px"
-    >
-      <v-card v-if="currentUser">
-        <v-card-title class="text-wrap">
-          {{ $t('common.editTitle', {name: currentUser.name}) }}
-        </v-card-title>
-        <v-card-text>
-          <p class="mb-3">
-            {{ $t('pages.admin.users.explainLimit', {defaultMaxCreatedOrgs: $uiConfig.quotas.defaultMaxCreatedOrgs}) }}
-          </p>
-          <p
-            v-if="nbCreatedOrgs !== null"
-            class="mb-3"
-          >
-            {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
-          </p>
-          <v-text-field
-            id="maxCreatedOrgs"
-            v-model.number="newMaxCreatedOrgs"
-            :label="$t('common.maxCreatedOrgs')"
-            name="maxCreatedOrgs"
-            type="number"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="editMaxCreatedOrgsDialog = false"
-          >
-            {{ $t('common.confirmCancel') }}
-          </v-btn>
-          <v-btn
-            color="warning"
-            variant="flat"
-            @click="editMaxCreatedOrgsDialog = false;saveCurrentUserMaxCreatedOrgs.execute()"
-          >
-            {{ $t('common.confirmOk') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog
-      v-model="drop2FADialog"
-      max-width="500px"
-    >
-      <v-card v-if="currentUser">
-        <v-card-title class="text-wrap">
-          {{ $t('pages.admin.users.drop2FATitle', {name: currentUser.name}) }}
-        </v-card-title>
-        <v-card-text>
-          <v-alert
-            :value="true"
-            type="warning"
-          >
-            {{ $t('pages.admin.users.drop2FAExplain') }}
-          </v-alert>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="drop2FADialog = false"
-          >
-            {{ $t('common.confirmCancel') }}
-          </v-btn>
-          <v-btn
-            color="warning"
-            variant="flat"
-            @click="drop2FADialog = false;drop2FACurrentUser.execute()"
-          >
-            {{ $t('common.confirmOk') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog
-      v-model="transferDialog"
-      max-width="500px"
-    >
-      <v-card v-if="currentUser">
-        <v-card-title class="text-wrap">
-          {{ $t('pages.admin.users.transferTitle', {name: currentUser.name}) }}
-        </v-card-title>
-        <v-card-text>
-          <v-alert
-            :value="true"
-            type="warning"
-            class="mb-3"
-          >
-            {{ $t('pages.admin.users.transferText') }}
-          </v-alert>
-          <v-autocomplete
-            v-model="transferTarget"
-            :items="transferSiteItems"
-            :label="$t('pages.admin.users.transferTargetSite')"
-            item-title="title"
-            return-object
-            density="comfortable"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="transferDialog = false"
-          >
-            {{ $t('common.confirmCancel') }}
-          </v-btn>
-          <v-btn
-            color="warning"
-            variant="flat"
-            :disabled="!transferTarget"
-            @click="transferDialog = false;transferUser.execute()"
-          >
-            {{ $t('common.confirmOk') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-container>
 </template>
 
@@ -403,52 +297,34 @@ const sort = computed(() => {
 const usersQuery = computed(() => ({ q: validQ.value, allFields: true, page: page.value, size: itemsPerPage.value, sort: sort.value }))
 const users = useFetch<{ count: number, results: User[], fromCache?: string }>($apiPath + '/users', { query: usersQuery })
 
-const deleteUserDialog = ref(false)
 const deleteUser = useAsyncAction(async (user: User) => {
   await $fetch(`users/${user.id}`, { method: 'DELETE' })
   users.refresh()
 })
 
-const currentUser = ref<User>()
 const nbCreatedOrgs = ref<number>()
 const newMaxCreatedOrgs = ref<number>()
-const editMaxCreatedOrgsDialog = ref(false)
-const showEditMaxCreatedOrgsDialog = async (user: User) => {
-  currentUser.value = undefined
+const initMaxCreatedOrgs = async (user: User) => {
   nbCreatedOrgs.value = undefined
-  nbCreatedOrgs.value = (await $fetch('organizations', { params: { creator: user.id, size: 0 } })).count
-  currentUser.value = user
   newMaxCreatedOrgs.value = user.maxCreatedOrgs
-  editMaxCreatedOrgsDialog.value = true
+  nbCreatedOrgs.value = (await $fetch('organizations', { params: { creator: user.id, size: 0 } })).count
 }
-const saveCurrentUserMaxCreatedOrgs = useAsyncAction(async () => {
-  if (newMaxCreatedOrgs.value === undefined || currentUser.value === undefined) return
-  await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { maxCreatedOrgs: newMaxCreatedOrgs.value } })
-  currentUser.value.maxCreatedOrgs = newMaxCreatedOrgs.value
+const saveMaxCreatedOrgs = useAsyncAction(async (user: User) => {
+  if (newMaxCreatedOrgs.value === undefined) return
+  await $fetch(`users/${user.id}`, { method: 'PATCH', body: { maxCreatedOrgs: newMaxCreatedOrgs.value } })
+  user.maxCreatedOrgs = newMaxCreatedOrgs.value
 })
 
 const email = ref<string>()
-const editUserEmailDialog = ref(false)
-const showEditUserEmailDialog = (user: User) => {
-  currentUser.value = user
-  email.value = user.email
-  editUserEmailDialog.value = true
-}
-const saveCurrentUserEmail = useAsyncAction(async () => {
-  if (email.value === undefined || currentUser.value === undefined) return
-  await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { email: email.value } })
-  currentUser.value.email = email.value
+const saveUserEmail = useAsyncAction(async (user: User) => {
+  if (email.value === undefined) return
+  await $fetch(`users/${user.id}`, { method: 'PATCH', body: { email: email.value } })
+  user.email = email.value
 })
 
-const drop2FADialog = ref(false)
-const showDrop2FADialog = (user: User) => {
-  currentUser.value = user
-  drop2FADialog.value = true
-}
-const drop2FACurrentUser = useAsyncAction(async () => {
-  if (currentUser.value === undefined) return
+const drop2FA = useAsyncAction(async (user: User) => {
   // null unsets the whole 2FA configuration, the user will have to enrol again
-  await $fetch(`users/${currentUser.value.id}`, { method: 'PATCH', body: { '2FA': null } })
+  await $fetch(`users/${user.id}`, { method: 'PATCH', body: { '2FA': null } })
 })
 
 type TransferTarget = { title: string, host?: string, path?: string }
@@ -460,21 +336,15 @@ const transferSiteItems = computed<TransferTarget[]>(() => {
   }
   return items
 })
-const transferDialog = ref(false)
 const transferTarget = ref<TransferTarget>()
-const showTransferDialog = (user: User) => {
-  currentUser.value = user
-  transferTarget.value = undefined
-  transferDialog.value = true
-}
-const transferUser = useAsyncAction(async () => {
-  if (currentUser.value === undefined || transferTarget.value === undefined) return
+const transferUser = useAsyncAction(async (user: User) => {
+  if (transferTarget.value === undefined) return
   const body: { host?: string, path?: string } = {}
   if (transferTarget.value.host) {
     body.host = transferTarget.value.host
     if (transferTarget.value.path) body.path = transferTarget.value.path
   }
-  await $fetch(`users/${currentUser.value.id}/transfer`, { method: 'POST', body })
+  await $fetch(`users/${user.id}/transfer`, { method: 'POST', body })
   users.refresh()
 })
 

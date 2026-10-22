@@ -31,6 +31,8 @@
         >
           <v-text-field
             v-model="editDepartment.id"
+            hide-details="auto"
+            class="mb-2"
             :label="$t('common.id')"
             :rules="[v => !!v || '', v => v && !!v.match(/^[ a-zA-Z0-9]*$/) || $t('pages.organization.departmentIdInvalid')]"
             name="id"
@@ -40,6 +42,7 @@
           />
           <v-text-field
             v-model="editDepartment.name"
+            hide-details="auto"
             :label="$t('common.name')"
             :rules="[v => !!v || '']"
             name="name"

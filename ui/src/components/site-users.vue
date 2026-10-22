@@ -54,15 +54,24 @@
               class="text-caption text-no-wrap"
             >
               {{ $t('pages.siteAdmin.2FAActive') }}
-              <v-btn
+              <confirm-menu
                 v-if="isOther(props.item)"
                 :title="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
-                :aria-label="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
-                :icon="mdiDelete"
-                size="x-small"
-                variant="text"
-                @click="openDialog('drop2FA', props.item)"
-              />
+                :alert="$t('pages.admin.users.drop2FAExplain')"
+                yes-color="warning"
+                @confirm="confirmAction.execute('drop2FA', props.item)"
+              >
+                <template #activator="{props: activatorProps}">
+                  <v-btn
+                    :title="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
+                    :aria-label="$t('pages.admin.users.drop2FATitle', {name: props.item.name})"
+                    :icon="mdiDelete"
+                    size="x-small"
+                    variant="text"
+                    v-bind="activatorProps"
+                  />
+                </template>
+              </confirm-menu>
             </div>
             <div
               v-if="props.item.plannedDeletion"
@@ -100,79 +109,46 @@
               v-if="isOther(props.item)"
               class="d-flex"
             >
-              <v-btn
+              <confirm-menu
                 :title="$t('pages.siteAdmin.revokeSessions', {name: props.item.name})"
-                :aria-label="$t('pages.siteAdmin.revokeSessions', {name: props.item.name})"
-                :icon="mdiLogout"
-                size="small"
-                variant="text"
-                @click="openDialog('revokeSessions', props.item)"
-              />
-              <v-btn
+                yes-color="warning"
+                @confirm="confirmAction.execute('revokeSessions', props.item)"
+              >
+                <template #activator="{props: activatorProps}">
+                  <v-btn
+                    :title="$t('pages.siteAdmin.revokeSessions', {name: props.item.name})"
+                    :aria-label="$t('pages.siteAdmin.revokeSessions', {name: props.item.name})"
+                    :icon="mdiLogout"
+                    size="small"
+                    variant="text"
+                    v-bind="activatorProps"
+                  />
+                </template>
+                {{ $t('pages.siteAdmin.confirmRevokeSessionsMsg') }}
+              </confirm-menu>
+              <confirm-menu
                 :title="$t('common.confirmDeleteTitle', {name: props.item.name})"
-                :aria-label="$t('common.confirmDeleteTitle', {name: props.item.name})"
-                color="warning"
-                :icon="mdiDelete"
-                size="small"
-                variant="text"
-                @click="openDialog('delete', props.item)"
-              />
+                yes-color="warning"
+                @confirm="confirmAction.execute('delete', props.item)"
+              >
+                <template #activator="{props: activatorProps}">
+                  <v-btn
+                    :title="$t('common.confirmDeleteTitle', {name: props.item.name})"
+                    :aria-label="$t('common.confirmDeleteTitle', {name: props.item.name})"
+                    color="warning"
+                    :icon="mdiDelete"
+                    size="small"
+                    variant="text"
+                    v-bind="activatorProps"
+                  />
+                </template>
+                {{ $t('pages.siteAdmin.confirmDeleteMsg', {email: props.item.email}) }}
+              </confirm-menu>
             </div>
           </td>
         </tr>
       </template>
     </v-data-table-server>
-
-    <v-dialog
-      :model-value="!!dialog"
-      max-width="500px"
-      @update:model-value="dialog = null"
-    >
-      <v-card v-if="dialog">
-        <v-card-title>
-          <template v-if="dialog.action === 'delete'">
-            {{ $t('common.confirmDeleteTitle', {name: dialog.user.name}) }}
-          </template>
-          <template v-else-if="dialog.action === 'drop2FA'">
-            {{ $t('pages.admin.users.drop2FATitle', {name: dialog.user.name}) }}
-          </template>
-          <template v-else>
-            {{ $t('pages.siteAdmin.revokeSessions', {name: dialog.user.name}) }}
-          </template>
-        </v-card-title>
-        <v-card-text>
-          <template v-if="dialog.action === 'delete'">
-            {{ $t('pages.siteAdmin.confirmDeleteMsg', {email: dialog.user.email}) }}
-          </template>
-          <v-alert
-            v-else-if="dialog.action === 'drop2FA'"
-            type="warning"
-          >
-            {{ $t('pages.admin.users.drop2FAExplain') }}
-          </v-alert>
-          <template v-else>
-            {{ $t('pages.siteAdmin.confirmRevokeSessionsMsg') }}
-          </template>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="dialog = null"
-          >
-            {{ $t('common.confirmCancel') }}
-          </v-btn>
-          <v-btn
-            color="warning"
-            variant="flat"
-            :loading="confirmAction.loading.value"
-            @click="confirmAction.execute()"
-          >
-            {{ $t('common.confirmOk') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
@@ -206,17 +182,11 @@ headers.push({ title: '', value: 'actions', sortable: false })
 const isOther = (user: User) => user.id !== session.user.value?.id
 
 type Action = 'delete' | 'drop2FA' | 'revokeSessions'
-const dialog = ref<{ action: Action, user: User } | null>(null)
-const openDialog = (action: Action, user: User) => { dialog.value = { action, user } }
-
-const confirmAction = useAsyncAction(async () => {
-  if (!dialog.value) return
-  const { action, user } = dialog.value
+const confirmAction = useAsyncAction(async (action: Action, user: User) => {
   if (action === 'delete') await $fetch(`users/${user.id}`, { method: 'DELETE' })
   // null unsets the whole 2FA configuration, the user will have to enrol again
   else if (action === 'drop2FA') await $fetch(`users/${user.id}`, { method: 'PATCH', body: { '2FA': null } })
   else await $fetch(`users/${user.id}/sessions`, { method: 'DELETE' })
-  dialog.value = null
   users.refresh()
 }, { success: t('common.modificationOk') })
 

@@ -31,6 +31,8 @@
           >
             <v-text-field
               v-model="editPartner.name"
+              hide-details="auto"
+              class="mb-2"
               :label="$t('common.orgName')"
               :rules="[v => !!v || '']"
               name="name"
@@ -41,6 +43,8 @@
             />
             <v-text-field
               v-model="editPartner.contactEmail"
+              hide-details="auto"
+              class="mb-2"
               :label="$t('common.contactEmail')"
               :rules="[v => !!v || '']"
               name="contactEmail"
@@ -52,6 +56,7 @@
             <v-select
               v-if="redirects && redirects.length > 1"
               v-model="editPartner.redirect"
+              hide-details
               :label="$t('common.redirectSite')"
               :items="redirects"
               name="host"
