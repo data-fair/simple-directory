@@ -17,6 +17,7 @@
       v-if="editMember"
       data-iframe-height
       width="500"
+      :loading="loading"
     >
       <v-card-title>
         {{ $t('pages.organization.confirmEditMemberTitle', {name: member.name}) }}
@@ -76,7 +77,7 @@
         <v-btn
           variant="flat"
           color="warning"
-          :disabled="member.readOnly || blocked"
+          :disabled="member.readOnly || blocked || loading"
           @click="menu = false;$emit('save', editMember)"
         >
           {{ $t('common.confirmOk') }}
@@ -97,7 +98,7 @@ defineEmits({ save: (_editMember: Member) => true })
 
 const menu = ref(false)
 const editMember = ref<any>()
-const { isSelf, isLastAdmin } = useLastAdmin(() => orga, () => member, menu)
+const { isSelf, isLastAdmin, loading } = useLastAdmin(() => orga, () => member, menu)
 const changed = computed(() => editMember.value && (editMember.value.role !== member.role || editMember.value.department !== member.department))
 const blocked = computed(() => isLastAdmin.value && changed.value)
 

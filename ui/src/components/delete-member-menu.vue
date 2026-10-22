@@ -3,6 +3,7 @@
     v-model="menu"
     :title="$t('pages.organization.confirmDeleteMemberTitle', {name: member.name})"
     :disabled="disabled || member.readOnly || isLastAdmin"
+    :loading="loading"
     yes-color="warning"
     @confirm="$emit('delete', member)"
   >
@@ -57,7 +58,7 @@ const { member, orga } = defineProps({
 })
 defineEmits({ delete: (_member: Member) => true })
 const menu = ref(false)
-const { isSelf, isLastAdmin, isLastMember } = useLastAdmin(() => orga, () => member, menu)
+const { isSelf, isLastAdmin, isLastMember, loading } = useLastAdmin(() => orga, () => member, menu)
 </script>
 
 <style lang="css" scoped>

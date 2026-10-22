@@ -32,6 +32,7 @@
     <v-card
       data-iframe-height
       :width="500"
+      :loading="loading"
     >
       <v-card-title>
         {{ title || $t('common.confirmTitle') }}
@@ -66,7 +67,7 @@
         <v-btn
           :color="yesColor"
           variant="flat"
-          :disabled="disabled || (!!checkText && !checked)"
+          :disabled="disabled || loading || (!!checkText && !checked)"
           @click="$emit('confirm'); menu= false"
         >
           {{ $t('common.confirmOk') }}
@@ -87,6 +88,7 @@ const { title, alert, buttonText, checkText, yesColor } = defineProps({
   yesColor: { type: String as () => VAlert['type'], default: 'primary' },
   location: { type: String as () => VMenu['location'], default: undefined },
   disabled: { type: Boolean, default: false },
+  loading: { type: Boolean, default: false },
 })
 defineEmits(['confirm'])
 

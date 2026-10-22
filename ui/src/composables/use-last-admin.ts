@@ -19,10 +19,12 @@ export function useLastAdmin (orga: MaybeRefOrGetter<Organization>, member: Mayb
   })
 
   const isLastAdmin = computed(() => isSelf.value && isOrgAdmin.value && adminsFetch.data.value?.count === 1)
-  // ponytail: counts memberships, not users, so a sole user holding 2 roles (multi-roles) is not seen as the last member
+  // ponytail: the file storage counts memberships, not users, so there a sole user holding 2 roles (multi-roles) is not seen as the last member
   const isLastMember = computed(() => isLastAdmin.value && allFetch.data.value?.count === 1)
 
-  return { isSelf, isLastAdmin, isLastMember }
+  const loading = computed(() => adminsFetch.loading.value || allFetch.loading.value)
+
+  return { isSelf, isLastAdmin, isLastMember, loading }
 }
 
 export default useLastAdmin
