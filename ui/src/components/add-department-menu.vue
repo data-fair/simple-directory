@@ -30,6 +30,7 @@
         >
           <v-text-field
             v-model="editDepartment.name"
+            hide-details="auto"
             :label="$t('common.name')"
             :rules="[v => !!v || '']"
             name="name"

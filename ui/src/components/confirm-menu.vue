@@ -2,7 +2,6 @@
   <v-menu
     v-model="menu"
     :close-on-content-click="false"
-    max-width="600"
     :location="location"
   >
     <template #activator="{ props }">
@@ -30,7 +29,10 @@
         </v-btn>
       </slot>
     </template>
-    <v-card data-iframe-height>
+    <v-card
+      data-iframe-height
+      :width="500"
+    >
       <v-card-title>
         {{ title || $t('common.confirmTitle') }}
       </v-card-title>
@@ -43,11 +45,13 @@
         >
           {{ alert }}
         </v-alert>
+        <slot />
         <template v-if="checkText">
           <v-checkbox
             v-model="checked"
             :label="checkText"
             :color="yesColor"
+            hide-details
           />
         </template>
       </v-card-text>
@@ -62,7 +66,7 @@
         <v-btn
           :color="yesColor"
           variant="flat"
-          :disabled="!!checkText && !checked"
+          :disabled="disabled || (!!checkText && !checked)"
           @click="$emit('confirm'); menu= false"
         >
           {{ $t('common.confirmOk') }}
@@ -81,11 +85,12 @@ const { title, alert, buttonText, checkText, yesColor } = defineProps({
   buttonText: { type: String, default: '' },
   checkText: { type: String, default: '' },
   yesColor: { type: String as () => VAlert['type'], default: 'primary' },
-  location: { type: String as () => VMenu['location'], default: 'top' },
+  location: { type: String as () => VMenu['location'], default: undefined },
+  disabled: { type: Boolean, default: false },
 })
 defineEmits(['confirm'])
 
-const menu = ref(false)
+const menu = defineModel<boolean>({ default: false })
 const checked = ref(false)
 
 watch(menu, () => {

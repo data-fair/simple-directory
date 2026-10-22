@@ -1,7 +1,10 @@
 <template>
-  <v-menu
+  <confirm-menu
     v-model="menu"
-    :close-on-content-click="false"
+    :title="$t('pages.organization.confirmDeleteMemberTitle', {name: member.name})"
+    :disabled="disabled || member.readOnly || isLastAdmin"
+    yes-color="warning"
+    @confirm="$emit('delete', member)"
   >
     <template #activator="{props}">
       <v-btn
@@ -14,55 +17,47 @@
         v-bind="props"
       />
     </template>
-    <v-card
-      data-iframe-height
-      width="500"
+    <v-alert
+      v-if="member.readOnly"
+      type="warning"
+      border="start"
+      variant="outlined"
+      density="compact"
     >
-      <v-card-title>
-        {{ $t('pages.organization.confirmDeleteMemberTitle', {name: member.name}) }}
-      </v-card-title>
-      <v-card-text>
-        <v-alert
-          v-if="member.readOnly"
-          type="warning"
-          border="start"
-          variant="outlined"
-          density="compact"
-        >
-          {{ $t('pages.organization.memberReadOnly') }}
-        </v-alert>
-        <template v-else>
-          {{ $t('pages.organization.confirmDeleteMemberMsg', {org: orga.name + (member.department ? (' / ' + (member.departmentName || member.department)) : '')}) }}
-        </template>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn
-          variant="text"
-          @click="menu = false"
-        >
-          {{ $t('common.confirmCancel') }}
-        </v-btn>
-        <v-btn
-          color="warning"
-          variant="flat"
-          :disabled="member.readOnly"
-          @click="menu = false;$emit('delete', member)"
-        >
-          {{ $t('common.confirmOk') }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-menu>
+      {{ $t('pages.organization.memberReadOnly') }}
+    </v-alert>
+    <template v-else>
+      <p>{{ $t('pages.organization.confirmDeleteMemberMsg', {org: orga.name + (member.department ? (' / ' + (member.departmentName || member.department)) : '')}) }}</p>
+      <v-alert
+        v-if="isLastAdmin"
+        type="error"
+        variant="outlined"
+        class="mt-4"
+      >
+        {{ $t(isLastMember ? 'pages.organization.deleteMemberLastMember' : 'pages.organization.deleteMemberLastAdmin') }}
+      </v-alert>
+      <v-alert
+        v-else-if="isSelf"
+        type="warning"
+        variant="outlined"
+        class="mt-4"
+      >
+        {{ $t('pages.organization.deleteMemberSelfWarning') }}
+      </v-alert>
+    </template>
+  </confirm-menu>
 </template>
 
 <script setup lang="ts">
 const { member, orga } = defineProps({
   member: { type: Object as () => Member, required: true },
-  orga: { type: Object as () => Organization, required: true }
+  orga: { type: Object as () => Organization, required: true },
+  // declared so it does not fall through onto confirm-menu and override its own disabled state
+  disabled: { type: Boolean, default: false }
 })
 defineEmits({ delete: (_member: Member) => true })
 const menu = ref(false)
+const { isSelf, isLastAdmin, isLastMember } = useLastAdmin(() => orga, () => member, menu)
 </script>
 
 <style lang="css" scoped>

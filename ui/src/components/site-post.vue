@@ -3,7 +3,6 @@
     v-model="menu"
     :close-on-content-click="false"
     persistent
-    width="500"
   >
     <template #activator="{props}">
       <v-btn
@@ -20,6 +19,7 @@
     <v-card
       v-if="site"
       data-iframe-height
+      :width="500"
     >
       <v-card-title>
         {{ $t('pages.admin.sites.createSite') }}

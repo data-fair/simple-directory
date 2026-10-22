@@ -41,6 +41,8 @@
         >
           <v-text-field
             v-model="editOrganization.name"
+            hide-details="auto"
+            class="mb-2"
             :label="$t('common.name')"
             :rules="[v => !!v || '', v => v.length < 150 || $t('common.tooLong')]"
             name="name"
@@ -51,9 +53,11 @@
           />
           <v-textarea
             v-model="editOrganization.description"
+            hide-details
             :label="$t('common.description')"
             name="description"
             variant="outlined"
+            density="compact"
             autocomplete="off"
           />
         </v-form>

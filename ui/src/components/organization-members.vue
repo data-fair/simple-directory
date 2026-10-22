@@ -77,9 +77,11 @@
           @update:model-value="refetchMembers()"
         />
       </v-col>
-      <v-col :cols="filterMemberCols">
+      <v-col
+        v-if="showDepartmentFilter"
+        :cols="filterMemberCols"
+      >
         <v-autocomplete
-          v-if="$uiConfig.manageDepartments && orga.departments && orga.departments.length && !adminDepartment"
           v-model="department"
           :items="departmentsList"
           :label="orga.departmentLabel || $t('common.department')"
@@ -107,6 +109,7 @@
           name="storage"
           variant="solo"
           density="comfortable"
+          hide-details="auto"
           @update:model-value="refetchMembers()"
         />
       </v-col>
@@ -284,7 +287,9 @@ const notifyTopics = computed(() => {
 })
 
 const csvUrl = computed(() => $sdUrl + `/api/organizations/${orga.id}/members?size=10000&format=csv` + (adminDepartment ? `&department=${encodeURIComponent(adminDepartment)}` : ''))
-const filterMemberCols = $uiConfig.alwaysAcceptInvitation ? 6 : 4
+const showDepartmentFilter = computed(() => !!($uiConfig.manageDepartments && orga.departments?.length && !adminDepartment))
+// 3 filters fit on one line, 4 go on two lines of 2
+const filterMemberCols = computed(() => (showDepartmentFilter.value && $uiConfig.alwaysAcceptInvitation) ? 6 : 4)
 
 const departmentsList = computed(() => {
   return [{ id: '-', name: 'aucun' }].concat(orga.departments ?? [])

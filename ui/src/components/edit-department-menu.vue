@@ -35,10 +35,13 @@
 
         <v-text-field
           v-model="editDepartment.name"
+          hide-details="auto"
           :label="$t('common.name')"
           :rules="[v => !!v || '']"
           name="name"
           required
+          density="compact"
+          variant="outlined"
         />
       </v-card-text>
       <v-card-actions>

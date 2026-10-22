@@ -69,16 +69,23 @@
                   :icon="mdiPencil"
                   variant="text"
                 />
-                <v-btn
-                  :title="$t('common.delete')"
-                  :aria-label="$t('common.delete')"
-                  color="warning"
-                  :icon="mdiDelete"
-                  variant="text"
-                  @click="currentOrganization = props.item;deleteOrganizationDialog = true"
+                <confirm-menu
+                  :title="$t('common.confirmDeleteTitle', {name: props.item.name})"
+                  yes-color="warning"
+                  @confirm="deleteOrganization.execute(props.item)"
                 >
-                  <v-icon />
-                </v-btn>
+                  <template #activator="{props: activatorProps}">
+                    <v-btn
+                      :title="$t('common.delete')"
+                      :aria-label="$t('common.delete')"
+                      color="warning"
+                      :icon="mdiDelete"
+                      variant="text"
+                      v-bind="activatorProps"
+                    />
+                  </template>
+                  {{ $t('common.confirmDeleteMsg') }}
+                </confirm-menu>
               </div>
             </td>
           </template>
@@ -98,35 +105,6 @@
         </tr>
       </template>
     </v-data-table-server>
-
-    <v-dialog
-      v-model="deleteOrganizationDialog"
-      max-width="500px"
-    >
-      <v-card v-if="currentOrganization">
-        <v-card-title>
-          {{ $t('common.confirmDeleteTitle', {name: currentOrganization.name}) }}
-        </v-card-title>
-        <v-card-text>
-          {{ $t('common.confirmDeleteMsg') }}
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="deleteOrganizationDialog = false"
-          >
-            {{ $t('common.confirmCancel') }}
-          </v-btn>
-          <v-btn
-            color="warning"
-            @click="deleteOrganizationDialog = false;deleteOrganization.execute(currentOrganization)"
-          >
-            {{ $t('common.confirmOk') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-container>
 </template>
 
@@ -150,9 +128,6 @@ const sort = computed(() => {
 })
 const organizationsQuery = computed(() => ({ q: validQ.value, allFields: true, page: page.value, size: itemsPerPage.value, sort: sort.value, host: window.location.host, path: $sitePath || undefined }))
 const organizations = useFetch<{ count: number, results: Organization[] }>($apiPath + '/organizations', { query: organizationsQuery })
-
-const deleteOrganizationDialog = ref(false)
-const currentOrganization = ref<Organization | null>(null)
 
 const deleteOrganization = useAsyncAction(async (org) => {
   await $fetch(`organizations/${org.id}`, { method: 'DELETE' })

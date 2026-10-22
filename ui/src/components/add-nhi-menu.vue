@@ -38,6 +38,8 @@
           >
             <v-text-field
               v-model="editNhi.name"
+              hide-details="auto"
+              class="mb-2"
               :label="$t('common.name')"
               :rules="[v => !!v || '']"
               name="name"
@@ -48,6 +50,8 @@
             />
             <v-select
               v-model="editNhi.role"
+              hide-details="auto"
+              class="mb-2"
               :items="roleItems"
               :label="$t('common.role')"
               :rules="[v => !!v || '']"
@@ -59,6 +63,8 @@
             <v-select
               v-if="$uiConfig.manageDepartments && orga.departments && orga.departments.length"
               v-model="editNhi.department"
+              hide-details
+              class="mb-2"
               :items="orga.departments"
               :label="orga.departmentLabel || $t('common.department')"
               item-value="id"
@@ -70,6 +76,8 @@
             />
             <v-text-field
               v-model="editNhi.provider.issuer"
+              hide-details="auto"
+              class="mb-2"
               :label="$t('pages.organization.nhiIssuer')"
               :hint="$t('pages.organization.nhiKeyBindingHint')"
               persistent-hint
@@ -78,10 +86,11 @@
               density="compact"
               variant="outlined"
               autocomplete="off"
-              class="mb-2"
             />
             <v-text-field
               v-model="editNhi.subject"
+              hide-details="auto"
+              class="mb-2"
               :label="$t('pages.organization.nhiSubject')"
               :rules="[v => !!v || !editNhi.provider.issuer || '']"
               name="subject"
@@ -91,6 +100,8 @@
             />
             <v-textarea
               v-model="jwks"
+              hide-details
+              class="mb-2"
               :label="$t('pages.organization.nhiJwks')"
               name="jwks"
               rows="4"
@@ -99,6 +110,8 @@
             />
             <v-combobox
               v-model="allowedIps"
+              hide-details="auto"
+              class="mb-2"
               :label="$t('pages.organization.nhiAllowedIps')"
               :hint="$t('pages.organization.nhiAllowedIpsHint')"
               persistent-hint
@@ -112,6 +125,8 @@
             />
             <v-checkbox
               v-model="ipBinding"
+              hide-details="auto"
+              class="mb-2"
               :label="$t('pages.organization.nhiIpBinding')"
               :hint="$t('pages.organization.nhiIpBindingHint')"
               persistent-hint
@@ -120,6 +135,7 @@
             />
             <v-autocomplete
               v-model="scopes"
+              hide-details="auto"
               :items="scopeItems"
               item-props
               :label="$t('pages.organization.nhiScopes')"

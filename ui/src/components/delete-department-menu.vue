@@ -1,7 +1,10 @@
 <template>
-  <v-menu
+  <confirm-menu
     v-model="menu"
-    :close-on-content-click="false"
+    :title="$t('pages.organization.confirmDeleteDepartmentTitle', {name: department.name, departmentLabel})"
+    :disabled="!members || !!members.count || patchOrganization.loading.value"
+    yes-color="warning"
+    @confirm="confirmDelete.execute()"
   >
     <template #activator="{props}">
       <v-btn
@@ -15,51 +18,23 @@
         <v-icon :icon="mdiDelete" />
       </v-btn>
     </template>
-
-    <v-card
-      data-iframe-height
-      width="500"
+    <p>{{ $t('common.id') }} = {{ department.id }}</p>
+    <v-progress-circular
+      v-if="!members"
+      indeterminate
+      color="primary"
+    />
+    <v-alert
+      v-else-if="members.count"
+      type="warning"
+      variant="outlined"
     >
-      <v-card-title>
-        {{ $t('pages.organization.confirmDeleteDepartmentTitle', {name: department.name, departmentLabel}) }}
-      </v-card-title>
-      <v-card-text>
-        <p>{{ $t('common.id') }} = {{ department.id }}</p>
-        <v-progress-circular
-          v-if="!members"
-          indeterminate
-          color="primary"
-        />
-        <v-alert
-          v-else-if="members.count"
-          type="warning"
-          variant="outlined"
-        >
-          {{ $t('pages.organization.deleteDepartmentHasMembers', {count: members.count.toLocaleString()}) }}
-        </v-alert>
-        <p v-else>
-          {{ $t('pages.organization.confirmDeleteDepartmentMsg', {name: department.name, departmentLabel}) }}
-        </p>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn
-          variant="text"
-          @click="menu = false"
-        >
-          {{ $t('common.confirmCancel') }}
-        </v-btn>
-        <v-btn
-          :disabled="!members || !!members.count || patchOrganization.loading.value"
-          color="warning"
-          variant="flat"
-          @click="confirmDelete.execute()"
-        >
-          {{ $t('common.confirmOk') }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-menu>
+      {{ $t('pages.organization.deleteDepartmentHasMembers', {count: members.count.toLocaleString()}) }}
+    </v-alert>
+    <p v-else>
+      {{ $t('pages.organization.confirmDeleteDepartmentMsg', {name: department.name, departmentLabel}) }}
+    </p>
+  </confirm-menu>
 </template>
 
 <script setup lang="ts">
@@ -94,7 +69,6 @@ const fetchMembers = useFetch<{ count: number, results: any[] }>(
 const members = computed(() => fetchMembers.data.value)
 
 const confirmDelete = useAsyncAction(async () => {
-  menu.value = false
   const departments = (orga.departments ?? []).filter(d => d.id !== department.id)
   await patchOrganization.execute(orga.id, { departments }, t('common.modificationOk'))
   emit('change')
