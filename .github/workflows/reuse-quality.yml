@@ -41,10 +41,10 @@ jobs:
       run: docker compose --profile test up -d --wait
 
     - name: Start mock OIDC servers
-      run: dotenv -- npm run dev-mock-oidc &
+      run: ./node_modules/.bin/dotenv -- npm run dev-mock-oidc &
 
     - name: Start dev API
-      run: dotenv -- npm run dev-api &
+      run: ./node_modules/.bin/dotenv -- npm run dev-api &
 
     - name: Wait for API to be ready
       run: |
