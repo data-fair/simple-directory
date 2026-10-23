@@ -26,8 +26,8 @@ export const maildevAx = axiosBuilder({ baseURL: `http://localhost:${process.env
 
 const mockOidcPort1 = parseInt(process.env.MOCK_OIDC_PORT1 || '8998')
 const mockOidcPort2 = parseInt(process.env.MOCK_OIDC_PORT2 || '8999')
-export const mockOidcControlUrl1 = `http://localhost:${mockOidcPort1 + 100}`
-export const mockOidcControlUrl2 = `http://localhost:${mockOidcPort2 + 100}`
+export const mockOidcControlUrl1 = `http://localhost:${process.env.MOCK_OIDC_CONTROL_PORT1 || mockOidcPort1 + 100}`
+export const mockOidcControlUrl2 = `http://localhost:${process.env.MOCK_OIDC_CONTROL_PORT2 || mockOidcPort2 + 100}`
 
 // Fetch config from the running dev server (avoids importing config.ts locally which loads test.cjs)
 let _serverConfig: any

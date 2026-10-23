@@ -17,6 +17,8 @@
     "KEYCLOAK_PORT",
     "MOCK_OIDC_PORT1",
     "MOCK_OIDC_PORT2",
+    "MOCK_OIDC_CONTROL_PORT1",
+    "MOCK_OIDC_CONTROL_PORT2",
     "EVENTS_PORT"
   ],
   "panes": {

@@ -2,7 +2,7 @@
 // Follows the data-fair pattern of a separate mock server with dynamic test control.
 //
 // Runs in the mock-oidc pane of .zellij.kdl
-// Uses MOCK_OIDC_PORT1 and MOCK_OIDC_PORT2 from .env
+// Uses MOCK_OIDC_PORT1, MOCK_OIDC_PORT2 and their MOCK_OIDC_CONTROL_PORT* from .env
 //
 // Each server instance exposes test control endpoints alongside standard OAuth2 endpoints:
 //   PATCH /_test/userinfo        — set the userinfo response body
@@ -90,9 +90,8 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
 const port1 = parseInt(process.env.MOCK_OIDC_PORT1 || '8998')
 const port2 = parseInt(process.env.MOCK_OIDC_PORT2 || '8999')
 
-// Control ports are oauth ports + 100 to avoid collisions
-const controlPort1 = port1 + 100
-const controlPort2 = port2 + 100
+const controlPort1 = parseInt(process.env.MOCK_OIDC_CONTROL_PORT1 || String(port1 + 100))
+const controlPort2 = parseInt(process.env.MOCK_OIDC_CONTROL_PORT2 || String(port2 + 100))
 
 await createInstance(port1, controlPort1)
 await createInstance(port2, controlPort2)

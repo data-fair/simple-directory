@@ -54,8 +54,8 @@ jobs:
         set -a; source .env; set +a
         for i in {1..30}; do
           if curl -sf "http://localhost:${DEV_API_PORT}/api/test-env/ping" >/dev/null \
-            && curl -sf "http://localhost:$((MOCK_OIDC_PORT1 + 100))/_test/ping" >/dev/null \
-            && curl -sf "http://localhost:$((MOCK_OIDC_PORT2 + 100))/_test/ping" >/dev/null; then
+            && curl -sf "http://localhost:${MOCK_OIDC_CONTROL_PORT1}/_test/ping" >/dev/null \
+            && curl -sf "http://localhost:${MOCK_OIDC_CONTROL_PORT2}/_test/ping" >/dev/null; then
             exit 0
           fi
           sleep 2
