@@ -4,12 +4,10 @@ services:
   #####
 
   nginx:
-    image: nginx:1.23.1-alpine
-    profiles:
-      - dev
-      - test
+    image: nginx:1.29.4-alpine
     network_mode: host
     environment:
+      - DEV_HOST=${DEV_HOST}
       - NGINX_PORT1=${NGINX_PORT1}
       - NGINX_PORT2=${NGINX_PORT2}
       - NGINX_PORT3=${NGINX_PORT3}
@@ -26,9 +24,6 @@ services:
   #####
 
   maildev:
-    profiles:
-      - dev
-      - test
     image: maildev/maildev:2.1.0
     ports:
       - ${MAILDEV_UI_PORT}:1080
@@ -42,19 +37,16 @@ services:
   #####
 
   ldap:
-    profiles:
-      - dev
-      - test
     image: osixia/openldap:1.4.0
     volumes:
-      - ./dev/data/ldap:/var/lib/ldap
-      - ./dev/data/slapd.d:/etc/ldap/slapd.d
+      - ldap-data:/var/lib/ldap
+      - ldap-config:/etc/ldap/slapd.d
       - ./dev/resources:/test-resources
     ports:
       - ${LDAP_PORT}:389
   ldap-admin:
     profiles:
-      - dev
+      - ldap-admin
     image: osixia/phpldapadmin:0.9.0
     ports:
       # open over HTTPS https://localhost:6443/
@@ -70,7 +62,7 @@ services:
   # user2	user2pass	group2	user2@example.com
   saml-provider:
     profiles:
-      - dev
+      - saml-provider
     image: kristophjunge/test-saml-idp:1.15
     network_mode: host
     environment:
@@ -82,9 +74,6 @@ services:
   # list of users : harley@qlik.example
   # harley@qlik.example Password1!
   oidc-provider:
-    profiles:
-      - dev
-      - test
     image: qlik/simple-oidc-provider:0.2.5
     network_mode: host
     environment:
@@ -93,9 +82,6 @@ services:
       - IDP_NAME=http://localhost:${OIDC_PROVIDER_PORT}
 
   keycloak:
-    profiles:
-      - dev
-      - test
     image: quay.io/keycloak/keycloak:23.0.4
     user: root
     environment:
@@ -103,7 +89,7 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin
     network_mode: host
     volumes:
-      - ./dev/data/keycloak:/opt/keycloak/data/
+      - keycloak-data:/opt/keycloak/data/
     command: ["start-dev", "--http-port=${KEYCLOAK_PORT}"]
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/${KEYCLOAK_PORT} && printf 'GET /realms/master/.well-known/openid-configuration HTTP/1.1\\r\\nHost: localhost:${KEYCLOAK_PORT}\\r\\nConnection: close\\r\\n\\r\\n' >&3 && head -n 1 <&3 | grep -q '200'"]
@@ -118,9 +104,11 @@ services:
 
   events:
     profiles:
-      - dev
+      - events
     image: ghcr.io/data-fair/events:main
     network_mode: host
+    depends_on:
+      - mongo
     environment:
       - PORT=${EVENTS_PORT}
       # host-networked, so mongo is reached on its published host port (MONGO_PORT), not 27017
@@ -138,14 +126,26 @@ services:
   #####
 
   mongo:
-    profiles:
-      - dev
-      - test
-    image: mongo:4.2
+    # production version; later 8.0 patches refuse Ubuntu 7.0 kernels (https://jira.mongodb.org/browse/SERVER-136848)
+    image: mongo:8.0.17
     ports:
       - ${MONGO_PORT}:27017
+    # wiredTiger takes half the machine's RAM by default
+    command: ["--wiredTigerCacheSizeGB", "0.25"]
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      # 2 s probes while starting, then one per minute: a mongosh probe costs ~1.3 s of CPU
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 3m
+      start_interval: 2s
 
 volumes:
   mongo-data:
+  # named volumes, not bind mounts: the containers write as root and df-worktree-delete drops volumes
+  ldap-data:
+  ldap-config:
+  keycloak-data:

@@ -1,0 +1,39 @@
+{
+  "ports": [
+    "NGINX_PORT1",
+    "NGINX_PORT2",
+    "NGINX_PORT3",
+    "NGINX_PORT4",
+    "DEV_API_PORT",
+    "DEV_UI_PORT",
+    "DEV_UI_HMR_PORT",
+    "DEV_OBSERVER_PORT",
+    "MAILDEV_UI_PORT",
+    "MAILDEV_SMTP_PORT",
+    "MONGO_PORT",
+    "LDAP_PORT",
+    "LDAP_ADMIN_PORT",
+    "OIDC_PROVIDER_PORT",
+    "KEYCLOAK_PORT",
+    "MOCK_OIDC_PORT1",
+    "MOCK_OIDC_PORT2",
+    "EVENTS_PORT"
+  ],
+  "panes": {
+    "api": {
+      "ready": "http://localhost:${DEV_API_PORT}/api/test-env/ping"
+    },
+    "ui": {
+      "ready": "http://localhost:${DEV_UI_PORT}/simple-directory/"
+    },
+    "mock-oidc": {
+      "ready": "http://localhost:${MOCK_OIDC_PORT1}/.well-known/openid-configuration"
+    }
+  },
+  "url": "http://${DEV_HOST}:${NGINX_PORT1}/simple-directory/",
+  "optional": {
+    "events": {
+      "privateEventsUrl": ""
+    }
+  }
+}

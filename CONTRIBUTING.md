@@ -5,24 +5,19 @@
 This project uses the following stack : Mongo, Express, VueJS, NodeJS. The primary language used is javascript with the ES7 syntax.
 You should use linters and beautifiers compliants with the ES7 syntax in your editor.
 
-Switch to the appropriate nodejs version:
+Switch to the appropriate nodejs version (`.nvmrc`):
 
     nvm use
 
-Install dependencies:
+Install dependencies and set the checkout up (`.env` with free ports, types, UI build):
 
-    npm install
+    npm ci
+    npx --no df-dev setup
 
-If you use [zellij](https://zellij.dev/) you can replace all the following steps with `npm run dev-zellij`, otherwise follow the next instructions.
+Start the dev environment in a [zellij](https://zellij.dev/) (>= 0.44) session, optionally with some optional containers (`events`, `saml-provider`, `ldap-admin`):
 
-Run the services dependencies:
-
-    docker compose --profile dev up -d
-
-Run the 2 development servers with these commands in separate shells:
-
-    npm -w api run dev
-    npm -w ui run dev
+    npm run dev-zellij
+    npm run dev-zellij -- --services events
 
 ## Docker image
 
@@ -35,7 +30,7 @@ docker build --progress=plain -t sd-dev .
 
 ## Working with Git Worktrees
 
-This project supports git worktrees with fully isolated port allocations, allowing multiple branches to run concurrently (useful for AI agents or parallel development). Run `./dev/worktree.sh <branch-name>` to create a new worktree with its own `.env`, Docker Compose project, and randomized port range. When setting up for the first time, not in a worktree, you can run `./dev/init-env.sh`.
+Each worktree gets its own `.env`, docker compose project and ports, so several branches run concurrently. From the main checkout: `npx --no df-worktree <branch-name>` creates `../simple-directory_<branch-name>` (npm ci + setup), `npx --no df-worktree-delete <branch-name>` removes it with its containers and volumes.
 
 ## Git quality checks
 

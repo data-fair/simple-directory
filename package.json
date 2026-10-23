@@ -11,12 +11,9 @@
     "test-e2e": "playwright test --project e2e --max-failures=1",
     "lint": "eslint . && npm -w ui run lint",
     "lint-fix": "eslint --fix . && npm -w ui run lint-fix",
-    "dev-api": "npm -w api run dev",
-    "dev-mock-oidc": "node --experimental-strip-types dev/mock-oidc-server.ts",
     "dev-fixtures": "dotenv -- node --experimental-strip-types --disable-warning=ExperimentalWarning dev/fixtures.ts",
-    "dev-ui": "npm -w ui run dev",
-    "dev-zellij": "dotenv -- zellij --layout .zellij.kdl",
-    "stop-dev-deps": "docker compose --profile dev stop",
+    "dev-zellij": "df-dev zellij",
+    "stop-dev-deps": "docker compose --profile '*' stop",
     "build-types": "mkdir -p ui/src/components/vjsf && rm -f ui/src/components/vjsf/* && rm -rf node_modules/.cache/@data-fair/lib-types-builder && df-build-types . --vjsf-dir ui/src/components/vjsf",
     "prepare": "husky || true",
     "check-types": "tsc && npm -w ui run check-types",
@@ -39,6 +36,7 @@
   "homepage": "https://github.com/data-fair/simple-directory#readme",
   "devDependencies": {
     "@commitlint/config-conventional": "^19.8.1",
+    "@data-fair/lib-dev": "^0.1.0",
     "@data-fair/lib-express": "^1.33.0",
     "@data-fair/lib-node": "^2.17.0",
     "@json-layout/core": "~2.12.1",
@@ -73,7 +71,7 @@
     "typescript": "~5.6.3"
   },
   "dependencies": {
-    "@data-fair/lib-types-builder": "^1.8.3",
+    "@data-fair/lib-types-builder": "^1.14.5",
     "@koumoul/vjsf-compiler": "^1.4.0",
     "@types/debug": "^4.1.13",
     "ajv": "^8.17.1"

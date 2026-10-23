@@ -32,34 +32,37 @@ jobs:
       run: npm run check-types
 
     - name: Init .env
-      run: ./dev/init-env.sh
+      run: ./node_modules/.bin/df-dev init-env # local bin only: a bare npx would fetch an unrelated "df-dev" from the registry if the dependency were missing
 
     - name: Use localhost as DEV_HOST in CI
       run: sed -i 's/^DEV_HOST=.*/DEV_HOST=localhost/' .env
 
-    - name: Start test services
-      run: docker compose --profile test up -d --wait
+    # the core services only, like a developer's default env: no test needs an optional one
+    - name: Start docker compose services
+      run: docker compose up -d --wait
 
     - name: Start mock OIDC servers
-      run: ./node_modules/.bin/dotenv -- npm run dev-mock-oidc &
+      run: |
+        mkdir -p dev/logs
+        ./node_modules/.bin/dotenv -- node dev/mock-oidc-server.ts > dev/logs/mock-oidc.log 2>&1 &
 
     - name: Start dev API
-      run: ./node_modules/.bin/dotenv -- npm run dev-api &
+      run: NODE_CONFIG=$(./node_modules/.bin/df-dev absent-config) ./node_modules/.bin/dotenv -- npm -w api run dev > dev/logs/api.log 2>&1 &
 
-    - name: Wait for API to be ready
+    - name: Wait for the dev API and mock OIDC servers to be ready
       run: |
-        for i in $(seq 1 30); do
-          curl -s http://localhost:$(grep DEV_API_PORT .env | cut -d= -f2)/api/test-env/ping && break
+        set -a; source .env; set +a
+        for i in {1..30}; do
+          if curl -sf "http://localhost:${DEV_API_PORT}/api/test-env/ping" >/dev/null \
+            && curl -sf "http://localhost:$((MOCK_OIDC_PORT1 + 100))/_test/ping" >/dev/null \
+            && curl -sf "http://localhost:$((MOCK_OIDC_PORT2 + 100))/_test/ping" >/dev/null; then
+            exit 0
+          fi
           sleep 2
         done
-
-    - name: Wait for mock OIDC to be ready
-      run: |
-        MOCK_PORT1=$(grep MOCK_OIDC_PORT1 .env | cut -d= -f2)
-        for i in $(seq 1 15); do
-          curl -s http://localhost:$((MOCK_PORT1 + 100))/_test/ping && break
-          sleep 1
-        done
+        echo "dev API or mock OIDC servers did not become ready" >&2
+        tail -n 50 dev/logs/*.log
+        exit 1
 
     - name: Run unit tests
       run: npm run test-unit
@@ -73,6 +76,20 @@ jobs:
     - name: Audit
       run: npm audit --omit=dev --audit-level=critical
 
-    - name: Stop test services
+    - name: Upload test results
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          test-results/
+          dev/logs/
+        retention-days: 7
+
+    - name: Docker compose logs on failure
+      if: failure()
+      run: docker compose --profile '*' logs
+
+    - name: Stop docker compose services
       if: always()
-      run: docker compose --profile test down
+      run: docker compose --profile '*' down

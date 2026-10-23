@@ -25,11 +25,6 @@ export default defineConfig({
     {
       name: 'state-setup',
       testMatch: /state-setup\.ts/,
-      teardown: 'state-teardown'
-    },
-    {
-      name: 'state-teardown',
-      testMatch: /state-teardown\.ts/,
     },
     {
       name: 'api',

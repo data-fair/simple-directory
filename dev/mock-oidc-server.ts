@@ -1,7 +1,7 @@
 // Standalone mock OIDC server process for testing OAuth2/OIDC login flows.
 // Follows the data-fair pattern of a separate mock server with dynamic test control.
 //
-// Start with: npm run dev-mock-oidc
+// Runs in the mock-oidc pane of .zellij.kdl
 // Uses MOCK_OIDC_PORT1 and MOCK_OIDC_PORT2 from .env
 //
 // Each server instance exposes test control endpoints alongside standard OAuth2 endpoints:
