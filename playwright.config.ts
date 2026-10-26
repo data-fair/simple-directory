@@ -57,9 +57,19 @@ export default defineConfig({
       testMatch: /oidc-ldap\.inproc\.spec\.ts/,
     },
     {
+      // the first hit of each UI route is slow on a cold vite: this pays for it once, with long
+      // timeouts, before the e2e tests
+      name: 'e2e-warmup',
+      testMatch: /e2e-warmup\.ts/,
+      dependencies: ['state-setup'],
+      timeout: 120_000,
+      expect: { timeout: 60_000 },
+      use: { ...browser, navigationTimeout: 60_000 },
+    },
+    {
       name: 'e2e',
       testMatch: /.*\.e2e\.spec\.ts/,
-      dependencies: ['state-setup'],
+      dependencies: ['e2e-warmup'],
       // full page loads (incl. superadmin login) can exceed 10s when the whole suite loads the server
       use: { ...browser, navigationTimeout: 15_000 },
     },
