@@ -16,7 +16,7 @@
       :data-client-id="client.clientId"
     >
       <!-- the name of a dynamic client is chosen by whoever registered it: text only -->
-      <span class="text-body-2">
+      <span class="text-body-medium">
         <strong>{{ client.name }}</strong>
         - {{ $t('pages.organization.nhiConnectionsCount', { count: client.count }) }}
         - {{ client.lastUsedAt ? $t('pages.organization.nhiConnectionLastUsed', { date: dayjs(client.lastUsedAt).format('LL') }) : $t('pages.organization.nhiConnectionNeverUsed') }}
