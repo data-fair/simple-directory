@@ -10,7 +10,7 @@ test.describe('Session management', () => {
     await testEnvAx.post('/seed')
   })
 
-  test('Create session for known user', async () => {
+  test('Create session for known user', { tag: '@smoke' }, async () => {
     const ax = await axiosAuth('dmeadus0@answers.com')
     const res = await ax.get('/api/auth/me')
     assert.equal(res.status, 200)

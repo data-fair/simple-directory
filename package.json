@@ -4,23 +4,21 @@
   "description": "Easy users and organizations management for modern Web-oriented architectures.",
   "type": "module",
   "scripts": {
-    "test": "playwright test --max-failures=1",
-    "test-unit": "playwright test --project unit --max-failures=1",
-    "test-api": "playwright test --project api --max-failures=1",
-    "test-inproc": "playwright test --project api-inproc-ldap --project api-inproc-oidc --max-failures=1",
-    "test-e2e": "playwright test --project e2e --max-failures=1",
+    "test": "playwright test",
+    "test-unit": "npm run test -- --project=unit",
+    "test-api": "npm run test -- --project=api",
+    "test-api-fast": "npm run test -- --project=api --max-failures=1",
+    "test-inproc": "npm run test -- --project=api-inproc-ldap --project=api-inproc-oidc",
+    "test-e2e": "npm run test -- --project=e2e",
     "lint": "eslint . && npm -w ui run lint",
     "lint-fix": "eslint --fix . && npm -w ui run lint-fix",
-    "dev-api": "npm -w api run dev",
-    "dev-mock-oidc": "node --experimental-strip-types dev/mock-oidc-server.ts",
     "dev-fixtures": "dotenv -- node --experimental-strip-types --disable-warning=ExperimentalWarning dev/fixtures.ts",
-    "dev-ui": "npm -w ui run dev",
-    "dev-zellij": "dotenv -- zellij --layout .zellij.kdl",
-    "stop-dev-deps": "docker compose --profile dev stop",
+    "dev-zellij": "df-dev zellij",
+    "stop-dev-deps": "docker compose --profile '*' stop",
     "build-types": "mkdir -p ui/src/components/vjsf && rm -f ui/src/components/vjsf/* && rm -rf node_modules/.cache/@data-fair/lib-types-builder && df-build-types . --vjsf-dir ui/src/components/vjsf",
     "prepare": "husky || true",
     "check-types": "tsc && npm -w ui run check-types",
-    "quality": "npm run lint && npm run build-types && npm -w ui run build && npm run check-types && npm run test"
+    "quality": "npm run lint && npm run build-types && npm -w ui run build && npm run check-types && npm run test && npm audit --omit=dev --audit-level=critical"
   },
   "repository": {
     "type": "git",
@@ -37,10 +35,16 @@
     "url": "https://github.com/data-fair/simple-directory/issues"
   },
   "homepage": "https://github.com/data-fair/simple-directory#readme",
+  "engines": {
+    "node": ">=24.22.1"
+  },
   "devDependencies": {
-    "@commitlint/config-conventional": "^19.8.1",
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@data-fair/lib-dev": "^0.1.0",
     "@data-fair/lib-express": "^1.33.0",
     "@data-fair/lib-node": "^2.17.0",
+    "@data-fair/lib-utils": "^1.14.1",
     "@json-layout/core": "~2.12.1",
     "@playwright/test": "^1.59.1",
     "@types/accept-language-parser": "^1.5.8",
@@ -62,18 +66,18 @@
     "commitlint": "^19.8.1",
     "dotenv": "^17.3.1",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.10.0",
-    "eslint-plugin-vue": "^10.11.0",
-    "eslint-plugin-vuetify": "^2.7.2",
+    "eslint": "^10.13.0",
+    "eslint-plugin-vue": "^10.11.1",
+    "eslint-plugin-vuetify": "^2.7.3",
     "husky": "^9.1.7",
-    "neostandard": "^0.12.2",
+    "neostandard": "^0.14.1",
     "nodemon": "^3.1.14",
     "oauth2-mock-server": "^9.2.0",
     "tough-cookie": "^5.1.2",
-    "typescript": "~5.6.3"
+    "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@data-fair/lib-types-builder": "^1.8.3",
+    "@data-fair/lib-types-builder": "^1.14.5",
     "@koumoul/vjsf-compiler": "^1.4.0",
     "@types/debug": "^4.1.13",
     "ajv": "^8.17.1"

@@ -1,3 +1,5 @@
+# Not on the shared head of the data-fair-service skill yet: it sets X-Forwarded-For to $remote_addr,
+# tests spoof the client IP through that header and rely on nginx appending to it.
 
     # first origin
     server {

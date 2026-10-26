@@ -4,7 +4,7 @@
  * own accounts (site admin) and a partnership, so that every back-office screen
  * has something real to show without clicking through the signup flow by hand.
  *
- * Run it (dev env must be up -- `bash dev/status.sh`):
+ * Run it (dev env must be up -- `npx --no df-dev status`):
  *   npm run dev-fixtures
  *
  * Idempotent: anything already present is skipped. The only thing it ever

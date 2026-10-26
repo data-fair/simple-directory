@@ -1,12 +1,24 @@
-/tmp
-.type
-node_modules
-dev/data
-dev/logs
-test-results
+# dependencies and generated code
+node_modules/
+.type/
 *.tsbuildinfo
-ui/src/components/vjsf
+
+# local environment and data
 .env
-.playwright-mcp
+**/config/local-*
+dev/data/
+dev/logs/
+
+# test output
+test-results/
+playwright-report/
+
+# agent working files
+docs/superpowers/
+.superpowers/
+.playwright-mcp/
+
+# simple-directory
+/tmp
+ui/src/components/vjsf
 docs/local
-docs/superpowers

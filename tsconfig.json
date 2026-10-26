@@ -8,7 +8,9 @@
     "strict": true,
     "allowJs": true,
     "checkJs": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "erasableSyntaxOnly": true,
+    "types": ["node"]
   },
   "exclude": ["node_modules", ".type", "ui", "dev"]
 }

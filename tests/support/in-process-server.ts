@@ -2,7 +2,6 @@
 // (e.g., STORAGE_TYPE=ldap). Only used by .inproc.spec.ts tests.
 
 // Must be set before config module is loaded, playwright transpiles imports to ordered requires
-/* eslint-disable import-x/first */
 process.env.NODE_ENV = 'test'
 process.env.ENABLE_TEST_API = '1'
 process.env.IGNORE_ASSERT_REQ_INTERNAL = '1'

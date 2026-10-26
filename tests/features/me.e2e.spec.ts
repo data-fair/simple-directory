@@ -1,7 +1,7 @@
 import { test, expect } from '../support/e2e-fixtures.ts'
 
 test.describe('Account profile page', () => {
-  test('displays user email (read-only)', async ({ page, appUrl, loginAs }) => {
+  test('displays user email (read-only)', { tag: '@smoke' }, async ({ page, appUrl, loginAs }) => {
     await loginAs('testprofile@test.com')
     await page.goto(appUrl('/me'))
 

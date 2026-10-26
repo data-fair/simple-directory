@@ -4,12 +4,10 @@ services:
   #####
 
   nginx:
-    image: nginx:1.23.1-alpine
-    profiles:
-      - dev
-      - test
+    image: nginx:1.29.4-alpine
     network_mode: host
     environment:
+      - DEV_HOST=${DEV_HOST}
       - NGINX_PORT1=${NGINX_PORT1}
       - NGINX_PORT2=${NGINX_PORT2}
       - NGINX_PORT3=${NGINX_PORT3}
@@ -22,39 +20,45 @@ services:
       - ./dev/resources/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
 
   #####
-  # mail server mock
+  # related services from the data-fair stack
   #####
 
-  maildev:
+  events:
     profiles:
-      - dev
-      - test
-    image: maildev/maildev:2.1.0
-    ports:
-      - ${MAILDEV_UI_PORT}:1080
-      - ${MAILDEV_SMTP_PORT}:1025
-    # https://github.com/maildev/maildev/issues/484
-    healthcheck:
-      test: 'wget -O - http://127.0.0.1:$${MAILDEV_WEB_PORT}$${MAILDEV_BASE_PATHNAME}/healthz || exit 1'
+      - events
+    image: ghcr.io/data-fair/events:main
+    network_mode: host
+    depends_on:
+      - mongo
+    environment:
+      - PORT=${EVENTS_PORT}
+      # the notifications menu of the UI embeds events pages through nginx
+      - PUBLIC_URL=http://localhost:${NGINX_PORT1}/events
+      - WS_PUBLIC_URL=ws://localhost:${NGINX_PORT1}/events
+      # simple-directory is the dev API itself
+      - PRIVATE_DIRECTORY_URL=http://localhost:${DEV_API_PORT}
+      - MONGO_URL=mongodb://localhost:${MONGO_PORT}/data-fair-events
+      - OBSERVER_ACTIVE=false
+      - SECRET_IDENTITIES=secret-identities
+      - SECRET_EVENTS=secret-events
+      - SECRET_SENDMAILS=secret-sendmails
 
   #####
   # auth providers
   #####
 
   ldap:
-    profiles:
-      - dev
-      - test
     image: osixia/openldap:1.4.0
-    volumes:
-      - ./dev/data/ldap:/var/lib/ldap
-      - ./dev/data/slapd.d:/etc/ldap/slapd.d
-      - ./dev/resources:/test-resources
     ports:
       - ${LDAP_PORT}:389
+    volumes:
+      - ldap-data:/var/lib/ldap
+      - ldap-config:/etc/ldap/slapd.d
+      - ./dev/resources:/test-resources
+
   ldap-admin:
     profiles:
-      - dev
+      - ldap-admin
     image: osixia/phpldapadmin:0.9.0
     ports:
       # open over HTTPS https://localhost:6443/
@@ -70,21 +74,18 @@ services:
   # user2	user2pass	group2	user2@example.com
   saml-provider:
     profiles:
-      - dev
+      - saml-provider
     image: kristophjunge/test-saml-idp:1.15
     network_mode: host
     environment:
       - SIMPLESAMLPHP_SP_ENTITY_ID=http://localhost:${NGINX_PORT1}/simple-directory/api/auth/saml2-metadata.xml
       - SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE=http://localhost:${NGINX_PORT1}/simple-directory/api/auth/saml2-assert
       - SIMPLESAMLPHP_SP_SINGLE_LOGOUT_SERVICE=http://localhost:${NGINX_PORT1}/simple-directory/api/auth/saml2-logout
-  
+
   # WARNING: does not work on a recent chrome, this provider tries to use a cookie with samesite=none option and this is not permitted without https
   # list of users : harley@qlik.example
   # harley@qlik.example Password1!
   oidc-provider:
-    profiles:
-      - dev
-      - test
     image: qlik/simple-oidc-provider:0.2.5
     network_mode: host
     environment:
@@ -93,59 +94,60 @@ services:
       - IDP_NAME=http://localhost:${OIDC_PROVIDER_PORT}
 
   keycloak:
-    profiles:
-      - dev
-      - test
     image: quay.io/keycloak/keycloak:23.0.4
+    network_mode: host
     user: root
+    command: ["start-dev", "--http-port=${KEYCLOAK_PORT}"]
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
-    network_mode: host
     volumes:
-      - ./dev/data/keycloak:/opt/keycloak/data/
-    command: ["start-dev", "--http-port=${KEYCLOAK_PORT}"]
+      - keycloak-data:/opt/keycloak/data/
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/${KEYCLOAK_PORT} && printf 'GET /realms/master/.well-known/openid-configuration HTTP/1.1\\r\\nHost: localhost:${KEYCLOAK_PORT}\\r\\nConnection: close\\r\\n\\r\\n' >&3 && head -n 1 <&3 | grep -q '200'"]
       interval: 5s
       timeout: 5s
       retries: 40
       start_period: 10s
-  
+
   #####
-  # related services from the data-fair stack
+  # mail server mock
   #####
 
-  events:
-    profiles:
-      - dev
-    image: ghcr.io/data-fair/events:main
-    network_mode: host
-    environment:
-      - PORT=${EVENTS_PORT}
-      # host-networked, so mongo is reached on its published host port (MONGO_PORT), not 27017
-      - MONGO_URL=mongodb://localhost:${MONGO_PORT}/events
-      - PUBLIC_URL=http://localhost:${NGINX_PORT1}/notify
-      - WS_PUBLIC_URL=ws://localhost:${NGINX_PORT1}/notify
-      - PRIVATE_DIRECTORY_URL=http://localhost:${NGINX_PORT1}/simple-directory
-      - SECRET_EVENTS=secret-events
-      - SECRET_IDENTITIES=secret-identities
-      - SECRET_SENDMAILS=secret-sendmails
-      - OBSERVER_ACTIVE=false
+  maildev:
+    image: maildev/maildev:2.1.0
+    ports:
+      - ${MAILDEV_UI_PORT}:1080
+      - ${MAILDEV_SMTP_PORT}:1025
+    # https://github.com/maildev/maildev/issues/484
+    healthcheck:
+      test: 'wget -O - http://127.0.0.1:$${MAILDEV_WEB_PORT}$${MAILDEV_BASE_PATHNAME}/healthz || exit 1'
 
   #####
   # db
   #####
 
   mongo:
-    profiles:
-      - dev
-      - test
-    image: mongo:4.2
+    # production version; later 8.0 patches refuse Ubuntu 7.0 kernels (https://jira.mongodb.org/browse/SERVER-136848)
+    image: mongo:8.0.17
     ports:
       - ${MONGO_PORT}:27017
+    # wiredTiger takes half the machine's RAM by default
+    command: ["--wiredTigerCacheSizeGB", "0.25"]
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      # 2 s probes while starting, then one per minute: a mongosh probe costs ~1.3 s of CPU
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 3m
+      start_interval: 2s
 
 volumes:
   mongo-data:
+  # named volumes, not bind mounts: the containers write as root and df-worktree-delete drops volumes
+  ldap-data:
+  ldap-config:
+  keycloak-data:

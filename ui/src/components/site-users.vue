@@ -51,7 +51,7 @@
             </div>
             <div
               v-if="props.item['2FA']?.active"
-              class="text-caption text-no-wrap"
+              class="text-body-small text-no-wrap"
             >
               {{ $t('pages.siteAdmin.2FAActive') }}
               <confirm-menu
@@ -75,7 +75,7 @@
             </div>
             <div
               v-if="props.item.plannedDeletion"
-              class="text-caption text-warning text-no-wrap"
+              class="text-body-small text-warning text-no-wrap"
             >
               {{ $t('pages.siteAdmin.plannedDeletion', {date: $d(new Date(props.item.plannedDeletion))}) }}
               <v-btn

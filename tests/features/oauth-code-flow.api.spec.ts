@@ -39,7 +39,7 @@ test.describe('oauth authorization code flow', () => {
     await testEnvAx.patch('/config', { mainSiteFromDb: [] })
   })
 
-  test('full code flow issues a user at+jwt and a refresh token', async () => {
+  test('full code flow issues a user at+jwt and a refresh token', { tag: '@smoke' }, async () => {
     const { org, user, clientId, flow } = await setup()
     const result = await runCodeFlow(flow({ scope: 'openid organizations:read', decision: { account: { type: 'organization', id: org.id } } }))
     assert.equal(result.iss, issuer)

@@ -1,78 +1,201 @@
 name: Quality checks
 
+# The full gate. One build job (types, vjsf components, UI) shared as an artifact; static
+# checks in one job; unit + api (+ in-process) and e2e tests on fresh runners with the core
+# services and the dev processes of the zellij layout (mock-oidc, api, ui), single worker each
+# (tests share one dev env state). The unit tests are not server-free here: several use mongo
+# and ldap, so they run with the api tests, not in the static job.
+# Used by pull requests, releases and the nightly check of master; the pre-push hook only
+# runs a light subset (dev/pre-push.sh).
+
 on:
   workflow_call:
+    inputs:
+      retries:
+        description: playwright retries per failed test (the nightly run uses 0 to expose flaky tests)
+        type: number
+        default: 1
+      browser:
+        description: browser engine of the e2e tests (chromium, firefox or webkit; the nightly run rotates them)
+        type: string
+        default: chromium
   workflow_dispatch:
 
 jobs:
-  quality:
+  build:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout git repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v7
       with:
-        node-version: 24
+        node-version-file: .nvmrc
         cache: 'npm'
 
     - name: Install dependencies
       run: npm ci
 
-    - name: Lint
-      run: npm run lint
-
+    # the generated .type modules and vjsf components are imported by the API, the tests and the UI
     - name: Build types
       run: npm run build-types
 
+    # also generates the ui/dts files vue-tsc needs
     - name: Build UI
       run: npm -w ui run build
+
+    - name: Upload build outputs
+      uses: actions/upload-artifact@v4
+      with:
+        name: build
+        include-hidden-files: true # the .type directories
+        retention-days: 1
+        path: |
+          **/.type/
+          !**/node_modules/**
+          ui/src/components/vjsf/
+          ui/dist/
+          ui/dts/
+
+  static:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout git repository
+      uses: actions/checkout@v7
+
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: .nvmrc
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Download build outputs
+      uses: actions/download-artifact@v4
+      with:
+        name: build
+
+    - name: Lint
+      run: npm run lint
 
     - name: Type check
       run: npm run check-types
 
+    - name: Audit
+      run: npm audit --omit=dev --audit-level=critical
+
+  tests:
+    name: tests (${{ matrix.name }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # unit tests use mongo and ldap; the in-process projects start their own API servers on
+          # the core containers (~30 s)
+          - { name: api, projects: '--project=unit --project=api --project=api-inproc-ldap --project=api-inproc-oidc', e2e: false }
+          - { name: e2e, projects: '--project=e2e', e2e: true }
+    env:
+      # empty on workflow_dispatch, where playwright.config.ts falls back to 1
+      TEST_RETRIES: ${{ inputs.retries }}
+      # empty on workflow_dispatch, where playwright.config.ts falls back to chromium
+      TEST_BROWSER: ${{ inputs.browser }}
+    steps:
+    - name: Checkout git repository
+      uses: actions/checkout@v7
+
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: .nvmrc
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Download build outputs
+      uses: actions/download-artifact@v4
+      with:
+        name: build
+
+    # only the browser binaries are cached, keyed on the installed playwright version and engine;
+    # the system packages they need are installed on every run
+    - name: Read the playwright version
+      id: playwright
+      run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+    - name: Cache playwright browsers
+      if: matrix.e2e
+      id: playwright-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-${{ inputs.browser || 'chromium' }}
+
+    - name: Install playwright browser
+      if: matrix.e2e && steps.playwright-cache.outputs.cache-hit != 'true'
+      run: npx playwright install --with-deps ${{ inputs.browser || 'chromium' }}
+
+    - name: Install playwright system dependencies
+      if: matrix.e2e && steps.playwright-cache.outputs.cache-hit == 'true'
+      run: npx playwright install-deps ${{ inputs.browser || 'chromium' }}
+
     - name: Init .env
-      run: ./dev/init-env.sh
+      run: ./node_modules/.bin/df-dev init-env # local bin only: a bare npx would fetch an unrelated "df-dev" from the registry if the dependency were missing
 
     - name: Use localhost as DEV_HOST in CI
       run: sed -i 's/^DEV_HOST=.*/DEV_HOST=localhost/' .env
 
-    - name: Start test services
-      run: docker compose --profile test up -d --wait
+    # the core services only, like a developer's default env: no test needs an optional one
+    - name: Start docker compose services
+      run: docker compose up -d --wait
 
-    - name: Start mock OIDC servers
-      run: ./node_modules/.bin/dotenv -- npm run dev-mock-oidc &
-
-    - name: Start dev API
-      run: ./node_modules/.bin/dotenv -- npm run dev-api &
-
-    - name: Wait for API to be ready
+    # the commands of the zellij layout (.zellij.kdl), logs written to dev/logs/
+    # absent-config like the api and ui panes: events is not in the CI core
+    - name: Start dev processes
       run: |
-        for i in $(seq 1 30); do
-          curl -s http://localhost:$(grep DEV_API_PORT .env | cut -d= -f2)/api/test-env/ping && break
+        mkdir -p dev/logs
+        set -a; . ./.env; set +a
+        export NODE_CONFIG=$(./node_modules/.bin/df-dev absent-config)
+        node dev/mock-oidc-server.ts > dev/logs/mock-oidc.log 2>&1 &
+        (cd api && NODE_ENV=development ENABLE_TEST_API=1 IGNORE_ASSERT_REQ_INTERNAL=1 node index.ts > ../dev/logs/api.log 2>&1 &)
+        (cd ui && NODE_CONFIG_DIR=../api/config/ ../node_modules/.bin/vite --configLoader native --port "$DEV_UI_PORT" > ../dev/logs/ui.log 2>&1 &)
+
+    - name: Wait for the dev API, UI and mock OIDC servers to be ready
+      run: |
+        set -a; . ./.env; set +a
+        for i in $(seq 1 60); do
+          if curl -sf "http://localhost:${DEV_API_PORT}/api/test-env/ping" >/dev/null \
+            && curl -sf "http://localhost:${DEV_UI_PORT}/simple-directory/" >/dev/null \
+            && curl -sf "http://localhost:${MOCK_OIDC_CONTROL_PORT1}/_test/ping" >/dev/null \
+            && curl -sf "http://localhost:${MOCK_OIDC_CONTROL_PORT2}/_test/ping" >/dev/null; then
+            exit 0
+          fi
           sleep 2
         done
+        echo "dev API, UI or mock OIDC servers did not become ready" >&2
+        tail -n 50 dev/logs/*.log
+        exit 1
 
-    - name: Wait for mock OIDC to be ready
-      run: |
-        MOCK_PORT1=$(grep MOCK_OIDC_PORT1 .env | cut -d= -f2)
-        for i in $(seq 1 15); do
-          curl -s http://localhost:$((MOCK_PORT1 + 100))/_test/ping && break
-          sleep 1
-        done
+    - name: Run tests
+      run: npm run test -- ${{ matrix.projects }}
 
-    - name: Run unit tests
-      run: npm run test-unit
+    - name: Upload test results
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.name }}
+        path: |
+          test-results/
+          dev/logs/
+        retention-days: 7
 
-    - name: Run API tests
-      run: npm run test-api
+    - name: Docker compose logs on failure
+      if: failure()
+      run: docker compose --profile '*' logs
 
-    - name: Run in-process tests
-      run: npm run test-inproc
-
-    - name: Audit
-      run: npm audit --omit=dev --audit-level=critical
-
-    - name: Stop test services
+    - name: Stop docker compose services
       if: always()
-      run: docker compose --profile test down
+      run: docker compose --profile '*' down
