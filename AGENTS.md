@@ -53,12 +53,13 @@ Test framework: Playwright. Tests live in `tests/` with naming conventions:
 ```bash
 npm test                                    # all tests
 npm run test-unit                           # unit tests only
-npm run test-api                            # API tests only
+npm run test-api                            # API tests only (test-api-fast stops at the first failure)
+npm run test-inproc                         # in-process tests only
 npm run test-e2e                            # e2e tests only
-npm run test-base tests/path/to/file.ts     # specific file
+npm test -- tests/features/file.api.spec.ts # specific file
 ```
 
-The full test suite is run by a git hook on push. When iterating on changes, always run only the related test cases.
+The pre-push hook runs a light gate (`dev/pre-push.sh`: check-types, unit, the `@smoke` set and the spec files the push changes); the full suite runs on pull requests, releases and nightly on master. On a failure, `npx playwright show-trace test-results/<test>/trace.zip`. When iterating on changes, always run only the related test cases.
 
 Set `IGNORE_ASSERT_REQ_INTERNAL=true` to bypass internal secret validation in tests.
 
