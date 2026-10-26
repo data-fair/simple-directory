@@ -62,7 +62,7 @@ The full test suite is run by a git hook on push. When iterating on changes, alw
 
 Set `IGNORE_ASSERT_REQ_INTERNAL=true` to bypass internal secret validation in tests.
 
-`/api/test-env` is gated behind `ENABLE_TEST_API=1` (in addition to `NODE_ENV ∈ {development, test}`). The `npm run dev` script sets it; tests using `tests/support/in-process-server.ts` set it too. Never set it in production — the server refuses to start if `NODE_ENV=production` and `ENABLE_TEST_API=1`.
+`/api/test-env` is gated behind `ENABLE_TEST_API=1` (in addition to `NODE_ENV ∈ {development, test}`). The api pane of `.zellij.kdl` and the api workspace `dev` script (used by CI) set it; tests using `tests/support/in-process-server.ts` set it too. Never set it in production — the server refuses to start if `NODE_ENV=production` and `ENABLE_TEST_API=1`.
 
 ### Linting & Type Checking
 
