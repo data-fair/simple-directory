@@ -1,9 +1,10 @@
 name: Quality checks
 
 # The full gate. One build job (types, vjsf components, UI) shared as an artifact; static
-# checks and unit tests in one job; api (+ in-process) and e2e tests on fresh runners with the
-# core services and the dev processes of the zellij layout (mock-oidc, api, ui), single worker
-# each (tests share one dev env state).
+# checks in one job; unit + api (+ in-process) and e2e tests on fresh runners with the core
+# services and the dev processes of the zellij layout (mock-oidc, api, ui), single worker each
+# (tests share one dev env state). The unit tests are not server-free here: several use mongo
+# and ldap, so they run with the api tests, not in the static job.
 # Used by pull requests, releases and the nightly check of master; the pre-push hook only
 # runs a light subset (dev/pre-push.sh).
 
@@ -85,10 +86,6 @@ jobs:
     - name: Audit
       run: npm audit --omit=dev --audit-level=critical
 
-    # no server needed
-    - name: Unit tests
-      run: npm run test-unit
-
   tests:
     name: tests (${{ matrix.name }})
     needs: build
@@ -97,8 +94,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # the in-process projects start their own API servers on the core containers (~30 s)
-          - { name: api, projects: '--project=api --project=api-inproc-ldap --project=api-inproc-oidc', e2e: false }
+          # unit tests use mongo and ldap; the in-process projects start their own API servers on
+          # the core containers (~30 s)
+          - { name: api, projects: '--project=unit --project=api --project=api-inproc-ldap --project=api-inproc-oidc', e2e: false }
           - { name: e2e, projects: '--project=e2e', e2e: true }
     env:
       # empty on workflow_dispatch, where playwright.config.ts falls back to 1
