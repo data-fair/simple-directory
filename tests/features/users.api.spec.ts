@@ -8,7 +8,7 @@ test.describe('users api', () => {
     await deleteAllEmails()
   })
 
-  test('should create a user', async () => {
+  test('should create a user', { tag: '@smoke' }, async () => {
     const config = await getServerConfig()
     const ax = await axios()
 

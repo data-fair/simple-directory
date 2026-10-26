@@ -9,7 +9,7 @@ test.describe('Login page', () => {
     await expect(page.locator('input[name="password"]')).toBeVisible()
   })
 
-  test('login with email and password', async ({ page, appUrl }) => {
+  test('login with email and password', { tag: '@smoke' }, async ({ page, appUrl }) => {
     await testEnvAx.post('/seed')
 
     await page.goto(appUrl('/login'))

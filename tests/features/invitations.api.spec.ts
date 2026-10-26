@@ -10,7 +10,7 @@ test.describe('invitations', () => {
     await testEnvAx.patch('/config', { alwaysAcceptInvitation: false, multiRoles: false })
   })
 
-  test('should invite a new user in an organization', async () => {
+  test('should invite a new user in an organization', { tag: '@smoke' }, async () => {
     const config = await getServerConfig()
     const { ax } = await createUser('test-invit1@test.com')
     const anonymousAx = await axios()

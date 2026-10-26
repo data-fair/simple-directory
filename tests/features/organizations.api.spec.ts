@@ -10,7 +10,7 @@ test.describe('organizations api', () => {
     await testEnvAx.patch('/config', { multiRoles: false })
   })
 
-  test('should create an organization', async () => {
+  test('should create an organization', { tag: '@smoke' }, async () => {
     const { ax, user } = await createUser('test-org@test.com')
     const createdOrg = (await ax.post('/api/organizations', { name: 'test' })).data
     assert.equal(createdOrg.name, 'test')

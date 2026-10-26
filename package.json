@@ -4,11 +4,12 @@
   "description": "Easy users and organizations management for modern Web-oriented architectures.",
   "type": "module",
   "scripts": {
-    "test": "playwright test --max-failures=1",
-    "test-unit": "playwright test --project unit --max-failures=1",
-    "test-api": "playwright test --project api --max-failures=1",
-    "test-inproc": "playwright test --project api-inproc-ldap --project api-inproc-oidc --max-failures=1",
-    "test-e2e": "playwright test --project e2e --max-failures=1",
+    "test": "playwright test",
+    "test-unit": "npm run test -- --project=unit",
+    "test-api": "npm run test -- --project=api",
+    "test-api-fast": "npm run test -- --project=api --max-failures=1",
+    "test-inproc": "npm run test -- --project=api-inproc-ldap --project=api-inproc-oidc",
+    "test-e2e": "npm run test -- --project=e2e",
     "lint": "eslint . && npm -w ui run lint",
     "lint-fix": "eslint --fix . && npm -w ui run lint-fix",
     "dev-fixtures": "dotenv -- node --experimental-strip-types --disable-warning=ExperimentalWarning dev/fixtures.ts",
@@ -17,7 +18,7 @@
     "build-types": "mkdir -p ui/src/components/vjsf && rm -f ui/src/components/vjsf/* && rm -rf node_modules/.cache/@data-fair/lib-types-builder && df-build-types . --vjsf-dir ui/src/components/vjsf",
     "prepare": "husky || true",
     "check-types": "tsc && npm -w ui run check-types",
-    "quality": "npm run lint && npm run build-types && npm -w ui run build && npm run check-types && npm run test"
+    "quality": "npm run lint && npm run build-types && npm -w ui run build && npm run check-types && npm run test && npm audit --omit=dev --audit-level=critical"
   },
   "repository": {
     "type": "git",
