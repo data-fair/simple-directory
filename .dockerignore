@@ -1,5 +1,7 @@
-node_modules
+**/node_modules
+**/dist
+ui/dts
+.env
 /dev/data
-/dist
 /.git
 config/local*
