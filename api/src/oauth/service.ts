@@ -42,6 +42,14 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
   scope: string,
   // operator-declared provider (config.oidc.providers), its endpoints may be on a private network
   trusted?: boolean,
+  // oidc providers only
+  clientId?: string,
+  issuer?: string,
+  jwksUri?: string,
+  endSessionEndpoint?: string,
+  issParameterSupported?: boolean,
+  strict?: boolean,
+  rpInitiatedLogout?: boolean,
   auth: {
     tokenHost: string,
     tokenPath: string,
@@ -106,7 +114,7 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     auth: p.auth,
     options: {
       credentialsEncodingMode: p.credentialsEncodingMode ?? 'strict', // strict or loose
-      authorizationMethod: p.authorizationMethod ?? 'header', // header or body
+      authorizationMethod: p.authorizationMethod ?? 'header', // header or body, resolved from the discovery for oidc providers
       bodyFormat: p.bodyFormat ?? 'form'
     },
     // the token endpoint of an untrusted provider comes from a site config or a discovery document,

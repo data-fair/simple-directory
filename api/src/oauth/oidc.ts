@@ -39,6 +39,33 @@ export const parseUserInfoResponse = (body: string, contentType?: string): Recor
   }
 }
 
+export const resolveAuthorizationMethod = (configured: 'header' | 'body' | undefined, supported?: string[]): 'header' | 'body' => {
+  if (configured) return configured
+  if (supported?.includes('client_secret_post') && !supported.includes('client_secret_basic')) return 'body'
+  return 'header'
+}
+
+const DISCOVERY_TTL = 24 * 3600 * 1000
+
+export const discoveryStale = (fetchedAt: Date | undefined, now = new Date()): boolean => {
+  return !fetchedAt || now.getTime() - fetchedAt.getTime() > DISCOVERY_TTL
+}
+
+// returns the cached discovery when fresh, refetches it when stale and keeps serving the stale copy
+// if the provider is unreachable (an unreachable provider must not break logins for a cached discovery)
+export async function refreshDiscovery (cached: { content: any, fetchedAt?: Date } | null, fetch: () => Promise<any>): Promise<{ content: any, fetchedAt: Date, refreshed: boolean }> {
+  if (cached && !discoveryStale(cached.fetchedAt)) {
+    return { content: cached.content, fetchedAt: cached.fetchedAt!, refreshed: false }
+  }
+  try {
+    return { content: await fetch(), fetchedAt: new Date(), refreshed: true }
+  } catch (err) {
+    if (!cached) throw err
+    log.warn('failed to refresh the OIDC discovery, keeping the cached one', { code: 'sd.oidc.discovery-refresh-failed', err })
+    return { content: cached.content, fetchedAt: cached.fetchedAt ?? new Date(0), refreshed: false }
+  }
+}
+
 // trusted: the provider comes from the operator's config (config.oidc.providers) and may live on
 // a private network. Site-level providers are not trusted, their discovery and userinfo requests
 // go through the public agents that refuse non public addresses (cf SSRF_PUBLIC_IPS).
@@ -48,14 +75,13 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
   // use full discovery URL as cache key to avoid collision between providers
   // on the same host but different paths (e.g. Azure AD multi-tenant)
   const cacheKey = slug(p.discovery, { lower: true, strict: true })
-  let discoveryContent = (await mongo.oidcDiscovery.findOne({ _id: cacheKey }))?.content
-  if (discoveryContent) {
-    debug(`Read pre-fetched OIDC discovery info from db for provider ${id}`, discoveryContent)
-  } else {
-    discoveryContent = (await axios.get(p.discovery)).data
-    debug(`Fetched OIDC discovery info from ${p.discovery}`, discoveryContent)
-    await mongo.oidcDiscovery.insertOne({ _id: cacheKey, content: discoveryContent })
-  }
+  const cached = await mongo.oidcDiscovery.findOne({ _id: cacheKey })
+  const { content: discoveryContent, fetchedAt, refreshed } = await refreshDiscovery(cached, async () => {
+    const content = (await axios.get(p.discovery)).data
+    debug(`Fetched OIDC discovery info from ${p.discovery}`, content)
+    return content
+  })
+  if (refreshed) await mongo.oidcDiscovery.replaceOne({ _id: cacheKey }, { content: discoveryContent, fetchedAt }, { upsert: true })
   const tokenURL = new URL(discoveryContent.token_endpoint)
   const authURL = new URL(discoveryContent.authorization_endpoint)
   const auth = {
@@ -146,6 +172,14 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     type: 'oidc',
     oidc: true,
     trusted,
+    clientId: p.client.id,
+    issuer: discoveryContent.issuer,
+    jwksUri: discoveryContent.jwks_uri,
+    endSessionEndpoint: discoveryContent.end_session_endpoint,
+    issParameterSupported: discoveryContent.authorization_response_iss_parameter_supported === true,
+    strict: p.strict ?? !trusted,
+    rpInitiatedLogout: p.rpInitiatedLogout ?? !trusted,
+    authorizationMethod: resolveAuthorizationMethod(p.authorizationMethod, discoveryContent.token_endpoint_auth_methods_supported),
     scope: p.scope || 'openid email profile',
     auth,
     userInfo
