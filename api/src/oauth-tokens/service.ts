@@ -64,10 +64,12 @@ export async function findOfflineOAuthTokens () {
 
 // back-channel logout: flag the tokens of the provider session (sid, or the legacy session_state of the
 // token response), else all the sessions of the subject on this provider
-export async function logoutOAuthToken ({ providerId, sid, sub }: { providerId: string, sid?: string, sub?: string }) {
+// site: the _id of the site that hosts the provider, null for a root provider (provider ids are not unique
+// across sites and levels, the tokens are stored under the site of the login)
+export async function logoutOAuthToken ({ providerId, site, sid, sub }: { providerId: string, site: string | null, sid?: string, sub?: string }) {
   const filter = sid
-    ? { 'provider.id': providerId, $or: [{ sid }, { 'token.session_state': sid }] }
-    : sub ? { 'provider.id': providerId, sub } : undefined
+    ? { 'provider.id': providerId, site, $or: [{ sid }, { 'token.session_state': sid }] }
+    : sub ? { 'provider.id': providerId, site, sub } : undefined
   if (!filter) return
   await mongo.oauthTokens.updateMany(filter, { $set: { loggedOut: new Date() } })
 }

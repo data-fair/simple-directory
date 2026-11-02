@@ -47,6 +47,8 @@ export const resolveAuthorizationMethod = (configured: 'header' | 'body' | undef
   return 'header'
 }
 
+const LOGOUT_TOKEN_MAX_AGE = 10 * 60
+
 const DISCOVERY_TTL = 24 * 3600 * 1000
 
 export const discoveryStale = (fetchedAt: Date | undefined, now = new Date()): boolean => {
@@ -79,12 +81,10 @@ export const applyOidcPolicy = (provider: Pick<OAuthProvider, 'id' | 'strict'>, 
   }
 }
 
-// trusted: the provider comes from the operator's config (config.oidc.providers) and may live on
-// a private network. Site-level providers are not trusted, their discovery and userinfo requests
-// go through the public agents that refuse non public addresses (cf SSRF_PUBLIC_IPS).
-export async function completeOidcProvider (p: OpenIDConnect, trusted = false): Promise<OAuthProvider> {
+// trusted: see completeOidcProvider
+// discovery document of a provider, from the cache when fresh (refetched and stored otherwise)
+export async function loadOidcDiscovery (p: Pick<OpenIDConnect, 'discovery'>, trusted = false): Promise<Record<string, any>> {
   const axios = trusted ? privateAxiosInstance : axiosInstance
-  const id = getOidcProviderId(p.discovery)
   // use full discovery URL as cache key to avoid collision between providers
   // on the same host but different paths (e.g. Azure AD multi-tenant)
   const cacheKey = slug(p.discovery, { lower: true, strict: true })
@@ -95,6 +95,16 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     return content
   })
   if (refreshed) await mongo.oidcDiscovery.replaceOne({ _id: cacheKey }, { content: discoveryContent, fetchedAt }, { upsert: true })
+  return discoveryContent
+}
+
+// trusted: the provider comes from the operator's config (config.oidc.providers) and may live on
+// a private network. Site-level providers are not trusted, their discovery and userinfo requests
+// go through the public agents that refuse non public addresses (cf SSRF_PUBLIC_IPS).
+export async function completeOidcProvider (p: OpenIDConnect, trusted = false): Promise<OAuthProvider> {
+  const id = getOidcProviderId(p.discovery)
+  const axios = trusted ? privateAxiosInstance : axiosInstance
+  const discoveryContent = await loadOidcDiscovery(p, trusted)
   const tokenURL = new URL(discoveryContent.token_endpoint)
   const authURL = new URL(discoveryContent.authorization_endpoint)
   const auth = {
@@ -130,6 +140,9 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
   const validateLogoutToken = async (logoutToken: string, logFields?: LogFields): Promise<{ sid?: string, sub?: string }> => {
     try {
       const claims = await verifyProviderJwt(jwtContext, logoutToken, { requireExp: false })
+      // no jti store: a captured token is only replayable during a short window
+      if (typeof claims.iat !== 'number') throw new OidcValidationError('iat', 'missing iat claim')
+      if (claims.iat < Date.now() / 1000 - LOGOUT_TOKEN_MAX_AGE) throw new OidcValidationError('iat', 'logout token too old')
       const event = claims.events?.['http://schemas.openid.net/event/backchannel-logout']
       if (!event || typeof event !== 'object' || Array.isArray(event)) throw new OidcValidationError('events', 'missing back-channel logout event')
       if ('nonce' in claims) throw new OidcValidationError('malformed', 'a logout token must not have a nonce')

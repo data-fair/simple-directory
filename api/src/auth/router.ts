@@ -21,7 +21,7 @@ import { checkPassword, validatePassword, type Password } from '../utils/passwor
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
-import { applyOidcPolicy } from '../oauth/oidc.ts'
+import { applyOidcPolicy, loadOidcDiscovery } from '../oauth/oidc.ts'
 import type { OAuthProvider } from '../oauth/service.ts'
 import { OidcValidationError, issuerParameterMatches } from '../oauth/oidc-jwt.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
@@ -949,27 +949,37 @@ const oauthLogoutCallback: RequestHandler = async (req, res, next) => {
   const decoded = decodeToken(logoutToken)
   if (!decoded || typeof decoded.iss !== 'string') return res.status(400).send('invalid logout_token')
 
-  // the providers of the site come first: for an issuer declared at both levels the policy of the site applies
-  const candidates: OAuthProvider[] = []
+  // the providers of the site come first: for an issuer declared at both levels the policy of the site applies.
+  // Only the provider whose discovery issuer matches the unverified iss is initialised: a broken provider of
+  // the site must not fail the request.
   const site = await reqSite(req)
-  if (site) {
-    for (const providerInfo of site.authProviders ?? []) {
-      if (providerInfo.type === 'oidc') candidates.push(await initOidcProvider(providerInfo, reqSiteUrl(req) + '/simple-directory'))
+  let provider: OAuthProvider | undefined
+  for (const providerInfo of site?.authProviders ?? []) {
+    if (providerInfo.type !== 'oidc') continue
+    try {
+      const { issuer } = await loadOidcDiscovery(providerInfo)
+      if (typeof issuer === 'string' && issuerParameterMatches(issuer, decoded.iss)) {
+        provider = await initOidcProvider(providerInfo, reqSiteUrl(req) + '/simple-directory')
+        break
+      }
+    } catch (err) {
+      log.warn('failed to load an OIDC provider of the site while looking for a back-channel logout issuer', { code: 'sd.auth.oauth.logout-provider-ko', providerId: getOidcProviderId(providerInfo.discovery), err })
     }
   }
-  candidates.push(...oauthGlobalProviders())
-  const provider = candidates.find(p => p.oidc && p.issuer && p.validateLogoutToken && issuerParameterMatches(p.issuer, decoded.iss as string))
-  if (!provider) return res.status(400).send('unknown logout_token issuer')
+  provider ??= oauthGlobalProviders().find(p => p.oidc && p.issuer && p.validateLogoutToken && issuerParameterMatches(p.issuer, decoded.iss as string))
+  if (!provider?.validateLogoutToken) return res.status(400).send('unknown logout_token issuer')
+  // the oauth tokens are stored under the site of the login: the site hosting the provider, null for a root provider
+  const tokenSite = provider.trusted ? null : (site?._id ?? null)
 
   let claims: { sid?: string, sub?: string }
   try {
-    claims = await provider.validateLogoutToken!(logoutToken, {})
+    claims = await provider.validateLogoutToken(logoutToken, {})
   } catch (err) {
     if (!(err instanceof OidcValidationError)) throw err
     log.warn(`back-channel logout refused for provider ${provider.id}, check ${err.check}`, { code: 'sd.auth.oauth.fail', providerId: provider.id, reason: 'logout-token', check: err.check })
     return res.status(400).send('invalid logout_token')
   }
-  await logoutOAuthToken({ providerId: provider.id, ...claims })
+  await logoutOAuthToken({ providerId: provider.id, site: tokenSite, ...claims })
   res.status(204).send()
 }
 
