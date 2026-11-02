@@ -4,7 +4,8 @@ import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, session, mo
 import eventsLog from '@data-fair/lib-express/events-log.js'
 import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
-import config from '#config'
+import config, { jwtDurations } from '#config'
+import { isExpiredPartnerInvitation } from '@sd/shared/partners.ts'
 import { isSiteAdminOf } from '../utils/site-admin.ts'
 import { reqI18n, __all } from '#i18n'
 import storages from '#storages'
@@ -418,8 +419,8 @@ if (config.managePartners) {
     if (!orga) return res.status(404).send()
     logContext.account = { type: 'organization', id: orga.id, name: orga.name }
 
-    // re-inviting a pending contact replaces its invitation (cf addPartner), it does not take a new slot
-    const reinvitation = (orga.partners || []).some(p => !p.id && p.contactEmail === partnerPost.contactEmail)
+    // re-inviting a pending contact replaces its invitation (cf addPartner), it only takes a new slot if the previous one expired
+    const reinvitation = (orga.partners || []).some(p => !p.id && p.contactEmail === partnerPost.contactEmail && !isExpiredPartnerInvitation(p, jwtDurations.partnerInvitationToken))
     if (!reinvitation) await assertNbPartnersLimit(orga, reqI18n(req).messages.errors.maxNbPartners)
 
     const partnerId = nanoid()

@@ -11,11 +11,12 @@
           style="top:-2px"
           :icon="mdiGraph"
         />
-        {{ $t('common.partners') }} <span>({{ $n(orga.partners?.length ?? 0) }})</span>
+        {{ $t('common.partners') }} <span>({{ quotaLabel }})</span>
         <add-partner-menu
           v-if="writablePartners && !adminMode"
           :orga="orga"
           :limit-reached="limitReached"
+          :nb-pending="nbPending"
           @change="$emit('change')"
         />
         <add-partner-superadmin-menu
@@ -31,6 +32,13 @@
         />-->
       </h2>
     </v-row>
+
+    <p
+      v-if="nbPartnersLimits && nbPartnersLimits.limit > 0"
+      class="text-body-medium text-medium-emphasis mb-2"
+    >
+      {{ $t('pages.organization.partnersQuotaHelp') }}
+    </p>
 
     <v-row
       v-if="(orga.partners?.length ?? 0) > pageSize"
@@ -87,10 +95,25 @@
               ({{ partner.contactEmail }})
             </template>
             <template v-if="!partner.id">
-              <span class="text-warning">{{ $t('common.emailNotConfirmed') }}
+              <span
+                v-if="isExpired(partner)"
+                class="text-error"
+              >{{ $t('pages.organization.partnerInvitationExpired') }}
                 <resend-partner-invitation
                   :partner="partner"
                   :orga="orga"
+                  :limit-reached="limitReached"
+                  @change="$emit('change')"
+                />
+              </span>
+              <span
+                v-else
+                class="text-warning"
+              >{{ $t('common.emailNotConfirmed') }}
+                <resend-partner-invitation
+                  :partner="partner"
+                  :orga="orga"
+                  @change="$emit('change')"
                 />
               </span>
             </template>
@@ -133,6 +156,7 @@
 </template>
 
 <script setup lang="ts">
+import { isExpiredPartnerInvitation } from '@sd/shared/partners'
 
 const { isAdminOrga, orga, nbPartnersLimits } = defineProps({
   isAdminOrga: {
@@ -156,9 +180,16 @@ const q = ref('')
 const validQ = ref('')
 
 const session = useSession()
+const { n } = useI18n()
 const adminMode = computed(() => !!session.user.value?.adminMode)
-// -1 means unlimited, 0 means none, pending invitations included
+// -1 means unlimited, 0 means none, unexpired pending invitations included
 const limitReached = computed(() => !!nbPartnersLimits && nbPartnersLimits.limit !== -1 && nbPartnersLimits.consumption >= nbPartnersLimits.limit)
+// "consumed / limit" when the quota is bounded, the plain count otherwise
+const quotaLabel = computed(() => nbPartnersLimits && nbPartnersLimits.limit > 0
+  ? `${n(nbPartnersLimits.consumption)} / ${n(nbPartnersLimits.limit)}`
+  : n(orga.partners?.length ?? 0))
+const isExpired = (partner: Partner) => isExpiredPartnerInvitation(partner, $uiConfig.jwtDurations.partnerInvitationToken)
+const nbPending = computed(() => (orga.partners ?? []).filter(p => !p.id && !isExpired(p)).length)
 const writablePartners = computed(() => (isAdminOrga && (!$uiConfig.readonly || $uiConfig.orgStorageOverwrite?.includes('partners'))) || adminMode.value)
 const filteredPartners = computed(() => {
   if (!validQ.value) return orga.partners ?? []

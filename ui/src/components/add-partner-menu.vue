@@ -27,8 +27,12 @@
         <v-alert
           :value="true"
           type="warning"
+          variant="outlined"
         >
           {{ $t('errors.maxNbPartners') }}
+          <template v-if="nbPending">
+            <br>{{ $t('pages.organization.partnersQuotaPending', { count: nbPending }) }}
+          </template>
         </v-alert>
       </v-card-text>
       <template v-else-if="editPartner && !loadingRedirects">
@@ -103,7 +107,8 @@ const { t } = useI18n()
 
 const { orga, limitReached } = defineProps({
   orga: { type: Object as () => Organization, required: true },
-  limitReached: { type: Boolean, default: false }
+  limitReached: { type: Boolean, default: false },
+  nbPending: { type: Number, default: 0 }
 })
 const emit = defineEmits(['change'])
 

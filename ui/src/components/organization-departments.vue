@@ -11,7 +11,7 @@
           style="top:-2px"
           :icon="mdiFamilyTree"
         />
-        {{ orga.departmentLabel || $t('common.departments') }} <span>({{ $n(orga.departments?.length ?? 0) }})</span>
+        {{ orga.departmentLabel || $t('common.departments') }} <span>({{ quotaLabel }})</span>
         <add-department-menu
           v-if="writableDepartments"
           :orga="orga"
@@ -131,7 +131,7 @@ const { isAdminOrga, orga, nbDepartmentsLimits } = defineProps({
 })
 defineEmits(['change'])
 
-const { t } = useI18n()
+const { t, n } = useI18n()
 
 const pageSize = 10
 const page = ref(1)
@@ -145,6 +145,10 @@ const sortItems = [
   { title: t('pages.organization.depSortAlpha'), value: 'alpha' }
 ]
 
+// "consumed / limit" when the quota is bounded, the plain count otherwise
+const quotaLabel = computed(() => nbDepartmentsLimits && nbDepartmentsLimits.limit > 0
+  ? `${n(orga.departments?.length ?? 0)} / ${n(nbDepartmentsLimits.limit)}`
+  : n(orga.departments?.length ?? 0))
 // -1 means unlimited, 0 means none
 const limitReached = computed(() => !!nbDepartmentsLimits && nbDepartmentsLimits.limit !== -1 && nbDepartmentsLimits.consumption >= nbDepartmentsLimits.limit)
 const writableDepartments = computed(() => isAdminOrga && (!$uiConfig.readonly || $uiConfig.orgStorageOverwrite?.includes('departments')))

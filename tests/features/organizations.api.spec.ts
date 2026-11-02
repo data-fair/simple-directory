@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { testEnvAx, maildevAx, createUser, axiosAuth, deleteAllEmails, waitForMail, getServerConfig, axios } from '../support/axios.ts'
 import jwt, { type JwtPayload } from 'jsonwebtoken'
+import { MongoClient } from 'mongodb'
 
 test.describe('organizations api', () => {
   test.beforeEach(async () => {
@@ -99,6 +100,24 @@ test.describe('organizations api', () => {
     await ax.post(`/api/organizations/${org.id}/partners`, { name: 'Partner 1', contactEmail: 'test-partner-limits1@test.com' })
     const orgInfo = (await ax.get(`/api/organizations/${org.id}`)).data
     assert.equal(orgInfo.partners.length, 1)
+
+    // an expired invitation can no longer be accepted, it frees its slot
+    const mongoClient = await MongoClient.connect((await getServerConfig()).mongo.url)
+    try {
+      await mongoClient.db().collection('organizations').updateOne({ _id: org.id } as any, { $set: { 'partners.0.createdAt': new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString() } })
+    } finally {
+      await mongoClient.close()
+    }
+    limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_partners, { limit: 1, consumption: 0 })
+    await ax.post(`/api/organizations/${org.id}/partners`, { name: 'Partner 2', contactEmail: 'test-partner-limits2@test.com' })
+    limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_partners, { limit: 1, consumption: 1 })
+    // re-inviting the expired contact would take a slot again, it is refused while the quota is full
+    await assert.rejects(
+      ax.post(`/api/organizations/${org.id}/partners`, { name: 'Partner 1', contactEmail: 'test-partner-limits1@test.com' }),
+      { status: 429 }
+    )
   })
 
   test('should invite a new partner in an organization', async () => {

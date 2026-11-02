@@ -68,5 +68,6 @@ export const jwtDurations = {
   idToken: ms(apiConfig.jwtDurations.idToken as StringValue) / 1000,
   exchangeToken: ms(apiConfig.jwtDurations.exchangeToken as StringValue) / 1000,
   adminExchangeToken: ms(apiConfig.jwtDurations.adminExchangeToken as StringValue) / 1000,
-  nhiToken: ms(apiConfig.jwtDurations.nhiToken as StringValue) / 1000
+  nhiToken: ms(apiConfig.jwtDurations.nhiToken as StringValue) / 1000,
+  partnerInvitationToken: ms(apiConfig.jwtDurations.partnerInvitationToken as StringValue) / 1000
 }

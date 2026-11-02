@@ -27,6 +27,7 @@
         <v-alert
           :value="true"
           type="warning"
+          variant="outlined"
         >
           {{ $t('errors.maxNbDepartments') }}
         </v-alert>
