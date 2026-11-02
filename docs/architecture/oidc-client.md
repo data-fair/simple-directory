@@ -111,6 +111,11 @@ scanners prefetch links.
 
 ## Logout
 
+Invariant the logout scoping relies on: root (config) providers are reachable only on requests without a site,
+and site providers only on requests with one (`getOAuthProviderById` / `getOAuthProviderByState`). A login
+through a root provider therefore never records a site (`idp.site` absent, oauth token `site: null`), and a
+login through a site provider always does. RP-initiated and back-channel logout match on that level.
+
 ### RP-initiated logout
 
 Flag `rpInitiatedLogout`, same rules as `strict` (`p.rpInitiatedLogout ?? !trusted`, migrated to `false` for
@@ -122,8 +127,8 @@ existing site providers). It also needs an `end_session_endpoint` in the discove
 - `DELETE /api/auth` calls `logout(req, res, { endSession: true })` and answers `200 { endSessionUrl }` when the
   session has an `idp`; lib-vue then redirects the browser. Without it, or when asked without `endSession`
   (other callers of `logout`), the answer is a plain `204` logout.
-- `idpEndSessionUrl` resolves the provider at the level recorded in `idp.site` (that site's `authProviders`,
-  else the root providers) and builds `end_session_endpoint?id_token_hint&client_id&post_logout_redirect_uri&state`.
+- `idpEndSessionUrl` resolves the provider at the level recorded in `idp.site`: with it set, only that site's
+  `authProviders`; without it, only the root providers. There is no fallback between levels. It builds `end_session_endpoint?id_token_hint&client_id&post_logout_redirect_uri&state`.
   Any failure (site or provider gone, flag turned off) is logged (`sd.auth.oidc.end-session-fail`) and the
   logout carries on without the URL.
 - The post logout redirect URI to register at the provider is
