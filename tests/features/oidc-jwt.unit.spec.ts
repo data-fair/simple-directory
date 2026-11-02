@@ -8,7 +8,7 @@ process.env.NODE_CONFIG_DIR = process.env.NODE_CONFIG_DIR || './api/config/'
 process.env.NODE_ENV = process.env.NODE_ENV || 'test'
 process.env.SUPPRESS_NO_CONFIG_WARNING = '1'
 
-const { verifyProviderJwt, clearJwksCache, expectedIssuer, OidcValidationError } = await import('../../api/src/oauth/oidc-jwt.ts')
+const { verifyProviderJwt, clearJwksCache, ageJwksCache, expectedIssuer, OidcValidationError } = await import('../../api/src/oauth/oidc-jwt.ts')
 
 const ISSUER = 'https://idp.test.com'
 const CLIENT_ID = 'test_client'
@@ -24,10 +24,12 @@ let server: http.Server
 let jwksUri: string
 let served: any[] = []
 let requests = 0
+let failing = false
 
 test.beforeAll(async () => {
   server = http.createServer((req, res) => {
     requests++
+    if (failing) { res.statusCode = 500; res.end('boom'); return }
     res.setHeader('content-type', 'application/json')
     res.end(JSON.stringify({ keys: served }))
   })
@@ -38,6 +40,7 @@ test.afterAll(() => { server.close() })
 test.beforeEach(() => {
   clearJwksCache()
   requests = 0
+  failing = false
 })
 
 const ctx = (extra: Record<string, any> = {}) => ({ id: 'test_p', issuer: ISSUER, jwksUri, clientId: CLIENT_ID, clientSecret: CLIENT_SECRET, trusted: true, ...extra })
@@ -168,6 +171,56 @@ test.describe('verifyProviderJwt', () => {
     await expectCheck(verifyProviderJwt(ctx(), t, { requireExp: true }), 'signature')
     assert.equal(requests, 2)
     await expectCheck(verifyProviderJwt(ctx(), t, { requireExp: true }), 'signature')
+    assert.equal(requests, 2)
+  })
+
+  test('no expected issuer fails closed', async () => {
+    const k = await newKey('k1')
+    served = [k.jwk]
+    await expectCheck(verifyProviderJwt(ctx({ issuer: undefined }), await sign(k.privateKey), { requireExp: true }), 'iss')
+  })
+
+  test('JWKS endpoint failing -> signature', async () => {
+    const k = await newKey('k1')
+    served = [k.jwk]
+    failing = true
+    await expectCheck(verifyProviderJwt(ctx(), await sign(k.privateKey), { requireExp: true }), 'signature')
+  })
+
+  test('concurrent unknown kids trigger a single refetch', async () => {
+    const k1 = await newKey('k1')
+    const k3 = await newKey('k3')
+    served = [k1.jwk]
+    await verifyProviderJwt(ctx(), await sign(k1.privateKey), { requireExp: true })
+    assert.equal(requests, 1)
+    const t = await sign(k3.privateKey, {}, 'k3')
+    const results = await Promise.allSettled(Array.from({ length: 8 }, () => verifyProviderJwt(ctx(), t, { requireExp: true })))
+    assert.ok(results.every(r => r.status === 'rejected'))
+    assert.equal(requests, 2)
+  })
+
+  test('failing forced refetch is rate limited', async () => {
+    const k1 = await newKey('k1')
+    const k3 = await newKey('k3')
+    served = [k1.jwk]
+    await verifyProviderJwt(ctx(), await sign(k1.privateKey), { requireExp: true })
+    failing = true
+    const t = await sign(k3.privateKey, {}, 'k3')
+    await expectCheck(verifyProviderJwt(ctx(), t, { requireExp: true }), 'signature')
+    await expectCheck(verifyProviderJwt(ctx(), t, { requireExp: true }), 'signature')
+    assert.equal(requests, 2)
+  })
+
+  test('stale keys are served when the refresh fails', async () => {
+    const k = await newKey('k1')
+    served = [k.jwk]
+    const t = await sign(k.privateKey)
+    await verifyProviderJwt(ctx(), t, { requireExp: true })
+    ageJwksCache(2 * 3600 * 1000)
+    failing = true
+    assert.equal((await verifyProviderJwt(ctx(), t, { requireExp: true })).sub, 'u1')
+    assert.equal(requests, 2)
+    assert.equal((await verifyProviderJwt(ctx(), t, { requireExp: true })).sub, 'u1')
     assert.equal(requests, 2)
   })
 })

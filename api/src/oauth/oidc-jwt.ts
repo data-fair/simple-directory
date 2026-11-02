@@ -8,8 +8,8 @@ export type OidcCheck = 'signature' | 'alg' | 'iss' | 'aud' | 'azp' | 'exp' | 'i
 
 export class OidcValidationError extends Error {
   check: OidcCheck
-  constructor (check: OidcCheck, message?: string) {
-    super(message ?? `OIDC validation failed: ${check}`)
+  constructor (check: OidcCheck, message?: string, options?: { cause?: unknown }) {
+    super(message ?? `OIDC validation failed: ${check}`, options)
     this.name = 'OidcValidationError'
     this.check = check
   }
@@ -42,20 +42,47 @@ export const expectedIssuer = (issuer: string, claims: Record<string, any>): str
   return issuer.replace('{tenantid}', claims.tid)
 }
 
-const fetchJwks = async (ctx: ProviderJwtContext, previous?: JwksEntry): Promise<JwksEntry> => {
-  const axios = ctx.trusted ? privateAxiosInstance : axiosInstance
-  const data = (await axios.get(ctx.jwksUri!)).data as JSONWebKeySet
-  if (!data || !Array.isArray(data.keys)) throw new Error(`invalid JWKS document for OIDC provider ${ctx.id}`)
-  return { jwks: createLocalJWKSet(data), fetchedAt: Date.now(), lastForcedRefetchAt: previous?.lastForcedRefetchAt ?? 0 }
+const inflight = new Map<string, Promise<JwksEntry>>()
+
+/** test hook: make the cached keys look older */
+export const ageJwksCache = (ms: number): void => {
+  for (const entry of jwksCache.values()) entry.fetchedAt -= ms
+}
+
+const fetchJwks = async (ctx: ProviderJwtContext): Promise<JwksEntry> => {
+  try {
+    const axios = ctx.trusted ? privateAxiosInstance : axiosInstance
+    const data = (await axios.get(ctx.jwksUri!)).data as JSONWebKeySet
+    if (!data || !Array.isArray(data.keys)) throw new Error('not a JWKS document')
+    return { jwks: createLocalJWKSet(data), fetchedAt: Date.now(), lastForcedRefetchAt: jwksCache.get(ctx.jwksUri!)?.lastForcedRefetchAt ?? 0 }
+  } catch (err: any) {
+    throw new OidcValidationError('signature', `could not fetch the keys of OIDC provider ${ctx.id}: ${err.message}`, { cause: err })
+  }
+}
+
+// one fetch at a time per URI, concurrent callers share it
+const refreshJwks = (ctx: ProviderJwtContext): Promise<JwksEntry> => {
+  let p = inflight.get(ctx.jwksUri!)
+  if (!p) {
+    p = fetchJwks(ctx).then(entry => { jwksCache.set(ctx.jwksUri!, entry); return entry })
+    const clear = () => { inflight.delete(ctx.jwksUri!) }
+    p.then(clear, clear)
+    inflight.set(ctx.jwksUri!, p)
+  }
+  return p
 }
 
 const getJwks = async (ctx: ProviderJwtContext): Promise<JwksEntry> => {
-  let entry = jwksCache.get(ctx.jwksUri!)
-  if (!entry || Date.now() - entry.fetchedAt > JWKS_TTL) {
-    entry = await fetchJwks(ctx, entry)
-    jwksCache.set(ctx.jwksUri!, entry)
+  const entry = jwksCache.get(ctx.jwksUri!)
+  if (entry && Date.now() - entry.fetchedAt <= JWKS_TTL) return entry
+  try {
+    return await refreshJwks(ctx)
+  } catch (err) {
+    if (!entry) throw err
+    // provider outage: keep serving the stale keys, and retry later rather than at each request
+    entry.fetchedAt = Date.now() - JWKS_TTL + FORCED_REFETCH_MIN_DELAY
+    return entry
   }
-  return entry
 }
 
 const verifySignature = async (ctx: ProviderJwtContext, token: string, alg: string): Promise<JWTPayload> => {
@@ -65,21 +92,25 @@ const verifySignature = async (ctx: ProviderJwtContext, token: string, alg: stri
     return (await jwtVerify(token, new TextEncoder().encode(ctx.clientSecret), options)).payload
   }
   if (!ctx.jwksUri) throw new OidcValidationError('signature', 'no jwks_uri to verify an asymmetric signature')
-  let entry = await getJwks(ctx)
+  const entry = await getJwks(ctx)
   try {
     return (await jwtVerify(token, entry.jwks, options)).payload
   } catch (err) {
     if (!(err instanceof errors.JWKSNoMatchingKey)) throw err
-    if (Date.now() - entry.lastForcedRefetchAt < FORCED_REFETCH_MIN_DELAY) throw err
     // the provider may have rotated its keys
-    entry = await fetchJwks(ctx, entry)
-    entry.lastForcedRefetchAt = Date.now()
-    jwksCache.set(ctx.jwksUri, entry)
-    return (await jwtVerify(token, entry.jwks, options)).payload
+    let fresh: JwksEntry
+    if (inflight.has(ctx.jwksUri)) {
+      fresh = await refreshJwks(ctx)
+    } else {
+      if (Date.now() - entry.lastForcedRefetchAt < FORCED_REFETCH_MIN_DELAY) throw err
+      entry.lastForcedRefetchAt = Date.now() // before awaiting: failures and concurrent callers are rate limited too
+      fresh = await refreshJwks(ctx)
+    }
+    return (await jwtVerify(token, fresh.jwks, options)).payload
   }
 }
 
-const mapJoseError = (err: unknown): unknown => {
+const mapJoseError = (err: unknown): OidcValidationError => {
   if (err instanceof OidcValidationError) return err
   if (err instanceof errors.JWTExpired) return new OidcValidationError('exp', err.message)
   if (err instanceof errors.JWTClaimValidationFailed) {
@@ -92,7 +123,8 @@ const mapJoseError = (err: unknown): unknown => {
   }
   if (err instanceof errors.JOSEAlgNotAllowed || err instanceof errors.JOSENotSupported) return new OidcValidationError('alg', err.message)
   if (err instanceof errors.JWSInvalid || err instanceof errors.JWTInvalid) return new OidcValidationError('malformed', err.message)
-  return err
+  // anything else (key import failure, invalid key...) is a failure to verify the signature
+  return new OidcValidationError('signature', (err as Error)?.message, { cause: err })
 }
 
 export async function verifyProviderJwt (ctx: ProviderJwtContext, token: string, opts: { nonce?: string, requireExp: boolean }): Promise<Record<string, any>> {
@@ -116,7 +148,8 @@ export async function verifyProviderJwt (ctx: ProviderJwtContext, token: string,
   if (opts.requireExp && typeof claims.exp !== 'number') throw new OidcValidationError('exp', 'missing exp claim')
   if (typeof claims.iat === 'number' && claims.iat > Date.now() / 1000 + CLOCK_TOLERANCE) throw new OidcValidationError('iat', 'iat claim in the future')
 
-  if (ctx.issuer && claims.iss !== expectedIssuer(ctx.issuer, claims)) throw new OidcValidationError('iss')
+  if (!ctx.issuer) throw new OidcValidationError('iss', 'no expected issuer')
+  if (claims.iss !== expectedIssuer(ctx.issuer, claims)) throw new OidcValidationError('iss')
 
   const audiences = Array.isArray(claims.aud) ? claims.aud : (claims.aud ? [claims.aud] : [])
   if (!audiences.includes(ctx.clientId)) throw new OidcValidationError('aud')
