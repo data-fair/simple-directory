@@ -241,7 +241,9 @@ module.exports = {
   },
   quotas: {
     defaultMaxCreatedOrgs: 'DEFAULT_MAX_CREATED_ORGS',
-    defaultMaxNbMembers: 'DEFAULT_MAX_NB_MEMBERS'
+    defaultMaxNbMembers: 'DEFAULT_MAX_NB_MEMBERS',
+    defaultMaxNbDepartments: 'DEFAULT_MAX_NB_DEPARTMENTS',
+    defaultMaxNbPartners: 'DEFAULT_MAX_NB_PARTNERS'
   },
   listEntitiesMode: 'LIST_ENTITIES_MODE',
   listUsersMode: 'LIST_USERS_MODE',

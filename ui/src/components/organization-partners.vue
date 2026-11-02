@@ -15,6 +15,7 @@
         <add-partner-menu
           v-if="writablePartners && !adminMode"
           :orga="orga"
+          :limit-reached="limitReached"
           @change="$emit('change')"
         />
         <add-partner-superadmin-menu
@@ -133,13 +134,17 @@
 
 <script setup lang="ts">
 
-const { isAdminOrga, orga } = defineProps({
+const { isAdminOrga, orga, nbPartnersLimits } = defineProps({
   isAdminOrga: {
     type: Boolean,
     default: null
   },
   orga: {
     type: Object as () => Organization,
+    default: null
+  },
+  nbPartnersLimits: {
+    type: Object as () => { limit: number, consumption: number },
     default: null
   }
 })
@@ -152,6 +157,8 @@ const validQ = ref('')
 
 const session = useSession()
 const adminMode = computed(() => !!session.user.value?.adminMode)
+// -1 means unlimited, 0 means none, pending invitations included
+const limitReached = computed(() => !!nbPartnersLimits && nbPartnersLimits.limit !== -1 && nbPartnersLimits.consumption >= nbPartnersLimits.limit)
 const writablePartners = computed(() => (isAdminOrga && (!$uiConfig.readonly || $uiConfig.orgStorageOverwrite?.includes('partners'))) || adminMode.value)
 const filteredPartners = computed(() => {
   if (!validQ.value) return orga.partners ?? []

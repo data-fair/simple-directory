@@ -35,6 +35,72 @@ test.describe('organizations api', () => {
     assert.equal(detailedOrg.departments.length, 1)
   })
 
+  test('should count departments and refuse new ones beyond the limit', async () => {
+    const { ax } = await createUser('test-dep-limits@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test dep limits', departments: [{ id: 'dep1', name: 'Department 1' }] })).data
+    ax.setOrg(org.id)
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+
+    // without a limit pushed by the customers service, departments are unlimited
+    let limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_departments, { limit: -1, consumption: 1 })
+
+    await adminAx.post(`/api/limits/organization/${org.id}`, {
+      lastUpdate: new Date().toISOString(),
+      store_nb_members: { limit: 0, consumption: 0 },
+      store_nb_departments: { limit: 2, consumption: 0 }
+    })
+    await ax.patch(`/api/organizations/${org.id}`, { departments: [{ id: 'dep1', name: 'Department 1' }, { id: '', name: 'Department 2' }] })
+    limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_departments, { limit: 2, consumption: 2 })
+    await assert.rejects(
+      ax.patch(`/api/organizations/${org.id}`, { departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'department-2', name: 'Department 2' }, { id: '', name: 'Department 3' }] }),
+      { status: 429 }
+    )
+
+    // 0 means none: an organization over its quota can still rename and remove its departments
+    await adminAx.post(`/api/limits/organization/${org.id}`, {
+      lastUpdate: new Date().toISOString(),
+      store_nb_members: { limit: 0, consumption: 0 },
+      store_nb_departments: { limit: 0, consumption: 0 }
+    })
+    await ax.patch(`/api/organizations/${org.id}`, { departments: [{ id: 'dep1', name: 'Renamed' }, { id: 'department-2', name: 'Department 2' }] })
+    await ax.patch(`/api/organizations/${org.id}`, { departments: [{ id: 'dep1', name: 'Renamed' }] })
+    await assert.rejects(
+      ax.patch(`/api/organizations/${org.id}`, { departments: [{ id: 'dep1', name: 'Renamed' }, { id: '', name: 'Department 2' }] }),
+      { status: 429 }
+    )
+    const orgInfo = (await ax.get(`/api/organizations/${org.id}`)).data
+    assert.deepEqual(orgInfo.departments.map((d: any) => d.id), ['dep1'])
+  })
+
+  test('should count partners, pending invitations included, and refuse new ones beyond the limit', async () => {
+    const { ax } = await createUser('test-partner-limits@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test partner limits' })).data
+    ax.setOrg(org.id)
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+
+    let limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_partners, { limit: -1, consumption: 0 })
+
+    await adminAx.post(`/api/limits/organization/${org.id}`, {
+      lastUpdate: new Date().toISOString(),
+      store_nb_members: { limit: 0, consumption: 0 },
+      store_nb_partners: { limit: 1, consumption: 0 }
+    })
+    await ax.post(`/api/organizations/${org.id}/partners`, { name: 'Partner 1', contactEmail: 'test-partner-limits1@test.com' })
+    limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_partners, { limit: 1, consumption: 1 })
+    await assert.rejects(
+      ax.post(`/api/organizations/${org.id}/partners`, { name: 'Partner 2', contactEmail: 'test-partner-limits2@test.com' }),
+      { status: 429 }
+    )
+    // re-inviting the same contact replaces the pending invitation, it does not consume a new slot
+    await ax.post(`/api/organizations/${org.id}/partners`, { name: 'Partner 1', contactEmail: 'test-partner-limits1@test.com' })
+    const orgInfo = (await ax.get(`/api/organizations/${org.id}`)).data
+    assert.equal(orgInfo.partners.length, 1)
+  })
+
   test('should invite a new partner in an organization', async () => {
     const config = await getServerConfig()
 

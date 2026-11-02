@@ -23,7 +23,15 @@
       <v-card-title>
         {{ $t('pages.organization.addDepartment', {departmentLabel: departmentLabel.toLowerCase()}) }}
       </v-card-title>
-      <v-card-text>
+      <v-card-text v-if="limitReached">
+        <v-alert
+          :value="true"
+          type="warning"
+        >
+          {{ $t('errors.maxNbDepartments') }}
+        </v-alert>
+      </v-card-text>
+      <v-card-text v-else>
         <v-form
           ref="createForm"
           @submit.prevent
@@ -53,7 +61,7 @@
         <v-btn
           color="primary"
           variant="flat"
-          :disabled="patchOrganization.loading.value"
+          :disabled="limitReached || patchOrganization.loading.value"
           @click="confirmCreate"
         >
           {{ $t('common.confirmOk') }}
@@ -72,7 +80,8 @@ const { patchOrganization } = useStore()
 
 const { orga, departmentLabel } = defineProps({
   orga: { type: Object as () => Organization, required: true },
-  departmentLabel: { type: String, required: true }
+  departmentLabel: { type: String, required: true },
+  limitReached: { type: Boolean, default: false }
 })
 const emit = defineEmits(['change'])
 

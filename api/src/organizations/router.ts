@@ -10,7 +10,7 @@ import { reqI18n, __all } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
 import type { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
-import { setNbMembersLimit, deleteIdentityLimits, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, getInvitationRedirect, deleteOtherDepartmentsAvatars } from '#services'
+import { setNbMembersLimit, deleteIdentityLimits, assertNbDepartmentsLimit, assertNbPartnersLimit, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, getInvitationRedirect, deleteOtherDepartmentsAvatars } from '#services'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
 import { cipher } from '../utils/cipher.ts'
@@ -172,6 +172,9 @@ router.patch('/:organizationId', async (req, res, next) => {
     patch.orgStorage.config.searchUserPassword = cipher(patch.orgStorage.config.searchUserPassword)
   }
   if (patch.departments) {
+    const orga = await storages.globalStorage.getOrganization(req.params.organizationId)
+    if (!orga) throw httpError(404)
+    await assertNbDepartmentsLimit(orga, patch.departments.length, reqI18n(req).messages.errors.maxNbDepartments)
     for (const dep of patch.departments) {
       if (!dep.id) {
         if (patch.departments.find(d => d.id && d.name === dep.name)) {
@@ -414,6 +417,10 @@ if (config.managePartners) {
     const orga = await storage.getOrganization(req.params.organizationId)
     if (!orga) return res.status(404).send()
     logContext.account = { type: 'organization', id: orga.id, name: orga.name }
+
+    // re-inviting a pending contact replaces its invitation (cf addPartner), it does not take a new slot
+    const reinvitation = (orga.partners || []).some(p => !p.id && p.contactEmail === partnerPost.contactEmail)
+    if (!reinvitation) await assertNbPartnersLimit(orga, reqI18n(req).messages.errors.maxNbPartners)
 
     const partnerId = nanoid()
 
