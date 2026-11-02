@@ -1,4 +1,5 @@
 import { strict as assert } from 'node:assert'
+import { loginBindingCookie } from './login-binding.ts'
 import type { AxiosAuthInstance, AxiosAuthOptions } from '@data-fair/lib-node/axios-auth.js'
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
@@ -140,12 +141,6 @@ export const deleteAllEmails = async () => {
   }
 }
 
-// the Cookie header value that forwards the sd_login_* binding cookies set by a login response
-export const loginBindingCookie = (res: { headers: any }): string => {
-  const setCookies: string[] = res.headers['set-cookie'] ?? []
-  return setCookies.filter(c => c.startsWith('sd_login_')).map(c => c.split(';')[0]).join('; ')
-}
-
 export const loginWithOIDC = async (port: number) => {
   const anonymousAx = await axios()
 
@@ -184,3 +179,5 @@ export const passwordLogin = async (ax: AxiosAuthInstance, email: string, passwo
     if (redirectError) throw new Error(redirectError)
   }
 }
+
+export { loginBindingCookie }

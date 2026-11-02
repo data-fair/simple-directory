@@ -834,22 +834,8 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     log.warn('oauth callback without state', { code: 'sd.auth.oauth.fail' })
     throw new Error('Bad OAuth state')
   }
-  // a relay state is single use: consuming it first also protects against concurrent replays
-  const relayState = await mongo.oauthRelayStates.findOneAndUpdate(
-    { _id: req.query.state as string, usedAt: { $exists: false } },
-    { $set: { usedAt: new Date() } },
-    { returnDocument: 'before' }
-  )
-  if (!relayState) {
-    // distinguish a replay from an unknown state for the logs, both are refused
-    const known = await mongo.oauthRelayStates.findOne({ _id: req.query.state as string }, { projection: { _id: 1 } })
-    if (known) {
-      log.warn('oauth callback with a relay state that was already used', { code: 'sd.auth.oauth.fail', reason: 'relay-state-used' })
-      res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=badIDPResponse`)
-      return
-    }
-    return res.status(404).send('Unknown relay state')
-  }
+  const relayState = await mongo.oauthRelayStates.findOne({ _id: req.query.state as string })
+  if (!relayState) return res.status(404).send('Unknown relay state')
   const { providerState, redirect, org, dep, invitToken, adminMode, nonce, codeVerifier, bindingHash } = relayState
   const returnError = (error: string, errorCode: number) => {
     log.info(`a user failed to authenticate with oauth due to ${error}`, { code: 'sd.auth.oauth.fail' })
@@ -861,14 +847,26 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   if (!provider) return res.status(404).send('Unknown OAuth provider')
   if (req.params.oauthId && req.params.oauthId !== provider.id) return res.status(404).send('Wrong OAuth provider id')
 
-  if (req.query.error) {
-    log.warn('oauth callback with an error from the provider', { code: 'sd.auth.oauth.fail', providerId: provider.id, error: String(req.query.error), errorDescription: req.query.error_description ? String(req.query.error_description) : undefined })
-    return returnError('badIDPQuery', 500)
-  }
-
+  // the binding is checked before the relay state is consumed: whoever learns the state from the authorize URL
+  // must not be able to burn the login of the browser that started it
   if (!bindingHash || !checkLoginBinding(req, res, relayState._id, bindingHash)) {
     log.warn('oauth callback from a browser that did not start the login', { code: 'sd.auth.oauth.fail', providerId: provider.id, reason: 'binding-cookie' })
     return returnError('badIDPResponse', 400)
+  }
+
+  // a relay state is single use, the atomic update also protects against concurrent replays
+  const consumed = await mongo.oauthRelayStates.findOneAndUpdate(
+    { _id: relayState._id, usedAt: { $exists: false } },
+    { $set: { usedAt: new Date() } }
+  )
+  if (!consumed) {
+    log.warn('oauth callback with a relay state that was already used', { code: 'sd.auth.oauth.fail', providerId: provider.id, reason: 'relay-state-used' })
+    return returnError('badIDPResponse', 400)
+  }
+
+  if (req.query.error) {
+    log.warn('oauth callback with an error from the provider', { code: 'sd.auth.oauth.fail', providerId: provider.id, error: String(req.query.error), errorDescription: req.query.error_description ? String(req.query.error_description) : undefined })
+    return returnError('badIDPQuery', 500)
   }
 
   // RFC 9207: the authorization server identifies itself in the response

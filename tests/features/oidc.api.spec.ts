@@ -122,6 +122,14 @@ test.describe('global OIDC configuration', () => {
     assert.equal(new URL(res2.headers.location).searchParams.get('error'), 'badIDPResponse')
   })
 
+  test('should not let a callback without the cookie burn the legitimate login', async () => {
+    const { anonymousAx, loginInitial, callbackUrl } = await startLogin()
+    const attack = await callback(anonymousAx, callbackUrl)
+    assert.equal(new URL(attack.headers.location).searchParams.get('error'), 'badIDPResponse')
+    const res = await callback(anonymousAx, callbackUrl, loginBindingCookie(loginInitial))
+    assert.equal(new URL(res.headers.location).pathname, '/simple-directory/api/auth/token_callback')
+  })
+
   test('should accept two logins started before either callback', async () => {
     const login1 = await startLogin()
     const login2 = await startLogin()

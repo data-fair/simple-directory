@@ -8,6 +8,7 @@ process.env.IGNORE_ASSERT_REQ_INTERNAL = '1'
 process.env.NODE_CONFIG_DIR = process.env.NODE_CONFIG_DIR || './api/config/'
 
 import { strict as assert } from 'node:assert'
+import { loginBindingCookie } from './login-binding.ts'
 import type { AxiosAuthOptions } from '@data-fair/lib-node/axios-auth.js'
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
@@ -74,11 +75,6 @@ export const axiosAuth = async (opts: string | Omit<AxiosAuthOptions, 'password'
 }
 
 export { clean }
-
-const loginBindingCookie = (res: { headers: any }): string => {
-  const setCookies: string[] = res.headers['set-cookie'] ?? []
-  return setCookies.filter(c => c.startsWith('sd_login_')).map(c => c.split(';')[0]).join('; ')
-}
 
 export const loginWithOIDC = async (port: number) => {
   const anonymousAx = await axios()
