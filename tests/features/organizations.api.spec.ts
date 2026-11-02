@@ -42,7 +42,7 @@ test.describe('organizations api', () => {
     ax.setOrg(org.id)
     const { ax: adminAx } = await createUser('admin@test.com', true)
 
-    // without a limit pushed by the customers service, departments are unlimited
+    // without a limit pushed by the limits service, departments are unlimited
     let limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
     assert.deepEqual(limits.store_nb_departments, { limit: -1, consumption: 1 })
 

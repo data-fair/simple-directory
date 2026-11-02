@@ -157,7 +157,7 @@ module.exports = {
   quotas: {
     defaultMaxCreatedOrgs: -1,
     defaultMaxNbMembers: 0,
-    // used when the customers service did not push a limit, -1 means unlimited
+    // used when the limits service did not push a limit, -1 means unlimited
     defaultMaxNbDepartments: -1,
     defaultMaxNbPartners: -1
   },
