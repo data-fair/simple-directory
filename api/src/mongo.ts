@@ -62,6 +62,11 @@ export class SdMongo {
     return mongo.db.collection<OAuthToken>('oauth-tokens')
   }
 
+  // jti of the redirect-flow callback tokens already exchanged for a session (single use)
+  get usedCallbackTokens () {
+    return mongo.db.collection<{ _id: string, usedAt: Date }>('used-callback-tokens')
+  }
+
   get oauthRelayStates () {
     return mongo.db.collection<OAuthRelayState>('oauth-relay-states')
   }
@@ -157,6 +162,9 @@ export class SdMongo {
         'oauth-tokens-provider': { 'provider.id': 1 },
         'oauth-tokens-offline': { offlineRefreshToken: 1 },
         'oauth-tokens-sid': { 'token.session_state': 1 }
+      },
+      'used-callback-tokens': {
+        ttl: [{ usedAt: 1 }, { expireAfterSeconds: 60 * 60 }]
       },
       'oauth-relay-states': {
         ttl: [{ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 }]

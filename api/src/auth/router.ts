@@ -177,7 +177,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   // after the password check keeps the account enumeration protection of the routes above.
   if (user.emailConfirmed === false) {
     const payload = { ...getTokenPayload(user, site), emailConfirmed: true }
-    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, site, orgId, depId))
+    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, site, orgId, depId), undefined, { emailed: true })
     await sendMailI18n('creation', reqI18n(req).messages, user.email, { link: linkUrl.href })
     log.info('a user with a valid password tried to authenticate before confirming their email, a new confirmation mail was sent', { code: 'sd.auth.password.unconfirmed', ...logFields })
     return returnError('emailNotConfirmed', 403)
@@ -419,7 +419,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   }
 
   const redirectSite = query.redirect ? (await getSiteByUrl(query.redirect)) : site
-  const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, redirectSite, body.org, body.dep), body.orgStorage)
+  const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, redirectSite, body.org, body.dep), body.orgStorage, { emailed: true })
 
   debug(`Passwordless authentication of user ${user.name}`)
   await sendMailI18n('login', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
@@ -461,6 +461,17 @@ router.get('/token_callback', async (req, res, next) => {
     decoded = await session.verifyToken(query.id_token)
   } catch (err) {
     return redirectError('invalidToken')
+  }
+
+  // redirect flows: the temporary token is single use (emailed links carry no cbJti and stay reusable)
+  if (decoded.cbJti) {
+    try {
+      await mongo.usedCallbackTokens.insertOne({ _id: decoded.cbJti, usedAt: new Date() })
+    } catch (err: any) {
+      if (err.code !== 11000) throw err
+      log.warn('a token_callback url was opened twice, the second use is refused', { code: 'sd.auth.callback.reuse', ...logFields })
+      return redirectError('invalidToken')
+    }
   }
 
   let org

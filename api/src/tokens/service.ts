@@ -449,11 +449,14 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
 // this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
-export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:(Pick<OrganizationMembership, 'id' | 'department'> & { role?: string }), orgStorage?: boolean) => {
+export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:(Pick<OrganizationMembership, 'id' | 'department'> & { role?: string }), orgStorage?: boolean, opts?: { emailed?: boolean }) => {
   redirect = getDefaultLoginRedirect(reqSiteUrl(req), redirect)
   const redirectUrl = new URL(redirect)
   const redirectSite = await getRedirectSite(req, redirect)
-  const token = await signToken({ ...payload, temporary: true }, config.jwtDurations.initialToken)
+  // redirect flows hand the token to the browser: it is single use (cbJti consumed by token_callback).
+  // links sent by email stay reusable until expiry, mail scanners prefetch them
+  const cbPayload = opts?.emailed ? payload : { ...payload, cbJti: nanoid() }
+  const token = await signToken({ ...cbPayload, temporary: true }, config.jwtDurations.initialToken)
   const redirectBase = redirectSite ? (redirectUrl.protocol + redirectSite.host + (redirectSite.path ?? '') + '/simple-directory') : config.publicUrl
   const tokenCallback = redirectBase + '/api/auth/token_callback'
   const tokenCallbackUrl = new URL(tokenCallback)

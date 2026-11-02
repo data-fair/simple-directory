@@ -242,7 +242,7 @@ router.post('', async (req, res, next) => {
     // the user will be validated and authenticated at the same time by the token_callback route
     const payload = { ...getTokenPayload(createdUser, site), emailConfirmed: true }
     const redirectSite = query.redirect ? (await getSiteByUrl(query.redirect)) : site
-    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, redirectSite, query.org, query.dep))
+    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(createdUser, redirectSite, query.org, query.dep), undefined, { emailed: true })
     await sendMailI18n('creation', reqI18n(req).messages, body.email, { link: linkUrl.href })
     // this route doesn't return any info to its caller to prevent giving any indication of existing accounts, etc
     return res.status(204).send()
