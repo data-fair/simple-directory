@@ -47,6 +47,36 @@ test.describe('global OIDC configuration', () => {
     assert.deepEqual(me2.organizations, [{ id: 'test_org1', name: 'test', role: 'contrib', dflt: 1 }])
   })
 
+  test('should send a nonce and check it in the id_token', async () => {
+    const anonymousAx = await axios()
+    const loginInitial = await anonymousAx.get(`/api/auth/oauth/localhost${mockOidcPort1}/login`, { validateStatus: (status: number) => status === 302 })
+    const providerAuthUrl = new URL(loginInitial.headers.location)
+    const nonce = providerAuthUrl.searchParams.get('nonce')
+    assert.ok(nonce && nonce.length >= 32)
+    // rejected by ProConnect, and the default value anyway
+    assert.equal(providerAuthUrl.searchParams.get('display'), null)
+    assert.equal(providerAuthUrl.searchParams.get('scope'), 'openid email profile')
+
+    // the provider puts a nonce that does not match the relay state in the id_token
+    providerAuthUrl.searchParams.set('nonce', 'tampered-' + nonce)
+    const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (status: number) => status === 302 })
+    const oauthCallback = await anonymousAx(loginProvider.headers.location, { validateStatus: (status: number) => status === 302 })
+    const callbackRedirect = new URL(oauthCallback.headers.location)
+    assert.equal(callbackRedirect.pathname, '/simple-directory/login')
+    assert.equal(callbackRedirect.searchParams.get('error'), 'badIDPResponse')
+  })
+
+  test('should read the last name from usual_name (ProConnect)', async () => {
+    const { ax } = await createUser('test-org@test.com')
+    await ax.post('/api/organizations', { name: 'test', id: 'test_org1', roles: ['admin', 'user', 'contrib'] })
+    const { family_name: _, ...proConnectUserInfo } = oidcUserInfo1
+    await axiosBuilder().patch(mockOidcControlUrl1 + '/_test/userinfo', { ...proConnectUserInfo, usual_name: 'Usual' })
+    const ax1 = await loginWithOIDC(mockOidcPort1)
+    const me = (await ax1.get('/api/auth/me')).data
+    assert.equal(me.email, 'oidc1@test.com')
+    assert.equal(me.name, 'OIDC Usual')
+  })
+
   test('should implement a standard login workflow on a core id provider', async () => {
     const { ax } = await createUser('test-org@test.com')
     await ax.post('/api/organizations', { name: 'test', id: 'test_org1', roles: ['admin', 'user', 'contrib'] })

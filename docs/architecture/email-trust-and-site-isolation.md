@@ -62,7 +62,16 @@ looser IdP.
   `claims.email_verified === false`. Absent / null / non-boolean passes.
   Per-provider `ignoreEmailVerified: true` escape hatch, gated behind
   superadmin-level site-config editing, suppresses even the explicit-false
-  rejection.
+  rejection. Claims come from the userinfo endpoint (JSON, or a signed JWT
+  answered as `application/jwt`, e.g. ProConnect), then the id_token, then
+  the access token. The id_token and a JWT userinfo are decoded without
+  signature verification: both come from back channel TLS requests to the
+  provider's own endpoints. Each login sends a random `nonce`, kept in the
+  relay state, and the callback refuses an id_token whose `nonce` differs
+  (`badIDPResponse`). Some providers require it (ProConnect). It adds little
+  beyond `state`: the relay state is not bound to the browser, so it does
+  not protect against login CSRF with a callback URL crafted from an
+  attacker's own login.
 - **Google** — requires `verified_email === true` on the v1 userinfo
   (Google always emits this reliably, so strict opt-in is correct here).
 - **GitHub** — requires the address to be both `primary` and `verified`.

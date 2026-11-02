@@ -22,7 +22,7 @@ import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
-import { randomUUID } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
 import dayjs from 'dayjs'
 import { userLogFields, type LogFields } from '../utils/log-fields.ts'
 
@@ -810,8 +810,9 @@ const oauthLogin: RequestHandler<{ oauthId: string }> = async (req, res, next) =
     // adminMode via SSO trusts the IdP's own MFA; prompt=login forces a fresh IdP authentication
     adminMode: !!(req.query.adminMode as string)
   }
+  if (provider.oidc) relayState.nonce = randomBytes(32).toString('base64url')
   await mongo.oauthRelayStates.insertOne(relayState)
-  const authorizationUri = provider.authorizationUri(relayState._id, req.query.email as string, provider.coreIdProvider, relayState.adminMode)
+  const authorizationUri = provider.authorizationUri(relayState._id, req.query.email as string, provider.coreIdProvider, relayState.adminMode, relayState.nonce)
   debugOAuth('login authorizationUri', authorizationUri)
   log.info('a user was redirected to a oauth provider', { code: 'sd.auth.oauth.redirect' })
   res.redirect(authorizationUri)
@@ -830,7 +831,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   }
   const relayState = await mongo.oauthRelayStates.findOne({ _id: req.query.state as string })
   if (!relayState) return res.status(404).send('Unknown relay state')
-  const { providerState, redirect, org, dep, invitToken, adminMode } = relayState
+  const { providerState, redirect, org, dep, invitToken, adminMode, nonce } = relayState
   const returnError = (error: string, errorCode: number) => {
     log.info(`a user failed to authenticate with oauth due to ${error}`, { code: 'sd.auth.oauth.fail' })
     debugOAuth('login return error', error, errorCode)
@@ -848,6 +849,14 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
 
   const { token, offlineRefreshToken } = await provider.getToken(req.query.code as string, provider.coreIdProvider)
   debugOAuthTokens('full oauth token', token)
+  // relay states created before the nonce was introduced have none
+  if (nonce && token.id_token) {
+    const idTokenNonce = decodeToken(token.id_token as string)?.nonce
+    if (idTokenNonce !== nonce) {
+      log.warn('oauth callback with an id_token nonce that does not match the relay state', { code: 'sd.auth.oauth.fail', providerId: provider.id })
+      return returnError('badIDPResponse', 400)
+    }
+  }
   const authInfo = await provider.userInfo(token.access_token, token.id_token, logFields)
 
   if (!authInfo.user.email) {

@@ -22,6 +22,23 @@ export const getOidcProviderId = (url: string) => {
   return slug(host, { lower: true, strict: true })
 }
 
+// the userinfo endpoint answers in JSON, or with a JWT when the client registration asks for a signed
+// response (application/jwt, cf OIDC Core 5.3.2, the default of ProConnect). The JWT is decoded without
+// checking its signature, like the id_token: both come from a back channel request to the provider.
+export const parseUserInfoResponse = (body: string, contentType?: string): Record<string, any> | undefined => {
+  // an unreadable response returns undefined, userInfo then falls back to the id_token claims
+  if (contentType?.startsWith('application/jwt')) {
+    const claims = jwt.decode(body.trim())
+    return claims && typeof claims === 'object' ? claims : undefined
+  }
+  try {
+    const claims = JSON.parse(body)
+    return claims && typeof claims === 'object' ? claims : undefined
+  } catch {
+    return undefined
+  }
+}
+
 // trusted: the provider comes from the operator's config (config.oidc.providers) and may live on
 // a private network. Site-level providers are not trusted, their discovery and userinfo requests
 // go through the public agents that refuse non public addresses (cf SSRF_PUBLIC_IPS).
@@ -52,9 +69,11 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     if (!p.userInfoSource || p.userInfoSource === 'auto') {
       if (discoveryContent.userinfo_endpoint) {
         debug('read claims from userinfo_endpoint')
-        claims = (await axios.get(discoveryContent.userinfo_endpoint, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        })).data
+        const res = await axios.get(discoveryContent.userinfo_endpoint, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          responseType: 'text'
+        })
+        claims = parseUserInfoResponse(res.data, String(res.headers['content-type'] ?? ''))
       }
       if (!claims?.email && idToken) {
         debug('fallback to reading claims from id_token')
@@ -111,6 +130,9 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     }
     if (claims.family_name) {
       userInfo.user.lastName = claims.family_name
+    } else if (claims.usual_name) {
+      // ProConnect (French public sector) uses usual_name instead of family_name
+      userInfo.user.lastName = claims.usual_name
     }
     if (claims.name) {
       userInfo.user.name = claims.name
@@ -124,7 +146,7 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     type: 'oidc',
     oidc: true,
     trusted,
-    scope: 'openid email profile',
+    scope: p.scope || 'openid email profile',
     auth,
     userInfo
   }

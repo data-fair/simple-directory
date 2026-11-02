@@ -716,6 +716,28 @@ export default {
             }
           }
         },
+        scope: {
+          type: 'string',
+          title: 'Scopes demandés',
+          'x-i18n-title': {
+            fr: 'Scopes demandés',
+            en: 'Requested scopes',
+            es: 'Scopes solicitados',
+            it: 'Scope richiesti',
+            pt: 'Scopes solicitados',
+            de: 'Angeforderte Scopes'
+          },
+          description: 'Liste séparée par des espaces, "openid email profile" par défaut. Pour ProConnect : "openid email given_name usual_name".',
+          'x-i18n-description': {
+            fr: 'Liste séparée par des espaces, "openid email profile" par défaut. Pour ProConnect : "openid email given_name usual_name".',
+            en: 'Space separated list, "openid email profile" by default. For ProConnect: "openid email given_name usual_name".',
+            es: 'Lista separada por espacios, "openid email profile" por defecto. Para ProConnect: "openid email given_name usual_name".',
+            it: 'Elenco separato da spazi, "openid email profile" per impostazione predefinita. Per ProConnect: "openid email given_name usual_name".',
+            pt: 'Lista separada por espaços, "openid email profile" por padrão. Para ProConnect: "openid email given_name usual_name".',
+            de: 'Durch Leerzeichen getrennte Liste, standardmäßig "openid email profile". Für ProConnect: "openid email given_name usual_name".'
+          },
+          pattern: '^\\S+( \\S+)*$'
+        },
         credentialsEncodingMode: {
           type: 'string',
           title: 'Encodage des crédentiels du client',

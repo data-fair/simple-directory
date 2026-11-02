@@ -57,7 +57,7 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
 
 export type PreparedOAuthProvider = OAuthProvider & {
   state: string
-  authorizationUri (relayState: string, email: string, offlineAccess?: boolean, forceLogin?: boolean): string
+  authorizationUri (relayState: string, email: string, offlineAccess?: boolean, forceLogin?: boolean, nonce?: string): string
   getToken (code: string, offlineAccess?: boolean): Promise<any>
   refreshToken (tokenObj: any): Promise<any>
 }
@@ -70,7 +70,9 @@ export type OAuthRelayState = {
   org?: string,
   dep?: string,
   invitToken?: string,
-  adminMode?: boolean
+  adminMode?: boolean,
+  // OIDC only, echoed by the provider in the id_token and checked in the callback
+  nonce?: string
 }
 
 export const getOAuthProviderById = async (req: Request, id: string): Promise<PreparedOAuthProvider | undefined> => {
@@ -123,7 +125,7 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
   const callbackUri = p.oidc ? `${publicUrl}/api/auth/oauth-callback` : `${publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
-  const authorizationUri = (relayState: string, email: string, offlineAccess = false, forceLogin = false) => {
+  const authorizationUri = (relayState: string, email: string, offlineAccess = false, forceLogin = false, nonce?: string) => {
     let scope = p.scope
     if (offlineAccess) {
       scope += ' offline_access'
@@ -131,8 +133,10 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     const params: Record<string, string> = {
       redirect_uri: callbackUri,
       scope,
-      state: relayState,
-      display: 'page'
+      state: relayState
+    }
+    if (nonce) {
+      params.nonce = nonce
     }
     if (forceLogin) {
       params.prompt = 'login'
