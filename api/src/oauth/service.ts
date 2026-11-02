@@ -62,7 +62,9 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
   // the token-refresh worker): they do not log these refusals.
   userInfo: (accessToken: string, id_token?: string, logFields?: LogFields, idTokenClaims?: Record<string, any>) => Promise<OAuthUserInfo>,
   // oidc providers only: verified claims of the id_token, or the decoded ones if the policy of the provider lets a failure through
-  validateIdToken?: (idToken: string, nonce?: string, logFields?: LogFields) => Promise<Record<string, any>>
+  validateIdToken?: (idToken: string, nonce?: string, logFields?: LogFields) => Promise<Record<string, any>>,
+  // oidc providers only: OIDC Back-Channel Logout 1.0, resolves the session and subject the token ends
+  validateLogoutToken?: (logoutToken: string, logFields?: LogFields) => Promise<{ sid?: string, sub?: string }>
 }
 
 export type PreparedOAuthProvider = OAuthProvider & {

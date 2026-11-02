@@ -67,7 +67,7 @@ export const task = async () => {
           const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token)
           const memberInfos = await authProviderMemberInfo(undefined, provider, userInfo)
           await patchCoreAuthUser(provider, user, userInfo, memberInfos)
-          await writeOAuthToken(user, provider, newToken, offlineRefreshToken, token.loggedOut, token.site)
+          await writeOAuthToken(user, provider, newToken, offlineRefreshToken, token.loggedOut, token.site, token)
           log.info(`a user refreshed their info from their core identity provider ${provider.id}`, { code: 'sd.cleanup-cron.offline-token.refresh-ok', ...userLogFields(user) })
         } catch (err: any) {
           if (err?.data?.payload?.error === 'invalid_grant') {

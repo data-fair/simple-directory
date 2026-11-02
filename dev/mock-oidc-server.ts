@@ -10,6 +10,7 @@
 //   PATCH /_test/authorize-redirect — set query params added to (or overriding) the authorize redirect, e.g. { "iss": "http://evil" }
 //   PATCH /_test/id-token-claims — set claims merged into the id_token payload (e.g. { "aud": "other" })
 //   PATCH /_test/access-token-claims — same for the access token; token-config { "omitIdToken": true } drops the id_token
+//   POST /_test/sign             — sign the body claims with the keys of the instance, answers { token } (a null claim is dropped; iss, iat, exp default to the instance's)
 //   DELETE /_test                — reset to defaults
 
 import 'dotenv/config'
@@ -105,6 +106,18 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
       instance.accessTokenClaims = body || {}
       res.writeHead(200)
       res.end(JSON.stringify({ ok: true }))
+    } else if (req.method === 'POST' && req.url === '/_test/sign') {
+      const claims: Record<string, any> = body || {}
+      const token = await instance.oauthServer.issuer.buildToken({
+        scopesOrTransform: (_header: any, payload: any) => {
+          for (const [key, value] of Object.entries(claims)) {
+            if (value === null) delete payload[key]
+            else payload[key] = value
+          }
+        }
+      })
+      res.writeHead(200)
+      res.end(JSON.stringify({ token }))
     } else if (req.method === 'DELETE' && req.url === '/_test') {
       instance.accessTokenClaims = {}
       instance.idTokenClaims = {}

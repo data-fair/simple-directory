@@ -125,6 +125,25 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     }
   }
 
+  // OIDC Back-Channel Logout 1.0 §2.4. A non strict provider that fails the verification still honors the
+  // legacy unsigned Keycloak shape (typ Logout and a sid), after the alert
+  const validateLogoutToken = async (logoutToken: string, logFields?: LogFields): Promise<{ sid?: string, sub?: string }> => {
+    try {
+      const claims = await verifyProviderJwt(jwtContext, logoutToken, { requireExp: false })
+      const event = claims.events?.['http://schemas.openid.net/event/backchannel-logout']
+      if (!event || typeof event !== 'object' || Array.isArray(event)) throw new OidcValidationError('events', 'missing back-channel logout event')
+      if ('nonce' in claims) throw new OidcValidationError('malformed', 'a logout token must not have a nonce')
+      if (typeof claims.sid !== 'string' && typeof claims.sub !== 'string') throw new OidcValidationError('sub', 'a logout token needs a sid or a sub')
+      return { sid: typeof claims.sid === 'string' ? claims.sid : undefined, sub: typeof claims.sub === 'string' ? claims.sub : undefined }
+    } catch (err) {
+      if (!(err instanceof OidcValidationError)) throw err
+      applyOidcPolicy(policyProvider, err, logFields)
+      const decoded = jwt.decode(logoutToken) as Record<string, any> | null
+      if (decoded?.typ === 'Logout' && typeof decoded.sid === 'string') return { sid: decoded.sid }
+      throw err
+    }
+  }
+
   // idTokenClaims: the claims returned by validateIdToken when the login produced an id_token
   const userInfo = async (accessToken: string, idToken?: string, logFields?: LogFields, idTokenClaims?: Record<string, any>) => {
     let claims
@@ -233,6 +252,7 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     scope: p.scope || 'openid email profile',
     auth,
     userInfo,
-    validateIdToken
+    validateIdToken,
+    validateLogoutToken
   }
 }

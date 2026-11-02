@@ -22,6 +22,7 @@ import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
 import { applyOidcPolicy } from '../oauth/oidc.ts'
+import type { OAuthProvider } from '../oauth/service.ts'
 import { OidcValidationError, issuerParameterMatches } from '../oauth/oidc-jwt.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
@@ -651,7 +652,7 @@ router.post('/keepalive', async (req, res, next) => {
         const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token, {}, idTokenClaims)
         const memberInfos = await authProviderMemberInfo(await reqSite(req), provider, userInfo)
         user = await patchCoreAuthUser(provider, user, userInfo, memberInfos)
-        await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, authSite?._id)
+        await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, authSite?._id, idTokenClaims ?? oauthToken)
         log.info(`a user refreshed their info from their core identity provider ${provider.id}`, { code: 'sd.auth.keepalive.oauth-refresh-ok' })
       }
     } catch (err: any) {
@@ -894,6 +895,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   }
 
   let token, offlineRefreshToken, authInfo
+  let idTokenClaims: Record<string, any> | undefined
   try {
     // RFC 9207: the authorization server identifies itself in the response
     if (provider.oidc) {
@@ -906,7 +908,6 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     ;({ token, offlineRefreshToken } = await provider.getToken(req.query.code as string, codeVerifier))
     debugOAuthTokens('full oauth token', token)
     // relay states created before the nonce was introduced have none, the nonce is then not checked
-    let idTokenClaims: Record<string, any> | undefined
     if (provider.validateIdToken) {
       // the id_token is mandatory in the authorization code flow of an OIDC provider
       if (token.id_token) idTokenClaims = await provider.validateIdToken(token.id_token as string, nonce, logFields)
@@ -928,7 +929,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     const [callbackUrl, user] = await authProviderLoginCallback(req, invitToken, authInfo, logFields, provider, redirect, org, dep, adminMode)
     if (provider.coreIdProvider) {
       const callbackSite = await reqSite(req)
-      await writeOAuthToken(user, provider, token, offlineRefreshToken, undefined, callbackSite?._id)
+      await writeOAuthToken(user, provider, token, offlineRefreshToken, undefined, callbackSite?._id, idTokenClaims)
     }
     res.redirect(callbackUrl)
   } catch (err : any) {
@@ -940,13 +941,35 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
 router.get('/oauth/:oauthId/callback', oauthCallback)
 router.get('/oauth-callback', oauthCallback)
 
+// OIDC Back-Channel Logout 1.0: the provider is found by the (still unverified) iss of the logout token, then the
+// token is verified against its keys. The response never tells why a token was refused.
 const oauthLogoutCallback: RequestHandler = async (req, res, next) => {
-  if (!req.body.logout_token) return res.status(400).send('missing logout_token')
-  const decoded = decodeToken(req.body.logout_token)
-  if (!decoded) return res.status(400).send('invalid logout_token')
-  if (decoded.typ !== 'Logout') return res.status(400).send('invalid logout_token type')
-  if (!decoded.sid) return res.status(400).send('missing sid in logout_token')
-  await logoutOAuthToken(decoded.sid)
+  const logoutToken = req.body?.logout_token
+  if (!logoutToken || typeof logoutToken !== 'string') return res.status(400).send('missing logout_token')
+  const decoded = decodeToken(logoutToken)
+  if (!decoded || typeof decoded.iss !== 'string') return res.status(400).send('invalid logout_token')
+
+  // the providers of the site come first: for an issuer declared at both levels the policy of the site applies
+  const candidates: OAuthProvider[] = []
+  const site = await reqSite(req)
+  if (site) {
+    for (const providerInfo of site.authProviders ?? []) {
+      if (providerInfo.type === 'oidc') candidates.push(await initOidcProvider(providerInfo, reqSiteUrl(req) + '/simple-directory'))
+    }
+  }
+  candidates.push(...oauthGlobalProviders())
+  const provider = candidates.find(p => p.oidc && p.issuer && p.validateLogoutToken && issuerParameterMatches(p.issuer, decoded.iss as string))
+  if (!provider) return res.status(400).send('unknown logout_token issuer')
+
+  let claims: { sid?: string, sub?: string }
+  try {
+    claims = await provider.validateLogoutToken!(logoutToken, {})
+  } catch (err) {
+    if (!(err instanceof OidcValidationError)) throw err
+    log.warn(`back-channel logout refused for provider ${provider.id}, check ${err.check}`, { code: 'sd.auth.oauth.fail', providerId: provider.id, reason: 'logout-token', check: err.check })
+    return res.status(400).send('invalid logout_token')
+  }
+  await logoutOAuthToken({ providerId: provider.id, ...claims })
   res.status(204).send()
 }
 

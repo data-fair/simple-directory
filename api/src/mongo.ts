@@ -161,7 +161,9 @@ export class SdMongo {
         'oauth-tokens-key': [{ 'user.id': 1, 'provider.id': 1, site: 1 }, { unique: true }],
         'oauth-tokens-provider': { 'provider.id': 1 },
         'oauth-tokens-offline': { offlineRefreshToken: 1 },
-        'oauth-tokens-sid': { 'token.session_state': 1 }
+        'oauth-tokens-sid': { 'token.session_state': 1 },
+        'oauth-tokens-bc-sid': { sid: 1 },
+        'oauth-tokens-bc-sub': { 'provider.id': 1, sub: 1 }
       },
       'used-callback-tokens': {
         // kept as long as the token itself could still be verified (jwtDurations.initialToken is configurable)
