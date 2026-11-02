@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { axios, loginBindingCookie } from '../support/axios.ts'
+import { withMongo } from '../support/oauth-code-site.ts'
 
 const providerId = 'localhost8080'
 
@@ -34,20 +35,36 @@ test.describe('saml2 relay state binding', () => {
     assert.match(setCookie, /path=\/simple-directory\/api\/auth\//)
   })
 
+  // the guards passed: the dummy response is rejected by parseLoginResponse, an unhandled error (500), not a badIDPResponse redirect
+  const assertGuardsPassed = (res: any) => {
+    assert.equal(res.status, 500)
+  }
+
   test('should refuse an assertion without the binding cookie, without consuming the relay state', async () => {
     const { anonymousAx, loginInitial, relayState } = await startLogin()
     assert.equal(errorOf(await assertPost(anonymousAx, relayState)), 'badIDPResponse')
-    // the failed attempt did not burn the login: with the cookie the relay state is accepted (and the dummy response fails later)
-    const res = await assertPost(anonymousAx, relayState, loginBindingCookie(loginInitial))
-    // parseLoginResponse rejects the dummy response, which is not a redirect to badIDPResponse
-    assert.notEqual(res.status, 302)
+    assertGuardsPassed(await assertPost(anonymousAx, relayState, loginBindingCookie(loginInitial)))
+  })
+
+  test('should refuse a forged cookie value, without consuming the relay state', async () => {
+    const { anonymousAx, loginInitial, relayState } = await startLogin()
+    assert.equal(errorOf(await assertPost(anonymousAx, relayState, `sd_login_${relayState}=forged`)), 'badIDPResponse')
+    assertGuardsPassed(await assertPost(anonymousAx, relayState, loginBindingCookie(loginInitial)))
+  })
+
+  test('should refuse a relay state stored without binding hash', async () => {
+    const id = 'test_saml_nobinding'
+    await withMongo(db => db.collection('saml2-relay-states').replaceOne({ _id: id } as any,
+      { _id: id, createdAt: new Date(), providerId, redirect: 'http://localhost/' } as any, { upsert: true }))
+    const anonymousAx = await axios()
+    assert.equal(errorOf(await assertPost(anonymousAx, id, `sd_login_${id}=anything`)), 'badIDPResponse')
+    await withMongo(db => db.collection('saml2-relay-states').deleteOne({ _id: id } as any))
   })
 
   test('should accept a relay state only once', async () => {
     const { anonymousAx, loginInitial, relayState } = await startLogin()
     const cookie = loginBindingCookie(loginInitial)
-    // first use passes the binding and consumption checks, the dummy response is then rejected by the parsing
-    await assertPost(anonymousAx, relayState, cookie)
+    assertGuardsPassed(await assertPost(anonymousAx, relayState, cookie))
     assert.equal(errorOf(await assertPost(anonymousAx, relayState, cookie)), 'badIDPResponse')
   })
 })
