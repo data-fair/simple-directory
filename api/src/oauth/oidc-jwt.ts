@@ -42,6 +42,14 @@ export const expectedIssuer = (issuer: string, claims: Record<string, any>): str
   return issuer.replace('{tenantid}', claims.tid)
 }
 
+// the iss parameter of an authorization response (RFC 9207) carries no tid claim to expand a templated issuer
+// with: for a templated issuer accept any tenant that is a single path segment
+export const issuerParameterMatches = (issuer: string, iss: string): boolean => {
+  if (!issuer.includes('{tenantid}')) return iss === issuer
+  const escape = (part: string) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp('^' + issuer.split('{tenantid}').map(escape).join('[^/]+') + '$').test(iss)
+}
+
 const inflight = new Map<string, Promise<JwksEntry>>()
 
 /** test hook: make the cached keys look older */

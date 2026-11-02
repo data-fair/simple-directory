@@ -60,7 +60,9 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
   // alert lines (sd.oidc.email-not-verified / sd.oauth.email-not-verified), the request context
   // comes from the implicit log context. Omit it in background paths that have no request (e.g.
   // the token-refresh worker): they do not log these refusals.
-  userInfo: (accessToken: string, id_token?: string, logFields?: LogFields) => Promise<OAuthUserInfo>
+  userInfo: (accessToken: string, id_token?: string, logFields?: LogFields, idTokenClaims?: Record<string, any>) => Promise<OAuthUserInfo>,
+  // oidc providers only: verified claims of the id_token, or the decoded ones if the policy of the provider lets a failure through
+  validateIdToken?: (idToken: string, nonce?: string, logFields?: LogFields) => Promise<Record<string, any>>
 }
 
 export type PreparedOAuthProvider = OAuthProvider & {

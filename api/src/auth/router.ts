@@ -21,6 +21,8 @@ import { checkPassword, validatePassword, type Password } from '../utils/passwor
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
+import { applyOidcPolicy } from '../oauth/oidc.ts'
+import { OidcValidationError, issuerParameterMatches } from '../oauth/oidc-jwt.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { setLoginBinding, checkLoginBinding } from './login-binding.ts'
@@ -629,7 +631,9 @@ router.post('/keepalive', async (req, res, next) => {
 
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
-        const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token, {})
+        // a strict provider whose id_token fails validation throws here, like any other refresh failure
+        const idTokenClaims = provider.validateIdToken && newToken.id_token ? await provider.validateIdToken(newToken.id_token, undefined, {}) : undefined
+        const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token, {}, idTokenClaims)
         const memberInfos = await authProviderMemberInfo(await reqSite(req), provider, userInfo)
         user = await patchCoreAuthUser(provider, user, userInfo, memberInfos)
         await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, authSite?._id)
@@ -837,10 +841,18 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   const relayState = await mongo.oauthRelayStates.findOne({ _id: req.query.state as string })
   if (!relayState) return res.status(404).send('Unknown relay state')
   const { providerState, redirect, org, dep, invitToken, adminMode, nonce, codeVerifier, bindingHash } = relayState
+  const redirectError = (error: string) => {
+    res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=${encodeURIComponent(error)}`)
+  }
+  // a refused login logs one line, with the reason
+  const refuse = (message: string, fields: Record<string, any>, error = 'badIDPResponse') => {
+    log.warn(message, { code: 'sd.auth.oauth.fail', ...fields })
+    redirectError(error)
+  }
   const returnError = (error: string, errorCode: number) => {
     log.info(`a user failed to authenticate with oauth due to ${error}`, { code: 'sd.auth.oauth.fail' })
     debugOAuth('login return error', error, errorCode)
-    res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=${encodeURIComponent(error)}`)
+    redirectError(error)
   }
 
   const provider = await getOAuthProviderByState(req, providerState)
@@ -850,8 +862,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   // the binding is checked before the relay state is consumed: whoever learns the state from the authorize URL
   // must not be able to burn the login of the browser that started it
   if (!bindingHash || !checkLoginBinding(req, res, relayState._id, bindingHash)) {
-    log.warn('oauth callback from a browser that did not start the login', { code: 'sd.auth.oauth.fail', providerId: provider.id, reason: 'binding-cookie' })
-    return returnError('badIDPResponse', 400)
+    return refuse('oauth callback from a browser that did not start the login', { providerId: provider.id, reason: 'binding-cookie' })
   }
 
   // a relay state is single use, the atomic update also protects against concurrent replays
@@ -860,35 +871,32 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     { $set: { usedAt: new Date() } }
   )
   if (!consumed) {
-    log.warn('oauth callback with a relay state that was already used', { code: 'sd.auth.oauth.fail', providerId: provider.id, reason: 'relay-state-used' })
-    return returnError('badIDPResponse', 400)
+    return refuse('oauth callback with a relay state that was already used', { providerId: provider.id, reason: 'relay-state-used' })
   }
 
   if (req.query.error) {
-    log.warn('oauth callback with an error from the provider', { code: 'sd.auth.oauth.fail', providerId: provider.id, error: String(req.query.error), errorDescription: req.query.error_description ? String(req.query.error_description) : undefined })
-    return returnError('badIDPQuery', 500)
+    return refuse('oauth callback with an error from the provider', { providerId: provider.id, error: String(req.query.error), errorDescription: req.query.error_description ? String(req.query.error_description) : undefined }, 'badIDPQuery')
   }
 
-  // RFC 9207: the authorization server identifies itself in the response
-  if (provider.oidc) {
-    const iss = req.query.iss as string | undefined
-    if (iss !== undefined ? iss !== provider.issuer : provider.issParameterSupported) {
-      log.warn('oauth callback with a missing or mismatching iss parameter', { code: 'sd.auth.oauth.fail', providerId: provider.id, reason: 'iss' })
-      return returnError('badIDPResponse', 400)
+  let token, offlineRefreshToken, authInfo
+  try {
+    // RFC 9207: the authorization server identifies itself in the response
+    if (provider.oidc) {
+      const iss = req.query.iss as string | undefined
+      if (iss !== undefined ? !provider.issuer || !issuerParameterMatches(provider.issuer, iss) : provider.issParameterSupported) {
+        applyOidcPolicy(provider, new OidcValidationError('iss', 'missing or mismatching iss parameter in the authorization response'), logFields)
+      }
     }
-  }
 
-  const { token, offlineRefreshToken } = await provider.getToken(req.query.code as string, codeVerifier)
-  debugOAuthTokens('full oauth token', token)
-  // relay states created before the nonce was introduced have none
-  if (nonce && token.id_token) {
-    const idTokenNonce = decodeToken(token.id_token as string)?.nonce
-    if (idTokenNonce !== nonce) {
-      log.warn('oauth callback with an id_token nonce that does not match the relay state', { code: 'sd.auth.oauth.fail', providerId: provider.id })
-      return returnError('badIDPResponse', 400)
-    }
+    ;({ token, offlineRefreshToken } = await provider.getToken(req.query.code as string, codeVerifier))
+    debugOAuthTokens('full oauth token', token)
+    // relay states created before the nonce was introduced have none, the nonce is then not checked
+    const idTokenClaims = provider.validateIdToken && token.id_token ? await provider.validateIdToken(token.id_token as string, nonce, logFields) : undefined
+    authInfo = await provider.userInfo(token.access_token, token.id_token, logFields, idTokenClaims)
+  } catch (err) {
+    if (!(err instanceof OidcValidationError)) throw err
+    return refuse(`oauth callback refused, ${err.message}`, { providerId: provider.id, reason: 'oidc-validation', check: err.check })
   }
-  const authInfo = await provider.userInfo(token.access_token, token.id_token, logFields)
 
   if (!authInfo.user.email) {
     log.warn('email attribute not fetched from oauth', { code: 'sd.auth.oauth.fail', providerId: provider.id })

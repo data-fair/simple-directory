@@ -8,6 +8,8 @@ import jwt from 'jsonwebtoken'
 import { httpError } from '@data-fair/lib-express'
 import log from '@data-fair/lib-node/log.js'
 import type { LogFields } from '../utils/log-fields.ts'
+import { decipher, type CipheredContent } from '../utils/cipher.ts'
+import { verifyProviderJwt, OidcValidationError, type ProviderJwtContext } from './oidc-jwt.ts'
 
 const slug = _slug.default
 const debug = Debug('oauth')
@@ -66,6 +68,17 @@ export async function refreshDiscovery (cached: { content: any, fetchedAt?: Date
   }
 }
 
+// strict providers refuse a login whose tokens fail validation (the error is rethrown, the callers turn
+// it into a refusal), the others raise an alert and carry on with the unverified claims. The alert is
+// emitted only for interactive requests (logFields given), like the email-not-verified alert.
+export const applyOidcPolicy = (provider: Pick<OAuthProvider, 'id' | 'strict'>, err: OidcValidationError, logFields?: LogFields): void => {
+  if (provider.strict) throw err
+  if (logFields) {
+    // the message may tell a provider outage (jwks fetch) from a bad signature: logged for ops, never shown to users
+    log.alert(`OIDC validation failed on a non strict provider: provider=${provider.id} check=${err.check} message=${err.message}`, { code: 'sd.oidc.validation-failed', providerId: provider.id, check: err.check, ...logFields })
+  }
+}
+
 // trusted: the provider comes from the operator's config (config.oidc.providers) and may live on
 // a private network. Site-level providers are not trusted, their discovery and userinfo requests
 // go through the public agents that refuse non public addresses (cf SSRF_PUBLIC_IPS).
@@ -90,8 +103,32 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     authorizeHost: authURL.origin,
     authorizePath: authURL.pathname
   }
-  const userInfo = async (accessToken: string, idToken?:string, logFields?: LogFields) => {
+  const strict = p.strict ?? !trusted
+  const policyProvider = { id, strict }
+  const jwtContext: ProviderJwtContext = {
+    id,
+    issuer: discoveryContent.issuer,
+    jwksUri: discoveryContent.jwks_uri,
+    clientId: p.client.id,
+    clientSecret: decipher(p.client.secret as CipheredContent),
+    trusted
+  }
+
+  // verified claims, or the decoded ones if the policy of the provider lets the failure through
+  const validateIdToken = async (idToken: string, nonce?: string, logFields?: LogFields): Promise<Record<string, any>> => {
+    try {
+      return await verifyProviderJwt(jwtContext, idToken, { nonce, requireExp: true })
+    } catch (err) {
+      if (!(err instanceof OidcValidationError)) throw err
+      applyOidcPolicy(policyProvider, err, logFields)
+      return (jwt.decode(idToken) as Record<string, any> | null) ?? {}
+    }
+  }
+
+  // idTokenClaims: the claims returned by validateIdToken when the login produced an id_token
+  const userInfo = async (accessToken: string, idToken?: string, logFields?: LogFields, idTokenClaims?: Record<string, any>) => {
     let claims
+    const decodeIdToken = () => idTokenClaims ?? jwt.decode(idToken!) as any
     if (!p.userInfoSource || p.userInfoSource === 'auto') {
       if (discoveryContent.userinfo_endpoint) {
         debug('read claims from userinfo_endpoint')
@@ -99,11 +136,23 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
           headers: { Authorization: `Bearer ${accessToken}` },
           responseType: 'text'
         })
-        claims = parseUserInfoResponse(res.data, String(res.headers['content-type'] ?? ''))
+        const contentType = String(res.headers['content-type'] ?? '')
+        claims = parseUserInfoResponse(res.data, contentType)
+        try {
+          if (claims && contentType.startsWith('application/jwt')) {
+            claims = await verifyProviderJwt(jwtContext, String(res.data).trim(), { requireExp: false })
+          }
+          if (claims && idTokenClaims && claims.sub !== idTokenClaims.sub) {
+            throw new OidcValidationError('sub', 'the sub of the userinfo response differs from the one of the id_token')
+          }
+        } catch (err) {
+          if (!(err instanceof OidcValidationError)) throw err
+          applyOidcPolicy(policyProvider, err, logFields)
+        }
       }
       if (!claims?.email && idToken) {
         debug('fallback to reading claims from id_token')
-        claims = jwt.decode(idToken) as any
+        claims = decodeIdToken()
       }
       if (!claims?.email) {
         debug('fallback to reading claims from access_token')
@@ -112,7 +161,7 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     }
     if (p.userInfoSource === 'id_token' && idToken) {
       debug('read claims directly from id_token')
-      claims = jwt.decode(idToken) as any
+      claims = decodeIdToken()
       if (!claims) debug('failed to decode id_token as a JWT', idToken)
     }
     if (p.userInfoSource === 'access_token') {
@@ -177,11 +226,12 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     jwksUri: discoveryContent.jwks_uri,
     endSessionEndpoint: discoveryContent.end_session_endpoint,
     issParameterSupported: discoveryContent.authorization_response_iss_parameter_supported === true,
-    strict: p.strict ?? !trusted,
+    strict,
     rpInitiatedLogout: p.rpInitiatedLogout ?? !trusted,
     authorizationMethod: resolveAuthorizationMethod(p.authorizationMethod, discoveryContent.token_endpoint_auth_methods_supported),
     scope: p.scope || 'openid email profile',
     auth,
-    userInfo
+    userInfo,
+    validateIdToken
   }
 }

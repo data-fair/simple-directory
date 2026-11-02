@@ -47,7 +47,7 @@ test.describe('global OIDC configuration', () => {
     assert.deepEqual(me2.organizations, [{ id: 'test_org1', name: 'test', role: 'contrib', dflt: 1 }])
   })
 
-  test('should send a nonce and check it in the id_token', async () => {
+  test('should send a nonce', async () => {
     const anonymousAx = await axios()
     const loginInitial = await anonymousAx.get(`/api/auth/oauth/localhost${mockOidcPort1}/login`, { validateStatus: (status: number) => status === 302 })
     const providerAuthUrl = new URL(loginInitial.headers.location)
@@ -56,14 +56,6 @@ test.describe('global OIDC configuration', () => {
     // rejected by ProConnect, and the default value anyway
     assert.equal(providerAuthUrl.searchParams.get('display'), null)
     assert.equal(providerAuthUrl.searchParams.get('scope'), 'openid email profile')
-
-    // the provider puts a nonce that does not match the relay state in the id_token
-    providerAuthUrl.searchParams.set('nonce', 'tampered-' + nonce)
-    const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (status: number) => status === 302 })
-    const oauthCallback = await anonymousAx(loginProvider.headers.location, { headers: { Cookie: loginBindingCookie(loginInitial) }, validateStatus: (status: number) => status === 302 })
-    const callbackRedirect = new URL(oauthCallback.headers.location)
-    assert.equal(callbackRedirect.pathname, '/simple-directory/login')
-    assert.equal(callbackRedirect.searchParams.get('error'), 'badIDPResponse')
   })
 
   let orgReady = false
@@ -139,13 +131,15 @@ test.describe('global OIDC configuration', () => {
     assert.equal(new URL(res1.headers.location).pathname, '/simple-directory/api/auth/token_callback')
   })
 
-  test('should refuse a callback whose iss does not match the provider issuer', async () => {
+  // root providers are not strict by default: the mismatch raises an alert and the login goes on
+  // (a strict provider refuses it, cf oidc-strict.api.spec.ts)
+  test('should let through a callback whose iss does not match the issuer of a non strict provider', async () => {
     await axiosBuilder().patch(mockOidcControlUrl1 + '/_test/authorize-redirect', { iss: 'http://evil.example.com' })
     const login = await startLogin()
     const url = new URL(login.callbackUrl)
     assert.equal(url.searchParams.get('iss'), 'http://evil.example.com')
     const res = await callback(login.anonymousAx, login.callbackUrl, loginBindingCookie(login.loginInitial))
-    assert.equal(new URL(res.headers.location).searchParams.get('error'), 'badIDPResponse')
+    assert.equal(new URL(res.headers.location).pathname, '/simple-directory/api/auth/token_callback')
   })
 
   test('should read the last name from usual_name (ProConnect)', async () => {

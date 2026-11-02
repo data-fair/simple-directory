@@ -8,6 +8,7 @@
 //   PATCH /_test/userinfo        — set the userinfo response body
 //   PATCH /_test/token-config    — set token endpoint overrides (e.g. { "expires_in": 1 })
 //   PATCH /_test/authorize-redirect — set query params added to (or overriding) the authorize redirect, e.g. { "iss": "http://evil" }
+//   PATCH /_test/id-token-claims — set claims merged into the id_token payload (e.g. { "aud": "other" })
 //   DELETE /_test                — reset to defaults
 
 import 'dotenv/config'
@@ -20,6 +21,7 @@ interface ServerInstance {
   userinfo: Record<string, any>
   tokenConfig: Record<string, any>
   authorizeRedirect: Record<string, string>
+  idTokenClaims: Record<string, any>
 }
 
 const createInstance = async (oauthPort: number, controlPort: number): Promise<ServerInstance> => {
@@ -28,7 +30,8 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
     controlServer: null as any,
     userinfo: {},
     tokenConfig: {},
-    authorizeRedirect: {}
+    authorizeRedirect: {},
+    idTokenClaims: {}
   }
 
   await instance.oauthServer.issuer.keys.generate('RS256')
@@ -40,6 +43,12 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
   // add or override query params of the redirect to the client (e.g. the RFC 9207 iss parameter)
   instance.oauthServer.service.on('beforeAuthorizeRedirect', ({ url }: { url: URL }, _req: any) => {
     for (const [key, value] of Object.entries(instance.authorizeRedirect)) url.searchParams.set(key, value)
+  })
+
+  // the id_token identifies the user of the userinfo, like a real provider (the client checks both subs)
+  instance.oauthServer.service.on('beforeTokenSigning', (token: any, _req: any) => {
+    if (instance.userinfo.sub) token.payload.sub = instance.userinfo.sub
+    Object.assign(token.payload, instance.idTokenClaims)
   })
 
   instance.oauthServer.service.on('beforeResponse', (tokenEndpointResponse, _req) => {
@@ -79,7 +88,12 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
       instance.authorizeRedirect = body || {}
       res.writeHead(200)
       res.end(JSON.stringify({ ok: true }))
+    } else if (req.method === 'PATCH' && req.url === '/_test/id-token-claims') {
+      instance.idTokenClaims = body || {}
+      res.writeHead(200)
+      res.end(JSON.stringify({ ok: true }))
     } else if (req.method === 'DELETE' && req.url === '/_test') {
+      instance.idTokenClaims = {}
       instance.authorizeRedirect = {}
       instance.userinfo = {}
       instance.tokenConfig = {}
