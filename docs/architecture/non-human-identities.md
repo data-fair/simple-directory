@@ -219,7 +219,9 @@ NHIs created before scopes working unchanged.
 The granted scopes become the `scope` claim of both the cookie session and the returned
 `access_token` (and `scope` in the response when restricted). The access token alone has the JWT
 header `typ: at+jwt`, the only kind of token the services accept as `Authorization: Bearer`
-(lib-express). A session token or the exchange token presented as bearer is a 401.
+(lib-express). A session token or the exchange token presented as bearer authenticates nothing:
+since lib-express 1.34.1 any bearer that does not declare `typ: at+jwt` leaves the request
+anonymous (cookies are still not read), while an at+jwt that fails verification is a 401.
 
 Tokens carrying a scope and every at+jwt are signed with a separate key set (kid prefix
 `scoped-`) published only at `/.well-known/scoped-jwks.json`, so services on libs that predate

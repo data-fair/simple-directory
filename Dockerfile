@@ -1,5 +1,5 @@
 ##########################
-FROM node:24.22.1-alpine3.24@sha256:1200d815de24f8dcca745fbf7651d166034a35adbcad8860a8538ffff44f1420 AS base
+FROM node:24.22.2-alpine3.24@sha256:8a32c8cf649a49915a66e81e7a609223c708d0adabf288ee3f4077d765542f85 AS base
 
 # pick up alpine security fixes released after this base image was published
 RUN apk upgrade --no-cache
