@@ -114,7 +114,9 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     auth: p.auth,
     options: {
       credentialsEncodingMode: p.credentialsEncodingMode ?? 'strict', // strict or loose
-      authorizationMethod: p.authorizationMethod ?? 'header', // header or body, resolved from the discovery for oidc providers
+      // header or body: oidc providers arrive with the value resolved by completeOidcProvider (config, else discovery),
+      // the fallback only serves the standard oauth providers
+      authorizationMethod: p.authorizationMethod ?? 'header',
       bodyFormat: p.bodyFormat ?? 'form'
     },
     // the token endpoint of an untrusted provider comes from a site config or a discovery document,

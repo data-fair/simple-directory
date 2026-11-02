@@ -774,7 +774,15 @@ export default {
         authorizationMethod: {
           type: 'string',
           title: 'Méthode d\'envoi des crédentiels du client',
-          default: 'header',
+          description: "Si ce champ est vide, la méthode est choisie d'après le document de découverte du fournisseur (entête \"Authorization\" par défaut).",
+          'x-i18n-description': {
+            fr: "Si ce champ est vide, la méthode est choisie d'après le document de découverte du fournisseur (entête \"Authorization\" par défaut).",
+            en: 'If empty, the method is chosen from the provider\'s discovery document ("Authorization" header by default).',
+            es: 'Si está vacío, el método se elige a partir del documento de descubrimiento del proveedor (encabezado "Authorization" por defecto).',
+            it: 'Se vuoto, il metodo viene scelto in base al documento di discovery del provider (intestazione "Authorization" per impostazione predefinita).',
+            pt: 'Se estiver vazio, o método é escolhido a partir do documento de descoberta do provedor (cabeçalho "Authorization" por padrão).',
+            de: 'Wenn leer, wird die Methode anhand des Discovery-Dokuments des Anbieters gewählt (standardmäßig Kopfzeile "Authorization").'
+          },
           oneOf: [
             {
               const: 'header',
@@ -801,7 +809,7 @@ export default {
               }
             }
           ],
-          layout: { cols: 6 }
+          layout: { cols: 6, props: { clearable: true } }
         },
         bodyFormat: {
           type: 'string',
