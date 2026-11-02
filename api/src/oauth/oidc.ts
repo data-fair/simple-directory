@@ -142,9 +142,6 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
           if (claims && contentType.startsWith('application/jwt')) {
             claims = await verifyProviderJwt(jwtContext, String(res.data).trim(), { requireExp: false })
           }
-          if (claims && idTokenClaims && claims.sub !== idTokenClaims.sub) {
-            throw new OidcValidationError('sub', 'the sub of the userinfo response differs from the one of the id_token')
-          }
         } catch (err) {
           if (!(err instanceof OidcValidationError)) throw err
           applyOidcPolicy(policyProvider, err, logFields)
@@ -170,6 +167,10 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
       if (!claims) debug('failed to decode access_token as a JWT', accessToken)
     }
     debug('found claims', claims)
+    // whatever the source (userinfo, access token...), the claims must be about the user the verified id_token was issued for
+    if (claims && idTokenClaims && claims !== idTokenClaims && claims.sub !== idTokenClaims.sub) {
+      applyOidcPolicy(policyProvider, new OidcValidationError('sub', 'the sub of the claims differs from the one of the id_token'), logFields)
+    }
     if (!claims?.email) {
       throw httpError(400, 'Authentification refusée depuis le fournisseur. Pas d\'adresse email trouvée dans les informations utilisateur.')
     }

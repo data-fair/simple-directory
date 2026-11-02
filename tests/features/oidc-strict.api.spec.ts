@@ -11,14 +11,8 @@ const siteUrl = `http://${host}/simple-directory`
 const providerId = 'localhost' + mockOidcPort
 const userinfo = { sub: 'teststrict1', email: 'strict1@test.com', email_verified: true, given_name: 'Strict', family_name: 'Test' }
 
-const setupSite = async (strict: boolean) => {
-  const config = await getServerConfig()
-  const { ax: adminAx } = await createUser('admin@test.com', true)
-  const org = (await adminAx.post('/api/organizations', { name: 'Strict Org' })).data
-  const owner = { type: 'organization', id: org.id, name: org.name }
-  await (await axios()).post('/api/sites',
-    { _id: 'test_strict_site', owner, host, theme: { primaryColor: '#000000' } },
-    { params: { key: config.secretKeys.sites } })
+let adminAx: any
+const patchProvider = async (strict: boolean, userInfoSource?: string) => {
   await adminAx.patch('/api/sites/test_strict_site', {
     authMode: 'onlyLocal',
     authProviders: [{
@@ -27,10 +21,22 @@ const setupSite = async (strict: boolean) => {
       discovery: `http://localhost:${mockOidcPort}/.well-known/openid-configuration`,
       client: { id: 'test-client', secret: 'test-secret' },
       strict,
+      ...(userInfoSource ? { userInfoSource } : {}),
       createMember: { type: 'always' }
     }]
   })
   await testEnvAx.post('/clear-site-cache')
+}
+
+const setupSite = async (strict: boolean) => {
+  const config = await getServerConfig()
+  adminAx = (await createUser('admin@test.com', true)).ax
+  const org = (await adminAx.post('/api/organizations', { name: 'Strict Org' })).data
+  const owner = { type: 'organization', id: org.id, name: org.name }
+  await (await axios()).post('/api/sites',
+    { _id: 'test_strict_site', owner, host, theme: { primaryColor: '#000000' } },
+    { params: { key: config.secretKeys.sites } })
+  await patchProvider(strict)
 }
 
 // returns the redirect location of the oauth callback: token_callback on success, login?error= on refusal
@@ -85,6 +91,22 @@ for (const strict of [true, false]) {
 
     test(`should ${strict ? 'refuse' : 'let through'} an id_token with a nonce that does not match the relay state`, async () => {
       const location = await login({ nonce: 'tampered' })
+      if (strict) assert.equal(location.searchParams.get('error'), 'badIDPResponse')
+      else assert.equal(location.pathname, '/simple-directory/api/auth/token_callback')
+    })
+
+    test(`should ${strict ? 'refuse' : 'let through'} a token response without id_token`, async () => {
+      await axiosBuilder().patch(mockOidcControlUrl1 + '/_test/token-config', { omitIdToken: true })
+      const location = await login()
+      if (strict) assert.equal(location.searchParams.get('error'), 'badIDPResponse')
+      else assert.equal(location.pathname, '/simple-directory/api/auth/token_callback')
+    })
+
+    test(`should ${strict ? 'refuse' : 'let through'} claims read from an access token of another subject`, async () => {
+      // the mock access token has the sub johndoe, the id_token the one of the userinfo
+      await patchProvider(strict, 'access_token')
+      await axiosBuilder().patch(mockOidcControlUrl1 + '/_test/access-token-claims', { email: 'strict1@test.com', email_verified: true })
+      const location = await login()
       if (strict) assert.equal(location.searchParams.get('error'), 'badIDPResponse')
       else assert.equal(location.pathname, '/simple-directory/api/auth/token_callback')
     })

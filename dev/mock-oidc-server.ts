@@ -9,6 +9,7 @@
 //   PATCH /_test/token-config    — set token endpoint overrides (e.g. { "expires_in": 1 })
 //   PATCH /_test/authorize-redirect — set query params added to (or overriding) the authorize redirect, e.g. { "iss": "http://evil" }
 //   PATCH /_test/id-token-claims — set claims merged into the id_token payload (e.g. { "aud": "other" })
+//   PATCH /_test/access-token-claims — same for the access token; token-config { "omitIdToken": true } drops the id_token
 //   DELETE /_test                — reset to defaults
 
 import 'dotenv/config'
@@ -22,6 +23,7 @@ interface ServerInstance {
   tokenConfig: Record<string, any>
   authorizeRedirect: Record<string, string>
   idTokenClaims: Record<string, any>
+  accessTokenClaims: Record<string, any>
 }
 
 const createInstance = async (oauthPort: number, controlPort: number): Promise<ServerInstance> => {
@@ -31,7 +33,8 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
     userinfo: {},
     tokenConfig: {},
     authorizeRedirect: {},
-    idTokenClaims: {}
+    idTokenClaims: {},
+    accessTokenClaims: {}
   }
 
   await instance.oauthServer.issuer.keys.generate('RS256')
@@ -47,11 +50,17 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
 
   // the id_token identifies the user of the userinfo, like a real provider (the client checks both subs)
   instance.oauthServer.service.on('beforeTokenSigning', (token: any, _req: any) => {
-    if (instance.userinfo.sub) token.payload.sub = instance.userinfo.sub
-    Object.assign(token.payload, instance.idTokenClaims)
+    // only the id_token has an aud here
+    if (token.payload.aud) {
+      if (instance.userinfo.sub) token.payload.sub = instance.userinfo.sub
+      Object.assign(token.payload, instance.idTokenClaims)
+    } else {
+      Object.assign(token.payload, instance.accessTokenClaims)
+    }
   })
 
   instance.oauthServer.service.on('beforeResponse', (tokenEndpointResponse, _req) => {
+    if (instance.tokenConfig.omitIdToken) delete tokenEndpointResponse.body.id_token
     if (instance.tokenConfig.expires_in !== undefined) {
       tokenEndpointResponse.body.expires_in = instance.tokenConfig.expires_in
     }
@@ -92,7 +101,12 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
       instance.idTokenClaims = body || {}
       res.writeHead(200)
       res.end(JSON.stringify({ ok: true }))
+    } else if (req.method === 'PATCH' && req.url === '/_test/access-token-claims') {
+      instance.accessTokenClaims = body || {}
+      res.writeHead(200)
+      res.end(JSON.stringify({ ok: true }))
     } else if (req.method === 'DELETE' && req.url === '/_test') {
+      instance.accessTokenClaims = {}
       instance.idTokenClaims = {}
       instance.authorizeRedirect = {}
       instance.userinfo = {}

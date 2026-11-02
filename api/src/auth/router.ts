@@ -891,7 +891,12 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     ;({ token, offlineRefreshToken } = await provider.getToken(req.query.code as string, codeVerifier))
     debugOAuthTokens('full oauth token', token)
     // relay states created before the nonce was introduced have none, the nonce is then not checked
-    const idTokenClaims = provider.validateIdToken && token.id_token ? await provider.validateIdToken(token.id_token as string, nonce, logFields) : undefined
+    let idTokenClaims: Record<string, any> | undefined
+    if (provider.validateIdToken) {
+      // the id_token is mandatory in the authorization code flow of an OIDC provider
+      if (token.id_token) idTokenClaims = await provider.validateIdToken(token.id_token as string, nonce, logFields)
+      else applyOidcPolicy(provider, new OidcValidationError('malformed', 'missing id_token in the token response'), logFields)
+    }
     authInfo = await provider.userInfo(token.access_token, token.id_token, logFields, idTokenClaims)
   } catch (err) {
     if (!(err instanceof OidcValidationError)) throw err
