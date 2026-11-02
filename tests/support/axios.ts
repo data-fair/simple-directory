@@ -140,6 +140,12 @@ export const deleteAllEmails = async () => {
   }
 }
 
+// the Cookie header value that forwards the sd_login_* binding cookies set by a login response
+export const loginBindingCookie = (res: { headers: any }): string => {
+  const setCookies: string[] = res.headers['set-cookie'] ?? []
+  return setCookies.filter(c => c.startsWith('sd_login_')).map(c => c.split(';')[0]).join('; ')
+}
+
 export const loginWithOIDC = async (port: number) => {
   const anonymousAx = await axios()
 
@@ -150,7 +156,7 @@ export const loginWithOIDC = async (port: number) => {
   const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (status: number) => status === 302 })
   const providerAuthRedirect = new URL(loginProvider.headers.location)
   // open our callback url that produces a temporary token to be transformed in a session token by a token_callback url
-  const oauthCallback = await anonymousAx(providerAuthRedirect.href, { validateStatus: (status: number) => status === 302 })
+  const oauthCallback = await anonymousAx(providerAuthRedirect.href, { headers: { Cookie: loginBindingCookie(loginInitial) }, validateStatus: (status: number) => status === 302 })
   const callbackRedirect = new URL(oauthCallback.headers.location)
   // finally the token_callback url will set cookies and redirect to our final destination
   const tokenCallback = await anonymousAx(callbackRedirect.href, { validateStatus: (status: number) => status === 302 })

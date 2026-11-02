@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, testEnvAx, createUser, directoryUrl, mockOidcControlUrl2 } from '../support/axios.ts'
+import { axios, loginBindingCookie, testEnvAx, createUser, directoryUrl, mockOidcControlUrl2 } from '../support/axios.ts'
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { CookieJar } from 'tough-cookie'
 
@@ -44,7 +44,7 @@ test.describe('global OIDC configuration in coreIdProvider mode', () => {
     const providerAuthRedirect = new URL(loginProvider.headers.location)
     assert.equal(providerAuthRedirect.pathname, '/simple-directory/api/auth/oauth-callback')
     // open our callback url that produces a temporary token to be transformed in a session token by a token_callback url
-    const oauthCallback = await anonymousAx(providerAuthRedirect.href, { validateStatus: (status: number) => status === 302 })
+    const oauthCallback = await anonymousAx(providerAuthRedirect.href, { headers: { Cookie: loginBindingCookie(loginInitial) }, validateStatus: (status: number) => status === 302 })
     const callbackRedirect = new URL(oauthCallback.headers.location)
     assert.equal(callbackRedirect.pathname, '/simple-directory/api/auth/token_callback')
     // finally the token_callback url will set cookies and redirect to our final destination
@@ -102,7 +102,7 @@ test.describe('global OIDC configuration in coreIdProvider mode', () => {
     const providerAuthUrl = new URL(loginInitial.headers.location)
     const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (s: number) => s === 302 })
     const providerAuthRedirect = new URL(loginProvider.headers.location)
-    const oauthCallback = await anonymousAx(providerAuthRedirect.href, { validateStatus: (s: number) => s === 302 })
+    const oauthCallback = await anonymousAx(providerAuthRedirect.href, { headers: { Cookie: loginBindingCookie(loginInitial) }, validateStatus: (s: number) => s === 302 })
     const callbackRedirect = new URL(oauthCallback.headers.location)
     await anonymousAx(callbackRedirect.href, { validateStatus: (s: number) => s === 302 })
 

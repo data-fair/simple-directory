@@ -7,6 +7,7 @@
 // Each server instance exposes test control endpoints alongside standard OAuth2 endpoints:
 //   PATCH /_test/userinfo        — set the userinfo response body
 //   PATCH /_test/token-config    — set token endpoint overrides (e.g. { "expires_in": 1 })
+//   PATCH /_test/authorize-redirect — set query params added to (or overriding) the authorize redirect, e.g. { "iss": "http://evil" }
 //   DELETE /_test                — reset to defaults
 
 import 'dotenv/config'
@@ -18,6 +19,7 @@ interface ServerInstance {
   controlServer: http.Server
   userinfo: Record<string, any>
   tokenConfig: Record<string, any>
+  authorizeRedirect: Record<string, string>
 }
 
 const createInstance = async (oauthPort: number, controlPort: number): Promise<ServerInstance> => {
@@ -25,13 +27,19 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
     oauthServer: new OAuth2Server(),
     controlServer: null as any,
     userinfo: {},
-    tokenConfig: {}
+    tokenConfig: {},
+    authorizeRedirect: {}
   }
 
   await instance.oauthServer.issuer.keys.generate('RS256')
 
   instance.oauthServer.service.on('beforeUserinfo', (userInfoResponse, _req) => {
     userInfoResponse.body = { ...instance.userinfo }
+  })
+
+  // add or override query params of the redirect to the client (e.g. the RFC 9207 iss parameter)
+  instance.oauthServer.service.on('beforeAuthorizeRedirect', ({ url }: { url: URL }, _req: any) => {
+    for (const [key, value] of Object.entries(instance.authorizeRedirect)) url.searchParams.set(key, value)
   })
 
   instance.oauthServer.service.on('beforeResponse', (tokenEndpointResponse, _req) => {
@@ -67,7 +75,12 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
       instance.tokenConfig = body || {}
       res.writeHead(200)
       res.end(JSON.stringify({ ok: true }))
+    } else if (req.method === 'PATCH' && req.url === '/_test/authorize-redirect') {
+      instance.authorizeRedirect = body || {}
+      res.writeHead(200)
+      res.end(JSON.stringify({ ok: true }))
     } else if (req.method === 'DELETE' && req.url === '/_test') {
+      instance.authorizeRedirect = {}
       instance.userinfo = {}
       instance.tokenConfig = {}
       res.writeHead(200)

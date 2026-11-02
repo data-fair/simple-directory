@@ -65,8 +65,8 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
 
 export type PreparedOAuthProvider = OAuthProvider & {
   state: string
-  authorizationUri (relayState: string, email: string, offlineAccess?: boolean, forceLogin?: boolean, nonce?: string): string
-  getToken (code: string, offlineAccess?: boolean): Promise<any>
+  authorizationUri (relayState: string, email: string, offlineAccess?: boolean, forceLogin?: boolean, nonce?: string, codeChallenge?: string): string
+  getToken (code: string, codeVerifier?: string): Promise<any>
   refreshToken (tokenObj: any): Promise<any>
 }
 
@@ -80,7 +80,14 @@ export type OAuthRelayState = {
   invitToken?: string,
   adminMode?: boolean,
   // OIDC only, echoed by the provider in the id_token and checked in the callback
-  nonce?: string
+  nonce?: string,
+  // sha256 of the secret held by the browser that started the login (cf auth/login-binding.ts)
+  bindingHash?: string,
+  // PKCE
+  codeVerifier?: string,
+  // set when the callback consumed this relay state, it can be used only once
+  usedAt?: Date,
+  idToken?: string
 }
 
 export const getOAuthProviderById = async (req: Request, id: string): Promise<PreparedOAuthProvider | undefined> => {
@@ -135,7 +142,7 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
   const callbackUri = p.oidc ? `${publicUrl}/api/auth/oauth-callback` : `${publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
-  const authorizationUri = (relayState: string, email: string, offlineAccess = false, forceLogin = false, nonce?: string) => {
+  const authorizationUri = (relayState: string, email: string, offlineAccess = false, forceLogin = false, nonce?: string, codeChallenge?: string) => {
     let scope = p.scope
     if (offlineAccess) {
       scope += ' offline_access'
@@ -147,6 +154,10 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     }
     if (nonce) {
       params.nonce = nonce
+    }
+    if (codeChallenge) {
+      params.code_challenge = codeChallenge
+      params.code_challenge_method = 'S256'
     }
     if (forceLogin) {
       params.prompt = 'login'
@@ -161,10 +172,11 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
   }
 
   // get an access token from code sent as callback to login redirect
-  const getToken = async (code: string, offlineAccess = false) => {
+  const getToken = async (code: string, codeVerifier?: string) => {
     const tokenWrap = await oauthClient.getToken({
       code,
-      redirect_uri: callbackUri
+      redirect_uri: callbackUri,
+      ...(codeVerifier ? { code_verifier: codeVerifier } : {})
     })
     const token = tokenWrap.token
     const decodedRefreshToken = decodeToken(token.refresh_token as string)

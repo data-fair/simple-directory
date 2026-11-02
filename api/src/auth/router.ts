@@ -22,7 +22,8 @@ import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
-import { randomBytes, randomUUID } from 'node:crypto'
+import { createHash, randomBytes, randomUUID } from 'node:crypto'
+import { setLoginBinding, checkLoginBinding } from './login-binding.ts'
 import dayjs from 'dayjs'
 import { userLogFields, type LogFields } from '../utils/log-fields.ts'
 
@@ -811,8 +812,12 @@ const oauthLogin: RequestHandler<{ oauthId: string }> = async (req, res, next) =
     adminMode: !!(req.query.adminMode as string)
   }
   if (provider.oidc) relayState.nonce = randomBytes(32).toString('base64url')
+  relayState.codeVerifier = randomBytes(32).toString('base64url')
+  const codeChallenge = createHash('sha256').update(relayState.codeVerifier).digest('base64url')
+  // the callback is a top level GET navigation from the provider: lax cookies are sent
+  relayState.bindingHash = setLoginBinding(req, res, relayState._id, 'lax')
   await mongo.oauthRelayStates.insertOne(relayState)
-  const authorizationUri = provider.authorizationUri(relayState._id, req.query.email as string, provider.coreIdProvider, relayState.adminMode, relayState.nonce)
+  const authorizationUri = provider.authorizationUri(relayState._id, req.query.email as string, provider.coreIdProvider, relayState.adminMode, relayState.nonce, codeChallenge)
   debugOAuth('login authorizationUri', authorizationUri)
   log.info('a user was redirected to a oauth provider', { code: 'sd.auth.oauth.redirect' })
   res.redirect(authorizationUri)
@@ -829,9 +834,23 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     log.warn('oauth callback without state', { code: 'sd.auth.oauth.fail' })
     throw new Error('Bad OAuth state')
   }
-  const relayState = await mongo.oauthRelayStates.findOne({ _id: req.query.state as string })
-  if (!relayState) return res.status(404).send('Unknown relay state')
-  const { providerState, redirect, org, dep, invitToken, adminMode, nonce } = relayState
+  // a relay state is single use: consuming it first also protects against concurrent replays
+  const relayState = await mongo.oauthRelayStates.findOneAndUpdate(
+    { _id: req.query.state as string, usedAt: { $exists: false } },
+    { $set: { usedAt: new Date() } },
+    { returnDocument: 'before' }
+  )
+  if (!relayState) {
+    // distinguish a replay from an unknown state for the logs, both are refused
+    const known = await mongo.oauthRelayStates.findOne({ _id: req.query.state as string }, { projection: { _id: 1 } })
+    if (known) {
+      log.warn('oauth callback with a relay state that was already used', { code: 'sd.auth.oauth.fail', reason: 'relay-state-used' })
+      res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=badIDPResponse`)
+      return
+    }
+    return res.status(404).send('Unknown relay state')
+  }
+  const { providerState, redirect, org, dep, invitToken, adminMode, nonce, codeVerifier, bindingHash } = relayState
   const returnError = (error: string, errorCode: number) => {
     log.info(`a user failed to authenticate with oauth due to ${error}`, { code: 'sd.auth.oauth.fail' })
     debugOAuth('login return error', error, errorCode)
@@ -847,7 +866,21 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     return returnError('badIDPQuery', 500)
   }
 
-  const { token, offlineRefreshToken } = await provider.getToken(req.query.code as string, provider.coreIdProvider)
+  if (!bindingHash || !checkLoginBinding(req, res, relayState._id, bindingHash)) {
+    log.warn('oauth callback from a browser that did not start the login', { code: 'sd.auth.oauth.fail', providerId: provider.id, reason: 'binding-cookie' })
+    return returnError('badIDPResponse', 400)
+  }
+
+  // RFC 9207: the authorization server identifies itself in the response
+  if (provider.oidc) {
+    const iss = req.query.iss as string | undefined
+    if (iss !== undefined ? iss !== provider.issuer : provider.issParameterSupported) {
+      log.warn('oauth callback with a missing or mismatching iss parameter', { code: 'sd.auth.oauth.fail', providerId: provider.id, reason: 'iss' })
+      return returnError('badIDPResponse', 400)
+    }
+  }
+
+  const { token, offlineRefreshToken } = await provider.getToken(req.query.code as string, codeVerifier)
   debugOAuthTokens('full oauth token', token)
   // relay states created before the nonce was introduced have none
   if (nonce && token.id_token) {

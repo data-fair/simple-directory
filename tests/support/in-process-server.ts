@@ -75,6 +75,11 @@ export const axiosAuth = async (opts: string | Omit<AxiosAuthOptions, 'password'
 
 export { clean }
 
+const loginBindingCookie = (res: { headers: any }): string => {
+  const setCookies: string[] = res.headers['set-cookie'] ?? []
+  return setCookies.filter(c => c.startsWith('sd_login_')).map(c => c.split(';')[0]).join('; ')
+}
+
 export const loginWithOIDC = async (port: number) => {
   const anonymousAx = await axios()
 
@@ -86,7 +91,7 @@ export const loginWithOIDC = async (port: number) => {
   const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (status: number) => status === 302 })
   const providerAuthRedirect = new URL(loginProvider.headers.location)
   assert.ok(providerAuthRedirect.pathname.endsWith('/api/auth/oauth-callback'))
-  const oauthCallback = await anonymousAx(providerAuthRedirect.href, { validateStatus: (status: number) => status === 302 })
+  const oauthCallback = await anonymousAx(providerAuthRedirect.href, { headers: { Cookie: loginBindingCookie(loginInitial) }, validateStatus: (status: number) => status === 302 })
   const callbackRedirect = new URL(oauthCallback.headers.location)
   assert.ok(callbackRedirect.pathname.endsWith('/api/auth/token_callback'))
   const tokenCallback = await anonymousAx(callbackRedirect.href, { validateStatus: (status: number) => status === 302 })

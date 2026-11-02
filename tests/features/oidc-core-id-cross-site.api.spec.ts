@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
-import { axios, testEnvAx, createUser, getServerConfig, mockOidcControlUrl1 } from '../support/axios.ts'
+import { axios, loginBindingCookie, testEnvAx, createUser, getServerConfig, mockOidcControlUrl1 } from '../support/axios.ts'
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { CookieJar } from 'tough-cookie'
 
@@ -75,7 +75,7 @@ test.describe('OIDC core id provider across sibling sites', () => {
     const providerAuthRedirect = new URL(loginProvider.headers.location)
     assert.equal(providerAuthRedirect.host, mainHost, 'OIDC callback must land on the main-org site')
     assert.equal(providerAuthRedirect.pathname, '/simple-directory/api/auth/oauth-callback')
-    const oauthCallback = await mainAx(providerAuthRedirect.href, { validateStatus: (s: number) => s === 302 })
+    const oauthCallback = await mainAx(providerAuthRedirect.href, { headers: { Cookie: loginBindingCookie(loginInitial) }, validateStatus: (s: number) => s === 302 })
     const callbackRedirect = new URL(oauthCallback.headers.location)
     assert.equal(callbackRedirect.pathname, '/simple-directory/api/auth/token_callback')
     const tokenCallback = await mainAx(callbackRedirect.href, { validateStatus: (s: number) => s === 302 })
