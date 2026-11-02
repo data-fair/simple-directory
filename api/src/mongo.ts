@@ -64,7 +64,7 @@ export class SdMongo {
 
   // jti of the redirect-flow callback tokens already exchanged for a session (single use)
   get usedCallbackTokens () {
-    return mongo.db.collection<{ _id: string, usedAt: Date }>('used-callback-tokens')
+    return mongo.db.collection<{ _id: string, usedAt: Date, expiresAt: Date }>('used-callback-tokens')
   }
 
   get oauthRelayStates () {
@@ -164,7 +164,8 @@ export class SdMongo {
         'oauth-tokens-sid': { 'token.session_state': 1 }
       },
       'used-callback-tokens': {
-        ttl: [{ usedAt: 1 }, { expireAfterSeconds: 60 * 60 }]
+        // kept as long as the token itself could still be verified (jwtDurations.initialToken is configurable)
+        ttl: [{ expiresAt: 1 }, { expireAfterSeconds: 0 }]
       },
       'oauth-relay-states': {
         ttl: [{ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 }]

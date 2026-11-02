@@ -463,10 +463,14 @@ router.get('/token_callback', async (req, res, next) => {
     return redirectError('invalidToken')
   }
 
+  // only the temporary tokens of prepareCallbackUrl may start a session here, not a session
+  // id_token or an emailed action token (changePassword, changeHost) signed with the same key
+  if (decoded.temporary !== true || decoded.action) return redirectError('invalidToken')
+
   // redirect flows: the temporary token is single use (emailed links carry no cbJti and stay reusable)
   if (decoded.cbJti) {
     try {
-      await mongo.usedCallbackTokens.insertOne({ _id: decoded.cbJti, usedAt: new Date() })
+      await mongo.usedCallbackTokens.insertOne({ _id: decoded.cbJti, usedAt: new Date(), expiresAt: new Date(decoded.exp * 1000) })
     } catch (err: any) {
       if (err.code !== 11000) throw err
       log.warn('a token_callback url was opened twice, the second use is refused', { code: 'sd.auth.callback.reuse', ...logFields })

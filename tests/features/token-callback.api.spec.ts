@@ -51,4 +51,18 @@ test.describe('token_callback single use', () => {
     assert.ok(!second.headers['set-cookie']?.length)
     assert.equal(new URL(second.headers.location).searchParams.get('error'), 'invalidToken')
   })
+
+  test('a session id_token cannot be exchanged for a new session', async () => {
+    await createUser('sess@test.com')
+    const callbackUrl = (await axios().post('/api/auth/password', { email: 'sess@test.com', password: 'TestPasswd01' })).data
+    const first = await open(callbackUrl)
+    const cookies: string[] = first.headers['set-cookie'] ?? []
+    const get = (name: string) => cookies.find(c => c.startsWith(name + '='))!.split(';')[0].slice(name.length + 1)
+    const sessionToken = get('id_token') + '.' + get('id_token_sign')
+    const url = new URL(callbackUrl)
+    url.searchParams.set('id_token', sessionToken)
+    const res = await open(url.href)
+    assert.ok(!res.headers['set-cookie']?.length)
+    assert.equal(new URL(res.headers.location).searchParams.get('error'), 'invalidToken')
+  })
 })
