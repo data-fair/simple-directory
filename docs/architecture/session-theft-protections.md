@@ -129,6 +129,37 @@ Consequences to keep in mind when changing this code:
 - sessions created before this mechanism have no `jti`, they are tolerated and
   get one at their next keepalive.
 
+## Callback tokens
+
+Redirect logins (SSO, password, redirect to a secondary site, invitation) end on `GET /api/auth/token_callback`
+with a short lived `temporary` token signed with the session key, possibly on another domain.
+
+- `token_callback` accepts only tokens with `temporary: true` and no `action`. Session `id_token`s and emailed
+  action tokens (`changePassword`, `changeHost`) are signed with the same key and must not start a session.
+- The tokens of redirect flows carry a single use `cbJti` (`prepareCallbackUrl`). `token_callback` records it
+  in `used-callback-tokens` (TTL index on the token's own expiry) and refuses a second presentation
+  (`sd.auth.callback.reuse`). A URL leaked through history, logs or a referrer is dead once the legitimate
+  browser used it.
+- Emailed links (passwordless login, account confirmation, unconfirmed account resend) carry no `cbJti`:
+  mail scanners prefetch links, a single use token would be burnt before the user clicks. They stay valid
+  until expiry.
+- Not covered: login CSRF through this hop (an attacker's own valid URL opened in a victim's browser), by
+  design since the token must travel across domains. See [`oidc-client.md`](oidc-client.md).
+
+## Identity provider session (`idp`)
+
+For an OIDC provider with `rpInitiatedLogout`, the server session records `idp: { providerId, idToken, site? }`
+so that `DELETE /api/auth` can build the provider's end session URL. The `idToken` is a bearer-ish credential
+at the provider (it is the `id_token_hint`), hence:
+
+- it never travels in a callback URL: it waits on the OAuth relay state and `token_callback` moves it (atomic
+  find and unset) to the session, so a replayed callback finds nothing;
+- `site` is the site that recorded it (absent for a root provider), so the provider is resolved at the level
+  the login happened at;
+- it is stripped from the API output (`sessions` of the user in `api/src/users/router.ts`), and it is used
+  only by `logout` when `endSession` is asked;
+- it disappears with the server session.
+
 ## OAuth tokens are not cookie credentials
 
 The OAuth authorization server (see
