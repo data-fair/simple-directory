@@ -258,6 +258,8 @@ router.get('/:userId', async (req, res, next) => {
   }
   const user = await storage.getUser(req.params.userId)
   if (!user) return res.status(404).send()
+  // the id_token kept for the RP-initiated logout of a session is never exposed
+  if (user.sessions) user.sessions = user.sessions.map(({ idp, ...s }) => s)
   res.json(user)
 })
 

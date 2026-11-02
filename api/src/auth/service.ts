@@ -127,7 +127,9 @@ export const authProviderLoginCallback = async (
   redirect: string,
   org: string | undefined,
   dep: string | undefined,
-  adminMode: boolean | undefined
+  adminMode: boolean | undefined,
+  // relay state holding the id_token of an OIDC login with RP-initiated logout, cf token_callback
+  idpLogin?: string
 ): Promise<[string, User]> => {
   const storage = storages.globalStorage
   const site = await reqSite(req)
@@ -270,7 +272,7 @@ export const authProviderLoginCallback = async (
   let userOrg: Pick<OrganizationMembership, 'id' | 'department'> & { role?: string } | undefined
   if (invit && invitOrga) userOrg = { id: invit.id, department: invit.department, role: invit.role }
   else if (org) userOrg = { id: org, department: dep }
-  const linkUrl = await prepareCallbackUrl(req, payload, redirect, userOrg)
+  const linkUrl = await prepareCallbackUrl(req, payload, redirect, userOrg, undefined, { idpLogin })
   debugAuthProvider(`Auth provider based authentication of user ${user.name}`)
 
   return [linkUrl.href, user]

@@ -305,6 +305,18 @@ export default {
         rotatedAt: {
           type: 'string',
           format: 'date-time'
+        },
+        // OIDC login with RP-initiated logout: the id_token to present as id_token_hint at logout.
+        // Never exposed by the API (cf users/router.ts)
+        idp: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['providerId', 'idToken'],
+          properties: {
+            providerId: { type: 'string' },
+            site: { type: 'string' },
+            idToken: { type: 'string' }
+          }
         }
       }
     }

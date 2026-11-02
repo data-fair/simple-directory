@@ -511,6 +511,13 @@ router.get('/token_callback', async (req, res, next) => {
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = 1
 
   const serverSession = initServerSession(req)
+  if (decoded.idpLogin) {
+    // the id_token is moved (not copied) from the relay state, a replayed token_callback finds nothing
+    const idpState = await mongo.oauthRelayStates.findOneAndUpdate({ _id: decoded.idpLogin, idToken: { $exists: true } }, { $unset: { idToken: '' } })
+    if (idpState?.idToken && idpState.idpProviderId) {
+      serverSession.idp = { providerId: idpState.idpProviderId, idToken: idpState.idToken, ...(idpState.idpSite ? { site: idpState.idpSite } : {}) }
+    }
+  }
   await storage.addUserSession(user.id, serverSession)
 
   await confirmLog(storage, user, serverSession)
@@ -670,9 +677,16 @@ router.post('/keepalive', async (req, res, next) => {
 })
 
 router.delete('/', async (req, res) => {
-  await logout(req, res)
+  const { endSessionUrl } = await logout(req, res)
   log.info('a session was deleted', { code: 'sd.auth.session-delete' })
-  res.status(204).send()
+  // lib-vue redirects the browser to the end session url of the identity provider
+  if (endSessionUrl) res.status(200).send({ endSessionUrl })
+  else res.status(204).send()
+})
+
+// post logout redirect uri of the RP-initiated logout: the provider session is over, back to the site
+router.get('/oidc-logout-callback', (req, res) => {
+  res.redirect(reqSiteUrl(req) + '/')
 })
 
 // Send an email to confirm user identity before authorizing an action
@@ -926,7 +940,13 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   debugOAuth('Got user info from oauth', provider.id, authInfo)
 
   try {
-    const [callbackUrl, user] = await authProviderLoginCallback(req, invitToken, authInfo, logFields, provider, redirect, org, dep, adminMode)
+    // RP-initiated logout: the id_token waits on the relay state until token_callback moves it to the server session
+    let idpLogin: string | undefined
+    if (provider.rpInitiatedLogout && provider.endSessionEndpoint && token.id_token) {
+      await mongo.oauthRelayStates.updateOne({ _id: relayState._id }, { $set: { idToken: token.id_token as string, idpProviderId: provider.id, idpSite: (await reqSite(req))?._id } })
+      idpLogin = relayState._id
+    }
+    const [callbackUrl, user] = await authProviderLoginCallback(req, invitToken, authInfo, logFields, provider, redirect, org, dep, adminMode, idpLogin)
     if (provider.coreIdProvider) {
       const callbackSite = await reqSite(req)
       await writeOAuthToken(user, provider, token, offlineRefreshToken, undefined, callbackSite?._id, idTokenClaims)

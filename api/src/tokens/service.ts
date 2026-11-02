@@ -10,7 +10,7 @@ import Cookies from 'cookies'
 import { nanoid } from 'nanoid'
 import storages from '#storages'
 import { getSignatureKeys } from './keys-manager.ts'
-import { getDefaultLoginRedirect, getRedirectSite, reqSite } from '#services'
+import { getDefaultLoginRedirect, getRedirectSite, reqSite, getOAuthProviderById } from '#services'
 import { lastIpInfo } from '../utils/ip-info.ts'
 import { revokeGrants } from '../oauth-server/grants.ts'
 
@@ -102,7 +102,7 @@ export const getDefaultUserOrg = (user: User, site: Site | undefined, reqOrgId?:
 
 const secure = config.publicUrl.startsWith('https://')
 
-export const logout = async (req: Request, res: Response) => {
+export const logout = async (req: Request, res: Response): Promise<{ endSessionUrl?: string }> => {
   const cookies = new Cookies(req, res, { secure })
   const sitePath = reqSitePath(req)
   const opts: Cookies.SetOption = { path: sitePath + '/', expires: new Date(0) }
@@ -119,8 +119,26 @@ export const logout = async (req: Request, res: Response) => {
   if (sessionState.user && exchangeToken) {
     const storage = await storages.getSessionStorage(sessionState)
     const serverSessionInfo = decodeToken(exchangeToken) as SessionInfoPayload | undefined
-    if (serverSessionInfo?.session) await storage.deleteUserSession(sessionState.user.id, serverSessionInfo.session)
+    if (serverSessionInfo?.session) {
+      // the server session is read before it is deleted: its idp holds the id_token for the provider logout
+      const serverSession = (await storage.getUser(sessionState.user.id))?.sessions?.find(s => s.id === serverSessionInfo.session)
+      await storage.deleteUserSession(sessionState.user.id, serverSessionInfo.session)
+      if (serverSession?.idp) return { endSessionUrl: await idpEndSessionUrl(req, serverSession.idp) }
+    }
   }
+  return {}
+}
+
+// RP-initiated logout: the provider may have been removed or reconfigured since the login
+const idpEndSessionUrl = async (req: Request, idp: NonNullable<ServerSession['idp']>) => {
+  const provider = await getOAuthProviderById(req, idp.providerId)
+  if (!provider?.rpInitiatedLogout || !provider.endSessionEndpoint) return undefined
+  const url = new URL(provider.endSessionEndpoint)
+  url.searchParams.set('id_token_hint', idp.idToken)
+  if (provider.clientId) url.searchParams.set('client_id', provider.clientId)
+  url.searchParams.set('post_logout_redirect_uri', reqSiteUrl(req) + '/simple-directory/api/auth/oidc-logout-callback')
+  url.searchParams.set('state', nanoid())
+  return url.href
 }
 
 // single use exchange token: presenting anything else than the last one issued means a copy of the
@@ -449,13 +467,13 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
 // this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
-export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:(Pick<OrganizationMembership, 'id' | 'department'> & { role?: string }), orgStorage?: boolean, opts?: { emailed?: boolean }) => {
+export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:(Pick<OrganizationMembership, 'id' | 'department'> & { role?: string }), orgStorage?: boolean, opts?: { emailed?: boolean, idpLogin?: string }) => {
   redirect = getDefaultLoginRedirect(reqSiteUrl(req), redirect)
   const redirectUrl = new URL(redirect)
   const redirectSite = await getRedirectSite(req, redirect)
   // redirect flows hand the token to the browser: it is single use (cbJti consumed by token_callback).
   // links sent by email stay reusable until expiry, mail scanners prefetch them
-  const cbPayload = opts?.emailed ? payload : { ...payload, cbJti: nanoid() }
+  const cbPayload = opts?.emailed ? payload : { ...payload, cbJti: nanoid(), ...(opts?.idpLogin ? { idpLogin: opts.idpLogin } : {}) }
   const token = await signToken({ ...cbPayload, temporary: true }, config.jwtDurations.initialToken)
   const redirectBase = redirectSite ? (redirectUrl.protocol + redirectSite.host + (redirectSite.path ?? '') + '/simple-directory') : config.publicUrl
   const tokenCallback = redirectBase + '/api/auth/token_callback'

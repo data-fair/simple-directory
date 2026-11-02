@@ -91,7 +91,10 @@ export type OAuthRelayState = {
   codeVerifier?: string,
   // set when the callback consumed this relay state, it can be used only once
   usedAt?: Date,
-  idToken?: string
+  // RP-initiated logout: kept from the callback until token_callback moves it to the server session
+  idToken?: string,
+  idpProviderId?: string,
+  idpSite?: string
 }
 
 export const getOAuthProviderById = async (req: Request, id: string): Promise<PreparedOAuthProvider | undefined> => {
