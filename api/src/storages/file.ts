@@ -11,6 +11,7 @@ import type { OrganizationPost } from '#doc/organizations/post-req/index.ts'
 import type { UserRef } from '@data-fair/lib-express'
 import type { TwoFA } from '#services'
 import mongo from '#mongo'
+import log from '@data-fair/lib-node/log.js'
 
 type StoredOrganization = Omit<Organization, 'members'> & { members: { id: string, role: string, department?: string }[] }
 
@@ -59,7 +60,7 @@ class FileStorage implements SdStorage {
     const newUsersPath = resolve(import.meta.dirname, '../../..', params.users)
     const oldUsersPath = '/webapp/data/users.json'
     if (existsSync(oldUsersPath)) {
-      console.error(`WARNING: found a users file at deprecated path ${oldUsersPath}, please use new path ${newUsersPath}`)
+      log.warn(`found a users file at deprecated path ${oldUsersPath}, please use new path ${newUsersPath}`, { code: 'deprecated-path' })
       this.users = JSON.parse(readFileSync(oldUsersPath, 'utf-8'))
     } else {
       this.users = JSON.parse(readFileSync(newUsersPath, 'utf-8'))
@@ -71,7 +72,7 @@ class FileStorage implements SdStorage {
     const newOrgsPath = resolve(import.meta.dirname, '../../..', params.organizations)
     const oldOrgsPath = '/webapp/data/organizations.json'
     if (existsSync(oldOrgsPath)) {
-      console.error(`WARNING: found a organizations file at deprecated path ${oldOrgsPath}, please use new path ${newOrgsPath}`)
+      log.warn(`found a organizations file at deprecated path ${oldOrgsPath}, please use new path ${newOrgsPath}`, { code: 'deprecated-path' })
       this.organizations = JSON.parse(readFileSync(oldOrgsPath, 'utf-8'))
     } else {
       this.organizations = JSON.parse(readFileSync(newOrgsPath, 'utf-8'))

@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { createServer } from 'node:http'
 import { session } from '@data-fair/lib-express/index.js'
-import { startObserver, stopObserver, internalError } from '@data-fair/lib-node/observer.js'
+import { startObserver, stopObserver } from '@data-fair/lib-node/observer.js'
 import locks from '@data-fair/lib-node/locks.js'
 import upgradeScripts from '@data-fair/lib-node/upgrade-scripts.js'
 import mongo from '#mongo'
@@ -21,6 +21,7 @@ import { publicGlobalProviders } from './auth/providers.ts'
 import { getSiteColorsWarnings } from '@data-fair/lib-common-types/theme/index.js'
 import { getMainSiteDoc } from './sites/service.ts'
 import { getMainSiteWarnings, getMainSiteIgnoredFields } from './sites/main-site.ts'
+import log from '@data-fair/lib-node/log.js'
 
 const server = createServer(app)
 const httpTerminator = createHttpTerminator({ server })
@@ -52,24 +53,23 @@ export const start = async () => {
 
   const colorWarnings = getSiteColorsWarnings(config.i18n.defaultLocale as 'fr' | 'en', config.theme, await publicGlobalProviders())
   if (colorWarnings.length) {
-    console.error('Configuration contains color warnings')
-    for (const cw of colorWarnings) console.error('  - ' + cw)
+    for (const cw of colorWarnings) log.warn('configuration contains a color warning: ' + cw, { code: 'config-color-warning' })
   }
 
   const mainSiteDoc = await getMainSiteDoc()
   if (mainSiteDoc) {
-    console.log(`Main site document ${mainSiteDoc._id} found on ${mainSiteDoc.host}${mainSiteDoc.path ?? ''}; categories read from the database: ${config.mainSiteFromDb.join(', ') || '(none)'}`)
-    for (const w of getMainSiteWarnings(config.i18n.defaultLocale, mainSiteDoc)) console.warn('  - ' + w)
+    log.info(`Main site document ${mainSiteDoc._id} found on ${mainSiteDoc.host}${mainSiteDoc.path ?? ''}; categories read from the database: ${config.mainSiteFromDb.join(', ') || '(none)'}`)
+    for (const w of getMainSiteWarnings(config.i18n.defaultLocale, mainSiteDoc)) log.warn('main site document: ' + w, { code: 'main-site-warning' })
     const ignoredFields = getMainSiteIgnoredFields(mainSiteDoc)
     if (ignoredFields.length) {
-      internalError('main-site-ignored-fields', `main site document ${mainSiteDoc._id} carries fields that are never honoured on the main host: ${ignoredFields.join(', ')}`)
+      log.error(`main site document ${mainSiteDoc._id} carries fields that are never honoured on the main host: ${ignoredFields.join(', ')}`, { code: 'main-site-ignored-fields' })
     }
   }
 
   server.listen(config.port)
   await new Promise(resolve => server.once('listening', resolve))
 
-  console.log(`API server listening on port ${config.port}`)
+  log.info(`API server listening on port ${config.port}`)
 }
 
 export const stop = async () => {

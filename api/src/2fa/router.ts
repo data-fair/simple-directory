@@ -3,13 +3,14 @@ import qrcode from 'qrcode'
 import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
 import { reqIp, reqSiteUrl, httpError } from '@data-fair/lib-express'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import emailValidator from 'email-validator'
 import storages from '#storages'
 import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import { checkPassword, hashPassword, reqSite, is2FAValid } from '#services'
 import { assertNotNhiSession } from '../nhis/service.ts'
+import { userLogFields } from '../utils/log-fields.ts'
 
 const router = Router()
 export default router
@@ -22,7 +23,7 @@ router.post('/', async (req, res, next) => {
   if (!req.body.password) return res.status(400).send(reqI18n(req).messages.errors.badCredentials)
 
   if (!await limiter()(reqIp(req))) {
-    eventsLog.warn('sd.2fa.rate-limit', `rate limit error for /2fa route with email ${req.body.email}`, { req })
+    log.warn(`rate limit error for /2fa route with email ${req.body.email}`, { code: 'sd.2fa.rate-limit' })
     return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }
 
@@ -51,7 +52,7 @@ router.post('/', async (req, res, next) => {
     const secret = authenticator.generateSecret()
     const otpauth = authenticator.keyuri(user.name, reqSiteUrl(req), secret)
     await storage.set2FA(user.id, { secret, active: false })
-    eventsLog.info('sd.2fa.init', `user initialized 2fa ${req.body.email}`, { req, user })
+    log.info(`user initialized 2fa ${req.body.email}`, { code: 'sd.2fa.init', ...userLogFields(user) })
     res.send({ otpauth, qrcode: await qrcode.toDataURL(otpauth) })
   } else {
     // validate secret with initial token
@@ -60,7 +61,7 @@ router.post('/', async (req, res, next) => {
     if (!isValid) return res.status(400).send(reqI18n(req).messages.errors.bad2FAToken)
     const recovery = randomUUID()
     await storage.set2FA(user.id, { ...user2FA, active: true, recovery: await hashPassword(recovery) })
-    eventsLog.info('sf.2fa.recover', `user recovered 2fa with initial token ${req.body.email}`, { req, user })
+    log.info(`user recovered 2fa with initial token ${req.body.email}`, { code: 'sf.2fa.recover', ...userLogFields(user) })
     res.send({ recovery })
   }
 })

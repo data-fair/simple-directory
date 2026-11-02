@@ -1,17 +1,18 @@
 import { start, stop } from './src/server.ts'
+import log from '@data-fair/lib-node/log.js'
 
 start().then(() => {}, err => {
-  console.error('Failure while starting service', err)
+  log.error('failure while starting service', { code: 'start-process', err })
   process.exit(1)
 })
 
 process.on('SIGTERM', function onSigterm () {
-  console.info('Received SIGTERM signal, shutdown gracefully...')
+  log.info('Received SIGTERM signal, shutdown gracefully...')
   stop().then(() => {
-    console.log('shutting down now')
+    log.info('shutting down now')
     process.exit()
   }, err => {
-    console.error('Failure while stopping service', err)
+    log.error('failure while stopping service', { code: 'stop-process', err })
     process.exit(1)
   })
 })

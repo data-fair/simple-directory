@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { httpError, reqSessionAuthenticated, type EventLogContext } from '@data-fair/lib-express'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import { httpError, reqSessionAuthenticated } from '@data-fair/lib-express'
+import log from '@data-fair/lib-node/log.js'
 import config from '#config'
 import storages from '#storages'
 import { reqI18n } from '#i18n'
@@ -13,6 +13,7 @@ import { getKnownScopes } from '../scopes/service.ts'
 import { getGrantRecord, listGrantRecords, revokeGrant, revokeGrants } from '../oauth-server/grants.ts'
 import { createNhi, getNhi, listNhis } from './service.ts'
 import type { Request } from 'express'
+import { orgLogFields } from '../utils/log-fields.ts'
 
 const router = Router({ mergeParams: true })
 export default router
@@ -46,7 +47,6 @@ router.get('', async (req: Request<OrgParams>, res) => {
 router.post('', async (req: Request<OrgParams>, res) => {
   await assertOrgAdmin(req)
   const { body } = (await import('#doc/nhis/post-req/index.ts')).returnValid(req, { name: 'req' })
-  const logContext: EventLogContext = { req }
   const { org, roles } = await getOrgAndRoles(req.params.organizationId)
   if (!roles.includes(body.role)) throw httpError(400, 'unknown role')
   // no key binding: the NHI is only usable by the OAuth clients an admin binds to it
@@ -54,16 +54,16 @@ router.post('', async (req: Request<OrgParams>, res) => {
   if (body.provider) await checkProvider(body.provider)
   if (body.allowedIps) checkAllowedIps(body.allowedIps)
   if (body.scopes) checkScopes(body.scopes, await knownScopes(req))
-  logContext.account = { type: 'organization', id: org.id, name: org.name }
+  const logFields = orgLogFields(org)
   const limits = await getOrgLimits(org)
   if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
-    eventsLog.info('sd.nhi.limit', `limit error for NHI creation in org ${org.id}`, logContext)
+    log.info(`limit error for NHI creation in org ${org.id}`, { code: 'sd.nhi.limit', ...logFields })
     throw httpError(429, reqI18n(req).messages.errors.maxNbMembers)
   }
   const sessionUser = reqSessionAuthenticated(req).user
   const user = await createNhi(org, body, { id: sessionUser.id, name: sessionUser.name })
   await setNbMembersLimit(org.id)
-  eventsLog.info('sd.nhi.create', `an NHI was created ${user.id} in org ${org.id}`, logContext)
+  log.info(`an NHI was created ${user.id} in org ${org.id}`, { code: 'sd.nhi.create', ...logFields })
   postUserIdentityWebhook(user)
   res.status(201).send(user)
 })
@@ -71,10 +71,9 @@ router.post('', async (req: Request<OrgParams>, res) => {
 router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
   await assertOrgAdmin(req)
   const { body } = (await import('#doc/nhis/patch-req/index.ts')).returnValid(req, { name: 'req' })
-  const logContext: EventLogContext = { req }
   const { org, roles } = await getOrgAndRoles(req.params.organizationId)
   const user = await getNhi(org.id, req.params.nhiId)
-  logContext.account = { type: 'organization', id: org.id, name: org.name }
+  const logFields = orgLogFields(org)
   const patch: any = {}
   if (body.name) patch.name = body.name
   if (body.provider) await checkProvider(body.provider)
@@ -126,19 +125,18 @@ router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
     patch.organizations = [membership]
   }
   const patched = await storages.globalStorage.patchUser(user.id, patch, reqSessionAuthenticated(req).user)
-  eventsLog.info('sd.nhi.patch', `an NHI was patched ${user.id}`, logContext)
+  log.info(`an NHI was patched ${user.id}`, { code: 'sd.nhi.patch', ...logFields })
   postUserIdentityWebhook(patched)
   res.send(patched)
 })
 
 router.delete('/:nhiId', async (req: Request<NhiParams>, res) => {
   await assertOrgAdmin(req)
-  const logContext: EventLogContext = { req }
   const user = await getNhi(req.params.organizationId, req.params.nhiId)
-  logContext.account = { type: 'organization', id: req.params.organizationId, name: user.organizations[0]?.name }
+  const logFields = orgLogFields({ id: req.params.organizationId, name: user.organizations[0]?.name })
   await storages.globalStorage.deleteUser(user.id)
   await setNbMembersLimit(req.params.organizationId)
-  eventsLog.info('sd.nhi.delete', `an NHI was deleted ${user.id}`, logContext)
+  log.info(`an NHI was deleted ${user.id}`, { code: 'sd.nhi.delete', ...logFields })
   deleteIdentityWebhook('user', user.id)
   res.status(204).send()
 })
@@ -170,9 +168,8 @@ router.delete('/:nhiId/oauth-grants', async (req: Request<NhiParams>, res) => {
   // both filters: never revoke the client's grants of other subjects
   const clientId = req.query.clientId
   if (typeof clientId !== 'string' || !clientId) throw httpError(400, 'clientId is required')
-  const logContext: EventLogContext = { req }
-  logContext.account = { type: 'organization', id: req.params.organizationId, name: nhi.organizations[0]?.name }
-  await revokeGrants({ subjectId: nhi.id, clientId }, 'org-admin', logContext)
+  const logFields = orgLogFields({ id: req.params.organizationId, name: nhi.organizations[0]?.name })
+  await revokeGrants({ subjectId: nhi.id, clientId }, 'org-admin', logFields)
   res.status(204).send()
 })
 
@@ -181,8 +178,7 @@ router.delete('/:nhiId/oauth-grants/:grantId', async (req: Request<NhiParams & {
   const nhi = await getNhi(req.params.organizationId, req.params.nhiId)
   const record = await getGrantRecord(req.params.grantId)
   if (!record || record.subject.type !== 'nhi' || record.subject.id !== nhi.id) throw httpError(404, 'grant not found')
-  const logContext: EventLogContext = { req }
-  logContext.account = { type: 'organization', id: req.params.organizationId, name: nhi.organizations[0]?.name }
-  await revokeGrant(record._id, 'org-admin', logContext)
+  const logFields = orgLogFields({ id: req.params.organizationId, name: nhi.organizations[0]?.name })
+  await revokeGrant(record._id, 'org-admin', logFields)
   res.status(204).send()
 })

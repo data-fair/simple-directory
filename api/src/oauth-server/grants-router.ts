@@ -3,7 +3,6 @@
 // scoped sessions; NHI sessions are refused explicitly (their grants are managed by org admins).
 import { Router, type Request } from 'express'
 import { httpError, reqSessionAuthenticated } from '@data-fair/lib-express'
-import type { EventLogContext } from '@data-fair/lib-express/events-log.js'
 import { reqI18n } from '#i18n'
 import { assertNotNhiSession } from '../nhis/service.ts'
 import { getGrantRecord, listGrantRecords, revokeGrant } from './grants.ts'
@@ -43,8 +42,7 @@ router.delete('/:grantId', async (req, res) => {
   assertSelfOrAdmin(req)
   const record = await getGrantRecord(req.params.grantId)
   if (!record || record.subject.type !== 'user' || record.subject.id !== reqUserId(req)) throw httpError(404, 'grant not found')
-  const logContext: EventLogContext = { req }
-  await revokeGrant(record._id, 'user', logContext)
+  await revokeGrant(record._id, 'user')
   res.status(204).send()
 })
 

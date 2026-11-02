@@ -90,16 +90,17 @@ emit `false` but omits) is left to the structural defenses.
 
 ### Monitoring
 
-Rejections emit `eventsLog.alert` entries to monitor post-deployment:
+Rejections emit `log.alert` lines (see [logging](logging.md)) to monitor post-deployment:
 
 - `sd.oidc.email-not-verified` — provider, raw `email_verified` value, domain.
   Fires only on explicit `false`; fix upstream, or set
   `ignoreEmailVerified: true` on the provider (superadmin-level decision).
 - `sd.oauth.email-not-verified` — provider, reason / claim value.
 
-Implementation: `userInfo(accessToken, idToken?, logContext?)` takes an
-optional log context; call sites with a request pass it, background paths
-(e.g. token-refresh worker) omit it.
+Implementation: `userInfo(accessToken, idToken?, logFields?)` takes optional
+explicit log fields; the interactive login routes pass them (the request fields
+come from the implicit log context), background paths (e.g. token-refresh
+worker) omit them and do not log the refusal.
 
 ## Preventing SSO superadmin escalation
 

@@ -1,7 +1,7 @@
 import type { Member, Organization, Partner } from '#types'
 import { Router, type Request } from 'express'
-import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, session, mongoPagination, mongoSort, type EventLogContext } from '@data-fair/lib-express'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, session, mongoPagination, mongoSort } from '@data-fair/lib-express'
+import log from '@data-fair/lib-node/log.js'
 import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
 import config from '#config'
@@ -18,6 +18,7 @@ import nhisRouter from '../nhis/router.ts'
 import { isOrgAdmin } from './service.ts'
 import { assertNotNhiSession } from '../nhis/service.ts'
 import Debug from 'debug'
+import { orgLogFields } from '../utils/log-fields.ts'
 
 const slug = _slug.default
 
@@ -122,7 +123,6 @@ router.get('/:organizationId/roles', async (req, res, next) => {
 router.post('', async (req, res, next) => {
   assertNotNhiSession(req)
   const user = reqUser(req)
-  const logContext: EventLogContext = { req }
 
   if (!user) return res.status(401).send()
   const storage = storages.globalStorage
@@ -142,8 +142,8 @@ router.post('', async (req, res, next) => {
   }
 
   const createdOrga = await storage.createOrganization(orga, user)
-  logContext.account = { type: 'organization', id: createdOrga.id, name: createdOrga.name }
-  eventsLog.info('sd.org.create', `a user created an organization: ${orga.name} (${orga.id})`, logContext)
+  const logFields = orgLogFields(createdOrga)
+  log.info(`a user created an organization: ${createdOrga.name} (${createdOrga.id})`, { code: 'sd.org.create', ...logFields })
   let autoAdmin = !reqUser(req)?.adminMode
   if (typeof req.query.autoAdmin === 'string') autoAdmin = req.query.autoAdmin === 'true'
   if (autoAdmin) await storage.addMember(createdOrga, user, 'admin')
@@ -158,7 +158,6 @@ router.post('', async (req, res, next) => {
 // Update some parts of an organization as admin of it
 router.patch('/:organizationId', async (req, res, next) => {
   const user = reqUser(req)
-  const logContext: EventLogContext = { req }
 
   if (!user) return res.status(401).send()
   // Only allowed for the organizations that the user is admin of
@@ -191,8 +190,8 @@ router.patch('/:organizationId', async (req, res, next) => {
   const patchedOrga = await storages.globalStorage.patchOrganization(req.params.organizationId, patch, user)
   if (patch.departments) await deleteOtherDepartmentsAvatars(patchedOrga.id, patch.departments.map(d => d.id as string))
 
-  logContext.account = { type: 'organization', id: patchedOrga.id, name: patchedOrga.name }
-  eventsLog.info('sd.org.patch', `a user patched the organization info ${Object.keys(patch).join(', ')} - ${patchedOrga.name} ${patchedOrga.id}`, logContext)
+  const logFields = orgLogFields(patchedOrga)
+  log.info(`a user patched the organization info ${Object.keys(patch).join(', ')} - ${patchedOrga.name} ${patchedOrga.id}`, { code: 'sd.org.patch', ...logFields })
 
   await mongo.limits.updateOne({ type: 'organization', id: patchedOrga.id }, { $set: { name: patchedOrga.name } })
   postOrganizationIdentityWebhook(patchedOrga)
@@ -205,8 +204,6 @@ router.patch('/:organizationId', async (req, res, next) => {
 
 // Get the members of an organization. i.e. a partial user object (id, name, role).
 router.get('/:organizationId/members', async (req, res, next) => {
-  const logContext: EventLogContext = { req }
-
   if (!reqUser(req)) return res.status(401).send()
   // Only search through the organizations that the user belongs to
   if (!await isMember(req)) {
@@ -215,7 +212,7 @@ router.get('/:organizationId/members', async (req, res, next) => {
 
   const org = await storages.globalStorage.getOrganization(req.params.organizationId)
   if (!org) return res.status(404).send('organization not found')
-  logContext.account = { type: 'organization', id: org.id, name: org.name }
+  const logFields = orgLogFields(org)
 
   // the export is for admins only (of the organization, or of the single department exported)
   if (req.query.format === 'csv') {
@@ -273,7 +270,7 @@ router.get('/:organizationId/members', async (req, res, next) => {
     }
   }
 
-  eventsLog.info('sd.org.get-member', `a user read the list of members of an organization ${org.name}(${org.id})`, logContext)
+  log.info(`a user read the list of members of an organization ${org.name}(${org.id})`, { code: 'sd.org.get-member', ...logFields })
 
   if (req.query.format === 'csv') {
     res.setHeader('content-disposition', 'attachment; filename="members.csv"')
@@ -292,8 +289,6 @@ router.get('/:organizationId/members', async (req, res, next) => {
 
 // Exclude a member of the organization
 router.delete('/:organizationId/members/:userId', async (req, res, next) => {
-  const logContext: EventLogContext = { req }
-
   if (!reqUser(req)) return res.status(401).send()
   const storage = storages.globalStorage
 
@@ -315,14 +310,14 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
   )
   if (userRole !== 'admin') throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
 
-  eventsLog.info('sd.org.member.del', `a user removed a member from an organization ${member.name} (${member.id}), ${req.params.organizationId}`, logContext)
+  log.info(`a user removed a member from an organization ${member.name} (${member.id}), ${req.params.organizationId}`, { code: 'sd.org.member.del' })
   await storage.removeMember(req.params.organizationId, req.params.userId, dep, role)
   await setNbMembersLimit(req.params.organizationId)
 
   const user = await storage.getUser(req.params.userId)
   if (!user) return res.status(404).send('user not found')
   if (config.onlyCreateInvited && !user.organizations.length) {
-    eventsLog.info('sd.org.member.del-user', `a user was removed after being excluded from last organization ${user.name} (${user.id})`, logContext)
+    log.info(`a user was removed after being excluded from last organization ${user.name} (${user.id})`, { code: 'sd.org.member.del-user' })
     await storage.deleteUser(req.params.userId)
     await deleteIdentityLimits('user', user.id)
     deleteIdentityWebhook('user', user.id)
@@ -339,7 +334,6 @@ router.delete('/:organizationId/members/:userId', async (req, res, next) => {
 // Change the role of the user in the organization
 router.patch('/:organizationId/members/:userId', async (req, res, next) => {
   assertNotNhiSession(req)
-  const logContext: EventLogContext = { req }
 
   if (!reqUser(req)) return res.status(401).send()
 
@@ -360,12 +354,12 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
   if (role !== 'admin') throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   const orga = await storage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
-  logContext.account = { type: 'organization', id: orga.id, name: orga.name }
+  const logFields = orgLogFields(orga)
   const roles = orga.roles || config.roles.defaults
   if (!roles.includes(body.role)) throw httpError(400, reqI18n(req).messages.errors.unknownRole.replace('{role}', body.role))
   if (config.multiRoles && !query.role) throw httpError(400, 'query.role is required in multi-roles mode')
   await storage.patchMember(req.params.organizationId, req.params.userId, query.department, query.role, body)
-  eventsLog.info('sd.org.member.patch', `a user changed the role of a member in an organization ${member.name} (${member.id}) ${body.role} ${body.department ?? ''}`, logContext)
+  log.info(`a user changed the role of a member in an organization ${member.name} (${member.id}) ${body.role} ${body.department ?? ''}`, { code: 'sd.org.member.patch', ...logFields })
   postUserIdentityWebhook(await storage.getUser(req.params.userId))
 
   // update session info
@@ -376,15 +370,12 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
 
 // Super admin and orga admin can delete an organization for now
 router.delete('/:organizationId', async (req, res, next) => {
-  /** @type {import('@data-fair/lib-express/events-log.js').EventLogContext} */
-  const logContext = { req }
-
   if (!reqUser(req)) return res.status(401).send()
   if (!await isOrgAdmin(req)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   const { count } = await storages.globalStorage.findMembers(req.params.organizationId, { size: 0, skip: 0 })
   if (count > 1) return res.status(400).send(reqI18n(req).messages.errors.nonEmptyOrganization)
   await storages.globalStorage.deleteOrganization(req.params.organizationId)
-  eventsLog.info('sd.org.delete', `a user deleted an organization ${req.params.organizationId}`, logContext)
+  log.info(`a user deleted an organization ${req.params.organizationId}`, { code: 'sd.org.delete', ...orgLogFields({ id: req.params.organizationId }) })
   await deleteIdentityLimits('organization', req.params.organizationId)
   deleteIdentityWebhook('organization', req.params.organizationId)
 
@@ -402,8 +393,6 @@ if (config.managePartners) {
   // Invitation for an organization to join us as partners
   const debugPartners = Debug('partners')
   router.post('/:organizationId/partners', async (req, res, next) => {
-    const logContext: EventLogContext = { req }
-
     if (!reqUser(req)) return res.status(401).send()
     if (!await isOrgAdmin(req)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
 
@@ -413,14 +402,14 @@ if (config.managePartners) {
 
     const orga = await storage.getOrganization(req.params.organizationId)
     if (!orga) return res.status(404).send()
-    logContext.account = { type: 'organization', id: orga.id, name: orga.name }
+    const logFields = orgLogFields(orga)
 
     const partnerId = nanoid()
 
     const token = await signToken(shortenPartnerInvitation(partnerPost, orga, partnerId), config.jwtDurations.partnerInvitationToken)
 
     await storage.addPartner(orga.id, { name: partnerPost.name, contactEmail: partnerPost.contactEmail, partnerId, createdAt: new Date().toISOString() })
-    eventsLog.info('sd.org.partner.invite', `a user invited an organization to be a partner ${partnerPost.name} ${partnerPost.contactEmail} ${orga.name} ${orga.id}`, logContext)
+    log.info(`a user invited an organization to be a partner ${partnerPost.name} ${partnerPost.contactEmail} ${orga.name} ${orga.id}`, { code: 'sd.org.partner.invite', ...logFields })
 
     // contrary to getInvitSite (cf invitations/router.ts) we do not fold the redirect site to the site
     // where its accounts live: the mail must point to the site the invitation actually targets, so that
@@ -451,7 +440,6 @@ if (config.managePartners) {
   })
 
   router.post('/:organizationId/partners/_accept', async (req, res, next) => {
-    const logContext: EventLogContext = { req }
     const user = reqUser(req)
 
     if (!user) return res.status(401).send()
@@ -460,7 +448,7 @@ if (config.managePartners) {
     // user must be owner of the new partner
     const userOrga = user.organizations.find(o => o.id === partnerAccept.id && !o.department)
     if (!userOrga || userOrga.role !== 'admin') throw httpError(403)
-    logContext.account = { type: 'organization', id: userOrga.id, name: userOrga.name }
+    const logFields = orgLogFields(userOrga)
 
     const storage = storages.globalStorage
     const partnerOrga = await storage.getOrganization(partnerAccept.id)
@@ -490,7 +478,7 @@ if (config.managePartners) {
     await storage.validatePartner(orga.id, tokenPayload.partnerId, partnerOrga)
     postOrganizationIdentityWebhook((await storage.getOrganization(orga.id)) ?? orga)
 
-    eventsLog.info('sd.org.partner.accept', `a user accepted an organization to be a partner ${partnerOrga.name} (${partnerOrga.id}) of ${orga.name} (${orga.id})`, logContext)
+    log.info(`a user accepted an organization to be a partner ${partnerOrga.name} (${partnerOrga.id}) of ${orga.name} (${orga.id})`, { code: 'sd.org.partner.accept', ...logFields })
 
     const notif = {
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
@@ -505,7 +493,6 @@ if (config.managePartners) {
 
   // Superadmin-only: directly create an established partnership with an existing organization
   router.post('/:organizationId/partners/_create', async (req, res, next) => {
-    const logContext: EventLogContext = { req }
     const user = reqUser(req)
 
     if (!user) return res.status(401).send()
@@ -517,7 +504,7 @@ if (config.managePartners) {
 
     const orga = await storage.getOrganization(req.params.organizationId)
     if (!orga) return res.status(404).send()
-    logContext.account = { type: 'organization', id: orga.id, name: orga.name }
+    const logFields = orgLogFields(orga)
 
     const partnerOrga = await storage.getOrganization(partnerCreate.id)
     if (!partnerOrga) return res.status(404).send('unknown organization')
@@ -536,14 +523,12 @@ if (config.managePartners) {
     await storage.addPartner(orga.id, partner)
     postOrganizationIdentityWebhook((await storage.getOrganization(orga.id)) ?? orga)
 
-    eventsLog.info('sd.org.partner.create', `a superadmin manually created a partnership ${partnerOrga.name} (${partnerOrga.id}) of ${orga.name} (${orga.id})`, logContext)
+    log.info(`a superadmin manually created a partnership ${partnerOrga.name} (${partnerOrga.id}) of ${orga.name} (${orga.id})`, { code: 'sd.org.partner.create', ...logFields })
 
     res.status(201).send()
   })
 
   router.delete('/:organizationId/partners/:partnerId', async (req, res, next) => {
-    const logContext: EventLogContext = { req }
-
     if (!reqUser(req)) return res.status(401).send()
     if (!await isOrgAdmin(req)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
     const storage = storages.globalStorage
@@ -551,7 +536,7 @@ if (config.managePartners) {
     const orga = await storage.getOrganization(req.params.organizationId)
     if (orga) postOrganizationIdentityWebhook(orga)
 
-    eventsLog.info('sd.org.partner.delete', `a user removed a partner from an organization ${req.params.partnerId} ${req.params.organizationId}`, logContext)
+    log.info(`a user removed a partner from an organization ${req.params.partnerId} ${req.params.organizationId}`, { code: 'sd.org.partner.delete' })
     res.status(201).send()
   })
 

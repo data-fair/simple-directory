@@ -1,9 +1,10 @@
 // SD's record of each authorization granted to an OAuth client: what people see, audit and revoke.
 // Stored as the sd field of the provider's own Grant document (oauth-grant collection), so that
 // whatever destroys the Grant (revocation, reuse detection, expiry) also removes the record.
-import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import mongo from '#mongo'
 import { MongoAdapter } from './adapter.ts'
+import type { LogFields } from '../utils/log-fields.ts'
 
 export type OAuthGrantRecord = {
   _id: string,
@@ -74,22 +75,22 @@ export const touchGrantRecord = async (grantId: string) => {
 
 // the provider's documents of the grant (access tokens are JWTs, never stored) then the Grant
 // itself with its record
-export const revokeGrant = async (grantId: string, reason: string, logContext: EventLogContext = {}) => {
+export const revokeGrant = async (grantId: string, reason: string, logFields: LogFields = {}) => {
   for (const model of ['RefreshToken', 'AuthorizationCode']) {
     await new MongoAdapter(model).revokeByGrantId(grantId)
   }
   const doc = await grantDocs().findOneAndDelete({ _id: grantId })
   if (!doc?.sd) return false
-  eventsLog.info('sd.oauth.grant.revoked', `oauth grant ${grantId} of client ${doc.sd.clientId} revoked: ${reason}`, logContext)
+  log.info(`oauth grant ${grantId} of client ${doc.sd.clientId} revoked: ${reason}`, { code: 'sd.oauth.grant.revoked', ...logFields })
   return true
 }
 
-export const revokeGrants = async (filter: GrantFilter, reason: string, logContext?: EventLogContext) => {
+export const revokeGrants = async (filter: GrantFilter, reason: string, logFields?: LogFields) => {
   // an empty filter would revoke every grant of the platform
   if (!Object.keys(filterKeys).some(key => filter[key as keyof GrantFilter])) throw new Error('revokeGrants needs a filter')
   let count = 0
   for (const doc of await grantDocs().find(toMongoFilter(filter), { projection: { _id: 1 } }).toArray()) {
-    if (await revokeGrant(doc._id, reason, logContext)) count++
+    if (await revokeGrant(doc._id, reason, logFields)) count++
   }
   return count
 }

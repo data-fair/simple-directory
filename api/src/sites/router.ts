@@ -220,7 +220,7 @@ router.patch('/:id', async (req, res, next) => {
   if (patch.oauthClients) {
     const kept = new Set(patch.oauthClients.map(c => c.id))
     for (const previous of site.oauthClients ?? []) {
-      if (!kept.has(previous.id)) await revokeGrants({ clientId: previous.id }, 'site client removed', { req })
+      if (!kept.has(previous.id)) await revokeGrants({ clientId: previous.id }, 'site client removed')
     }
   }
 
@@ -240,7 +240,7 @@ router.delete('/:id', async (req, res, next) => {
   const site = await getSite(req.params.id)
   await deleteSite(req.params.id)
   for (const client of site?.oauthClients ?? []) {
-    await revokeGrants({ clientId: client.id }, 'site deleted', { req })
+    await revokeGrants({ clientId: client.id }, 'site deleted')
   }
   res.status(204).send()
 })

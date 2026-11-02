@@ -131,7 +131,7 @@ document, stored client):
   literals checked, no redirect followed, the provider's timeout and 5 KB
   limit). A test-only fixture hook serves documents from memory, only with
   `ENABLE_TEST_API=1`. When the global dispatcher is not undici's `Agent`, fetches fail
-  closed (`internalError` `oauth-ssrf-dispatcher`, logged once);
+  closed (`log.error` code `oauth-ssrf-dispatcher`, logged once);
 - DCR clients are stored per issuer; those older than 30 days without a live
   grant are deleted by the users worker.
 

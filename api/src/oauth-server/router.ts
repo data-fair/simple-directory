@@ -2,7 +2,7 @@ import express, { Router, type Request, type Response } from 'express'
 import { decodeJwt } from 'jose'
 import config from '#config'
 import { reqIp, reqIsInternal } from '@data-fair/lib-express'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import { reqI18n } from '#i18n'
 import { consumeNhiLimits } from '../nhis/exchange.ts'
 import { codeFlowEnabled, agentClientsEnabled } from './clients.ts'
@@ -71,8 +71,8 @@ const limitTokenRequest = async (req: Request, res: Response, grantType: string)
     clientKey = clientId === undefined ? undefined : `oauth-token-client:${clientId} ${clientIp}`
   }
   if (!await consumeNhiLimits(ipKey, clientKey)) {
-    if (grantType === 'client_credentials') eventsLog.warn('sd.auth.nhi.rate-limit', 'rate limit error for the client_credentials grant', { req })
-    else eventsLog.warn('sd.oauth.rate-limit', `rate limit error for the ${grantType} grant of client ${clientId ?? 'unknown'}`, { req })
+    if (grantType === 'client_credentials') log.warn('rate limit error for the client_credentials grant', { code: 'sd.auth.nhi.rate-limit' })
+    else log.warn(`rate limit error for the ${grantType} grant of client ${clientId ?? 'unknown'}`, { code: 'sd.oauth.rate-limit' })
     oauthError(res, 429, 'invalid_request', reqI18n(req).messages.errors.rateLimitAuth)
     return false
   }
@@ -84,7 +84,7 @@ const limitTokenRequest = async (req: Request, res: Response, grantType: string)
 // applies SD's rules for dynamic clients (configuration.ts extraClientMetadata).
 const limitRegistration = async (req: Request, res: Response): Promise<boolean> => {
   if (await limiter()('oauth-dcr:' + reqIp(req))) return true
-  eventsLog.warn('sd.oauth.rate-limit', 'rate limit error for the dynamic client registration', { req })
+  log.warn('rate limit error for the dynamic client registration', { code: 'sd.oauth.rate-limit' })
   oauthError(res, 429, 'invalid_request', reqI18n(req).messages.errors.rateLimitAuth)
   return false
 }

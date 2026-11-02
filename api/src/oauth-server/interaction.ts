@@ -10,11 +10,10 @@ import mongo from '#mongo'
 import type { User } from '#types'
 import { reqI18n } from '#i18n'
 import { reqSession, markScopeChecked, httpError, type SessionState } from '@data-fair/lib-express'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import limiter, { refundLimiter } from '../utils/limiter.ts'
 import { getKnownScopes, knownScopeNames } from '../scopes/service.ts'
 import { getMainSiteDoc } from '../sites/service.ts'
-import { internalError } from '@data-fair/lib-node/observer.js'
 import { listNhis } from '../nhis/service.ts'
 import { narrowScope } from '../nhis/scopes.ts'
 import type { PostOauthConsentReq } from '#doc/oauth/post-consent-req/index.ts'
@@ -148,13 +147,13 @@ const lockDecision = async (uid: string) => {
 
 // the provider Grant of a decision and its record, then the result the provider resumes with; the
 // grant does not outlive a failure
-const grantAndResume = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, opts: Omit<ConsentGrantOptions, 'ctx' | 'interaction' | 'logContext'>) => {
-  const grantId = await createConsentGrant(ic.provider, { ...opts, ctx: ic.ctx, interaction, logContext: { req } })
+const grantAndResume = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, opts: Omit<ConsentGrantOptions, 'ctx' | 'interaction'>) => {
+  const grantId = await createConsentGrant(ic.provider, { ...opts, ctx: ic.ctx, interaction })
   try {
     return await ic.provider.interactionResult(req, res, { login: { accountId: opts.subject.id }, consent: { grantId } })
   } catch (err) {
-    await revokeGrant(grantId, 'consent failed', { req })
-      .catch(revokeErr => internalError('oauth-consent-undo', 'failed to revoke the grant of a failed consent decision', revokeErr))
+    await revokeGrant(grantId, 'consent failed')
+      .catch(revokeErr => log.error('failed to revoke the grant of a failed consent decision', { code: 'oauth-consent-undo', err: revokeErr }))
     throw err
   }
 }
@@ -352,7 +351,7 @@ router.post('/:uid', async (req, res) => {
   if (body.decision === 'deny') {
     if (!await lockDecision(uid)) throw httpError(400, 'the interaction is already finished')
     const redirectTo = await ic.provider.interactionResult(req, res, { error: 'access_denied', error_description: 'the end-user denied the request' }, { mergeWithLastSubmission: false })
-    eventsLog.info('sd.oauth.consent.denied', `consent denied to oauth client ${clientId}`, { req })
+    log.info(`consent denied to oauth client ${clientId}`, { code: 'sd.oauth.consent.denied' })
     await refundLimiter(limiterKey)
     return res.send({ redirectTo })
   }

@@ -5,6 +5,7 @@ import type { SdStorage, SdStorageFactory } from './interface.ts'
 import { nanoid } from 'nanoid'
 import defaultConfig from '../../config/default.cjs'
 import type { SessionState } from '@data-fair/lib-express'
+import log from '@data-fair/lib-node/log.js'
 
 class StorageManager {
   private _globalStorage?: SdStorage
@@ -41,7 +42,7 @@ class StorageManager {
           try {
             await storage.createUser(newAdmin)
           } catch (err) {
-            console.error('Failure to create initial admin user', err)
+            log.error('failure to create initial admin user', { code: 'create-admin-user', err })
           }
         }
       }

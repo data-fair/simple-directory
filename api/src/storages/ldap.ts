@@ -14,6 +14,7 @@ import userName from '../utils/user-name.ts'
 import slugify from 'slugify'
 import { type PatchMemberBody } from '#doc/organizations/patch-member-req/index.ts'
 import { unescapeNonAsciiInDn } from '../utils/dn.ts'
+import log from '@data-fair/lib-node/log.js'
 
 const debug = Debug('ldap')
 
@@ -130,7 +131,7 @@ export class LdapStorage implements SdStorage {
     }
     this.ldapParams = params
     this.org = org
-    console.log('Connecting to ldap ' + params.url)
+    log.info('Connecting to ldap ' + params.url)
     // check connexion at startup
 
     if (this.ldapParams.members.role.captureRegex) {
@@ -166,14 +167,14 @@ export class LdapStorage implements SdStorage {
     if (this.ldapParams.prefillCache && !this.org) {
       debug('prefill users cache')
       this.getAllUsers().catch(err => {
-        console.error('failed to prefill users cache', err)
+        log.error('failed to prefill the ldap users cache', { code: 'ldap-prefill', err })
       }).finally(() => {
         this.initializing = false
       })
       if (!this.ldapParams.organizations.staticSingleOrg) {
         debug('prefill orgs cache')
         this.getAllOrgs().catch(err => {
-          console.error('failed to prefill orgs cache', err)
+          log.error('failed to prefill the ldap orgs cache', { code: 'ldap-prefill', err })
         })
       }
     } else {
@@ -188,7 +189,7 @@ export class LdapStorage implements SdStorage {
 
   private async withClient <T>(fn: (client: ldap.Client) => Promise<T>) {
     const client = ldap.createClient({ url: this.ldapParams.url, timeout: 4000, ...this.ldapParams.clientOptions })
-    client.on('error', err => console.error(err.message))
+    client.on('error', err => log.error('ldap client error', { code: 'ldap-client', err }))
 
     const bind = promisify(client.bind).bind(client)
 
@@ -196,7 +197,7 @@ export class LdapStorage implements SdStorage {
       debug('bind service account', this.ldapParams.url, this.ldapParams.searchUserDN)
       await bind(this.ldapParams.searchUserDN, decipher(this.ldapParams.searchUserPassword as any))
     } else {
-      console.warn('No ldap search user credentials configured, proceed without binding a service account')
+      debug('no ldap search user credentials configured, proceed without binding a service account')
     }
     try {
       return await fn(client)
@@ -264,7 +265,7 @@ export class LdapStorage implements SdStorage {
         this.allUsersCache.previousData = users
         this.allUsersCache.previousFetch = date
       }, err => {
-        console.error('failed to fetch all users', err)
+        log.error('failed to fetch all ldap users', { code: 'ldap-fetch-all', err })
       })
     } else {
       fromCache = this.allUsersCache.lastFetch.toISOString()
@@ -322,7 +323,7 @@ export class LdapStorage implements SdStorage {
       this.allOrgsCache.dataPromise = orgsPromise
       this.allOrgsCache.lastFetch = new Date()
       orgsPromise.catch(err => {
-        console.error('failed to fetch all orgs', err)
+        log.error('failed to fetch all ldap orgs', { code: 'ldap-fetch-all', err })
       })
     } else {
       fromCache = this.allOrgsCache.lastFetch.toISOString()

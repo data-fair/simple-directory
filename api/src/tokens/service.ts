@@ -2,8 +2,7 @@ import type { ServerSession, SessionInfoPayload, Site, User } from '#types'
 import type { Request, Response } from 'express'
 import type { OrganizationMembership, SessionState, User as SessionUser } from '@data-fair/lib-express'
 import { reqSession, reqSiteUrl, session, reqSitePath, reqSessionAuthenticated, reqIp, httpError } from '@data-fair/lib-express'
-import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
-import { internalError } from '@data-fair/lib-node/observer.js'
+import log from '@data-fair/lib-node/log.js'
 import config, { jwtDurations } from '#config'
 import jwt, { type SignOptions, type JwtPayload } from 'jsonwebtoken'
 import type { StringValue } from 'ms'
@@ -306,7 +305,6 @@ export const switchOrganization = (req: Request, res: Response, user: SessionUse
 
 export const keepalive = async (req: Request, res: Response, _user?: User, removeAdminMode?: boolean) => {
   const sessionState = reqSessionAuthenticated(req)
-  const logContext: EventLogContext = { req, account: (await reqSite(req))?.owner }
 
   // An NHI session has no exchange token by construction (setSessionCookies is called with
   // skipExchangeToken), so it can never be renewed. Returning here instead of falling through to
@@ -321,7 +319,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   // and the only way to get another is a new exchange with a fresh assertion. What changes is
   // that a failed renewal is now inert rather than destructive.
   if (sessionState.user.nhi) {
-    eventsLog.info('sd.auth.keepalive.nhi', 'a keepalive on a non-human identity session was ignored', logContext)
+    log.info('a keepalive on a non-human identity session was ignored', { code: 'sd.auth.keepalive.nhi' })
     return
   }
 
@@ -331,16 +329,15 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     org = await storages.globalStorage.getOrganization(sessionState.organization.id)
     if (!org) {
       await logout(req, res)
-      eventsLog.info('sd.auth.keepalive.fail', 'a user tried to prolongate a session in invalid org', logContext)
+      log.info('a user tried to prolongate a session in invalid org', { code: 'sd.auth.keepalive.fail' })
       throw httpError(401, 'Organisation inexistante')
     }
-    logContext.account = { type: 'organization', id: org.id, name: org.name, department: sessionState.organization.department, departmentName: sessionState.organization.departmentName }
   }
   const storage = await storages.getSessionStorage(sessionState)
   const user = _user || (await storage.getUser(sessionState.user.id))
   if (!user) {
     await logout(req, res)
-    eventsLog.info('sd.auth.keepalive.fail', 'a deleted user tried to prolongate a session', logContext)
+    log.info('a deleted user tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
     throw httpError(401, 'Utilisateur inexistant')
   }
 
@@ -353,7 +350,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
 
   if (!exchangeToken) {
     await logout(req, res)
-    eventsLog.info('sd.auth.keepalive.fail', 'a user without a valid echange token tried to prolongate a session', logContext)
+    log.info('a user without a valid echange token tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
     throw httpError(401, 'Informations de session manquantes')
   }
   let serverSessionInfo: SessionInfoPayload
@@ -361,14 +358,14 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     serverSessionInfo = await session.verifyToken(exchangeToken) as SessionInfoPayload
   } catch (err) {
     await logout(req, res)
-    eventsLog.info('sd.auth.keepalive.fail', 'a user with a broken echange token tried to prolongate a session', logContext)
+    log.info('a user with a broken echange token tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
     throw httpError(401, 'Informations de session erronées')
   }
   // the exchange token is the long lived credential, its IP binding is checked here even if
   // the id_token was already checked by the session middleware (it may be expired at this point)
   if (serverSessionInfo.ip && serverSessionInfo.ip !== reqIp(req)) {
     await logout(req, res)
-    eventsLog.alert('sd.auth.keepalive.ip', 'a session bound to another IP tried to prolongate a session', logContext)
+    log.alert('a session bound to another IP tried to prolongate a session', { code: 'sd.auth.keepalive.ip' })
     throw httpError(401, 'Session liée à une autre adresse IP')
   }
   let serverSession: ServerSession | undefined
@@ -378,25 +375,25 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     if (!adminUser.isAdmin) throw httpError(401, 'Utilisateur "asAdmin" n\'est pas un superutilisateur')
     if (serverSessionInfo.user !== adminUser.id) {
       await logout(req, res)
-      eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with another user\'s exchange token tried to prolongate a session', logContext)
+      log.info('a user in asAdmin mode with another user\'s exchange token tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
       throw httpError(401, 'Informations de session manquantes')
     }
     serverSession = adminUser.sessions?.find(s => s.id === serverSessionInfo.session)
     if (!serverSession) {
       await logout(req, res)
-      eventsLog.info('sd.auth.keepalive.fail', 'a user in asAdmin mode with a deleted session reference tried to prolongate a session', logContext)
+      log.info('a user in asAdmin mode with a deleted session reference tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
       throw httpError(401, 'Session interrompue')
     }
   } else {
     if (serverSessionInfo.user !== user.id) {
       await logout(req, res)
-      eventsLog.info('sd.auth.keepalive.fail', 'a user with another user\'s exchange token tried to prolongate a session', logContext)
+      log.info('a user with another user\'s exchange token tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
       throw httpError(401, 'Informations de session manquantes')
     }
     serverSession = user.sessions?.find(s => s.id === serverSessionInfo.session)
     if (!serverSession) {
       await logout(req, res)
-      eventsLog.info('sd.auth.keepalive.fail', 'a user with a deleted session reference tried to prolongate a session', logContext)
+      log.info('a user with a deleted session reference tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
       throw httpError(401, 'Session interrompue')
     }
   }
@@ -405,10 +402,10 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   // and its owner must authenticate again
   if (!exchangeTokenCurrent(serverSession, serverSessionInfo.jti)) {
     await logout(req, res)
-    eventsLog.alert('sd.auth.keepalive.reuse', 'an already used exchange token was presented, the session was destroyed', logContext)
+    log.alert('an already used exchange token was presented, the session was destroyed', { code: 'sd.auth.keepalive.reuse' })
     // a copy of the session may have authorized oauth clients
-    await revokeGrants({ sessionId: serverSession.id }, 'exchange token reused', logContext)
-      .catch(err => internalError('keepalive-revoke-grants', 'failed to revoke the oauth grants of a reused session', err))
+    await revokeGrants({ sessionId: serverSession.id }, 'exchange token reused')
+      .catch(err => log.error('failed to revoke the oauth grants of a reused session', { code: 'keepalive-revoke-grants', err }))
     throw httpError(401, 'Session interrompue')
   }
   // the previous token within the grace window: re-issued as is, without rotating
@@ -426,7 +423,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   } else {
     if (!storage.readonly) {
       storage.updateLogged(sessionState.user.id).catch(async (err: any) => {
-        internalError('update-logged', 'error while updating logged date', err)
+        log.error('error while updating logged date', { code: 'update-logged', err })
       })
     }
   }
@@ -434,7 +431,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   // still belongs to the superadmin who opened it
   storage.updateUserSession(serverSessionInfo.user, serverSessionInfo.session, { lastKeepalive: new Date().toISOString(), ...lastIpInfo(req) })
     .catch(async (err: any) => {
-      internalError('update-user-session', 'error while updating session info', err)
+      log.error('error while updating session info', { code: 'update-user-session', err })
     })
   let userOrg
   if (idTokenOrg) {
@@ -447,7 +444,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   }
   await setSessionCookies(req, res, reqSitePath(req), payload, serverSessionInfo.session, userOrg, { keepExchangeJti })
 
-  eventsLog.info('sd.auth.keepalive.ok', 'a session was successfully prolongated', logContext)
+  log.info('a session was successfully prolongated', { code: 'sd.auth.keepalive.ok' })
 }
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback

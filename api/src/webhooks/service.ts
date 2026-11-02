@@ -3,9 +3,9 @@ import type { Organization } from '#types/organization/index.ts'
 import type { PostIdentityReq } from '@data-fair/lib-express/identities/types/post-req/index.js'
 // webhook targets come from config.webhooks, other services of the same infrastructure
 import { privateAxiosInstance as axios } from '@data-fair/lib-node/axios.js'
-import { internalError } from '@data-fair/lib-node/observer.js'
 import config from '#config'
 import Debug from 'debug'
+import log from '@data-fair/lib-node/log.js'
 
 const debug = Debug('webhooks')
 
@@ -33,7 +33,7 @@ const postIdentityWebhook = async (identity: PostIdentityReq['body'] & PostIdent
     try {
       await axios.post(url, identity, webhookAuth(webhook.key))
     } catch (err: any) {
-      internalError('webhook-identity-post', err)
+      log.error('failed to send the identity webhook', { code: 'webhook-identity-post', err })
     }
   }
 }
@@ -45,7 +45,7 @@ export const deleteIdentityWebhook = async (type: string, id: string) => {
     try {
       await axios.delete(url, webhookAuth(webhook.key))
     } catch (err: any) {
-      internalError('webhook-identity-delete', err)
+      log.error('failed to send the identity delete webhook', { code: 'webhook-identity-delete', err })
     }
   }
 }

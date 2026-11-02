@@ -185,7 +185,7 @@ the exchange as `/nhi-token` runs it.
    `APIRequestContext` shares its cookie jar with the browser context,
    calling this endpoint from `context.request.post(...)` leaves the browser
    authenticated too -- useful for e2e automation of NHI-driven flows.
-9. `updateLogged` and `eventsLog.info('sd.auth.nhi.ok', …)` on success for
+9. `updateLogged` and `log.info(…, { code: 'sd.auth.nhi.ok' })` on success for
    observability; the HTML login form is untouched by any of this.
 
 ## Grants available per NHI kind
