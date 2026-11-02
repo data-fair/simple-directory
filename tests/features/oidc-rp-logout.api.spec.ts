@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { axios, loginBindingCookie, testEnvAx, createUser, getServerConfig, mockOidcControlUrl1, loginWithOIDC } from '../support/axios.ts'
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
+import { withMongo } from '../support/oauth-code-site.ts'
 
 // RP-initiated logout: a user who logged in through an OIDC provider with rpInitiatedLogout is sent to the
 // end_session_endpoint of the provider (with his id_token) when he logs out
@@ -43,7 +44,10 @@ const siteLogin = async () => {
   const tokenCallback = await siteAx(oauthCallback.headers.location, { validateStatus: (s: number) => s === 302 })
   const cookie = (tokenCallback.headers['set-cookie'] as string[]).map(c => c.split(';')[0]).join('; ')
   siteAx.defaults.headers.Cookie = cookie
-  return siteAx
+  // the nonce sent to the provider is echoed in the id_token it issued
+  const nonce = new URL(loginInitial.headers.location).searchParams.get('nonce')
+  const state = new URL(loginInitial.headers.location).searchParams.get('state')
+  return Object.assign(siteAx, { nonce, state })
 }
 
 test.describe('RP-initiated logout', () => {
@@ -56,15 +60,26 @@ test.describe('RP-initiated logout', () => {
   })
 
   test('should answer an end session url when the provider has rpInitiatedLogout', async () => {
-    await setupSite(true)
+    const adminAx = await setupSite(true)
     const siteAx = await siteLogin()
+    const me = (await siteAx.get('/api/auth/me')).data
+    assert.equal((await adminAx.get(`/api/users/${me.id}`)).data.sessions.length, 1)
+    // the id_token is moved off the relay state by token_callback
+    const relayState = await withMongo(db => db.collection<any>('oauth-relay-states').findOne({ _id: siteAx.state as any }))
+    assert.ok(relayState?.usedAt)
+    assert.equal(relayState.idToken, undefined)
     const res = await siteAx.delete('/api/auth')
     assert.equal(res.status, 200)
     const url = new URL(res.data.endSessionUrl)
     assert.equal(url.origin + url.pathname, `http://localhost:${mockOidcPort}/endsession`)
     const idToken = url.searchParams.get('id_token_hint')!
     assert.ok(idToken)
-    assert.equal(JSON.parse(Buffer.from(idToken.split('.')[1], 'base64url').toString()).iss, `http://localhost:${mockOidcPort}`)
+    const claims = JSON.parse(Buffer.from(idToken.split('.')[1], 'base64url').toString())
+    assert.equal(claims.iss, `http://localhost:${mockOidcPort}`)
+    // the id_token issued for this login
+    assert.equal(claims.sub, userinfo.sub)
+    assert.ok(siteAx.nonce)
+    assert.equal(claims.nonce, siteAx.nonce)
     assert.equal(url.searchParams.get('client_id'), 'test-client')
     assert.equal(url.searchParams.get('post_logout_redirect_uri'), siteUrl + '/api/auth/oidc-logout-callback')
     assert.ok(url.searchParams.get('state'))
@@ -74,6 +89,18 @@ test.describe('RP-initiated logout', () => {
     assert.equal(back.headers.location, `http://${host}/`)
 
     // the session is gone
+    assert.equal((await adminAx.get(`/api/users/${me.id}`)).data.sessions.length, 0)
+  })
+
+  test('should answer 204 and delete the session when the provider was removed from the site', async () => {
+    const adminAx = await setupSite(true)
+    const siteAx = await siteLogin()
+    const me = (await siteAx.get('/api/auth/me')).data
+    await adminAx.patch('/api/sites/test_rplogout_site', { authProviders: [] })
+    await testEnvAx.post('/clear-site-cache')
+    const res = await siteAx.delete('/api/auth')
+    assert.equal(res.status, 204)
+    assert.equal((await adminAx.get(`/api/users/${me.id}`)).data.sessions.length, 0)
   })
 
   test('should answer 204 when the flag is off', async () => {

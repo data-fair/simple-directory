@@ -677,7 +677,7 @@ router.post('/keepalive', async (req, res, next) => {
 })
 
 router.delete('/', async (req, res) => {
-  const { endSessionUrl } = await logout(req, res)
+  const { endSessionUrl } = await logout(req, res, { endSession: true })
   log.info('a session was deleted', { code: 'sd.auth.session-delete' })
   // lib-vue redirects the browser to the end session url of the identity provider
   if (endSessionUrl) res.status(200).send({ endSessionUrl })
