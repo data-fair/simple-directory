@@ -38,7 +38,9 @@ export type Saml2RelayState = {
   org?: string,
   dep?: string,
   invitToken?: string,
-  adminMode?: boolean
+  adminMode?: boolean,
+  bindingHash?: string,
+  usedAt?: Date
 }
 
 // Schema validation is REQUIRED — samlify relies on it to mitigate XML signature-wrapping

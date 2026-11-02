@@ -968,6 +968,8 @@ router.get('/saml2/:providerId/login', async (req, res) => {
     adminMode: !!(req.query.adminMode as string),
     providerId: req.params.providerId
   }
+  // the assertion is a cross site POST from the IdP: a Lax cookie would not be sent with it
+  relayState.bindingHash = setLoginBinding(req, res, relayState._id, config.publicUrl.startsWith('https://') ? 'none' : 'lax')
   await mongo.saml2RelayStates.insertOne(relayState)
   // relay state should be a request level parameter but it is not in current version of samlify
   // cf https://github.com/tngan/samlify/issues/163
@@ -997,6 +999,20 @@ router.post('/saml2-assert', async (req, res) => {
 
   const provider = await getSamlProviderById(req, providerId)
   if (!provider) return res.status(404).send('unknown saml2 provider ' + providerId)
+
+  const refuse = (message: string, reason: string) => {
+    log.warn(message, { code: 'sd.auth.saml.fail', providerId, reason })
+    res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=badIDPResponse`)
+  }
+  // the binding is checked before the relay state is consumed, so that a third party cannot burn the login
+  if (!relayState.bindingHash || !checkLoginBinding(req, res, relayState._id, relayState.bindingHash)) {
+    return refuse('saml assertion from a browser that did not start the login', 'binding-cookie')
+  }
+  const consumed = await mongo.saml2RelayStates.findOneAndUpdate(
+    { _id: relayState._id, usedAt: { $exists: false } },
+    { $set: { usedAt: new Date() } }
+  )
+  if (!consumed) return refuse('saml assertion with a relay state that was already used', 'relay-state-used')
 
   const sp = await saml2ServiceProvider(await reqSite(req))
 
