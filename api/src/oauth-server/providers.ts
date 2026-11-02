@@ -5,7 +5,7 @@ import config from '#config'
 import { getSignatureKeys } from '../tokens/keys-manager.ts'
 import { buildConfiguration, discoveryOverrides, type SdTokenState } from './configuration.ts'
 import type { IssuerContext } from './issuers.ts'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import { refundNhiLimits, updateNhiLogged } from '../nhis/exchange.ts'
 import { siteClientsEnabled, agentClientsEnabled } from './clients.ts'
 import { touchGrantRecord } from './grants.ts'
@@ -57,7 +57,7 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
         return
       }
       updateNhiLogged(sdToken.user)
-      eventsLog.info('sd.auth.nhi.ok', `an NHI access token was issued for ${sdToken.user.id} by the client_credentials grant`, { req: koaCtx.req as any })
+      log.info(`an NHI access token was issued for ${sdToken.user.id} by the client_credentials grant`, { code: 'sd.auth.nhi.ok' })
     }
   })
   // every failure of the client_credentials grant (client authentication included), the reason server side only
@@ -65,16 +65,16 @@ const buildProvider = async (ctx: IssuerContext, privateKeyPem: string, kid: str
     if (koaCtx.oidc?.params?.grant_type !== 'client_credentials' || !tokenLimits.has(koaCtx.req)) return
     const clientId = tokenLimits.get(koaCtx.req)?.clientId ?? 'unknown client'
     const reason = [err.error, err.error_description, err.error_detail].filter(Boolean).join(': ')
-    eventsLog.warn('sd.auth.nhi.fail', `nhi client_credentials grant failed for ${clientId}: ${reason}`, { req: koaCtx.req as any })
+    log.warn(`nhi client_credentials grant failed for ${clientId}: ${reason}`, { code: 'sd.auth.nhi.fail' })
   })
   // refresh token reuse, authorization code reuse and the revocation endpoint: the provider
   // destroyed the Grant document, its SD record with it
   provider.on('grant.revoked', (koaCtx: KoaContextWithOIDC, grantId: string) => {
-    eventsLog.info('sd.oauth.grant.revoked', `oauth grant ${grantId} revoked by the provider`, { req: koaCtx?.req as any })
+    log.info(`oauth grant ${grantId} revoked by the provider`, { code: 'sd.oauth.grant.revoked' })
   })
   provider.on('registration_create.success', (koaCtx, client) => {
     const hosts = [...new Set((client.redirectUris ?? []).map(uri => URL.parse(uri)?.host || logSafeName(uri)))].join(', ')
-    eventsLog.info('sd.oauth.client.registered', `dynamic oauth client ${client.clientId} (${logSafeName(client.clientName)}) registered on ${ctx.issuer}, redirect hosts ${hosts}`, { req: koaCtx.req as any })
+    log.info(`dynamic oauth client ${client.clientId} (${logSafeName(client.clientName)}) registered on ${ctx.issuer}, redirect hosts ${hosts}`, { code: 'sd.oauth.client.registered' })
   })
   return provider
 }

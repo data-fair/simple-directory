@@ -3,7 +3,7 @@ import { Router, type RequestHandler } from 'express'
 import config from '#config'
 import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUrl, reqSession, reqUser, httpError } from '@data-fair/lib-express'
 import { assertNotNhiSession } from '../nhis/service.ts'
-import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import { nanoid } from 'nanoid'
 import eventsQueue from '#events-queue'
 import { reqI18n, __all, __date } from '#i18n'
@@ -15,6 +15,7 @@ import oauthGrants from '../oauth-server/grants-router.ts'
 import { revokeGrants } from '../oauth-server/grants.ts'
 import { isSiteAdminOf, isSiteAdminOfUser } from '../utils/site-admin.ts'
 import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, setNbMembersLimits, deleteIdentityLimits, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
+import { orgLogFields, userLogFields, type LogFields } from '../utils/log-fields.ts'
 
 const router = Router()
 
@@ -26,7 +27,6 @@ const rejectCoreIdUser: RequestHandler<{ userId: string }> = (req, res, next) =>
 
 // Get the list of users
 router.get('', async (req, res, next) => {
-  const logContext: EventLogContext = { req }
   const session = reqSession(req)
   const user = session.user
 
@@ -62,7 +62,7 @@ router.get('', async (req, res, next) => {
     for (const u of users.results) delete u.sessions
   }
 
-  eventsLog.info('sd.list-users', 'list users', logContext)
+  log.info('list users', { code: 'sd.list-users' })
 
   res.json(users)
 })
@@ -70,7 +70,7 @@ router.get('', async (req, res, next) => {
 // TODO: block when onlyCreateInvited is true ?
 router.post('', async (req, res, next) => {
   assertNotNhiSession(req)
-  const logContext: EventLogContext = { req }
+  const logFields: LogFields = {}
 
   if (!req.body || !req.body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   req.body.email = req.body.email.trim()
@@ -83,17 +83,17 @@ router.post('', async (req, res, next) => {
   // Authenticated callers are exempt — they're already rate-gated elsewhere and have an audit trail.
   if (!reqUser(req)) {
     if (!body.token) {
-      eventsLog.warn('sd.user.create.missing-token', 'anonymous POST /api/users without anonymous-action token', logContext)
+      log.warn('anonymous POST /api/users without anonymous-action token', { code: 'sd.user.create.missing-token', ...logFields })
       return res.status(401).send(reqI18n(req).messages.errors.missingToken)
     }
     try {
       await session.verifyToken(body.token)
     } catch (err: any) {
       if (err.name === 'NotBeforeError') {
-        eventsLog.alert('sd.user.create.bot-suspected', 'POST /api/users with premature anonymous-action token', logContext)
+        log.alert('POST /api/users with premature anonymous-action token', { code: 'sd.user.create.bot-suspected', ...logFields })
         return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
       }
-      eventsLog.warn('sd.user.create.invalid-token', `POST /api/users with invalid anonymous-action token: ${err.name}`, logContext)
+      log.warn(`POST /api/users with invalid anonymous-action token: ${err.name}`, { code: 'sd.user.create.invalid-token', ...logFields })
       return res.status(401).send(reqI18n(req).messages.errors.invalidToken)
     }
   }
@@ -112,7 +112,7 @@ router.post('', async (req, res, next) => {
     }
     orga = await storage.getOrganization(invit.id)
     if (!orga) return res.status(400).send(reqI18n(req).messages.errors.orgaUnknown)
-    logContext.account = { type: 'organization', id: orga.id, name: orga.name }
+    Object.assign(logFields, orgLogFields(orga))
     if (invit.email !== body.email) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
   } else if (config.onlyCreateInvited) {
     return res.status(400).send('users can only be created from an invitation')
@@ -161,7 +161,7 @@ router.post('', async (req, res, next) => {
   try {
     await getRedirectSite(req, link)
   } catch (err) {
-    eventsLog.alert('sd.user.create.redirect-rejected', `a user creation redirect to ${link} was rejected as off-site`, logContext)
+    log.alert(`a user creation redirect to ${link} was rejected as off-site`, { code: 'sd.user.create.redirect-rejected', ...logFields })
     link = getDefaultLoginRedirect(reqSiteUrl(req))
   }
   if (user && user.emailConfirmed !== false) {
@@ -177,13 +177,13 @@ router.post('', async (req, res, next) => {
 
   // Re-create a user that was never validated.. first clean temporary user
   if (user && user.emailConfirmed === false) {
-    logContext.user = user
+    Object.assign(logFields, userLogFields(user))
     if (user.organizations && invit) {
       // This user was created empty from an invitation in 'alwaysAcceptInvitations' mode
       newUser.id = user.id
       newUser.organizations = user.organizations
     } else {
-      eventsLog.info('sd.user.del-temp-user', 'temp user was deleted/recreated', logContext)
+      log.info('temp user was deleted/recreated', { code: 'sd.user.del-temp-user', ...logFields })
       await storage.deleteUser(user.id)
       // it was created from an invitation in alwaysAcceptInvitation mode, the recreated user below has no membership
       await setNbMembersLimits(user.organizations.map(o => o.id))
@@ -192,7 +192,7 @@ router.post('', async (req, res, next) => {
 
   const linkSite = await getRedirectSite(req, link)
   const createdUser = await storage.createUser(newUser, undefined, linkSite)
-  eventsLog.info('sd.user.create', 'user was created', logContext)
+  log.info('user was created', { code: 'sd.user.create', ...logFields })
   if (site) {
     eventsQueue?.pushEvent({
       sender: { ...site.owner, role: 'admin' },
@@ -208,7 +208,7 @@ router.post('', async (req, res, next) => {
     if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
       return res.status(400).send(reqI18n(req).messages.errors.maxNbMembers)
     }
-    eventsLog.info('sd.user.accept-invite', 'user accepted an invitation', logContext)
+    log.info('user accepted an invitation', { code: 'sd.user.accept-invite', ...logFields })
     const invitDepartments = invit.departments || (invit.department ? [invit.department] : [])
     const invitDepartmentNames = []
     if (invitDepartments.length > 0) {
@@ -266,7 +266,6 @@ const adminKeys = ['maxCreatedOrgs', 'email', '2FA']
 const coreIDPKeys = ['defaultOrg', 'defaultDep', 'ignorePersonalAccount', 'plannedDeletion']
 router.patch('/:userId', async (req, res, next) => {
   assertNotNhiSession(req)
-  const logContext: EventLogContext = { req }
 
   const session = reqSessionAuthenticated(req)
   const user = await storages.globalStorage.getUser(req.params.userId)
@@ -304,8 +303,8 @@ router.patch('/:userId', async (req, res, next) => {
     postUserIdentityWebhook(patchedUser)
   }
 
-  if (siteAdminPatch) eventsLog.info('sd.site-admin.user.drop-2fa', `site admin reset the 2FA of user ${patchedUser.name} (${patchedUser.id})`, logContext)
-  else eventsLog.info('sd.user.patch', `user was patched ${patchedUser.name} (${patchedUser.id})`, logContext)
+  if (siteAdminPatch) log.info(`site admin reset the 2FA of user ${patchedUser.name} (${patchedUser.id})`, { code: 'sd.site-admin.user.drop-2fa' })
+  else log.info(`user was patched ${patchedUser.name} (${patchedUser.id})`, { code: 'sd.user.patch' })
 
   const link = reqSiteUrl(req) + '/simple-directory/login?email=' + encodeURIComponent(session.user.email)
   if (patch.plannedDeletion) {
@@ -327,7 +326,6 @@ router.patch('/:userId', async (req, res, next) => {
 
 router.delete('/:userId/plannedDeletion', async (req, res, next) => {
   assertNotNhiSession(req)
-  const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
 
   let siteAdmin = false
@@ -342,15 +340,14 @@ router.delete('/:userId/plannedDeletion', async (req, res, next) => {
   // update session info
   await keepalive(req, res)
 
-  if (siteAdmin) eventsLog.info('sd.site-admin.user.cancel-deletion', `site admin cancelled the planned deletion of user ${req.params.userId}`, logContext)
-  else eventsLog.info('sd.user.cancelDeletion', 'user cancelled their planned deletion', logContext)
+  if (siteAdmin) log.info(`site admin cancelled the planned deletion of user ${req.params.userId}`, { code: 'sd.site-admin.user.cancel-deletion' })
+  else log.info('user cancelled their planned deletion', { code: 'sd.user.cancelDeletion' })
 
   res.status(204).send()
 })
 
 router.delete('/:userId', async (req, res, next) => {
   assertNotNhiSession(req)
-  const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
 
   // read the memberships before deleting, they are the only way back to the impacted organizations
@@ -367,8 +364,8 @@ router.delete('/:userId', async (req, res, next) => {
 
   await storages.globalStorage.deleteUser(req.params.userId)
 
-  if (siteAdmin) eventsLog.info('sd.site-admin.user.del', `site admin deleted user ${deletedUser?.name} (${req.params.userId})`, logContext)
-  else eventsLog.info('sd.user.del', `user was deleted ${req.params.userId}`, logContext)
+  if (siteAdmin) log.info(`site admin deleted user ${deletedUser?.name} (${req.params.userId})`, { code: 'sd.site-admin.user.del' })
+  else log.info(`user was deleted ${req.params.userId}`, { code: 'sd.user.del' })
 
   await setNbMembersLimits((deletedUser?.organizations ?? []).map(o => o.id))
 
@@ -379,7 +376,6 @@ router.delete('/:userId', async (req, res, next) => {
 
 // Change password of a user using an action token sent in a mail
 router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
-  const logContext: EventLogContext = { req }
   const { body, query } = (await import('#doc/users/post-password-req/index.ts')).returnValid(req, { name: 'req' })
 
   let decoded
@@ -408,14 +404,13 @@ router.post('/:userId/password', rejectCoreIdUser, async (req, res, next) => {
 
   await storage.patchUser(req.params.userId, { password: newStoredPassword, 'passwordUpdate.last': new Date().toISOString(), 'passwordUpdate.force': null })
 
-  eventsLog.info('sd.user.change-password', `user changed password ${req.params.userId}`, logContext)
+  log.info(`user changed password ${req.params.userId}`, { code: 'sd.user.change-password' })
 
   res.status(204).send()
 })
 
 // Change host of a user using an action token sent in a mail
 router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
-  const logContext: EventLogContext = { req }
   const { body, query } = (await import('#doc/users/post-host-req/index.ts')).returnValid(req, { name: 'req' })
 
   const storage = storages.globalStorage
@@ -430,18 +425,18 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
   // The target host/path are bound into the action token; if the body tries to override them,
   // refuse — and always take the target from the signed token, never from the request body.
   if (!decoded.host) {
-    eventsLog.alert('sd.user.change-host.unbound', `change-host token without bound host for user ${req.params.userId}`, logContext)
+    log.alert(`change-host token without bound host for user ${req.params.userId}`, { code: 'sd.user.change-host.unbound' })
     return res.status(401).send('unbound token')
   }
   if (body.host !== decoded.host) {
-    eventsLog.alert('sd.user.change-host.mismatch', `change-host token host mismatch for user ${req.params.userId}`, logContext)
+    log.alert(`change-host token host mismatch for user ${req.params.userId}`, { code: 'sd.user.change-host.mismatch' })
     return res.status(401).send('host mismatch')
   }
   const patch: any = { host: decoded.host, oauth: null, oidc: null, saml2: null }
   if (decoded.path) patch.path = decoded.path
   await storage.patchUser(req.params.userId, patch)
 
-  eventsLog.info('sd.user.change-host', `user changed host ${req.params.userId}`, logContext)
+  log.info(`user changed host ${req.params.userId}`, { code: 'sd.user.change-host' })
 
   if (storage.getPassword) {
     const storedPassword = await storage.getPassword(decoded.id)
@@ -465,7 +460,6 @@ router.post('/:userId/host', rejectCoreIdUser, async (req, res, next) => {
 // move a superadmin in any direction, and refuses an email collision on the target site. An empty
 // body (or empty host) moves the user back to the main site.
 router.post('/:userId/transfer', async (req, res, next) => {
-  const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
   if (!session.user?.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
 
@@ -481,7 +475,7 @@ router.post('/:userId/transfer', async (req, res, next) => {
   // isAdmin flag (which is already false for a config.admins user sitting on a secondary site).
   const isSuperadmin = user.id === '_superadmin' || (!!user.email && config.admins.includes(user.email.toLowerCase()))
   if (isSuperadmin) {
-    eventsLog.alert('sd.user.transfer.superadmin-blocked', `attempt to transfer superadmin ${user.email} refused`, logContext)
+    log.alert(`attempt to transfer superadmin ${user.email} refused`, { code: 'sd.user.transfer.superadmin-blocked' })
     throw httpError(403, 'super administrator accounts cannot be transferred between sites')
   }
 
@@ -508,7 +502,7 @@ router.post('/:userId/transfer', async (req, res, next) => {
   const patchedUser = await storage.patchUser(req.params.userId, patch, session.user)
 
   const target = targetSite ? targetSite.host + (targetSite.path ?? '') : 'main site'
-  eventsLog.info('sd.user.transfer', `user ${user.id} (${user.email}) transferred to ${target}`, logContext)
+  log.info(`user ${user.id} (${user.email}) transferred to ${target}`, { code: 'sd.user.transfer' })
 
   res.send(patchedUser)
 })
@@ -516,26 +510,24 @@ router.post('/:userId/transfer', async (req, res, next) => {
 // Revoke all the sessions of a user, as a superadmin or as the admin of the user's site
 router.delete('/:userId/sessions', async (req, res, next) => {
   assertNotNhiSession(req)
-  const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
   const user = await storages.globalStorage.getUser(req.params.userId)
   if (!session.user?.adminMode && !await isSiteAdminOfUser(req, user)) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   if (!user) throw httpError(404)
   await storages.globalStorage.deleteUserSessions(req.params.userId)
-  await revokeGrants({ subjectId: req.params.userId }, 'sessions revoked', logContext)
-  if (session.user?.adminMode) eventsLog.info('sd.user.revoke-sessions', `admin revoked all the sessions of user ${user.name} (${user.id})`, logContext)
-  else eventsLog.info('sd.site-admin.user.revoke-sessions', `site admin revoked all the sessions of user ${user.name} (${user.id})`, logContext)
+  await revokeGrants({ subjectId: req.params.userId }, 'sessions revoked')
+  if (session.user?.adminMode) log.info(`admin revoked all the sessions of user ${user.name} (${user.id})`, { code: 'sd.user.revoke-sessions' })
+  else log.info(`site admin revoked all the sessions of user ${user.name} (${user.id})`, { code: 'sd.site-admin.user.revoke-sessions' })
   res.status(204).send()
 })
 
 router.delete('/:userId/sessions/:sessionId', async (req, res, next) => {
-  const logContext: EventLogContext = { req }
   const session = reqSessionAuthenticated(req)
 
   if (!session.user?.adminMode && session.user.id !== req.params.userId) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   await storages.globalStorage.deleteUserSession(req.params.userId, req.params.sessionId)
-  await revokeGrants({ sessionId: req.params.sessionId, subjectId: req.params.userId }, 'session revoked', logContext)
-  eventsLog.info('sd.user.cancelDeleteSession', 'user cancelled a session', logContext)
+  await revokeGrants({ sessionId: req.params.sessionId, subjectId: req.params.userId }, 'session revoked')
+  log.info('user cancelled a session', { code: 'sd.user.cancelDeleteSession' })
   await keepalive(req, res)
   res.status(204).send()
 })

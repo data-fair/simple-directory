@@ -3,7 +3,7 @@ import { Router } from 'express'
 import config from '#config'
 import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError, reqSessionAuthenticated } from '@data-fair/lib-express'
 import { assertNotNhiSession } from '../nhis/service.ts'
-import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
@@ -13,6 +13,7 @@ import { getOrgLimits, setNbMembersLimit, reqSite, shortenInvit, unshortenInvit,
 import { isSiteAdminOf } from '../utils/site-admin.ts'
 import emailValidator from 'email-validator'
 import Debug from 'debug'
+import { orgLogFields, userLogFields, type LogFields } from '../utils/log-fields.ts'
 
 const debug = Debug('invitations')
 
@@ -27,7 +28,7 @@ router.post('', async (req, res, next) => {
 
   const { query, body } = (await import('#doc/invitations/post-req/index.ts')).returnValid(req, { name: 'req' })
 
-  const logContext: EventLogContext = { req }
+  const logFields: LogFields = {}
 
   if (body.email) body.email = body.email.trim()
   if (!emailValidator.validate(body.email)) return res.status(400).send(reqI18n(req).messages.errors.badEmail)
@@ -65,11 +66,11 @@ router.post('', async (req, res, next) => {
 
   const limits = await getOrgLimits(orga)
   if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
-    eventsLog.info('sd.invite.limit', `limit error for /invitations route with org ${body.id}`, logContext)
+    log.info(`limit error for /invitations route with org ${body.id}`, { code: 'sd.invite.limit', ...logFields })
     return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
   }
 
-  logContext.account = { type: 'organization', id: orga.id, name: orga.name }
+  Object.assign(logFields, orgLogFields(orga))
 
   const invitTargetLabel = orga.name + (departmentNames.length ? ` (${departmentNames.join(', ')})` : '')
 
@@ -78,7 +79,7 @@ router.post('', async (req, res, next) => {
 
   if (config.alwaysAcceptInvitation) {
     debug('in alwaysAcceptInvitation mode')
-    eventsLog.info('sd.invite.user-creation', `invitation sent in always accept mode immediately creates a user or adds it as member ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.departments?.join('|')}`, logContext)
+    log.info(`invitation sent in always accept mode immediately creates a user or adds it as member ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${invitation.departments?.join('|')}`, { code: 'sd.invite.user-creation', ...logFields })
     // in 'always accept invitation' mode the user is not sent an email to accept the invitation
     // he is simple added to the list of members and created if needed
     const existingUser = await storage.getUserByEmail(invitation.email, invitSite)
@@ -150,7 +151,7 @@ router.post('', async (req, res, next) => {
       // send the mail either if the user does not exist or it was created more that 24 hours ago
       if (!query.skip_mail && (!existingUser || query.force_mail || (existingUser.created && dayjs().diff(dayjs(existingUser.created.date), 'day', true) > 1))) {
         await sendMailI18n(mailKey, reqI18n(req).messages, body.email, params)
-        eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${departments.join(',')}`, logContext)
+        log.info(`invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${departments.join(',')}`, { code: 'sd.invite.sent', ...logFields })
       }
 
       // send same notif to user himself
@@ -179,7 +180,7 @@ router.post('', async (req, res, next) => {
     if (!query.skip_mail) {
       debug('send invitation email', body.email, params)
       await sendMailI18n(mailKey, reqI18n(req).messages, body.email, params)
-      eventsLog.info('sd.invite.sent', `invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${departments.join(',')}`, logContext)
+      log.info(`invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${departments.join(',')}`, { code: 'sd.invite.sent', ...logFields })
     }
 
     eventsQueue?.pushEvent({
@@ -198,7 +199,7 @@ router.post('', async (req, res, next) => {
 
 router.get('/_accept', async (req, res, next) => {
   const loggedUser = reqUser(req)
-  const logContext: EventLogContext = { req }
+  const logFields: LogFields = {}
   if (typeof req.query.invit_token !== 'string') throw httpError(400)
 
   debug('accept invitation route', reqSiteUrl(req) + req.originalUrl)
@@ -228,7 +229,7 @@ router.get('/_accept', async (req, res, next) => {
 
   const existingUser = await storage.getUserByEmail(invit.email, await reqSite(req))
   debug('found existing user on site ?', existingUser)
-  logContext.user = existingUser
+  Object.assign(logFields, userLogFields(existingUser))
   if (!existingUser && storage.readonly) {
     errorUrl.searchParams.set('error', 'userUnknown')
     return res.redirect(errorUrl.href)
@@ -239,7 +240,7 @@ router.get('/_accept', async (req, res, next) => {
     errorUrl.searchParams.set('error', 'orgaUnknown')
     return res.redirect(errorUrl.href)
   }
-  logContext.account = { type: 'organization', id: orga.id, name: orga.name, department: invit.departments?.[0] }
+  Object.assign(logFields, orgLogFields(orga, invit.departments?.[0]))
 
   let redirectUrl = new URL(getInvitationRedirect(reqSiteUrl(req), invit.redirect))
 
@@ -341,7 +342,7 @@ router.get('/_accept', async (req, res, next) => {
     await storage.patchUser(existingUser.id, userPatch)
   }
 
-  eventsLog.info('sd.invite.accepted', `invitation accepted ${invit.email}, ${orga.id} ${orga.name} ${invitDepartments.join(',')} ${invit.role}`, logContext)
+  log.info(`invitation accepted ${invit.email}, ${orga.id} ${orga.name} ${invitDepartments.join(',')} ${invit.role}`, { code: 'sd.invite.accepted', ...logFields })
 
   const event = {
     sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin', department: invitDepartments[0] },

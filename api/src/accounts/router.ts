@@ -1,8 +1,8 @@
 import config from '#config'
 import { reqI18n } from '#i18n'
 import storages from '#storages'
-import { type Account, type EventLogContext, httpError, mongoPagination, mongoSort, reqSession } from '@data-fair/lib-express'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import { type Account, httpError, mongoPagination, mongoSort, reqSession } from '@data-fair/lib-express'
+import log from '@data-fair/lib-node/log.js'
 import { Router } from 'express'
 
 export type FindAccountsParams = {
@@ -16,7 +16,6 @@ const router = Router()
 
 // Get the list of accounts, both users and organizations
 router.get('', async (req, res, next) => {
-  const logContext: EventLogContext = { req }
   const session = reqSession(req)
 
   const listMode = config.listUsersMode || config.listEntitiesMode
@@ -59,7 +58,7 @@ router.get('', async (req, res, next) => {
     count += organizations.count
   }
 
-  eventsLog.info('sd.list-accounts', 'list accounts', logContext)
+  log.info('list accounts', { code: 'sd.list-accounts' })
 
   res.json({ count, results })
 })

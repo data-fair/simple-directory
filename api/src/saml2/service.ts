@@ -20,7 +20,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { getSiteBaseUrl, reqSite } from '#services'
 import { type Site } from '#types'
-import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 
 const execFileAsync = promisify(execFile)
 const debug = Debug('saml')
@@ -80,9 +80,9 @@ const readDeprecatedCertificates = async (): Promise<undefined | Certificates> =
     await access('/webapp/security/saml2/signing.crt', constants.R_OK)
     await access('/webapp/security/saml2/encrypt.key', constants.R_OK)
     await access('/webapp/security/saml2/encrypt.crt', constants.R_OK)
-  } catch (err) {
+  } catch {
     // TODO: remove this log after a few months
-    console.log('No deprecated saml certificates found, this message is expected on a new deployment', err)
+    log.info('No deprecated saml certificates found, this message is expected on a new deployment')
     return undefined
   }
   return {
@@ -138,15 +138,15 @@ export const saml2GlobalProviders = () => {
 const initCertificates = async (site?: Site) => {
   let certificates = await readCertificates(site)
   if (!certificates) {
-    console.log('Initializing SAML certificates')
+    log.info('Initializing SAML certificates')
     if (!site) {
       certificates = await readDeprecatedCertificates()
       if (certificates) {
-        console.log('Migrating SAML certificates from filesystem to database')
+        log.info('Migrating SAML certificates from filesystem to database')
       }
     }
     if (!certificates) {
-      console.log('Generating new SAML certificates')
+      log.info('Generating new SAML certificates')
       certificates = { signing: await createCert(), encrypt: await createCert() }
     }
     await writeCertificates(certificates, site)
@@ -265,14 +265,13 @@ const lastNameKeys = [
   'urn:oid:2.5.4.4'
 ]
 
-export const getUserAttrs = (attrs: any, logContext: EventLogContext) => {
+export const getUserAttrs = (attrs: any) => {
   const emailKey = emailKeys.find(k => attrs[k])
   const firstNameKey = firstNameKeys.find(k => attrs[k])
   const lastNameKey = lastNameKeys.find(k => attrs[k])
   const email = emailKey && attrs[emailKey] as string
   if (!email) {
-    console.error('Email attribute not fetched from SAML', attrs)
-    eventsLog.info('sd.auth.saml.fail', 'a user failed to authenticate with saml due to missing email', logContext)
+    log.info('a user failed to authenticate with saml due to missing email', { code: 'sd.auth.saml.fail', attributes: Object.keys(attrs ?? {}).join(', ') })
     throw new Error('Email attribute not fetched from SAML')
   }
   return {

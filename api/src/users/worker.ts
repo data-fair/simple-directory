@@ -2,13 +2,13 @@ import { type User } from '#types'
 import config, { jwtDurations } from '#config'
 import cron from 'node-cron'
 import { deleteOAuthToken, writeOAuthToken, oauthGlobalProviders, findOfflineOAuthTokens, authProviderMemberInfo, patchCoreAuthUser, deleteIdentityWebhook, setNbMembersLimits, deleteIdentityLimits, sendMailI18n } from '#services'
-import { internalError } from '@data-fair/lib-node/observer.js'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import { defaultLocale, localizedDayjs, messages } from '#i18n'
 import locks from '@data-fair/lib-node/locks.js'
 import storages from '#storages'
 import mongo from '#mongo'
 import { cleanupDynamicClients } from '../oauth-server/dynamic-clients.ts'
+import { userLogFields } from '../utils/log-fields.ts'
 
 // this single small worker loop doesn't really justify running in separate processes
 // we simply run it as part of the api server
@@ -19,7 +19,7 @@ let taskPromise: Promise<void> | undefined
 const planDeletion = async (user: User) => {
   const plannedDeletion = localizedDayjs().add(config.plannedDeletionDelay, 'days').format('YYYY-MM-DD')
   await storages.globalStorage.patchUser(user.id, { plannedDeletion })
-  eventsLog.warn('sd.cleanup-cron.plan-deletion', 'planned deletion of inactive user', { user })
+  log.warn('planned deletion of inactive user', { code: 'sd.cleanup-cron.plan-deletion', ...userLogFields(user) })
   // storage.findInactiveUsers/findUsersToDelete exclude nhi users, so email is always defined here
   const link = config.publicUrl + '/login?email=' + encodeURIComponent(user.email)
   if (user.emailConfirmed || user.logged) {
@@ -30,14 +30,14 @@ const planDeletion = async (user: User) => {
       plannedDeletion: localizedDayjs(plannedDeletion).locale(defaultLocale).format('L'),
       cause: messages[defaultLocale].mails.plannedDeletion.causeInactivity.replace('{date}', localizedDayjs(user.logged || user.created?.date).locale(defaultLocale).format('L'))
     })
-    eventsLog.warn('sd.cleanup-cron.inactive.email', `sent an email of planned deletion to inactive user ${user.email}`, { user })
+    log.warn(`sent an email of planned deletion to inactive user ${user.email}`, { code: 'sd.cleanup-cron.inactive.email', ...userLogFields(user) })
   }
 }
 
 export const task = async () => {
   if (stopped) return
   try {
-    console.info('run user cleanup cron task')
+    log.info('run user cleanup cron task')
     await locks.acquire('user-deletion-task')
     if (config.cleanup.deleteInactive) {
       for (const user of await storages.globalStorage.findInactiveUsers()) {
@@ -57,9 +57,9 @@ export const task = async () => {
       const provider = oauthGlobalProviders().find(p => p.id === token.provider.id)
       const user = await storages.globalStorage.getUser(token.user.id)
       if (!provider) {
-        console.error('offline token for unknown provider', token)
+        log.warn('offline token for unknown provider', { code: 'cleanup-offline-token-unknown', providerId: token.provider.id, ...userLogFields(token.user) })
       } else if (!user) {
-        console.error('offline token for unknown user', token)
+        log.warn('offline token for unknown user', { code: 'cleanup-offline-token-unknown', providerId: token.provider.id, ...userLogFields(token.user) })
       } else {
         try {
           const refreshedToken = await provider.refreshToken(token.token)
@@ -68,23 +68,22 @@ export const task = async () => {
           const memberInfos = await authProviderMemberInfo(undefined, provider, userInfo)
           await patchCoreAuthUser(provider, user, userInfo, memberInfos)
           await writeOAuthToken(user, provider, newToken, offlineRefreshToken, token.loggedOut, token.site)
-          eventsLog.info('sd.cleanup-cron.offline-token.refresh-ok', `a user refreshed their info from their core identity provider ${provider.id}`, { user })
+          log.info(`a user refreshed their info from their core identity provider ${provider.id}`, { code: 'sd.cleanup-cron.offline-token.refresh-ok', ...userLogFields(user) })
         } catch (err: any) {
           if (err?.data?.payload?.error === 'invalid_grant') {
             await deleteOAuthToken(user, provider, token.site)
-            eventsLog.warn('sd.cleanup-cron.offline-token.delete', `deleted invalid offline token for user ${user.id} and provider ${provider.id}`, { user })
+            log.warn(`deleted invalid offline token for user ${user.id} and provider ${provider.id}`, { code: 'sd.cleanup-cron.offline-token.delete', ...userLogFields(user) })
             await planDeletion(user)
           } else {
-            internalError('cleanup-refresh-token', err)
+            log.error('failed to refresh an offline oauth token in the cleanup task', { code: 'cleanup-refresh-token', err })
           }
         }
       }
     }
 
     for (const user of await storages.globalStorage.findUsersToDelete()) {
-      console.log('execute planned deletion of user', user)
       await storages.globalStorage.deleteUser(user.id)
-      eventsLog.warn('sd.cleanup-cron.delete', 'deleted user', { user })
+      log.warn('deleted user', { code: 'sd.cleanup-cron.delete', ...userLogFields(user) })
       await setNbMembersLimits(user.organizations.map(o => o.id))
       await deleteIdentityLimits('user', user.id)
       deleteIdentityWebhook('user', user.id)
@@ -93,19 +92,19 @@ export const task = async () => {
     try {
       await cleanupDynamicClients()
     } catch (err) {
-      internalError('cleanup-oauth-clients', err)
+      log.error('failed to clean up the dynamic oauth clients', { code: 'cleanup-oauth-clients', err })
     }
     await locks.release('user-deletion-task')
-    console.info('user cleanup cron task done\n\n')
+    log.info('user cleanup cron task done')
   } catch (err) {
-    internalError('cleanup-cron', err)
+    log.error('user cleanup task failed', { code: 'cleanup-cron', err })
   }
 }
 
 export const start = () => {
   cron.schedule(config.cleanup.cron, async () => {
     if (taskPromise) {
-      console.warn('cleanup task already running')
+      log.warn('cleanup task already running', { code: 'cleanup-cron-overlap' })
     } else {
       taskPromise = task()
       taskPromise.then(() => { taskPromise = undefined })

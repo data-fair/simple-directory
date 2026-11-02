@@ -1,7 +1,6 @@
 import type { Request } from 'express'
 import type { OpenIDConnect, OpenIDConnect1 } from '../../config/type/index.ts'
 import { reqSiteUrl } from '@data-fair/lib-express'
-import type { EventLogContext } from '@data-fair/lib-express/events-log.js'
 import oauth2 from 'simple-oauth2'
 import { httpAgent, httpsAgent } from '@data-fair/lib-node/http-agents.js'
 import { nanoid } from 'nanoid'
@@ -11,6 +10,7 @@ import standardProviders from './standard-providers.ts'
 import { completeOidcProvider, getOidcProviderId } from './oidc.ts'
 import { reqSite, decodeToken } from '#services'
 import { type CipheredContent, decipher } from '../utils/cipher.ts'
+import type { LogFields } from '../utils/log-fields.ts'
 
 export { getOidcProviderId } from './oidc.ts'
 
@@ -48,10 +48,11 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
     authorizeHost?: string,
     authorizePath: string
   },
-  // logContext is passed so that email-verification refusals can emit structured eventsLog
-  // entries (sd.oidc.email-not-verified / sd.oauth.email-not-verified) with full request
-  // context. Omit it in background paths that have no request (e.g. the token-refresh worker).
-  userInfo: (accessToken: string, id_token?: string, logContext?: EventLogContext) => Promise<OAuthUserInfo>
+  // logFields is passed by the interactive login routes so that email-verification refusals emit
+  // alert lines (sd.oidc.email-not-verified / sd.oauth.email-not-verified), the request context
+  // comes from the implicit log context. Omit it in background paths that have no request (e.g.
+  // the token-refresh worker): they do not log these refusals.
+  userInfo: (accessToken: string, id_token?: string, logFields?: LogFields) => Promise<OAuthUserInfo>
 }
 
 export type PreparedOAuthProvider = OAuthProvider & {

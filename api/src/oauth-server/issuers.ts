@@ -1,9 +1,9 @@
 import config from '#config'
-import { internalError } from '@data-fair/lib-node/observer.js'
 import type { Request } from 'express'
 import type { Site } from '#types'
 import { reqSiteUrl } from '@data-fair/lib-express'
 import { getSiteByUrl, resolveAccountMainSite, findMainSite, reqSite } from '../sites/service.ts'
+import log from '@data-fair/lib-node/log.js'
 
 export type IssuerContext = { issuer: string, site: Site | undefined, siteUrl: string }
 export type ResolvedResource = { kind: 'api' | 'mcp', site: Site | undefined, siteUrl: string, audience: string | string[] }
@@ -69,7 +69,7 @@ export const resolveResource = async (ctx: IssuerContext, resource: string | und
   } catch (err) {
     if (err instanceof ResourceError) throw err
     // fail closed, but an infrastructure error must not pass silently as a client error
-    internalError('oauth-resolve-resource', 'error while resolving an oauth resource', err)
+    log.error('error while resolving an oauth resource', { code: 'oauth-resolve-resource', err })
     throw new ResourceError('invalid resource')
   }
 }

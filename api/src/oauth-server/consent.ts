@@ -3,7 +3,7 @@
 import type Provider from 'oidc-provider'
 import type { Interaction } from 'oidc-provider'
 import type { SessionState } from '@data-fair/lib-express'
-import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import config from '#config'
 import type { Site, User } from '#types'
 import { getDefaultUserOrg } from '../tokens/service.ts'
@@ -93,8 +93,7 @@ export type ConsentGrantOptions = {
   authorizedBy: { id: string, name: string },
   // the server session of a user's consent: their grant is revoked with it (an NHI grant is not,
   // it does not act as the admin who authorized it)
-  sessionId?: string,
-  logContext?: EventLogContext
+  sessionId?: string
 }
 
 // the provider Grant of a consent and its SD record on the same document
@@ -141,7 +140,7 @@ export const createConsentGrant = async (provider: Provider, opts: ConsentGrantO
     if (grantId) await revokeGrant(grantId, 'consent failed').catch(() => {})
     throw err
   }
-  eventsLog.info('sd.oauth.grant.created', `oauth grant ${grantId} created for client ${clientId} (${opts.clientName}), ${opts.subject.type} ${opts.subject.id}, scope ${opts.scope.join(' ')}`, opts.logContext ?? {})
+  log.info(`oauth grant ${grantId} created for client ${clientId} (${opts.clientName}), ${opts.subject.type} ${opts.subject.id}, scope ${opts.scope.join(' ')}`, { code: 'sd.oauth.grant.created' })
   return grantId
 }
 

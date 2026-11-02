@@ -3,11 +3,11 @@
 import { jwtDurations } from '#config'
 import type { Site, User } from '#types'
 import storages from '#storages'
-import { internalError } from '@data-fair/lib-node/observer.js'
 import limiter, { refundLimiter } from '../utils/limiter.ts'
 import { siteOwnedByNhiOrg } from '../oauth-server/issuers.ts'
 import { verifyAssertion } from './service.ts'
 import { ipAllowed } from './ips.ts'
+import log from '@data-fair/lib-node/log.js'
 
 // carries the real reason of a failure, logged server side only
 export class NhiExchangeError extends Error {}
@@ -69,6 +69,6 @@ export const verifyExchangeAssertion = async (user: User, assertion: string, aud
 // Without the guard an NHI could not obtain a session at all under file storage.
 export const updateNhiLogged = (user: User) => {
   if (!storages.globalStorage.readonly) {
-    storages.globalStorage.updateLogged(user.id).catch((err: any) => internalError('nhi-update-logged', 'error while updating logged date', err))
+    storages.globalStorage.updateLogged(user.id).catch((err: any) => log.error('error while updating logged date', { code: 'nhi-update-logged', err }))
   }
 }

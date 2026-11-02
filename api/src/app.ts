@@ -6,6 +6,8 @@ import express, { type RequestHandler } from 'express'
 import helmet from 'helmet'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
+import log, { withLogContext } from '@data-fair/lib-node/log.js'
+import { reqLogFields } from '@data-fair/lib-express/req-log-context.js'
 import { session, errorHandler, createSiteMiddleware, createSpaMiddleware, defaultNonceCSPDirectives, setReqUser, httpError } from '@data-fair/lib-express'
 import admin from './admin/router.ts'
 import anonymousAction from './anonymous-action/router.ts'
@@ -50,6 +52,9 @@ app.set('json spaces', 2)
 
 app.use(cookieParser())
 app.use(createSiteMiddleware('simple-directory'))
+// the authorization server answers before session.middleware(), which opens the request log
+// context: open its ip / host part here so that the lines of the authorization server carry it
+app.use((req, res, next) => withLogContext(reqLogFields(req), next))
 // the authorization server answers before any session handling, it authenticates its clients itself
 app.use(oauthServer)
 // scoped operations answer bearer calls from any origin, without credentials (dashboards on other
@@ -107,14 +112,14 @@ app.use('/api/oauth/interaction', oauthInteraction)
 // Refuses to start at all if NODE_ENV=production, regardless of the opt-in.
 if (process.env.ENABLE_TEST_API === '1') {
   if (process.env.NODE_ENV === 'production') {
-    console.error('FATAL: ENABLE_TEST_API=1 is forbidden when NODE_ENV=production — refusing to start.')
+    log.error('FATAL: ENABLE_TEST_API=1 is forbidden when NODE_ENV=production — refusing to start.', { code: 'test-api-forbidden' })
     process.exit(1)
   }
   if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test') {
-    console.error(`FATAL: ENABLE_TEST_API=1 requires NODE_ENV ∈ {development, test}, got "${process.env.NODE_ENV}" — refusing to start.`)
+    log.error(`FATAL: ENABLE_TEST_API=1 requires NODE_ENV ∈ {development, test}, got "${process.env.NODE_ENV}" — refusing to start.`, { code: 'test-api-forbidden' })
     process.exit(1)
   }
-  console.warn('⚠️  /api/test-env IS MOUNTED — unauthenticated admin surface. ENABLE_TEST_API=1 + NODE_ENV=' + process.env.NODE_ENV + '. DO NOT expose this process to untrusted networks.')
+  log.warn('⚠️  /api/test-env IS MOUNTED — unauthenticated admin surface. ENABLE_TEST_API=1 + NODE_ENV=' + process.env.NODE_ENV + '. DO NOT expose this process to untrusted networks.', { code: 'test-api-mounted' })
   const testEnv = (await import('./test-env.ts')).default
   app.use('/api/test-env', testEnv)
 }

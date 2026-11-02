@@ -3,7 +3,7 @@ import debugModule from 'debug'
 import config from '#config'
 import type { Request } from 'express'
 import { session, httpError, type OrganizationMembership } from '@data-fair/lib-express'
-import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import type { Site, User, Organization, ServerSession, UserWritable } from '#types'
 import storages from '#storages'
 import eventsQueue from '#events-queue'
@@ -12,6 +12,7 @@ import type { CreateMember, AuthProvider, MemberRole, MemberDepartment, OpenIDCo
 import { getOrgLimits, getRedirectSite, getTokenPayload, prepareCallbackUrl, reqSite, setNbMembersLimit, setNbMembersLimits, unshortenInvit } from '#services'
 import { __all, reqI18n } from '#i18n'
 import { reqIpInfo } from '../utils/ip-info.ts'
+import { ownerLogFields, userLogFields, type LogFields } from '../utils/log-fields.ts'
 
 const debugAuthProvider = debugModule('auth-provider')
 
@@ -121,7 +122,7 @@ export const authProviderLoginCallback = async (
   req: Request,
   invitToken: string | undefined,
   authInfo: AuthProviderAuthInfo,
-  logContext: EventLogContext,
+  logFields: LogFields,
   provider: AuthProviderCore,
   redirect: string,
   org: string | undefined,
@@ -138,7 +139,7 @@ export const authProviderLoginCallback = async (
   if (invitToken) {
     try {
       invit = unshortenInvit(await session.verifyToken(invitToken))
-      eventsLog.info('sd.auth.provider.invit', `a user was invited to join an organization ${invit.id}`, logContext)
+      log.info(`a user was invited to join an organization ${invit.id}`, { code: 'sd.auth.provider.invit', ...logFields })
     } catch (err: any) {
       throw httpError(400, err.name === 'TokenExpiredError' ? 'expiredInvitationToken' : 'invalidInvitationToken')
     }
@@ -149,7 +150,7 @@ export const authProviderLoginCallback = async (
 
   // check for user with same email
   let user = await storage.getUserByEmail(authInfo.user.email, site)
-  logContext.user = user
+  Object.assign(logFields, userLogFields(user))
 
   // Standard OAuth providers (github/google/facebook/linkedin from config.oauth.providers)
   // are user-registration IdPs: anyone can create an account with an arbitrary email, so a
@@ -158,7 +159,7 @@ export const authProviderLoginCallback = async (
   // authenticate superadmins by deployment decision. Site-level providers can never reach
   // this branch with an admin user since site-scoped records cannot be admin.
   if (provider.type === 'oauth' && user?.isAdmin) {
-    eventsLog.alert('sd.auth.provider.superadmin-blocked', `standard OAuth provider ${provider.id} refused to authenticate superadmin ${user.email}`, logContext)
+    log.alert(`standard OAuth provider ${provider.id} refused to authenticate superadmin ${user.email}`, { code: 'sd.auth.provider.superadmin-blocked', ...logFields })
     throw httpError(403, 'superadminProviderBlocked')
   }
 
@@ -171,7 +172,7 @@ export const authProviderLoginCallback = async (
     if (user.organizations && invit) {
       // This user was created empty from an invitation in 'alwaysAcceptInvitations' mode
     } else {
-      eventsLog.info('sd.auth.provider.del-temp-user', `a temporary user was deleted in oauth callback ${user.id}`, logContext)
+      log.info(`a temporary user was deleted in oauth callback ${user.id}`, { code: 'sd.auth.provider.del-temp-user', ...logFields })
       await storage.deleteUser(user.id)
       // it was created from an invitation in alwaysAcceptInvitation mode, its memberships die with it
       await setNbMembersLimits(user.organizations.map(o => o.id))
@@ -212,14 +213,14 @@ export const authProviderLoginCallback = async (
       newUser.ignorePersonalAccount = true
     }
     debugAuthProvider('Create user authenticated through oauth', user)
-    logContext.user = user
-    eventsLog.info('sd.auth.provider.create-user', `a user was created in oauth callback ${newUser.id}`, logContext)
+    Object.assign(logFields, userLogFields(newUser))
+    log.info(`a user was created in oauth callback ${newUser.id}`, { code: 'sd.auth.provider.create-user', ...logFields })
     const redirectSite = await getRedirectSite(req, redirect)
     user = await storage.createUser(newUser, undefined, redirectSite)
 
     for (const memberInfo of memberInfos) {
-      logContext.account = { type: 'organization', ...memberInfo.org }
-      eventsLog.info('sd.auth.provider.create-member', `a user was added as a member in oauth callback ${user.id} / ${memberInfo.role}`, logContext)
+      Object.assign(logFields, ownerLogFields({ type: 'organization', ...memberInfo.org }))
+      log.info(`a user was added as a member in oauth callback ${user.id} / ${memberInfo.role}`, { code: 'sd.auth.provider.create-member', ...logFields })
       await storage.addMember(memberInfo.org, user, memberInfo.role, memberInfo.department, memberInfo.readOnly)
       await setNbMembersLimit(memberInfo.org.id)
     }
@@ -238,7 +239,7 @@ export const authProviderLoginCallback = async (
     }
 
     await storage.addMember(invitOrga, user, invit.role, invit.department)
-    eventsLog.info('sd.auth.provider.accept-invite', `a user accepted an invitation in oauth callback ${user.id}`, logContext)
+    log.info(`a user accepted an invitation in oauth callback ${user.id}`, { code: 'sd.auth.provider.accept-invite', ...logFields })
     eventsQueue?.pushEvent({
       sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
@@ -257,12 +258,12 @@ export const authProviderLoginCallback = async (
     // path (login, keepalive, exchange) stays consistent. It relaxes invariants #1/#2 of the
     // site-isolation model, so only enable it when every site is operator-trusted.
     if (site && !(config.adminModeOnSites && payload.isAdmin)) {
-      eventsLog.alert('sd.auth.oauth.not-admin', 'admin mode activation refused on non-main site session', logContext)
+      log.alert('admin mode activation refused on non-main site session', { code: 'sd.auth.oauth.not-admin', ...logFields })
       throw httpError(403, 'adminModeOnly')
     }
     if (payload.isAdmin) payload.adminMode = 1
     else {
-      eventsLog.alert('sd.auth.oauth.not-admin', 'a unauthorized user tried to activate admin mode', logContext)
+      log.alert('a unauthorized user tried to activate admin mode', { code: 'sd.auth.oauth.not-admin', ...logFields })
       throw httpError(403, 'adminModeOnly')
     }
   }

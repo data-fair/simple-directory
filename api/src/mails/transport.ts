@@ -1,7 +1,7 @@
 import { promisify } from 'node:util'
 import nodemailer, { type SendMailOptions, type Transporter } from 'nodemailer'
 import config from '#config'
-import { internalError } from '@data-fair/lib-node/observer.js'
+import log from '@data-fair/lib-node/log.js'
 
 class MailsTransport {
   private transport: Transporter | undefined
@@ -21,7 +21,7 @@ class MailsTransport {
     try {
       await verifyAsync()
     } catch (err) {
-      internalError('mails-transport-verify', err)
+      log.error('failed to verify the mail transport', { code: 'mails-transport-verify', err })
     }
   }
 

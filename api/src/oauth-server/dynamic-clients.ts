@@ -7,14 +7,13 @@ import { errors } from 'oidc-provider'
 import type { KoaContextWithOIDC } from 'oidc-provider'
 import { publicLookup, checkAddress, getSsrfRules } from '@data-fair/lib-node/ssrf.js'
 import { reqIp } from '@data-fair/lib-express'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import mongo from '#mongo'
 import limiter from '../utils/limiter.ts'
 import { isLoopbackRedirectUri, loopbackHosts } from './clients.ts'
 import { listGrantRecords } from './grants.ts'
 import { oidcScopeNames } from './consent.ts'
 import Debug from 'debug'
-import { internalError } from '@data-fair/lib-node/observer.js'
 
 const debug = Debug('oauth-server')
 
@@ -98,7 +97,7 @@ export const checkDynamicMetadata = (metadata: Record<string, any>) => {
 export const allowFetch = async (koaCtx: KoaContextWithOIDC | undefined) => {
   if (!koaCtx?.req) return true
   if (await limiter()('oauth-cimd:' + reqIp(koaCtx.req as any))) return true
-  eventsLog.warn('sd.oauth.rate-limit', 'rate limit error for client id metadata document fetches', { req: koaCtx?.req as any })
+  log.warn('rate limit error for client id metadata document fetches', { code: 'sd.oauth.rate-limit' })
   return false
 }
 
@@ -133,7 +132,7 @@ const getSsrfAgent = () => {
       const err = new Error('cannot create the SSRF safe dispatcher of the oauth server, the global dispatcher is a ' + (Agent?.name ?? 'missing'))
       if (!missingAgentLogged) {
         missingAgentLogged = true
-        internalError('oauth-ssrf-dispatcher', 'client id metadata documents cannot be fetched', err)
+        log.error('client id metadata documents cannot be fetched', { code: 'oauth-ssrf-dispatcher', err })
       }
       throw err
     }

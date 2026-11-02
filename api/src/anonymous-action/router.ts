@@ -1,7 +1,7 @@
 import { type RequestHandler } from 'express'
 import config from '#config'
 import { reqIp } from '@data-fair/lib-express'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import { nanoid } from 'nanoid'
 import { reqI18n } from '#i18n'
 import limiter from '../utils/limiter.ts'
@@ -11,7 +11,7 @@ import { signToken } from '#services'
 // useful to ensure that the user is human and waits for a little while before submitting a form
 const route: RequestHandler = async (req, res, next) => {
   if (!await limiter()(reqIp(req))) {
-    eventsLog.warn('sd.anonym-action.rate-limit', 'rate limit error for /anonymous-action route', { req })
+    log.warn('rate limit error for /anonymous-action route', { code: 'sd.anonym-action.rate-limit' })
     return res.status(429).send(reqI18n(req).messages.errors.rateLimitAuth)
   }
   const payload = { anonymousAction: true, validation: 'wait', id: nanoid() }

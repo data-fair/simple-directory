@@ -9,8 +9,8 @@ import EventEmitter from 'node:events'
 import mailsTransport from './transport.ts'
 import { getSiteByUrl, getSiteByHost, isMainSiteDoc } from '#services'
 import { getEffectiveMainSite } from '../sites/main-site.ts'
-import { internalError } from '@data-fair/lib-node/observer.js'
 import { mailLimiter } from '../utils/limiter.ts'
+import log from '@data-fair/lib-node/log.js'
 
 export const events = new EventEmitter()
 
@@ -27,7 +27,7 @@ const newTplPath = join(import.meta.dirname, 'mail.mjml')
 if (existsSync(newTplPath)) mainSiteTemplate = readFileSync(newTplPath, 'utf8')
 const oldTplPath = '/webapp/server/mails/mail.mjml'
 if (existsSync(oldTplPath)) {
-  console.error(`WARNING: found a mail template at deprecated path ${oldTplPath}, please use new path ${newTplPath}`)
+  log.warn(`found a mail template at deprecated path ${oldTplPath}, please use new path ${newTplPath}`, { code: 'deprecated-path' })
   mainSiteTemplate = readFileSync(oldTplPath, 'utf8')
 }
 
@@ -39,7 +39,7 @@ const newNoButtonTplPath = join(import.meta.dirname, 'mail-nobutton.mjml')
 if (existsSync(newNoButtonTplPath)) mainSiteNoButtonTemplate = readFileSync(newNoButtonTplPath, 'utf8')
 const oldNoButtonTplPath = '/webapp/server/mails/mail-nobutton.mjml'
 if (existsSync(oldNoButtonTplPath)) {
-  console.error(`WARNING: found a mail template at deprecated path ${oldNoButtonTplPath}, please use new path ${newNoButtonTplPath}`)
+  log.warn(`found a mail template at deprecated path ${oldNoButtonTplPath}, please use new path ${newNoButtonTplPath}`, { code: 'deprecated-path' })
   mainSiteNoButtonTemplate = readFileSync(oldNoButtonTplPath, 'utf8')
 }
 
@@ -102,11 +102,11 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
     if (await mailLimiter()(recipient)) {
       allowed.push(recipient)
     } else {
-      internalError('mail-rate-limited', `recipient ${recipient} exceeded mail rate limit, dropping (subject: ${params.subject})`)
+      log.alert(`recipient ${recipient} exceeded mail rate limit, dropping (subject: ${params.subject})`, { code: 'mail-rate-limited' })
     }
   }
   if (allowed.length === 0) {
-    internalError('mail-rate-limited', `all recipients dropped, mail not sent (subject: ${params.subject}, original to: ${to})`)
+    log.alert(`all recipients dropped, mail not sent (subject: ${params.subject}, original to: ${to})`, { code: 'mail-rate-limited' })
     return
   }
   to = allowed.join(', ')
@@ -161,7 +161,7 @@ export const sendMail = async (to: string, params: SendMailParams, attachments?:
   // mjml 5 returns a promise where mjml 4 was synchronous
   const mjmlRes = await mjml2html(microTemplate(template, tmplParams))
   if (mjmlRes.errors && mjmlRes.errors.length) {
-    console.error('Error while preparing mail body', mjmlRes.errors)
+    log.error('error while preparing mail body: ' + mjmlRes.errors.map((e: any) => e.formattedMessage ?? e.message).join('; '), { code: 'mail-mjml' })
     throw new Error('Error while preparing mail body')
   }
 

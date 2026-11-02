@@ -41,7 +41,11 @@ test.describe('CORS on bearer calls to the SD API', () => {
   })
 
   test('errors of bearer calls are readable cross-origin', async () => {
-    const res = await call('GET', '/api/auth/me', { authorization: 'Bearer not-a-token' })
+    // only a token declaring typ at+jwt is verified (any other bearer is an anonymous request):
+    // an access token with a bad signature
+    const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url')
+    const badToken = `${b64({ alg: 'RS256', typ: 'at+jwt' })}.${b64({ sub: 'x' })}.c2ln`
+    const res = await call('GET', '/api/auth/me', { authorization: 'Bearer ' + badToken })
     assert.equal(res.status, 401)
     assert.equal(res.headers['access-control-allow-origin'], '*')
   })

@@ -4,6 +4,7 @@ import { type Password } from '../utils/passwords.ts'
 import { session } from '@data-fair/lib-express'
 import type { User } from '#types'
 import type { SdStorage } from '../storages/interface.ts'
+import log from '@data-fair/lib-node/log.js'
 
 // accept the codes of the previous and next 30s steps too (RFC 6238 recommends one step of
 // tolerance): otplib defaults to the current step only, so a code typed while the
@@ -30,7 +31,7 @@ export const check2FASession = async (req: Request, userId: string) => {
   try {
     decoded = await session.verifyToken(token)
   } catch (err) {
-    console.error('invalid 2fa token', err)
+    log.warn('invalid 2fa session token', { code: 'sd.2fa.invalid-session', err })
     return false
   }
   if (decoded.user !== userId) return false

@@ -4,7 +4,7 @@
 import type { Request, Response } from 'express'
 import config from '#config'
 import { reqIp } from '@data-fair/lib-express'
-import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import { reqI18n } from '#i18n'
 import type { User } from '#types'
 import { NhiExchangeError, consumeNhiLimits, refundNhiLimits, loadExchangeNhi, verifyExchangeAssertion, rejectDelay, updateNhiLogged } from '../nhis/exchange.ts'
@@ -15,7 +15,6 @@ import { sdClaims, signAccessToken, stripOidcScopes, oauthError } from './access
 export const jwtBearerGrantType = 'urn:ietf:params:oauth:grant-type:jwt-bearer'
 
 export const handleJwtBearerGrant = async (req: Request, res: Response, ctx: IssuerContext): Promise<void> => {
-  const logContext: EventLogContext = { req }
   if (!req.is('application/x-www-form-urlencoded')) {
     return oauthError(res, 400, 'invalid_request', 'only application/x-www-form-urlencoded bodies are accepted')
   }
@@ -30,7 +29,7 @@ export const handleJwtBearerGrant = async (req: Request, res: Response, ctx: Iss
   // reqIp throws when the reverse-proxy left no usable X-Forwarded-For, before any lookup (no oracle)
   const clientIp = reqIp(req)
   if (!await consumeNhiLimits(clientIp, clientId)) {
-    eventsLog.warn('sd.auth.nhi.rate-limit', 'rate limit error for the jwt bearer grant', logContext)
+    log.warn('rate limit error for the jwt bearer grant', { code: 'sd.auth.nhi.rate-limit' })
     return oauthError(res, 429, 'invalid_request', reqI18n(req).messages.errors.rateLimitAuth)
   }
 
@@ -53,7 +52,7 @@ export const handleJwtBearerGrant = async (req: Request, res: Response, ctx: Iss
   } catch (err) {
     if (!(err instanceof NhiExchangeError)) throw err
     // uniform failure: same status/body whatever the cause, random delay against timing probes
-    eventsLog.warn('sd.auth.nhi.fail', `nhi jwt bearer grant failed: ${err.message}`, logContext)
+    log.warn(`nhi jwt bearer grant failed: ${err.message}`, { code: 'sd.auth.nhi.fail' })
     await rejectDelay()
     return oauthError(res, 400, 'invalid_grant')
   }
@@ -74,7 +73,7 @@ export const handleJwtBearerGrant = async (req: Request, res: Response, ctx: Iss
 
   await refundNhiLimits(clientIp, clientId)
   updateNhiLogged(user)
-  eventsLog.info('sd.auth.nhi.ok', `an NHI access token was issued for ${user.id} by the jwt bearer grant`, logContext)
+  log.info(`an NHI access token was issued for ${user.id} by the jwt bearer grant`, { code: 'sd.auth.nhi.ok' })
   res.set('Cache-Control', 'no-store')
   res.send({ access_token: accessToken, token_type: 'Bearer', expires_in: exp - nowSec, ...(granted !== undefined ? { scope: granted } : {}) })
 }

@@ -13,6 +13,7 @@ import { textToSafeHtml, sanitizeMailHtml } from './escape.ts'
 import type { FindMembersParams } from '../storages/interface.ts'
 import { reqSite } from '#services'
 import { getEffectiveMainSite } from '../sites/main-site.ts'
+import log from '@data-fair/lib-node/log.js'
 
 const router = Router()
 export default router
@@ -37,7 +38,7 @@ router.post('/', async (req, res, next) => {
       const user = (await storage.getUser(t.id))
       // never mail a non-human identity: it has a synthetic, non-routable address
       if (user && !user.nhi) to.add(user.email)
-      else console.error('Trying to send an email to a user that doesn\'t exist anymore or is a non-human identity')
+      else log.warn('trying to send an email to a user that doesn\'t exist anymore or is a non-human identity', { code: 'mail-unknown-user', recipientId: t.id })
     } else if (t.type === 'organization') {
       const membersParams: FindMembersParams = { size: 10000, skip: 0 }
       if (t.role) membersParams.roles = [t.role]
@@ -129,7 +130,7 @@ router.post('/contact', async (req, res) => {
     })
     await _contactLimiter.consume(reqIp(req), 1)
   } catch (err) {
-    console.error('Rate limit error for /mails/contact route', reqIp(req), req.body.email, err)
+    log.warn(`rate limit error for /mails/contact route ${req.body.email}`, { code: 'sd.mails.contact.rate-limit' })
     return res.status(429).send('Trop de messages dans un bref interval. Veuillez patienter avant d\'essayer de nouveau.')
   }
 

@@ -6,7 +6,8 @@ import Debug from 'debug'
 import _slug from 'slugify'
 import jwt from 'jsonwebtoken'
 import { httpError } from '@data-fair/lib-express'
-import eventsLog, { type EventLogContext } from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
+import type { LogFields } from '../utils/log-fields.ts'
 
 const slug = _slug.default
 const debug = Debug('oauth')
@@ -16,7 +17,7 @@ export const getOidcProviderId = (url: string) => {
   try {
     host = new URL(url).host
   } catch (err) {
-    console.warn('invalide oauth provider url', url)
+    log.warn('invalid oauth provider url ' + url, { code: 'oauth-provider-url' })
   }
   return slug(host, { lower: true, strict: true })
 }
@@ -46,7 +47,7 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     authorizeHost: authURL.origin,
     authorizePath: authURL.pathname
   }
-  const userInfo = async (accessToken: string, idToken?:string, logContext?: EventLogContext) => {
+  const userInfo = async (accessToken: string, idToken?:string, logFields?: LogFields) => {
     let claims
     if (!p.userInfoSource || p.userInfoSource === 'auto') {
       if (discoveryContent.userinfo_endpoint) {
@@ -91,13 +92,9 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
       // site-scoped user records, standard-OAuth superadmin block, main-site-only
       // `adminMode`, and `config.admins` change-host protection. If any of
       // those guarantees is weakened, revisit this check before relaxing them.
-      if (logContext) {
+      if (logFields) {
         const emailDomain = typeof claims.email === 'string' ? claims.email.split('@')[1] : null
-        eventsLog.alert(
-          'sd.oidc.email-not-verified',
-          `OIDC login refused: provider=${id} emailVerified=${JSON.stringify(claims.email_verified)} emailDomain=${emailDomain}`,
-          logContext
-        )
+        log.alert(`OIDC login refused: provider=${id} emailVerified=${JSON.stringify(claims.email_verified)} emailDomain=${emailDomain}`, { code: 'sd.oidc.email-not-verified', ...logFields })
       }
       throw httpError(400, 'Authentification refusée depuis le fournisseur. L\'adresse mail n\'est pas indiquée comme validée.')
     }

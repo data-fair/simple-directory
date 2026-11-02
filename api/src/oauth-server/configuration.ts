@@ -6,7 +6,7 @@ import config, { jwtDurations } from '#config'
 import storages from '#storages'
 import type { User } from '#types'
 import { reqIp } from '@data-fair/lib-express'
-import eventsLog from '@data-fair/lib-express/events-log.js'
+import log from '@data-fair/lib-node/log.js'
 import { grantedScope, narrowScope } from '../nhis/scopes.ts'
 import { ipAllowed } from '../nhis/ips.ts'
 import { MongoAdapter } from './adapter.ts'
@@ -122,7 +122,7 @@ const grantSubject = async (ctx: IssuerContext, koaCtx: KoaContextWithOIDC, sub:
     const details = record
       ? `client ${record.clientId} (${record.clientName}), ${record.subject.type} ${record.subject.id}, account ${record.account.type} ${record.account.id}${record.account.department ? ' / ' + record.account.department : ''}, authorized by ${record.authorizedBy.name} (${record.authorizedBy.id})`
       : `client ${koaCtx.oidc.client?.clientId}, subject ${sub}`
-    eventsLog.warn('sd.oauth.grant.reused', `refresh token reused for grant ${token.grantId} of ${details}, the grant is revoked`, { req: koaCtx.req as any })
+    log.warn(`refresh token reused for grant ${token.grantId} of ${details}, the grant is revoked`, { code: 'sd.oauth.grant.reused' })
     return { accountId: sub, claims: async () => ({ sub }) }
   }
   const record = await getGrantRecord(token.grantId)

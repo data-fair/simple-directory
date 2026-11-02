@@ -10,7 +10,7 @@ import { randomUUID } from 'node:crypto'
 import dayjs from 'dayjs'
 import locks from '@data-fair/lib-node/locks.js'
 import { cipher, decipher } from '../utils/cipher.ts'
-import { internalError } from '@data-fair/lib-node/observer.js'
+import log from '@data-fair/lib-node/log.js'
 
 type WebKey = { alg: 'RS256', kid: string, use: 'sig' }
 type SignatureKeys = { privateKey: string, publicKey: string, webKeys: [WebKey, WebKey?], lastUpdate: Date }
@@ -30,15 +30,15 @@ export const start = async () => {
   }
   const existingKeys = await readSignatureKeys('session')
   if (!existingKeys) {
-    console.log('Initializing signature keys')
+    log.info('Initializing signature keys')
     // manage transition with old FS based persistence of keys
     const existingFSKeys = await readDeprecatedSignatureKeys()
     if (existingFSKeys) {
-      console.log('Migrating signature keys from filesystem to database')
+      log.info('Migrating signature keys from filesystem to database')
       const signatureKeys: SignatureKeys = { ...existingFSKeys, webKeys: [createWekKey(existingFSKeys.publicKey, 'simple-directory')], lastUpdate: new Date() }
       await writeSignatureKeys('session', signatureKeys)
     } else {
-      console.log('Generating new signature keys')
+      log.info('Generating new signature keys')
       const newKeys = await createKeys()
       const signatureKeys: SignatureKeys = { ...newKeys, webKeys: [createWekKey(newKeys.publicKey)], lastUpdate: new Date() }
       await writeSignatureKeys('session', signatureKeys)
@@ -47,7 +47,7 @@ export const start = async () => {
 
   // the scoped set is never migrated from the filesystem
   if (!await readSignatureKeys('scoped')) {
-    console.log('Generating new scoped signature keys')
+    log.info('Generating new scoped signature keys')
     const newKeys = await createKeys()
     const stored = { ...newKeys, webKeys: [createWekKey(newKeys.publicKey, undefined, 'scoped')], lastUpdate: new Date() } as any
     stored.privateKey = cipher(newKeys.privateKey)
@@ -73,7 +73,7 @@ const rotateLoop = async () => {
         await locks.release('signature-keys-rotation')
       }
     } catch (err) {
-      internalError('sign-keys-rotation', err)
+      log.error('failed to rotate the signature keys', { code: 'sign-keys-rotation', err })
     }
     await new Promise(resolve => setTimeout(resolve, 10 * 60 * 1000))
   }
@@ -112,9 +112,9 @@ const readDeprecatedSignatureKeys = async () => {
   try {
     await access(privateKeyPath, constants.R_OK)
     await access(publicKeyPath, constants.R_OK)
-  } catch (err) {
+  } catch {
     // TODO: remove this log after a few months
-    console.log('No deprecated signature keys found, this message is expected on a new deployment', err)
+    log.info('No deprecated signature keys found, this message is expected on a new deployment')
     return null
   }
   return {
@@ -132,7 +132,7 @@ const createWekKey = (publicKey: string, kid?: string, keySet: KeySet = 'session
 }
 
 const rotateKeySet = async (keySet: KeySet) => {
-  console.log(`Rotating ${keySet} signature keys`)
+  log.info(`Rotating ${keySet} signature keys`)
   const existingKeys = await readSignatureKeys(keySet)
   const newKeys = await createKeys()
   const webKeys: [WebKey, WebKey?] = [createWekKey(newKeys.publicKey, undefined, keySet)]
