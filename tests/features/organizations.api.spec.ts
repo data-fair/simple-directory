@@ -75,6 +75,23 @@ test.describe('organizations api', () => {
     assert.deepEqual(orgInfo.departments.map((d: any) => d.id), ['dep1'])
   })
 
+  test('should refuse to create an organization with more departments than its limit', async () => {
+    const { ax } = await createUser('test-dep-create-limits@test.com')
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    await adminAx.post('/api/limits/organization/test_dep_create_limits', {
+      lastUpdate: new Date().toISOString(),
+      store_nb_members: { limit: 0, consumption: 0 },
+      store_nb_departments: { limit: 2, consumption: 0 }
+    })
+    const departments = [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }]
+    await assert.rejects(
+      ax.post('/api/organizations', { id: 'test_dep_create_limits', name: 'test dep create limits', departments: [...departments, { id: 'dep3', name: 'Department 3' }] }),
+      { status: 429 }
+    )
+    const org = (await ax.post('/api/organizations', { id: 'test_dep_create_limits', name: 'test dep create limits', departments })).data
+    assert.equal(org.departments.length, 2)
+  })
+
   test('should count partners, pending invitations included, and refuse new ones beyond the limit', async () => {
     const { ax } = await createUser('test-partner-limits@test.com')
     const org = (await ax.post('/api/organizations', { name: 'test partner limits' })).data

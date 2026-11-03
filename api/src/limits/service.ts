@@ -26,9 +26,11 @@ export const getOrgLimits = async (org: Organization) => {
 }
 
 // only an increase is refused, an organization over its quota can still rename or remove
-export const assertNbDepartmentsLimit = async (org: Organization, newNbDepartments: number, message: string) => {
+// also called before an organization is created, so it reads the pushed limit without upserting a limits document
+export const assertNbDepartmentsLimit = async (org: { id?: string, departments?: unknown[] }, newNbDepartments: number, message: string) => {
   if (newNbDepartments <= (org.departments?.length ?? 0)) return
-  const { limit } = (await getOrgLimits(org)).store_nb_departments
+  const limits = org.id ? await mongo.limits.findOne({ type: 'organization', id: org.id }) : null
+  const limit = limits?.store_nb_departments?.limit ?? config.quotas.defaultMaxNbDepartments
   if (limit !== -1 && newNbDepartments > limit) throw httpError(429, message)
 }
 

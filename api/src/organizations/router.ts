@@ -135,6 +135,7 @@ router.post('', async (req, res, next) => {
   }
   const { body } = (await import('#doc/organizations/post-req/index.ts')).returnValid(req, { name: 'req' })
   const orga = body as Organization
+  if (orga.departments?.length) await assertNbDepartmentsLimit({ id: orga.id }, orga.departments.length, reqI18n(req).messages.errors.maxNbDepartments)
 
   const site = await reqSite(req)
   if (config.siteOrgs && site) {
