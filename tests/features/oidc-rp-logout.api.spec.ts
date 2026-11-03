@@ -127,5 +127,22 @@ test.describe('RP-initiated logout', () => {
       assert.ok(!JSON.stringify(user).includes('idToken'))
       assert.ok(!JSON.stringify(user).includes('id_token_hint'))
     }
+    const assertNoIdToken = (doc: any) => {
+      assert.ok(doc.sessions.length >= 1)
+      assert.ok(!doc.sessions.some((s: any) => 'idp' in s))
+      assert.ok(!JSON.stringify(doc).includes('idToken'))
+    }
+    // listed with all fields by a superadmin
+    const list = (await adminAx.get('/api/users', { params: { allFields: true, ids: me.id } })).data
+    assert.equal(list.results.length, 1)
+    assertNoIdToken(list.results[0])
+    // patched by the user himself and by a superadmin
+    assertNoIdToken((await siteAx.patch(`/api/users/${me.id}`, { firstName: 'Rp2' })).data)
+    assertNoIdToken((await adminAx.patch(`/api/users/${me.id}`, { firstName: 'Rp3' })).data)
+    // transferred by a superadmin
+    assertNoIdToken((await adminAx.post(`/api/users/${me.id}/transfer`, {})).data)
+    // the id_token is still stored for the provider logout
+    const stored = await withMongo(db => db.collection<any>('users').findOne({ _id: me.id }))
+    assert.ok(stored?.sessions.some((s: any) => s.idp?.idToken))
   })
 })

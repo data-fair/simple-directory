@@ -16,6 +16,7 @@ import { revokeGrants } from '../oauth-server/grants.ts'
 import { isSiteAdminOf, isSiteAdminOfUser } from '../utils/site-admin.ts'
 import { validatePassword, hashPassword, unshortenInvit, reqSite, deleteIdentityWebhook, sendMailI18n, getOrgLimits, setNbMembersLimit, setNbMembersLimits, deleteIdentityLimits, getTokenPayload, getDefaultUserOrg, prepareCallbackUrl, postUserIdentityWebhook, keepalive, signToken, getRedirectSite, checkPassword, getSiteByUrl, getSiteByHost, getDefaultLoginRedirect } from '#services'
 import { orgLogFields, userLogFields, type LogFields } from '../utils/log-fields.ts'
+import { exposedUser } from './expose.ts'
 
 const router = Router()
 
@@ -64,7 +65,7 @@ router.get('', async (req, res, next) => {
 
   log.info('list users', { code: 'sd.list-users' })
 
-  res.json(users)
+  res.json({ ...users, results: users.results.map(exposedUser) })
 })
 
 // TODO: block when onlyCreateInvited is true ?
@@ -258,9 +259,7 @@ router.get('/:userId', async (req, res, next) => {
   }
   const user = await storage.getUser(req.params.userId)
   if (!user) return res.status(404).send()
-  // the id_token kept for the RP-initiated logout of a session is never exposed
-  if (user.sessions) user.sessions = user.sessions.map(({ idp, ...s }) => s)
-  res.json(user)
+  res.json(exposedUser(user))
 })
 
 // Update some parts of a user as himself
@@ -323,7 +322,7 @@ router.patch('/:userId', async (req, res, next) => {
   // update session info
   await keepalive(req, res)
 
-  res.send(patchedUser)
+  res.send(exposedUser(patchedUser))
 })
 
 router.delete('/:userId/plannedDeletion', async (req, res, next) => {
@@ -506,7 +505,7 @@ router.post('/:userId/transfer', async (req, res, next) => {
   const target = targetSite ? targetSite.host + (targetSite.path ?? '') : 'main site'
   log.info(`user ${user.id} (${user.email}) transferred to ${target}`, { code: 'sd.user.transfer' })
 
-  res.send(patchedUser)
+  res.send(exposedUser(patchedUser))
 })
 
 // Revoke all the sessions of a user, as a superadmin or as the admin of the user's site
