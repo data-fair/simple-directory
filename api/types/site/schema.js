@@ -412,6 +412,7 @@ export default {
           },
           type: 'array',
           minItems: 1,
+          layout: { getItems: 'context.scopes' },
           items: { type: 'string' },
         }
       }

@@ -45,7 +45,7 @@
     "@data-fair/lib-express": "^2.0.0",
     "@data-fair/lib-node": "^3.0.0",
     "@data-fair/lib-utils": "^1.14.1",
-    "@json-layout/core": "~2.13.0",
+    "@json-layout/core": "~2.13.1",
     "@playwright/test": "^1.59.1",
     "@types/accept-language-parser": "^1.5.8",
     "@types/capitalize": "^2.0.2",
