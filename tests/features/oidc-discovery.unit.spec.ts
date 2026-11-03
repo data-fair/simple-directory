@@ -5,7 +5,7 @@ process.env.NODE_CONFIG_DIR = process.env.NODE_CONFIG_DIR || './api/config/'
 process.env.NODE_ENV = process.env.NODE_ENV || 'test'
 process.env.SUPPRESS_NO_CONFIG_WARNING = '1'
 
-const { resolveAuthorizationMethod, discoveryStale, refreshDiscovery } = await import('../../api/src/oauth/oidc.ts')
+const { resolveAuthorizationMethod, discoveryStale, refreshDiscovery, DISCOVERY_RETRY_DELAY } = await import('../../api/src/oauth/oidc.ts')
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3600 * 1000)
 
@@ -46,6 +46,27 @@ test.describe('OIDC discovery refresh', () => {
     const res = await refreshDiscovery({ content: { a: 1 }, fetchedAt: hoursAgo(25) }, async () => { throw new Error('down') })
     assert.deepEqual(res.content, { a: 1 })
     assert.equal(res.refreshed, false)
+  })
+
+  test('a failed refresh is not retried before the retry delay', async () => {
+    const now = new Date()
+    let calls = 0
+    const failing = async () => { calls++; throw new Error('down') }
+    const first = await refreshDiscovery({ content: { a: 1 }, fetchedAt: hoursAgo(25) }, failing, now)
+    assert.equal(calls, 1)
+    assert.equal(first.store, true)
+    assert.equal(first.retryAfter?.getTime(), now.getTime() + DISCOVERY_RETRY_DELAY)
+    // what loadOidcDiscovery stores, read back by a later call (possibly from another process)
+    const stored = { content: first.content, fetchedAt: first.fetchedAt, retryAfter: first.retryAfter }
+    const second = await refreshDiscovery(stored, failing, new Date(now.getTime() + DISCOVERY_RETRY_DELAY - 1000))
+    assert.equal(calls, 1)
+    assert.deepEqual(second.content, { a: 1 })
+    assert.equal(second.store, false)
+    // after the delay the refresh is attempted again
+    const third = await refreshDiscovery(stored, async () => ({ a: 2 }), new Date(now.getTime() + DISCOVERY_RETRY_DELAY + 1000))
+    assert.deepEqual(third.content, { a: 2 })
+    assert.equal(third.refreshed, true)
+    assert.equal(third.retryAfter, undefined)
   })
 
   test('a legacy cache without date is refreshed', async () => {

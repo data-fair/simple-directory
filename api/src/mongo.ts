@@ -86,7 +86,7 @@ export class SdMongo {
   }
 
   get oidcDiscovery () {
-    return mongo.db.collection<{ _id: string, content: any, fetchedAt?: Date }>('oidc-discovery')
+    return mongo.db.collection<{ _id: string, content: any, fetchedAt?: Date, retryAfter?: Date }>('oidc-discovery')
   }
 
   get passwordLists () {

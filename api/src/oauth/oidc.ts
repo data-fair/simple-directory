@@ -50,23 +50,30 @@ export const resolveAuthorizationMethod = (configured: 'header' | 'body' | undef
 const LOGOUT_TOKEN_MAX_AGE = 10 * 60
 
 const DISCOVERY_TTL = 24 * 3600 * 1000
+// after a failed refresh, the stale copy is served without refetching for this long: one unreachable
+// provider must not add a fetch (up to the agent timeout) to every request that initialises it
+export const DISCOVERY_RETRY_DELAY = 60 * 1000
 
 export const discoveryStale = (fetchedAt: Date | undefined, now = new Date()): boolean => {
   return !fetchedAt || now.getTime() - fetchedAt.getTime() > DISCOVERY_TTL
 }
 
+type CachedDiscovery = { content: any, fetchedAt?: Date, retryAfter?: Date }
+
 // returns the cached discovery when fresh, refetches it when stale and keeps serving the stale copy
-// if the provider is unreachable (an unreachable provider must not break logins for a cached discovery)
-export async function refreshDiscovery (cached: { content: any, fetchedAt?: Date } | null, fetch: () => Promise<any>): Promise<{ content: any, fetchedAt: Date, refreshed: boolean }> {
-  if (cached && !discoveryStale(cached.fetchedAt)) {
-    return { content: cached.content, fetchedAt: cached.fetchedAt!, refreshed: false }
+// if the provider is unreachable (an unreachable provider must not break logins for a cached discovery).
+// store: the result must be written to the cache (a refreshed copy, or a stale one with a retry date)
+export async function refreshDiscovery (cached: CachedDiscovery | null, fetch: () => Promise<any>, now = new Date()): Promise<{ content: any, fetchedAt: Date, retryAfter?: Date, refreshed: boolean, store: boolean }> {
+  if (cached && (!discoveryStale(cached.fetchedAt, now) || (cached.retryAfter && cached.retryAfter > now))) {
+    return { content: cached.content, fetchedAt: cached.fetchedAt ?? new Date(0), retryAfter: cached.retryAfter, refreshed: false, store: false }
   }
   try {
-    return { content: await fetch(), fetchedAt: new Date(), refreshed: true }
+    return { content: await fetch(), fetchedAt: now, refreshed: true, store: true }
   } catch (err) {
     if (!cached) throw err
     log.warn('failed to refresh the OIDC discovery, keeping the cached one', { code: 'sd.oidc.discovery-refresh-failed', err })
-    return { content: cached.content, fetchedAt: cached.fetchedAt ?? new Date(0), refreshed: false }
+    const retryAfter = new Date(now.getTime() + DISCOVERY_RETRY_DELAY)
+    return { content: cached.content, fetchedAt: cached.fetchedAt ?? new Date(0), retryAfter, refreshed: false, store: true }
   }
 }
 
@@ -89,12 +96,15 @@ export async function loadOidcDiscovery (p: Pick<OpenIDConnect, 'discovery'>, tr
   // on the same host but different paths (e.g. Azure AD multi-tenant)
   const cacheKey = slug(p.discovery, { lower: true, strict: true })
   const cached = await mongo.oidcDiscovery.findOne({ _id: cacheKey })
-  const { content: discoveryContent, fetchedAt, refreshed } = await refreshDiscovery(cached, async () => {
+  const { content: discoveryContent, fetchedAt, retryAfter, store } = await refreshDiscovery(cached, async () => {
     const content = (await axios.get(p.discovery)).data
     debug(`Fetched OIDC discovery info from ${p.discovery}`, content)
     return content
   })
-  if (refreshed) await mongo.oidcDiscovery.replaceOne({ _id: cacheKey }, { content: discoveryContent, fetchedAt }, { upsert: true })
+  if (store) {
+    // the retry date is kept in the cache so that it holds across processes
+    await mongo.oidcDiscovery.replaceOne({ _id: cacheKey }, retryAfter ? { content: discoveryContent, fetchedAt, retryAfter } : { content: discoveryContent, fetchedAt }, { upsert: true })
+  }
   return discoveryContent
 }
 
