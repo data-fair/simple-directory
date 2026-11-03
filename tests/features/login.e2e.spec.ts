@@ -96,8 +96,9 @@ test.describe('Login page', () => {
     // Navigate directly to the create user step via URL param
     await page.goto(appUrl('/login?step=createUser'))
 
-    // Fill the create user form
-    await expect(page.locator('input[name="createuser-email"]')).toBeVisible({ timeout: 10_000 })
+    // Fill the create user form once the email field has its autofocus: Vuetify focuses it 50 ms
+    // after it shows, so a password typed before that lands in the email field (no mail is sent)
+    await expect(page.locator('input[name="createuser-email"]')).toBeFocused({ timeout: 10_000 })
     await page.locator('input[name="createuser-email"]').fill('newuser@test.com')
     await page.locator('input[name="newUserPassword"]').fill('TestPasswd01')
     await page.locator('input[name="newUserPassword2"]').fill('TestPasswd01')
