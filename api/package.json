@@ -62,7 +62,7 @@
     "rate-limiter-flexible": "^11.2.1",
     "samlify": "^2.11.0",
     "sanitize-html": "^2.13.0",
-    "serialize-javascript": "^7.0.4",
+    "serialize-javascript": "^7.1.4",
     "sharp": "^0.35.4",
     "simple-oauth2": "^5.1.0",
     "slugify": "^1.6.8",
