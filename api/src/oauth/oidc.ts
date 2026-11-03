@@ -25,8 +25,8 @@ export const getOidcProviderId = (url: string) => {
 }
 
 // the userinfo endpoint answers in JSON, or with a JWT when the client registration asks for a signed
-// response (application/jwt, cf OIDC Core 5.3.2, the default of ProConnect). The JWT is decoded without
-// checking its signature, like the id_token: both come from a back channel request to the provider.
+// response (application/jwt, cf OIDC Core 5.3.2, the default of ProConnect). This only parses the response:
+// userInfo then verifies a JWT against the provider keys, under the strict policy of the provider.
 export const parseUserInfoResponse = (body: string, contentType?: string): Record<string, any> | undefined => {
   // an unreadable response returns undefined, userInfo then falls back to the id_token claims
   if (contentType?.startsWith('application/jwt')) {
