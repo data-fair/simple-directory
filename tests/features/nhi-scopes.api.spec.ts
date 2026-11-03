@@ -140,6 +140,8 @@ test('an NHI cannot mint a renewable session through token_callback', async () =
     params: { id_token: cookies.id_token + '.' + cookies.id_token_sign },
     validateStatus: () => true
   })
-  assert.equal(res.status, 403)
+  // a session token is not a temporary callback token: refused before any user lookup
+  assert.equal(res.status, 302)
+  assert.equal(new URL(res.headers.location).searchParams.get('error'), 'invalidToken')
   assert.ok(!(res.headers['set-cookie'] ?? []).some((c: string) => c.startsWith('id_token_ex=')))
 })

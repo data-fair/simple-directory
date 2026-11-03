@@ -28,7 +28,10 @@ export type OAuthToken = {
   user: { id: string, name: string, email: string },
   site?: string | null,
   offlineRefreshToken?: boolean,
-  loggedOut?: Date
+  loggedOut?: Date,
+  // identifiers of the provider session, from the verified id_token, used to match back-channel logout tokens
+  sid?: string,
+  sub?: string
 }
 
 export type PublicAuthProvider = {

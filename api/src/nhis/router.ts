@@ -13,6 +13,7 @@ import { getKnownScopes } from '../scopes/service.ts'
 import { getGrantRecord, listGrantRecords, revokeGrant, revokeGrants } from '../oauth-server/grants.ts'
 import { createNhi, getNhi, listNhis } from './service.ts'
 import type { Request } from 'express'
+import { exposedUser } from '../users/expose.ts'
 import { orgLogFields } from '../utils/log-fields.ts'
 
 const router = Router({ mergeParams: true })
@@ -127,7 +128,7 @@ router.patch('/:nhiId', async (req: Request<NhiParams>, res) => {
   const patched = await storages.globalStorage.patchUser(user.id, patch, reqSessionAuthenticated(req).user)
   log.info(`an NHI was patched ${user.id}`, { code: 'sd.nhi.patch', ...logFields })
   postUserIdentityWebhook(patched)
-  res.send(patched)
+  res.send(exposedUser(patched))
 })
 
 router.delete('/:nhiId', async (req: Request<NhiParams>, res) => {

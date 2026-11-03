@@ -8,6 +8,7 @@ process.env.IGNORE_ASSERT_REQ_INTERNAL = '1'
 process.env.NODE_CONFIG_DIR = process.env.NODE_CONFIG_DIR || './api/config/'
 
 import { strict as assert } from 'node:assert'
+import { loginBindingCookie } from './login-binding.ts'
 import type { AxiosAuthOptions } from '@data-fair/lib-node/axios-auth.js'
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
@@ -86,7 +87,7 @@ export const loginWithOIDC = async (port: number) => {
   const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (status: number) => status === 302 })
   const providerAuthRedirect = new URL(loginProvider.headers.location)
   assert.ok(providerAuthRedirect.pathname.endsWith('/api/auth/oauth-callback'))
-  const oauthCallback = await anonymousAx(providerAuthRedirect.href, { validateStatus: (status: number) => status === 302 })
+  const oauthCallback = await anonymousAx(providerAuthRedirect.href, { headers: { Cookie: loginBindingCookie(loginInitial) }, validateStatus: (status: number) => status === 302 })
   const callbackRedirect = new URL(oauthCallback.headers.location)
   assert.ok(callbackRedirect.pathname.endsWith('/api/auth/token_callback'))
   const tokenCallback = await anonymousAx(callbackRedirect.href, { validateStatus: (status: number) => status === 302 })

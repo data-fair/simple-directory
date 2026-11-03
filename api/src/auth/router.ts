@@ -21,8 +21,12 @@ import { checkPassword, validatePassword, type Password } from '../utils/passwor
 import { type OpenIDConnect } from '#types/site/index.ts'
 import { publicGlobalProviders, publicSiteProviders } from './providers.ts'
 import { type OAuthRelayState } from '../oauth/service.ts'
+import { applyOidcPolicy, loadOidcDiscovery } from '../oauth/oidc.ts'
+import type { OAuthProvider } from '../oauth/service.ts'
+import { OidcValidationError, issuerParameterMatches } from '../oauth/oidc-jwt.ts'
 import { type Saml2RelayState, getUserAttrs as getSamlUserAttrs } from '../saml2/service.ts'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomBytes, randomUUID } from 'node:crypto'
+import { setLoginBinding, checkLoginBinding } from './login-binding.ts'
 import dayjs from 'dayjs'
 import { userLogFields, type LogFields } from '../utils/log-fields.ts'
 
@@ -174,7 +178,7 @@ router.post('/password', rejectCoreIdUser, async (req, res, next) => {
   // after the password check keeps the account enumeration protection of the routes above.
   if (user.emailConfirmed === false) {
     const payload = { ...getTokenPayload(user, site), emailConfirmed: true }
-    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, site, orgId, depId))
+    const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, site, orgId, depId), undefined, { emailed: true })
     await sendMailI18n('creation', reqI18n(req).messages, user.email, { link: linkUrl.href })
     log.info('a user with a valid password tried to authenticate before confirming their email, a new confirmation mail was sent', { code: 'sd.auth.password.unconfirmed', ...logFields })
     return returnError('emailNotConfirmed', 403)
@@ -416,7 +420,7 @@ router.post('/passwordless', rejectCoreIdUser, async (req, res, next) => {
   }
 
   const redirectSite = query.redirect ? (await getSiteByUrl(query.redirect)) : site
-  const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, redirectSite, body.org, body.dep), body.orgStorage)
+  const linkUrl = await prepareCallbackUrl(req, payload, query.redirect, getDefaultUserOrg(user, redirectSite, body.org, body.dep), body.orgStorage, { emailed: true })
 
   debug(`Passwordless authentication of user ${user.name}`)
   await sendMailI18n('login', reqI18n(req).messages, user.email, { link: linkUrl.href, host: linkUrl.host, origin: linkUrl.origin })
@@ -460,6 +464,21 @@ router.get('/token_callback', async (req, res, next) => {
     return redirectError('invalidToken')
   }
 
+  // only the temporary tokens of prepareCallbackUrl may start a session here, not a session
+  // id_token or an emailed action token (changePassword, changeHost) signed with the same key
+  if (decoded.temporary !== true || decoded.action) return redirectError('invalidToken')
+
+  // redirect flows: the temporary token is single use (emailed links carry no cbJti and stay reusable)
+  if (decoded.cbJti) {
+    try {
+      await mongo.usedCallbackTokens.insertOne({ _id: decoded.cbJti, usedAt: new Date(), expiresAt: new Date(decoded.exp * 1000) })
+    } catch (err: any) {
+      if (err.code !== 11000) throw err
+      log.warn('a token_callback url was opened twice, the second use is refused', { code: 'sd.auth.callback.reuse', ...logFields })
+      return redirectError('invalidToken')
+    }
+  }
+
   let org
   if (query.id_token_org) {
     org = await storages.globalStorage.getOrganization(query.id_token_org)
@@ -492,6 +511,13 @@ router.get('/token_callback', async (req, res, next) => {
   if (decoded.adminMode && payload.isAdmin) payload.adminMode = 1
 
   const serverSession = initServerSession(req)
+  if (decoded.idpLogin) {
+    // the id_token is moved (not copied) from the relay state, a replayed token_callback finds nothing
+    const idpState = await mongo.oauthRelayStates.findOneAndUpdate({ _id: decoded.idpLogin, idToken: { $exists: true } }, { $unset: { idToken: '' } })
+    if (idpState?.idToken && idpState.idpProviderId) {
+      serverSession.idp = { providerId: idpState.idpProviderId, idToken: idpState.idToken, ...(idpState.idpSite ? { site: idpState.idpSite } : {}) }
+    }
+  }
   await storage.addUserSession(user.id, serverSession)
 
   await confirmLog(storage, user, serverSession)
@@ -628,10 +654,15 @@ router.post('/keepalive', async (req, res, next) => {
 
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
-        const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token, {})
+        // a strict provider whose id_token fails validation throws here, like any other refresh failure.
+        // No log fields: a non strict provider does not raise an alert at each keepalive (only at login)
+        const idTokenClaims = provider.validateIdToken && newToken.id_token ? await provider.validateIdToken(newToken.id_token) : undefined
+        const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token, undefined, idTokenClaims)
         const memberInfos = await authProviderMemberInfo(await reqSite(req), provider, userInfo)
         user = await patchCoreAuthUser(provider, user, userInfo, memberInfos)
-        await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, authSite?._id)
+        // a refreshed id_token may omit the sid: keep the one of the login for the back-channel logout
+        const sessionClaims = { sid: idTokenClaims?.sid ?? oauthToken.sid, sub: idTokenClaims?.sub ?? oauthToken.sub }
+        await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, authSite?._id, sessionClaims)
         log.info(`a user refreshed their info from their core identity provider ${provider.id}`, { code: 'sd.auth.keepalive.oauth-refresh-ok' })
       }
     } catch (err: any) {
@@ -649,9 +680,16 @@ router.post('/keepalive', async (req, res, next) => {
 })
 
 router.delete('/', async (req, res) => {
-  await logout(req, res)
+  const { endSessionUrl } = await logout(req, res, { endSession: true })
   log.info('a session was deleted', { code: 'sd.auth.session-delete' })
-  res.status(204).send()
+  // lib-vue redirects the browser to the end session url of the identity provider
+  if (endSessionUrl) res.status(200).send({ endSessionUrl })
+  else res.status(204).send()
+})
+
+// post logout redirect uri of the RP-initiated logout: the provider session is over, back to the site
+router.get('/oidc-logout-callback', (req, res) => {
+  res.redirect(reqSiteUrl(req) + '/')
 })
 
 // Send an email to confirm user identity before authorizing an action
@@ -810,8 +848,13 @@ const oauthLogin: RequestHandler<{ oauthId: string }> = async (req, res, next) =
     // adminMode via SSO trusts the IdP's own MFA; prompt=login forces a fresh IdP authentication
     adminMode: !!(req.query.adminMode as string)
   }
+  if (provider.oidc) relayState.nonce = randomBytes(32).toString('base64url')
+  relayState.codeVerifier = randomBytes(32).toString('base64url')
+  const codeChallenge = createHash('sha256').update(relayState.codeVerifier).digest('base64url')
+  // the callback is a top level GET navigation from the provider: lax cookies are sent
+  relayState.bindingHash = setLoginBinding(req, res, relayState._id, 'lax')
   await mongo.oauthRelayStates.insertOne(relayState)
-  const authorizationUri = provider.authorizationUri(relayState._id, req.query.email as string, provider.coreIdProvider, relayState.adminMode)
+  const authorizationUri = provider.authorizationUri(relayState._id, req.query.email as string, provider.coreIdProvider, relayState.adminMode, relayState.nonce, codeChallenge)
   debugOAuth('login authorizationUri', authorizationUri)
   log.info('a user was redirected to a oauth provider', { code: 'sd.auth.oauth.redirect' })
   res.redirect(authorizationUri)
@@ -830,25 +873,68 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   }
   const relayState = await mongo.oauthRelayStates.findOne({ _id: req.query.state as string })
   if (!relayState) return res.status(404).send('Unknown relay state')
-  const { providerState, redirect, org, dep, invitToken, adminMode } = relayState
+  const { providerState, redirect, org, dep, invitToken, adminMode, nonce, codeVerifier, bindingHash } = relayState
+  const redirectError = (error: string) => {
+    res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=${encodeURIComponent(error)}`)
+  }
+  // a refused login logs one line, with the reason
+  const refuse = (message: string, fields: Record<string, any>, error = 'badIDPResponse') => {
+    log.warn(message, { code: 'sd.auth.oauth.fail', ...fields })
+    redirectError(error)
+  }
   const returnError = (error: string, errorCode: number) => {
     log.info(`a user failed to authenticate with oauth due to ${error}`, { code: 'sd.auth.oauth.fail' })
     debugOAuth('login return error', error, errorCode)
-    res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=${encodeURIComponent(error)}`)
+    redirectError(error)
   }
 
   const provider = await getOAuthProviderByState(req, providerState)
   if (!provider) return res.status(404).send('Unknown OAuth provider')
   if (req.params.oauthId && req.params.oauthId !== provider.id) return res.status(404).send('Wrong OAuth provider id')
 
-  if (req.query.error) {
-    log.warn('oauth callback with an error from the provider', { code: 'sd.auth.oauth.fail', providerId: provider.id, error: String(req.query.error), errorDescription: req.query.error_description ? String(req.query.error_description) : undefined })
-    return returnError('badIDPQuery', 500)
+  // the binding is checked before the relay state is consumed: whoever learns the state from the authorize URL
+  // must not be able to burn the login of the browser that started it
+  if (!bindingHash || !checkLoginBinding(req, res, relayState._id, bindingHash)) {
+    return refuse('oauth callback from a browser that did not start the login', { providerId: provider.id, reason: 'binding-cookie' })
   }
 
-  const { token, offlineRefreshToken } = await provider.getToken(req.query.code as string, provider.coreIdProvider)
-  debugOAuthTokens('full oauth token', token)
-  const authInfo = await provider.userInfo(token.access_token, token.id_token, logFields)
+  // a relay state is single use, the atomic update also protects against concurrent replays
+  const consumed = await mongo.oauthRelayStates.findOneAndUpdate(
+    { _id: relayState._id, usedAt: { $exists: false } },
+    { $set: { usedAt: new Date() } }
+  )
+  if (!consumed) {
+    return refuse('oauth callback with a relay state that was already used', { providerId: provider.id, reason: 'relay-state-used' })
+  }
+
+  if (req.query.error) {
+    return refuse('oauth callback with an error from the provider', { providerId: provider.id, error: String(req.query.error), errorDescription: req.query.error_description ? String(req.query.error_description) : undefined }, 'badIDPQuery')
+  }
+
+  let token, offlineRefreshToken, authInfo
+  let idTokenClaims: Record<string, any> | undefined
+  try {
+    // RFC 9207: the authorization server identifies itself in the response
+    if (provider.oidc) {
+      const iss = req.query.iss as string | undefined
+      if (iss !== undefined ? !provider.issuer || !issuerParameterMatches(provider.issuer, iss) : provider.issParameterSupported) {
+        applyOidcPolicy(provider, new OidcValidationError('iss', 'missing or mismatching iss parameter in the authorization response'), logFields)
+      }
+    }
+
+    ;({ token, offlineRefreshToken } = await provider.getToken(req.query.code as string, codeVerifier))
+    debugOAuthTokens('full oauth token', token)
+    // every OIDC relay state carries the nonce set by oauthLogin, validateIdToken compares it with the id_token
+    if (provider.validateIdToken) {
+      // the id_token is mandatory in the authorization code flow of an OIDC provider
+      if (token.id_token) idTokenClaims = await provider.validateIdToken(token.id_token as string, nonce, logFields)
+      else applyOidcPolicy(provider, new OidcValidationError('malformed', 'missing id_token in the token response'), logFields)
+    }
+    authInfo = await provider.userInfo(token.access_token, token.id_token, logFields, idTokenClaims)
+  } catch (err) {
+    if (!(err instanceof OidcValidationError)) throw err
+    return refuse(`oauth callback refused, ${err.message}`, { providerId: provider.id, reason: 'oidc-validation', check: err.check })
+  }
 
   if (!authInfo.user.email) {
     log.warn('email attribute not fetched from oauth', { code: 'sd.auth.oauth.fail', providerId: provider.id })
@@ -857,10 +943,16 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
   debugOAuth('Got user info from oauth', provider.id, authInfo)
 
   try {
-    const [callbackUrl, user] = await authProviderLoginCallback(req, invitToken, authInfo, logFields, provider, redirect, org, dep, adminMode)
+    // RP-initiated logout: the id_token waits on the relay state until token_callback moves it to the server session
+    let idpLogin: string | undefined
+    if (provider.rpInitiatedLogout && provider.endSessionEndpoint && token.id_token) {
+      await mongo.oauthRelayStates.updateOne({ _id: relayState._id }, { $set: { idToken: token.id_token as string, idpProviderId: provider.id, idpSite: (await reqSite(req))?._id } })
+      idpLogin = relayState._id
+    }
+    const [callbackUrl, user] = await authProviderLoginCallback(req, invitToken, authInfo, logFields, provider, redirect, org, dep, adminMode, idpLogin)
     if (provider.coreIdProvider) {
       const callbackSite = await reqSite(req)
-      await writeOAuthToken(user, provider, token, offlineRefreshToken, undefined, callbackSite?._id)
+      await writeOAuthToken(user, provider, token, offlineRefreshToken, undefined, callbackSite?._id, idTokenClaims)
     }
     res.redirect(callbackUrl)
   } catch (err : any) {
@@ -872,13 +964,47 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
 router.get('/oauth/:oauthId/callback', oauthCallback)
 router.get('/oauth-callback', oauthCallback)
 
+// OIDC Back-Channel Logout 1.0: the provider is found by the (still unverified) iss of the logout token, then the
+// token is verified against its keys. The response never tells why a token was refused.
 const oauthLogoutCallback: RequestHandler = async (req, res, next) => {
-  if (!req.body.logout_token) return res.status(400).send('missing logout_token')
-  const decoded = decodeToken(req.body.logout_token)
-  if (!decoded) return res.status(400).send('invalid logout_token')
-  if (decoded.typ !== 'Logout') return res.status(400).send('invalid logout_token type')
-  if (!decoded.sid) return res.status(400).send('missing sid in logout_token')
-  await logoutOAuthToken(decoded.sid)
+  const logoutToken = req.body?.logout_token
+  // a single body for every refusal
+  const refuse = () => res.status(400).send('invalid logout_token')
+  if (!logoutToken || typeof logoutToken !== 'string') return refuse()
+  const decoded = decodeToken(logoutToken)
+  if (!decoded || typeof decoded.iss !== 'string') return refuse()
+
+  // the providers of the site come first: for an issuer declared at both levels the policy of the site applies.
+  // Only the provider whose discovery issuer matches the unverified iss is initialised: a broken provider of
+  // the site must not fail the request.
+  const site = await reqSite(req)
+  let provider: OAuthProvider | undefined
+  for (const providerInfo of site?.authProviders ?? []) {
+    if (providerInfo.type !== 'oidc') continue
+    try {
+      const { issuer } = await loadOidcDiscovery(providerInfo)
+      if (typeof issuer === 'string' && issuerParameterMatches(issuer, decoded.iss)) {
+        provider = await initOidcProvider(providerInfo, reqSiteUrl(req) + '/simple-directory')
+        break
+      }
+    } catch (err) {
+      log.warn('failed to load an OIDC provider of the site while looking for a back-channel logout issuer', { code: 'sd.auth.oauth.logout-provider-ko', providerId: getOidcProviderId(providerInfo.discovery), err })
+    }
+  }
+  provider ??= oauthGlobalProviders().find(p => p.oidc && p.issuer && p.validateLogoutToken && issuerParameterMatches(p.issuer, decoded.iss as string))
+  if (!provider?.validateLogoutToken) return refuse()
+  // the oauth tokens are stored under the site of the login: the site hosting the provider, null for a root provider
+  const tokenSite = provider.trusted ? null : (site?._id ?? null)
+
+  let claims: { sid?: string, sub?: string }
+  try {
+    claims = await provider.validateLogoutToken(logoutToken, {})
+  } catch (err) {
+    if (!(err instanceof OidcValidationError)) throw err
+    log.warn(`back-channel logout refused for provider ${provider.id}, check ${err.check}`, { code: 'sd.auth.oauth.fail', providerId: provider.id, reason: 'logout-token', check: err.check })
+    return refuse()
+  }
+  await logoutOAuthToken({ providerId: provider.id, site: tokenSite, ...claims })
   res.status(204).send()
 }
 
@@ -915,6 +1041,8 @@ router.get('/saml2/:providerId/login', async (req, res) => {
     adminMode: !!(req.query.adminMode as string),
     providerId: req.params.providerId
   }
+  // the assertion is a cross site POST from the IdP: a Lax cookie would not be sent with it
+  relayState.bindingHash = setLoginBinding(req, res, relayState._id, config.publicUrl.startsWith('https://') ? 'none' : 'lax')
   await mongo.saml2RelayStates.insertOne(relayState)
   // relay state should be a request level parameter but it is not in current version of samlify
   // cf https://github.com/tngan/samlify/issues/163
@@ -944,6 +1072,20 @@ router.post('/saml2-assert', async (req, res) => {
 
   const provider = await getSamlProviderById(req, providerId)
   if (!provider) return res.status(404).send('unknown saml2 provider ' + providerId)
+
+  const refuse = (message: string, reason: string) => {
+    log.warn(message, { code: 'sd.auth.saml.fail', providerId, reason })
+    res.redirect(`${reqSiteUrl(req)}/simple-directory/login?error=badIDPResponse`)
+  }
+  // the binding is checked before the relay state is consumed, so that a third party cannot burn the login
+  if (!relayState.bindingHash || !checkLoginBinding(req, res, relayState._id, relayState.bindingHash)) {
+    return refuse('saml assertion from a browser that did not start the login', 'binding-cookie')
+  }
+  const consumed = await mongo.saml2RelayStates.findOneAndUpdate(
+    { _id: relayState._id, usedAt: { $exists: false } },
+    { $set: { usedAt: new Date() } }
+  )
+  if (!consumed) return refuse('saml assertion with a relay state that was already used', 'relay-state-used')
 
   const sp = await saml2ServiceProvider(await reqSite(req))
 

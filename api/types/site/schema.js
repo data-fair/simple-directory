@@ -716,6 +716,28 @@ export default {
             }
           }
         },
+        scope: {
+          type: 'string',
+          title: 'Scopes demandés',
+          'x-i18n-title': {
+            fr: 'Scopes demandés',
+            en: 'Requested scopes',
+            es: 'Scopes solicitados',
+            it: 'Scope richiesti',
+            pt: 'Scopes solicitados',
+            de: 'Angeforderte Scopes'
+          },
+          description: 'Liste séparée par des espaces, "openid email profile" par défaut. Pour ProConnect : "openid email given_name usual_name".',
+          'x-i18n-description': {
+            fr: 'Liste séparée par des espaces, "openid email profile" par défaut. Pour ProConnect : "openid email given_name usual_name".',
+            en: 'Space separated list, "openid email profile" by default. For ProConnect: "openid email given_name usual_name".',
+            es: 'Lista separada por espacios, "openid email profile" por defecto. Para ProConnect: "openid email given_name usual_name".',
+            it: 'Elenco separato da spazi, "openid email profile" per impostazione predefinita. Per ProConnect: "openid email given_name usual_name".',
+            pt: 'Lista separada por espaços, "openid email profile" por padrão. Para ProConnect: "openid email given_name usual_name".',
+            de: 'Durch Leerzeichen getrennte Liste, standardmäßig "openid email profile". Für ProConnect: "openid email given_name usual_name".'
+          },
+          pattern: '^\\S+( \\S+)*$'
+        },
         credentialsEncodingMode: {
           type: 'string',
           title: 'Encodage des crédentiels du client',
@@ -752,7 +774,15 @@ export default {
         authorizationMethod: {
           type: 'string',
           title: 'Méthode d\'envoi des crédentiels du client',
-          default: 'header',
+          description: "Si ce champ est vide, la méthode est choisie d'après le document de découverte du fournisseur (entête \"Authorization\" par défaut).",
+          'x-i18n-description': {
+            fr: "Si ce champ est vide, la méthode est choisie d'après le document de découverte du fournisseur (entête \"Authorization\" par défaut).",
+            en: 'If empty, the method is chosen from the provider\'s discovery document ("Authorization" header by default).',
+            es: 'Si está vacío, el método se elige a partir del documento de descubrimiento del proveedor (encabezado "Authorization" por defecto).',
+            it: 'Se vuoto, il metodo viene scelto in base al documento di discovery del provider (intestazione "Authorization" per impostazione predefinita).',
+            pt: 'Se estiver vazio, o método é escolhido a partir do documento de descoberta do provedor (cabeçalho "Authorization" por padrão).',
+            de: 'Wenn leer, wird die Methode anhand des Discovery-Dokuments des Anbieters gewählt (standardmäßig Kopfzeile "Authorization").'
+          },
           oneOf: [
             {
               const: 'header',
@@ -779,7 +809,7 @@ export default {
               }
             }
           ],
-          layout: { cols: 6 }
+          layout: { cols: 6, props: { clearable: true } }
         },
         bodyFormat: {
           type: 'string',
@@ -899,6 +929,48 @@ export default {
               }
             },
           ]
+        },
+        strict: {
+          type: 'boolean',
+          title: 'Validation stricte des jetons',
+          'x-i18n-title': {
+            fr: 'Validation stricte des jetons',
+            en: 'Strict token validation',
+            es: 'Validación estricta de los tokens',
+            it: 'Convalida rigorosa dei token',
+            pt: 'Validação estrita dos tokens',
+            de: 'Strenge Token-Validierung'
+          },
+          description: 'Si cette option est activée, les connexions dont les jetons ne passent pas la validation (signature, émetteur, audience, expiration, nonce...) sont refusées. Sinon une alerte est seulement enregistrée dans les logs.',
+          'x-i18n-description': {
+            fr: 'Si cette option est activée, les connexions dont les jetons ne passent pas la validation (signature, émetteur, audience, expiration, nonce...) sont refusées. Sinon une alerte est seulement enregistrée dans les logs.',
+            en: 'If enabled, logins whose tokens fail validation (signature, issuer, audience, expiration, nonce...) are refused. Otherwise only an alert is logged.',
+            es: 'Si se activa, se rechazan los inicios de sesión cuyos tokens no superan la validación (firma, emisor, audiencia, expiración, nonce...). De lo contrario solo se registra una alerta.',
+            it: 'Se attivata, gli accessi i cui token non superano la convalida (firma, emittente, audience, scadenza, nonce...) vengono rifiutati. Altrimenti viene registrato solo un avviso.',
+            pt: 'Se ativada, os inícios de sessão cujos tokens não passam a validação (assinatura, emissor, audiência, expiração, nonce...) são recusados. Caso contrário, apenas um alerta é registado.',
+            de: 'Wenn aktiviert, werden Anmeldungen abgelehnt, deren Token die Validierung nicht bestehen (Signatur, Aussteller, Audience, Ablauf, Nonce...). Andernfalls wird nur eine Warnung protokolliert.'
+          }
+        },
+        rpInitiatedLogout: {
+          type: 'boolean',
+          title: 'Déconnexion auprès du fournisseur',
+          'x-i18n-title': {
+            fr: 'Déconnexion auprès du fournisseur',
+            en: 'Logout at the provider',
+            es: 'Cierre de sesión en el proveedor',
+            it: 'Disconnessione presso il provider',
+            pt: 'Terminar sessão no provedor',
+            de: 'Abmeldung beim Anbieter'
+          },
+          description: "À la déconnexion, l'utilisateur est redirigé vers la déconnexion du fournisseur d'identité. Nécessite de déclarer l'URL <site>/simple-directory/api/auth/oidc-logout-callback comme URL de redirection après déconnexion (post logout redirect URI) chez le fournisseur.",
+          'x-i18n-description': {
+            fr: "À la déconnexion, l'utilisateur est redirigé vers la déconnexion du fournisseur d'identité. Nécessite de déclarer l'URL <site>/simple-directory/api/auth/oidc-logout-callback comme URL de redirection après déconnexion (post logout redirect URI) chez le fournisseur.",
+            en: "On logout, the user is redirected to the identity provider's logout. Requires registering <site>/simple-directory/api/auth/oidc-logout-callback as a post logout redirect URI at the provider.",
+            es: 'Al cerrar sesión, el usuario es redirigido al cierre de sesión del proveedor de identidad. Requiere registrar <site>/simple-directory/api/auth/oidc-logout-callback como URI de redirección posterior al cierre de sesión (post logout redirect URI) en el proveedor.',
+            it: "Alla disconnessione, l'utente viene reindirizzato alla disconnessione del provider di identità. Richiede di registrare <site>/simple-directory/api/auth/oidc-logout-callback come URI di reindirizzamento dopo la disconnessione (post logout redirect URI) presso il provider.",
+            pt: 'Ao terminar sessão, o utilizador é redirecionado para o logout do provedor de identidade. Requer o registo de <site>/simple-directory/api/auth/oidc-logout-callback como URI de redirecionamento após logout (post logout redirect URI) no provedor.',
+            de: 'Beim Abmelden wird der Benutzer zur Abmeldung des Identitätsanbieters weitergeleitet. Erfordert die Registrierung von <site>/simple-directory/api/auth/oidc-logout-callback als Post-Logout-Redirect-URI beim Anbieter.'
+          }
         },
         ignoreEmailVerified: {
           type: 'boolean',

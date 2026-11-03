@@ -1,4 +1,5 @@
 import { strict as assert } from 'node:assert'
+import { loginBindingCookie } from './login-binding.ts'
 import type { AxiosAuthInstance, AxiosAuthOptions } from '@data-fair/lib-node/axios-auth.js'
 import { axiosBuilder } from '@data-fair/lib-node/axios.js'
 import { axiosAuth as _axiosAuth } from '@data-fair/lib-node/axios-auth.js'
@@ -150,7 +151,7 @@ export const loginWithOIDC = async (port: number) => {
   const loginProvider = await anonymousAx(providerAuthUrl.href, { validateStatus: (status: number) => status === 302 })
   const providerAuthRedirect = new URL(loginProvider.headers.location)
   // open our callback url that produces a temporary token to be transformed in a session token by a token_callback url
-  const oauthCallback = await anonymousAx(providerAuthRedirect.href, { validateStatus: (status: number) => status === 302 })
+  const oauthCallback = await anonymousAx(providerAuthRedirect.href, { headers: { Cookie: loginBindingCookie(loginInitial) }, validateStatus: (status: number) => status === 302 })
   const callbackRedirect = new URL(oauthCallback.headers.location)
   // finally the token_callback url will set cookies and redirect to our final destination
   const tokenCallback = await anonymousAx(callbackRedirect.href, { validateStatus: (status: number) => status === 302 })
@@ -178,3 +179,5 @@ export const passwordLogin = async (ax: AxiosAuthInstance, email: string, passwo
     if (redirectError) throw new Error(redirectError)
   }
 }
+
+export { loginBindingCookie }

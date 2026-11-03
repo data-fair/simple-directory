@@ -42,6 +42,14 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
   scope: string,
   // operator-declared provider (config.oidc.providers), its endpoints may be on a private network
   trusted?: boolean,
+  // oidc providers only
+  clientId?: string,
+  issuer?: string,
+  jwksUri?: string,
+  endSessionEndpoint?: string,
+  issParameterSupported?: boolean,
+  strict?: boolean,
+  rpInitiatedLogout?: boolean,
   auth: {
     tokenHost: string,
     tokenPath: string,
@@ -52,13 +60,17 @@ export type OAuthProvider = Omit<OpenIDConnect, 'discovery' | 'type'> & {
   // alert lines (sd.oidc.email-not-verified / sd.oauth.email-not-verified), the request context
   // comes from the implicit log context. Omit it in background paths that have no request (e.g.
   // the token-refresh worker): they do not log these refusals.
-  userInfo: (accessToken: string, id_token?: string, logFields?: LogFields) => Promise<OAuthUserInfo>
+  userInfo: (accessToken: string, id_token?: string, logFields?: LogFields, idTokenClaims?: Record<string, any>) => Promise<OAuthUserInfo>,
+  // oidc providers only: verified claims of the id_token, or the decoded ones if the policy of the provider lets a failure through
+  validateIdToken?: (idToken: string, nonce?: string, logFields?: LogFields) => Promise<Record<string, any>>,
+  // oidc providers only: OIDC Back-Channel Logout 1.0, resolves the session and subject the token ends
+  validateLogoutToken?: (logoutToken: string, logFields?: LogFields) => Promise<{ sid?: string, sub?: string }>
 }
 
 export type PreparedOAuthProvider = OAuthProvider & {
   state: string
-  authorizationUri (relayState: string, email: string, offlineAccess?: boolean, forceLogin?: boolean): string
-  getToken (code: string, offlineAccess?: boolean): Promise<any>
+  authorizationUri (relayState: string, email: string, offlineAccess?: boolean, forceLogin?: boolean, nonce?: string, codeChallenge?: string): string
+  getToken (code: string, codeVerifier?: string): Promise<any>
   refreshToken (tokenObj: any): Promise<any>
 }
 
@@ -70,7 +82,19 @@ export type OAuthRelayState = {
   org?: string,
   dep?: string,
   invitToken?: string,
-  adminMode?: boolean
+  adminMode?: boolean,
+  // OIDC only, echoed by the provider in the id_token and checked in the callback
+  nonce?: string,
+  // sha256 of the secret held by the browser that started the login (cf auth/login-binding.ts)
+  bindingHash?: string,
+  // PKCE
+  codeVerifier?: string,
+  // set when the callback consumed this relay state, it can be used only once
+  usedAt?: Date,
+  // RP-initiated logout: kept from the callback until token_callback moves it to the server session
+  idToken?: string,
+  idpProviderId?: string,
+  idpSite?: string
 }
 
 export const getOAuthProviderById = async (req: Request, id: string): Promise<PreparedOAuthProvider | undefined> => {
@@ -104,7 +128,9 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     auth: p.auth,
     options: {
       credentialsEncodingMode: p.credentialsEncodingMode ?? 'strict', // strict or loose
-      authorizationMethod: p.authorizationMethod ?? 'header', // header or body
+      // header or body: oidc providers arrive with the value resolved by completeOidcProvider (config, else discovery),
+      // the fallback only serves the standard oauth providers
+      authorizationMethod: p.authorizationMethod ?? 'header',
       bodyFormat: p.bodyFormat ?? 'form'
     },
     // the token endpoint of an untrusted provider comes from a site config or a discovery document,
@@ -123,7 +149,7 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
   const callbackUri = p.oidc ? `${publicUrl}/api/auth/oauth-callback` : `${publicUrl}/api/auth/oauth/${p.id}/callback`
 
   // dynamically prepare authorization uris for login redirection
-  const authorizationUri = (relayState: string, email: string, offlineAccess = false, forceLogin = false) => {
+  const authorizationUri = (relayState: string, email: string, offlineAccess = false, forceLogin = false, nonce?: string, codeChallenge?: string) => {
     let scope = p.scope
     if (offlineAccess) {
       scope += ' offline_access'
@@ -131,8 +157,14 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
     const params: Record<string, string> = {
       redirect_uri: callbackUri,
       scope,
-      state: relayState,
-      display: 'page'
+      state: relayState
+    }
+    if (nonce) {
+      params.nonce = nonce
+    }
+    if (codeChallenge) {
+      params.code_challenge = codeChallenge
+      params.code_challenge_method = 'S256'
     }
     if (forceLogin) {
       params.prompt = 'login'
@@ -147,10 +179,11 @@ async function initOAuthProvider (p: OAuthProvider, publicUrl = config.publicUrl
   }
 
   // get an access token from code sent as callback to login redirect
-  const getToken = async (code: string, offlineAccess = false) => {
+  const getToken = async (code: string, codeVerifier?: string) => {
     const tokenWrap = await oauthClient.getToken({
       code,
-      redirect_uri: callbackUri
+      redirect_uri: callbackUri,
+      ...(codeVerifier ? { code_verifier: codeVerifier } : {})
     })
     const token = tokenWrap.token
     const decodedRefreshToken = decodeToken(token.refresh_token as string)

@@ -7,6 +7,10 @@
 // Each server instance exposes test control endpoints alongside standard OAuth2 endpoints:
 //   PATCH /_test/userinfo        — set the userinfo response body
 //   PATCH /_test/token-config    — set token endpoint overrides (e.g. { "expires_in": 1 })
+//   PATCH /_test/authorize-redirect — set query params added to (or overriding) the authorize redirect, e.g. { "iss": "http://evil" }
+//   PATCH /_test/id-token-claims — set claims merged into the id_token payload (e.g. { "aud": "other" })
+//   PATCH /_test/access-token-claims — same for the access token; token-config { "omitIdToken": true } drops the id_token
+//   POST /_test/sign             — sign the body claims with the keys of the instance, answers { token } (a null claim is dropped; iss, iat, exp default to the instance's)
 //   DELETE /_test                — reset to defaults
 
 import 'dotenv/config'
@@ -18,6 +22,9 @@ interface ServerInstance {
   controlServer: http.Server
   userinfo: Record<string, any>
   tokenConfig: Record<string, any>
+  authorizeRedirect: Record<string, string>
+  idTokenClaims: Record<string, any>
+  accessTokenClaims: Record<string, any>
 }
 
 const createInstance = async (oauthPort: number, controlPort: number): Promise<ServerInstance> => {
@@ -25,7 +32,10 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
     oauthServer: new OAuth2Server(),
     controlServer: null as any,
     userinfo: {},
-    tokenConfig: {}
+    tokenConfig: {},
+    authorizeRedirect: {},
+    idTokenClaims: {},
+    accessTokenClaims: {}
   }
 
   await instance.oauthServer.issuer.keys.generate('RS256')
@@ -34,7 +44,24 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
     userInfoResponse.body = { ...instance.userinfo }
   })
 
+  // add or override query params of the redirect to the client (e.g. the RFC 9207 iss parameter)
+  instance.oauthServer.service.on('beforeAuthorizeRedirect', ({ url }: { url: URL }, _req: any) => {
+    for (const [key, value] of Object.entries(instance.authorizeRedirect)) url.searchParams.set(key, value)
+  })
+
+  // the id_token identifies the user of the userinfo, like a real provider (the client checks both subs)
+  instance.oauthServer.service.on('beforeTokenSigning', (token: any, _req: any) => {
+    // only the id_token has an aud here
+    if (token.payload.aud) {
+      if (instance.userinfo.sub) token.payload.sub = instance.userinfo.sub
+      Object.assign(token.payload, instance.idTokenClaims)
+    } else {
+      Object.assign(token.payload, instance.accessTokenClaims)
+    }
+  })
+
   instance.oauthServer.service.on('beforeResponse', (tokenEndpointResponse, _req) => {
+    if (instance.tokenConfig.omitIdToken) delete tokenEndpointResponse.body.id_token
     if (instance.tokenConfig.expires_in !== undefined) {
       tokenEndpointResponse.body.expires_in = instance.tokenConfig.expires_in
     }
@@ -67,7 +94,34 @@ const createInstance = async (oauthPort: number, controlPort: number): Promise<S
       instance.tokenConfig = body || {}
       res.writeHead(200)
       res.end(JSON.stringify({ ok: true }))
+    } else if (req.method === 'PATCH' && req.url === '/_test/authorize-redirect') {
+      instance.authorizeRedirect = body || {}
+      res.writeHead(200)
+      res.end(JSON.stringify({ ok: true }))
+    } else if (req.method === 'PATCH' && req.url === '/_test/id-token-claims') {
+      instance.idTokenClaims = body || {}
+      res.writeHead(200)
+      res.end(JSON.stringify({ ok: true }))
+    } else if (req.method === 'PATCH' && req.url === '/_test/access-token-claims') {
+      instance.accessTokenClaims = body || {}
+      res.writeHead(200)
+      res.end(JSON.stringify({ ok: true }))
+    } else if (req.method === 'POST' && req.url === '/_test/sign') {
+      const claims: Record<string, any> = body || {}
+      const token = await instance.oauthServer.issuer.buildToken({
+        scopesOrTransform: (_header: any, payload: any) => {
+          for (const [key, value] of Object.entries(claims)) {
+            if (value === null) delete payload[key]
+            else payload[key] = value
+          }
+        }
+      })
+      res.writeHead(200)
+      res.end(JSON.stringify({ token }))
     } else if (req.method === 'DELETE' && req.url === '/_test') {
+      instance.accessTokenClaims = {}
+      instance.idTokenClaims = {}
+      instance.authorizeRedirect = {}
       instance.userinfo = {}
       instance.tokenConfig = {}
       res.writeHead(200)

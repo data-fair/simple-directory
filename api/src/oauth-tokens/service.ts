@@ -1,7 +1,8 @@
 import type { User, OAuthToken } from '#types'
 import mongo from '#mongo'
 
-export async function writeOAuthToken (user: User, provider: any, token: any, offlineRefreshToken: boolean, loggedOut?: Date, site?: string | null) {
+// sid and sub come from the verified claims of the id_token (absent when the provider issues none)
+export async function writeOAuthToken (user: User, provider: any, token: any, offlineRefreshToken: boolean, loggedOut?: Date, site?: string | null, idTokenClaims?: { sid?: string, sub?: string }) {
   const siteValue = site ?? null
   const tokenInfo: OAuthToken = {
     user: { id: user.id, email: user.email, name: user.name },
@@ -11,6 +12,8 @@ export async function writeOAuthToken (user: User, provider: any, token: any, of
   }
   if (offlineRefreshToken) tokenInfo.offlineRefreshToken = true
   if (loggedOut) tokenInfo.loggedOut = loggedOut
+  if (typeof idTokenClaims?.sid === 'string') tokenInfo.sid = idTokenClaims.sid
+  if (typeof idTokenClaims?.sub === 'string') tokenInfo.sub = idTokenClaims.sub
   await mongo.oauthTokens
     .replaceOne({ 'user.id': user.id, 'provider.id': provider.id, site: siteValue }, tokenInfo, { upsert: true })
   // lazy migration: clean up legacy token without site
@@ -59,6 +62,14 @@ export async function findOfflineOAuthTokens () {
   return tokens
 }
 
-export async function logoutOAuthToken (sid: string) {
-  await mongo.oauthTokens.updateOne({ 'token.session_state': sid }, { $set: { loggedOut: new Date() } })
+// back-channel logout: flag the tokens of the provider session (sid, or the legacy session_state of the
+// token response), else all the sessions of the subject on this provider
+// site: the _id of the site that hosts the provider, null for a root provider (provider ids are not unique
+// across sites and levels, the tokens are stored under the site of the login)
+export async function logoutOAuthToken ({ providerId, site, sid, sub }: { providerId: string, site: string | null, sid?: string, sub?: string }) {
+  const filter = sid
+    ? { 'provider.id': providerId, site, $or: [{ sid }, { 'token.session_state': sid }] }
+    : sub ? { 'provider.id': providerId, site, sub } : undefined
+  if (!filter) return
+  await mongo.oauthTokens.updateMany(filter, { $set: { loggedOut: new Date() } })
 }

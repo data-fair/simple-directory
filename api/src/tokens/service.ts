@@ -10,7 +10,10 @@ import Cookies from 'cookies'
 import { nanoid } from 'nanoid'
 import storages from '#storages'
 import { getSignatureKeys } from './keys-manager.ts'
-import { getDefaultLoginRedirect, getRedirectSite, reqSite } from '#services'
+import { getDefaultLoginRedirect, getRedirectSite, reqSite, getSiteBaseUrl, initOidcProvider, oauthGlobalProviders, getOidcProviderId } from '#services'
+import mongo from '#mongo'
+import type { OAuthProvider } from '../oauth/service.ts'
+import type { OpenIDConnect1 } from '../../config/type/index.ts'
 import { lastIpInfo } from '../utils/ip-info.ts'
 import { revokeGrants } from '../oauth-server/grants.ts'
 
@@ -102,7 +105,8 @@ export const getDefaultUserOrg = (user: User, site: Site | undefined, reqOrgId?:
 
 const secure = config.publicUrl.startsWith('https://')
 
-export const logout = async (req: Request, res: Response) => {
+// endSession: also compute the end session url of the identity provider (only the explicit logout asks for it)
+export const logout = async (req: Request, res: Response, logoutOpts?: { endSession?: boolean }): Promise<{ endSessionUrl?: string }> => {
   const cookies = new Cookies(req, res, { secure })
   const sitePath = reqSitePath(req)
   const opts: Cookies.SetOption = { path: sitePath + '/', expires: new Date(0) }
@@ -119,7 +123,50 @@ export const logout = async (req: Request, res: Response) => {
   if (sessionState.user && exchangeToken) {
     const storage = await storages.getSessionStorage(sessionState)
     const serverSessionInfo = decodeToken(exchangeToken) as SessionInfoPayload | undefined
-    if (serverSessionInfo?.session) await storage.deleteUserSession(sessionState.user.id, serverSessionInfo.session)
+    if (serverSessionInfo?.session) {
+      // the server session is read before it is deleted: its idp holds the id_token for the provider logout.
+      // A failure to read it must not prevent the deletion of the session
+      let idp: ServerSession['idp']
+      if (logoutOpts?.endSession) {
+        try {
+          idp = (await storage.getUser(sessionState.user.id))?.sessions?.find(s => s.id === serverSessionInfo.session)?.idp
+        } catch (err) {
+          log.warn('the server session could not be read for the provider logout, the logout carries on without it', { code: 'sd.auth.oidc.end-session-fail', err })
+        }
+      }
+      await storage.deleteUserSession(sessionState.user.id, serverSessionInfo.session)
+      if (idp) return { endSessionUrl: await idpEndSessionUrl(idp) }
+    }
+  }
+  return {}
+}
+
+// RP-initiated logout: the provider is resolved at the level the session was created at (the site that
+// recorded it, else the root providers), where the post logout redirect uri is registered. The provider may
+// have been removed or reconfigured since the login: whatever fails, the logout carries on without the url.
+const idpEndSessionUrl = async (idp: NonNullable<ServerSession['idp']>) => {
+  try {
+    let provider: OAuthProvider | undefined
+    let baseUrl: string
+    if (idp.site) {
+      const site = await mongo.sites.findOne({ _id: idp.site })
+      if (!site) return undefined
+      baseUrl = getSiteBaseUrl(site) + '/simple-directory'
+      const providerInfo = site.authProviders?.find(p => p.type === 'oidc' && getOidcProviderId(p.discovery) === idp.providerId) as OpenIDConnect1 | undefined
+      if (providerInfo) provider = await initOidcProvider(providerInfo, baseUrl)
+    } else {
+      baseUrl = config.publicUrl
+      provider = oauthGlobalProviders().find(p => p.id === idp.providerId)
+    }
+    if (!provider?.rpInitiatedLogout || !provider.endSessionEndpoint) return undefined
+    const url = new URL(provider.endSessionEndpoint)
+    url.searchParams.set('id_token_hint', idp.idToken)
+    if (provider.clientId) url.searchParams.set('client_id', provider.clientId)
+    url.searchParams.set('post_logout_redirect_uri', baseUrl + '/api/auth/oidc-logout-callback')
+    url.searchParams.set('state', nanoid())
+    return url.href
+  } catch (err) {
+    log.warn('the end session url of an identity provider could not be built, the logout carries on without it', { code: 'sd.auth.oidc.end-session-fail', providerId: idp.providerId, err })
   }
 }
 
@@ -449,11 +496,14 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
 
 // after validating auth (password, passwordless or oaut), we prepare a redirect to /token_callback
 // this redirect is potentially on another domain, and it will do the actual set cookies with session tokens
-export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:(Pick<OrganizationMembership, 'id' | 'department'> & { role?: string }), orgStorage?: boolean) => {
+export const prepareCallbackUrl = async (req: Request, payload: any, redirect?: string, userOrg?:(Pick<OrganizationMembership, 'id' | 'department'> & { role?: string }), orgStorage?: boolean, opts?: { emailed?: boolean, idpLogin?: string }) => {
   redirect = getDefaultLoginRedirect(reqSiteUrl(req), redirect)
   const redirectUrl = new URL(redirect)
   const redirectSite = await getRedirectSite(req, redirect)
-  const token = await signToken({ ...payload, temporary: true }, config.jwtDurations.initialToken)
+  // redirect flows hand the token to the browser: it is single use (cbJti consumed by token_callback).
+  // links sent by email stay reusable until expiry, mail scanners prefetch them
+  const cbPayload = opts?.emailed ? payload : { ...payload, cbJti: nanoid(), ...(opts?.idpLogin ? { idpLogin: opts.idpLogin } : {}) }
+  const token = await signToken({ ...cbPayload, temporary: true }, config.jwtDurations.initialToken)
   const redirectBase = redirectSite ? (redirectUrl.protocol + redirectSite.host + (redirectSite.path ?? '') + '/simple-directory') : config.publicUrl
   const tokenCallback = redirectBase + '/api/auth/token_callback'
   const tokenCallbackUrl = new URL(tokenCallback)

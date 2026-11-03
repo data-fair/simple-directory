@@ -62,7 +62,12 @@ looser IdP.
   `claims.email_verified === false`. Absent / null / non-boolean passes.
   Per-provider `ignoreEmailVerified: true` escape hatch, gated behind
   superadmin-level site-config editing, suppresses even the explicit-false
-  rejection.
+  rejection. Claims come from the userinfo endpoint (JSON, or a signed JWT
+  answered as `application/jwt`, e.g. ProConnect), then the id_token, then
+  the access token. The id_token and a JWT userinfo are verified (signature,
+  `iss`, `aud`, `nonce`, `sub` binding) and a failure only raises an alert on a
+  non-strict provider, refuses the login on a strict one. See
+  [`oidc-client.md`](oidc-client.md) for the flow and the checks.
 - **Google** — requires `verified_email === true` on the v1 userinfo
   (Google always emits this reliably, so strict opt-in is correct here).
 - **GitHub** — requires the address to be both `primary` and `verified`.

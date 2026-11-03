@@ -62,6 +62,11 @@ export class SdMongo {
     return mongo.db.collection<OAuthToken>('oauth-tokens')
   }
 
+  // jti of the redirect-flow callback tokens already exchanged for a session (single use)
+  get usedCallbackTokens () {
+    return mongo.db.collection<{ _id: string, usedAt: Date, expiresAt: Date }>('used-callback-tokens')
+  }
+
   get oauthRelayStates () {
     return mongo.db.collection<OAuthRelayState>('oauth-relay-states')
   }
@@ -81,7 +86,7 @@ export class SdMongo {
   }
 
   get oidcDiscovery () {
-    return mongo.db.collection<{ _id: string, content: any }>('oidc-discovery')
+    return mongo.db.collection<{ _id: string, content: any, fetchedAt?: Date, retryAfter?: Date }>('oidc-discovery')
   }
 
   get passwordLists () {
@@ -156,7 +161,13 @@ export class SdMongo {
         'oauth-tokens-key': [{ 'user.id': 1, 'provider.id': 1, site: 1 }, { unique: true }],
         'oauth-tokens-provider': { 'provider.id': 1 },
         'oauth-tokens-offline': { offlineRefreshToken: 1 },
-        'oauth-tokens-sid': { 'token.session_state': 1 }
+        'oauth-tokens-sid': { 'token.session_state': 1 },
+        'oauth-tokens-bc-sid': { sid: 1 },
+        'oauth-tokens-bc-sub': { 'provider.id': 1, sub: 1 }
+      },
+      'used-callback-tokens': {
+        // kept as long as the token itself could still be verified (jwtDurations.initialToken is configurable)
+        ttl: [{ expiresAt: 1 }, { expireAfterSeconds: 0 }]
       },
       'oauth-relay-states': {
         ttl: [{ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 }]
