@@ -654,12 +654,15 @@ router.post('/keepalive', async (req, res, next) => {
 
       if (refreshedToken) {
         const { newToken, offlineRefreshToken } = refreshedToken
-        // a strict provider whose id_token fails validation throws here, like any other refresh failure
-        const idTokenClaims = provider.validateIdToken && newToken.id_token ? await provider.validateIdToken(newToken.id_token, undefined, {}) : undefined
-        const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token, {}, idTokenClaims)
+        // a strict provider whose id_token fails validation throws here, like any other refresh failure.
+        // No log fields: a non strict provider does not raise an alert at each keepalive (only at login)
+        const idTokenClaims = provider.validateIdToken && newToken.id_token ? await provider.validateIdToken(newToken.id_token) : undefined
+        const userInfo = await provider.userInfo(newToken.access_token, newToken.id_token, undefined, idTokenClaims)
         const memberInfos = await authProviderMemberInfo(await reqSite(req), provider, userInfo)
         user = await patchCoreAuthUser(provider, user, userInfo, memberInfos)
-        await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, authSite?._id, idTokenClaims ?? oauthToken)
+        // a refreshed id_token may omit the sid: keep the one of the login for the back-channel logout
+        const sessionClaims = { sid: idTokenClaims?.sid ?? oauthToken.sid, sub: idTokenClaims?.sub ?? oauthToken.sub }
+        await writeOAuthToken(user, provider, newToken, offlineRefreshToken, undefined, authSite?._id, sessionClaims)
         log.info(`a user refreshed their info from their core identity provider ${provider.id}`, { code: 'sd.auth.keepalive.oauth-refresh-ok' })
       }
     } catch (err: any) {
@@ -965,9 +968,11 @@ router.get('/oauth-callback', oauthCallback)
 // token is verified against its keys. The response never tells why a token was refused.
 const oauthLogoutCallback: RequestHandler = async (req, res, next) => {
   const logoutToken = req.body?.logout_token
-  if (!logoutToken || typeof logoutToken !== 'string') return res.status(400).send('missing logout_token')
+  // a single body for every refusal
+  const refuse = () => res.status(400).send('invalid logout_token')
+  if (!logoutToken || typeof logoutToken !== 'string') return refuse()
   const decoded = decodeToken(logoutToken)
-  if (!decoded || typeof decoded.iss !== 'string') return res.status(400).send('invalid logout_token')
+  if (!decoded || typeof decoded.iss !== 'string') return refuse()
 
   // the providers of the site come first: for an issuer declared at both levels the policy of the site applies.
   // Only the provider whose discovery issuer matches the unverified iss is initialised: a broken provider of
@@ -987,7 +992,7 @@ const oauthLogoutCallback: RequestHandler = async (req, res, next) => {
     }
   }
   provider ??= oauthGlobalProviders().find(p => p.oidc && p.issuer && p.validateLogoutToken && issuerParameterMatches(p.issuer, decoded.iss as string))
-  if (!provider?.validateLogoutToken) return res.status(400).send('unknown logout_token issuer')
+  if (!provider?.validateLogoutToken) return refuse()
   // the oauth tokens are stored under the site of the login: the site hosting the provider, null for a root provider
   const tokenSite = provider.trusted ? null : (site?._id ?? null)
 
@@ -997,7 +1002,7 @@ const oauthLogoutCallback: RequestHandler = async (req, res, next) => {
   } catch (err) {
     if (!(err instanceof OidcValidationError)) throw err
     log.warn(`back-channel logout refused for provider ${provider.id}, check ${err.check}`, { code: 'sd.auth.oauth.fail', providerId: provider.id, reason: 'logout-token', check: err.check })
-    return res.status(400).send('invalid logout_token')
+    return refuse()
   }
   await logoutOAuthToken({ providerId: provider.id, site: tokenSite, ...claims })
   res.status(204).send()

@@ -89,17 +89,32 @@ test.describe('back-channel logout of a core id provider (root, non strict)', ()
     const { keepalive } = await loginCoreId()
     const res = await postLogout(forge(logoutClaims(issuer2)))
     assert.equal(res.status, 400)
+    assert.equal(res.data, 'invalid logout_token')
     assert.equal((await keepalive()).status, 204)
   })
 
   test('a logout token with an unknown issuer is refused', async () => {
     const res = await postLogout(await sign(mockOidcControlUrl2, logoutClaims('http://unknown.example.com')))
     assert.equal(res.status, 400)
+    // the same body for every refusal
+    assert.equal(res.data, 'invalid logout_token')
   })
 
   test('a missing logout token is refused', async () => {
     const res = await postLogout('')
     assert.equal(res.status, 400)
+    assert.equal(res.data, 'invalid logout_token')
+  })
+
+  test('the sid of the login is kept when a refreshed id_token has none', async () => {
+    await axiosBuilder().patch(mockOidcControlUrl2 + '/_test/id-token-claims', { sid: 'sid-kept' })
+    const { keepalive } = await loginCoreId()
+    // the id_tokens of the refreshes at keepalive carry no sid
+    await axiosBuilder().patch(mockOidcControlUrl2 + '/_test/id-token-claims', {})
+    assert.equal((await keepalive()).status, 204)
+    const res = await postLogout(await sign(mockOidcControlUrl2, logoutClaims(issuer2, { sub: null, sid: 'sid-kept' })))
+    assert.equal(res.status, 204)
+    assert.equal((await keepalive()).status, 401)
   })
 
   test('a logout token matches the session by sid, without sub', async () => {
@@ -180,7 +195,7 @@ test.describe('back-channel logout of a strict site provider', () => {
     const { keepalive } = await login(siteUrl, `/api/auth/oidc/localhost${port1}/login`)
     const res = await postLogout(await sign(mockOidcControlUrl2, logoutClaims(issuer1)), siteUrl)
     assert.equal(res.status, 400)
-    assert.ok(!JSON.stringify(res.data).includes('signature'))
+    assert.equal(res.data, 'invalid logout_token')
     assert.equal((await keepalive()).status, 204)
   })
 

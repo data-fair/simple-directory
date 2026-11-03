@@ -124,10 +124,18 @@ export const logout = async (req: Request, res: Response, logoutOpts?: { endSess
     const storage = await storages.getSessionStorage(sessionState)
     const serverSessionInfo = decodeToken(exchangeToken) as SessionInfoPayload | undefined
     if (serverSessionInfo?.session) {
-      // the server session is read before it is deleted: its idp holds the id_token for the provider logout
-      const serverSession = logoutOpts?.endSession ? (await storage.getUser(sessionState.user.id))?.sessions?.find(s => s.id === serverSessionInfo.session) : undefined
+      // the server session is read before it is deleted: its idp holds the id_token for the provider logout.
+      // A failure to read it must not prevent the deletion of the session
+      let idp: ServerSession['idp']
+      if (logoutOpts?.endSession) {
+        try {
+          idp = (await storage.getUser(sessionState.user.id))?.sessions?.find(s => s.id === serverSessionInfo.session)?.idp
+        } catch (err) {
+          log.warn('the server session could not be read for the provider logout, the logout carries on without it', { code: 'sd.auth.oidc.end-session-fail', err })
+        }
+      }
       await storage.deleteUserSession(sessionState.user.id, serverSessionInfo.session)
-      if (serverSession?.idp) return { endSessionUrl: await idpEndSessionUrl(serverSession.idp) }
+      if (idp) return { endSessionUrl: await idpEndSessionUrl(idp) }
     }
   }
   return {}
