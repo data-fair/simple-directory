@@ -43,3 +43,30 @@ test.describe('OIDC validation policy', () => {
     assert.ok(!issuerParameterMatches('http://localhost:1', 'http://localhost:2'))
   })
 })
+
+// absent strict / rpInitiatedLogout means true for a site provider, false for a root one (p.x ?? !trusted):
+// the site form shows them as true through a form only default, the root config must not get one
+test.describe('OIDC provider flags defaults', () => {
+  const flags = ['strict', 'rpInitiatedLogout'] as const
+
+  test('the site form initialises the flags to true', async () => {
+    const { default: patchSchema } = await import('../../api/doc/sites/patch-req-body/schema.js')
+    for (const flag of flags) {
+      assert.deepEqual(patchSchema.$defs.oidcProvider.properties[flag].layout, { defaultData: true })
+    }
+  })
+
+  test('the shared provider schema has no default, a root provider stays without the flags', async () => {
+    const siteSchema: any = (await import('../../api/types/site/schema.js')).default
+    for (const flag of flags) {
+      assert.ok(!('default' in siteSchema.$defs.oidcProvider.properties[flag]))
+      assert.equal(siteSchema.$defs.oidcProvider.properties[flag].layout, undefined)
+    }
+    const { default: config } = await import('../../api/src/config.ts')
+    const { assertValid }: { assertValid: (data: any, opts: any) => void } = await import('../../api/config/type/index.ts')
+    const rootProvider = { title: 'Root', discovery: 'http://localhost:1/.well-known/openid-configuration', client: { id: 'a', secret: 'b' } }
+    const checked = JSON.parse(JSON.stringify({ ...config, oidc: { providers: [rootProvider] } }))
+    assertValid(checked, { lang: 'en', name: 'config', internal: true })
+    for (const flag of flags) assert.equal(checked.oidc.providers[0][flag], undefined)
+  })
+})

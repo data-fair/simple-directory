@@ -8,6 +8,11 @@ const schema = jsonSchema(SiteSchema)
   .schema
 
 schema['$defs'].oidcProvider.properties.client.properties.secret.type = 'string'
+// absent means true for a site provider (p.x ?? !trusted, cf docs/architecture/oidc-client.md): the form shows
+// and initialises it so. A form only default, a schema default would leak into the root config validation
+// (config.oidc.providers $refs the same oidcProvider definition, absent means false there)
+schema['$defs'].oidcProvider.properties.strict.layout = { defaultData: true }
+schema['$defs'].oidcProvider.properties.rpInitiatedLogout.layout = { defaultData: true }
 delete schema.required
 schema.$id = 'https://github.com/data-fair/simple-directory/sites/patch-req-body'
 schema['x-exports'] = ['validate', 'types', 'resolvedSchemaJson', 'vjsf']
