@@ -58,8 +58,11 @@ logout tokens, with a 60 second clock tolerance. Failures are `OidcValidationErr
 ### Strict or alert
 
 `strict = p.strict ?? !trusted` (`completeOidcProvider`). Providers of a site are untrusted: absent means
-strict. Providers of the root config (`config.oidc.providers`) are trusted: absent means non-strict. The
-`upgrade/8.23.0/oidc-providers-legacy-flags.ts` script sets `strict: false` (and `rpInitiatedLogout: false`) on
+strict. Providers of the root config (`config.oidc.providers`) are trusted: absent means non-strict. The site
+form (`api/doc/sites/patch-req-body/schema.js`) shows and initialises `strict` and `rpInitiatedLogout` as checked
+for a site provider through a form only default (`layout.defaultData`, not a schema `default`: the root config
+`$ref`s the same `oidcProvider` definition and must keep absent as false). The
+`upgrade/8.23.1/oidc-providers-legacy-flags.ts` script sets `strict: false` (and `rpInitiatedLogout: false`) on
 every existing site OIDC provider, so existing sites keep today's behaviour until an admin opts in.
 
 `applyOidcPolicy` is the single place of the policy:
@@ -67,7 +70,10 @@ every existing site OIDC provider, so existing sites keep today's behaviour unti
 - strict: the error is rethrown, the callback refuses with `badIDPResponse` (logout tokens: HTTP 400) and logs
   `log.warn` `sd.auth.oauth.fail` with the `check`;
 - non-strict: `log.alert` `sd.oidc.validation-failed` `{ providerId, check }`, then the unverified decoded
-  claims are used as before. The alert is only emitted for interactive logins (when log fields are passed).
+  claims are used as before. The alert is only emitted for interactive logins (when log fields are passed):
+  the keepalive of a core id provider session validates the refreshed id_token without log fields, so a
+  failing non-strict provider does not raise an alert at each keepalive (a strict one still refuses, which
+  ends the session).
 
 Never turn a new check into an unconditional refusal: add it to this policy so that non-strict providers only
 alert.
@@ -81,7 +87,9 @@ single use of redirect flow callback tokens, `token_callback` accepting only tem
 
 - Discovery documents are cached in `mongo.oidcDiscovery` (key: the slugified discovery URL), refreshed after
   24 hours. If the refresh fails the stale copy is kept and a warning logged: a provider outage must not break
-  logins.
+  logins. The failure stores a `retryAfter` date (`DISCOVERY_RETRY_DELAY`, 1 minute) in the cache document,
+  so that every process serves the stale copy without refetching until then: providers are initialised on
+  every callback and keepalive, one unreachable provider must not add a fetch to each of them.
 - JWKS are cached in memory for 1 hour per `jwks_uri`. An unknown `kid` triggers one forced refetch at most
   per minute (key rotation); concurrent fetches of a URI are shared (in-flight dedup); on refresh failure the
   stale keys are served and the next attempt is delayed.
@@ -123,7 +131,9 @@ existing site providers). It also needs an `end_session_endpoint` in the discove
 
 - At login, the id_token waits on the relay state (`idToken`, `idpProviderId`, `idpSite`). `token_callback`
   moves it (atomic find and unset) to `idp` on the server session. See
-  [`session-theft-protections.md`](session-theft-protections.md).
+  [`session-theft-protections.md`](session-theft-protections.md). The storages keep it (`logout` reads it
+  back) but it never leaves the API: every response built from a storage user goes through `exposedUser`
+  (`api/src/users/expose.ts`), which drops `sessions[].idp`.
 - `DELETE /api/auth` calls `logout(req, res, { endSession: true })` and answers `200 { endSessionUrl }` when the
   session has an `idp`; lib-vue then redirects the browser. Without it, or when asked without `endSession`
   (other callers of `logout`), the answer is a plain `204` logout.
@@ -149,9 +159,14 @@ existing site providers). It also needs an `end_session_endpoint` in the discove
    after the alert.
 3. `logoutOAuthToken` flags the OAuth tokens of that provider id **and** level (site id, `null` for a root
    provider), by `sid` (or the legacy `session_state`), else by `sub`. Both are stored on the oauth token at
-   login, from the verified id_token claims.
+   login, from the verified id_token claims, and kept at keepalive when a refreshed id_token omits them.
 
-The response never says why a token was refused (400 with a generic message).
+OAuth tokens are only stored for logins through a provider with `coreIdProvider`, and only the keepalive of a
+core id user checks the `loggedOut` flag: back-channel logout ends nothing for the other providers (the
+request is still answered `204`).
+
+Every refusal (missing or undecodable token, unknown issuer, failed verification) is answered with the same
+`400 invalid logout_token`; the reason is only logged, for a failed verification (`sd.auth.oauth.fail`).
 
 ## Configuring ProConnect
 
@@ -159,8 +174,13 @@ Site provider of type `oidc`, discovery URL of the ProConnect environment (`.../
 client id and secret, and `scope: "openid email given_name usual_name"`. Nothing else is required: the client
 authentication method comes from the discovery, the `application/jwt` userinfo and `usual_name` are handled,
 the nonce is always sent. Register at ProConnect the callback `<base>/simple-directory/api/auth/oauth-callback`
-(and the back-channel logout URL `<base>/simple-directory/api/auth/oauth-logout`), and for RP-initiated logout
-the post logout URI above, then enable `strict` and `rpInitiatedLogout` on the provider.
+and, for RP-initiated logout, the post logout URI above. `strict` and `rpInitiatedLogout` are on for a new
+site provider (absent means on, the form shows them checked); on a provider migrated from before them
+(set to `false` by the upgrade script) check them both.
+
+ProConnect is usually not a core id provider (`coreIdProvider` off: the users keep their own accounts). Its
+back-channel logout then ends nothing on the SD side (see Back-channel logout), so there is no need to register
+`<base>/simple-directory/api/auth/oauth-logout`; it only matters for a core id provider.
 
 ## Known limits
 
@@ -174,3 +194,6 @@ the post logout URI above, then enable `strict` and `rpInitiatedLogout` on the p
 - SAML on plain http loses the binding cookie on the cross-site ACS POST.
 - Back-channel logout only flags the OAuth tokens (`loggedOut`); the SD session ends at its next keepalive, which
   finds the flag, not immediately.
+- Back-channel logout only acts on logins through a core id provider (the only ones with a stored OAuth token
+  and a keepalive that checks it). For any other provider (ProConnect as usually configured included) a logout
+  at the provider leaves the SD session alive until it expires or the user logs out.
