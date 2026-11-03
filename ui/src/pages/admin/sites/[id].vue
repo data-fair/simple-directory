@@ -87,6 +87,8 @@ const form = ref<InstanceType<typeof VForm>>()
 
 const { locale } = useI18n()
 
+const { scopeItems } = usePlatformScopes()
+
 const vjsfOptions = computed(() => {
   const owner = site.data.value?.owner
   const otherSites = sites.data.value?.results
@@ -98,7 +100,9 @@ const vjsfOptions = computed(() => {
       isMainSite: isMainSite.value,
       hasAccountMainSite: otherSites?.some(s => s.isAccountMain),
       otherSites: otherSites?.map(site => site.host),
-      otherSitesProviders: otherSites?.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {} as Record<string, string[]>)
+      otherSitesProviders: otherSites?.reduce((a, site) => { a[site.host] = (site.authProviders || []).filter(p => p.type === 'oidc').map(p => `${p.type}:${p.id}`); return a }, {} as Record<string, string[]>),
+      // the maximum scopes of the OAuth clients
+      scopes: scopeItems.value.map(({ value }) => value)
     }
   }
 })
