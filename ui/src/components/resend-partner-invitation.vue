@@ -23,7 +23,16 @@
       <v-card-title>
         {{ $t('pages.organization.sendInvitationLink') }}
       </v-card-title>
-      <template v-if="editPartner && !loadingRedirects">
+      <v-card-text v-if="limitReached">
+        <v-alert
+          :value="true"
+          type="warning"
+          variant="outlined"
+        >
+          {{ $t('errors.maxNbPartners') }}
+        </v-alert>
+      </v-card-text>
+      <template v-else-if="editPartner && !loadingRedirects">
         <v-card-text>
           <v-text-field
             v-model="editPartner.name"
@@ -85,7 +94,8 @@
 <script setup lang="ts">
 const { orga, partner } = defineProps({
   orga: { type: Object as () => Organization, required: true },
-  partner: { type: Object as () => Partner, required: true }
+  partner: { type: Object as () => Partner, required: true },
+  limitReached: { type: Boolean, default: false }
 })
 const emit = defineEmits(['change'])
 
