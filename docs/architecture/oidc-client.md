@@ -78,6 +78,18 @@ every existing site OIDC provider, so existing sites keep today's behaviour unti
 Never turn a new check into an unconditional refusal: add it to this policy so that non-strict providers only
 alert.
 
+### Non-strict mode is transitional
+
+Non-strict mode exists only to let existing deployments upgrade without breaking logins. A future major
+release will make strict validation always on: the `strict` flag will be ignored then removed,
+`applyOidcPolicy` will always refuse, and root config providers will be strict too.
+
+Until then, operators must monitor the `sd.oidc.validation-failed` alerts. Each one names the provider and
+the failed `check`. Fix the cause (provider configuration, client id, issuer, keys...), then set
+`strict: true` on that provider. Before the release that removes the flag, check that no
+`sd.oidc.validation-failed` alert was emitted for several weeks and that every provider runs strict, and
+announce the change as breaking in the release notes.
+
 ### Unconditional protections
 
 Not behind `strict`: the binding cookie, single use relay states, PKCE `S256`, the nonce for OIDC, the

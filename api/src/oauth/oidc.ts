@@ -123,6 +123,9 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
     authorizeHost: authURL.origin,
     authorizePath: authURL.pathname
   }
+  // TODO(next major): strict validation always on, drop the flag and the non-strict branch of
+  // applyOidcPolicy. Before that, sd.oidc.validation-failed alerts must have stopped, cf
+  // docs/architecture/oidc-client.md "Non-strict mode is transitional"
   const strict = p.strict ?? !trusted
   const policyProvider = { id, strict }
   const jwtContext: ProviderJwtContext = {
