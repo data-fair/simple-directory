@@ -248,8 +248,9 @@ An NHI session carries restrictions (scopes, short `exp`, `boundIp`, no refresh)
 shed by any other endpoint that signs a fresh session. `GET /api/auth/token_callback` refuses an
 NHI user or session with 403 (`api/src/auth/router.ts`). `POST /api/auth/pseudo` is the one
 exception, reserved to an internal service holding the pseudo-session secret: it issues an NHI
-session that is GET-only (lib-express), never renewed (a pseudo session has no exchange token, so it cannot be
-renewed, and its IP binding, `boundIp` / `allowedIps`, is shed too), without the token's scopes, with the NHI's organization as active account, and
+session that is GET-only (lib-express), never renewed (keepalive is a POST, refused on a
+GET-only session, and there is no exchange token to renew it with), without the token's scopes
+or IP binding (`boundIp` / `allowedIps`), with the NHI's organization as active account, and
 capped at the required `exp` (seconds) the caller passes, at most `jwtDurations.idToken` from
 now. It is issued like the exchange, `skipExchangeToken` and `exp`, so no server session is
 stored. The scope gate does not list these routes for scoped sessions.
@@ -656,9 +657,9 @@ narrow, low-value target:
    token, and scoped tokens are signed only by the scoped key set.
 9. No endpoint other than the exchange issues a session that an NHI holds.
    `/pseudo` may issue one to an internal service holding the pseudo-session
-   secret: GET-only (lib-express), never renewed (a pseudo session has no exchange
-   token, so it cannot be renewed, and its IP binding, `boundIp` /
-   `allowedIps`, is shed too), without the token's scopes, and capped at the `exp` the
+   secret: GET-only (lib-express), never renewed (keepalive is a POST, refused on
+   a GET-only session, and there is no exchange token), without the token's
+   scopes or IP binding, and capped at the `exp` the
    caller passes, the expiry of the NHI token it acts for. `token_callback`
    refuses an NHI. The OAuth token endpoint issues access tokens only, through
    the same exchange (`nhis/exchange.ts`), never cookies.
