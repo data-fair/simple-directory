@@ -1158,14 +1158,18 @@ router.post('/pseudo', async (req, res) => {
     if (organization !== undefined && typeof organization !== 'string') throw httpError(400, 'organization must be a string')
     if (department !== undefined && typeof department !== 'string') throw httpError(400, 'department must be a string')
 
-    // an NHI belongs to a single organization, so its active account is the default one
+    if (department && !organization) throw httpError(400, 'department requires organization')
+
     let userOrg: OrganizationMembership | undefined
-    if (organization || user.nhi) {
+    if (organization) {
+      // exact membership: the root one when no department is given, never another department of the organization
+      userOrg = user.organizations.find(o => o.id === organization && (o.department ?? undefined) === department)
+      if (!userOrg) throw httpError(400, 'the user is not a member of this organization')
+    } else if (user.nhi) {
+      // an NHI belongs to a single organization, so its active account is the default one
       // no site: this is an internal call, the secret holder has no host to resolve one from
-      userOrg = getDefaultUserOrg(user, undefined, organization, department)
-      if (organization && (userOrg?.id !== organization || (department && userOrg?.department !== department))) {
-        throw httpError(400, 'the user is not a member of this organization')
-      }
+      userOrg = getDefaultUserOrg(user, undefined)
+      if (!userOrg) throw httpError(400, 'the non-human identity has no organization')
     }
 
     // never copy the scopes of an NHI: the payload comes from getTokenPayload without them

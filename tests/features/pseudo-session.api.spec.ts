@@ -89,7 +89,17 @@ test.describe('Pseudo session', () => {
   test('Pseudo session exp is capped by the id_token duration', async () => {
     const { nhi } = await createNhi('pseudo-nhi2@test.com')
     const res = await ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: nhi.id, exp: nowSec() + 10 * 365 * 86400 })
-    assert.ok(res.data.exp <= nowSec() + 24 * 3600)
+    assert.equal(res.status, 200)
+    // jwtDurations.idToken: 15m by default
+    const idTokenDuration = 15 * 60
+    const before = nowSec()
+    assert.ok(res.data.exp <= before + idTokenDuration + 5)
+    const cookies = res.headers['set-cookie'] as string[]
+    const idToken = cookies.find(c => c.startsWith('id_token='))!.split(';')[0].split('=')[1]
+    const sign = cookies.find(c => c.startsWith('id_token_sign='))!.split(';')[0].split('=')[1]
+    const decoded = jwt.decode(idToken + '.' + sign) as any
+    assert.ok(decoded.exp <= before + idTokenDuration + 5)
+    assert.ok(decoded.exp > before)
   })
 
   test('An NHI pseudo session requires exp', async () => {
@@ -100,6 +110,50 @@ test.describe('Pseudo session', () => {
   test('A pseudo session exp in the past is refused', async () => {
     const { nhi } = await createNhi('pseudo-nhi4@test.com')
     await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: nhi.id, exp: nowSec() - 10 }), { status: 400 })
+  })
+
+  test('A human pseudo session accepts a bounded exp', async () => {
+    const exp = nowSec() + 120
+    const res = await ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'test_dmeadus0', exp })
+    assert.equal(res.status, 200)
+    assert.equal(res.data.exp, exp)
+    const cookies = res.headers['set-cookie'] as string[]
+    assert.ok(!cookies.some(c => /^id_token_ex=[^;]/.test(c)))
+  })
+
+  test('A non-integer exp is refused', async () => {
+    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'test_dmeadus0', exp: nowSec() + 60.5 }), { status: 400 })
+    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'test_dmeadus0', exp: String(nowSec() + 60) }), { status: 400 })
+  })
+
+  test('Pseudo session matches the department of the membership exactly', async () => {
+    const { ax: userAx } = await createUser('pseudo-dep@test.com')
+    const org = (await userAx.post('/api/organizations', { name: 'Pseudo dep org', departments: [{ id: 'dep1', name: 'Dep 1' }] })).data
+    const user = (await userAx.get('/api/auth/me')).data
+    await testEnvAx.patch('/user/pseudo-dep@test.com', { organizations: [{ id: org.id, name: org.name, role: 'admin' }, { id: org.id, name: org.name, role: 'user', department: 'dep1', departmentName: 'Dep 1' }] })
+
+    // root membership when no department is given
+    let res = await ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: user.id, organization: org.id })
+    let cookies = res.headers['set-cookie'] as string[]
+    assert.ok(cookies.some(c => c.startsWith(`id_token_org=${org.id};`)))
+    assert.ok(!cookies.some(c => c.startsWith('id_token_dep=dep1')))
+
+    res = await ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: user.id, organization: org.id, department: 'dep1' })
+    cookies = res.headers['set-cookie'] as string[]
+    assert.ok(cookies.some(c => c.startsWith('id_token_dep=dep1')))
+
+    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: user.id, organization: org.id, department: 'dep2' }), { status: 400 })
+    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: user.id, department: 'dep1' }), { status: 400 })
+
+    // only a department membership: no root one to fall back to
+    await testEnvAx.patch('/user/pseudo-dep@test.com', { organizations: [{ id: org.id, name: org.name, role: 'user', department: 'dep1', departmentName: 'Dep 1' }] })
+    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: user.id, organization: org.id }), { status: 400 })
+  })
+
+  test('A non-human identity without organization is refused', async () => {
+    const { nhi } = await createNhi('pseudo-nhi5@test.com')
+    await testEnvAx.patch('/user/' + nhi.email, { organizations: [] })
+    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: nhi.id, exp: nowSec() + 60 }), { status: 400 })
   })
 
   test('Pseudo session for a user picks the requested organization', async () => {
