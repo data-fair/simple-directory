@@ -31,6 +31,30 @@
           "type": "number"
         }
       }
+    },
+    "store_nb_departments": {
+      "type": "object",
+      "required": ["limit", "consumption"],
+      "properties": {
+        "limit": {
+          "type": "number"
+        },
+        "consumption": {
+          "type": "number"
+        }
+      }
+    },
+    "store_nb_partners": {
+      "type": "object",
+      "required": ["limit", "consumption"],
+      "properties": {
+        "limit": {
+          "type": "number"
+        },
+        "consumption": {
+          "type": "number"
+        }
+      }
     }
   }
 }

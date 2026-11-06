@@ -128,6 +128,7 @@
       id="departments"
       :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
+      :nb-departments-limits="limits.data.value?.store_nb_departments"
       @change="fetchOrga.refresh()"
     />
     <organization-members
@@ -159,6 +160,7 @@
       id="partners"
       :orga="orga"
       :is-admin-orga="orgRole === 'admin'"
+      :nb-partners-limits="limits.data.value?.store_nb_partners"
       @change="fetchOrga.refresh()"
     />
 

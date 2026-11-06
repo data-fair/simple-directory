@@ -156,7 +156,10 @@ module.exports = {
   },
   quotas: {
     defaultMaxCreatedOrgs: -1,
-    defaultMaxNbMembers: 0
+    defaultMaxNbMembers: 0,
+    // used when the limits service did not push a limit, -1 means unlimited
+    defaultMaxNbDepartments: -1,
+    defaultMaxNbPartners: -1
   },
   // Restricts who can use the find endpoints on users and organizations
   // One of 'anonymous', 'authenticated' or 'admin'

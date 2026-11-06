@@ -31,6 +31,7 @@
         <v-alert
           :value="true"
           type="warning"
+          variant="outlined"
         >
           {{ $t('pages.organization.disableInvite') }}
         </v-alert>

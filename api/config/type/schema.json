@@ -277,13 +277,21 @@
       "type": "object",
       "required": [
         "defaultMaxCreatedOrgs",
-        "defaultMaxNbMembers"
+        "defaultMaxNbMembers",
+        "defaultMaxNbDepartments",
+        "defaultMaxNbPartners"
       ],
       "properties": {
         "defaultMaxCreatedOrgs": {
           "type": "number"
         },
         "defaultMaxNbMembers": {
+          "type": "number"
+        },
+        "defaultMaxNbDepartments": {
+          "type": "number"
+        },
+        "defaultMaxNbPartners": {
           "type": "number"
         }
       }

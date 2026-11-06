@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert'
 import { test } from '@playwright/test'
 import { testEnvAx, maildevAx, createUser, axiosAuth, deleteAllEmails, waitForMail, getServerConfig, axios } from '../support/axios.ts'
 import jwt, { type JwtPayload } from 'jsonwebtoken'
+import { MongoClient } from 'mongodb'
 
 test.describe('organizations api', () => {
   test.beforeEach(async () => {
@@ -33,6 +34,107 @@ test.describe('organizations api', () => {
     ax.setOrg(createdOrg.id)
     const detailedOrg = (await ax.get('/api/organizations/' + createdOrg.id)).data
     assert.equal(detailedOrg.departments.length, 1)
+  })
+
+  test('should count departments and refuse new ones beyond the limit', async () => {
+    const { ax } = await createUser('test-dep-limits@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test dep limits', departments: [{ id: 'dep1', name: 'Department 1' }] })).data
+    ax.setOrg(org.id)
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+
+    // without a limit pushed by the limits service, departments are unlimited
+    let limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_departments, { limit: -1, consumption: 1 })
+
+    await adminAx.post(`/api/limits/organization/${org.id}`, {
+      lastUpdate: new Date().toISOString(),
+      store_nb_members: { limit: 0, consumption: 0 },
+      store_nb_departments: { limit: 2, consumption: 0 }
+    })
+    await ax.patch(`/api/organizations/${org.id}`, { departments: [{ id: 'dep1', name: 'Department 1' }, { id: '', name: 'Department 2' }] })
+    limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_departments, { limit: 2, consumption: 2 })
+    await assert.rejects(
+      ax.patch(`/api/organizations/${org.id}`, { departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'department-2', name: 'Department 2' }, { id: '', name: 'Department 3' }] }),
+      { status: 429 }
+    )
+
+    // 0 means none: an organization over its quota can still rename and remove its departments
+    await adminAx.post(`/api/limits/organization/${org.id}`, {
+      lastUpdate: new Date().toISOString(),
+      store_nb_members: { limit: 0, consumption: 0 },
+      store_nb_departments: { limit: 0, consumption: 0 }
+    })
+    await ax.patch(`/api/organizations/${org.id}`, { departments: [{ id: 'dep1', name: 'Renamed' }, { id: 'department-2', name: 'Department 2' }] })
+    await ax.patch(`/api/organizations/${org.id}`, { departments: [{ id: 'dep1', name: 'Renamed' }] })
+    await assert.rejects(
+      ax.patch(`/api/organizations/${org.id}`, { departments: [{ id: 'dep1', name: 'Renamed' }, { id: '', name: 'Department 2' }] }),
+      { status: 429 }
+    )
+    const orgInfo = (await ax.get(`/api/organizations/${org.id}`)).data
+    assert.deepEqual(orgInfo.departments.map((d: any) => d.id), ['dep1'])
+  })
+
+  test('should refuse to create an organization with more departments than its limit', async () => {
+    const { ax } = await createUser('test-dep-create-limits@test.com')
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    await adminAx.post('/api/limits/organization/test_dep_create_limits', {
+      lastUpdate: new Date().toISOString(),
+      store_nb_members: { limit: 0, consumption: 0 },
+      store_nb_departments: { limit: 2, consumption: 0 }
+    })
+    const departments = [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }]
+    await assert.rejects(
+      ax.post('/api/organizations', { id: 'test_dep_create_limits', name: 'test dep create limits', departments: [...departments, { id: 'dep3', name: 'Department 3' }] }),
+      { status: 429 }
+    )
+    const org = (await ax.post('/api/organizations', { id: 'test_dep_create_limits', name: 'test dep create limits', departments })).data
+    assert.equal(org.departments.length, 2)
+  })
+
+  test('should count partners, pending invitations included, and refuse new ones beyond the limit', async () => {
+    const { ax } = await createUser('test-partner-limits@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test partner limits' })).data
+    ax.setOrg(org.id)
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+
+    let limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_partners, { limit: -1, consumption: 0 })
+
+    await adminAx.post(`/api/limits/organization/${org.id}`, {
+      lastUpdate: new Date().toISOString(),
+      store_nb_members: { limit: 0, consumption: 0 },
+      store_nb_partners: { limit: 1, consumption: 0 }
+    })
+    await ax.post(`/api/organizations/${org.id}/partners`, { name: 'Partner 1', contactEmail: 'test-partner-limits1@test.com' })
+    limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_partners, { limit: 1, consumption: 1 })
+    await assert.rejects(
+      ax.post(`/api/organizations/${org.id}/partners`, { name: 'Partner 2', contactEmail: 'test-partner-limits2@test.com' }),
+      { status: 429 }
+    )
+    // re-inviting the same contact replaces the pending invitation, it does not consume a new slot
+    await ax.post(`/api/organizations/${org.id}/partners`, { name: 'Partner 1', contactEmail: 'test-partner-limits1@test.com' })
+    const orgInfo = (await ax.get(`/api/organizations/${org.id}`)).data
+    assert.equal(orgInfo.partners.length, 1)
+
+    // an expired invitation can no longer be accepted, it frees its slot
+    const mongoClient = await MongoClient.connect((await getServerConfig()).mongo.url)
+    try {
+      await mongoClient.db().collection('organizations').updateOne({ _id: org.id } as any, { $set: { 'partners.0.createdAt': new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString() } })
+    } finally {
+      await mongoClient.close()
+    }
+    limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_partners, { limit: 1, consumption: 0 })
+    await ax.post(`/api/organizations/${org.id}/partners`, { name: 'Partner 2', contactEmail: 'test-partner-limits2@test.com' })
+    limits = (await ax.get(`/api/limits/organization/${org.id}`)).data
+    assert.deepEqual(limits.store_nb_partners, { limit: 1, consumption: 1 })
+    // re-inviting the expired contact would take a slot again, it is refused while the quota is full
+    await assert.rejects(
+      ax.post(`/api/organizations/${org.id}/partners`, { name: 'Partner 1', contactEmail: 'test-partner-limits1@test.com' }),
+      { status: 429 }
+    )
   })
 
   test('should invite a new partner in an organization', async () => {

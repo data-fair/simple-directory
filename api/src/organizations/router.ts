@@ -4,13 +4,14 @@ import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, session, mo
 import log from '@data-fair/lib-node/log.js'
 import eventsQueue from '#events-queue'
 import { nanoid } from 'nanoid'
-import config from '#config'
+import config, { jwtDurations } from '#config'
+import { isExpiredPartnerInvitation } from '@sd/shared/partners.ts'
 import { isSiteAdminOf } from '../utils/site-admin.ts'
 import { reqI18n, __all } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
 import type { FindMembersParams, FindOrganizationsParams, SdStorage } from '../storages/interface.ts'
-import { setNbMembersLimit, deleteIdentityLimits, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, getInvitationRedirect, deleteOtherDepartmentsAvatars } from '#services'
+import { setNbMembersLimit, deleteIdentityLimits, assertNbDepartmentsLimit, assertNbPartnersLimit, sendMailI18n, postOrganizationIdentityWebhook, postUserIdentityWebhook, deleteIdentityWebhook, keepalive, signToken, shortenPartnerInvitation, unshortenPartnerInvitation, reqSite, getInvitSite, getSiteByUrl, getSiteBaseUrl, getInvitationRedirect, deleteOtherDepartmentsAvatars } from '#services'
 import { stringify as csvStringify } from 'csv-stringify/sync'
 import _slug from 'slugify'
 import { cipher } from '../utils/cipher.ts'
@@ -134,6 +135,7 @@ router.post('', async (req, res, next) => {
   }
   const { body } = (await import('#doc/organizations/post-req/index.ts')).returnValid(req, { name: 'req' })
   const orga = body as Organization
+  if (orga.departments?.length) await assertNbDepartmentsLimit({ id: orga.id }, orga.departments.length, reqI18n(req).messages.errors.maxNbDepartments)
 
   const site = await reqSite(req)
   if (config.siteOrgs && site) {
@@ -171,6 +173,9 @@ router.patch('/:organizationId', async (req, res, next) => {
     patch.orgStorage.config.searchUserPassword = cipher(patch.orgStorage.config.searchUserPassword)
   }
   if (patch.departments) {
+    const orga = await storages.globalStorage.getOrganization(req.params.organizationId)
+    if (!orga) throw httpError(404)
+    await assertNbDepartmentsLimit(orga, patch.departments.length, reqI18n(req).messages.errors.maxNbDepartments)
     for (const dep of patch.departments) {
       if (!dep.id) {
         if (patch.departments.find(d => d.id && d.name === dep.name)) {
@@ -403,6 +408,10 @@ if (config.managePartners) {
     const orga = await storage.getOrganization(req.params.organizationId)
     if (!orga) return res.status(404).send()
     const logFields = orgLogFields(orga)
+
+    // re-inviting a pending contact replaces its invitation (cf addPartner), it only takes a new slot if the previous one expired
+    const reinvitation = (orga.partners || []).some(p => !p.id && p.contactEmail === partnerPost.contactEmail && !isExpiredPartnerInvitation(p, jwtDurations.partnerInvitationToken))
+    if (!reinvitation) await assertNbPartnersLimit(orga, reqI18n(req).messages.errors.maxNbPartners)
 
     const partnerId = nanoid()
 

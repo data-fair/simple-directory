@@ -23,7 +23,19 @@
       <v-card-title>
         {{ $t('pages.organization.addPartner') }}
       </v-card-title>
-      <template v-if="editPartner && !loadingRedirects">
+      <v-card-text v-if="limitReached">
+        <v-alert
+          :value="true"
+          type="warning"
+          variant="outlined"
+        >
+          {{ $t('errors.maxNbPartners') }}
+          <template v-if="nbPending">
+            <br>{{ $t('pages.organization.partnersQuotaPending', { count: nbPending }) }}
+          </template>
+        </v-alert>
+      </v-card-text>
+      <template v-else-if="editPartner && !loadingRedirects">
         <v-card-text>
           <v-form
             ref="createForm"
@@ -93,8 +105,10 @@ import type { VForm } from 'vuetify/components'
 const { sendUiNotif } = useUiNotif()
 const { t } = useI18n()
 
-const { orga } = defineProps({
-  orga: { type: Object as () => Organization, required: true }
+const { orga, limitReached } = defineProps({
+  orga: { type: Object as () => Organization, required: true },
+  limitReached: { type: Boolean, default: false },
+  nbPending: { type: Number, default: 0 }
 })
 const emit = defineEmits(['change'])
 
