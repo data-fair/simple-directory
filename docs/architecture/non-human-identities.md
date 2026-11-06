@@ -245,10 +245,15 @@ The OpenAPI contract declares the `oauth2` client credentials scheme and the sco
 ### NHIs cannot mint sessions elsewhere
 
 An NHI session carries restrictions (scopes, short `exp`, `boundIp`, no refresh) that would be
-shed by any other endpoint that signs a fresh session. These refuse an NHI user or session with
-403 (`api/src/auth/router.ts`): `GET /api/auth/token_callback` and `POST /api/auth/pseudo` (`user.nhi`
-checks). The exchange is the only way to obtain an NHI session. The scope gate additionally does
-not list these routes for scoped sessions.
+shed by any other endpoint that signs a fresh session. `GET /api/auth/token_callback` refuses an
+NHI user or session with 403 (`api/src/auth/router.ts`). `POST /api/auth/pseudo` is the one
+exception, reserved to an internal service holding the pseudo-session secret: it issues an NHI
+session that is GET-only (lib-express), never renewed (keepalive is a POST, refused on a
+GET-only session, and there is no exchange token to renew it with), without the token's scopes
+or IP binding (`boundIp` / `allowedIps`), with the NHI's organization as active account, and
+capped at the required `exp` (seconds) the caller passes, at most `jwtDurations.idToken` from
+now. It is issued like the exchange, `skipExchangeToken` and `exp`, so no server session is
+stored. The scope gate does not list these routes for scoped sessions.
 
 ## Session payload
 
@@ -650,10 +655,14 @@ narrow, low-value target:
 8. A scoped session only reaches routes listed in `scope-gate.ts` (or marked
    by the route itself), the `access_token` is the only bearer-accepted
    token, and scoped tokens are signed only by the scoped key set.
-9. No endpoint other than the exchange issues a session to an NHI
-   (`token_callback`, `pseudo` refuse it). The OAuth token endpoint issues
-   access tokens only, through the same exchange (`nhis/exchange.ts`), never
-   cookies.
+9. No endpoint other than the exchange issues a session that an NHI holds.
+   `/pseudo` may issue one to an internal service holding the pseudo-session
+   secret: GET-only (lib-express), never renewed (keepalive is a POST, refused on
+   a GET-only session, and there is no exchange token), without the token's
+   scopes or IP binding, and capped at the `exp` the
+   caller passes, the expiry of the NHI token it acts for. `token_callback`
+   refuses an NHI. The OAuth token endpoint issues access tokens only, through
+   the same exchange (`nhis/exchange.ts`), never cookies.
 
 Violations of #2 or #4 would let a compromised site config or an NHI's own
 session escalate beyond its owning org — the same category of failure this

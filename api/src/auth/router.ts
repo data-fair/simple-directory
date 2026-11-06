@@ -1,4 +1,4 @@
-import config, { superadmin } from '#config'
+import config, { superadmin, jwtDurations } from '#config'
 import mongo from '#mongo'
 import { Router, type RequestHandler } from 'express'
 import { reqUser, reqIp, reqSiteUrl, reqUserAuthenticated, session, httpError, reqSession, reqSessionAuthenticated, assertReqInternalSecret, reqSitePath } from '@data-fair/lib-express'
@@ -6,6 +6,7 @@ import bodyParser from 'body-parser'
 import Cookies from 'cookies'
 import Debug from 'debug'
 import { sendMailI18n, postUserIdentityWebhook, getOidcProviderId, oauthGlobalProviders, initOidcProvider, getOAuthProviderById, getOAuthProviderByState, reqSite, reqAccountMainSite, getSiteByUrl, getSiteBaseUrl, getRedirectSite, check2FASession, is2FAValid, is2FARequired, cookie2FAName, getTokenPayload, prepareCallbackUrl, signToken, decodeToken, setSessionCookies, getDefaultUserOrg, logout, keepalive, logoutOAuthToken, readOAuthToken, writeOAuthToken, authProviderMemberInfo, patchCoreAuthUser, saml2ServiceProvider, initServerSession, getSamlProviderById, authProviderLoginCallback, getDefaultLoginRedirect } from '#services'
+import type { OrganizationMembership } from '@data-fair/lib-express'
 import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, Site, User } from '#types'
 import log from '@data-fair/lib-node/log.js'
@@ -1141,7 +1142,7 @@ router.post('/pseudo', async (req, res) => {
   if (!config.secretKeys.pseudoSession) throw httpError(400, 'pseudoSession functionality is disabled')
   assertReqInternalSecret(req, config.secretKeys.pseudoSession)
 
-  const { type, id, role } = req.body
+  const { type, id, role, exp: reqExp, organization, department } = req.body
   if (!type || !id) return res.status(400).send('Missing type or id in request body')
 
   const storage = storages.globalStorage
@@ -1149,17 +1150,43 @@ router.post('/pseudo', async (req, res) => {
   if (type === 'user') {
     const user = await storage.getUser(id)
     if (!user) return res.status(404).send('User not found')
-    if (user.nhi) throw httpError(403, 'forbidden for non-human identities')
 
+    const nowSec = Math.floor(Date.now() / 1000)
+    if (reqExp !== undefined && (!Number.isInteger(reqExp) || reqExp <= nowSec)) throw httpError(400, 'exp must be a future timestamp in seconds')
+    // an NHI session is always bounded, by the expiry of the token the caller acts for
+    if (user.nhi && reqExp === undefined) throw httpError(400, 'exp is required for a non-human identity')
+    if (organization !== undefined && typeof organization !== 'string') throw httpError(400, 'organization must be a string')
+    if (department !== undefined && typeof department !== 'string') throw httpError(400, 'department must be a string')
+
+    if (department && !organization) throw httpError(400, 'department requires organization')
+
+    let userOrg: OrganizationMembership | undefined
+    if (organization) {
+      // exact membership: the root one when no department is given, never another department of the organization
+      userOrg = user.organizations.find(o => o.id === organization && (o.department ?? undefined) === department)
+      if (!userOrg) throw httpError(400, 'the user is not a member of this organization')
+    } else if (user.nhi) {
+      // an NHI belongs to a single organization, so its active account is the default one
+      // no site: this is an internal call, the secret holder has no host to resolve one from
+      userOrg = getDefaultUserOrg(user, undefined)
+      if (!userOrg) throw httpError(400, 'the non-human identity has no organization')
+    }
+
+    // never copy the scopes of an NHI: the payload comes from getTokenPayload without them
     const payload = getTokenPayload(user) as any
     payload.pseudoSession = true
 
-    const serverSession = initServerSession(req)
-    await storage.addUserSession(user.id, serverSession)
-
-    await setSessionCookies(req, res, '', payload, serverSession.id, undefined, { skipExchangeToken: true })
-
-    res.send({ user: { id: user.id, email: user.email, name: user.name }, pseudoSession: true })
+    if (reqExp !== undefined) {
+      // bounded like the NHI exchange: no server session is stored
+      const exp = Math.min(reqExp, nowSec + jwtDurations.idToken)
+      await setSessionCookies(req, res, '', payload, 'pseudo-session', userOrg, { skipExchangeToken: true, exp })
+      res.send({ user: { id: user.id, email: user.email, name: user.name }, pseudoSession: true, exp })
+    } else {
+      const serverSession = initServerSession(req)
+      await storage.addUserSession(user.id, serverSession)
+      await setSessionCookies(req, res, '', payload, serverSession.id, userOrg, { skipExchangeToken: true })
+      res.send({ user: { id: user.id, email: user.email, name: user.name }, pseudoSession: true })
+    }
   } else if (type === 'organization') {
     const org = await storage.getOrganization(id)
     if (!org) return res.status(404).send('Organization not found')
