@@ -16,6 +16,7 @@ import { getKnownScopes, knownScopeNames } from '../scopes/service.ts'
 import { getMainSiteDoc } from '../sites/service.ts'
 import { listNhis } from '../nhis/service.ts'
 import { narrowScope } from '../nhis/scopes.ts'
+import { collapseScopes } from '@sd/shared/scopes.ts'
 import type { PostOauthConsentReq } from '#doc/oauth/post-consent-req/index.ts'
 import { reqIssuer, resolveResource, nhiMayTarget, ResourceError, type IssuerContext, type ResolvedResource } from './issuers.ts'
 import { getProvider } from './providers.ts'
@@ -117,6 +118,11 @@ const resourceParam = (interaction: Interaction): string | undefined => {
 
 const knownScopes = (i18n: I18n) => getKnownScopes(i18n.localeCode, i18n.messages.scopes)
 
+// the scopes a grant will carry, as the consent screen shows them: only the ones no other scope
+// of the list already implies, with their descriptions (display only, the grant keeps them all)
+const displayScopes = (scopes: string[], descriptions: Record<string, string>) =>
+  collapseScopes(scopes).map(name => ({ name, description: descriptions[name] ?? name, broad: isBroadScope(name) }))
+
 const siteClientScopes = async (interaction: Interaction, clientScopes: string[]) =>
   siteClientRequestScopes(interaction.params.scope, clientScopes, await knownScopeNames())
 
@@ -202,35 +208,33 @@ const dynamicClientInfo = async (ic: InteractionContext, interaction: Interactio
 }
 
 // the NHIs of an organization that may be bound to this resource: a target the NHI may reach.
-// Names and maximum scopes only.
-const bindableNhis = async (orgId: string, resource: ResolvedResource, requested: string[], known: string[]) => {
+// Names and the scopes the grant would carry with this NHI only.
+const bindableNhis = async (orgId: string, resource: ResolvedResource, requested: string[], descriptions: Record<string, string>) => {
+  const known = Object.keys(descriptions)
   const { results } = await listNhis(orgId)
   return results
     .filter(n => nhiMayTarget({ id: orgId, department: n.department }, resource))
+    .map(n => ({ id: n.id, name: n.name, scopes: narrowScope(requested, n.scopes, known) }))
     // an NHI that could be granted none of the requested scopes is not a choice
-    .filter(n => narrowScope(requested, n.scopes, known).length > 0)
-    .map(n => ({ id: n.id, name: n.name, ...(n.scopes ? { scopes: n.scopes } : {}) }))
+    .filter(n => n.scopes.length > 0)
+    .map(n => ({ ...n, scopes: displayScopes(n.scopes, descriptions) }))
 }
 
 const dynamicClientDetails = async (req: Request, ic: InteractionContext, interaction: Interaction, user: User, clientId: string, kind: 'cimd' | 'dcr') => {
   const client = await dynamicClientInfo(ic, interaction, user, clientId, kind)
   const { url, resolved } = await resolveInteractionResource(ic.ctx, interaction)
   const descriptions = await knownScopes(reqI18n(req))
-  // the requested scopes, nothing preselected; each NHI's maximum narrows them on the screen
-  const known = Object.keys(descriptions)
-  const requested = dynamicClientRequestScopes(interaction.params.scope, known)
-  const scopes = requested
-    .map(name => ({ name, description: descriptions[name] ?? name, broad: isBroadScope(name) }))
+  // the requested scopes; the NHI the admin picks narrows them to its own scopes, no subselection
+  const requested = dynamicClientRequestScopes(interaction.params.scope, Object.keys(descriptions))
   const organizations = consentAdminOrgs(user).filter(a => nhiMayTarget(a, resolved))
   // keyed by organization id: the NHIs belong to the organization, whatever the department
-  const nhis: Record<string, { id: string, name: string, scopes?: string[] }[]> = {}
+  const nhis: Record<string, Awaited<ReturnType<typeof bindableNhis>>> = {}
   for (const account of organizations) {
-    nhis[account.id] ??= await bindableNhis(account.id, resolved, requested, known)
+    nhis[account.id] ??= await bindableNhis(account.id, resolved, requested, descriptions)
   }
   return {
     client,
     resource: { url, kind: resolved.kind },
-    scopes,
     oidcScopes: nhiOidcScopes(interaction),
     organizations,
     nhis,
@@ -241,8 +245,8 @@ const dynamicClientDetails = async (req: Request, ic: InteractionContext, intera
 
 type ConsentDecision = PostOauthConsentReq['body']
 // the decision of an org admin for a dynamic client: the account, an NHI of the organization
-// (managed on the organization page), the scopes within the request and the NHI maximum, the
-// lifetime. Returns the url the browser resumes the authorization with.
+// (managed on the organization page) and the lifetime. The scopes are not chosen: the requested
+// scopes within the scopes of the NHI. Returns the url the browser resumes the authorization with.
 const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionContext, interaction: Interaction, user: User, clientId: string, kind: 'cimd' | 'dcr', body: ConsentDecision) => {
   const client = await dynamicClientInfo(ic, interaction, user, clientId, kind)
   const adminAccount = findConsentAccount(consentAdminOrgs(user), body.account)
@@ -256,11 +260,8 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
   if (!nhiMayTarget(nhi.organizations[0], resolved)) throw httpError(400, 'the resource is not reachable by this nhi')
 
   const known = await knownScopeNames()
-  const allowed = narrowScope(dynamicClientRequestScopes(interaction.params.scope, known), nhi.nhi.scopes, known)
-  const scope = body.scopes
-  if (!scope?.every(s => allowed.includes(s))) {
-    throw httpError(400, 'scopes must be a non-empty subset of the requested scopes within the nhi maximum')
-  }
+  const scope = narrowScope(dynamicClientRequestScopes(interaction.params.scope, known), nhi.nhi.scopes, known)
+  if (!scope.length) throw httpError(400, 'this nhi can be granted none of the requested scopes')
 
   if (!await lockDecision(interaction.uid)) throw httpError(400, 'the interaction is already finished')
   await detachForeignSession(ic.provider, interaction, nhi.id)
@@ -269,7 +270,7 @@ const nhiConsentDecision = async (req: Request, res: Response, ic: InteractionCo
     account: membershipAccount(nhi.organizations[0]),
     clientKind: kind,
     clientName: client.name,
-    scope: [...new Set(scope)],
+    scope,
     oidcScopes: nhiOidcScopes(interaction),
     resource: url,
     resourceKind: resolved.kind,
@@ -327,7 +328,7 @@ router.get('/:uid/details', async (req, res) => {
   const { url, resolved } = await resolveInteractionResource(ic.ctx, interaction)
   const i18n = reqI18n(req)
   const descriptions = await knownScopes(i18n)
-  const scopes = (await siteClientScopes(interaction, siteClient.scopes)).map(name => ({ name, description: descriptions[name] ?? name, broad: isBroadScope(name) }))
+  const scopes = displayScopes(await siteClientScopes(interaction, siteClient.scopes), descriptions)
   const redirectUri = (interaction.params.redirect_uri as string | undefined) ?? siteClient.redirectUris[0]
   const client: Record<string, any> = { id: clientId, name: siteClient.name, kind, verified: true, redirectHost: new URL(redirectUri).host }
   if (siteClient.logoUri) client.logoUri = siteClient.logoUri
@@ -367,10 +368,9 @@ router.post('/:uid', async (req, res) => {
   if (!siteClient) throw httpError(400, 'unknown client')
   const account = findConsentAccount(userConsentAccounts(user), body.account)
   if (!account) throw httpError(400, 'account is not one of the accounts of the user')
-  const allowed = await siteClientScopes(interaction, siteClient.scopes)
-  const scope = body.scopes ?? allowed
-  if (!scope.every(s => allowed.includes(s))) throw httpError(400, 'scopes must be a non-empty subset of the proposed scopes')
-  const redirectTo = await finishUserConsent(req, res, ic, interaction, user, serverSessionId, account, [...new Set(scope)], siteClient.name)
+  // the scopes are not chosen: the requested scopes within the registration of the client
+  const scope = await siteClientScopes(interaction, siteClient.scopes)
+  const redirectTo = await finishUserConsent(req, res, ic, interaction, user, serverSessionId, account, scope, siteClient.name)
   if (!redirectTo) throw httpError(400, 'the interaction is already finished')
   await refundLimiter(limiterKey)
   res.send({ redirectTo })

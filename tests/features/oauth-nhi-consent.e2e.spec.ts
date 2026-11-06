@@ -70,14 +70,16 @@ test.describe('OAuth NHI consent page', () => {
     // created on the organization page (here through its API), then picked
     await ownerAx.post(`/api/organizations/${org.id}/nhis`, { name: 'Claude agent', role: 'user', scopes: ['organizations:read'] })
     await page.reload()
-    // nothing preselected, so no confirmation yet
-    await expect(page.locator('[data-scope="organizations:read"] input')).not.toBeChecked({ timeout: 15_000 })
+    // no identity picked, so no permissions shown and no confirmation yet
     const allow = page.getByRole('button', { name: /Autoriser|Allow/ })
-    await expect(allow).toBeDisabled()
+    await expect(allow).toBeDisabled({ timeout: 15_000 })
+    await expect(page.locator('[data-scope]')).toHaveCount(0)
 
     await selectOf(page, /Identité|Identity/).locator('.v-field').click()
     await page.getByRole('option', { name: 'Claude agent' }).click()
-    await page.locator('[data-scope="organizations:read"] input').check()
+    // the permissions are the ones of the identity, shown, not chosen
+    await expect(page.locator('[data-scope="organizations:read"]')).toBeVisible()
+    await expect(page.locator('[data-consent-scopes] input')).toHaveCount(0)
     await expect(selectOf(page, /Durée|Duration/)).toContainText(/30/)
     await expect(allow).toBeEnabled()
     await allow.click()
@@ -86,14 +88,17 @@ test.describe('OAuth NHI consent page', () => {
     assert.ok(callback.searchParams.get('code'), callback.href)
   })
 
-  test('a broad requested scope shows a warning', async ({ page }) => {
+  test('a broad requested scope shows a warning and hides what it implies', async ({ page }) => {
     const { org, ownerAx, url } = await prepare(page, 'organizations organizations:read')
-    // the scopes are listed once the organization has a service account to bind
+    // the scopes are listed once a service account is picked
     await ownerAx.post(`/api/organizations/${org.id}/nhis`, { name: 'Agent', role: 'user' })
     await page.goto(url)
     await expect(page.locator('[data-unverified]')).toBeVisible({ timeout: 15_000 })
+    await selectOf(page, /Identité|Identity/).locator('.v-field').click()
+    await page.getByRole('option', { name: 'Agent' }).click()
     await expect(page.locator('[data-scope="organizations"] .v-icon[title]')).toBeVisible()
-    await expect(page.locator('[data-scope="organizations:read"] .v-icon[title]')).toHaveCount(0)
+    // implied by the umbrella: not listed
+    await expect(page.locator('[data-scope="organizations:read"]')).toHaveCount(0)
   })
 
   test('the nhi row lists the connections of a client and revokes them', async ({ page }) => {
@@ -110,7 +115,7 @@ test.describe('OAuth NHI consent page', () => {
       const uid = await openInteraction(opts, location)
       await getDetails(opts, uid)
       const decided = await postDecision(opts, uid, {
-        decision: 'allow', account: { type: 'organization', id: base.org.id }, nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d'
+        decision: 'allow', account: { type: 'organization', id: base.org.id }, nhi: { id: nhi.id }, lifetime: '30d'
       })
       const callback = await resume(opts, decided.data.redirectTo)
       await exchangeCode(opts, callback.searchParams.get('code')!, pkce.verifier)
@@ -121,6 +126,9 @@ test.describe('OAuth NHI consent page', () => {
 
     const connections = page.locator('[data-nhi-connections]')
     await expect(connections.getByText('Claude Code')).toBeVisible({ timeout: 15_000 })
+    // an nhi without scopes is shown as unrestricted
+    await expect(page.locator('[data-nhi-unrestricted]')).toContainText(/sans restriction|Unrestricted/)
+    await expect(page.locator('[data-nhi-scopes]')).toHaveCount(0)
     await connections.getByRole('button', { name: /Révoquer|Revoke/ }).click()
     // the menu is still opening when it first shows: a click on Ok at that moment is lost
     await expect(async () => {

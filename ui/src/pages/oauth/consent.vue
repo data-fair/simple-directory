@@ -86,10 +86,7 @@
               <p class="text-body-large mb-2">
                 {{ $t('pages.oauthConsent.willBeAble') }}
               </p>
-              <consent-scopes
-                v-model="selectedScopes"
-                :scopes="details.scopes"
-              />
+              <consent-scopes :scopes="details.scopes!" />
               <consent-account
                 v-model="account"
                 :accounts="details.accounts!"
@@ -138,17 +135,17 @@
 </template>
 
 <script lang="ts" setup>
-import type { NhiDecision } from '../../components/oauth/nhi-decision.ts'
+import type { NhiDecision, ConsentScope } from '../../components/oauth/nhi-decision.ts'
 
 type Account = { type: 'user' | 'organization', id: string, department?: string, departmentName?: string, name: string }
 type Details = {
   client: { id: string, name: string, logoUri?: string, kind: string, verified: boolean, redirectHost: string, idUrl?: string, registeredAutomatically?: boolean },
   resource: { url: string, kind: 'api' | 'mcp' },
-  scopes: { name: string, description: string, broad: boolean }[],
+  scopes?: ConsentScope[],
   oidcScopes: string[],
   accounts?: Account[],
   organizations: Account[],
-  nhis: Record<string, { id: string, name: string, scopes?: string[] }[]>,
+  nhis: Record<string, { id: string, name: string, scopes: ConsentScope[] }[]>,
   lifetimes: string[],
   defaultLifetime: string
 }
@@ -160,7 +157,6 @@ const queryError = useStringSearchParam('error')
 const details = ref<Details>()
 const loading = ref(false)
 const loadError = ref<string>()
-const selectedScopes = ref<string[]>([])
 const account = ref<Account>()
 const nhiDecision = ref<NhiDecision>()
 const redirecting = ref(false)
@@ -170,7 +166,7 @@ const rateLimited = ref(false)
 const logoUri = computed(() => /^https:\/\//i.test(details.value?.client.logoUri ?? '') ? details.value?.client.logoUri : undefined)
 
 const isDynamic = computed(() => details.value?.client.kind === 'cimd' || details.value?.client.kind === 'dcr')
-const canAllow = computed(() => isDynamic.value ? !!nhiDecision.value : !!selectedScopes.value.length && !!account.value)
+const canAllow = computed(() => isDynamic.value ? !!nhiDecision.value : !!account.value)
 
 const statusOf = (err: any) => err.status ?? err.statusCode ?? err.response?.status
 
@@ -196,10 +192,7 @@ const load = async () => {
   try {
     details.value = await $fetch<Details>(`${$apiPath}/oauth/interaction/${encodeURIComponent(uid.value)}/details`)
     // nothing is preselected for a dynamic client: its identity is unverified
-    if (!isDynamic.value) {
-      selectedScopes.value = details.value.scopes.map(s => s.name)
-      account.value = details.value.accounts![0]
-    }
+    if (!isDynamic.value) account.value = details.value.accounts![0]
   } catch (err: any) {
     const status = statusOf(err)
     loadError.value = status === 401 ? 'unauthorized' : status === 403 ? 'forbidden' : status === 400 ? 'interaction_expired' : 'server_error'
@@ -215,7 +208,6 @@ const decide = useAsyncAction(async (decision: 'allow' | 'deny') => {
     Object.assign(body, nhiDecision.value)
   } else if (decision === 'allow' && account.value) {
     body.account = { type: account.value.type, id: account.value.id, department: account.value.department }
-    body.scopes = selectedScopes.value
   }
   rateLimited.value = false
   try {

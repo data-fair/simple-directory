@@ -119,7 +119,7 @@ test.describe('oauth authorization code flow', () => {
     const { location } = await startAuthorization(opts)
     const uid = await openInteraction(opts, location)
     const details = await getDetails(opts, uid)
-    const decided = await postDecision(opts, uid, { decision: 'allow', account: details.accounts[0], scopes: ['organizations:read'] })
+    const decided = await postDecision(opts, uid, { decision: 'allow', account: details.accounts[0] })
     const callback = await resume(opts, decided.data.redirectTo)
     const res = await exchangeCode(opts, callback.searchParams.get('code')!, 'x'.repeat(43))
     assert.equal(res.status, 400)
@@ -132,15 +132,24 @@ test.describe('oauth authorization code flow', () => {
     assert.deepEqual(result.details.scopes.map((s: any) => s.name), ['organizations:read'])
     assert.equal((jwt.decode(result.tokens.access_token) as jwt.JwtPayload).scope, 'organizations:read')
     assert.equal(await authorizeError(flow({ scope: 'datasets:read' })), 'invalid_scope')
-    // the decision cannot widen the scope either
+    // the decision does not choose the scopes, neither wider nor narrower
     const opts = flow()
     const { location } = await startAuthorization(opts)
     const uid = await openInteraction(opts, location)
     const details = await getDetails(opts, uid)
-    for (const scopes of [['datasets:read'], [], ['organizations:read', 'organizations']]) {
+    for (const scopes of [['datasets:read'], [], ['organizations:read']]) {
       const res = await postDecision(opts, uid, { decision: 'allow', account: details.accounts[0], scopes })
       assert.equal(res.status, 400, JSON.stringify(scopes))
     }
+  })
+
+  test('the consent details show the granted scopes densely, the grant keeps them all', async () => {
+    const { adminAx, clientId, flow } = await setup()
+    await patchClient(adminAx, clientId, { scopes: ['organizations:read', 'organizations'] })
+    const result = await runCodeFlow(flow({ scope: 'organizations:read organizations' }))
+    // the umbrella implies the read tier: only the umbrella is listed, as a broad scope
+    assert.deepEqual(result.details.scopes.map((s: any) => [s.name, s.broad]), [['organizations', true]])
+    assert.equal((jwt.decode(result.tokens.access_token) as jwt.JwtPayload).scope, 'organizations:read organizations')
   })
 
   test('without platform scope the client registration is proposed', async () => {
@@ -311,7 +320,7 @@ test.describe('oauth authorization code flow', () => {
       assert.equal(entry.headers.location, directoryUrl + '/oauth/consent?error=forbidden')
       const uid = interactionUid(location)
       assert.equal((await adminAx.get(`${directoryUrl}/api/oauth/interaction/${uid}/details`, { validateStatus: () => true })).status, 403)
-      assert.equal((await postDecision(opts, uid, { decision: 'allow', account: { type: 'user', id: target.id }, scopes: ['organizations:read'] })).status, 403)
+      assert.equal((await postDecision(opts, uid, { decision: 'allow', account: { type: 'user', id: target.id } })).status, 403)
       assert.equal((await grantRecords({ clientId })).length, 0)
     } finally {
       await testEnvAx.patch('/config', { mainSiteFromDb: [] })
@@ -345,7 +354,7 @@ test.describe('oauth authorization code flow', () => {
     const { location } = await startAuthorization(opts)
     const uid = await openInteraction(opts, location)
     const details = await getDetails(opts, uid)
-    const decision = { decision: 'allow', account: details.accounts[0], scopes: ['organizations:read'] }
+    const decision = { decision: 'allow', account: details.accounts[0] }
     const results = await Promise.all([0, 1, 2, 3].map(() => postDecision(opts, uid, decision)))
     assert.deepEqual(results.map(r => r.status).sort(), [200, 400, 400, 400])
     assert.equal((await grantRecords({ clientId })).length, 1)
@@ -358,7 +367,7 @@ test.describe('oauth authorization code flow', () => {
     const { location } = await startAuthorization(opts)
     const uid = await openInteraction(opts, location)
     const details = await getDetails(opts, uid)
-    const decision = { decision: 'allow', account: details.accounts[0], scopes: ['organizations:read'] }
+    const decision = { decision: 'allow', account: details.accounts[0] }
     const decided = await postDecision(opts, uid, decision)
     assert.equal(decided.status, 200)
     assert.equal((await postDecision(opts, uid, decision)).status, 400)

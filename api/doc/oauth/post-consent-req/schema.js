@@ -1,5 +1,6 @@
-// the decision posted by the consent page; the rules that depend on the interaction (scopes within
-// the request, an NHI of the organization) are checked in code
+// the decision posted by the consent page; the rules that depend on the interaction (an NHI of the
+// organization) are checked in code. No scopes: a grant carries the requested scopes within the
+// registration of the client or the scopes of the NHI, never a subselection
 export default {
   $id: 'https://github.com/data-fair/simple-directory/oauth/post-consent-req',
   title: 'Post oauth consent req',
@@ -26,7 +27,6 @@ export default {
             departmentName: { type: 'string' }
           }
         },
-        scopes: { type: 'array', minItems: 1, maxItems: 50, items: { type: 'string', maxLength: 100 } },
         lifetime: { type: 'string', enum: ['1d', '7d', '30d', '90d', '1y'] },
         nhi: {
           type: 'object',

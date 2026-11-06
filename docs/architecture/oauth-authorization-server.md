@@ -193,7 +193,8 @@ stays); the person restarts from the client.
 **A user for a site client.** The user binds the grant to their personal
 account (unless `ignorePersonalAccount`) or one of their memberships, the
 site's default account first; the screen lists the requested scopes within the
-registration. Every authorization shows the screen (no implicit consent).
+registration, read only: the user allows them as a whole or denies, the decision
+carries no scopes. Every authorization shows the screen (no implicit consent).
 30 days.
 
 **An org admin for a dynamic client.** Only a real admin membership (department
@@ -201,16 +202,22 @@ admins with `depAdminIsOrgAdmin`), never admin mode nor the site-admin
 fallback. The admin binds the client to an NHI of the organization; NHIs are
 only created and managed on the organization page (`POST /nhis`, a key binding
 optional), never at consent, so the list stays the one admins curate. The
-screen says so and links there when the organization has none. Nothing is
-preselected; NHIs that could get none of the requested scopes are not offered;
-the lifetime is `1d`, `7d`, `30d` (default), `90d` or `1y`. The subject is the
+screen says so and links there when the organization has none. No NHI is
+preselected; NHIs that could get none of the requested scopes are not offered.
+The NHI sets the permissions: the details list, per NHI, the requested scopes
+within its own, shown read only once it is picked (an admin who wants less
+binds a narrower NHI); the lifetime is `1d`, `7d`, `30d` (default), `90d` or `1y`. The subject is the
 NHI, the admin is `authorizedBy`. An NHI gets no identity claim.
 
 **Scopes.** Platform scopes are resource scopes, read live (`knownScopeNames`,
 refreshed from data-fair); the provider's static list holds the OIDC ones.
 `narrowScope(requested, maximum)` drops what the maximum (site client
-registration, NHI scopes) does not cover; empty is `invalid_scope`. A request
-without a platform scope gets the chosen scopes merged into its stored request.
+registration, NHI scopes) does not cover; empty is `invalid_scope`. The result
+is the grant's scope, never a subselection by the person consenting. A request
+without a platform scope gets these scopes merged into its stored request.
+The consent details show them densely (`collapseScopes`, `shared/scopes.ts`):
+a scope another one of the list implies, as `acceptedScopes` reads them, is not
+listed (`all:admin` alone stands for everything), display only.
 `openid`, `profile`, `email` are honoured for users only and never appear in an
 access token's `scope`. Coverage is `maxCovers`: a global tier scope of the
 maximum covers the lower tiers (an NHI with `all:read` can be granted
