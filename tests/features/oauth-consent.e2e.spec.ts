@@ -46,7 +46,9 @@ test.describe('OAuth consent page', () => {
     await expect(page.getByRole('heading', { name: /Dash/ })).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText(/Lire les organisations|Read organizations/)).toBeVisible()
     await expect(page.locator('[data-redirect-host]')).toContainText('localhost:5999')
-    await expect(page.locator('[data-scope="organizations:read"] input')).toBeChecked()
+    // shown, not chosen
+    await expect(page.locator('[data-scope="organizations:read"]')).toBeVisible()
+    await expect(page.locator('[data-consent-scopes] input')).toHaveCount(0)
 
     // the native input of a v-select is covered by its field
     await page.locator('.v-select .v-field').click()

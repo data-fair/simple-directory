@@ -34,7 +34,7 @@ const setupGrants = async () => {
     const uid = await openInteraction(opts, location)
     await getDetails(opts, uid)
     const decided = await postDecision(opts, uid, {
-      decision: 'allow', account: { type: 'organization', id: org.id }, nhi: { id: nhiId }, scopes: ['organizations:read'], lifetime: '30d'
+      decision: 'allow', account: { type: 'organization', id: org.id }, nhi: { id: nhiId }, lifetime: '30d'
     })
     assert.equal(decided.status, 200, JSON.stringify(decided.data))
     const callback = await resume(opts, decided.data.redirectTo)

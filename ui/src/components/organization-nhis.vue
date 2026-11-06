@@ -81,8 +81,21 @@
           <v-list-item-subtitle
             v-if="nhi.scopes?.length"
             style="white-space:normal;"
+            data-nhi-scopes
           >
-            {{ $t('pages.organization.nhiScopes') }} = {{ nhi.scopes.join(' ') }}
+            {{ $t('pages.organization.nhiScopes') }} = {{ collapseScopes(nhi.scopes).join(' ') }}
+          </v-list-item-subtitle>
+          <v-list-item-subtitle
+            v-else
+            class="text-warning"
+            style="white-space:normal;"
+            data-nhi-unrestricted
+          >
+            <v-icon
+              :icon="mdiShieldAlert"
+              size="small"
+            />
+            {{ $t('pages.organization.nhiUnrestricted') }}
           </v-list-item-subtitle>
           <v-list-item-subtitle style="white-space:normal;">
             {{ $t('pages.organization.nhiClientId') }} = {{ nhi.id }}
@@ -131,6 +144,7 @@
 <script setup lang="ts">
 import { useClipboard } from '@vueuse/core'
 import DfTutorialAlert from '@data-fair/lib-vuetify/tutorial-alert.vue'
+import { collapseScopes } from '@sd/shared/scopes'
 
 // Progressive rollout: normal org admins get a read-only view, and only once at least
 // one NHI exists (the whole section is hidden otherwise). Only superadmins see the

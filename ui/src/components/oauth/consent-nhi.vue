@@ -42,13 +42,12 @@
           name="nhi"
         />
 
-        <p class="text-body-large mt-4 mb-2">
-          {{ $t('pages.oauthConsent.permissions') }}
-        </p>
-        <consent-scopes
-          v-model="selectedScopes"
-          :scopes="availableScopes"
-        />
+        <template v-if="chosenNhi">
+          <p class="text-body-large mt-4 mb-2">
+            {{ $t('pages.oauthConsent.permissions') }}
+          </p>
+          <consent-scopes :scopes="chosenNhi.scopes" />
+        </template>
 
         <v-select
           v-model="lifetime"
@@ -67,15 +66,15 @@
 </template>
 
 <script lang="ts" setup>
-import type { NhiDecision } from './nhi-decision.ts'
+import type { NhiDecision, ConsentScope } from './nhi-decision.ts'
 
 type Account = { type: 'user' | 'organization', id: string, department?: string, departmentName?: string, name: string }
 
 const props = defineProps<{
   details: {
-    scopes: { name: string, description: string, broad: boolean }[],
     organizations: Account[],
-    nhis: Record<string, { id: string, name: string, scopes?: string[] }[]>,
+    // per NHI, the scopes the grant would carry with it
+    nhis: Record<string, { id: string, name: string, scopes: ConsentScope[] }[]>,
     lifetimes: string[],
     defaultLifetime: string
   }
@@ -88,8 +87,6 @@ const { t } = useI18n()
 const account = ref<Account | undefined>(props.details.organizations[0])
 // the service accounts are managed on the organization page, the consent only picks one
 const nhiChoice = ref<string>()
-// nothing is preselected for a dynamic client
-const selectedScopes = ref<string[]>([])
 const lifetime = ref(props.details.defaultLifetime)
 
 const orgNhis = computed(() => account.value ? props.details.nhis[account.value.id] ?? [] : [])
@@ -98,23 +95,18 @@ const nhisPage = computed(() => `/organization/${account.value?.id}#nhis`)
 const lifetimeItems = computed(() => props.details.lifetimes.map(value => ({ value, title: t(`pages.oauthConsent.lifetime${value}`) })))
 watch(() => account.value?.id, () => { nhiChoice.value = undefined })
 
-// the identity caps the permissions by its maximum scopes
-const maxScopes = computed(() => orgNhis.value.find(n => n.id === nhiChoice.value)?.scopes)
-const availableScopes = computed(() => maxScopes.value ? props.details.scopes.filter(s => maxScopes.value!.includes(s.name)) : props.details.scopes)
-watch(availableScopes, (scopes) => {
-  selectedScopes.value = selectedScopes.value.filter(s => scopes.some(a => a.name === s))
-})
+// the identity sets the permissions: the requested scopes within its own, nothing to choose
+const chosenNhi = computed(() => orgNhis.value.find(n => n.id === nhiChoice.value))
 
 watchEffect(() => {
   const acc = account.value
-  if (acc?.type !== 'organization' || !nhiChoice.value || !selectedScopes.value.length) {
+  if (acc?.type !== 'organization' || !nhiChoice.value) {
     decision.value = undefined
     return
   }
   decision.value = {
     account: { type: 'organization' as const, id: acc.id, ...(acc.department ? { department: acc.department } : {}) },
     nhi: { id: nhiChoice.value },
-    scopes: [...selectedScopes.value],
     lifetime: lifetime.value
   }
 })

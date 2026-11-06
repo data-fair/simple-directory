@@ -1,36 +1,34 @@
 <template>
-  <div>
-    <v-checkbox
+  <v-list
+    density="compact"
+    class="py-0"
+    data-consent-scopes
+  >
+    <v-list-item
       v-for="scope of scopes"
       :key="scope.name"
-      v-model="selected"
-      :value="scope.name"
-      density="compact"
-      hide-details
       :data-scope="scope.name"
+      class="px-0"
     >
-      <template #label>
-        <span>{{ scope.description }}</span>
+      <template #prepend>
         <v-icon
-          v-if="scope.broad"
-          :icon="mdiShieldAlert"
-          color="warning"
+          :icon="scope.broad ? mdiShieldAlert : mdiCheck"
+          :color="scope.broad ? 'warning' : 'success'"
           size="small"
-          class="ml-2"
-          :title="$t('pages.oauthConsent.broadScope')"
+          :title="scope.broad ? $t('pages.oauthConsent.broadScope') : undefined"
         />
       </template>
-    </v-checkbox>
-    <p
-      v-if="!selected.length"
-      class="text-error text-body-small mt-2"
-    >
-      {{ $t('pages.oauthConsent.atLeastOneScope') }}
-    </p>
-  </div>
+      <v-list-item-title style="white-space:normal;">
+        {{ scope.description }}
+      </v-list-item-title>
+    </v-list-item>
+  </v-list>
 </template>
 
 <script lang="ts" setup>
-defineProps<{ scopes: { name: string, description: string, broad: boolean }[] }>()
-const selected = defineModel<string[]>({ required: true })
+import type { ConsentScope } from './nhi-decision.ts'
+
+// read only: a grant carries the scopes of the request within the client registration or the
+// scopes of the NHI, the user consents to them as a whole
+defineProps<{ scopes: ConsentScope[] }>()
 </script>

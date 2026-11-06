@@ -37,7 +37,7 @@ export type CodeFlowOptions = {
   scope?: string,
   resource?: string,
   browserAx: AxiosInstance,
-  // merged over the default decision: allow, the first proposed account, every proposed scope
+  // merged over the default decision: allow, the first proposed account
   decision?: Record<string, any>,
   extraParams?: Record<string, string | undefined>
 }
@@ -114,7 +114,6 @@ export const runCodeFlow = async (opts: CodeFlowOptions) => {
   const decision = {
     decision: 'allow',
     account: details.accounts[0] && { type: details.accounts[0].type, id: details.accounts[0].id, department: details.accounts[0].department },
-    scopes: details.scopes.map((s: any) => s.name),
     ...opts.decision
   }
   const decided = await postDecision(opts, uid, decision)

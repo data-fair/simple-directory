@@ -105,9 +105,9 @@ export const createConsentGrant = async (provider: Provider, opts: ConsentGrantO
   // (checkGrantSubject refuses any other pair at every issuance)
   if ((opts.subject.type === 'nhi') === (opts.clientKind === 'site')) throw new Error('the subject type does not match the client kind')
   const clientId = opts.interaction.params.client_id as string
-  // a request without any platform scope (the screen proposed the registration or, for a dynamic
-  // client, let the admin pick): the provider only issues the scopes of the request (a request
-  // without scope at all ends in access_denied), so the chosen ones join the interaction's request.
+  // a request without any platform scope (the grant gets the registration or, for a dynamic
+  // client, the scopes of the NHI): the provider only issues the scopes of the request (a request
+  // without scope at all ends in access_denied), so the granted ones join the interaction's request.
   // Persisted only once the grant is saved; a decision that fails ends the interaction anyway.
   const requestedParam = String(opts.interaction.params.scope ?? '').split(' ').filter(Boolean)
   const mergeScope = !opts.scope.some(s => requestedParam.includes(s))

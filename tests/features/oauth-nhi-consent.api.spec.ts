@@ -69,7 +69,7 @@ test.describe('oauth nhi consent', () => {
     const { org, user, adminAx, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
     const nhi = await createNhi({ scopes: ['organizations:read'] })
     const opts = dynamicFlow()
-    const tokens = await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'] })))
+    const tokens = await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id } })))
     const [record] = await grantRecords({ clientId: dynamicClientId })
     assert.equal(record.sessionId, undefined)
     await adminAx.delete(`/api/users/${user.id}/sessions`)
@@ -81,7 +81,7 @@ test.describe('oauth nhi consent', () => {
     const { org, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
     const nhi = await createNhi({ scopes: ['organizations:read'] })
     const opts = dynamicFlow()
-    const tokens = await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'] })))
+    const tokens = await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id } })))
     await testEnvAx.patch('/user/oauth-code-user@test.com', { organizations: [{ id: org.id, name: org.name, role: 'user' }] })
     const res = await tokenRequest(issuer, { grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: dynamicClientId })
     assert.equal(res.status, 400, JSON.stringify(res.data))
@@ -94,7 +94,7 @@ test.describe('oauth nhi consent', () => {
     const opts = dynamicFlow()
     const { pkce, state, location } = await startAuthorization(opts)
     const uid = await openInteraction(opts, location)
-    const valid = { decision: 'allow', account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'] }
+    const valid = { decision: 'allow', account: orgAccount(org), nhi: { id: nhi.id } }
     const malformed = [
       { decision: 'maybe' },
       { ...valid, nhi: { id: nhi.id, create: { name: 'x', role: 'user', scopes: ['organizations:read'] } } },
@@ -102,6 +102,8 @@ test.describe('oauth nhi consent', () => {
       { ...valid, nhi: {} },
       { ...valid, scopes: 'organizations:read' },
       { ...valid, scopes: [] },
+      // the scopes are not chosen at the decision
+      { ...valid, scopes: ['organizations:read'] },
       { ...valid, lifetime: '2y' },
       { ...valid, account: { type: 'organization' } }
     ]
@@ -117,7 +119,7 @@ test.describe('oauth nhi consent', () => {
     const { org, user, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
     const nhi = await createNhi({ name: 'Bound agent', scopes: ['organizations:read'] })
     const opts = dynamicFlow({ scope: 'openid profile email organizations:read' })
-    const started = await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' }))
+    const started = await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, lifetime: '30d' }))
 
     // the details of a dynamic client
     const details = started.details
@@ -130,9 +132,9 @@ test.describe('oauth nhi consent', () => {
     assert.deepEqual(details.organizations.map((o: any) => o.id), [org.id])
     assert.deepEqual(details.lifetimes, ['1d', '7d', '30d', '90d', '1y'])
     assert.equal(details.defaultLifetime, '30d')
-    assert.deepEqual(details.scopes.map((s: any) => s.name), ['organizations:read'])
-    // no key material is exposed
-    assert.deepEqual(details.nhis[org.id], [{ id: nhi.id, name: 'Bound agent', scopes: ['organizations:read'] }])
+    // no key material is exposed, the scopes are the ones the grant would carry with this nhi
+    assert.deepEqual(details.nhis[org.id].map((n: any) => ({ ...n, scopes: n.scopes.map((s: any) => s.name) })), [{ id: nhi.id, name: 'Bound agent', scopes: ['organizations:read'] }])
+    assert.equal(details.scopes, undefined)
     // no identity claim for an nhi subject
     assert.deepEqual(details.oidcScopes, ['openid'])
 
@@ -173,7 +175,7 @@ test.describe('oauth nhi consent', () => {
     const { org, ownerAx, dynamicClientId, dynamicFlow } = await setupNhiConsent()
     const nhi = (await ownerAx.post(`/api/organizations/${org.id}/nhis`, { name: 'Claude agent', role: 'user', scopes: ['organizations:read'] })).data
     const opts = dynamicFlow()
-    const tokens = await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' })))
+    const tokens = await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, lifetime: '30d' })))
     assert.equal((jwt.decode(tokens.access_token) as jwt.JwtPayload).sub, nhi.id)
     assert.deepEqual((await grantRecords({ clientId: dynamicClientId }))[0].subject, { type: 'nhi', id: nhi.id })
   })
@@ -181,7 +183,7 @@ test.describe('oauth nhi consent', () => {
   test('a non-admin member cannot consent for an org', async () => {
     const { org, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent({ role: 'user' })
     const nhi = await createNhi()
-    const started = await decide(dynamicFlow(), () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' }))
+    const started = await decide(dynamicFlow(), () => ({ account: orgAccount(org), nhi: { id: nhi.id }, lifetime: '30d' }))
     assert.deepEqual(started.details.organizations, [])
     assert.deepEqual(started.details.nhis, {})
     assert.ok([400, 403].includes(started.decided.status), String(started.decided.status))
@@ -192,7 +194,7 @@ test.describe('oauth nhi consent', () => {
     const { org, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent({ role: 'admin', department: 'dep1', departmentName: 'Dep 1' })
     const nhi = await createNhi()
     const account = { type: 'organization', id: org.id, department: 'dep1' }
-    const refused = await decide(dynamicFlow(), () => ({ account, nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' }))
+    const refused = await decide(dynamicFlow(), () => ({ account, nhi: { id: nhi.id }, lifetime: '30d' }))
     assert.deepEqual(refused.details.organizations, [])
     assert.ok([400, 403].includes(refused.decided.status), String(refused.decided.status))
     assert.equal((await grantRecords({ clientId: dynamicClientId })).length, 0)
@@ -200,7 +202,7 @@ test.describe('oauth nhi consent', () => {
     await testEnvAx.patch('/config', { depAdminIsOrgAdmin: true })
     try {
       const opts = dynamicFlow()
-      const started = await decide(opts, () => ({ account, nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' }))
+      const started = await decide(opts, () => ({ account, nhi: { id: nhi.id }, lifetime: '30d' }))
       assert.deepEqual(started.details.organizations.map((o: any) => [o.id, o.department]), [[org.id, 'dep1']])
       assert.deepEqual(started.details.nhis[org.id].map((n: any) => n.id), [nhi.id])
       const tokens = await finish(opts, started)
@@ -214,7 +216,7 @@ test.describe('oauth nhi consent', () => {
     const { org, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
     const nhi = await createNhi({ name: 'Ip bound agent', ipBinding: true })
     const opts = dynamicFlow()
-    const started = await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' }))
+    const started = await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, lifetime: '30d' }))
     assert.ok(started.details.nhis[org.id].some((n: any) => n.id === nhi.id))
     const tokens = await finish(opts, started, { 'x-forwarded-for': '9.9.9.5' })
     assert.equal((jwt.decode(tokens.access_token) as jwt.JwtPayload).boundIp, '9.9.9.5')
@@ -239,28 +241,27 @@ test.describe('oauth nhi consent', () => {
     const otherOrg = (await otherAx.post('/api/organizations', { name: 'Other org' })).data
     otherAx.setOrg(otherOrg.id)
     const foreign = (await otherAx.post(`/api/organizations/${otherOrg.id}/nhis`, nhiBody({ subject: nhiSubject + '-foreign' }))).data
-    const started = await decide(dynamicFlow(), () => ({ account: orgAccount(org), nhi: { id: foreign.id }, scopes: ['organizations:read'], lifetime: '30d' }))
+    const started = await decide(dynamicFlow(), () => ({ account: orgAccount(org), nhi: { id: foreign.id }, lifetime: '30d' }))
     assert.equal(started.decided.status, 400, JSON.stringify(started.decided.data))
     assert.equal((await grantRecords({ clientId: dynamicClientId })).length, 0)
   })
 
-  test('scopes wider than the nhi maximum are refused at the decision', async () => {
+  test('an nhi whose scopes cover none of the requested ones is refused at the decision', async () => {
     const { org, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
     const nhi = await createNhi({ scopes: ['organizations:read'] })
     const opts = dynamicFlow({ scope: 'organizations' })
-    const started = await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations'], lifetime: '30d' }))
-    assert.deepEqual(started.details.scopes.map((s: any) => s.name), ['organizations'])
+    const started = await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, lifetime: '30d' }))
     // an nhi that could be granted none of the requested scopes is not offered
     assert.ok(!started.details.nhis[org.id].some((n: any) => n.id === nhi.id))
     assert.equal(started.decided.status, 400, JSON.stringify(started.decided.data))
-    // nor an empty scope, nor one that was not requested
-    for (const scopes of [[], ['organizations:read'], 'organizations']) {
+    // the decision cannot choose the scopes either
+    for (const scopes of [[], ['organizations:read'], ['organizations'], 'organizations']) {
       const res = await postDecision(opts, started.uid, { decision: 'allow', account: orgAccount(org), nhi: { id: nhi.id }, scopes, lifetime: '30d' })
       assert.equal(res.status, 400, JSON.stringify(scopes))
     }
     // an unknown lifetime
     const nhiAll = await createNhi()
-    const res = await postDecision(opts, started.uid, { decision: 'allow', account: orgAccount(org), nhi: { id: nhiAll.id }, scopes: ['organizations'], lifetime: '2y' })
+    const res = await postDecision(opts, started.uid, { decision: 'allow', account: orgAccount(org), nhi: { id: nhiAll.id }, lifetime: '2y' })
     assert.equal(res.status, 400)
     assert.equal((await grantRecords({ clientId: dynamicClientId })).length, 0)
   })
@@ -269,18 +270,18 @@ test.describe('oauth nhi consent', () => {
     const { org, dynamicClientId, dynamicFlow, createNhi } = await setupNhiConsent()
     const nhi = await createNhi()
     const opts = dynamicFlow()
-    await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '7d' })))
+    await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, lifetime: '7d' })))
     const records = await grantRecords({ clientId: dynamicClientId })
     assert.equal(records.length, 1)
     assert.ok(Math.abs(records[0].expiresAt.getTime() - Date.now() - 7 * 86400000) < 60000, String(records[0].expiresAt))
   })
 
-  test('without a requested platform scope the known scopes are offered', async () => {
+  test('without a requested platform scope the nhi gets its own scopes', async () => {
     const { org, dynamicFlow, createNhi } = await setupNhiConsent()
     const nhi = await createNhi({ scopes: ['organizations:read'] })
     const opts = dynamicFlow({ scope: undefined })
-    const started = await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' }))
-    assert.ok(started.details.scopes.some((s: any) => s.name === 'organizations:read'))
+    const started = await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, lifetime: '30d' }))
+    assert.deepEqual(started.details.nhis[org.id][0].scopes.map((s: any) => s.name), ['organizations:read'])
     const tokens = await finish(opts, started)
     assert.equal((jwt.decode(tokens.access_token) as jwt.JwtPayload).scope, 'organizations:read')
   })
@@ -291,7 +292,7 @@ test.describe('oauth nhi consent', () => {
     const first = await runCodeFlow(flow({ decision: { account: orgAccount(org) } }))
     assert.equal((jwt.decode(first.tokens.access_token) as jwt.JwtPayload).sub, user.id)
     const opts = dynamicFlow()
-    const second = await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, scopes: ['organizations:read'], lifetime: '30d' })))
+    const second = await finish(opts, await decide(opts, () => ({ account: orgAccount(org), nhi: { id: nhi.id }, lifetime: '30d' })))
     assert.equal((jwt.decode(second.access_token) as jwt.JwtPayload).sub, nhi.id)
     // and back to the user
     const third = await runCodeFlow(flow({ decision: { account: orgAccount(org) } }))

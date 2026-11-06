@@ -203,7 +203,7 @@ Both grants apply the same org, site, `allowedIps`, scope and `exp` rules.
 
 ## Scopes
 
-An NHI may store maximum scopes (`nhi.scopes`, names `resource:class` or a bare `resource`
+An NHI may store scopes (`nhi.scopes`, names `resource:class` or a bare `resource`
 umbrella), validated at create/patch time against the platform list served by
 `GET /api/scopes` (`api/src/scopes/service.ts`; the list comes from `PLATFORM_SCOPES_URL`, a
 soft dependency). simple-directory's own vocabulary (`api/src/scopes/vocabulary.ts`, built with
@@ -213,8 +213,12 @@ The exchange accepts `scope` (space-delimited); each requested scope must be
 covered by the maximum (`maxCovers` in `api/src/nhis/scopes.ts`): exactly, through the umbrella,
 or through a global tier scope at or above its tier (`all:write` covers `all:read`,
 `datasets:write`, `datasets:read`, never the bare `datasets` umbrella), never by prefix. A request without `scope` grants the
-maximum. An NHI without maximum scopes is unrestricted unless it asks for less: this keeps
-NHIs created before scopes working unchanged.
+maximum. They are the scopes of the NHI, also for the OAuth grants bound to it (the consent
+shows them, it offers no subselection); a token request may still ask for less. An NHI without
+scopes is unrestricted unless it asks for less: this keeps NHIs created before scopes working
+unchanged. Its token has no `scope` claim, which is more than `all:admin` (accepted by services
+that are not scope-aware, and on routes the scope gate does not mark), so the organization page
+shows it as "unrestricted access", not as `all:admin`.
 
 The granted scopes become the `scope` claim of both the cookie session and the returned
 `access_token` (and `scope` in the response when restricted). The access token alone has the JWT
