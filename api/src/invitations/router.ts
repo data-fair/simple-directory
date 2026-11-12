@@ -4,7 +4,7 @@ import config from '#config'
 import { assertAccountRole, reqUser, reqSession, reqSiteUrl, session, httpError, reqSessionAuthenticated } from '@data-fair/lib-express'
 import { assertNotNhiSession } from '../nhis/service.ts'
 import log from '@data-fair/lib-node/log.js'
-import eventsQueue from '#events-queue'
+import eventsQueue from '@data-fair/lib-node/events-queue.js'
 import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 import { reqI18n, __all, __ } from '#i18n'
@@ -88,7 +88,7 @@ router.post('', async (req, res, next) => {
       if (departments.length > 0) {
         for (const deptId of departments) {
           await storage.addMember(orga, existingUser, invitation.role, deptId)
-          eventsQueue?.pushEvent({
+          eventsQueue.pushEvent({
             sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: deptId },
             topic: { key: 'simple-directory:invitation-sent' },
             title: __all('notifications.sentInvitation', { email: body.email, orgName: invitTargetLabel })
@@ -96,7 +96,7 @@ router.post('', async (req, res, next) => {
         }
       } else {
         await storage.addMember(orga, existingUser, invitation.role, undefined)
-        eventsQueue?.pushEvent({
+        eventsQueue.pushEvent({
           sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
           topic: { key: 'simple-directory:invitation-sent' },
           title: __all('notifications.sentInvitation', { email: body.email, orgName: invitTargetLabel })
@@ -122,7 +122,7 @@ router.post('', async (req, res, next) => {
       if (departments.length > 0) {
         for (const deptId of departments) {
           await storage.addMember(orga, newUser, invitation.role, deptId)
-          eventsQueue?.pushEvent({
+          eventsQueue.pushEvent({
             sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin', department: deptId },
             topic: { key: 'simple-directory:add-member' },
             title: __all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: invitTargetLabel })
@@ -130,7 +130,7 @@ router.post('', async (req, res, next) => {
         }
       } else {
         await storage.addMember(orga, newUser, invitation.role, undefined)
-        eventsQueue?.pushEvent({
+        eventsQueue.pushEvent({
           sender: { type: 'organization' as const, id: orga.id, name: orga.name, role: 'admin' },
           topic: { key: 'simple-directory:add-member' },
           title: __all('notifications.addMember', { name: newUser.name, email: newUser.email, orgName: invitTargetLabel })
@@ -155,7 +155,7 @@ router.post('', async (req, res, next) => {
       }
 
       // send same notif to user himself
-      eventsQueue?.pushNotification({
+      eventsQueue.pushNotification({
         sender: { type: 'organization' as const, id: orga.id, name: orga.name },
         topic: { key: 'simple-directory:add-member' },
         title: __(req, 'notifications.addMember', { name: newUser.name, email: newUser.email, orgName: invitTargetLabel }),
@@ -183,7 +183,7 @@ router.post('', async (req, res, next) => {
       log.info(`invitation sent ${invitation.email}, ${orga.id} ${orga.name} ${invitation.role} ${departments.join(',')}`, { code: 'sd.invite.sent', ...logFields })
     }
 
-    eventsQueue?.pushEvent({
+    eventsQueue.pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: departments[0] },
       topic: { key: 'simple-directory:invitation-sent' },
       title: __all('notifications.sentInvitation', { email: body.email, orgName: invitTargetLabel })
@@ -350,9 +350,9 @@ router.get('/_accept', async (req, res, next) => {
     title: __all('notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: invitTargetLabel })
   }
   // send notif to all admins subscribed to the topic
-  eventsQueue?.pushEvent(event)
+  eventsQueue.pushEvent(event)
   // send same notif to user himself
-  eventsQueue?.pushNotification({
+  eventsQueue.pushNotification({
     sender: event.sender,
     topic: event.topic,
     title: __(req, 'notifications.acceptedInvitation', { name: existingUser.name, email: existingUser.email, orgName: invitTargetLabel }),

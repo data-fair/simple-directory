@@ -5,7 +5,7 @@ import { reqSessionAuthenticated, mongoPagination, mongoSort, session, reqSiteUr
 import { assertNotNhiSession } from '../nhis/service.ts'
 import log from '@data-fair/lib-node/log.js'
 import { nanoid } from 'nanoid'
-import eventsQueue from '#events-queue'
+import eventsQueue from '@data-fair/lib-node/events-queue.js'
 import { reqI18n, __all, __date } from '#i18n'
 import storages from '#storages'
 import mongo from '#mongo'
@@ -195,7 +195,7 @@ router.post('', async (req, res, next) => {
   const createdUser = await storage.createUser(newUser, undefined, linkSite)
   log.info('user was created', { code: 'sd.user.create', ...logFields })
   if (site) {
-    eventsQueue?.pushEvent({
+    eventsQueue.pushEvent({
       sender: { ...site.owner, role: 'admin' },
       topic: { key: 'simple-directory:user-created:' + site._id },
       title: (invit && !config.alwaysAcceptInvitation && orga)
@@ -223,7 +223,7 @@ router.post('', async (req, res, next) => {
       await storage.addMember(orga, createdUser, invit.role, undefined)
     }
     const invitTargetLabel = orga.name + (invitDepartmentNames.length ? ` (${invitDepartmentNames.join(', ')})` : '')
-    eventsQueue?.pushEvent({
+    eventsQueue.pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin', department: invitDepartments[0] },
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: createdUser.name, email: createdUser.email, orgName: invitTargetLabel })
