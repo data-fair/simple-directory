@@ -36,7 +36,7 @@ schema.layout = {
     { key: 'theme' },
     { key: 'mails' },
     {
-      title: 'Users management',
+      title: 'User management',
       'x-i18n-title': {
         fr: 'Gestion des utilisateurs',
         de: 'Benutzerverwaltung',

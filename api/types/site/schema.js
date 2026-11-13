@@ -130,7 +130,7 @@ export default {
       default: 'onlyBackOffice',
       title: 'Authentication mode (deprecated, use "Main site of the account")',
       'x-i18n-title': {
-        fr: "Mode d'authentification (déprécié, utilisez \"Site principal du compte\")",
+        fr: "Mode d'authentification (obsolète, utilisez \"Site principal du compte\")",
         es: 'Modo de autenticación (obsoleto, use "Sitio principal de la cuenta")',
         it: 'Modalità di autenticazione (deprecata, usa "Sito principale dell\'account")',
         pt: 'Modo de autenticação (obsoleto, use "Site principal da conta")',
@@ -140,46 +140,46 @@ export default {
       oneOf: [
         {
           const: 'onlyLocal',
-          title: 'only on the site itself',
+          title: 'Only on the site itself',
           'x-i18n-title': {
-            fr: 'uniquement sur le site lui même',
-            es: 'solo en el sitio mismo',
-            it: 'solo sul sito stesso',
-            pt: 'apenas no site em si',
-            de: 'nur auf der Website selbst'
+            fr: 'Uniquement sur le site lui-même',
+            es: 'Solo en el sitio mismo',
+            it: 'Solo sul sito stesso',
+            pt: 'Apenas no site em si',
+            de: 'Nur auf der Website selbst'
           }
         },
         {
           const: 'onlyBackOffice',
-          title: 'only on the back-office',
+          title: 'Only on the back-office',
           'x-i18n-title': {
-            fr: 'uniquement sur le back-office',
-            es: 'solo en el back-office',
-            it: 'solo sul back-office',
-            pt: 'apenas no back-office',
-            de: 'nur im Back-Office'
+            fr: 'Uniquement sur le back-office',
+            es: 'Solo en el back-office',
+            it: 'Solo sul back-office',
+            pt: 'Apenas no back-office',
+            de: 'Nur im Back-Office'
           }
         },
         {
           const: 'ssoBackOffice',
-          title: 'on the site and on the back-office via SSO',
+          title: 'On the site and on the back-office via SSO',
           'x-i18n-title': {
-            fr: 'sur le site et sur le back-office par SSO',
-            es: 'en el sitio y en el back-office mediante SSO',
-            it: 'sul sito e sul back-office tramite SSO',
-            pt: 'no site e no back-office via SSO',
-            de: 'auf der Website und im Back-Office über SSO'
+            fr: 'Sur le site et sur le back-office par SSO',
+            es: 'En el sitio y en el back-office mediante SSO',
+            it: 'Sul sito e sul back-office tramite SSO',
+            pt: 'No site e no back-office via SSO',
+            de: 'Auf der Website und im Back-Office über SSO'
           }
         },
         {
           const: 'onlyOtherSite',
-          title: 'only on another of your sites',
+          title: 'Only on another of your sites',
           'x-i18n-title': {
-            fr: 'uniquement sur un autre de vos sites',
-            es: 'solo en otro de sus sitios',
-            it: 'solo su un altro dei tuoi siti',
-            pt: 'apenas em outro de seus sites',
-            de: 'nur auf einer anderen Ihrer Websites'
+            fr: 'Uniquement sur un autre de vos sites',
+            es: 'Solo en otro de sus sitios',
+            it: 'Solo su un altro dei tuoi siti',
+            pt: 'Apenas em outro de seus sites',
+            de: 'Nur auf einer anderen Ihrer Websites'
           }
         }
       ]
@@ -193,7 +193,7 @@ export default {
       type: 'string',
       title: 'Other site for authentication (deprecated, use "Main site of the account")',
       'x-i18n-title': {
-        fr: "Autre site pour l'authentification (déprécié, utilisez \"Site principal du compte\")",
+        fr: "Autre site pour l'authentification (obsolète, utilisez \"Site principal du compte\")",
         es: 'Otro sitio para autenticación (obsoleto, use "Sitio principal de la cuenta")',
         it: 'Altro sito per l\'autenticazione (deprecato, usa "Sito principale dell\'account")',
         pt: 'Outro site para autenticação (obsoleto, use "Site principal da conta")',
@@ -254,7 +254,7 @@ export default {
           type: 'string',
           title: 'Contact email address',
           'x-i18n-title': {
-            fr: 'Adresse e-mail de contact',
+            fr: 'Adresse email de contact',
             es: 'Dirección de correo electrónico de contacto',
             it: 'Indirizzo e-mail di contatto',
             pt: 'Endereço de e-mail de contato',
@@ -271,9 +271,9 @@ export default {
             pt: 'Endereço de e-mail do remetente',
             de: 'E-Mail-Adresse des Absenders'
           },
-          description: 'Attention, the configuration must be set up on the mail sending service so that this sender is not considered illegitimate.',
+          description: 'Warning: the configuration must be set up on the mail sending service so that this sender is not considered illegitimate.',
           'x-i18n-description': {
-            fr: 'Attention, la configuration doit être effectuée sur le service d\'envoi de mail pour que cet expéditeur ne soit pas considéré comme illégitime.',
+            fr: 'Attention : la configuration doit être effectuée sur le service d\'envoi de mail pour que cet expéditeur ne soit pas considéré comme illégitime.',
             es: 'Atención, la configuración debe realizarse en el servicio de envío de correo para que este remitente no sea considerado ilegítimo.',
             it: 'Attenzione, la configurazione deve essere effettuata sul servizio di invio di posta in modo che questo mittente non sia considerato illegittimo.',
             pt: 'Atenção, a configuração deve ser feita no serviço de envio de e-mail para que este remetente não seja considerado ilegítimo.',
@@ -365,7 +365,7 @@ export default {
         redirectUris: {
           title: 'Redirect URIs',
           'x-i18n-title': {
-            fr: 'URIs de redirection',
+            fr: 'URI de redirection',
             es: 'URIs de redirección',
             it: 'URI di reindirizzamento',
             pt: 'URIs de redirecionamento',
@@ -483,7 +483,7 @@ export default {
           type: 'object',
           title: 'An identity provider configured on another of your sites',
           'x-i18n-title': {
-            fr: "Un fournisseur d'identité configuré sur autre de vos sites",
+            fr: "Un fournisseur d'identité configuré sur un autre de vos sites",
             es: 'Un proveedor de identidad configurado en otro de sus sitios',
             it: 'Un provider di identità configurato su un altro dei tuoi siti',
             pt: 'Um provedor de identidade configurado em outro de seus sites',
@@ -545,7 +545,7 @@ export default {
           type: 'string',
           title: 'XML metadata',
           'x-i18n-title': {
-            fr: 'XML metadata',
+            fr: 'Métadonnées XML',
             es: 'XML metadata',
             it: 'XML metadata',
             pt: 'XML metadata',
@@ -638,13 +638,13 @@ export default {
             pt: 'URL de descoberta',
             de: 'Entdeckungs-URL'
           },
-          description: 'probably in the form http://mon-fournisseur/.well-known/openid-configuration',
+          description: 'Probably of the form http://my-provider/.well-known/openid-configuration',
           'x-i18n-description': {
-            fr: 'probablement de la forme http://mon-fournisseur/.well-known/openid-configuration',
-            es: 'probablemente en la forma http://mon-fournisseur/.well-known/openid-configuration',
-            it: 'probabilmente nella forma http://mon-fournisseur/.well-known/openid-configuration',
-            pt: 'provavelmente na forma http://mon-fournisseur/.well-known/openid-configuration',
-            de: 'wahrscheinlich in der Form http://mon-fournisseur/.well-known/openid-configuration'
+            fr: 'Probablement de la forme http://mon-fournisseur/.well-known/openid-configuration',
+            es: 'Probablemente en la forma http://mon-fournisseur/.well-known/openid-configuration',
+            it: 'Probabilmente nella forma http://mon-fournisseur/.well-known/openid-configuration',
+            pt: 'Provavelmente na forma http://mon-fournisseur/.well-known/openid-configuration',
+            de: 'Wahrscheinlich in der Form http://mon-fournisseur/.well-known/openid-configuration'
           },
           layout: { slots: { before: { name: 'oidc-help' } } }
         },
@@ -706,7 +706,7 @@ export default {
           type: 'string',
           title: 'Client credentials encoding',
           'x-i18n-title': {
-            fr: 'Encodage des crédentiels du client',
+            fr: 'Encodage des identifiants du client',
             es: 'Codificación de las credenciales del cliente',
             it: 'Codifica delle credenziali del client',
             pt: 'Codificação das credenciais do cliente',
@@ -714,7 +714,7 @@ export default {
           },
           description: 'Technical parameter, ignore it most of the time. If the provided secret contains special characters, the non-strict mode may be worth trying.',
           'x-i18n-description': {
-            fr: 'Paramètre technique à ignorer la plupart du temps. Si le secret fourni contient des caractères spéciaux il peut être utile de tester le mode non-strict.',
+            fr: 'Paramètre technique à ignorer la plupart du temps. Si le secret fourni contient des caractères spéciaux, il peut être utile de tester le mode non-strict.',
             es: 'Parámetro técnico que se puede ignorar la mayoría de las veces. Si el secreto proporcionado contiene caracteres especiales, puede ser útil probar el modo no estricto.',
             it: 'Parametro tecnico da ignorare nella maggior parte dei casi. Se il segreto fornito contiene caratteri speciali, può essere utile provare la modalità non rigida.',
             pt: 'Parâmetro técnico a ignorar na maioria das vezes. Se o segredo fornecido contiver caracteres especiais, pode ser útil testar o modo não rígido.',
@@ -751,7 +751,7 @@ export default {
           type: 'string',
           title: 'Client credentials sending method',
           'x-i18n-title': {
-            fr: 'Méthode d\'envoi des crédentiels du client',
+            fr: 'Méthode d\'envoi des identifiants du client',
             es: 'Método de envío de las credenciales del cliente',
             it: 'Metodo di invio delle credenziali del client',
             pt: 'Método de envio das credenciais do cliente',
@@ -759,7 +759,7 @@ export default {
           },
           description: 'If empty, the method is chosen from the provider\'s discovery document ("Authorization" header by default).',
           'x-i18n-description': {
-            fr: "Si ce champ est vide, la méthode est choisie d'après le document de découverte du fournisseur (entête \"Authorization\" par défaut).",
+            fr: "Si ce champ est vide, la méthode est choisie d'après le document de découverte du fournisseur (en-tête \"Authorization\" par défaut).",
             es: 'Si está vacío, el método se elige a partir del documento de descubrimiento del proveedor (encabezado "Authorization" por defecto).',
             it: 'Se vuoto, il metodo viene scelto in base al documento di discovery del provider (intestazione "Authorization" per impostazione predefinita).',
             pt: 'Se estiver vazio, o método é escolhido a partir do documento de descoberta do provedor (cabeçalho "Authorization" por padrão).',
@@ -770,7 +770,7 @@ export default {
               const: 'header',
               title: 'Authorization header',
               'x-i18n-title': {
-                fr: 'Entête "Authorization"',
+                fr: 'En-tête "Authorization"',
                 es: 'Encabezado "Authorization"',
                 it: 'Intestazione "Authorization"',
                 pt: 'Cabeçalho "Authorization"',
@@ -876,9 +876,9 @@ export default {
           oneOf: [
             {
               const: 'auto',
-              title: 'Auto (endpoint "user_info" if available, otherwise content id_token or content access_token)',
+              title: 'Auto ("user_info" endpoint if available, otherwise the content of id_token or access_token)',
               'x-i18n-title': {
-                fr: 'Auto (endpoint "user_info" si disponible, sinon contenu id_token ou contenu access_token)',
+                fr: 'Auto (endpoint "user_info" si disponible, sinon contenu du jeton id_token ou access_token)',
                 es: 'Auto (endpoint "user_info" si está disponible, de lo contrario contenido id_token o contenido access_token)',
                 it: 'Auto (endpoint "user_info" se disponibile, altrimenti contenuto id_token o contenuto access_token)',
                 pt: 'Auto (endpoint "user_info" se disponível, caso contrário conteúdo id_token ou conteúdo access_token)',
@@ -921,7 +921,7 @@ export default {
           },
           description: 'If enabled, logins whose tokens fail validation (signature, issuer, audience, expiration, nonce...) are refused. Otherwise only an alert is logged.',
           'x-i18n-description': {
-            fr: 'Si cette option est activée, les connexions dont les jetons ne passent pas la validation (signature, émetteur, audience, expiration, nonce...) sont refusées. Sinon une alerte est seulement enregistrée dans les logs.',
+            fr: 'Si cette option est activée, les connexions dont les jetons ne passent pas la validation (signature, émetteur, audience, expiration, nonce...) sont refusées. Sinon, une alerte est seulement enregistrée dans les logs.',
             es: 'Si se activa, se rechazan los inicios de sesión cuyos tokens no superan la validación (firma, emisor, audiencia, expiración, nonce...). De lo contrario solo se registra una alerta.',
             it: 'Se attivata, gli accessi i cui token non superano la convalida (firma, emittente, audience, scadenza, nonce...) vengono rifiutati. Altrimenti viene registrato solo un avviso.',
             pt: 'Se ativada, os inícios de sessão cujos tokens não passam a validação (assinatura, emissor, audiência, expiração, nonce...) são recusados. Caso contrário, apenas um alerta é registado.',
@@ -959,7 +959,7 @@ export default {
           },
           description: 'By default, if the identity provider returns email_verified=false, authentication is rejected. Check this option to change this behavior.',
           'x-i18n-description': {
-            fr: "Par défaut si le fournisseur d'identité retourne email_verified=false l'authentification est refusée. Cochez cette option pour changer ce comportement.",
+            fr: "Par défaut, si le fournisseur d'identité retourne email_verified=false, l'authentification est refusée. Cochez cette option pour changer ce comportement.",
             es: 'Por defecto, si el proveedor de identidad devuelve email_verified=false, se rechaza la autenticación. Marque esta opción para cambiar este comportamiento.',
             it: "Per impostazione predefinita, se il provider di identità restituisce email_verified=false, l'autenticazione viene rifiutata. Selezionare questa opzione per modificare questo comportamento.",
             pt: 'Por padrão, se o provedor de identidade retornar email_verified=false, a autenticação será rejeitada. Marque esta opção para alterar este comportamento.',
@@ -990,7 +990,7 @@ export default {
         },
         help: 'If this option is enabled, all users created through this identity provider will automatically be members of the organization owning the site.',
         'x-i18n-help': {
-          fr: "Si cette option est activée tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
+          fr: "Si cette option est activée, tous les utilisateurs créés au travers de ce fournisseur d'identité seront automatiquement membres de l'organisation propriétaire du site.",
           es: 'Si esta opción está activada, todos los usuarios creados a través de este proveedor de identidad serán automáticamente miembros de la organización propietaria del sitio.',
           it: "Se questa opzione è attivata, tutti gli utenti creati tramite questo provider di identità saranno automaticamente membri dell'organizzazione proprietaria del sito.",
           pt: 'Se esta opção estiver ativada, todos os usuários criados por meio deste provedor de identidade serão automaticamente membros da organização proprietária do site.',
@@ -999,13 +999,13 @@ export default {
       },
       oneOf: [
         {
-          title: 'never (or only by invitation)',
+          title: 'Never (or only by invitation)',
           'x-i18n-title': {
-            fr: 'jamais (ou uniquement sur invitation)',
-            es: 'nunca (o solo por invitación)',
-            it: 'mai (o solo per invito)',
-            pt: 'nunca (ou apenas por convite)',
-            de: 'niemals (oder nur per Einladung)'
+            fr: 'Jamais (ou uniquement sur invitation)',
+            es: 'Nunca (o solo por invitación)',
+            it: 'Mai (o solo per invito)',
+            pt: 'Nunca (ou apenas por convite)',
+            de: 'Niemals (oder nur per Einladung)'
           },
           properties: {
             type: {
@@ -1014,13 +1014,13 @@ export default {
           }
         },
         {
-          title: 'always',
+          title: 'Always',
           'x-i18n-title': {
-            fr: 'toujours',
-            es: 'siempre',
-            it: 'sempre',
-            pt: 'sempre',
-            de: 'immer'
+            fr: 'Toujours',
+            es: 'Siempre',
+            it: 'Sempre',
+            pt: 'Sempre',
+            de: 'Immer'
           },
           properties: {
             type: {
@@ -1029,12 +1029,12 @@ export default {
           }
         },
         {
-          title: 'when the email belongs to a domain',
+          title: 'When the email belongs to a domain',
           'x-i18n-title': {
-            fr: "quand l'email appartient à un nom de domaine",
-            es: 'cuando el correo electrónico pertenece a un dominio',
-            it: 'quando l\'email appartiene a un dominio',
-            pt: 'quando o e-mail pertence a um domínio',
+            fr: "Quand l'email appartient à un nom de domaine",
+            es: 'Cuando el correo electrónico pertenece a un dominio',
+            it: 'Quando l\'email appartiene a un dominio',
+            pt: 'Quando o e-mail pertence a um domínio',
             de: 'wenn die E-Mail zu einer Domain gehört'
           },
           properties: {
@@ -1043,12 +1043,12 @@ export default {
             },
             emailDomain: {
               type: 'string',
-              title: 'email domain name',
+              title: 'Email domain name',
               'x-i18n-title': {
-                fr: "nom de domaine de l'email",
-                es: 'nombre de dominio del correo electrónico',
-                it: 'nome di dominio dell\'email',
-                pt: 'nome de domínio do e-mail',
+                fr: "Nom de domaine de l'email",
+                es: 'Nombre de dominio del correo electrónico',
+                it: 'Nome di dominio dell\'email',
+                pt: 'Nome de domínio do e-mail',
                 de: 'Domainname der E-Mail'
               }
             }
@@ -1193,7 +1193,7 @@ export default {
                 '.*': {
                   title: 'Attribute values',
                   'x-i18n-title': {
-                    fr: 'Valeurs de d\'attribut',
+                    fr: 'Valeurs de l\'attribut',
                     es: 'Valores de atributo',
                     it: 'Valori dell\'attributo',
                     pt: 'Valores de atributo',
@@ -1304,7 +1304,7 @@ export default {
               },
               description: 'The attribute value will be compared both with the department id and its label',
               'x-i18n-description': {
-                fr: 'La valeur de l\'attribut sera comparée à la fois avec l\'id du départment et son libellé',
+                fr: 'La valeur de l\'attribut sera comparée à la fois avec l\'identifiant du département et son libellé',
                 es: 'El valor del atributo se comparará tanto con el id del departamento como con su etiqueta',
                 it: 'Il valore dell\'attributo verrà confrontato sia con l\'id del dipartimento che con la sua etichetta',
                 pt: 'O valor do atributo será comparado tanto com o id do departamento quanto com seu rótulo',
@@ -1323,7 +1323,7 @@ export default {
               },
               description: 'If this option is not enabled and the attribute is not present, the user will be in the root of the organization',
               'x-i18n-description': {
-                fr: "Si cette option n'est pas activée et que l'attribut n'est pas présent l'utilisateur sera dans la racine de l'organisation",
+                fr: "Si cette option n'est pas activée et que l'attribut n'est pas présent, l'utilisateur sera à la racine de l'organisation",
                 es: 'Si esta opción no está habilitada y el atributo no está presente, el usuario estará en la raíz de la organización',
                 it: "Se questa opzione non è attivata e l'attributo non è presente, l'utente sarà nella radice dell'organizzazione",
                 pt: 'Se esta opção não estiver ativada e o atributo não estiver presente, o usuário estará na raiz da organização',
@@ -1342,7 +1342,7 @@ export default {
               },
               description: 'If the attribute has this value, the user will not be in a department',
               'x-i18n-description': {
-                fr: "Si l'attribut a cette valeur l'utilisateur ne sera pas dans un département",
+                fr: "Si l'attribut a cette valeur, l'utilisateur ne sera pas dans un département",
                 es: 'Si el atributo tiene este valor, el usuario no estará en un departamento',
                 it: "Se l'attributo ha questo valore, l'utente non sarà in un dipartimento",
                 pt: 'Se o atributo tiver este valor, o usuário não estará em um departamento',
@@ -1365,7 +1365,7 @@ export default {
       },
       description: 'This option has several effects:\n  - an account associated with this provider cannot have any other authentication method (password or another provider attached to the same account)\n  - account information will be read-only and automatically synchronized from the provider when the user has an active session\n  - this synchronization includes session destruction and account deactivation if the account no longer exists in the identity provider\n - if the "Member role" option is used, the role will also be synchronized and will not be editable in the back-office',
       'x-i18n-description': {
-        fr: "Cette option a plusieurs effets :\n  - un compte associé à ce fournisseur ne peut pas avoir d'autre moyen d'authentification (mot de posse ou autre fournisseur rattaché au même compte)\n  - les informations du compte seront en lecture seule et synchronisées automatiquement depuis le fournisseur quand l'utilisateur a une session active\n  - cette synchronisation inclue la destruction de la session et la désactivation du compte si celui-ci n'existe plus dans le fournisseur d'identité\n - si l'option \"Rôle des membres\" est utilisée le rôle sera lui aussi synchronisé et ne sera pas éditable dans le back-office",
+        fr: "Cette option a plusieurs effets :\n  - un compte associé à ce fournisseur ne peut pas avoir d'autre moyen d'authentification (mot de passe ou autre fournisseur rattaché au même compte)\n  - les informations du compte seront en lecture seule et synchronisées automatiquement depuis le fournisseur quand l'utilisateur a une session active\n  - cette synchronisation inclut la destruction de la session et la désactivation du compte si celui-ci n'existe plus dans le fournisseur d'identité\n - si l'option \"Rôle des membres\" est utilisée, le rôle sera lui aussi synchronisé et ne sera pas modifiable dans le back-office",
         es: 'Esta opción tiene varios efectos:\n  - una cuenta asociada con este proveedor no puede tener otro método de autenticación (contraseña u otro proveedor adjunto a la misma cuenta)\n  - la información de la cuenta será de solo lectura y se sincronizará automáticamente desde el proveedor cuando el usuario tenga una sesión activa\n  - esta sincronización incluye la destrucción de la sesión y la desactivación de la cuenta si la cuenta ya no existe en el proveedor de identidad\n - si se utiliza la opción "Rol de miembros", el rol también se sincronizará y no será editable en el back-office',
         it: "Questa opzione ha diversi effetti:\n  - un account associato a questo provider non può avere altri metodi di autenticazione (password o altro provider allegato allo stesso account)\n  - le informazioni dell'account saranno in sola lettura e sincronizzate automaticamente dal provider quando l'utente ha una sessione attiva\n  - questa sincronizzazione include la distruzione della sessione e la disattivazione dell'account se l'account non esiste più nel provider di identità\n - se l'opzione \"Ruolo dei membri\" è utilizzata, il ruolo sarà anch'esso sincronizzato e non sarà modificabile nel back-office",
         pt: 'Esta opção tem vários efeitos:\n  - uma conta associada a este provedor não pode ter outro método de autenticação (senha ou outro provedor anexado à mesma conta)\n  - as informações da conta serão somente leitura e sincronizadas automaticamente a partir do provedor quando o usuário tiver uma sessão ativa\n  - esta sincronização inclui a destruição da sessão e a desativação da conta se a conta não existir mais no provedor de identidade\n - se a opção "Função dos membros" for usada, a função também será sincronizada e não será editável no back-office',
@@ -1380,7 +1380,7 @@ export default {
       oneOfLayout: {
         label: 'Control how users are redirected to this provider',
         'x-i18n-label': {
-          fr: 'Controlez la manière dont les utilisateurs sont redirigés vers ce fournisseur',
+          fr: 'Contrôlez la manière dont les utilisateurs sont redirigés vers ce fournisseur',
           es: 'Controle cómo los usuarios son redirigidos a este proveedor',
           it: 'Controlla come gli utenti vengono reindirizzati a questo provider',
           pt: 'Controle como os usuários são redirecionados para este provedor',
@@ -1388,7 +1388,7 @@ export default {
         },
         help: 'If you use an email-based mode, the authentication screen will ask for the user\'s email in the first step.',
         'x-i18n-help': {
-          fr: "Si vous utilisez un mode basé sur l'email alors la mire d'authentification demandera l'email de l'utilisateur en 1ère étape.",
+          fr: "Si vous utilisez un mode basé sur l'email, la mire d'authentification demandera l'email de l'utilisateur à la première étape.",
           es: 'Si utiliza un modo basado en correo electrónico, la pantalla de autenticación pedirá el correo electrónico del usuario en el primer paso.',
           it: "Se si utilizza una modalità basata sull'email, la schermata di autenticazione chiederà l'email dell'utente nel primo passo.",
           pt: 'Se você usar um modo baseado em e-mail, a tela de autenticação solicitará o e-mail do usuário na primeira etapa.',
@@ -1397,12 +1397,12 @@ export default {
       },
       oneOf: [
         {
-          title: 'button',
+          title: 'Button',
           'x-i18n-title': {
-            fr: 'bouton',
-            es: 'botón',
-            it: 'pulsante',
-            pt: 'botão',
+            fr: 'Bouton',
+            es: 'Botón',
+            it: 'Pulsante',
+            pt: 'Botão',
             de: 'Schaltfläche'
           },
           properties: {
@@ -1412,13 +1412,13 @@ export default {
           }
         },
         {
-          title: 'auto redirect when email belongs to a domain',
+          title: 'Automatic redirection when the email belongs to a domain',
           'x-i18n-title': {
-            fr: "redirection auto quand l'email appartient à un nom de domaine",
-            es: 'redirección automática cuando el correo electrónico pertenece a un dominio',
-            it: 'reindirizzamento automatico quando l\'email appartiene a un dominio',
-            pt: 'redirecionamento automático quando o e-mail pertence a um domínio',
-            de: 'automatische Weiterleitung, wenn die E-Mail zu einer Domain gehört'
+            fr: "Redirection automatique quand l'email appartient à un nom de domaine",
+            es: 'Redirección automática cuando el correo electrónico pertenece a un dominio',
+            it: 'Reindirizzamento automatico quando l\'email appartiene a un dominio',
+            pt: 'Redirecionamento automático quando o e-mail pertence a um domínio',
+            de: 'Automatische Weiterleitung, wenn die E-Mail zu einer Domain gehört'
           },
           properties: {
             type: {
@@ -1426,25 +1426,25 @@ export default {
             },
             emailDomain: {
               type: 'string',
-              title: 'email domain name',
+              title: 'Email domain name',
               'x-i18n-title': {
-                fr: "nom de domaine de l'email",
-                es: 'nombre de dominio del correo electrónico',
-                it: 'nome di dominio dell\'email',
-                pt: 'nome de domínio do e-mail',
+                fr: "Nom de domaine de l'email",
+                es: 'Nombre de dominio del correo electrónico',
+                it: 'Nome di dominio dell\'email',
+                pt: 'Nome de domínio do e-mail',
                 de: 'Domainname der E-Mail'
               }
             }
           }
         },
         {
-          title: 'always redirect implicitly',
+          title: 'Always redirect implicitly',
           'x-i18n-title': {
-            fr: 'toujours rediriger implicitement',
-            es: 'siempre redirigir implícitamente',
-            it: 'sempre reindirizzare implicitamente',
-            pt: 'sempre redirecionar implicitamente',
-            de: 'immer implizit weiterleiten'
+            fr: 'Toujours rediriger implicitement',
+            es: 'Siempre redirigir implícitamente',
+            it: 'Sempre reindirizzare implicitamente',
+            pt: 'Sempre redirecionar implicitamente',
+            de: 'Immer implizit weiterleiten'
           },
           properties: {
             type: {

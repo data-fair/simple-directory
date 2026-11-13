@@ -177,7 +177,7 @@
         <p v-if="nbCreatedOrgs !== null">
           {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
         </p>
-        <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
+        <p>{{ $t('common.maxCreatedOrgsValue', { value: showMaxCreatedOrgs }) }}</p>
       </div>
 
       <add-organization-menu

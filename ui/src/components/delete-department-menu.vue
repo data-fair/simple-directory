@@ -29,7 +29,7 @@
       type="warning"
       variant="outlined"
     >
-      {{ $t('pages.organization.deleteDepartmentHasMembers', {count: members.count.toLocaleString(locale)}) }}
+      {{ $t('pages.organization.deleteDepartmentHasMembers', {count: members.count.toLocaleString(locale)}, members.count) }}
     </v-alert>
     <p v-else>
       {{ $t('pages.organization.confirmDeleteDepartmentMsg', {name: department.name, departmentLabel}) }}
