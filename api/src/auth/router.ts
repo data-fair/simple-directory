@@ -11,7 +11,7 @@ import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, Site, User } from '#types'
 import log from '@data-fair/lib-node/log.js'
 import emailValidator from 'email-validator'
-import { reqI18n } from '#i18n'
+import { reqI18n, __, I18nHttpError } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
 import { NhiExchangeError, consumeNhiLimits, refundNhiLimits, loadExchangeNhi, verifyExchangeAssertion, rejectDelay, updateNhiLogged } from '../nhis/exchange.ts'
@@ -634,19 +634,19 @@ router.post('/keepalive', async (req, res, next) => {
     if (!provider) {
       await logout(req, res)
       log.info(`a user failed to prolongate a session because the core identity provider ${coreIdProvider.id} is not exposed by the current site`, { code: 'sd.auth.keepalive.no-provider' })
-      return res.status(401).send('Fournisseur d\'identité principal inconnu')
+      return res.status(401).send('unknown core identity provider')
     }
     const oauthToken = (await readOAuthToken(user, provider, authSite?._id))
 
     if (!oauthToken) {
       await logout(req, res)
       log.info(`a user failed to prolongate a session because no oauth token is stored for core identity provider ${provider.id} on site ${authSite?._id ?? 'main'}`, { code: 'sd.auth.keepalive.no-token' })
-      return res.status(401).send('Pas de jeton de session sur le fournisseur d\'identité principal')
+      return res.status(401).send('no session token for the core identity provider')
     }
     if (oauthToken.loggedOut) {
       await logout(req, res)
       log.info(`a user failed to prolongate a session because the oauth token for core identity provider ${provider.id} is flagged as logged out`, { code: 'sd.auth.keepalive.logged-out' })
-      return res.status(401).send('Utilisateur déconnecté depuis le fournisseur d\'identité principal')
+      return res.status(401).send('user logged out from the core identity provider')
     }
     const tokenJson = oauthToken.token
 
@@ -670,7 +670,7 @@ router.post('/keepalive', async (req, res, next) => {
       await logout(req, res)
       log.warn(`a user failed to refresh their info from their core identity provider ${provider.id}`, { code: 'sd.auth.keepalive.oauth-refresh-ko', err })
       // TODO: can we be confident enough in this to actually delete the user ? or maybe flag it as disabled so that it is removed from listings ?
-      return res.status(401).send('Échec de prolongation de la session avec le fournisseur d\'identité principal')
+      return res.status(401).send('failed to extend the session with the core identity provider')
     }
   }
 
@@ -939,7 +939,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
 
   if (!authInfo.user.email) {
     log.warn('email attribute not fetched from oauth', { code: 'sd.auth.oauth.fail', providerId: provider.id })
-    throw new Error('Email manquant dans les attributs de l\'utilisateur.')
+    throw new Error('missing email in the user attributes')
   }
   debugOAuth('Got user info from oauth', provider.id, authInfo)
 
@@ -957,7 +957,8 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     }
     res.redirect(callbackUrl)
   } catch (err : any) {
-    return returnError(err.message as string, err.code || 500)
+    // a translated message for the login page, the English one stays for the logs
+    return returnError(err instanceof I18nHttpError ? __(req, err.key, err.params) : err.message as string, err.code || 500)
   }
 }
 
@@ -1110,7 +1111,8 @@ router.post('/saml2-assert', async (req, res) => {
     const [callbackUrl] = await authProviderLoginCallback(req, invitToken, authInfo, logFields, provider, redirect, org, dep, !!adminMode)
     res.redirect(callbackUrl)
   } catch (err : any) {
-    return returnError(err.message as string, err.code || 500)
+    // a translated message for the login page, the English one stays for the logs
+    return returnError(err instanceof I18nHttpError ? __(req, err.key, err.params) : err.message as string, err.code || 500)
   }
 })
 

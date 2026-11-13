@@ -6,7 +6,7 @@ import mongo from '#mongo'
 import { RateLimiterMongo } from 'rate-limiter-flexible'
 import emailValidator from 'email-validator'
 import multer from 'multer'
-import { reqI18n } from '#i18n'
+import { reqI18n, getMessage } from '#i18n'
 import { sendMail, defaultLogoPng } from './service.ts'
 import { crossOriginResourcePolicy } from 'helmet'
 import { textToSafeHtml, sanitizeMailHtml } from './escape.ts'
@@ -113,7 +113,7 @@ router.post('/contact', async (req, res) => {
       await session.verifyToken(req.body.token)
     } catch (err: any) {
       if (err.name === 'NotBeforeError') {
-        return res.status(429).send('Message refusé, l\'activité ressemble à celle d\'un robot spammeur.')
+        return res.status(429).send(reqI18n(req).messages.errors.spamSuspected)
       } else {
         return res.status(401).send('Invalid id_token')
       }
@@ -131,17 +131,19 @@ router.post('/contact', async (req, res) => {
     await _contactLimiter.consume(reqIp(req), 1)
   } catch (err) {
     log.warn(`rate limit error for /mails/contact route ${req.body.email}`, { code: 'sd.mails.contact.rate-limit' })
-    return res.status(429).send('Trop de messages dans un bref interval. Veuillez patienter avant d\'essayer de nouveau.')
+    return res.status(429).send(reqI18n(req).messages.errors.rateLimitMessages)
   }
 
   const siteUrl = reqSiteUrl(req)
-  const intro = `Message transmis par le formulaire de contact de ${siteUrl} émis par ${req.body.from}`
+  const { localeCode } = reqI18n(req)
+  const intro = getMessage(localeCode, 'mails.contact.intro', { site: siteUrl, from: req.body.from })
   const body: string = req.body.text ?? ''
   const text = `${intro}\n\n${body}`
   // the portal contact form sends html, the simple-directory one plain text whose line breaks must survive
   const bodyHtml = /<\/?[a-z][^>]*>/i.test(body) ? body : `<p>${textToSafeHtml(body)}</p>`
   const [safeUrl, safeFrom] = [textToSafeHtml(siteUrl), textToSafeHtml(req.body.from)]
-  const html = `<p>Message transmis par le formulaire de contact de <a href="${safeUrl}">${safeUrl}</a> émis par <a href="mailto:${safeFrom}">${safeFrom}</a></p>${bodyHtml}`
+  const htmlIntro = getMessage(localeCode, 'mails.contact.intro', { site: `<a href="${safeUrl}">${safeUrl}</a>`, from: `<a href="mailto:${safeFrom}">${safeFrom}</a>` })
+  const html = `<p>${htmlIntro}</p>${bodyHtml}`
 
   // on the main host reqSite() is undefined, the portal contact lives in the
   // main site document (mails category of MAIN_SITE_FROM_DB)

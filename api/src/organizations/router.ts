@@ -472,17 +472,17 @@ if (config.managePartners) {
 
     // user must have access to a token sent to the contact email
     if (tokenPayload.contactEmail !== partnerAccept.contactEmail || tokenPayload.orgId !== req.params.organizationId) {
-      return res.status(400).send('requête incohérente avec l\'invitation envoyée')
+      return res.status(400).send(reqI18n(req).messages.errors.partnerInvitationMismatch)
     }
     const orga = await storage.getOrganization(req.params.organizationId)
     if (!orga) return res.status(404).send('unknown organization')
     debugPartners('accept partner invitation', tokenPayload, partnerOrga.name, partnerOrga.id)
 
     const conflictInvitation = (orga.partners || []).find(p => p.id === partnerOrga.id)
-    if (conflictInvitation) return res.status(400).send('cette organisation est déjà partenaire')
+    if (conflictInvitation) return res.status(400).send(reqI18n(req).messages.errors.partnerConflict)
 
     const pendingInvitation = (orga.partners || []).find(p => p.partnerId === tokenPayload.partnerId && p.contactEmail === partnerAccept.contactEmail && !p.id)
-    if (!pendingInvitation) return res.status(400).send('pas d\'invitation en attente de validation')
+    if (!pendingInvitation) return res.status(400).send(reqI18n(req).messages.errors.noPendingPartnerInvitation)
 
     await storage.validatePartner(orga.id, tokenPayload.partnerId, partnerOrga)
     postOrganizationIdentityWebhook((await storage.getOrganization(orga.id)) ?? orga)
@@ -519,7 +519,7 @@ if (config.managePartners) {
     if (!partnerOrga) return res.status(404).send('unknown organization')
 
     const conflict = (orga.partners || []).find(p => p.id === partnerOrga.id)
-    if (conflict) return res.status(400).send('cette organisation est déjà partenaire')
+    if (conflict) return res.status(400).send(reqI18n(req).messages.errors.partnerConflict)
 
     // this partnership is established immediately, there is no invitation workflow, so we do not
     // store a contact email (unnecessary personal information)

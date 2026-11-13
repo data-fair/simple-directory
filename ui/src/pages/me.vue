@@ -175,9 +175,9 @@
       <br>
       <div v-if="showMaxCreatedOrgs">
         <p v-if="nbCreatedOrgs !== null">
-          {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
+          {{ $t('common.nbCreatedOrgs', { count: nbCreatedOrgs?.toLocaleString(locale) }) }}
         </p>
-        <p>{{ $t('common.maxCreatedOrgs') }} : {{ showMaxCreatedOrgs }}</p>
+        <p>{{ $t('common.maxCreatedOrgsValue', { value: showMaxCreatedOrgs }) }}</p>
       </div>
 
       <add-organization-menu
@@ -297,7 +297,7 @@ import type { VForm } from 'vuetify/components'
 
 const { user, keepalive } = useSession()
 const { dayjs, duration } = useLocaleDayjs()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { userDetailsFetch, authProvidersFetch } = useStore()
 
 if (!user.value) throw new Error('auth required')
@@ -347,7 +347,7 @@ const showMaxCreatedOrgs = computed(() => {
   if (!userDetailsFetch.data.value) return false
   if ($uiConfig.quotas.defaultMaxCreatedOrgs === -1) return false
   if ($uiConfig.quotas.defaultMaxCreatedOrgs === 0 && !userDetailsFetch.data.value.maxCreatedOrgs) return false
-  return maxCreatedOrgs.value === -1 ? 'illimité' : ('' + maxCreatedOrgs.value)
+  return maxCreatedOrgs.value === -1 ? t('common.unlimited') : ('' + maxCreatedOrgs.value)
 })
 
 const defaultOrgItems = computed<{ value: string, title: string }[]>(() => {

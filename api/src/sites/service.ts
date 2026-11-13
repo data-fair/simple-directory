@@ -2,6 +2,7 @@ import config from '#config'
 import { type Site, type SitePublic } from '#types'
 import { type Request } from 'express'
 import { reqSiteUrl, httpError, type AccountKeys, reqUser } from '@data-fair/lib-express'
+import { I18nHttpError } from '#i18n'
 import mongo from '#mongo'
 import memoize from 'memoizee'
 import Debug from 'debug'
@@ -121,7 +122,7 @@ export const resolveAccountMainSite = async (site: Site | undefined): Promise<Si
     const backing = await getSiteByUrl('https://' + site.authOnlyOtherSite)
     if (!backing?.authMode || backing.authMode === 'onlyBackOffice') return undefined
     if (backing.authMode === 'onlyOtherSite' && backing.authOnlyOtherSite) {
-      throw httpError(400, `Impossible d'utiliser le site ${backing.host} comme référence pour l'authentification, il est lui aussi configuré comme "uniquement sur un autre de vos sites".`)
+      throw new I18nHttpError(400, 'errors.authOnlyOtherSiteChain', { host: backing.host })
     }
     return backing
   }

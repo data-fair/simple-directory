@@ -29,6 +29,7 @@ import { scopeGate } from './utils/scope-gate.ts'
 import oauthServer from './oauth-server/router.ts'
 import oauthInteraction from './oauth-server/interaction.ts'
 import { getSiteExtraParams } from './sites/spa-params.ts'
+import { i18nErrorMiddleware } from '#i18n'
 
 const app = express()
 export default app
@@ -152,4 +153,5 @@ if (process.env.NODE_ENV !== 'test') {
   }))
 }
 
+app.use(i18nErrorMiddleware)
 app.use(errorHandler)

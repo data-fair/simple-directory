@@ -4,54 +4,54 @@
 export default {
   root: {
     title: 'Simple Directory',
-    description: 'Vereinfachte Verwaltung Ihrer Benutzer und Organisationen in einer modernen weborientierten Architektur.'
+    description: 'Einfache Verwaltung von Benutzern und Organisationen für moderne webbasierte Architekturen.'
   },
   common: {
     manageNotifications: 'Benachrichtigungen verwalten',
     home: 'Startseite',
     logLink: 'Anmelden / Registrieren',
     logout: 'Abmelden',
-    login: 'Anmeldung',
-    signin: 'Sign up',
-    activateAdminMode: 'Aktivierungsmodus admin',
+    login: 'Anmelden',
+    signin: 'Registrieren',
+    activateAdminMode: 'Admin-Modus aktivieren',
     deactivateAdminMode: 'Admin-Modus deaktivieren',
     documentation: 'Dokumentation',
     administration: 'Verwaltung',
-    myAccount: 'Mein Konto',
+    myAccount: 'Persönliche Daten',
     myOrganizations: 'Meine Organisationen',
     organization: 'Organisation',
     organizations: 'Organisationen',
-    organizationName: 'Organisationsname',
-    user: 'Nutzer',
+    organizationName: 'Name der Organisation',
+    user: 'Benutzer',
     users: 'Benutzer',
-    createOrganization: 'Erstellen einer Organisation',
-    dashboard: 'Instrumententafel',
+    createOrganization: 'Organisation erstellen',
+    dashboard: 'Dashboard',
     description: 'Beschreibung',
-    id: 'Nutzername',
+    id: 'Kennung',
     name: 'Name',
-    save: 'Aufzeichnung',
+    save: 'Speichern',
     send: 'Senden',
     load: 'Hochladen',
-    active: 'aktiv',
-    inactive: 'inaktiv',
+    active: 'Aktiv',
+    inactive: 'Inaktiv',
     members: 'Mitglieder',
     orgStorageMembers: 'Mitglieder im sekundären Speicher',
     role: 'Rolle',
-    search: 'Suche',
+    search: 'Suchen',
     noResult: 'Kein Ergebnis',
-    confirmOk: 'Ok',
+    confirmOk: 'OK',
     confirmCancel: 'Abbrechen',
-    confirmTitle: 'Möchten Sie diese Operation bestätigen?',
+    confirmTitle: 'Möchten Sie diesen Vorgang bestätigen?',
     firstName: 'Vorname',
     lastName: 'Nachname',
     email: 'E-Mail-Adresse',
-    modificationOk: 'Ihre Änderung wurde übernommen.',
+    modificationOk: 'Ihre Änderung wurde gespeichert.',
     invitations: 'Einladungen',
-    accept: 'Akzeptieren Sie',
-    reject: 'ablehnen',
-    confirmDeleteTitle: 'Löschen {name}',
-    confirmDeleteMsg: 'Sind Sie sicher, dass Sie diese Ressource löschen möchten? Seien Sie vorsichtig, die Daten sind nicht wiederherstellbar.',
-    editTitle: 'Bearbeiten {name}',
+    accept: 'Annehmen',
+    reject: 'Ablehnen',
+    confirmDeleteTitle: '{name} löschen',
+    confirmDeleteMsg: 'Möchten Sie diese Ressource wirklich löschen? Die Daten können nicht wiederhergestellt werden.',
+    editTitle: '{name} bearbeiten',
     seeTitle: '{name} ansehen',
     loggedAt: 'Letzte Anmeldung',
     createdAt: 'Erstellt am',
@@ -59,33 +59,35 @@ export default {
     host: 'Website',
     sites: 'Websites',
     updatedAt: 'Aktualisiert am',
-    maxCreatedOrgs: 'Maximale Anzahl der zu gründenden Organisationen',
-    maxCreatedOrgsShort: 'Max Orgs',
-    nbCreatedOrgs: 'Anzahl der erstellten Organisationen :',
+    maxCreatedOrgs: 'Maximale Anzahl erstellbarer Organisationen',
+    maxCreatedOrgsShort: 'Max. Org.',
+    unlimited: 'unbegrenzt',
+    nbCreatedOrgs: 'Anzahl erstellter Organisationen: {count}',
+    maxCreatedOrgsValue: 'Maximale Anzahl erstellbarer Organisationen: {value}',
     back: 'Zurück',
-    next: 'Nächste',
-    password: 'Kennwort',
-    showPassword: 'Kennwort anzeigen',
-    hidePassword: 'Kennwort ausblenden',
-    passwordShown: 'Ihr Kennwort ist sichtbar',
-    passwordHidden: 'Ihr Kennwort ist ausgeblendet',
-    checkInbox: 'Überprüfen Sie Ihre Mailbox',
-    spamWarning: 'Wenn Sie eine E-Mail nicht erhalten haben, überprüfen Sie, ob sie nicht automatisch als Spam klassifiziert wurde.',
-    validate: 'Validieren Sie',
-    delete: 'Delete',
+    next: 'Weiter',
+    password: 'Passwort',
+    showPassword: 'Passwort anzeigen',
+    hidePassword: 'Passwort ausblenden',
+    passwordShown: 'Ihr Passwort ist sichtbar',
+    passwordHidden: 'Ihr Passwort ist ausgeblendet',
+    checkInbox: 'Prüfen Sie Ihr Postfach',
+    spamWarning: 'Falls Sie keine E-Mail erhalten haben, prüfen Sie, ob sie in Ihrem Postfach als Spam eingestuft wurde.',
+    validate: 'Bestätigen',
+    delete: 'Löschen',
     department: 'Abteilung',
     departments: 'Abteilungen',
     autoAdmin: 'Mich automatisch als Administrator hinzufügen',
-    asAdmin: 'Anmeldung als dieser Benutzer',
+    asAdmin: 'Als dieser Benutzer anmelden',
     transfer: 'Auf eine andere Website übertragen',
-    delAsAdmin: 'Zurück zu meiner Administratorsitzung',
+    delAsAdmin: 'Zurück zu Ihrer Administratorsitzung',
     avatar: 'Avatar',
     birthday: 'Geburtstag',
-    missingInfo: 'Fehlende Informationen',
+    missingInfo: 'Fehlende Angaben',
     '2FA': 'Zwei-Faktor-Authentifizierung',
     userAccount: 'Persönliches Konto',
-    continue: 'Fortsetzen',
-    tooLong: 'Text ist zu lang',
+    continue: 'Weiter',
+    tooLong: 'Der Text ist zu lang',
     settings: 'Einstellungen',
     emailConfirmed: 'Erstellung abgeschlossen',
     emailNotConfirmed: 'Erstellung nicht abgeschlossen',
@@ -94,7 +96,7 @@ export default {
     authMode: 'Authentifizierungsmodus',
     authProviders: 'Authentifizierungsanbieter',
     partners: 'Partnerorganisationen',
-    contactEmail: 'Kontakt-E-Mail',
+    contactEmail: 'Kontakt-E-Mail-Adresse',
     orgName: 'Name der Organisation',
     loginSignin: 'Anmelden / Konto erstellen',
     sort: 'Sortieren',
@@ -103,19 +105,19 @@ export default {
     oauthTokens: 'OAuth-Token',
     plannedDeletion: 'Geplante Löschung',
     plannedDeletionShort: 'Löschung',
-    owner: 'Besitzer',
+    owner: 'Eigentümer',
     passwordLists: 'Passwörter',
     adminGlobal: 'Globale Verwaltung',
-    adminSite: 'Seitenverwaltung',
+    adminSite: 'Website-Verwaltung',
     no: 'Nein',
     yes: 'Ja',
     redirectSite: 'Website für die Weiterleitung',
-    manageOrg: 'Organisationsverwaltung',
-    manageDep: 'Abteilungsverwaltung'
+    manageOrg: 'Verwaltung der Organisation',
+    manageDep: 'Verwaltung der Abteilung'
   },
   doc: {
     about: {
-      link: 'Über uns'
+      link: 'Über'
     },
     install: {
       link: 'Installation'
@@ -130,137 +132,141 @@ export default {
       varDesc: 'Beschreibung',
       varDefault: 'Standardwert',
       varDescriptions: {
-        publicUrl: '<b>WICHTIG.</b> Die URL, der der Dienst ausgesetzt wird. Zum Beispiel https://koumoul.com/simple-directory',
-        admins: '<b>WICHTIG.</b> Die Liste der E-Mail-Adressen der Administratoren des Dienstes.',
-        contact: '<b>WICHTIG.</b> Die Kontakt-E-Mail-Adresse für Benutzer des Dienstes.',
+        publicUrl: '<b>WICHTIG.</b> Die URL, unter der der Dienst erreichbar ist. Zum Beispiel https://koumoul.com/simple-directory',
+        admins: '<b>WICHTIG.</b> Die Liste der E-Mail-Adressen der Administratoren dieses Dienstes.',
+        contact: '<b>WICHTIG.</b> Die Kontakt-E-Mail-Adresse für die Benutzer des Dienstes.',
         theme: {
-          logo: 'Die Logo-URL, die verwendet werden soll, um das Standardlogo des <i>Simple Directory</i> zu ersetzen.',
-          dark: 'Verdunkeln Sie das gesamte Erscheinungsbild der Seiten.<br>Beachten Sie, dass die Standardfarben für ein klares Thema besser geeignet sind. Wenn Sie zu dunkel wechseln, müssen Sie auch diese Farben ändern.',
-          cssUrl: 'Verknüpfung mit einer Stilvorlage, um die Anpassungsvariablen zu vervollständigen.<br>WARNUNG: die HTML-Struktur kann zwischen 2 Versionen erheblich variieren. Die Beibehaltung dieses Stylesheets wird bei jedem Upgrade zusätzliche Arbeit für Sie bedeuten.',
-          cssText: 'Textlicher CSS-Inhalt.<br>WARNUNG: die HTML-Struktur kann zwischen 2 Versionen erheblich variieren. Die Beibehaltung dieses Stylesheets wird bei jedem Upgrade zusätzliche Arbeit für Sie bedeuten.'
+          logo: 'Die URL eines Logos, das das Standardlogo von Simple Directory ersetzt.',
+          dark: 'Stellt das gesamte Erscheinungsbild der Seiten auf ein dunkles Design um.<br>Beachten Sie, dass die Standardfarben besser zu einem hellen Design passen: Wenn Sie auf dunkel umstellen, müssen Sie auch diese Farben anpassen.',
+          cssUrl: 'Link zu einem Stylesheet, das die Variablen für das Branding ergänzt.<br>WARNUNG: Die HTML-Struktur kann sich von einer Version zur nächsten ändern. Die Pflege eines externen Stylesheets bedeutet bei jedem Upgrade zusätzlichen Aufwand für Sie.',
+          cssText: 'CSS-Inhalt als Text, der die Variablen für das Branding ergänzt.<br>WARNUNG: Die HTML-Struktur kann sich von einer Version zur nächsten ändern. Die Pflege eines externen Stylesheets bedeutet bei jedem Upgrade zusätzlichen Aufwand für Sie.'
         },
         secret: {
-          public: '<b>WICHTIG.</b> Der Pfad zum öffentlichen RSA-Verschlüsselungsschlüssel. Siehe die Dokumentation zur Dienstinstallation.',
-          private: '<b>WICHTIG.</b> Der Pfad zum privaten RSA-Verschlüsselungsschlüssel. Siehe die Dokumentation zur Dienstinstallation.'
+          public: '<b>WICHTIG.</b> Der Pfad zum öffentlichen RSA-Signaturschlüssel. Siehe die Installationsdokumentation des Dienstes.',
+          private: '<b>WICHTIG.</b> Der Pfad zum privaten RSA-Signaturschlüssel. Siehe die Installationsdokumentation des Dienstes.'
         },
         storage: {
-          type: `<b>WICHTIG.</b> Die Art der Speicherung für die Persistenz von Benutzern und Organisationen.<br>
-Der voreingestellte "Datei"-Typ ist schreibgeschützt und eignet sich für Entwicklung/Test oder zur Verwendung einer aus einem anderen System exportierten Benutzersammlung.<br>
-Der "Mongo"-Typ hängt vom Zugriff auf eine MongoDB-Datenbank ab, er ist der geeignete Modus für die meisten Installationen in der Produktion.`,
+          type: `<b>WICHTIG.</b> Die Speicherart für die Persistenz von Benutzern und Organisationen.<br>
+Der Standardtyp „file“ ist schreibgeschützt und eignet sich für Entwicklung und Tests oder für Daten, die aus einem anderen System exportiert wurden.<br>
+Der Typ „mongo“ setzt den Zugriff auf eine MongoDB-Instanz voraus; er ist die richtige Wahl für die meisten Produktivinstallationen.`,
           file: {
-            users: 'Nur für storage.type=file. Der Pfad zu der JSON-Datei mit den Benutzerdefinitionen',
+            users: 'Nur für storage.type=file. Der Pfad zur JSON-Datei mit den Benutzerdefinitionen',
             organizations: 'Nur für storage.type=file. Der Pfad zur JSON-Datei mit den Organisationsdefinitionen'
           },
           mongo: {
-            url: 'Nur für storage.type=mongo. Die vollständige Verbindungszeichenfolge zur mongodb-Datenbank.'
+            url: 'Nur für storage.type=mongo. Die vollständige Verbindungszeichenfolge zur MongoDB-Datenbank.'
           }
         },
         mails: {
-          transport: '<b>WICHTIG.</b> Ein mit der Bibliothek kompatibles JSON-Mail-Transport-Konfigurationsobjekt <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
-          from: '\'<b>WICHTIG.</b> Die Adresse, die als Absender der von der Dienststelle ausgegebenen E-Mails anzugeben ist.'
+          transport: '<b>WICHTIG.</b> Ein JSON-Konfigurationsobjekt für den E-Mail-Versand, kompatibel mit der Bibliothek <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
+          from: '<b>WICHTIG.</b> Die Absenderadresse für die vom Dienst versendeten E-Mails.'
         },
-        listEntitiesMode: `Ermöglicht es Ihnen, den Zugriff auf Listen von Benutzern und Organisationen global einzuschränken.<br>
-Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
-        defaultLoginRedirect: 'Standardumleitung nach Anmeldung. Wenn nicht angegeben, wird der Benutzer zu seinem Profil umgeleitet.',
-        onlyCreateInvited: 'Wenn echte Benutzer nicht bei der ersten gesendeten E-Mail erstellt werden. Sie müssen in eine Organisation eingeladen werden.',
-        tosUrl: '<b>WICHTIG.</b> Wenn echte Benutzer nicht bei der ersten gesendeten E-Mail erstellt werden. Sie müssen in eine Organisation eingeladen werden.'
+        listEntitiesMode: `Schränkt den Zugriff auf die Listen von Benutzern und Organisationen global ein.<br>
+Mögliche Werte: 'anonymous', 'authenticated' oder 'admin'.`,
+        defaultLoginRedirect: 'Standardweiterleitung nach der Anmeldung. Ohne Angabe wird der Benutzer zu seinem Profil weitergeleitet.',
+        onlyCreateInvited: 'Wenn aktiviert, werden Benutzer nicht beim Versand der ersten E-Mail angelegt. Sie müssen in eine Organisation eingeladen werden.',
+        tosUrl: '<b>WICHTIG.</b> Die URL Ihrer Nutzungsbedingungen. Wenn dieser Parameter leer ist oder nicht auf eine gültige Webseite verweist, riskieren Sie, Ihren Pflichten gegenüber Ihren Benutzern nicht nachzukommen.'
       }
     },
     use: {
-      link: 'Verwenden Sie'
+      link: 'Verwendung'
     }
   },
   pages: {
     admin: {
       users: {
-        noCreatedOrgsLimit: 'Benutzer können eine beliebige Anzahl von Organisationen erstellen.',
-        createdOrgsLimit: 'Benutzer können {defaultMaxCreatedOrgs} Standardorganisation(en) erstellen.',
-        explainLimit: 'Legen Sie einen Wert fest, um die Anzahl der Organisationen zu begrenzen, die dieser Benutzer erstellen kann. -1 für eine beliebige Anzahl. Löschen Sie das Feld, um zum Standardwert zurückzukehren ({defaultMaxCreatedOrgs}).',
+        noCreatedOrgsLimit: 'Benutzer können beliebig viele Organisationen erstellen.',
+        createdOrgsLimit: 'Benutzer können standardmäßig {defaultMaxCreatedOrgs} Organisation erstellen. | Benutzer können standardmäßig {defaultMaxCreatedOrgs} Organisationen erstellen.',
+        explainLimit: 'Legen Sie einen Wert fest, um die Anzahl der Organisationen zu begrenzen, die dieser Benutzer erstellen kann. -1 für eine unbegrenzte Anzahl. Leeren Sie das Feld, um zum Standardwert ({defaultMaxCreatedOrgs}) zurückzukehren.',
         editUserEmailTitle: 'E-Mail-Adresse des Benutzers {name} ändern',
-        editUserEmailText: 'Warnung! E-Mail ist ein wichtiger Benutzerschlüssel. Durch das Ändern dieser Informationen laufen Sie Gefahr, eine falsche, nicht funktionierende oder inkonsistente Adresse mit anderen Einträgen einzufügen. Diese Funktion wird nur Administratoren angeboten, um die Blockierung eines Benutzers aufzuheben, auf dessen Postfach nicht mehr zugegriffen werden kann.',
-        drop2FATitle: 'Zwei-Faktor-Authentifizierung deaktivieren',
+        editUserEmailText: 'Warnung! Die E-Mail-Adresse ist ein wichtiger Schlüssel des Benutzers: Wenn Sie sie ändern, riskieren Sie, eine falsche, nicht funktionierende oder mit anderen Einträgen inkonsistente Adresse einzutragen. Diese Funktion steht nur Administratoren zur Verfügung, um einen Benutzer zu entsperren, dessen Postfach nicht mehr erreichbar ist.',
+        drop2FATitle: 'Zwei-Faktor-Authentifizierung des Benutzers {name} zurücksetzen',
         transferTitle: 'Benutzer {name} auf eine andere Website übertragen',
-        transferText: 'Der Benutzer wird der ausgewählten Website zugeordnet. Seine SSO-Identitäten werden zurückgesetzt und seine Organisationsmitgliedschaften bleiben erhalten. Super-Administrator-Konten können nicht übertragen werden.',
+        transferText: 'Der Benutzer wird der ausgewählten Website zugeordnet. Seine SSO-Identitäten werden zurückgesetzt, seine Mitgliedschaften in Organisationen bleiben erhalten. Superadministrator-Konten können nicht übertragen werden.',
         transferTargetSite: 'Zielwebsite',
         transferMainSite: 'Hauptwebsite',
-        drop2FAExplain: 'Warnung! Dieser Vorgang ist dafür vorgesehen, einen Benutzer zu entsperren, der sowohl sein Gerät als auch seinen Wiederherstellungscode für die Zwei-Faktor-Authentifizierung verloren hat. Bevor Sie fortfahren, wird dringend empfohlen, die Identität der anfragenden Person auf irgendeine Weise zu überprüfen (zum Beispiel durch Kontaktaufnahme mit einem Kollegen in derselben Organisation).'
+        drop2FAExplain: 'Warnung! Dieser Vorgang ist dafür vorgesehen, einen Benutzer zu entsperren, der sowohl sein Gerät als auch seinen Wiederherstellungscode für die Zwei-Faktor-Authentifizierung verloren hat. Bevor Sie fortfahren, wird dringend empfohlen, die Identität der anfragenden Person auf geeignete Weise zu überprüfen (zum Beispiel durch Rücksprache mit einem Kollegen aus derselben Organisation).'
       },
       organizations: {
-        limitOrganizationTitle: 'Organisatorische Grenzen ändern',
-        members: 'mitglied(er)',
-        nbMembers: 'Maximale Anzahl von Mitgliedern (0 für keine Begrenzung)',
-        fromCache: 'Letzte Synchronisierung dieser Liste mit dem Identitätsanbieter: '
+        limitOrganizationTitle: 'Limits der Organisation bearbeiten',
+        members: 'Mitglied | Mitglieder',
+        nbMembers: 'Maximale Anzahl von Mitgliedern (0 für unbegrenzt)'
       },
       sites: {
-        createSite: 'Eine neue Website definieren',
+        createSite: 'Neue Website definieren',
         loginOnSite: 'Auf der Website anmelden',
-        colorWarnings: 'Kontrastwarnungen'
+        colorWarnings: 'Kontrastwarnungen',
+        mainSite: 'Hauptwebsite'
       },
       passwordLists: {
-        help1: 'Sie können Kennwortlisten aus CSV-Dateien hochladen. Diese zu bekannten Kennwörter werden dann abgelehnt, wenn Benutzer versuchen, sie zu verwenden.',
-        help2: 'Sie finden Kennwortlisten im Internet, zum Beispiel im Projekt {secLists} oder im Projekt {richelieu} für eine französische Liste.',
-        newFile: 'Neue Kennwortdatei (ein Kennwort pro Zeile)',
-        subtitle: '{state} - {date} - {count} Kennwörter',
-        confirmDelete: 'Diese Kennwortliste löschen?'
+        help1: 'Sie können Passwortlisten aus CSV-Dateien hochladen. Diese allgemein bekannten Passwörter werden dann abgelehnt, wenn Benutzer versuchen, sie zu verwenden.',
+        help2: 'Passwortlisten finden Sie im Internet, zum Beispiel im Projekt {secLists} oder im Projekt {richelieu} für eine französische Liste.',
+        newFile: 'Neue Passwortdatei (ein Passwort pro Zeile)',
+        subtitle: '{state} - {date} - {count} Passwort | {state} - {date} - {count} Passwörter',
+        confirmDelete: 'Diese Passwortliste löschen?'
       },
       site: {
-        title: 'Website-Konfiguration'
+        title: 'Website-Konfiguration',
+        oidcHelp: 'Geben Sie diese Login-Callback-URL ({url}) an den Identitätsanbieter weiter und legen Sie die Scopes "openid", "profile", "email" fest.',
+        samlHelp: 'Füllen Sie das Feld unten mit den XML-Metadaten des Identitätsanbieters aus und geben Sie ihm im Gegenzug diesen {link}.',
+        samlHelpLink: 'Link',
+        mainSiteExplanation: 'Diese Website entspricht der Hauptdomain dieses Dienstes. Ihr Datenbankdokument steuert nur die Darstellung, und zwar nur für die in MAIN_SITE_FROM_DB aufgeführten Kategorien. Authentifizierung, Identitätsanbieter und der Kontobereich stammen immer aus den Umgebungsvariablen.'
       }
     },
     contact: {
-      title: 'Kontaktieren Sie uns',
+      title: 'Kontakt',
       from: 'Ihre E-Mail-Adresse',
       subject: 'Betreff',
       text: 'Ihre Anfrage',
       sent: 'Ihre Anfrage wurde gesendet'
     },
     login: {
-      title: 'Identifizieren Sie sich',
-      emailLabel: 'Deine E-Mail',
-      success: 'Sie erhalten eine E-Mail an die angegebene Adresse, die einen Link enthält. Bitte öffnen Sie diesen Link, um Ihre Identifikation zu vervollständigen.',
-      maildevLink: 'Auf das Entwicklungspostfach zugreifen',
-      newPassword: 'Neues Kennwort',
-      newPassword2: 'Bestätigung des neuen Passworts',
+      title: 'Anmeldung',
+      emailLabel: 'Ihre E-Mail-Adresse',
+      success: 'Sie erhalten eine E-Mail an die angegebene Adresse. Bitte öffnen Sie den Link in dieser E-Mail, um Ihre Anmeldung abzuschließen.',
+      maildevLink: 'Entwicklungspostfach öffnen',
+      newPassword: 'Neues Passwort',
+      newPassword2: 'Neues Passwort bestätigen',
       changePassword: 'Passwort erneuern',
-      changePasswordTooltip: 'Wenn Sie Ihr Passwort vergessen haben oder es ändern müssen, erneuern Sie Ihr Passwort.',
+      changePasswordTooltip: 'Wenn Sie Ihr Passwort vergessen haben oder es ändern müssen, erneuern Sie es.',
       newPasswordMsg: 'Geben Sie das neue Passwort zweimal ein.',
-      changePasswordSent: 'Unter {email} wurde eine E-Mail an Sie gesendet. Diese E-Mail enthält einen Link zum Ändern des mit Ihrem Konto verknüpften Passworts.',
-      passwordlessMsg1: 'Es reicht aus, eine E-Mail zu verbinden.',
-      passwordlessMsg2: 'Eine Login-E-Mail senden.',
-      passwordlessConfirmed: 'Unter {email} wurde eine E-Mail an Sie gesendet. Diese E-Mail enthält einen Link zur Verbindung mit unserer Plattform.',
-      createUserMsg1: 'Wenn Sie sich noch nicht auf unserer Plattform angemeldet haben, erstellen Sie bitte ein Konto.',
-      createUserMsg2: 'Ein Konto erstellen',
-      createUserInvit: 'Erstellen Sie ein Konto, um die Einladung in der Organisation {name} anzunehmen',
+      changePasswordSent: 'Eine E-Mail wurde an die Adresse {email} gesendet. Sie enthält einen Link, mit dem Sie das Passwort Ihres Kontos ändern können.',
+      passwordlessMsg1: 'Zum Anmelden genügt eine E-Mail.',
+      passwordlessMsg2: 'Anmelde-E-Mail senden.',
+      passwordlessConfirmed: 'Eine E-Mail wurde an die Adresse {email} gesendet. Sie enthält einen Link, mit dem Sie sich auf der Plattform anmelden können.',
+      createUserMsg1: 'Wenn Sie sich noch nie auf unserer Plattform angemeldet haben, erstellen Sie bitte ein Konto.',
+      createUserMsg2: 'Konto erstellen',
+      createUserInvit: 'Erstellen Sie ein Konto, um die Einladung in die Organisation {name} anzunehmen',
       createUserOrganization: 'Möchten Sie eine Organisation erstellen?',
-      createUserOrganizationHelp: 'Wenn Sie eine Organisation erstellen, können Sie andere Benutzer einladen, Ihnen beizutreten und Ressourcen zu teilen.',
-      tosMsg: 'Bevor Sie Ihr Konto erstellen, lesen Sie bitte <a href="{tosUrl}" target="_blank">unsere allgemeinen Nutzungsbedingungenn</a>.',
-      tosConfirm: 'Ich bestätige, dass ich die allgemeinen Nutzungsbedingungen für diese Website gelesen habe.',
+      createUserOrganizationHelp: 'Wenn Sie eine Organisation erstellen, können Sie andere Benutzer einladen, ihr beizutreten, und Ressourcen mit ihnen teilen.',
+      tosMsg: 'Bevor Sie ein Konto erstellen, lesen Sie bitte <a href="{tosUrl}" target="_blank">unsere Nutzungsbedingungen</a>.',
+      tosConfirm: 'Ich bestätige, dass ich die Nutzungsbedingungen dieser Website gelesen habe.',
       createUserConfirm: 'Konto erstellen',
-      createUserConfirmed: 'Ihnen wurde eine E-Mail an {email} geschickt. Diese E-Mail enthält einen Link zur Validierung der Erstellung des Kontos.',
-      adminMode: 'Bestätigen Sie Ihre Identität, um in den Verwaltungsmodus zu wechseln.',
-      adminModePromptTitle: 'Administrationsmodus',
-      adminModePromptMsg: 'Ihr Konto ist ein Superadministrator-Konto. Möchten Sie den Administrationsmodus für diese Sitzung aktivieren?',
-      adminModePromptAccept: 'Administrationsmodus',
+      createUserConfirmed: 'Eine E-Mail wurde an die Adresse {email} gesendet. Sie enthält einen Link, mit dem Sie die Erstellung Ihres Kontos bestätigen können.',
+      adminMode: 'Bestätigen Sie Ihre Identität, um in den Admin-Modus zu wechseln.',
+      adminModePromptTitle: 'Admin-Modus',
+      adminModePromptMsg: 'Ihr Konto ist ein Superadministrator-Konto. Möchten Sie den Admin-Modus für diese Sitzung aktivieren?',
+      adminModePromptAccept: 'Admin-Modus',
       adminModePromptDecline: 'Normale Sitzung',
-      oauth: 'Anmeldung mit :',
+      oauth: 'Anmelden mit:',
       error: 'Fehler',
-      rememberMe: 'erinnere dich an mich',
+      rememberMe: 'Angemeldet bleiben',
       '2FACode': '6-stelliger Code oder Wiederherstellungscode',
-      '2FAInfo': 'Geben Sie einen Bestätigungscode ein, um fortzufahren. Sie können diesen Code aus der Bestätigungs-App auf Ihrem Telefon erhalten. Wenn Sie Ihr Gerät verlieren, können Sie den Wiederherstellungscode verwenden, den Sie beim Einrichten der Zwei-Faktor-Authentifizierung heruntergeladen haben.',
-      configure2FA: 'Zwei-Faktor-Authentifizierung konfigurieren',
-      configure2FAQRCode: 'QR-Code für die Einrichtung der Zwei-Faktor-Authentifizierung',
-      configure2FAQRCodeMsg: 'Scannen Sie diesen QR-Code mit einem Authentifizierungs-Tool Ihrer Wahl (wie Authy oder Google Authenticator) und geben Sie den 6-stelligen Code ein, den diese Anwendung anbietet.',
+      '2FAInfo': 'Geben Sie einen Bestätigungscode ein, um fortzufahren. Sie erhalten diesen Code über die Authentifizierungs-App auf Ihrem Telefon. Wenn Sie Ihr Gerät verlieren, können Sie den Wiederherstellungscode verwenden, den Sie beim Einrichten der Zwei-Faktor-Authentifizierung heruntergeladen haben.',
+      configure2FA: 'Zwei-Faktor-Authentifizierung einrichten',
+      configure2FAQRCode: 'QR-Code zum Einrichten der Zwei-Faktor-Authentifizierung',
+      configure2FAQRCodeMsg: 'Scannen Sie diesen QR-Code mit einer Authentifizierungs-App Ihrer Wahl (zum Beispiel Authy oder Google Authenticator) und geben Sie dann den 6-stelligen Code ein, den diese App anzeigt.',
       configure2FACode: '6-stelliger Code',
       recovery2FA: 'Wiederherstellungscode',
-      recovery2FAInfo: 'Achtung! Bewahren Sie den Wiederherstellungscode unten an einem sicheren Ort auf. Ohne ihn können Sie Ihr Konto nicht wiederherstellen, wenn Sie das Gerät verlieren, auf dem Sie gerade die Zwei-Faktor-Authentifizierung eingerichtet haben.',
+      recovery2FAInfo: 'Achtung! Bewahren Sie den folgenden Wiederherstellungscode an einem sicheren Ort auf. Ohne ihn können Sie Ihr Konto nicht wiederherstellen, wenn Sie das Gerät verlieren, auf dem Sie gerade die Zwei-Faktor-Authentifizierung eingerichtet haben.',
       recovery2FACode: 'Wiederherstellungscode: ',
-      recovery2FADownload: 'Eine Datei mit dem Wiederherstellungscode herunterladen',
+      recovery2FADownload: 'Datei mit dem Wiederherstellungscode herunterladen',
       recovery2FAContent: 'Wiederherstellungscode für die Zwei-Faktor-Authentifizierung {name}',
       plannedDeletion: 'Geplante Löschung',
-      cancelDeletion: 'Löschen des Benutzers abbrechen',
+      cancelDeletion: 'Löschung des Benutzers abbrechen',
       siteLogo: 'Website-Logo',
-      partnerInvitation: 'Partner-Einladung',
-      changeHost: 'Konto mit Back-Office verknüpft'
+      partnerInvitation: 'Partnereinladung',
+      changeHost: 'Mit dem Backoffice verknüpftes Konto'
     },
     siteAdmin: {
       account: 'Konto',
@@ -308,14 +314,14 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       }
     },
     organization: {
-      addMember: 'Einen Benutzer zum Beitritt zur Organisation einladen',
-      disableInvite: 'Diese Organisation hat ihre maximale Mitgliederzahl erreicht.',
-      deleteMember: 'Löschen Sie diesen Benutzer aus der Mitgliederliste der Organisation',
-      editMember: 'Ändern Sie die Rolle dieses Benutzers in der Organisation',
-      memberReadOnly: 'Die Mitgliedschaft dieses Benutzers in der Organisation stammt aus einem Identitätsanbieter und kann hier nicht geändert werden.',
+      addMember: 'Einen Benutzer einladen, dieser Organisation beizutreten',
+      disableInvite: 'Diese Organisation hat bereits die maximale Anzahl von Mitgliedern erreicht.',
+      deleteMember: 'Diesen Benutzer aus der Mitgliederliste entfernen',
+      editMember: 'Rolle dieses Benutzers in der Organisation ändern',
+      memberReadOnly: 'Die Mitgliedschaft dieses Benutzers in der Organisation stammt von einem Identitätsanbieter und kann hier nicht geändert werden.',
       confirmEditMemberTitle: '{name} bearbeiten',
-      confirmDeleteMemberTitle: 'Ausschließen {name}',
-      confirmDeleteMemberMsg: 'Wollen Sie diesen Benutzer wirklich von der Mitgliederliste der Organisation {org} streichen?',
+      confirmDeleteMemberTitle: '{name} ausschließen',
+      confirmDeleteMemberMsg: 'Möchten Sie diesen Benutzer wirklich aus der Mitgliederliste der Organisation {org} entfernen?',
       deleteMemberSelfWarning: 'Dies ist Ihre eigene Mitgliedschaft: Sie können den Zugriff auf diese Organisation und ihre Ressourcen verlieren und diese Änderung nicht selbst rückgängig machen.',
       editMemberSelfWarning: 'Sie ändern Ihre eigene Rolle: Sie können Ihre Verwaltungsrechte für diese Organisation verlieren und diese Änderung nicht selbst rückgängig machen.',
       deleteMemberLastAdmin: 'Sie sind der letzte Administrator dieser Organisation: Ernennen Sie zuerst einen anderen Administrator, bevor Sie sie verlassen.',
@@ -323,33 +329,33 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       editMemberLastAdmin: 'Sie sind der letzte Administrator dieser Organisation: Ernennen Sie zuerst einen anderen Administrator, bevor Sie Ihre Rolle ändern.',
       deleteMemberSuccess: 'Der Benutzer {name} wurde aus der Organisation ausgeschlossen.',
       inviteEmail: 'E-Mail-Adresse des Benutzers',
-      inviteSuccess: 'Eine Einladung wurde an {email} geschickt',
-      invitePartnerSuccess: 'Eine Einladung wurde an {email} geschickt',
+      inviteSuccess: 'Eine Einladung wurde an die Adresse {email} gesendet',
+      invitePartnerSuccess: 'Eine Einladung wurde an die Adresse {email} gesendet',
       memberConflict: 'Dieser Benutzer ist bereits Mitglied',
-      departmentLabelTitle: 'Bezeichnung für das Konzept "Abteilung"',
-      departmentLabelHelp: 'Leer lassen, um "{defaultDepartmentLabel}" anzuzeigen. Füllen Sie es aus, um eine andere Bezeichnung wie "Abteilung", "Agentur" usw. zu verwenden.',
+      departmentLabelTitle: 'Bezeichnung für das Konzept „Abteilung“',
+      departmentLabelHelp: 'Leer lassen, um „{defaultDepartmentLabel}“ anzuzeigen. Ausfüllen, um eine andere Bezeichnung wie „Bereich“, „Agentur“ usw. zu verwenden.',
       addDepartment: '{departmentLabel} erstellen',
       editDepartment: '{departmentLabel} bearbeiten',
       deleteDepartment: '{departmentLabel} löschen',
-      confirmEditDepartmentTitle: 'Bearbeiten {name}',
-      confirmDeleteDepartmentTitle: '{name} entfernen',
-      confirmDeleteDepartmentMsg: 'Möchten Sie {name} wirklich aus Ihrer Organisation entfernen?',
-      deleteDepartmentHasMembers: 'Este departamento está atribuído a {count} membro(s) da organização. Não pode ser excluído neste estado.',
-      departmentIdInvalid: 'Der Bezeichner darf nur Buchstaben, Zahlen und Leerzeichen enthalten.',
-      inviteLink: 'Bei Problemen bei der Kommunikation per E-Mail können Sie den untenstehenden Bestätigungslink auf andere Weise senden. Warnung ! Sie riskieren das Einfügen einer falschen oder nicht funktionierenden E-Mail-Adresse in die Benutzerdatenbank. Diese E-Mail-Adresse kann später mehrere Probleme verursachen: Passwortänderung, Senden von Benachrichtigungen usw.',
+      confirmEditDepartmentTitle: '{name} bearbeiten',
+      confirmDeleteDepartmentTitle: '{name} löschen',
+      confirmDeleteDepartmentMsg: 'Möchten Sie {name} wirklich aus Ihrer Organisation löschen?',
+      deleteDepartmentHasMembers: 'Diese Abteilung ist {count} Mitglied der Organisation zugewiesen. Sie kann in diesem Zustand nicht gelöscht werden. | Diese Abteilung ist {count} Mitgliedern der Organisation zugewiesen. Sie kann in diesem Zustand nicht gelöscht werden.',
+      departmentIdInvalid: 'Die Kennung darf nur Buchstaben, Ziffern und Leerzeichen enthalten.',
+      inviteLink: 'Falls es Probleme mit der Kommunikation per E-Mail gibt, können Sie den untenstehenden Bestätigungslink auf anderem Weg übermitteln. Warnung! Sie riskieren, eine falsche oder nicht funktionierende E-Mail-Adresse in die Benutzerdatenbank einzutragen. Diese E-Mail-Adresse kann später mehrere Probleme verursachen: Passwortänderung, Versand von Benachrichtigungen usw.',
       '2FARoles': 'Zwei-Faktor-Authentifizierung.',
-      '2FARolesMsg': 'Machen Sie die Zwei-Faktor-Authentifizierung für Benutzer mit diesen Rollen obligatorisch:',
+      '2FARolesMsg': 'Zwei-Faktor-Authentifizierung für Benutzer mit diesen Rollen verpflichtend machen.',
       sendInvitationLink: 'Einen anderen Einladungslink senden',
       addPartner: 'Eine Partnerorganisation einladen',
-      deletePartner: 'Löschen Sie diesen Partner',
+      deletePartner: 'Diesen Partner löschen',
       depSortCreation: 'Zuletzt erstellt',
       depSortAlpha: 'Alphabetische Reihenfolge',
       deletePartnerWarning: 'Die Berechtigungen, die dieser Organisation für Ihre Ressourcen gewährt wurden, werden ihr entzogen.',
       partnerInvitationExpired: 'Einladung abgelaufen',
       partnersQuotaHelp: 'Ausstehende Einladungen zählen zum Kontingent, außer den abgelaufenen.',
-      partnersQuotaPending: '{count} ausstehende Einladung(en) belegen einen Platz: Löschen Sie eine, um ihn freizugeben, oder warten Sie, bis sie abläuft.',
+      partnersQuotaPending: '{count} ausstehende Einladung belegt einen Platz: Löschen Sie sie, um ihn freizugeben, oder warten Sie, bis sie abläuft. | {count} ausstehende Einladungen belegen einen Platz: Löschen Sie eine, um ihn freizugeben, oder warten Sie, bis sie abläuft.',
       fromCache: 'Letzte Synchronisierung dieser Liste mit dem Identitätsanbieter: {fromNow}.',
-      roleLabel: 'Bezeichnung der Rolle "{role}"',
+      roleLabel: 'Bezeichnung für die Rolle „{role}“',
       infoTitle: 'Informationen',
       siteUsersTitle: 'Konten der Website',
       siteUsersHelp: 'Auf dieser Website, der Hauptwebsite der Organisation, erstellte Konten. Als Administrator der Organisation können Sie ihre Zwei-Faktor-Authentifizierung zurücksetzen, eine geplante Löschung abbrechen, ihre Sitzungen beenden oder sie löschen.',
@@ -365,17 +371,17 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       nhiKeyBindingHint: 'Aussteller und Subjekt leer lassen für ein Dienstkonto, das nur von OAuth-Anwendungen verwendet wird.',
       nhiOauthOnly: 'Nur OAuth-Verbindungen',
       nhiConnections: 'OAuth-Verbindungen',
-      nhiConnectionsCount: '{count} Verbindung(en)',
+      nhiConnectionsCount: '{count} Verbindung | {count} Verbindungen',
       nhiConnectionLastUsed: 'zuletzt verwendet am {date}',
       nhiConnectionNeverUsed: 'nie verwendet',
       nhiConnectionExpires: 'läuft ab am {date}',
       revokeNhiConnections: 'Verbindungen widerrufen',
       revokeNhiConnectionsTitle: 'Verbindungen von {name} widerrufen',
-      revokeNhiConnectionsWarning: 'Der Client kann nicht mehr mit diesem Dienstkonto handeln. Bereits ausgestellte Zugriffstoken bleiben bis zu {duration} gültig.',
+      revokeNhiConnectionsWarning: 'Der Client kann nicht mehr als dieses Dienstkonto handeln. Bereits ausgestellte Zugriffstoken bleiben bis zu {duration} gültig.',
       nhiAllowedIps: 'Erlaubte Adressen (optional)',
       nhiAllowedIpsHint: 'Adressen oder CIDR-Subnetze, von denen der Token-Austausch akzeptiert wird, zum Beispiel 203.0.113.5 oder 10.4.0.0/16. Leer lassen, um jede Adresse zu akzeptieren.',
       nhiIpBinding: 'Sitzung an die Adresse binden, von der sie erhalten wurde',
-      nhiIpBindingHint: 'Ein entwendetes Token wird von anderen Adressen unbrauchbar. Aktivieren Sie dies nur, wenn dieses Dienstkonto immer von einer stabilen Adresse aus aufruft: eine wechselnde Ausgangsadresse (NAT-Pool, Dual-Stack) würde seine Sitzungen unterbrechen.',
+      nhiIpBindingHint: 'Ein entwendetes Token wird von anderen Adressen aus unbrauchbar. Aktivieren Sie dies nur, wenn dieses Dienstkonto immer von einer stabilen Adresse aus aufruft: Eine wechselnde Ausgangsadresse (NAT-Pool, Dual-Stack) würde seine Sitzungen unterbrechen.',
       nhiScopes: 'Berechtigungsbereiche (optional)',
       nhiScopesHint: 'Die Berechtigungen dieses Dienstkontos, zum Beispiel datasets:read oder datasets. Leer lassen für ein uneingeschränktes Konto, das mit allen Rechten seiner Rolle handelt.',
       nhiUnrestricted: 'Uneingeschränkter Zugriff (alle Rechte seiner Rolle)',
@@ -384,29 +390,29 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       nhiJwksInvalid: 'Ungültiges JSON für den JWKS: {message}'
     },
     invitation: {
-      title: 'Einladung validiert',
-      msgSameUser: 'Ihre Einladung, Mitglied einer Organisation zu werden, wurde angenommen. Sie können Ihr <a href="{profileUrl}">Profil einsehen</a>.',
-      msgDifferentUser: 'Diese Einladung, Mitglied einer Organisation zu werden, wurde gut angenommen. Sie können <a href="{loginUrl}">Anmelden</a> mit dem Gastkonto.'
+      title: 'Einladung bestätigt',
+      msgSameUser: 'Ihre Einladung, Mitglied einer Organisation zu werden, wurde bestätigt. Sie können <a href="{profileUrl}">Ihr Profil</a> aufrufen.',
+      msgDifferentUser: 'Diese Einladung, Mitglied einer Organisation zu werden, wurde bestätigt. Sie können sich mit dem eingeladenen Konto <a href="{loginUrl}">anmelden</a>.'
     },
     avatar: {
       changeUser: 'Avatar Ihres Kontos ändern',
       changeOrganization: 'Avatar der Organisation ändern',
-      changeDepartment: 'Avatar von "{departmentName}" ändern',
+      changeDepartment: 'Avatar von „{departmentName}“ ändern',
       reset: 'Standard-Avatar wiederherstellen'
     },
     me: {
       emailNotEditable: 'Diese Adresse kann nicht geändert werden.',
       noOrganization: 'Sie sind nicht Mitglied einer Organisation.',
-      operations: 'Sensible Operationen',
+      operations: 'Sensible Vorgänge',
       deleteMyself: 'Dieses Konto löschen',
-      deleteMyselfAlert: 'Wenn Sie Ihr Benutzerkonto löschen, haben Sie {plannedDeletionDelay} Tage Zeit, um den Vorgang abzubrechen. Danach werden alle zugehörigen Daten gelöscht und können nicht wiederhergestellt werden.',
-      deleteMyselfCheck: 'Markieren Sie dieses Kästchen und klicken Sie auf OK, um das Löschen des Benutzers {name} und aller seiner Daten zu bestätigen.',
-      accountChanges: 'Kontowechsel verwalten',
-      defaultOrg: 'Aktivieren Sie dieses Konto standardmäßig nach jeder Anmeldung',
-      ignorePersonalAccount: 'Aktivieren Sie dieses Kontrollkästchen, wenn Sie dieses Konto nicht außerhalb eines Organisationskontos verwenden möchten',
+      deleteMyselfAlert: 'Wenn Sie Ihr Konto löschen, haben Sie {plannedDeletionDelay} Tage Zeit, den Vorgang abzubrechen. Danach werden alle zugehörigen Daten gelöscht und können nicht wiederhergestellt werden.',
+      deleteMyselfCheck: 'Aktivieren Sie dieses Kästchen und klicken Sie auf OK, um die Löschung des Benutzers {name} und aller seiner Daten zu bestätigen.',
+      accountChanges: 'Kontowechsel',
+      defaultOrg: 'Dieses Konto nach jeder Anmeldung standardmäßig aktivieren',
+      ignorePersonalAccount: 'Aktivieren Sie dieses Kästchen, wenn Sie diese Plattform nicht außerhalb eines Organisationskontos nutzen möchten',
       sessions: 'Ihre Sitzungen',
       deleteSession: 'Sitzung auf {deviceName} löschen?',
-      deleteSessionWarning: 'Das Löschen einer Sitzung kann maximal {duration} dauern, bis es vollständig angewendet wird.',
+      deleteSessionWarning: 'Es kann bis zu {duration} dauern, bis das Löschen einer Sitzung vollständig wirksam ist.',
       settings: 'Ihre Einstellungen',
       connectedApplications: 'Verbundene Anwendungen',
       revokeApplication: 'Zugriff widerrufen',
@@ -420,222 +426,247 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
     },
     colorsPreview: {
       title: 'Vorschau der Farbdarstellung',
-      cardTitle: 'Ein Beispiel für eine Karte',
-      cardText: 'Sie verwendet die Farbe der "Oberflächen".'
+      cardTitle: 'Eine Beispielkarte',
+      cardText: 'Sie verwendet die Farbe „surface“.'
     },
     partnerInvitation: {
       msg1: 'Die Organisation {name} möchte {partnerName} als Partner hinzufügen, mit {email} als Kontaktadresse.',
-      msg2: 'Der Name "{partnerName}" ist nur eine Indikation und entspricht nicht unbedingt dem genauen Namen Ihrer Organisation.',
-      diffEmail: 'Sie sind mit dem Benutzerkonto {userName} ({userEmail}) angemeldet. Sie können sich mit einem anderen Konto anmelden oder ein neues Konto erstellen, indem Sie auf die Schaltfläche unten klicken.',
-      noUser1: 'Sie haben bereits ein Konto? Sie können sich anmelden und werden später auf diese Seite weitergeleitet.',
-      noUser2: 'Sie haben noch kein Konto? Sie können eines erstellen und werden später auf diese Seite weitergeleitet.',
-      noOrg: 'Sie gehören keiner Organisation an. Sie können eine neue Organisation erstellen und die Einladung im Namen der Organisation akzeptieren.',
-      org: 'Sie können diese Einladung im Namen einer Organisation akzeptieren, für die Sie Administrator sind, oder eine neue Organisation erstellen und die Einladung im Namen der Organisation akzeptieren.',
-      createOrg: 'eine neue Organisation erstellen',
+      msg2: 'Der Name „{partnerName}“ dient nur der Orientierung und entspricht nicht unbedingt dem genauen Namen Ihrer Organisation.',
+      diffEmail: 'Sie sind mit dem Benutzerkonto {userName} ({userEmail}) angemeldet. Sie können sich mit einem anderen Konto anmelden oder über die Schaltfläche unten ein neues Konto erstellen.',
+      noUser1: 'Sie haben bereits ein Konto? Melden Sie sich an, Sie werden anschließend auf diese Seite zurückgeleitet.',
+      noUser2: 'Sie haben noch kein Konto? Erstellen Sie eines, Sie werden anschließend auf diese Seite zurückgeleitet.',
+      noOrg: 'Sie sind nicht Mitglied einer Organisation. Sie können eine neue Organisation erstellen und die Einladung in deren Namen annehmen.',
+      org: 'Sie können diese Einladung im Namen einer Organisation annehmen, die Sie verwalten, oder eine neue Organisation erstellen und die Einladung in deren Namen annehmen.',
+      createOrg: 'Neue Organisation erstellen',
       newOrgName: 'Name der neuen Organisation',
       create: 'Erstellen',
-      acceptAs: 'Akzeptieren im Namen von {name}'
+      acceptAs: 'Im Namen von {name} annehmen'
     },
     changeHost: {
-      msg1: 'Das Konto {email} existiert nicht auf {host}, aber es existiert auf {mainHost}.',
-      sso1: 'Lösung: Verwenden Sie {mainHost} zum Anmelden',
-      sso2: 'Die Anmeldeseite bietet eine Schaltfläche zum Anmelden von {mainHost}, die Sie verwenden können. Sie können auch <a class="text-primary" href="{mainHostLogin}">diesen Link</a> verwenden.',
-      solution1: 'Lösung: Konto zu {host} verschieben',
-      solution2: 'Wenn Sie diese Lösung wählen, verlieren Sie die Möglichkeit, sich bei {mainHost} anzumelden.',
-      confirmMigration: 'Konto zu {host} verschieben und den Zugriff auf {mainHost} verlieren'
+      msg1: 'Das Konto {email} existiert nicht auf {host}, aber auf {mainHost}.',
+      sso1: 'Lösung: Melden Sie sich über {mainHost} an',
+      sso2: 'Die Anmeldeseite bietet eine Schaltfläche, um sich über {mainHost} anzumelden. Sie können auch <a class="text-primary" href="{mainHostLogin}">diesen Link</a> verwenden.',
+      solution1: 'Lösung: Konto nach {host} verschieben',
+      solution2: 'Wenn Sie diese Lösung wählen, können Sie sich nicht mehr bei {mainHost} anmelden.',
+      confirmMigration: 'Konto nach {host} verschieben und den Zugriff auf {mainHost} verlieren'
     },
     orgStorage: {
-      activate: 'Aktivieren Sie den sekundären Benutzerspeicher',
-      link: 'Verbindungslink zum Verwenden dieses sekundären Speichers',
+      activate: 'Sekundären Benutzerspeicher aktivieren',
+      link: 'Anmeldelink für diesen sekundären Speicher',
       ldap: 'LDAP-Konfiguration'
     }
   },
   errors: {
-    badEmail: 'Die E-Mail-Adresse ist leer oder fehlerhaft.',
-    badProviderInvitEmail: 'The email address you just used to log in does not match the one from the invitation you received',
+    badEmail: 'Die E-Mail-Adresse ist leer oder ungültig.',
+    badProviderInvitEmail: 'Die E-Mail-Adresse, mit der Sie sich gerade angemeldet haben, stimmt nicht mit der Adresse der erhaltenen Einladung überein',
     maxCreatedOrgs: 'Der Benutzer kann keine weiteren Organisationen erstellen. Limit erreicht.',
-    permissionDenied: 'Nicht ausreichende Berechtigungen.',
-    nonEmptyOrganization: 'Sie müssen andere Mitglieder aus dieser Organisation entfernen',
+    permissionDenied: 'Unzureichende Berechtigungen.',
+    nonEmptyOrganization: 'Sie müssen zuerst die anderen Mitglieder aus dieser Organisation entfernen',
     userUnknown: 'Unbekannter Benutzer.',
     orgaUnknown: 'Unbekannte Organisation.',
     invitationConflict: 'Dieser Benutzer ist bereits Mitglied der Organisation.',
-    unknownRole: 'Rolle {role} ist unbekannt.',
-    serviceUnavailable: 'Service wegen Wartung nicht verfügbar.',
-    badCredentials: 'E-Mail-Adresse oder Passwort ungültig.',
-    updatePassword: 'It is necessary to update your password, because it was not updated for a long time.',
-    missingToken: 'The id_token parameter is missing.',
-    invalidToken: 'Das Token ist ungültig. Vielleicht ist es abgelaufen.',
-    differentPasswords: 'The passwords are different',
+    unknownRole: 'Die Rolle {role} ist unbekannt.',
+    serviceUnavailable: 'Dienst wegen Wartungsarbeiten nicht verfügbar.',
+    badCredentials: 'Ungültige E-Mail-Adresse oder ungültiges Passwort.',
+    updatePassword: 'Sie müssen Ihr Passwort aktualisieren, da es gemäß unseren Sicherheitsrichtlinien zu lange nicht geändert wurde.',
+    missingToken: 'Der Parameter id_token fehlt.',
+    invalidToken: 'Das Token ist ungültig. Möglicherweise ist es abgelaufen.',
+    differentPasswords: 'Die Passwörter stimmen nicht überein',
     noPasswordless: 'Die passwortlose Authentifizierung wird von diesem Dienst nicht akzeptiert.',
     rateLimitAuth: 'Zu viele Versuche in kurzer Zeit. Bitte warten Sie, bevor Sie es erneut versuchen.',
     invalidInvitationToken: 'Der Einladungslink, den Sie erhalten haben, ist ungültig.',
     expiredInvitationToken: 'Der Einladungslink, den Sie erhalten haben, ist abgelaufen. Sie können diese Einladung nicht mehr annehmen.',
-    maxNbMembers: 'Die Organisation enthält bereits die maximale Anzahl von Mitgliedern, die durch ihre Quoten zulässig sind.',
-    maxNbDepartments: 'Die Organisation enthält bereits die maximale Anzahl von Abteilungen, die durch ihre Quoten zulässig sind.',
-    maxNbPartners: 'Die Organisation hat bereits die maximale Anzahl von Partnern, die durch ihre Quoten zulässig sind, nicht abgelaufene ausstehende Einladungen eingeschlossen.',
-    unknownOAuthProvider: 'OAuth-Identifizierung wird nicht unterstützt.',
-    unknownSAMLProvider: 'SAML identification not supported.',
-    adminModeOnly: 'Funktionalität für Superadministratoren reserviert.',
-    adminChangeHostBlocked: 'Superadministratoren können ihr Konto nicht auf eine Sekundärseite übertragen. Melden Sie sich von der Hauptseite aus an.',
-    emailNotConfirmed: 'Ihre E-Mail-Adresse wurde noch nicht bestätigt. Ein neuer Bestätigungslink wurde Ihnen soeben zugesandt, öffnen Sie ihn, um Ihr Konto zu aktivieren.',
-    '2FANotConfigured': 'Zwei-Faktor-Authentifizierung ist für dieses Konto erforderlich und noch nicht konfiguriert.',
-    passwordless2FA: 'Kennwortlose Authentifizierung ist inkompatibel mit der Zwei-Faktor-Authentifizierung, die für dieses Konto erforderlich ist.',
+    maxNbMembers: 'Die Organisation hat bereits die maximale Anzahl von Mitgliedern erreicht, die ihr Kontingent erlaubt.',
+    maxNbDepartments: 'Die Organisation hat bereits die maximale Anzahl von Abteilungen erreicht, die ihr Kontingent erlaubt.',
+    maxNbPartners: 'Die Organisation hat bereits die maximale Anzahl von Partnern erreicht, die ihr Kontingent erlaubt, nicht abgelaufene ausstehende Einladungen eingeschlossen.',
+    unknownOAuthProvider: 'OAuth-Authentifizierung wird nicht unterstützt.',
+    unknownSAMLProvider: 'SAML-Authentifizierung wird nicht unterstützt.',
+    adminModeOnly: 'Funktion nur für Superadministratoren verfügbar.',
+    adminChangeHostBlocked: 'Superadministratoren können ihr Konto nicht auf eine sekundäre Website übertragen. Melden Sie sich über die Hauptwebsite an.',
+    emailNotConfirmed: 'Ihre E-Mail-Adresse wurde noch nicht bestätigt. Ein neuer Bestätigungslink wurde Ihnen soeben zugesandt; öffnen Sie ihn, um Ihr Konto zu aktivieren.',
+    '2FANotConfigured': 'Die Zwei-Faktor-Authentifizierung ist für dieses Konto erforderlich, aber noch nicht eingerichtet.',
+    passwordless2FA: 'Die passwortlose Authentifizierung ist nicht mit der Zwei-Faktor-Authentifizierung vereinbar, die für dieses Konto erforderlich ist.',
     bad2FAToken: 'Ungültiger oder abgelaufener Bestätigungscode für die Zwei-Faktor-Authentifizierung',
     plannedDeletion: 'Die Löschung des Benutzers {name} und aller zugehörigen Daten ist für den {plannedDeletion} geplant.',
     onlyCreateInvited: 'Sie können kein Konto direkt erstellen. Sie müssen von einer Organisation eingeladen werden.',
-    badIDPQuery: 'Anfrage wird vom Identitätsanbieter als ungültig betrachtet.',
+    badIDPQuery: 'Die Anfrage wurde vom Identitätsanbieter als ungültig eingestuft.',
     badIDPResponse: 'Ungültige Antwort des Identitätsanbieters, bitte melden Sie sich erneut an.',
-    duplicateDep: 'Das neue Abteilungsobjekt ist ein Duplikat',
+    duplicateDep: 'Die neue Abteilung ist ein Duplikat',
     passwordEntropy: 'Das Passwort ist nicht stark genug.',
     passwordMinLength: 'Das Passwort muss mindestens {minLength} Zeichen enthalten.',
-    passwordMinCharClasses: 'Das Passwort muss mindestens {minCharClasses} verschiedene Arten von Zeichen enthalten (Kleinbuchstaben, Großbuchstaben, Ziffer, Sonderzeichen).',
+    passwordMinCharClasses: 'Das Passwort muss mindestens {minCharClasses} verschiedene Zeichenarten enthalten (Kleinbuchstabe, Großbuchstabe, Ziffer, Sonderzeichen).',
     forbiddenPassword: 'Dieses Passwort wurde in einer Liste bekannter Passwörter gefunden und kann nicht verwendet werden.',
     samePassword: 'Das neue Passwort muss sich vom alten Passwort unterscheiden.',
+    conflict2FA: 'Die Zwei-Faktor-Authentifizierung ist für dieses Konto bereits eingerichtet.',
+    oauthNoEmail: 'Anmeldung abgelehnt: Der Identitätsanbieter hat keine E-Mail-Adresse übermittelt.',
+    oauthEmailNotVerified: 'Anmeldung abgelehnt: Der Identitätsanbieter meldet diese E-Mail-Adresse nicht als verifiziert.',
+    githubNoVerifiedEmail: 'Anmeldung abgelehnt: Im GitHub-Konto wurde keine verifizierte primäre E-Mail-Adresse gefunden.',
+    facebookDisabled: 'Die Anmeldung mit Facebook ist deaktiviert: Facebook gibt nicht an, ob die E-Mail-Adresse verifiziert wurde.',
+    partnerInvitationMismatch: 'Diese Anfrage entspricht nicht der gesendeten Einladung.',
+    partnerConflict: 'Diese Organisation ist bereits Partner.',
+    noPendingPartnerInvitation: 'Es ist keine Einladung ausstehend.',
+    memberOfParentOrg: 'Dieser Benutzer ist Mitglied der übergeordneten Organisation und kann keiner Abteilung hinzugefügt werden.',
+    memberOfDepartment: 'Dieser Benutzer ist Mitglied einer Abteilung und kann der übergeordneten Organisation nicht hinzugefügt werden.',
+    departmentUnknown: 'Unbekannte Abteilung.',
+    unknownOrgRole: 'Die Rolle {role} ist in der Organisation {org} unbekannt.',
+    missingDepartmentAttribute: 'Der Identitätsanbieter hat das erforderliche Abteilungsattribut nicht übermittelt.',
+    otherCoreIdProvider: 'Dieser Benutzer ist bereits mit einem anderen Haupt-Identitätsanbieter verknüpft.',
+    authOnlyOtherSiteChain: 'Die Website {host} kann nicht als Referenz für die Authentifizierung verwendet werden: Sie ist ebenfalls so konfiguriert, dass die Authentifizierung nur auf einer anderen Website erfolgt.',
+    spamSuspected: 'Nachricht abgelehnt: Die Aktivität ähnelt der eines Spam-Bots.',
+    rateLimitMessages: 'Zu viele Nachrichten in kurzer Zeit. Bitte warten Sie, bevor Sie es erneut versuchen.'
   },
   mails: {
+    // the message forwarded by the contact form
+    contact: {
+      intro: 'Nachricht über das Kontaktformular von {site}, gesendet von {from}'
+    },
     creation: {
       subject: 'Willkommen bei {host}',
       text: `
-Für diese E-Mail-Adresse wurde vom {host} ein Antrag auf Einrichtung eines Kontos gestellt. Um das Konto zu aktivieren, müssen Sie die untenstehende URL in einen Browser kopieren. Diese URL ist 15 Minuten lang gültig.
+Über {host} wurde die Erstellung eines Kontos beantragt. Um das Konto zu aktivieren, kopieren Sie die folgende URL in die Adressleiste Ihres Browsers. Diese URL ist 15 Minuten lang gültig.
+
 {link}
 
-Wenn Sie ein Problem mit Ihrem Konto haben oder nicht beantragt haben, ein Konto auf {host} einzurichten, kontaktieren Sie uns bitte unter {contact}.
+Wenn Sie ein Problem mit Ihrem Konto haben oder kein Konto auf {host} beantragt haben, kontaktieren Sie uns gerne unter {contact}.
       `,
-      htmlMsg: 'Ein Antrag auf Einrichtung eines Kontos wurde gestellt seit <a href="{origin}">{host}</a> für diese E-Mail-Adresse. Zur Bestätigung klicken Sie auf die Schaltfläche unten. Der Link ist 15 Minuten lang gültig.',
+      htmlMsg: 'Über <a href="{origin}">{host}</a> wurde die Erstellung eines Kontos beantragt. Um das Konto zu aktivieren, klicken Sie auf die Schaltfläche unten. Der Link ist 15 Minuten lang gültig.',
       htmlButton: 'Kontoerstellung bestätigen',
-      htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
-      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder wenn Sie nicht beantragt haben, sich unter <a href="{origin}">{host}</a>, zögern Sie nicht, uns zu kontaktieren unter <a href="mailto:{contact}">{contact}</a>.'
+      htmlAlternativeLink: 'Wenn die Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
+      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder kein Konto auf <a href="{origin}">{host}</a> beantragt haben, kontaktieren Sie uns gerne unter <a href="mailto:{contact}">{contact}</a>.'
     },
     login: {
-      subject: 'Identifikation auf {host}',
+      subject: 'Anmeldung bei {host}',
       text: `
-Eine Identifikationsanfrage wurde von {host} gestellt. Kopieren Sie zur Bestätigung die folgende URL in einen Browser. Diese URL ist 15 Minuten gültig.
+Über {host} wurde eine Anmeldung angefordert. Um sie zu bestätigen, kopieren Sie die folgende URL in die Adressleiste Ihres Browsers. Diese URL ist 15 Minuten lang gültig.
 
 {link}
 
-Wenn Sie ein Problem mit Ihrem Konto haben oder nicht darum gebeten haben, sich bei {host} anzumelden, zögern Sie bitte nicht, uns unter {contact} zu kontaktieren.
+Wenn Sie ein Problem mit Ihrem Konto haben oder diese Anmeldung bei {host} nicht angefordert haben, kontaktieren Sie uns gerne unter {contact}.
       `,
-      htmlMsg: 'Seitdem wurde ein Ausweisantrag gestellt <a href="{origin}">{host}</a>. Um dies zu bestätigen, klicken Sie auf die Schaltfläche unten. Der Link ist 15 Minuten gültig.',
-      htmlButton: 'Verbindung zu {host} herstellen',
-      htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
-      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder keine Verbindung zu <a href="{origin}">{host}</a>, hergestellt haben, zögern Sie bitte nicht, uns unter <a href="mailto:{contact}">{contact}</a> zu kontaktieren.'
+      htmlMsg: 'Über <a href="{origin}">{host}</a> wurde eine Anmeldung angefordert. Um sie zu bestätigen, klicken Sie auf die Schaltfläche unten. Der Link ist 15 Minuten lang gültig.',
+      htmlButton: 'Bei {host} anmelden',
+      htmlAlternativeLink: 'Wenn die Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
+      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Anmeldung bei <a href="{origin}">{host}</a> nicht angefordert haben, kontaktieren Sie uns gerne unter <a href="mailto:{contact}">{contact}</a>.'
     },
     noCreation: {
-      subject: 'Authentifizierungsfehler ein {host}',
+      subject: 'Authentifizierung bei {host} fehlgeschlagen',
       text: `
-Eine Identifikationsanfrage wurde von {host} gestellt, aber abgelehnt, da diese E-Mail-Adresse unbekannt oder nicht validiert ist.
+Über {host} wurde eine Anmeldung angefordert, aber abgelehnt, da diese E-Mail-Adresse unbekannt ist oder noch nicht bestätigt wurde.
 
-Zögern Sie nicht, uns unter {contact} zu kontaktieren.
+Kontaktieren Sie uns gerne unter {contact}.
       `,
-      htmlMsg: 'Seitdem wurde ein Ausweisantrag gestellt <a href="{origin}">{host}</a>, Es wurde jedoch abgelehnt, da diese E-Mail-Adresse unbekannt ist oder nicht validiert wurde.',
-      htmlCaption: 'Zögern Sie nicht, uns unter zu kontaktieren <a href="mailto:{contact}">{contact}</a>.'
+      htmlMsg: 'Über <a href="{origin}">{host}</a> wurde eine Anmeldung angefordert, aber abgelehnt, da diese E-Mail-Adresse unbekannt ist oder noch nicht bestätigt wurde.',
+      htmlCaption: 'Kontaktieren Sie uns gerne unter <a href="mailto:{contact}">{contact}</a>.'
     },
     conflict: {
-      subject: 'Fehler beim Erstellen eines Kontos am {host}',
+      subject: 'Kontoerstellung auf {host} fehlgeschlagen',
       text: `
-Eine Kontoerstellungsanforderung wurde von {host} gestellt, aber abgelehnt, da diese E-Mail-Adresse bereits einem Konto zugeordnet ist.
+Über {host} wurde die Erstellung eines Kontos beantragt, aber abgelehnt, da diese E-Mail-Adresse bereits mit einem Konto verknüpft ist.
 
-führt Sie nicht, uns zu gehören unter {contact}.
+Kontaktieren Sie uns gerne unter {contact}.
       `,
-      htmlMsg: 'Ein Antrag auf Einrichtung eines Kontos wurde gestellt seit <a href="{origin}">{host}</a>, aber es wurde abgelehnt, weil diese E-Mail-Adresse bereits mit einem Konto verknüpft ist.',
-      htmlCaption: 'führt Sie nicht, uns zu gehören unter <a href="mailto:{contact}">{contact}</a>.'
+      htmlMsg: 'Über <a href="{origin}">{host}</a> wurde die Erstellung eines Kontos beantragt, aber abgelehnt, da diese E-Mail-Adresse bereits mit einem Konto verknüpft ist.',
+      htmlCaption: 'Kontaktieren Sie uns gerne unter <a href="mailto:{contact}">{contact}</a>.'
     },
     invitation: {
-      subject: 'Treten Sie der {organization} am {host} bei.',
+      subject: 'Treten Sie der Organisation {organization} auf {host} bei',
       text: `
-Sie wurden von einem Administrator der {organization} eingeladen, ihr beizutreten. Um diese Einladung anzunehmen, kopieren Sie die untenstehende URL in einen Browser. Diese URL ist 10 Tage lang gültig.
-Wenn Sie noch kein Konto haben, wird es automatisch erstellt.
+Ein Administrator der Organisation {organization} hat Sie eingeladen, ihr beizutreten. Um diese Einladung anzunehmen, kopieren Sie die folgende URL in die Adressleiste Ihres Browsers. Diese URL ist 10 Tage lang gültig.
 
 {link}
 
-Falls Sie Probleme mit Ihrem Konto haben oder diese Einladung verdächtig finden, zögern Sie bitte nicht, uns unter {contact} zu kontaktieren.
+Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns gerne unter {contact}.
       `,
       htmlMsg: `
-Sie wurden von einem Administrator der {organization} eingeladen, ihr beizutreten. Um diese Einladung anzunehmen, klicken Sie auf die Schaltfläche unten. Der Link ist 10 Tage lang gültig.
-Wenn Sie noch kein Konto haben, wird es automatisch erstellt.
+Ein Administrator der Organisation {organization} hat Sie eingeladen, ihr beizutreten. Um diese Einladung anzunehmen, klicken Sie auf die Schaltfläche unten. Der Link ist 10 Tage lang gültig.
       `,
       htmlButton: 'Einladung annehmen',
-      htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
-      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.'
+      htmlAlternativeLink: 'Wenn die Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
+      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns gerne unter <a href="mailto:{contact}">{contact}</a>.'
     },
     invitationSecondary: {
-      subject: 'Treten Sie der {organization} am {host} bei.',
+      subject: 'Treten Sie der Organisation {organization} auf {host} bei',
       text: `
-Sie wurden von einem Administrator der {organization} eingeladen, ihr beizutreten auf {host} um auf {secondaryHost} zuzugreifen. Um diese Einladung anzunehmen, kopieren Sie die untenstehende URL in einen Browser. Diese URL ist 10 Tage lang gültig.
-Wenn Sie noch kein Konto haben, wird es automatisch erstellt.
+Ein Administrator der Organisation {organization} hat Sie eingeladen, ihr auf {host} beizutreten, um auf {secondaryHost} zuzugreifen. Um diese Einladung anzunehmen, kopieren Sie die folgende URL in die Adressleiste Ihres Browsers. Diese URL ist 10 Tage lang gültig.
 
 {link}
 
-Falls Sie Probleme mit Ihrem Konto haben oder diese Einladung verdächtig finden, zögern Sie bitte nicht, uns unter {contact} zu kontaktieren.
+Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns gerne unter {contact}.
       `,
       htmlMsg: `
-Sie wurden von einem Administrator der {organization} eingeladen, ihr beizutreten auf {host} um auf <b>{secondaryHost}</b> zuzugreifen. Um diese Einladung anzunehmen, klicken Sie auf die Schaltfläche unten. Der Link ist 10 Tage lang gültig.
-Wenn Sie noch kein Konto haben, wird es automatisch erstellt.
+Ein Administrator der Organisation {organization} hat Sie eingeladen, ihr auf {host} beizutreten, um auf <b>{secondaryHost}</b> zuzugreifen. Um diese Einladung anzunehmen, klicken Sie auf die Schaltfläche unten. Der Link ist 10 Tage lang gültig.
       `,
       htmlButton: 'Einladung annehmen',
-      htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
-      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.'
+      htmlAlternativeLink: 'Wenn die Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
+      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns gerne unter <a href="mailto:{contact}">{contact}</a>.'
     },
     partnerInvitation: {
       subject: 'Die Organisation {organization} auf {host} möchte {partner} als Partner hinzufügen',
       text: `
-Ein Administrator der Organisation {organization} lädt Sie als Kontakt für die Organisation {partner} auf {host} ein. Um diese Einladung anzunehmen, kopieren Sie die untenstehende URL in einen Browser. Diese URL ist 10 Tage lang gültig.
+Ein Administrator der Organisation {organization} lädt Sie als Kontaktperson der Organisation {partner} ein, ihr auf {host} beizutreten. Um diese Einladung anzunehmen, kopieren Sie die folgende URL in die Adressleiste Ihres Browsers. Diese URL ist 10 Tage lang gültig.
+
 {link}
 
 Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns bitte unter {contact}.
       `,
       htmlMsg: `
-Ein Administrator der Organisation {organization} lädt Sie als Kontakt für die Organisation {partner} auf {host} ein. Um diese Einladung anzunehmen, klicken Sie auf die Schaltfläche unten. Der Link ist 10 Tage lang gültig.
+Ein Administrator der Organisation {organization} lädt Sie als Kontaktperson der Organisation {partner} ein, ihr auf {host} beizutreten. Um diese Einladung anzunehmen, klicken Sie auf die Schaltfläche unten. Der Link ist 10 Tage lang gültig.
       `,
       htmlButton: 'Einladung annehmen',
-      htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
+      htmlAlternativeLink: 'Wenn die Schaltfläche oben nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
       htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Einladung verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.'
     },
     action: {
-      subject: 'Führen Sie eine Aktion auf Ihrem Konto bei {host} aus.',
+      subject: 'Aktion für Ihr Konto auf {host} ausführen',
       text: `
-Auf dieser Adresse wurde eine Aktion ausgelöst, die eine Bestätigung per E-Mail verlangt. Um diese Aktion zu validieren, kopieren Sie die untenstehende URL in einen Browser. Diese URL ist 15 Minuten lang gültig.
+Für diese Adresse wurde eine Aktion ausgelöst, die eine Bestätigung per E-Mail erfordert. Um diese Aktion zu bestätigen, kopieren Sie die folgende URL in die Adressleiste Ihres Browsers. Diese URL ist 15 Minuten lang gültig.
 
 {link}
 
-Wenn Sie auf ein Problem mit Ihrem Konto stoßen oder Sie diese Nachricht verdächtig finden, zögern Sie bitte nicht, uns unter {contact} zu kontaktieren.
+Wenn Sie ein Problem mit Ihrem Konto haben oder diese Nachricht verdächtig finden, kontaktieren Sie uns gerne unter {contact}.
       `,
       htmlMsg: `
-Auf dieser Adresse wurde eine Aktion ausgelöst, die eine Bestätigung per E-Mail verlangt. Um diese Aktion zu bestätigen, klicken Sie auf die Schaltfläche unten. Der Link ist 15 Minuten lang gültig.
+Für diese Adresse wurde eine Aktion ausgelöst, die eine Bestätigung per E-Mail erfordert. Um diese Aktion zu bestätigen, klicken Sie auf die Schaltfläche unten. Der Link ist 15 Minuten lang gültig.
       `,
-      htmlButton: 'Validieren',
-      htmlAlternativeLink: 'Wenn die obige Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
-      htmlCaption: 'Wenn Sie auf ein Problem mit Ihrem Konto stoßen oder diese Nachricht verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.'
+      htmlButton: 'Bestätigen',
+      htmlAlternativeLink: 'Wenn die Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
+      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Nachricht verdächtig finden, kontaktieren Sie uns gerne unter <a href="mailto:{contact}">{contact}</a>.'
     },
     plannedDeletion: {
-      subject: 'Konto-Löschung geplant auf {host}',
+      subject: 'Geplante Löschung Ihres Kontos auf {host}',
       text: `
-Der Benutzer {user} und alle damit verbundenen Daten werden am {plannedDeletion} gelöscht. {cause}
+Der Benutzer {user} und alle zugehörigen Daten werden am {plannedDeletion} endgültig gelöscht. {cause}
 
-Um die Löschung abzubrechen, können Sie sich hier anmelden {link}.
+Um die Löschung abzubrechen, können Sie sich über diesen Link anmelden: {link}.
 
 Kontaktieren Sie uns gerne unter {contact}.
       `,
-      htmlMsg: 'Der Benutzer {user} und alle damit verbundenen Daten werden am {plannedDeletion} gelöscht. {cause}',
+      htmlMsg: 'Der Benutzer {user} und alle zugehörigen Daten werden am {plannedDeletion} endgültig gelöscht. {cause}',
       htmlButton: 'Anmelden, um die Löschung abzubrechen',
       htmlAlternativeLink: 'Wenn die Schaltfläche nicht funktioniert, können Sie diesen Link in die Adressleiste Ihres Browsers kopieren:',
-      htmlCaption: 'Wenn Sie ein Problem mit Ihrem Konto haben oder diese Nachricht verdächtig finden, kontaktieren Sie uns bitte unter <a href="mailto:{contact}">{contact}</a>.',
-      causeInactivity: 'Diese Operation wurde automatisch ausgelöst, weil dieses Konto seit dem {date} inaktiv ist.'
+      htmlCaption: 'Kontaktieren Sie uns gerne unter <a href="mailto:{contact}">{contact}</a>.',
+      causeInactivity: 'Dieser Vorgang wurde automatisch ausgelöst, weil dieses Konto seit dem {date} inaktiv ist.'
     }
   },
   notifications: {
     sentInvitationTopic: 'eine Einladung wurde gesendet',
-    sentInvitation: 'Eine E-Mail wurde an {email} gesendet mit einer Einladung, der Organisation {orgName} beizutreten.',
+    sentInvitation: 'Eine E-Mail mit einer Einladung, der Organisation {orgName} beizutreten, wurde an {email} gesendet.',
     acceptedInvitationTopic: 'eine Einladung wurde angenommen',
     acceptedInvitation: 'Der Benutzer {name} ({email}) ist der Organisation {orgName} beigetreten.',
     userCreated: 'Der Benutzer {name} ({email}) hat sich auf der Website {host} registriert.',
     userCreatedOrg: 'Der Benutzer {name} ({email}) hat sich auf der Website {host} in der Organisation {orgName} registriert.',
-    sentPartnerInvitationTopic: 'eine Partner-Einladung wurde gesendet',
-    sentPartnerInvitation: 'Eine E-Mail wurde an {email} gesendet mit einer Einladung für die Organisation {partnerName}, der Organisation {orgName} als Partner beizutreten.',
-    acceptedPartnerInvitationTopic: 'eine Partner-Einladung wurde angenommen',
+    sentPartnerInvitationTopic: 'eine Partnereinladung wurde gesendet',
+    sentPartnerInvitation: 'Eine E-Mail mit einer Einladung für die Organisation {partnerName}, der Organisation {orgName} als Partner beizutreten, wurde an {email} gesendet.',
+    acceptedPartnerInvitationTopic: 'eine Partnereinladung wurde angenommen',
     acceptedPartnerInvitation: 'Die Organisation {partnerName} ({email}) ist der Organisation {orgName} als Partner beigetreten.',
     addMemberTopic: 'ein Mitglied wurde hinzugefügt',
     addMember: 'Der Benutzer {name} ({email}) ist der Organisation {orgName} beigetreten.'
+  },
+  // server-side only (not in publicMessages): reported through
+  // mainSiteWarnings on the sites API and by the boot check
+  mainSite: {
+    ignoredField: 'Das Feld „{field}“ wird auf der Hauptwebsite ignoriert: Diese Konfiguration stammt aus den Umgebungsvariablen.',
+    ignoredCategory: 'Der gespeicherte Wert für „{category}“ wird ignoriert: MAIN_SITE_FROM_DB enthält diese Kategorie nicht.'
   },
   // server-side only: simple-directory's own scopes, merged with the platform scopes
   scopes: {

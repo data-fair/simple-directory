@@ -51,7 +51,7 @@ export const start = async () => {
     return ((await mongo.sites.countDocuments()) === 0)
   })
 
-  const colorWarnings = getSiteColorsWarnings(config.i18n.defaultLocale as 'fr' | 'en', config.theme, await publicGlobalProviders())
+  const colorWarnings = getSiteColorsWarnings('en', config.theme, await publicGlobalProviders())
   if (colorWarnings.length) {
     for (const cw of colorWarnings) log.warn('configuration contains a color warning: ' + cw, { code: 'config-color-warning' })
   }
@@ -59,7 +59,7 @@ export const start = async () => {
   const mainSiteDoc = await getMainSiteDoc()
   if (mainSiteDoc) {
     log.info(`Main site document ${mainSiteDoc._id} found on ${mainSiteDoc.host}${mainSiteDoc.path ?? ''}; categories read from the database: ${config.mainSiteFromDb.join(', ') || '(none)'}`)
-    for (const w of getMainSiteWarnings(config.i18n.defaultLocale, mainSiteDoc)) log.warn('main site document: ' + w, { code: 'main-site-warning' })
+    for (const w of getMainSiteWarnings('en', mainSiteDoc)) log.warn('main site document: ' + w, { code: 'main-site-warning' })
     const ignoredFields = getMainSiteIgnoredFields(mainSiteDoc)
     if (ignoredFields.length) {
       log.error(`main site document ${mainSiteDoc._id} carries fields that are never honoured on the main host: ${ignoredFields.join(', ')}`, { code: 'main-site-ignored-fields' })

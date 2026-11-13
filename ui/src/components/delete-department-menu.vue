@@ -29,7 +29,7 @@
       type="warning"
       variant="outlined"
     >
-      {{ $t('pages.organization.deleteDepartmentHasMembers', {count: members.count.toLocaleString()}) }}
+      {{ $t('pages.organization.deleteDepartmentHasMembers', {count: members.count.toLocaleString(locale)}, members.count) }}
     </v-alert>
     <p v-else>
       {{ $t('pages.organization.confirmDeleteDepartmentMsg', {name: department.name, departmentLabel}) }}
@@ -47,7 +47,7 @@ const { orga, department, departmentLabel } = defineProps({
 const emit = defineEmits(['change'])
 
 const { patchOrganization } = useStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const menu = ref(false)
 

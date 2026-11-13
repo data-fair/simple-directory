@@ -1,7 +1,7 @@
 import axios from '@data-fair/lib-node/axios.js'
 import config from '#config'
 import Debug from 'debug'
-import { httpError } from '@data-fair/lib-express'
+import { I18nHttpError } from '#i18n'
 import log from '@data-fair/lib-node/log.js'
 import { type OAuthProvider, type OAuthUserInfo } from './service.ts'
 
@@ -35,7 +35,7 @@ for (const provider of config.oauth.providers) {
           if (logFields) {
             log.alert(`GitHub login refused: no primary+verified email (addressesCount=${Array.isArray(res[1].data) ? res[1].data.length : 0})`, { code: 'sd.oauth.email-not-verified', ...logFields })
           }
-          throw httpError(400, 'Authentification refusée depuis le fournisseur. Aucune adresse email principale validée trouvée sur le compte GitHub.')
+          throw new I18nHttpError(400, 'errors.githubNoVerifiedEmail')
         }
         return {
           data: res[0].data,
@@ -74,7 +74,7 @@ for (const provider of config.oauth.providers) {
         if (logFields) {
           log.alert('Facebook login refused: provider does not deliver a verified email flag', { code: 'sd.oauth.email-not-verified', ...logFields })
         }
-        throw httpError(400, 'Authentification via Facebook désactivée : Facebook ne fournit pas d\'information de validation de l\'adresse email.')
+        throw new I18nHttpError(400, 'errors.facebookDisabled')
       },
       client: config.oauth.facebook
     })
@@ -102,7 +102,7 @@ for (const provider of config.oauth.providers) {
             const emailDomain = typeof res.data.email === 'string' ? res.data.email.split('@')[1] : null
             log.alert(`Google login refused: verifiedEmail=${JSON.stringify(res.data.verified_email ?? null)} emailDomain=${emailDomain}`, { code: 'sd.oauth.email-not-verified', ...logFields })
           }
-          throw httpError(400, 'Authentification refusée depuis le fournisseur. L\'adresse email Google n\'est pas indiquée comme validée.')
+          throw new I18nHttpError(400, 'errors.oauthEmailNotVerified')
         }
         return {
           data: res.data,

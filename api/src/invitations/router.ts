@@ -67,7 +67,7 @@ router.post('', async (req, res, next) => {
   const limits = await getOrgLimits(orga)
   if (limits.store_nb_members.limit > 0 && limits.store_nb_members.consumption >= limits.store_nb_members.limit) {
     log.info(`limit error for /invitations route with org ${body.id}`, { code: 'sd.invite.limit', ...logFields })
-    return res.status(429).send('L\'organisation contient déjà le nombre maximal de membres autorisé par ses quotas.')
+    return res.status(429).send(reqI18n(req).messages.errors.maxNbMembers)
   }
 
   Object.assign(logFields, orgLogFields(orga))
