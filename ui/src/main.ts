@@ -37,7 +37,7 @@ const debug = debugModule('sd:main');
     vuetify.defaults.value.VjsfTabs = { VWindowsItem: { eager: true } }
     vuetify.defaults.value.VColorPicker = { mode: 'hex' }
   }
-  const i18n = createI18n({ locale: session.state.lang, messages: $uiConfig.publicMessages })
+  const i18n = createI18n({ locale: session.state.lang, fallbackLocale: 'en', messages: $uiConfig.publicMessages })
   const head = createHead();
 
   (window as any).vIframeOptions = { router }
