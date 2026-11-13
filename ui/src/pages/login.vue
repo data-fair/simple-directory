@@ -1166,7 +1166,7 @@ const validate2FA = useAsyncAction(async () => {
 
 function downloadRecovery () {
   const element = document.createElement('a')
-  const contentHeader = t('recovery2FAContent', { name: `${window.location.host}` })
+  const contentHeader = t('pages.login.recovery2FAContent', { name: `${window.location.host}` })
   const content = `${contentHeader}
 
 ${recovery.value}`
