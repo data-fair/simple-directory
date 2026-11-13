@@ -26,7 +26,7 @@
       </p>
       <p>
         <v-btn
-          v-t="'common.loginSignin'"
+          :text="$t('common.loginSignin')"
           :href="loginUrl(undefined, {email: invit.e})"
           variant="flat"
           color="primary"
@@ -41,7 +41,7 @@
       </p>
       <p>
         <v-btn
-          v-t="'common.login'"
+          :text="$t('common.login')"
           variant="flat"
           color="primary"
           class="text-uppercase"
@@ -53,7 +53,7 @@
       </p>
       <p>
         <v-btn
-          v-t="'common.signin'"
+          :text="$t('common.signin')"
           variant="flat"
           color="primary"
           class="text-uppercase"

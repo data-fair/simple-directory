@@ -17,7 +17,7 @@
       v-if="organizations.data.value?.fromCache"
       class="mb-3 mx-0"
     >
-      {{ $t('pages.admin.organizations.fromCache') }} {{ dayjs(organizations.data.value?.fromCache).fromNow() }}.
+      {{ $t('pages.organization.fromCache', { fromNow: dayjs(organizations.data.value?.fromCache).fromNow() }) }}
     </v-row>
 
     <v-row class="mb-3 mx-0">
@@ -92,10 +92,10 @@
                           {{ $t('common.missingInfo') }}
                         </template>
                         <template v-else-if="limits[props.item.id].store_nb_members.limit === 0">
-                          {{ limits[props.item.id].store_nb_members.consumption.toLocaleString(locale) }} {{ $t('pages.admin.organizations.members') }}
+                          {{ limits[props.item.id].store_nb_members.consumption.toLocaleString(locale) }} {{ $t('pages.admin.organizations.members', limits[props.item.id].store_nb_members.consumption) }}
                         </template>
                         <template v-else>
-                          {{ limits[props.item.id].store_nb_members.consumption.toLocaleString(locale) }} / {{ limits[props.item.id].store_nb_members.limit.toLocaleString(locale) }} {{ $t('pages.admin.organizations.members') }}
+                          {{ limits[props.item.id].store_nb_members.consumption.toLocaleString(locale) }} / {{ limits[props.item.id].store_nb_members.limit.toLocaleString(locale) }} {{ $t('pages.admin.organizations.members', limits[props.item.id].store_nb_members.limit) }}
                         </template>
                       </template>
                     </v-btn>

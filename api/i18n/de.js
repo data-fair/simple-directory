@@ -32,8 +32,8 @@ export default {
     save: 'Aufzeichnung',
     send: 'Senden',
     load: 'Hochladen',
-    active: 'aktiv',
-    inactive: 'inaktiv',
+    active: 'Aktiv',
+    inactive: 'Inaktiv',
     members: 'Mitglieder',
     orgStorageMembers: 'Mitglieder im sekundären Speicher',
     role: 'Rolle',
@@ -48,7 +48,7 @@ export default {
     modificationOk: 'Ihre Änderung wurde übernommen.',
     invitations: 'Einladungen',
     accept: 'Akzeptieren Sie',
-    reject: 'ablehnen',
+    reject: 'Ablehnen',
     confirmDeleteTitle: 'Löschen {name}',
     confirmDeleteMsg: 'Sind Sie sicher, dass Sie diese Ressource löschen möchten? Seien Sie vorsichtig, die Daten sind nicht wiederherstellbar.',
     editTitle: 'Bearbeiten {name}',
@@ -62,7 +62,7 @@ export default {
     maxCreatedOrgs: 'Maximale Anzahl der zu gründenden Organisationen',
     maxCreatedOrgsShort: 'Max Orgs',
     unlimited: 'unbegrenzt',
-    nbCreatedOrgs: 'Anzahl der erstellten Organisationen:',
+    nbCreatedOrgs: 'Anzahl der erstellten Organisationen: {count}',
     maxCreatedOrgsValue: 'Maximale Anzahl der zu gründenden Organisationen: {value}',
     back: 'Zurück',
     next: 'Nächste',
@@ -176,11 +176,11 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
     admin: {
       users: {
         noCreatedOrgsLimit: 'Benutzer können eine beliebige Anzahl von Organisationen erstellen.',
-        createdOrgsLimit: 'Benutzer können {defaultMaxCreatedOrgs} Standardorganisation(en) erstellen.',
+        createdOrgsLimit: 'Benutzer können standardmäßig {defaultMaxCreatedOrgs} Organisation erstellen. | Benutzer können standardmäßig {defaultMaxCreatedOrgs} Organisationen erstellen.',
         explainLimit: 'Legen Sie einen Wert fest, um die Anzahl der Organisationen zu begrenzen, die dieser Benutzer erstellen kann. -1 für eine beliebige Anzahl. Löschen Sie das Feld, um zum Standardwert zurückzukehren ({defaultMaxCreatedOrgs}).',
         editUserEmailTitle: 'E-Mail-Adresse des Benutzers {name} ändern',
         editUserEmailText: 'Warnung! E-Mail ist ein wichtiger Benutzerschlüssel. Durch das Ändern dieser Informationen laufen Sie Gefahr, eine falsche, nicht funktionierende oder inkonsistente Adresse mit anderen Einträgen einzufügen. Diese Funktion wird nur Administratoren angeboten, um die Blockierung eines Benutzers aufzuheben, auf dessen Postfach nicht mehr zugegriffen werden kann.',
-        drop2FATitle: 'Zwei-Faktor-Authentifizierung deaktivieren',
+        drop2FATitle: 'Die Zwei-Faktor-Authentifizierung des Benutzers {name} zurücksetzen',
         transferTitle: 'Benutzer {name} auf eine andere Website übertragen',
         transferText: 'Der Benutzer wird der ausgewählten Website zugeordnet. Seine SSO-Identitäten werden zurückgesetzt und seine Organisationsmitgliedschaften bleiben erhalten. Super-Administrator-Konten können nicht übertragen werden.',
         transferTargetSite: 'Zielwebsite',
@@ -189,9 +189,8 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       },
       organizations: {
         limitOrganizationTitle: 'Organisatorische Grenzen ändern',
-        members: 'mitglied(er)',
-        nbMembers: 'Maximale Anzahl von Mitgliedern (0 für keine Begrenzung)',
-        fromCache: 'Letzte Synchronisierung dieser Liste mit dem Identitätsanbieter: '
+        members: 'Mitglied | Mitglieder',
+        nbMembers: 'Maximale Anzahl von Mitgliedern (0 für keine Begrenzung)'
       },
       sites: {
         createSite: 'Eine neue Website definieren',
@@ -203,7 +202,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
         help1: 'Sie können Kennwortlisten aus CSV-Dateien hochladen. Diese zu bekannten Kennwörter werden dann abgelehnt, wenn Benutzer versuchen, sie zu verwenden.',
         help2: 'Sie finden Kennwortlisten im Internet, zum Beispiel im Projekt {secLists} oder im Projekt {richelieu} für eine französische Liste.',
         newFile: 'Neue Kennwortdatei (ein Kennwort pro Zeile)',
-        subtitle: '{state} - {date} - {count} Kennwörter',
+        subtitle: '{state} - {date} - {count} Kennwort | {state} - {date} - {count} Kennwörter',
         confirmDelete: 'Diese Kennwortliste löschen?'
       },
       site: {
@@ -251,7 +250,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       adminModePromptDecline: 'Normale Sitzung',
       oauth: 'Anmeldung mit :',
       error: 'Fehler',
-      rememberMe: 'erinnere dich an mich',
+      rememberMe: 'Angemeldet bleiben',
       '2FACode': '6-stelliger Code oder Wiederherstellungscode',
       '2FAInfo': 'Geben Sie einen Bestätigungscode ein, um fortzufahren. Sie können diesen Code aus der Bestätigungs-App auf Ihrem Telefon erhalten. Wenn Sie Ihr Gerät verlieren, können Sie den Wiederherstellungscode verwenden, den Sie beim Einrichten der Zwei-Faktor-Authentifizierung heruntergeladen haben.',
       configure2FA: 'Zwei-Faktor-Authentifizierung konfigurieren',
@@ -438,7 +437,7 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       noUser2: 'Sie haben noch kein Konto? Sie können eines erstellen und werden später auf diese Seite weitergeleitet.',
       noOrg: 'Sie gehören keiner Organisation an. Sie können eine neue Organisation erstellen und die Einladung im Namen der Organisation akzeptieren.',
       org: 'Sie können diese Einladung im Namen einer Organisation akzeptieren, für die Sie Administrator sind, oder eine neue Organisation erstellen und die Einladung im Namen der Organisation akzeptieren.',
-      createOrg: 'eine neue Organisation erstellen',
+      createOrg: 'Eine neue Organisation erstellen',
       newOrgName: 'Name der neuen Organisation',
       create: 'Erstellen',
       acceptAs: 'Akzeptieren im Namen von {name}'
@@ -556,7 +555,7 @@ Eine Identifikationsanfrage wurde von {host} gestellt, aber abgelehnt, da diese 
 Zögern Sie nicht, uns unter {contact} zu kontaktieren.
       `,
       htmlMsg: 'Seitdem wurde ein Ausweisantrag gestellt <a href="{origin}">{host}</a>, Es wurde jedoch abgelehnt, da diese E-Mail-Adresse unbekannt ist oder nicht validiert wurde.',
-      htmlCaption: 'Zögern Sie nicht, uns unter zu kontaktieren <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'Zögern Sie nicht, uns unter <a href="mailto:{contact}">{contact}</a> zu kontaktieren.'
     },
     conflict: {
       subject: 'Fehler beim Erstellen eines Kontos am {host}',
@@ -566,7 +565,7 @@ Eine Kontoerstellungsanforderung wurde von {host} gestellt, aber abgelehnt, da d
 führt Sie nicht, uns zu gehören unter {contact}.
       `,
       htmlMsg: 'Ein Antrag auf Einrichtung eines Kontos wurde gestellt seit <a href="{origin}">{host}</a>, aber es wurde abgelehnt, weil diese E-Mail-Adresse bereits mit einem Konto verknüpft ist.',
-      htmlCaption: 'führt Sie nicht, uns zu gehören unter <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'Zögern Sie nicht, uns unter <a href="mailto:{contact}">{contact}</a> zu kontaktieren.'
     },
     invitation: {
       subject: 'Treten Sie der {organization} am {host} bei.',

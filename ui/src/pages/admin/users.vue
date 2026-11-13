@@ -14,7 +14,7 @@
         {{ $t('pages.admin.users.noCreatedOrgsLimit') }}
       </p>
       <p v-else>
-        {{ $t('pages.admin.users.createdOrgsLimit', {defaultMaxCreatedOrgs: $uiConfig.quotas.defaultMaxCreatedOrgs}) }}
+        {{ $t('pages.admin.users.createdOrgsLimit', {defaultMaxCreatedOrgs: $uiConfig.quotas.defaultMaxCreatedOrgs}, $uiConfig.quotas.defaultMaxCreatedOrgs) }}
       </p>
     </v-row>
 
@@ -172,7 +172,7 @@
                   v-if="nbCreatedOrgs !== undefined"
                   class="mb-3"
                 >
-                  {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
+                  {{ $t('common.nbCreatedOrgs', { count: nbCreatedOrgs?.toLocaleString(locale) }) }}
                 </p>
                 <v-text-field
                   id="maxCreatedOrgs"
@@ -281,7 +281,7 @@
 </template>
 
 <script setup lang="ts">
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { asAdmin } = useSession()
 const { dayjs } = useLocaleDayjs()
 

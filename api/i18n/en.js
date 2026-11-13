@@ -4,7 +4,7 @@
 export default {
   root: {
     title: 'Simple Directory',
-    description: 'Easy users and organizations management for modern Web-oriented architectures.'
+    description: 'Easy management of users and organizations for modern Web-oriented architectures.'
   },
   common: {
     manageNotifications: 'Manage notifications',
@@ -24,7 +24,7 @@ export default {
     organizationName: 'Organization name',
     user: 'User',
     users: 'Users',
-    createOrganization: 'Create organization',
+    createOrganization: 'Create an organization',
     dashboard: 'Dashboard',
     description: 'Description',
     id: 'Identifier',
@@ -39,11 +39,11 @@ export default {
     role: 'Role',
     search: 'Search',
     noResult: 'No result',
-    confirmOk: 'Ok',
+    confirmOk: 'OK',
     confirmCancel: 'Cancel',
     confirmTitle: 'Do you want to confirm this operation?',
     firstName: 'First name',
-    lastName: 'Family name',
+    lastName: 'Last name',
     email: 'Email',
     modificationOk: 'Your modification was saved.',
     invitations: 'Invitations',
@@ -62,7 +62,7 @@ export default {
     maxCreatedOrgs: 'Maximum number of organizations to create',
     maxCreatedOrgsShort: 'Max orgs',
     unlimited: 'unlimited',
-    nbCreatedOrgs: 'Number of organizations created:',
+    nbCreatedOrgs: 'Number of organizations created: {count}',
     maxCreatedOrgsValue: 'Maximum number of organizations to create: {value}',
     back: 'Back',
     next: 'Next',
@@ -80,7 +80,7 @@ export default {
     autoAdmin: 'Automatically add me as admin',
     asAdmin: 'Log in as this user',
     transfer: 'Transfer to another site',
-    delAsAdmin: 'Get back to your normal session',
+    delAsAdmin: 'Return to your administrator session',
     avatar: 'Avatar',
     birthday: 'Birthday',
     missingInfo: 'Missing info',
@@ -148,7 +148,7 @@ export default {
         storage: {
           type: `<b>IMPORTANT.</b> The type of storage for persisting users and organizations.<br>
 The default type "file" is read-only and suited for development/test or to use data exported from another system.<br>
-The type "mongo" depends on accessing a MongoDB instance, it is the appropriate choice for most production deployments.`,
+The type "mongo" depends on accessing a MongoDB instance; it is the appropriate choice for most production deployments.`,
           file: {
             users: 'Only for storage.type=file. The path to the JSON file containing user definitions',
             organizations: 'Only for storage.type=file. The path to the JSON file containing organization definitions'
@@ -158,7 +158,7 @@ The type "mongo" depends on accessing a MongoDB instance, it is the appropriate 
           }
         },
         mails: {
-          transport: '<b>IMPORTANT.</b> A JSON object of configuration for the email transport compatible with the library <a href="https://nodemailer.com/smtp/">nodemailer</a>.',
+          transport: '<b>IMPORTANT.</b> A JSON configuration object for the email transport, compatible with the <a href="https://nodemailer.com/smtp/">nodemailer</a> library.',
           from: '<b>IMPORTANT.</b> The address to use as sender for emails sent by the service.'
         },
         listEntitiesMode: `Used to globally restrict access to the lists of users and organizations.<br>
@@ -176,8 +176,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     admin: {
       users: {
         noCreatedOrgsLimit: 'Users can create an unlimited number of organizations.',
-        createdOrgsLimit: 'Users can create {defaultMaxCreatedOrgs} organization(s) by default.',
-        explainLimit: 'Define a value to limit the number of organizations the user can create. -1 for an unlimited number. Empty the field to fall back on the default value ({defaultMaxCreatedOrgs}).',
+        createdOrgsLimit: 'Users can create {defaultMaxCreatedOrgs} organization by default. | Users can create {defaultMaxCreatedOrgs} organizations by default.',
+        explainLimit: 'Define a value to limit the number of organizations the user can create. -1 for an unlimited number. Empty the field to fall back to the default value ({defaultMaxCreatedOrgs}).',
         editUserEmailTitle: 'Change the email address of the user {name}',
         editUserEmailText: 'Warning! The email is an important key of the user: by modifying it, you run the risk of inserting an address that is incorrect, non-functional or inconsistent with other entries. This feature is only presented to administrators to unblock a user whose mailbox becomes inaccessible.',
         drop2FATitle: 'Reset the two-factor authentication of the user {name}',
@@ -189,13 +189,12 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       },
       organizations: {
         limitOrganizationTitle: 'Edit the limits of the organization',
-        members: 'member(s)',
-        nbMembers: 'Maximum number of members (0 for no limit)',
-        fromCache: 'Last synchronization of this list with the identity provider: '
+        members: 'member | members',
+        nbMembers: 'Maximum number of members (0 for no limit)'
       },
       sites: {
         createSite: 'Define a new site',
-        loginOnSite: 'Sign in on the site',
+        loginOnSite: 'Log in to the site',
         colorWarnings: 'Contrast warnings',
         mainSite: 'Main site',
       },
@@ -203,7 +202,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
         help1: 'You can upload password lists from CSV files. These well-known passwords will then be rejected if users try to use them.',
         help2: 'You can find password list files on the internet, for example on the {secLists} project or the {richelieu} project for a French list.',
         newFile: 'New password file (one password per line)',
-        subtitle: '{state} - {date} - {count} passwords',
+        subtitle: '{state} - {date} - {count} password | {state} - {date} - {count} passwords',
         confirmDelete: 'Delete this password list?'
       },
       site: {
@@ -224,12 +223,12 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     login: {
       title: 'Identify yourself',
       emailLabel: 'Your email address',
-      success: 'You will receive an email at the specified address. Please use the link in this email to complete your identification.',
+      success: 'You will receive an email at the specified address. Please open the link in this email to complete your login.',
       maildevLink: 'Open the development mailbox',
       newPassword: 'New password',
       newPassword2: 'Confirm new password',
       changePassword: 'Renew the password',
-      changePasswordTooltip: 'In case you forgot your password or if you need to change it, renew your password.',
+      changePasswordTooltip: 'If you forgot your password or need to change it, renew it.',
       newPasswordMsg: 'Type the new password twice.',
       changePasswordSent: 'An email was sent to the address {email}. This email contains a link to change the password of your account.',
       passwordlessMsg1: 'To log in, an email is enough.',
@@ -239,8 +238,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       createUserMsg2: 'Create an account',
       createUserInvit: 'Create an account to accept the invitation to the organization {name}',
       createUserOrganization: 'Do you want to create an organization?',
-      createUserOrganizationHelp: 'If you create an organization you will be able to invite other users to join you and share resources.',
-      tosMsg: 'Before creating an account please read <a href="{tosUrl}" target="_blank">our terms of service</a>.',
+      createUserOrganizationHelp: 'If you create an organization, you will be able to invite other users to join you and share resources.',
+      tosMsg: 'Before creating an account, please read <a href="{tosUrl}" target="_blank">our terms of service</a>.',
       tosConfirm: 'I confirm that I have read the terms of service of this site.',
       createUserConfirm: 'Create the account',
       createUserConfirmed: 'An email was sent to the address {email}. This email contains a link to validate the creation of your account.',
@@ -249,14 +248,14 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       adminModePromptMsg: 'Your account is a super-administrator account. Do you want to activate admin mode for this session?',
       adminModePromptAccept: 'Admin mode',
       adminModePromptDecline: 'Normal session',
-      oauth: 'Connect with:',
+      oauth: 'Log in with:',
       error: 'Error',
       rememberMe: 'Remember me',
       '2FACode': '6-digit code or recovery code',
       '2FAInfo': 'Enter a verification code to continue. You can get this code from the verification app on your phone. If you lose your device, you can use the recovery code downloaded when setting up two-factor authentication.',
       configure2FA: 'Configure two-factor authentication',
       configure2FAQRCode: 'Two-factor authentication setup QR code',
-      configure2FAQRCodeMsg: 'Scan this QR code with an authentication tool of your choice (like Authy or Google Authenticator) then enter the 6-digit code offered by this application.',
+      configure2FAQRCodeMsg: 'Scan this QR code with an authentication tool of your choice (like Authy or Google Authenticator), then enter the 6-digit code offered by this application.',
       configure2FACode: '6-digit code',
       recovery2FA: 'Recovery code',
       recovery2FAInfo: 'Caution! Keep the recovery code below in a safe place. Without it, you won\'t be able to recover your account if you lose the device on which you just set up two-factor authentication.',
@@ -317,12 +316,12 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     organization: {
       addMember: 'Invite a user to join this organization',
       disableInvite: 'This organization already contains its maximum number of members.',
-      deleteMember: 'Delete this user from the list of members',
+      deleteMember: 'Remove this user from the list of members',
       editMember: 'Change the role of this user in the organization',
       memberReadOnly: 'This user\'s membership in the organization comes from an identity provider and cannot be modified here.',
       confirmEditMemberTitle: 'Change {name}',
       confirmDeleteMemberTitle: 'Exclude {name}',
-      confirmDeleteMemberMsg: 'Do you really want to delete this user from the list of members of the organization {org}?',
+      confirmDeleteMemberMsg: 'Do you really want to remove this user from the list of members of the organization {org}?',
       deleteMemberSelfWarning: 'This is your own membership: you may lose access to this organization and its resources, and you will not be able to undo this change yourself.',
       editMemberSelfWarning: 'You are changing your own role: you may lose your administration rights on this organization, and you will not be able to undo this change yourself.',
       deleteMemberLastAdmin: 'You are the last administrator of this organization: appoint another administrator before leaving it.',
@@ -345,7 +344,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       departmentIdInvalid: 'The identifier must contain only letters, digits and spaces.',
       inviteLink: 'If there is a problem with the email communication, you can send the confirmation link below by another means. Warning! You risk inserting an incorrect or non-functional email address in the user database. This email address may cause multiple problems later: change of password, sending alerts, etc.',
       '2FARoles': 'Two-factor authentication.',
-      '2FARolesMsg': 'Make two-factor authentication mandatory for users with these roles:',
+      '2FARolesMsg': 'Make two-factor authentication mandatory for users with these roles.',
       sendInvitationLink: 'Send another invitation link',
       addPartner: 'Invite a partner organization',
       deletePartner: 'Delete this partner',
@@ -358,8 +357,8 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       fromCache: 'Last synchronization of this list with the identity provider: {fromNow}.',
       roleLabel: 'Label for the role "{role}"',
       infoTitle: 'Information',
-      siteUsersTitle: 'Accounts of the site',
-      siteUsersHelp: 'Accounts created on this site, the main site of the organization. As an administrator of the organization you can reset their two-factor authentication, cancel a planned deletion, close their sessions or delete them.',
+      siteUsersTitle: 'Site accounts',
+      siteUsersHelp: 'Accounts created on this site, the main site of the organization. As an administrator of the organization, you can reset their two-factor authentication, cancel a planned deletion, close their sessions or delete them.',
       nhisTitle: 'Service accounts (non-human identities)',
       nhisHelp: 'Service accounts are the non-human identities of the organization. They authenticate with a token issued by a trusted identity provider (for example a Kubernetes cluster), or act as the identity of the OAuth applications (for example an AI agent) an administrator connects to them. They have no email and their sessions are short-lived.',
       addNhi: 'Create a service account',
@@ -408,7 +407,7 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       deleteMyself: 'Delete this account',
       deleteMyselfAlert: 'If you delete your account, you will have {plannedDeletionDelay} days to cancel the operation, after which all associated data will be deleted and will not be recoverable.',
       deleteMyselfCheck: 'Check this box and click OK to confirm the deletion of the user {name} and all their data.',
-      accountChanges: 'Managing account switching',
+      accountChanges: 'Account switching',
       defaultOrg: 'Activate this account by default after each login',
       ignorePersonalAccount: 'Check this box if you do not wish to use this platform outside of an organization account',
       sessions: 'Your sessions',
@@ -428,10 +427,10 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     colorsPreview: {
       title: 'Preview of color rendering',
       cardTitle: 'An example card',
-      cardText: 'It uses the color of "surfaces".'
+      cardText: 'It uses the "surface" color.'
     },
     partnerInvitation: {
-      msg1: 'The organization {name} wants to add {partnerName} as a partner with {email} as contact address.',
+      msg1: 'The organization {name} wants to add {partnerName} as a partner with {email} as the contact address.',
       msg2: 'The name "{partnerName}" is indicative and does not necessarily correspond to your organization\'s exact name.',
       diffEmail: 'You are logged in with the user account {userName} ({userEmail}). You can log in with another account or create a new account by clicking the button below.',
       noUser1: 'Already have an account? You can log in and will be redirected to this page afterward.',
@@ -476,15 +475,15 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     noPasswordless: 'Passwordless authentication is not accepted by this service.',
     rateLimitAuth: 'Too many attempts in a short interval. Please wait before trying again.',
     invalidInvitationToken: 'The invitation link you received is invalid.',
-    expiredInvitationToken: 'The invitation link you received has expired, you can no longer accept this invitation.',
+    expiredInvitationToken: 'The invitation link you received has expired; you can no longer accept this invitation.',
     maxNbMembers: 'The organization already contains the maximum number of members allowed by its quotas.',
     maxNbDepartments: 'The organization already contains the maximum number of departments allowed by its quotas.',
     maxNbPartners: 'The organization already has the maximum number of partners allowed by its quotas, unexpired pending invitations included.',
-    unknownOAuthProvider: 'OAuth identification not supported.',
-    unknownSAMLProvider: 'SAML identification not supported.',
+    unknownOAuthProvider: 'OAuth authentication is not supported.',
+    unknownSAMLProvider: 'SAML authentication is not supported.',
     adminModeOnly: 'Feature reserved for super administrators.',
-    adminChangeHostBlocked: 'Super administrators cannot transfer their account to a secondary site. Sign in from the main site.',
-    emailNotConfirmed: 'Your email address has not been confirmed yet. A new confirmation link has just been sent to you, open it to activate your account.',
+    adminChangeHostBlocked: 'Super administrators cannot transfer their account to a secondary site. Log in from the main site.',
+    emailNotConfirmed: 'Your email address has not been confirmed yet. A new confirmation link has just been sent to you; open it to activate your account.',
     '2FANotConfigured': 'Two-factor authentication is required for this account and is not yet configured.',
     passwordless2FA: 'Passwordless authentication is incompatible with the two-factor authentication required for this account.',
     bad2FAToken: 'Invalid or expired verification code for two-factor authentication',
@@ -528,39 +527,39 @@ An account creation request was made from {host}. To activate the account, you m
 
 {link}
 
-If you encounter a problem with your account or if you didn't submit this identification request to {host}, feel free to contact us at {contact}.
+If you encounter a problem with your account or if you didn't request an account on {host}, feel free to contact us at {contact}.
       `,
       htmlMsg: 'An account creation request was made from <a href="{origin}">{host}</a>. To activate the account, click the button below. This link is valid for 15 minutes.',
       htmlButton: 'Validate the account creation',
       htmlAlternativeLink: 'If the button doesn\'t work, you can copy/paste this link into the address bar of your browser:',
-      htmlCaption: 'If you encounter a problem with your account or if you didn\'t submit this identification request to <a href="{origin}">{host}</a>, feel free to contact us at <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'If you encounter a problem with your account or if you didn\'t request an account on <a href="{origin}">{host}</a>, feel free to contact us at <a href="mailto:{contact}">{contact}</a>.'
     },
     login: {
-      subject: 'Identification on {host}',
+      subject: 'Log in to {host}',
       text: `
-An identification request was made from {host}. To confirm, copy the URL below into the address bar of your Web browser. This URL is valid for 15 minutes.
+A login request was made from {host}. To confirm, copy the URL below into the address bar of your Web browser. This URL is valid for 15 minutes.
 
 {link}
 
-If you encounter a problem with your account or if you didn't submit this identification request to {host}, feel free to contact us at {contact}.
+If you encounter a problem with your account or if you didn't submit this login request to {host}, feel free to contact us at {contact}.
       `,
-      htmlMsg: 'An identification request was made from <a href="{origin}">{host}</a>. To confirm, click the button below. This link is valid for 15 minutes.',
+      htmlMsg: 'A login request was made from <a href="{origin}">{host}</a>. To confirm, click the button below. This link is valid for 15 minutes.',
       htmlButton: 'Log in to {host}',
       htmlAlternativeLink: 'If the button doesn\'t work, you can copy/paste this link into the address bar of your browser:',
-      htmlCaption: 'If you encounter a problem with your account or if you didn\'t submit this identification request to <a href="{origin}">{host}</a>, feel free to contact us at <a href="mailto:{contact}">{contact}</a>.'
+      htmlCaption: 'If you encounter a problem with your account or if you didn\'t submit this login request to <a href="{origin}">{host}</a>, feel free to contact us at <a href="mailto:{contact}">{contact}</a>.'
     },
     noCreation: {
       subject: 'Authentication failure on {host}',
       text: `
-An identification request was made from {host}, but it was rejected as this email address is unknown.
+A login request was made from {host}, but it was rejected as this email address is unknown or has not been validated.
 
 Feel free to contact us at {contact}.
       `,
-      htmlMsg: 'An identification request was made from <a href="{origin}">{host}</a>, but it was rejected as this email address is unknown.',
+      htmlMsg: 'A login request was made from <a href="{origin}">{host}</a>, but it was rejected as this email address is unknown or has not been validated.',
       htmlCaption: 'Feel free to contact us at <a href="mailto:{contact}">{contact}</a>.'
     },
     conflict: {
-      subject: 'Failure to create an account on {host}',
+      subject: 'Account creation failed on {host}',
       text: `
 An account creation request was made from {host}, but it was rejected as this email address is already associated with an account.
 
@@ -645,7 +644,7 @@ Feel free to contact us at {contact}.
       htmlMsg: 'The user {user} and all their related data will be deleted on {plannedDeletion}. {cause}',
       htmlButton: 'Log in to cancel the deletion',
       htmlAlternativeLink: 'If the button doesn\'t work, you can copy/paste this link into the address bar of your browser:',
-      htmlCaption: 'If you encounter a problem with your account or if you find this message suspicious, feel free to contact us at <a href="mailto:{contact}">{contact}</a>.',
+      htmlCaption: 'Feel free to contact us at <a href="mailto:{contact}">{contact}</a>.',
       causeInactivity: 'This operation was automatically triggered because this account has been inactive since {date}.'
     }
   },

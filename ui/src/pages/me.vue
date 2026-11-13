@@ -175,7 +175,7 @@
       <br>
       <div v-if="showMaxCreatedOrgs">
         <p v-if="nbCreatedOrgs !== null">
-          {{ $t('common.nbCreatedOrgs') + ' ' + nbCreatedOrgs }}
+          {{ $t('common.nbCreatedOrgs', { count: nbCreatedOrgs?.toLocaleString(locale) }) }}
         </p>
         <p>{{ $t('common.maxCreatedOrgsValue', { value: showMaxCreatedOrgs }) }}</p>
       </div>
@@ -297,7 +297,7 @@ import type { VForm } from 'vuetify/components'
 
 const { user, keepalive } = useSession()
 const { dayjs, duration } = useLocaleDayjs()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { userDetailsFetch, authProvidersFetch } = useStore()
 
 if (!user.value) throw new Error('auth required')
