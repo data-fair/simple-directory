@@ -61,6 +61,7 @@ export default {
     updatedAt: 'Mis à jour le',
     maxCreatedOrgs: 'Nombre maximal d\'organisations à créer',
     maxCreatedOrgsShort: 'Nb orga max',
+    unlimited: 'illimité',
     nbCreatedOrgs: 'Nombre d\'organisations créées :',
     back: 'Retour',
     next: 'Suivant',
@@ -206,6 +207,9 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
       },
       site: {
         title: 'Configuration du site',
+        oidcHelp: 'Donnez cette URL de retour de connexion ({url}) au fournisseur d\'identité et définissez les scopes "openid", "profile", "email".',
+        samlHelp: 'Remplissez le champ ci-dessous avec les métadonnées au format XML données par le fournisseur d\'identité. Et donnez-lui ce {link} en retour.',
+        samlHelpLink: 'lien',
         mainSiteExplanation: 'Ce site correspond au domaine principal de ce service. Son document en base de données ne pilote que la présentation, et seulement pour les catégories listées dans MAIN_SITE_FROM_DB. L\'authentification, les fournisseurs d\'identité et le périmètre des comptes proviennent toujours des variables d\'environnement.'
       }
     },

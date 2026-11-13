@@ -591,6 +591,14 @@ export default {
         color: {
           type: 'string',
           title: 'Couleur',
+          'x-i18n-title': {
+            fr: 'Couleur',
+            en: 'Color',
+            es: 'Color',
+            it: 'Colore',
+            pt: 'Cor',
+            de: 'Farbe'
+          },
           layout: 'color-picker'
         },
         img: {
@@ -742,7 +750,23 @@ export default {
         credentialsEncodingMode: {
           type: 'string',
           title: 'Encodage des crédentiels du client',
+          'x-i18n-title': {
+            fr: 'Encodage des crédentiels du client',
+            en: 'Client credentials encoding',
+            es: 'Codificación de las credenciales del cliente',
+            it: 'Codifica delle credenziali del client',
+            pt: 'Codificação das credenciais do cliente',
+            de: 'Kodierung der Client-Anmeldedaten'
+          },
           description: 'Paramètre technique à ignorer la plupart du temps. Si le secret fourni contient des caractères spéciaux il peut être utile de tester le mode non-strict.',
+          'x-i18n-description': {
+            fr: 'Paramètre technique à ignorer la plupart du temps. Si le secret fourni contient des caractères spéciaux il peut être utile de tester le mode non-strict.',
+            en: 'Technical parameter, ignore it most of the time. If the provided secret contains special characters, the non-strict mode may be worth trying.',
+            es: 'Parámetro técnico que se puede ignorar la mayoría de las veces. Si el secreto proporcionado contiene caracteres especiales, puede ser útil probar el modo no estricto.',
+            it: 'Parametro tecnico da ignorare nella maggior parte dei casi. Se il segreto fornito contiene caratteri speciali, può essere utile provare la modalità non rigida.',
+            pt: 'Parâmetro técnico a ignorar na maioria das vezes. Se o segredo fornecido contiver caracteres especiais, pode ser útil testar o modo não rígido.',
+            de: 'Technischer Parameter, der meistens ignoriert werden kann. Enthält das angegebene Geheimnis Sonderzeichen, kann es sinnvoll sein, den nicht strengen Modus zu testen.'
+          },
           default: 'strict',
           oneOf: [
             {
@@ -775,6 +799,14 @@ export default {
         authorizationMethod: {
           type: 'string',
           title: 'Méthode d\'envoi des crédentiels du client',
+          'x-i18n-title': {
+            fr: 'Méthode d\'envoi des crédentiels du client',
+            en: 'Client credentials sending method',
+            es: 'Método de envío de las credenciales del cliente',
+            it: 'Metodo di invio delle credenziali del client',
+            pt: 'Método de envio das credenciais do cliente',
+            de: 'Übermittlungsmethode der Client-Anmeldedaten'
+          },
           description: "Si ce champ est vide, la méthode est choisie d'après le document de découverte du fournisseur (entête \"Authorization\" par défaut).",
           'x-i18n-description': {
             fr: "Si ce champ est vide, la méthode est choisie d'après le document de découverte du fournisseur (entête \"Authorization\" par défaut).",
@@ -815,6 +847,14 @@ export default {
         bodyFormat: {
           type: 'string',
           title: 'Format du corps de la requête',
+          'x-i18n-title': {
+            fr: 'Format du corps de la requête',
+            en: 'Request body format',
+            es: 'Formato del cuerpo de la solicitud',
+            it: 'Formato del corpo della richiesta',
+            pt: 'Formato do corpo da solicitação',
+            de: 'Format des Anfragekörpers'
+          },
           default: 'form',
           enum: ['form', 'json'],
           layout: { cols: 6 }

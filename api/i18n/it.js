@@ -61,6 +61,7 @@ export default {
     updatedAt: 'Aggiornato il',
     maxCreatedOrgs: 'Numero massimo di organizzazioni da creare',
     maxCreatedOrgsShort: 'Max orgs',
+    unlimited: 'illimitato',
     nbCreatedOrgs: 'Numero di organizzazioni create:',
     back: 'Ritorno',
     next: 'Avanti',
@@ -204,7 +205,10 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
         confirmDelete: 'Eliminare questo elenco di password?'
       },
       site: {
-        title: 'Configurazione del sito'
+        title: 'Configurazione del sito',
+        oidcHelp: 'Fornisci questo URL di ritorno di accesso ({url}) al provider di identità e definisci gli scope "openid", "profile", "email".',
+        samlHelp: 'Compila il campo qui sotto con i metadati in formato XML forniti dal provider di identità e fornisci in cambio questo {link}.',
+        samlHelpLink: 'link'
       }
     },
     contact: {

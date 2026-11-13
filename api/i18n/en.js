@@ -61,6 +61,7 @@ export default {
     updatedAt: 'Updated on',
     maxCreatedOrgs: 'Max number of created organizations',
     maxCreatedOrgsShort: 'Max orgs',
+    unlimited: 'unlimited',
     nbCreatedOrgs: 'Number of organizations created :',
     back: 'Back',
     next: 'Next',
@@ -206,6 +207,9 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
       },
       site: {
         title: 'Site configuration',
+        oidcHelp: 'Give this login callback URL ({url}) to the identity provider and set the scopes "openid", "profile", "email".',
+        samlHelp: 'Fill in the field below with the XML metadata provided by the identity provider, and give it this {link} in return.',
+        samlHelpLink: 'link',
         mainSiteExplanation: 'This site matches this service\'s main domain. Its database document drives presentation only, and only for the categories listed in MAIN_SITE_FROM_DB. Authentication, identity providers and account scoping always come from environment variables.'
       }
     },

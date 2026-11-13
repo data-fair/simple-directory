@@ -61,6 +61,7 @@ export default {
     updatedAt: 'Aktualisiert am',
     maxCreatedOrgs: 'Maximale Anzahl der zu gründenden Organisationen',
     maxCreatedOrgsShort: 'Max Orgs',
+    unlimited: 'unbegrenzt',
     nbCreatedOrgs: 'Anzahl der erstellten Organisationen :',
     back: 'Zurück',
     next: 'Nächste',
@@ -204,7 +205,10 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
         confirmDelete: 'Diese Kennwortliste löschen?'
       },
       site: {
-        title: 'Website-Konfiguration'
+        title: 'Website-Konfiguration',
+        oidcHelp: 'Geben Sie diese Login-Callback-URL ({url}) an den Identitätsanbieter weiter und legen Sie die Scopes "openid", "profile", "email" fest.',
+        samlHelp: 'Füllen Sie das Feld unten mit den XML-Metadaten des Identitätsanbieters aus und geben Sie ihm im Gegenzug diesen {link}.',
+        samlHelpLink: 'Link'
       }
     },
     contact: {

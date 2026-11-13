@@ -347,7 +347,7 @@ const showMaxCreatedOrgs = computed(() => {
   if (!userDetailsFetch.data.value) return false
   if ($uiConfig.quotas.defaultMaxCreatedOrgs === -1) return false
   if ($uiConfig.quotas.defaultMaxCreatedOrgs === 0 && !userDetailsFetch.data.value.maxCreatedOrgs) return false
-  return maxCreatedOrgs.value === -1 ? 'illimité' : ('' + maxCreatedOrgs.value)
+  return maxCreatedOrgs.value === -1 ? t('common.unlimited') : ('' + maxCreatedOrgs.value)
 })
 
 const defaultOrgItems = computed<{ value: string, title: string }[]>(() => {
