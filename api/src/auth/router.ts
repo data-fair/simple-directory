@@ -11,7 +11,7 @@ import type { SdStorage } from '../storages/interface.ts'
 import type { ActionPayload, ServerSession, Site, User } from '#types'
 import log from '@data-fair/lib-node/log.js'
 import emailValidator from 'email-validator'
-import { reqI18n } from '#i18n'
+import { reqI18n, __, I18nHttpError } from '#i18n'
 import limiter from '../utils/limiter.ts'
 import storages from '#storages'
 import { NhiExchangeError, consumeNhiLimits, refundNhiLimits, loadExchangeNhi, verifyExchangeAssertion, rejectDelay, updateNhiLogged } from '../nhis/exchange.ts'
@@ -957,7 +957,8 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     }
     res.redirect(callbackUrl)
   } catch (err : any) {
-    return returnError(err.message as string, err.code || 500)
+    // a translated message for the login page, the English one stays for the logs
+    return returnError(err instanceof I18nHttpError ? __(req, err.key, err.params) : err.message as string, err.code || 500)
   }
 }
 
@@ -1110,7 +1111,8 @@ router.post('/saml2-assert', async (req, res) => {
     const [callbackUrl] = await authProviderLoginCallback(req, invitToken, authInfo, logFields, provider, redirect, org, dep, !!adminMode)
     res.redirect(callbackUrl)
   } catch (err : any) {
-    return returnError(err.message as string, err.code || 500)
+    // a translated message for the login page, the English one stays for the logs
+    return returnError(err instanceof I18nHttpError ? __(req, err.key, err.params) : err.message as string, err.code || 500)
   }
 })
 
