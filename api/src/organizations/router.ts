@@ -2,7 +2,7 @@ import type { Member, Organization, Partner } from '#types'
 import { Router, type Request } from 'express'
 import { reqUser, getAccountRole, reqSession, reqSiteUrl, httpError, session, mongoPagination, mongoSort } from '@data-fair/lib-express'
 import log from '@data-fair/lib-node/log.js'
-import eventsQueue from '#events-queue'
+import eventsQueue from '@data-fair/lib-node/events-queue.js'
 import { nanoid } from 'nanoid'
 import config, { jwtDurations } from '#config'
 import { isExpiredPartnerInvitation } from '@sd/shared/partners.ts'
@@ -439,7 +439,7 @@ if (config.managePartners) {
     }
     await sendMailI18n('partnerInvitation', reqI18n(req).messages, partnerPost.contactEmail, params)
 
-    eventsQueue?.pushEvent({
+    eventsQueue.pushEvent({
       sender: { type: 'organization', id: orga.id, name: orga.name, role: 'admin' },
       topic: { key: 'simple-directory:partner-invitation-sent' },
       title: __all('notifications.sentPartnerInvitation', { partnerName: partnerPost.name, email: partnerPost.contactEmail, orgName: orga.name })

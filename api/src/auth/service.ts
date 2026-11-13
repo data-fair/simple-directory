@@ -6,7 +6,7 @@ import { session, httpError, type OrganizationMembership } from '@data-fair/lib-
 import log from '@data-fair/lib-node/log.js'
 import type { Site, User, Organization, ServerSession, UserWritable } from '#types'
 import storages from '#storages'
-import eventsQueue from '#events-queue'
+import eventsQueue from '@data-fair/lib-node/events-queue.js'
 import { nanoid } from 'nanoid'
 import type { CreateMember, AuthProvider, MemberRole, MemberDepartment, OpenIDConnect } from '#types/site/index.ts'
 import { getOrgLimits, getRedirectSite, getTokenPayload, prepareCallbackUrl, reqSite, setNbMembersLimit, setNbMembersLimits, unshortenInvit } from '#services'
@@ -242,7 +242,7 @@ export const authProviderLoginCallback = async (
 
     await storage.addMember(invitOrga, user, invit.role, invit.department)
     log.info(`a user accepted an invitation in oauth callback ${user.id}`, { code: 'sd.auth.provider.accept-invite', ...logFields })
-    eventsQueue?.pushEvent({
+    eventsQueue.pushEvent({
       sender: { type: 'organization', id: invitOrga.id, name: invitOrga.name, role: 'admin', department: invit.department },
       topic: { key: 'simple-directory:invitation-accepted' },
       title: __all('notifications.acceptedInvitation', { name: user.name, email: user.email, orgName: invitOrga.name + (invit.department ? ' / ' + invit.department : '') })

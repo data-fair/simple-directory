@@ -16,7 +16,7 @@ import storages from '#storages'
 import { createHttpTerminator } from 'http-terminator'
 import app from './app.ts'
 import config from '#config'
-import * as eventsQueue from '#events-queue'
+import eventsQueue from '@data-fair/lib-node/events-queue.js'
 import { publicGlobalProviders } from './auth/providers.ts'
 import { getSiteColorsWarnings } from '@data-fair/lib-common-types/theme/index.js'
 import { getMainSiteDoc } from './sites/service.ts'
@@ -37,7 +37,7 @@ export const start = async () => {
   await mongo.init()
   await locks.start(mongo.db)
   await Promise.all([
-    eventsQueue.start(),
+    eventsQueue.start({ eventsUrl: config.privateEventsUrl, eventsSecret: config.secretKeys.events }),
     oauth.init(),
     saml2.init(),
     storages.init(),
