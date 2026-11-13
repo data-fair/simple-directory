@@ -10,7 +10,7 @@ import eventsQueue from '@data-fair/lib-node/events-queue.js'
 import { nanoid } from 'nanoid'
 import type { CreateMember, AuthProvider, MemberRole, MemberDepartment, OpenIDConnect } from '#types/site/index.ts'
 import { getOrgLimits, getRedirectSite, getTokenPayload, prepareCallbackUrl, reqSite, setNbMembersLimit, setNbMembersLimits, unshortenInvit } from '#services'
-import { __all, reqI18n } from '#i18n'
+import { __all, reqI18n, I18nHttpError } from '#i18n'
 import { reqIpInfo } from '../utils/ip-info.ts'
 import { ownerLogFields, userLogFields, type LogFields } from '../utils/log-fields.ts'
 
@@ -90,7 +90,7 @@ export const authProviderMemberInfo = async (site: Site | undefined, provider: A
     }
     if (!role) role = 'user'
     if (!roles.includes(role)) {
-      throw httpError(400, `Rôle ${role} inconnu dans l'organisation ${org.id}`)
+      throw new I18nHttpError(400, 'errors.unknownOrgRole', { role, org: org.name ?? org.id })
     }
     if (provider.memberDepartment?.type === 'static') {
       department = provider.memberDepartment.department
@@ -98,7 +98,7 @@ export const authProviderMemberInfo = async (site: Site | undefined, provider: A
     if (provider.memberDepartment?.type === 'attribute') {
       department = authInfo.data[provider.memberDepartment.attribute] as string | undefined
       if (!department && provider.memberDepartment.required) {
-        throw httpError(400, "l'attribute de département n'est pas défini et est obligatoire")
+        throw new I18nHttpError(400, 'errors.missingDepartmentAttribute')
       }
       if (provider.memberDepartment.orgRootValue && department === provider.memberDepartment.orgRootValue) {
         department = undefined
@@ -228,7 +228,7 @@ export const authProviderLoginCallback = async (
     }
   } else if (!storage.readonly) {
     if (user.coreIdProvider && (user.coreIdProvider.type !== (provider.type || 'oauth') || user.coreIdProvider.id !== provider.id)) {
-      throw httpError(400, 'Utilisateur déjà lié à un autre fournisseur d\'identité principale')
+      throw httpError(400, reqI18n(req).messages.errors.otherCoreIdProvider)
     }
     debugAuthProvider('Existing user authenticated through oauth', user, authInfo)
     user = await patchCoreAuthUser(provider, user, authInfo, memberInfos)

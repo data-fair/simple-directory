@@ -196,7 +196,8 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
       sites: {
         createSite: 'Eine neue Website definieren',
         loginOnSite: 'Auf der Website anmelden',
-        colorWarnings: 'Kontrastwarnungen'
+        colorWarnings: 'Kontrastwarnungen',
+        mainSite: 'Hauptwebsite'
       },
       passwordLists: {
         help1: 'Sie können Kennwortlisten aus CSV-Dateien hochladen. Diese zu bekannten Kennwörter werden dann abgelehnt, wenn Benutzer versuchen, sie zu verwenden.',
@@ -209,7 +210,8 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
         title: 'Website-Konfiguration',
         oidcHelp: 'Geben Sie diese Login-Callback-URL ({url}) an den Identitätsanbieter weiter und legen Sie die Scopes "openid", "profile", "email" fest.',
         samlHelp: 'Füllen Sie das Feld unten mit den XML-Metadaten des Identitätsanbieters aus und geben Sie ihm im Gegenzug diesen {link}.',
-        samlHelpLink: 'Link'
+        samlHelpLink: 'Link',
+        mainSiteExplanation: 'Diese Website entspricht der Hauptdomain dieses Dienstes. Ihr Datenbankdokument steuert nur die Darstellung, und zwar nur für die in MAIN_SITE_FROM_DB aufgeführten Kategorien. Authentifizierung, Identitätsanbieter und der Kontobereich stammen immer aus den Umgebungsvariablen.'
       }
     },
     contact: {
@@ -496,8 +498,29 @@ Peut valoir 'anonym', 'authentifiziert' oder 'admin'.`,
     passwordMinCharClasses: 'Das Passwort muss mindestens {minCharClasses} verschiedene Arten von Zeichen enthalten (Kleinbuchstaben, Großbuchstaben, Ziffer, Sonderzeichen).',
     forbiddenPassword: 'Dieses Passwort wurde in einer Liste bekannter Passwörter gefunden und kann nicht verwendet werden.',
     samePassword: 'Das neue Passwort muss sich vom alten Passwort unterscheiden.',
+    conflict2FA: 'Die Zwei-Faktor-Authentifizierung ist für dieses Konto bereits eingerichtet.',
+    oauthNoEmail: 'Anmeldung abgelehnt: Der Identitätsanbieter hat keine E-Mail-Adresse übermittelt.',
+    oauthEmailNotVerified: 'Anmeldung abgelehnt: Der Identitätsanbieter meldet diese E-Mail-Adresse nicht als verifiziert.',
+    githubNoVerifiedEmail: 'Anmeldung abgelehnt: Im GitHub-Konto wurde keine verifizierte primäre E-Mail-Adresse gefunden.',
+    facebookDisabled: 'Die Anmeldung mit Facebook ist deaktiviert: Facebook gibt nicht an, ob die E-Mail-Adresse verifiziert wurde.',
+    partnerInvitationMismatch: 'Diese Anfrage entspricht nicht der gesendeten Einladung.',
+    partnerConflict: 'Diese Organisation ist bereits Partner.',
+    noPendingPartnerInvitation: 'Es ist keine Einladung ausstehend.',
+    memberOfParentOrg: 'Dieser Benutzer ist Mitglied der übergeordneten Organisation und kann keiner Abteilung hinzugefügt werden.',
+    memberOfDepartment: 'Dieser Benutzer ist Mitglied einer Abteilung und kann der übergeordneten Organisation nicht hinzugefügt werden.',
+    departmentUnknown: 'Unbekannte Abteilung.',
+    unknownOrgRole: 'Die Rolle {role} ist in der Organisation {org} unbekannt.',
+    missingDepartmentAttribute: 'Der Identitätsanbieter hat das erforderliche Abteilungsattribut nicht übermittelt.',
+    otherCoreIdProvider: 'Dieser Benutzer ist bereits mit einem anderen Haupt-Identitätsanbieter verknüpft.',
+    authOnlyOtherSiteChain: 'Die Website {host} kann nicht als Referenz für die Authentifizierung verwendet werden: Sie ist ebenfalls so konfiguriert, dass die Authentifizierung nur auf einer anderen Website erfolgt.',
+    spamSuspected: 'Nachricht abgelehnt: Die Aktivität ähnelt der eines Spam-Bots.',
+    rateLimitMessages: 'Zu viele Nachrichten in kurzer Zeit. Bitte warten Sie, bevor Sie es erneut versuchen.'
   },
   mails: {
+    // the message forwarded by the contact form
+    contact: {
+      intro: 'Nachricht über das Kontaktformular von {site}, gesendet von {from}'
+    },
     creation: {
       subject: 'Willkommen bei {host}',
       text: `
@@ -641,6 +664,12 @@ Kontaktieren Sie uns gerne unter {contact}.
     acceptedPartnerInvitation: 'Die Organisation {partnerName} ({email}) ist der Organisation {orgName} als Partner beigetreten.',
     addMemberTopic: 'ein Mitglied wurde hinzugefügt',
     addMember: 'Der Benutzer {name} ({email}) ist der Organisation {orgName} beigetreten.'
+  },
+  // server-side only (not in publicMessages): reported through
+  // mainSiteWarnings on the sites API and by the boot check
+  mainSite: {
+    ignoredField: 'Das Feld "{field}" wird auf der Hauptwebsite ignoriert: Diese Konfiguration stammt aus den Umgebungsvariablen.',
+    ignoredCategory: 'Der gespeicherte Wert für "{category}" wird ignoriert: MAIN_SITE_FROM_DB enthält diese Kategorie nicht.'
   },
   // server-side only: simple-directory's own scopes, merged with the platform scopes
   scopes: {

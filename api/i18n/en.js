@@ -498,8 +498,29 @@ Can be 'anonymous', 'authenticated' or 'admin'.`,
     passwordMinCharClasses: 'The password must contain at least {minCharClasses} different types of characters (lowercase, uppercase, digit, special character).',
     forbiddenPassword: 'This password was found in a list of known passwords and cannot be used.',
     samePassword: 'The new password must be different from the old one.',
+    conflict2FA: 'Two-factor authentication is already configured for this account.',
+    oauthNoEmail: 'Login refused: the identity provider did not send any email address.',
+    oauthEmailNotVerified: 'Login refused: the identity provider does not report this email address as verified.',
+    githubNoVerifiedEmail: 'Login refused: no verified primary email address was found on the GitHub account.',
+    facebookDisabled: 'Logging in with Facebook is disabled: Facebook does not tell whether the email address was verified.',
+    partnerInvitationMismatch: 'This request does not match the invitation that was sent.',
+    partnerConflict: 'This organization is already a partner.',
+    noPendingPartnerInvitation: 'No invitation is pending validation.',
+    memberOfParentOrg: 'This user is a member of the parent organization, they cannot be added to a department.',
+    memberOfDepartment: 'This user is a member of a department, they cannot be added to the parent organization.',
+    departmentUnknown: 'Unknown department.',
+    unknownOrgRole: 'Role {role} is unknown in the organization {org}.',
+    missingDepartmentAttribute: 'The identity provider did not send the department attribute, which is required.',
+    otherCoreIdProvider: 'This user is already linked to another main identity provider.',
+    authOnlyOtherSiteChain: 'The site {host} cannot be used as the authentication reference: it is also configured to authenticate on another site only.',
+    spamSuspected: 'Message refused: the activity looks like that of a spam bot.',
+    rateLimitMessages: 'Too many messages in a short interval. Please wait before trying again.'
   },
   mails: {
+    // the message forwarded by the contact form
+    contact: {
+      intro: 'Message sent through the contact form of {site} by {from}'
+    },
     creation: {
       subject: 'Welcome to {host}',
       text: `

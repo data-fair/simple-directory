@@ -196,7 +196,8 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
       sites: {
         createSite: 'Definire un nuovo sito',
         loginOnSite: 'Accedere al sito',
-        colorWarnings: 'Avvertenze di contrasto'
+        colorWarnings: 'Avvertenze di contrasto',
+        mainSite: 'Sito principale'
       },
       passwordLists: {
         help1: 'È possibile caricare elenchi di password da file CSV. Queste password troppo note verranno rifiutate se gli utenti tentano di utilizzarle.',
@@ -209,7 +210,8 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
         title: 'Configurazione del sito',
         oidcHelp: 'Fornisci questo URL di ritorno di accesso ({url}) al provider di identità e definisci gli scope "openid", "profile", "email".',
         samlHelp: 'Compila il campo qui sotto con i metadati in formato XML forniti dal provider di identità e fornisci in cambio questo {link}.',
-        samlHelpLink: 'link'
+        samlHelpLink: 'link',
+        mainSiteExplanation: 'Questo sito corrisponde al dominio principale di questo servizio. Il suo documento nel database gestisce solo la presentazione, e solo per le categorie elencate in MAIN_SITE_FROM_DB. L\'autenticazione, i provider di identità e l\'ambito degli account provengono sempre dalle variabili d\'ambiente.'
       }
     },
     contact: {
@@ -496,8 +498,29 @@ Può essere 'anonimo', 'autenticato' o 'admin'.`,
     passwordMinCharClasses: 'La password deve contenere almeno {minCharClasses} diversi tipi di caratteri (minuscole, maiuscole, cifra, carattere speciale).',
     forbiddenPassword: 'Questa password è stata trovata in un elenco di password note e non può essere utilizzata.',
     samePassword: 'La nuova password deve essere diversa da quella vecchia.',
+    conflict2FA: 'L\'autenticazione a due fattori è già configurata per questo account.',
+    oauthNoEmail: 'Accesso rifiutato: il provider di identità non ha trasmesso alcun indirizzo e-mail.',
+    oauthEmailNotVerified: 'Accesso rifiutato: il provider di identità non indica questo indirizzo e-mail come verificato.',
+    githubNoVerifiedEmail: 'Accesso rifiutato: nessun indirizzo e-mail principale verificato è stato trovato nell\'account GitHub.',
+    facebookDisabled: 'L\'accesso con Facebook è disattivato: Facebook non indica se l\'indirizzo e-mail è stato verificato.',
+    partnerInvitationMismatch: 'Questa richiesta non corrisponde all\'invito inviato.',
+    partnerConflict: 'Questa organizzazione è già partner.',
+    noPendingPartnerInvitation: 'Nessun invito è in attesa di convalida.',
+    memberOfParentOrg: 'Questo utente è membro dell\'organizzazione principale, non può essere aggiunto a un dipartimento.',
+    memberOfDepartment: 'Questo utente è membro di un dipartimento, non può essere aggiunto all\'organizzazione principale.',
+    departmentUnknown: 'Dipartimento sconosciuto.',
+    unknownOrgRole: 'Il ruolo {role} è sconosciuto nell\'organizzazione {org}.',
+    missingDepartmentAttribute: 'Il provider di identità non ha trasmesso l\'attributo di dipartimento, che è obbligatorio.',
+    otherCoreIdProvider: 'Questo utente è già collegato a un altro provider di identità principale.',
+    authOnlyOtherSiteChain: 'Impossibile usare il sito {host} come riferimento per l\'autenticazione: anch\'esso è configurato per autenticarsi solo su un altro sito.',
+    spamSuspected: 'Messaggio rifiutato: l\'attività somiglia a quella di un bot di spam.',
+    rateLimitMessages: 'Troppi messaggi in un breve intervallo. Attendi prima di riprovare.'
   },
   mails: {
+    // the message forwarded by the contact form
+    contact: {
+      intro: 'Messaggio inviato tramite il modulo di contatto di {site} da {from}'
+    },
     creation: {
       subject: 'Benvenuti a {host}',
       text: `
@@ -643,6 +666,12 @@ Non esitate a contattarci a {contact}.
     acceptedPartnerInvitation: 'L\'organizzazione {partnerName} ({email}) si è unita all\'organizzazione {orgName} come partner.',
     addMemberTopic: 'un membro è stato aggiunto',
     addMember: 'L\'utente {name} ({email}) si è unito all\'organizzazione {orgName}.'
+  },
+  // server-side only (not in publicMessages): reported through
+  // mainSiteWarnings on the sites API and by the boot check
+  mainSite: {
+    ignoredField: 'Il campo "{field}" viene ignorato sul sito principale: questa configurazione proviene dalle variabili d\'ambiente.',
+    ignoredCategory: 'Il valore salvato per "{category}" viene ignorato: MAIN_SITE_FROM_DB non contiene questa categoria.'
   },
   // server-side only: simple-directory's own scopes, merged with the platform scopes
   scopes: {

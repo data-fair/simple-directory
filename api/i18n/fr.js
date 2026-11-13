@@ -498,8 +498,29 @@ Peut valoir 'anonymous', 'authenticated' ou 'admin'.`,
     passwordMinCharClasses: 'Le mot de passe doit contenir au moins {minCharClasses} classes de caractères (minuscule, majuscule, nombre, caractère spécial).',
     forbiddenPassword: 'Le mot de passe a été trouvé dans une liste de mots de passe connus et ne peut pas être utilisé.',
     samePassword: 'Le nouveau mot de passe doit être différent de l\'ancien.',
+    conflict2FA: 'L\'authentification à 2 facteurs est déjà configurée pour ce compte.',
+    oauthNoEmail: 'Connexion refusée : le fournisseur d\'identité n\'a transmis aucune adresse email.',
+    oauthEmailNotVerified: 'Connexion refusée : le fournisseur d\'identité n\'indique pas cette adresse email comme vérifiée.',
+    githubNoVerifiedEmail: 'Connexion refusée : aucune adresse email principale vérifiée n\'a été trouvée sur le compte GitHub.',
+    facebookDisabled: 'La connexion avec Facebook est désactivée : Facebook n\'indique pas si l\'adresse email a été vérifiée.',
+    partnerInvitationMismatch: 'Cette requête ne correspond pas à l\'invitation envoyée.',
+    partnerConflict: 'Cette organisation est déjà partenaire.',
+    noPendingPartnerInvitation: 'Aucune invitation n\'est en attente de validation.',
+    memberOfParentOrg: 'Cet utilisateur est membre de l\'organisation parente, il ne peut pas être ajouté à un département.',
+    memberOfDepartment: 'Cet utilisateur est membre d\'un département, il ne peut pas être ajouté à l\'organisation parente.',
+    departmentUnknown: 'Département inconnu.',
+    unknownOrgRole: 'Rôle {role} inconnu dans l\'organisation {org}.',
+    missingDepartmentAttribute: 'Le fournisseur d\'identité n\'a pas transmis l\'attribut de département, qui est obligatoire.',
+    otherCoreIdProvider: 'Cet utilisateur est déjà lié à un autre fournisseur d\'identité principal.',
+    authOnlyOtherSiteChain: 'Impossible d\'utiliser le site {host} comme référence pour l\'authentification : il est lui aussi configuré pour s\'authentifier uniquement sur un autre site.',
+    spamSuspected: 'Message refusé : l\'activité ressemble à celle d\'un robot spammeur.',
+    rateLimitMessages: 'Trop de messages dans un bref intervalle. Veuillez patienter avant d\'essayer de nouveau.'
   },
   mails: {
+    // the message forwarded by the contact form
+    contact: {
+      intro: 'Message transmis par le formulaire de contact de {site}, envoyé par {from}'
+    },
     creation: {
       subject: 'Bienvenue sur {host}',
       text: `

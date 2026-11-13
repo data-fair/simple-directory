@@ -1,5 +1,6 @@
 import config from '../src/config.ts'
-import { type Request } from 'express'
+import { type Request, type ErrorRequestHandler } from 'express'
+import { httpError } from '@data-fair/lib-express'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
 import acceptLangParser from 'accept-language-parser'
 import dayjs from 'dayjs'
@@ -43,6 +44,26 @@ export const getMessage = (localeCode: string, key: string, params: Record<strin
 export const __ = (req: Request, key: string, params: Record<string, string> = {}) => {
   const myI18n = reqI18n(req)
   return getMessage(myI18n.localeCode, key, params)
+}
+
+// An error thrown where the request is not at hand (storages, auth providers...).
+// Its message is in English for the logs, i18nErrorMiddleware translates it into
+// the language of the request before it reaches the error handler.
+export class I18nHttpError extends Error {
+  status: number
+  key: string
+  params: Record<string, string>
+  constructor (status: number, key: string, params: Record<string, string> = {}) {
+    super(getMessage('en', key, params))
+    this.status = status
+    this.key = key
+    this.params = params
+  }
+}
+
+export const i18nErrorMiddleware: ErrorRequestHandler = (err, req, res, next) => {
+  if (err instanceof I18nHttpError) next(httpError(err.status, __(req, err.key, err.params)))
+  else next(err)
 }
 
 export const __all = (key: string, params: Record<string, string> = {}) => {
