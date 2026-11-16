@@ -812,7 +812,9 @@ const { t, locale } = useI18n()
 const { user, switchOrganization } = useSession()
 const { authProvidersFetch, sitePublic, mainPublicUrl } = useStore()
 
-useHead({ title: t('pages.login.title'), })
+const previousTitle = document.title
+document.title = t('pages.login.title')
+onUnmounted(() => { document.title = previousTitle })
 
 const error = useStringSearchParam('error')
 const plannedDeletion = reactiveSearchParams.planned_deletion

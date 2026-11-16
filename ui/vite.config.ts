@@ -5,7 +5,6 @@ import VueRouter from 'vue-router/vite'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
-import { unheadVueComposablesImports } from '@unhead/vue'
 // import webfontDownload from 'vite-plugin-webfont-dl'
 import Vuetify from 'vite-plugin-vuetify'
 import microTemplate from '@data-fair/lib-utils/micro-template.js'
@@ -57,7 +56,6 @@ export default defineConfig({
       vueTemplate: true,
       imports: [
         ...(autoImports as any),
-        unheadVueComposablesImports,
         {
           from: '@sd/api/types',
           imports: ['Organization', 'User', 'Member', 'Partner', 'Invitation', 'Site', 'Limits'],

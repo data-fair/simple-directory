@@ -10,8 +10,6 @@ import { createLocaleDayjs } from '@data-fair/lib-vue/locale-dayjs.js'
 import { createSession } from '@data-fair/lib-vue/session.js'
 import { createUiNotif } from '@data-fair/lib-vue/ui-notif.js'
 import { createI18n } from 'vue-i18n'
-// unhead 3 splits the client entry out of the root export
-import { createHead } from '@unhead/vue/client'
 import App from './App.vue'
 import dFrameContent from '@data-fair/frame/lib/vue-router/d-frame-content.js'
 import debugModule from 'debug'
@@ -38,9 +36,8 @@ const debug = debugModule('sd:main');
     vuetify.defaults.value.VColorPicker = { mode: 'hex' }
   }
   const i18n = createI18n({ legacy: false, locale: session.state.lang, fallbackLocale: 'en', messages: $uiConfig.publicMessages })
-  const head = createHead();
 
-  (window as any).vIframeOptions = { router }
+  ;(window as any).vIframeOptions = { router }
 
   const app = createApp(App)
     .use(router)
@@ -50,7 +47,6 @@ const debug = debugModule('sd:main');
     .use(uiNotif)
     .use(vuetify)
     .use(i18n)
-    .use(head)
 
   await router.isReady()
   debug('Router is ready')

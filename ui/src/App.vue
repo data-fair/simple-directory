@@ -46,12 +46,7 @@ import inIframe from '@data-fair/lib-utils/in-iframe.js'
 const session = useSession()
 const route = useRoute()
 
-useHead({
-  // unhead 3 resolves reactivity per attribute rather than over the whole object
-  htmlAttrs: { lang: () => session.lang.value ?? 'fr' },
-  // style: () => globalStyle
-  // __dangerouslyDisableSanitizers: ['style']
-})
+watchEffect(() => { document.documentElement.lang = session.lang.value ?? 'fr' })
 
 // const embed = useBooleanSearchParam('embed')
 // const showToolbarParam = useBooleanSearchParam('showToolbar')
