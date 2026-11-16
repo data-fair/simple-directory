@@ -25,11 +25,108 @@ router.post('/clear-platform-scopes-cache', async (req, res) => {
   res.status(200).send('ok')
 })
 
-// DELETE /api/test-env — clean test data
+// Prefixed test sub-spaces: each test suite owns the accounts whose ids start with its own
+// prefix (test_<suite>_), seeded and cleaned without touching other suites nor the unprefixed accounts.
+const testPrefixRegexp = /^test_[a-z0-9]+(?:_[a-z0-9]+)*_$/
+
+type SeedUser = { id: string, email?: string, firstName?: string, lastName?: string, [key: string]: any }
+type SeedOrg = { id: string, name?: string, members?: { id: string, role: string, department?: string }[], [key: string]: any }
+
+// upsert users and organizations described like dev/resources/users.json and organizations.json:
+// organizations carry their members, the memberships stored on the users are rebuilt from them.
+// Only the entries accepted by the filter are written, the others are ignored.
+const upsertSeed = async (users: SeedUser[], orgs: SeedOrg[], accept: (id: string) => boolean) => {
+  const userOrgs: Record<string, any[]> = {}
+  for (const org of orgs) {
+    for (const member of org.members || []) {
+      if (!userOrgs[member.id]) userOrgs[member.id] = []
+      userOrgs[member.id].push({
+        id: org.id,
+        name: org.name,
+        role: member.role,
+        ...(member.department ? { department: member.department } : {})
+      })
+    }
+  }
+
+  let usersCount = 0
+  for (const user of users) {
+    if (!accept(user.id)) continue
+    const doc: any = {
+      _id: user.id,
+      ...user,
+      name: [user.firstName, user.lastName].filter(Boolean).join(' '),
+      organizations: userOrgs[user.id] || [],
+      emailConfirmed: true
+    }
+    delete doc.id
+    await mongo.users.replaceOne({ _id: doc._id }, doc, { upsert: true })
+    usersCount++
+  }
+
+  let orgsCount = 0
+  for (const org of orgs) {
+    if (!accept(org.id)) continue
+    const doc: any = {
+      _id: org.id,
+      ...org,
+    }
+    delete doc.id
+    await mongo.organizations.replaceOne({ _id: doc._id }, doc, { upsert: true })
+    orgsCount++
+  }
+  return { users: usersCount, organizations: orgsCount }
+}
+
+// every id and email of a seed body must be one of the sub-space: returns the reason of a refusal
+const checkSeedBody = (body: any, forbidden: (value: string, kind: 'id' | 'email') => boolean) => {
+  if (!body || !Array.isArray(body.users) || !Array.isArray(body.organizations)) return 'users and organizations arrays are required'
+  for (const user of body.users) {
+    if (typeof user?.id !== 'string' || forbidden(user.id, 'id')) return `user id ${user?.id} is out of the sub-space`
+    if (user.email !== undefined && (typeof user.email !== 'string' || forbidden(user.email.toLowerCase(), 'email'))) return `user email ${user.email} is out of the sub-space`
+  }
+  for (const org of body.organizations) {
+    if (typeof org?.id !== 'string' || forbidden(org.id, 'id')) return `organization id ${org?.id} is out of the sub-space`
+    for (const member of org.members || []) {
+      if (typeof member?.id !== 'string' || forbidden(member.id, 'id')) return `member id ${member?.id} is out of the sub-space`
+    }
+  }
+}
+
+const cleanPrefixed = async (req: express.Request, res: express.Response) => {
+  const prefix = req.query.prefix
+  if (typeof prefix !== 'string' || !testPrefixRegexp.test(prefix)) return res.status(400).send('invalid test prefix')
+  // the prefix only holds [a-z0-9_], safe to use in a regexp
+  const startsWithPrefix = { $regex: '^' + prefix }
+  // users created through the API get a nanoid id, they are recognized by their email
+  const userFilter = { $or: [{ _id: startsWithPrefix }, { email: { $regex: '^' + prefix, $options: 'i' } }] }
+  const userIds = (await mongo.users.find(userFilter, { projection: { _id: 1 } }).toArray()).map(u => u._id as string)
+  const orgFilter = { $or: [{ _id: startsWithPrefix }, { 'created.id': { $in: userIds } }] }
+  const orgIds = (await mongo.organizations.find(orgFilter, { projection: { _id: 1 } }).toArray()).map(o => o._id as string)
+  const ownerIds = [...userIds, ...orgIds]
+
+  await mongo.organizations.deleteMany(orgFilter)
+  await mongo.users.deleteMany(userFilter)
+  // what is left of the other sub-spaces must not reference the deleted organizations
+  if (orgIds.length) {
+    await mongo.users.updateMany({ 'organizations.id': { $in: orgIds } }, { $pull: { organizations: { id: { $in: orgIds } } } })
+    await mongo.organizations.updateMany({ 'partners.id': { $in: orgIds } }, { $pull: { partners: { id: { $in: orgIds } } } })
+  }
+  await mongo.limits.deleteMany({ $or: [{ type: 'user', id: { $in: userIds } }, { type: 'organization', id: { $in: orgIds } }] })
+  await mongo.avatars.deleteMany({ $or: [{ 'owner.type': 'user', 'owner.id': { $in: userIds } }, { 'owner.type': 'organization', 'owner.id': { $in: orgIds } }] })
+  await mongo.sites.deleteMany({ $or: [{ _id: startsWithPrefix }, { 'owner.id': { $in: ownerIds } }] })
+  await mongo.oauthTokens.deleteMany({ 'user.id': { $in: userIds } })
+  const { getSiteByHost } = await import('./sites/service.ts')
+  getSiteByHost.clear()
+  res.status(204).send()
+}
+
+// DELETE /api/test-env — clean test data (DELETE /?prefix=<p> only cleans a prefixed sub-space)
 // Seeded data uses test_* prefixed IDs, dynamically-created test users use @test.com emails.
 // NHIs match neither pattern (their synthetic email is @nhi.<publicHost>, not @test.com)
 // -- swept separately by their nhi-* id prefix so they don't linger across runs.
 router.delete('/', async (req, res) => {
+  if (req.query.prefix !== undefined) return cleanPrefixed(req, res)
   const testIdFilter = { _id: { $regex: /^test_/ } }
   const testEmailFilter = { email: { $regex: /@test\.com$/i } }
   const nhiIdFilter = { _id: { $regex: /^nhi-/ } }
@@ -101,7 +198,16 @@ router.delete('/', async (req, res) => {
 
 // POST /api/test-env/seed — seed predefined users and organizations from JSON files into mongo
 // This enables tests that rely on predefined file-storage users to work against the mongo-backed dev server
-router.post('/seed', async (req, res) => {
+router.post('/seed', express.json({ limit: '5mb' }), async (req, res) => {
+  // prefixed sub-space: the entries are given in the body and must all belong to the prefix
+  if (req.body?.prefix !== undefined) {
+    const prefix = req.body.prefix
+    if (typeof prefix !== 'string' || !testPrefixRegexp.test(prefix)) return res.status(400).send('invalid test prefix')
+    const refusal = checkSeedBody(req.body, (value) => !value.startsWith(prefix))
+    if (refusal) return res.status(400).send(refusal)
+    return res.status(200).json(await upsertSeed(req.body.users, req.body.organizations, () => true))
+  }
+
   const usersFile = resolve(import.meta.dirname, '../../dev/resources/users.json')
   const orgsFile = resolve(import.meta.dirname, '../../dev/resources/organizations.json')
   const users = JSON.parse(readFileSync(usersFile, 'utf-8'))
@@ -111,45 +217,16 @@ router.post('/seed', async (req, res) => {
     if (value) orgsRaw = orgsRaw.replaceAll(`{${key}}`, value)
   }
   const orgs = JSON.parse(orgsRaw)
-
-  // build org membership map for users
-  const userOrgs: Record<string, any[]> = {}
-  for (const org of orgs) {
-    for (const member of org.members || []) {
-      if (!userOrgs[member.id]) userOrgs[member.id] = []
-      userOrgs[member.id].push({
-        id: org.id,
-        name: org.name,
-        role: member.role,
-        ...(member.department ? { department: member.department } : {})
-      })
-    }
-  }
-
-  for (const user of users) {
-    if (!user.id.startsWith('test_')) continue
-    const doc = {
-      _id: user.id,
-      ...user,
-      name: [user.firstName, user.lastName].filter(Boolean).join(' '),
-      organizations: userOrgs[user.id] || [],
-      emailConfirmed: true
-    }
-    delete doc.id
-    await mongo.users.replaceOne({ _id: doc._id }, doc, { upsert: true })
-  }
-
-  for (const org of orgs) {
-    if (!org.id.startsWith('test_')) continue
-    const doc = {
-      _id: org.id,
-      ...org,
-    }
-    delete doc.id
-    await mongo.organizations.replaceOne({ _id: doc._id }, doc, { upsert: true })
-  }
-
+  await upsertSeed(users, orgs, id => id.startsWith('test_'))
   res.status(200).json({ users: users.length, organizations: orgs.length })
+})
+
+// POST /api/test-env/seed-dev — seed accounts of the human dev space, same body as a prefixed seed
+// without the prefix. Test accounts (test_ ids, @test.com emails) are refused: they are wiped by the cleanups.
+router.post('/seed-dev', express.json({ limit: '5mb' }), async (req, res) => {
+  const refusal = checkSeedBody(req.body, (value, kind) => kind === 'id' ? value.startsWith('test_') : value.endsWith('@test.com'))
+  if (refusal) return res.status(400).send(refusal)
+  res.status(200).json(await upsertSeed(req.body.users, req.body.organizations, () => true))
 })
 
 // POST /api/test-env/rotate-keys — force key rotation for JWKS testing
