@@ -957,7 +957,7 @@ const oauthCallback: RequestHandler = async (req, res, next) => {
     }
     res.redirect(callbackUrl)
   } catch (err : any) {
-    // a translated message for the login page, the English one stays for the logs
+    // the login page shows the message in the language of the request
     return returnError(err instanceof I18nHttpError ? __(req, err.key, err.params) : err.message as string, err.code || 500)
   }
 }
@@ -1111,7 +1111,7 @@ router.post('/saml2-assert', async (req, res) => {
     const [callbackUrl] = await authProviderLoginCallback(req, invitToken, authInfo, logFields, provider, redirect, org, dep, !!adminMode)
     res.redirect(callbackUrl)
   } catch (err : any) {
-    // a translated message for the login page, the English one stays for the logs
+    // the login page shows the message in the language of the request
     return returnError(err instanceof I18nHttpError ? __(req, err.key, err.params) : err.message as string, err.code || 500)
   }
 })
