@@ -34,7 +34,7 @@ test.describe('Site OAuth clients editing', () => {
     await name.fill('Dash 2')
 
     // the maximum scopes are a select of the known scopes, not a free text input
-    await page.getByRole('combobox').filter({ hasText: 'Permissions maximales' }).click()
+    await page.getByRole('combobox').filter({ hasText: 'Portées maximales' }).click()
     await expect(page.getByRole('option', { name: 'organizations:read' })).toBeVisible()
     await page.keyboard.press('Escape')
 
