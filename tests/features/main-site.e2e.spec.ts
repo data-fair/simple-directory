@@ -56,7 +56,7 @@ test.describe('main site document admin page', () => {
     await expect(page.getByLabel('Titre du site', { exact: true })).toBeVisible()
 
     // and the form still saves
-    await expect(page.getByRole('textbox', { name: 'Couleur principale', exact: true })).toHaveValue('#FF00FF')
+    await expect(page.getByRole('textbox', { name: 'Couleur primaire', exact: true })).toHaveValue('#FF00FF')
     await page.getByRole('button', { name: /enregistrer|save/i }).click()
     await page.waitForTimeout(1000)
     const adminAx = await axiosAuth({ email: '_superadmin@test.com', password: 'Test1234', adminMode: true })

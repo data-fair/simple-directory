@@ -33,14 +33,14 @@ test.describe('Site theme editing', () => {
     await expect(page.getByText('mode de gestion des couleurs simplifié')).toBeVisible({ timeout: 15_000 })
 
     // Verify the primary color shows #FF0000 in assisted mode
-    await expect(page.getByRole('textbox', { name: 'Couleur principale', exact: true })).toHaveValue('#FF0000')
+    await expect(page.getByRole('textbox', { name: 'Couleur primaire', exact: true })).toHaveValue('#FF0000')
 
     // Toggle assisted mode OFF
     await page.getByText('mode de gestion des couleurs simplifié').click()
     await expect(page.getByText('Thème par défaut')).toBeVisible({ timeout: 5_000 })
 
     // Primary color should be preserved in manual mode
-    await expect(page.getByRole('textbox', { name: 'Couleur principale', exact: true })).toHaveValue('#FF0000')
+    await expect(page.getByRole('textbox', { name: 'Couleur primaire', exact: true })).toHaveValue('#FF0000')
 
     // Save and verify via API
     await page.getByRole('button', { name: /enregistrer|save/i }).click()
@@ -68,13 +68,13 @@ test.describe('Site theme editing', () => {
     await expect(page.getByText('mode de gestion des couleurs simplifié')).toBeVisible({ timeout: 15_000 })
 
     // Verify the primary color shows #00FF00 in manual mode
-    await expect(page.getByRole('textbox', { name: 'Couleur principale', exact: true })).toHaveValue('#00FF00')
+    await expect(page.getByRole('textbox', { name: 'Couleur primaire', exact: true })).toHaveValue('#00FF00')
 
     // Toggle assisted mode ON
     await page.getByText('mode de gestion des couleurs simplifié').click()
 
     // Primary color should be preserved in assisted mode
-    await expect(page.getByRole('textbox', { name: 'Couleur principale', exact: true })).toHaveValue('#00FF00')
+    await expect(page.getByRole('textbox', { name: 'Couleur primaire', exact: true })).toHaveValue('#00FF00')
 
     // Save and verify via API
     await page.getByRole('button', { name: /enregistrer|save/i }).click()
