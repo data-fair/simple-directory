@@ -144,7 +144,7 @@
             <v-list-item-title style="white-space:normal;">
               {{ member.name }} ({{ member.email }})
               <template v-if="member.emailConfirmed === false">
-                <span class="text-warning">{{ $t('common.emailNotConfirmed') }}
+                <span class="text-warning">({{ $t('common.emailNotConfirmed') }})
                   <resend-invitation
                     :member="member"
                     :orga="orga"

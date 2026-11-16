@@ -109,7 +109,7 @@
               <span
                 v-else
                 class="text-warning"
-              >{{ $t('common.emailNotConfirmed') }}
+              >({{ $t('common.emailNotConfirmed') }})
                 <resend-partner-invitation
                   :partner="partner"
                   :orga="orga"

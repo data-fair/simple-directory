@@ -383,16 +383,16 @@ export class LdapStorage implements SdStorage {
   private userDN (user: Pick<User, 'id' | 'email' | 'organizations'>) {
     const entry = this.userMapping.to(user)
     const dnKey = this.ldapParams.users.dnKey
-    if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
+    if (!entry[dnKey]) throw new Error(`the key ${dnKey} is required`)
     if (this.ldapParams.organizations.staticSingleOrg || this.org) {
       return `${dnKey}=${entry[dnKey]}, ${this.ldapParams.baseDN}`
     } else if (this.useDC) {
       if (!user.organizations || !user.organizations.length) {
-        throw new Error('L\'utilisateur doit être associé à une organisation dès la création')
+        throw new Error('the user must belong to an organization when it is created')
       }
       const orgEntry = this.orgMapping.to(user.organizations[0])
       const orgDNKey = this.ldapParams.organizations.dnKey
-      if (!orgEntry[orgDNKey]) throw new Error(`La clé ${orgDNKey} est obligatoire dans l'organisation`)
+      if (!orgEntry[orgDNKey]) throw new Error(`the key ${orgDNKey} is required in the organization`)
       return `${dnKey}=${entry[dnKey]}, ${orgDNKey}=${orgEntry[orgDNKey]}, ${this.ldapParams.baseDN}`
     } else {
       return `${dnKey}=${entry[dnKey]}, ${this.ldapParams.baseDN}`
@@ -402,7 +402,7 @@ export class LdapStorage implements SdStorage {
   private orgDN (org: { id: string }) {
     const entry = this.orgMapping.to(org)
     const dnKey = this.ldapParams.organizations.dnKey
-    if (!entry[dnKey]) throw new Error(`La clé ${dnKey} est obligatoire`)
+    if (!entry[dnKey]) throw new Error(`the key ${dnKey} is required`)
     return `${dnKey}=${entry[dnKey]},${this.ldapParams.baseDN}`
   }
 

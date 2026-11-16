@@ -54,10 +54,17 @@
           />
         </template>
         <template #oidc-help>
-          Donnez cette URL de retour de connexion ({{ siteHref + '/simple-directory/api/auth/oauth-callback' }}) au fournisseur d'identité et définissez les scopes "openid", "profile", "email".
+          {{ $t('pages.admin.site.oidcHelp', { url: siteHref + '/simple-directory/api/auth/oauth-callback' }) }}
         </template>
         <template #saml-help>
-          Remplissez le champ ci-dessous avec les métadonnées au format XML données par le fournisseurs d'identité. Et donnez ce <a :href="siteHref + '/simple-directory/api/auth/saml2-metadata.xml'">lien en retour</a>.
+          <i18n-t
+            keypath="pages.admin.site.samlHelp"
+            scope="global"
+          >
+            <template #link>
+              <a :href="siteHref + '/simple-directory/api/auth/saml2-metadata.xml'">{{ $t('pages.admin.site.samlHelpLink') }}</a>
+            </template>
+          </i18n-t>
         </template>
       </vjsf-patch-req-body>
     </v-form>

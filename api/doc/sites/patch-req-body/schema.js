@@ -23,10 +23,9 @@ schema.layout = {
   title: null,
   children: [
     {
-      title: 'Informations générales',
+      title: 'General information',
       'x-i18n-title': {
         fr: 'Informations générales',
-        en: 'General information',
         de: 'Allgemeine Informationen',
         it: 'Informazioni generali',
         pt: 'Informações gerais',
@@ -37,10 +36,9 @@ schema.layout = {
     { key: 'theme' },
     { key: 'mails' },
     {
-      title: 'Gestion des utilisateurs',
+      title: 'User management',
       'x-i18n-title': {
         fr: 'Gestion des utilisateurs',
-        en: 'Users management',
         de: 'Benutzerverwaltung',
         it: 'Gestione utenti',
         pt: 'Gestão de usuários',

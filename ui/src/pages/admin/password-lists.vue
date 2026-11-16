@@ -45,7 +45,7 @@
         v-for="passwordList of passwordLists.data.value"
         :key="passwordList._id"
         :title="passwordList.name"
-        :subtitle="$t('pages.admin.passwordLists.subtitle', {state: passwordList.active ? $t('common.active') : $t('common.inactive'), date: dayjs(passwordList.createdAt).format('LLL'), count: passwordList.count})"
+        :subtitle="$t('pages.admin.passwordLists.subtitle', {state: passwordList.active ? $t('common.active') : $t('common.inactive'), date: dayjs(passwordList.createdAt).format('LLL'), count: passwordList.count.toLocaleString(locale)}, passwordList.count)"
       >
         <template #prepend>
           <v-list-item-action start>
@@ -85,6 +85,7 @@
 import type { PasswordList } from '@sd/api/types'
 
 const { dayjs } = useLocaleDayjs()
+const { locale } = useI18n()
 
 // the two project names are injected as links into the help sentence, so that each
 // translation keeps its own word order around them

@@ -18,10 +18,10 @@
   },
   "dependencies": {
     "@authenio/samlify-node-xmllint": "^2.0.0",
-    "@data-fair/lib-common-types": "^1.26.0",
+    "@data-fair/lib-common-types": "^1.28.1",
     "@data-fair/lib-express": "^2.0.0",
     "@data-fair/lib-node": "^3.0.0",
-    "@data-fair/lib-utils": "^1.10.1",
+    "@data-fair/lib-utils": "^1.15.0",
     "@data-fair/lib-validation": "^1.0.2",
     "@sd/shared": "*",
     "accept-language-parser": "^1.5.0",

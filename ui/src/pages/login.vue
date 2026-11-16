@@ -812,7 +812,9 @@ const { t, locale } = useI18n()
 const { user, switchOrganization } = useSession()
 const { authProvidersFetch, sitePublic, mainPublicUrl } = useStore()
 
-useHead({ title: t('pages.login.title'), })
+const previousTitle = document.title
+document.title = t('pages.login.title')
+onUnmounted(() => { document.title = previousTitle })
 
 const error = useStringSearchParam('error')
 const plannedDeletion = reactiveSearchParams.planned_deletion
@@ -1166,7 +1168,7 @@ const validate2FA = useAsyncAction(async () => {
 
 function downloadRecovery () {
   const element = document.createElement('a')
-  const contentHeader = t('recovery2FAContent', { name: `${window.location.host}` })
+  const contentHeader = t('pages.login.recovery2FAContent', { name: `${window.location.host}` })
   const content = `${contentHeader}
 
 ${recovery.value}`

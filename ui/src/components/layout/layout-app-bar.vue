@@ -115,7 +115,7 @@
         to="/contact"
         variant="flat"
       >
-        Nous contacter
+        {{ $t('pages.contact.title') }}
       </v-btn>
     </v-toolbar-items>
     <personal-menu>

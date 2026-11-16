@@ -5,7 +5,7 @@ import mongo from '#mongo'
 import Debug from 'debug'
 import _slug from 'slugify'
 import jwt from 'jsonwebtoken'
-import { httpError } from '@data-fair/lib-express'
+import { I18nHttpError } from '#i18n'
 import log from '@data-fair/lib-node/log.js'
 import type { LogFields } from '../utils/log-fields.ts'
 import { decipher, type CipheredContent } from '../utils/cipher.ts'
@@ -217,7 +217,7 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
       applyOidcPolicy(policyProvider, new OidcValidationError('sub', 'the sub of the claims differs from the one of the id_token'), logFields)
     }
     if (!claims?.email) {
-      throw httpError(400, 'Authentification refusée depuis le fournisseur. Pas d\'adresse email trouvée dans les informations utilisateur.')
+      throw new I18nHttpError(400, 'errors.oauthNoEmail')
     }
     if (claims.email_verified === false && !p.ignoreEmailVerified) {
       // Reject only when the IdP explicitly asserts the email is not verified.
@@ -236,7 +236,7 @@ export async function completeOidcProvider (p: OpenIDConnect, trusted = false): 
         const emailDomain = typeof claims.email === 'string' ? claims.email.split('@')[1] : null
         log.alert(`OIDC login refused: provider=${id} emailVerified=${JSON.stringify(claims.email_verified)} emailDomain=${emailDomain}`, { code: 'sd.oidc.email-not-verified', ...logFields })
       }
-      throw httpError(400, 'Authentification refusée depuis le fournisseur. L\'adresse mail n\'est pas indiquée comme validée.')
+      throw new I18nHttpError(400, 'errors.oauthEmailNotVerified')
     }
     const userInfo: OAuthUserInfo = {
       data: claims,

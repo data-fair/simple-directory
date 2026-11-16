@@ -385,7 +385,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   if (!user) {
     await logout(req, res)
     log.info('a deleted user tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
-    throw httpError(401, 'Utilisateur inexistant')
+    throw httpError(401, 'unknown user')
   }
 
   const cookies = new Cookies(req, res, { secure })
@@ -398,7 +398,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   if (!exchangeToken) {
     await logout(req, res)
     log.info('a user without a valid echange token tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
-    throw httpError(401, 'Informations de session manquantes')
+    throw httpError(401, 'missing session information')
   }
   let serverSessionInfo: SessionInfoPayload
   try {
@@ -406,24 +406,24 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
   } catch (err) {
     await logout(req, res)
     log.info('a user with a broken echange token tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
-    throw httpError(401, 'Informations de session erronées')
+    throw httpError(401, 'invalid session information')
   }
   // the exchange token is the long lived credential, its IP binding is checked here even if
   // the id_token was already checked by the session middleware (it may be expired at this point)
   if (serverSessionInfo.ip && serverSessionInfo.ip !== reqIp(req)) {
     await logout(req, res)
     log.alert('a session bound to another IP tried to prolongate a session', { code: 'sd.auth.keepalive.ip' })
-    throw httpError(401, 'Session liée à une autre adresse IP')
+    throw httpError(401, 'session bound to another IP address')
   }
   let serverSession: ServerSession | undefined
   if (sessionState.user.asAdmin) {
     const adminUser = await storage.getUser(sessionState.user.asAdmin.id)
-    if (!adminUser) throw httpError(401, 'Utilisateur inexistant')
-    if (!adminUser.isAdmin) throw httpError(401, 'Utilisateur "asAdmin" n\'est pas un superutilisateur')
+    if (!adminUser) throw httpError(401, 'unknown user')
+    if (!adminUser.isAdmin) throw httpError(401, 'the "asAdmin" user is not a superadmin')
     if (serverSessionInfo.user !== adminUser.id) {
       await logout(req, res)
       log.info('a user in asAdmin mode with another user\'s exchange token tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
-      throw httpError(401, 'Informations de session manquantes')
+      throw httpError(401, 'missing session information')
     }
     serverSession = adminUser.sessions?.find(s => s.id === serverSessionInfo.session)
     if (!serverSession) {
@@ -435,7 +435,7 @@ export const keepalive = async (req: Request, res: Response, _user?: User, remov
     if (serverSessionInfo.user !== user.id) {
       await logout(req, res)
       log.info('a user with another user\'s exchange token tried to prolongate a session', { code: 'sd.auth.keepalive.fail' })
-      throw httpError(401, 'Informations de session manquantes')
+      throw httpError(401, 'missing session information')
     }
     serverSession = user.sessions?.find(s => s.id === serverSessionInfo.session)
     if (!serverSession) {

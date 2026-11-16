@@ -5,6 +5,7 @@ import userName from '../utils/user-name.ts'
 import config, { superadmin } from '#config'
 import type { TwoFA } from '#services'
 import { httpError, type UserRef } from '@data-fair/lib-express'
+import { I18nHttpError } from '#i18n'
 import { escapeRegExp } from '@data-fair/lib-utils/micro-template.js'
 import mongo from '#mongo'
 import { deleteAvatars } from '../avatars/service.ts'
@@ -451,10 +452,10 @@ class MongodbStorage implements SdStorage {
 
     if (!userOrga) {
       if (department && user.organizations.find(o => o.id === orga.id && !o.department)) {
-        throw httpError(400, 'cet utilisateur est membre de l\'organisation parente, il ne peut pas être ajouté dans un département.')
+        throw new I18nHttpError(400, 'errors.memberOfParentOrg')
       }
       if (!department && user.organizations.find(o => o.id === orga.id && o.department)) {
-        throw httpError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
+        throw new I18nHttpError(400, 'errors.memberOfDepartment')
       }
       userOrga = { id: orga.id, name: orga.name, role }
       if (department) {
@@ -484,19 +485,19 @@ class MongodbStorage implements SdStorage {
     if (!role && config.multiRoles) throw httpError(400, 'role is required')
 
     const org = await mongo.organizations.findOne({ _id: organizationId })
-    if (!org) throw httpError(404, 'organisation inconnue.')
+    if (!org) throw new I18nHttpError(404, 'errors.orgaUnknown')
     let patchDepartmentObject
     if (patch.department) {
       patchDepartmentObject = org.departments?.find(d => d.id === patch.department)
-      if (!patchDepartmentObject) throw httpError(404, 'département inconnu.')
+      if (!patchDepartmentObject) throw new I18nHttpError(404, 'errors.departmentUnknown')
     }
     const user = await mongo.users.findOne({ _id: userId })
-    if (!user) throw httpError(404, 'utilisateur inconnu.')
+    if (!user) throw new I18nHttpError(404, 'errors.userUnknown')
     const userOrg = user.organizations.find(o => {
       if (config.multiRoles) if (o.role !== role) return false
       return o.id === organizationId && (o.department || null) === (department || null)
     })
-    if (!userOrg) throw httpError(404, 'information de membre inconnue.')
+    if (!userOrg) throw httpError(404, 'unknown membership')
 
     const dupUserOrg = user.organizations.find(o => {
       return o.id === organizationId && (o.department || null) === (patch.department || null) && o.role === patch.role
@@ -530,10 +531,10 @@ class MongodbStorage implements SdStorage {
     }
 
     if (patch.department && user.organizations.find(o => o.id === organizationId && !o.department)) {
-      throw httpError(400, 'cet utilisateur est membre de l\'organisation parente, il ne peut pas être ajouté dans un département.')
+      throw new I18nHttpError(400, 'errors.memberOfParentOrg')
     }
     if (!patch.department && user.organizations.find(o => o.id === organizationId && o.department)) {
-      throw httpError(400, 'cet utilisateur est membre d\'un département, il ne peut pas être ajouté dans l\'organisation parente.')
+      throw new I18nHttpError(400, 'errors.memberOfDepartment')
     }
 
     await mongo.users.updateOne(
