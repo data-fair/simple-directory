@@ -104,26 +104,58 @@ test.describe('prefixed test sub-spaces', () => {
     }
   })
 
-  test('seed-dev refuses test accounts', async () => {
-    for (const user of [
-      { id: 'test_x', email: 'dev@example.org' },
-      { id: 'dev_user', email: 'x@test.com' }
-    ]) {
-      const res = await testEnvAx.post('/seed-dev', { users: [{ ...user, firstName: 'D' }], organizations: [] }, { validateStatus: () => true })
-      assert.equal(res.status, 400)
-    }
-    const res = await testEnvAx.post('/seed-dev', {
-      users: [{ id: 'dev_user', firstName: 'Dev', email: 'dev@example.org' }],
-      organizations: [{ id: 'dev_org', name: 'Dev org', members: [{ id: 'dev_user', role: 'admin' }] }]
-    })
+  test('seeded memberships carry the department name', async () => {
+    const res = await testEnvAx.post('/seed', seedBody('test_a_', {
+      orgExtra: {
+        departments: [{ id: 'dep1', name: 'Department One' }],
+        members: [{ id: 'test_a_user', role: 'user', department: 'dep1' }]
+      }
+    }))
     assert.equal(res.status, 200)
-    assert.deepEqual(res.data, { users: 1, organizations: 1 })
+    const user = await findDoc('users', { _id: 'test_a_user' })
+    assert.deepEqual(user?.organizations.map((o: any) => [o.id, o.department, o.departmentName]), [['test_a_org', 'dep1', 'Department One']])
+  })
+
+  test('seed replaces a user with the same email and another id', async () => {
+    const client = await MongoClient.connect((await getServerConfig()).mongo.url)
+    try {
+      await client.db().collection('users').insertOne({ _id: 'randomid123' as any, email: 'test_a_user@test.com', name: 'Admin', organizations: [{ id: 'test_a_org', name: 'x', role: 'admin' }] })
+    } finally {
+      await client.close()
+    }
+    const res = await testEnvAx.post('/seed', seedBody('test_a_'))
+    assert.equal(res.status, 200)
+    assert.equal(await exists('users', 'randomid123'), false)
+    const client2 = await MongoClient.connect((await getServerConfig()).mongo.url)
+    try {
+      const users = await client2.db().collection('users').find({ email: 'test_a_user@test.com' }).toArray()
+      assert.deepEqual(users.map(u => u._id), ['test_a_user'])
+    } finally {
+      await client2.close()
+    }
+  })
+
+  test('seed requires an email on every user', async () => {
+    const body = seedBody('test_a_')
+    delete (body.users[0] as any).email
+    const res = await testEnvAx.post('/seed', body, { validateStatus: () => true })
+    assert.equal(res.status, 400)
+    assert.equal(await exists('users', 'test_a_user'), false)
+  })
+
+  test('sites without prefix owned by the sub-space and orgs created by its users are cleaned', async () => {
+    const config = await getServerConfig()
     await testEnvAx.post('/seed', seedBody('test_a_'))
+    const { ax } = await createUser('test_a_new@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'created by test_a_' })).data
+    const anonymousAx = await axios()
+    await anonymousAx.post('/api/sites',
+      { _id: 'noprefix_site', owner: { type: 'organization', id: 'test_a_org', name: 'Org test_a_' }, host: 'noprefix-site.localhost:5600' },
+      { params: { key: config.secretKeys.sites } })
+    assert.equal(await exists('sites', 'noprefix_site'), true)
+    assert.equal(await exists('organizations', org.id), true)
     await testEnvAx.delete('/', { params: { prefix: 'test_a_' } })
-    assert.equal(await exists('users', 'dev_user'), true)
-    await testEnvAx.delete('/')
-    assert.equal(await exists('users', 'dev_user'), true)
-    assert.equal(await exists('organizations', 'dev_org'), true)
-    await testEnvAx.delete('/')
+    assert.equal(await exists('sites', 'noprefix_site'), false)
+    assert.equal(await exists('organizations', org.id), false)
   })
 })

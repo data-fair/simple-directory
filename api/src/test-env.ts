@@ -30,7 +30,7 @@ router.post('/clear-platform-scopes-cache', async (req, res) => {
 const testPrefixRegexp = /^test_[a-z0-9]+(?:_[a-z0-9]+)*_$/
 
 type SeedUser = { id: string, email?: string, firstName?: string, lastName?: string, [key: string]: any }
-type SeedOrg = { id: string, name?: string, members?: { id: string, role: string, department?: string }[], [key: string]: any }
+type SeedOrg = { id: string, name?: string, departments?: { id: string, name: string }[], members?: { id: string, role: string, department?: string }[], [key: string]: any }
 
 // upsert users and organizations described like dev/resources/users.json and organizations.json:
 // organizations carry their members, the memberships stored on the users are rebuilt from them.
@@ -44,7 +44,13 @@ const upsertSeed = async (users: SeedUser[], orgs: SeedOrg[], accept: (id: strin
         id: org.id,
         name: org.name,
         role: member.role,
-        ...(member.department ? { department: member.department } : {})
+        ...(member.department
+          ? {
+              department: member.department,
+              // same as the memberships created through the API
+              departmentName: org.departments?.find((d: any) => d.id === member.department)?.name
+            }
+          : {})
       })
     }
   }
@@ -79,10 +85,11 @@ const upsertSeed = async (users: SeedUser[], orgs: SeedOrg[], accept: (id: strin
 }
 
 // every id and email of a seed body must be one of the sub-space: returns the reason of a refusal
-const checkSeedBody = (body: any, forbidden: (value: string, kind: 'id' | 'email') => boolean) => {
+const checkSeedBody = (body: any, forbidden: (value: string, kind: 'id' | 'email') => boolean, emailRequired = false) => {
   if (!body || !Array.isArray(body.users) || !Array.isArray(body.organizations)) return 'users and organizations arrays are required'
   for (const user of body.users) {
     if (typeof user?.id !== 'string' || forbidden(user.id, 'id')) return `user id ${user?.id} is out of the sub-space`
+    if (emailRequired && typeof user.email !== 'string') return `user ${user.id} has no email`
     if (user.email !== undefined && (typeof user.email !== 'string' || forbidden(user.email.toLowerCase(), 'email'))) return `user email ${user.email} is out of the sub-space`
   }
   for (const org of body.organizations) {
@@ -203,8 +210,18 @@ router.post('/seed', express.json({ limit: '5mb' }), async (req, res) => {
   if (req.body?.prefix !== undefined) {
     const prefix = req.body.prefix
     if (typeof prefix !== 'string' || !testPrefixRegexp.test(prefix)) return res.status(400).send('invalid test prefix')
-    const refusal = checkSeedBody(req.body, (value) => !value.startsWith(prefix))
+    const refusal = checkSeedBody(req.body, (value) => !value.startsWith(prefix), true)
     if (refusal) return res.status(400).send(refusal)
+    // a user with the same email and another id (e.g. an ADMINS account created at startup with a generated id)
+    // belongs to the sub-space as the email starts with the prefix: replace it
+    const emails = req.body.users.map((u: SeedUser) => u.email!.toLowerCase())
+    const ids = req.body.users.map((u: SeedUser) => u.id)
+    const stale = await mongo.users.find({ email: { $in: emails }, _id: { $nin: ids } }, { projection: { _id: 1 } }).toArray()
+    if (stale.length) {
+      const staleIds = stale.map(u => u._id as string)
+      await mongo.users.deleteMany({ _id: { $in: staleIds } })
+      await mongo.oauthTokens.deleteMany({ 'user.id': { $in: staleIds } })
+    }
     return res.status(200).json(await upsertSeed(req.body.users, req.body.organizations, () => true))
   }
 
@@ -219,14 +236,6 @@ router.post('/seed', express.json({ limit: '5mb' }), async (req, res) => {
   const orgs = JSON.parse(orgsRaw)
   await upsertSeed(users, orgs, id => id.startsWith('test_'))
   res.status(200).json({ users: users.length, organizations: orgs.length })
-})
-
-// POST /api/test-env/seed-dev — seed accounts of the human dev space, same body as a prefixed seed
-// without the prefix. Test accounts (test_ ids, @test.com emails) are refused: they are wiped by the cleanups.
-router.post('/seed-dev', express.json({ limit: '5mb' }), async (req, res) => {
-  const refusal = checkSeedBody(req.body, (value, kind) => kind === 'id' ? value.startsWith('test_') : value.endsWith('@test.com'))
-  if (refusal) return res.status(400).send(refusal)
-  res.status(200).json(await upsertSeed(req.body.users, req.body.organizations, () => true))
 })
 
 // POST /api/test-env/rotate-keys — force key rotation for JWKS testing

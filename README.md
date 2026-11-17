@@ -37,8 +37,9 @@ docker run --rm -p 8080:8080 \
 
 Each test suite owns a prefixed sub-space of accounts, a prefix matches `^test_[a-z0-9]+(?:_[a-z0-9]+)*_$` (for example `test_datafair_`):
 
-- `POST /api/test-env/seed` with `{ prefix, users, organizations }` upserts the accounts and answers `200` with `{ users, organizations }`. The entries have the shape of `dev/resources/users.json` and `organizations.json` (organizations list their `members`). The ids of users, organizations and members and the emails of users must all start with the prefix, otherwise the answer is `400` and nothing is written.
+- `POST /api/test-env/seed` with `{ prefix, users, organizations }` upserts the accounts and answers `200` with `{ users, organizations }`. The entries have the shape of `dev/resources/users.json` and `organizations.json` (organizations list their `members`). Every user needs an email. The ids of users, organizations and members and the emails of users must all start with the prefix, otherwise the answer is `400` and nothing is written.
 - `DELETE /api/test-env?prefix=<prefix>` answers `204` after deleting the users whose id or email starts with the prefix, the organizations whose id starts with it (or created by a deleted user), their limits and avatars, the sites owned by a deleted account or whose id starts with the prefix, and the OAuth tokens of the deleted users. References to the deleted organizations are removed from the remaining users and organizations. Other sub-spaces and unprefixed accounts are left untouched.
-- `POST /api/test-env/seed-dev` takes the same body without a prefix, to seed the accounts of a developer's own space. It refuses ids starting with `test_` and emails ending with `@test.com`, which the cleanups remove.
+
+Prefixes nest: cleaning `test_a_` also deletes what belongs to `test_a_b_`, so a suite must not pick a prefix that starts with another suite's prefix.
 
 Without a prefix, `POST /api/test-env/seed` and `DELETE /api/test-env` keep their historical behavior used by this repository's own tests.
