@@ -135,6 +135,40 @@ test.describe('prefixed test sub-spaces', () => {
     }
   })
 
+  test('an _id in a seed entry cannot bypass the prefix', async () => {
+    const bodies = [
+      seedBody('test_a_', { userExtra: { _id: 'outside' } }),
+      seedBody('test_a_', { orgExtra: { _id: 'outside' } })
+    ]
+    for (const body of bodies) {
+      const res = await testEnvAx.post('/seed', body, { validateStatus: () => true })
+      if (res.status === 200) {
+        assert.equal(await exists('users', 'outside'), false)
+        assert.equal(await exists('organizations', 'outside'), false)
+        assert.equal(await exists('users', 'test_a_user'), true)
+      } else {
+        assert.equal(res.status, 400)
+      }
+      await testEnvAx.delete('/', { params: { prefix: 'test_a_' } })
+    }
+  })
+
+  test('replacing a user with the same email also removes its limits and avatars', async () => {
+    const client = await MongoClient.connect((await getServerConfig()).mongo.url)
+    try {
+      const db = client.db()
+      await db.collection('users').insertOne({ _id: 'randomid456' as any, email: 'test_a_user@test.com', name: 'Admin', organizations: [] })
+      await db.collection('limits').insertOne({ type: 'user', id: 'randomid456', lastUpdate: new Date() } as any)
+      await db.collection('avatars').insertOne({ owner: { type: 'user', id: 'randomid456' } } as any)
+      const res = await testEnvAx.post('/seed', seedBody('test_a_'))
+      assert.equal(res.status, 200)
+      assert.equal(await db.collection('limits').countDocuments({ type: 'user', id: 'randomid456' }), 0)
+      assert.equal(await db.collection('avatars').countDocuments({ 'owner.id': 'randomid456' }), 0)
+    } finally {
+      await client.close()
+    }
+  })
+
   test('seed requires an email on every user', async () => {
     const body = seedBody('test_a_')
     delete (body.users[0] as any).email

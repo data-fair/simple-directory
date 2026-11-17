@@ -59,8 +59,8 @@ const upsertSeed = async (users: SeedUser[], orgs: SeedOrg[], accept: (id: strin
   for (const user of users) {
     if (!accept(user.id)) continue
     const doc: any = {
-      _id: user.id,
       ...user,
+      _id: user.id,
       name: [user.firstName, user.lastName].filter(Boolean).join(' '),
       organizations: userOrgs[user.id] || [],
       emailConfirmed: true
@@ -74,8 +74,8 @@ const upsertSeed = async (users: SeedUser[], orgs: SeedOrg[], accept: (id: strin
   for (const org of orgs) {
     if (!accept(org.id)) continue
     const doc: any = {
-      _id: org.id,
       ...org,
+      _id: org.id
     }
     delete doc.id
     await mongo.organizations.replaceOne({ _id: doc._id }, doc, { upsert: true })
@@ -100,6 +100,16 @@ const checkSeedBody = (body: any, forbidden: (value: string, kind: 'id' | 'email
   }
 }
 
+// what hangs off deleted users and organizations: limits, avatars, owned sites and oauth tokens
+const deleteOwnedData = async (userIds: string[], orgIds: string[], extraSitesFilter?: Record<string, any>) => {
+  await mongo.limits.deleteMany({ $or: [{ type: 'user', id: { $in: userIds } }, { type: 'organization', id: { $in: orgIds } }] })
+  await mongo.avatars.deleteMany({ $or: [{ 'owner.type': 'user', 'owner.id': { $in: userIds } }, { 'owner.type': 'organization', 'owner.id': { $in: orgIds } }] })
+  await mongo.sites.deleteMany({ $or: [...(extraSitesFilter ? [extraSitesFilter] : []), { 'owner.id': { $in: [...userIds, ...orgIds] } }] })
+  await mongo.oauthTokens.deleteMany({ 'user.id': { $in: userIds } })
+  const { getSiteByHost } = await import('./sites/service.ts')
+  getSiteByHost.clear()
+}
+
 const cleanPrefixed = async (req: express.Request, res: express.Response) => {
   const prefix = req.query.prefix
   if (typeof prefix !== 'string' || !testPrefixRegexp.test(prefix)) return res.status(400).send('invalid test prefix')
@@ -110,7 +120,6 @@ const cleanPrefixed = async (req: express.Request, res: express.Response) => {
   const userIds = (await mongo.users.find(userFilter, { projection: { _id: 1 } }).toArray()).map(u => u._id as string)
   const orgFilter = { $or: [{ _id: startsWithPrefix }, { 'created.id': { $in: userIds } }] }
   const orgIds = (await mongo.organizations.find(orgFilter, { projection: { _id: 1 } }).toArray()).map(o => o._id as string)
-  const ownerIds = [...userIds, ...orgIds]
 
   await mongo.organizations.deleteMany(orgFilter)
   await mongo.users.deleteMany(userFilter)
@@ -119,12 +128,7 @@ const cleanPrefixed = async (req: express.Request, res: express.Response) => {
     await mongo.users.updateMany({ 'organizations.id': { $in: orgIds } }, { $pull: { organizations: { id: { $in: orgIds } } } })
     await mongo.organizations.updateMany({ 'partners.id': { $in: orgIds } }, { $pull: { partners: { id: { $in: orgIds } } } })
   }
-  await mongo.limits.deleteMany({ $or: [{ type: 'user', id: { $in: userIds } }, { type: 'organization', id: { $in: orgIds } }] })
-  await mongo.avatars.deleteMany({ $or: [{ 'owner.type': 'user', 'owner.id': { $in: userIds } }, { 'owner.type': 'organization', 'owner.id': { $in: orgIds } }] })
-  await mongo.sites.deleteMany({ $or: [{ _id: startsWithPrefix }, { 'owner.id': { $in: ownerIds } }] })
-  await mongo.oauthTokens.deleteMany({ 'user.id': { $in: userIds } })
-  const { getSiteByHost } = await import('./sites/service.ts')
-  getSiteByHost.clear()
+  await deleteOwnedData(userIds, orgIds, { _id: startsWithPrefix })
   res.status(204).send()
 }
 
@@ -205,7 +209,7 @@ router.delete('/', async (req, res) => {
 
 // POST /api/test-env/seed — seed predefined users and organizations from JSON files into mongo
 // This enables tests that rely on predefined file-storage users to work against the mongo-backed dev server
-router.post('/seed', express.json({ limit: '5mb' }), async (req, res) => {
+router.post('/seed', async (req, res) => {
   // prefixed sub-space: the entries are given in the body and must all belong to the prefix
   if (req.body?.prefix !== undefined) {
     const prefix = req.body.prefix
@@ -220,7 +224,7 @@ router.post('/seed', express.json({ limit: '5mb' }), async (req, res) => {
     if (stale.length) {
       const staleIds = stale.map(u => u._id as string)
       await mongo.users.deleteMany({ _id: { $in: staleIds } })
-      await mongo.oauthTokens.deleteMany({ 'user.id': { $in: staleIds } })
+      await deleteOwnedData(staleIds, [])
     }
     return res.status(200).json(await upsertSeed(req.body.users, req.body.organizations, () => true))
   }
