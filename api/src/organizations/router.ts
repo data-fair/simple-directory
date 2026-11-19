@@ -169,6 +169,8 @@ router.patch('/:organizationId', async (req, res, next) => {
 
   const { body: patch } = (await import('#doc/organizations/patch-req/index.ts')).returnValid(req, { name: 'req' })
   if (patch.orgStorage && !user.adminMode) throw httpError(403)
+  // host and path are managed by superadmins
+  if (('host' in patch || 'path' in patch) && !user.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   if (patch.orgStorage?.config?.searchUserPassword && typeof patch.orgStorage.config.searchUserPassword === 'string') {
     patch.orgStorage.config.searchUserPassword = cipher(patch.orgStorage.config.searchUserPassword)
   }
@@ -357,6 +359,11 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
     { acceptDepAsRoot: config.depAdminIsOrgAdmin }
   )
   if (role !== 'admin') throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  // department changes are made by the organization admin
+  if ((body.department || null) !== (query.department || null)) {
+    const rootRole = getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: config.depAdminIsOrgAdmin })
+    if (rootRole !== 'admin') throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  }
   const orga = await storage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   const logFields = orgLogFields(orga)
