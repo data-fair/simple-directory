@@ -76,6 +76,8 @@ export default {
     validate: 'Validate',
     delete: 'Delete',
     department: 'Department',
+    noDepartment: 'No department',
+    withoutDepartmentLabel: 'Without {label}',
     departments: 'Departments',
     autoAdmin: 'Automatically add me as admin',
     asAdmin: 'Log in as this user',

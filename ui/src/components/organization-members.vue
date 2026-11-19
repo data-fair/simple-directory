@@ -59,9 +59,6 @@
           :append-inner-icon="mdiMagnify"
           clearable
           hide-details="auto"
-          @click:clear="$nextTick(() => $nextTick(() => refetchMembers()))"
-          @click:append-inner="refetchMembers()"
-          @keyup.enter="refetchMembers()"
         />
       </v-col>
       <v-col :cols="filterMemberCols">
@@ -74,7 +71,6 @@
           density="comfortable"
           clearable
           hide-details="auto"
-          @update:model-value="refetchMembers()"
         />
       </v-col>
       <v-col
@@ -92,7 +88,6 @@
           variant="solo"
           density="comfortable"
           hide-details="auto"
-          @update:model-value="refetchMembers()"
         />
       </v-col>
       <v-col
@@ -110,7 +105,6 @@
           variant="solo"
           density="comfortable"
           hide-details="auto"
-          @update:model-value="refetchMembers()"
         />
       </v-col>
     </v-row>
@@ -231,6 +225,7 @@
 
 <script setup lang="ts">
 import type { QueryObject } from 'ufo'
+import { refDebounced } from '@vueuse/core'
 const { dayjs } = useLocaleDayjs()
 
 const { isAdminOrga, orga, nbMembersLimits, orgStorage, readonly, adminDepartment } = defineProps({
@@ -267,6 +262,7 @@ const { user, asAdmin } = useSessionAuthenticated()
 const { roleLabel, roleItems } = useRoleLabels(() => orga)
 
 const q = ref('')
+const debouncedQ = refDebounced(q, 300)
 const role = ref()
 const department = ref(adminDepartment)
 const membersPage = ref(1)
@@ -292,7 +288,8 @@ const showDepartmentFilter = computed(() => !!($uiConfig.manageDepartments && or
 const filterMemberCols = computed(() => (showDepartmentFilter.value && $uiConfig.alwaysAcceptInvitation) ? 6 : 4)
 
 const departmentsList = computed(() => {
-  return [{ id: '-', name: 'aucun' }].concat(orga.departments ?? [])
+  const noneLabel = orga.departmentLabel ? t('common.withoutDepartmentLabel', { label: orga.departmentLabel.toLowerCase() }) : t('common.noDepartment')
+  return [{ id: '-', name: noneLabel }].concat(orga.departments ?? [])
 })
 const creationStepsList = computed(() => {
   return [{ id: 'true', name: t('common.emailConfirmed') }, { id: 'false', name: t('common.emailNotConfirmed') }]
@@ -302,13 +299,13 @@ const membersParams = computed(() => {
   const params: QueryObject = {
     page: membersPage.value,
     size: membersPageSize,
-    role: role.value,
     org_storage: orgStorage,
     sort: 'name'
   }
+  if (role.value) params.role = role.value
   if (department.value) params.department = department.value
-  if (q.value) params.q = q.value
-  if (emailConfirmedFilter.value !== null) {
+  if (debouncedQ.value) params.q = debouncedQ.value
+  if (emailConfirmedFilter.value != null) {
     params.email_confirmed = emailConfirmedFilter.value
   }
   return params
@@ -316,9 +313,8 @@ const membersParams = computed(() => {
 
 const fetchMembers = useFetch<{ count: number, results: any[], fromCache?: string }>(() => `${$apiPath}/organizations/${orga.id}/members`, { query: membersParams })
 const members = computed(() => fetchMembers.data.value)
-const refetchMembers = async () => {
-  membersPage.value = 1
-}
+// any filter change goes back to the first page
+watch([q, role, department, emailConfirmedFilter], () => { membersPage.value = 1 })
 
 const deleteMember = useAsyncAction(async (member: Member) => {
   const params: Record<string, string> = {}
