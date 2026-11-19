@@ -254,8 +254,9 @@ router.get('/:organizationId/members', async (req, res, next) => {
   if (typeof req.query.q === 'string') params.q = req.query.q
   if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
   else if (typeof req.query.id === 'string') params.ids = req.query.id.split(',')
-  if (typeof req.query.role === 'string') params.roles = req.query.role.split(',')
-  if (typeof req.query.department === 'string') params.departments = req.query.department.split(',')
+  // empty values (role=, department=) are ignored instead of matching nothing
+  if (req.query.role && typeof req.query.role === 'string') params.roles = req.query.role.split(',')
+  if (req.query.department && typeof req.query.department === 'string') params.departments = req.query.department.split(',')
   if (typeof req.query.email === 'string') params.emails = req.query.email.split(',')
   if (typeof req.query.email_confirmed === 'string') params.emailConfirmed = req.query.email_confirmed === 'true'
   if (req.query.types && typeof req.query.types === 'string') params.types = req.query.types.split(',') as ('user' | 'nhi')[]

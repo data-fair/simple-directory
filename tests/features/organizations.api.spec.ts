@@ -361,6 +361,11 @@ test.describe('organizations api', () => {
     assert.equal(newMembers[1].departmentName, 'Department 2')
     assert.equal(newMembers[1].role, 'admin')
 
+    // empty filters (a cleared select in the UI) are ignored instead of matching nothing
+    const allCount = (await ax.get(`/api/organizations/${org.id}/members`)).data.count
+    assert.equal((await ax.get(`/api/organizations/${org.id}/members?role=&department=`)).data.count, allCount)
+    assert.equal((await ax.get(`/api/organizations/${org.id}/members?role`)).data.count, allCount)
+
     await ax.delete(`/api/organizations/${org.id}/members/${newMembers[0].id}?department=dep2`)
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
     newMembers = members.filter((m: any) => m.email === 'test-member2@test.com')

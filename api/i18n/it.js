@@ -76,6 +76,8 @@ export default {
     validate: 'Convalidare',
     delete: 'Eliminare',
     department: 'Dipartimento',
+    noDepartment: 'Nessun dipartimento',
+    withoutDepartmentLabel: 'Senza {label}',
     departments: 'Dipartimenti',
     autoAdmin: 'Aggiungermi automaticamente come amministratore',
     asAdmin: 'Accedere come questo utente',

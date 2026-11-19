@@ -7,7 +7,8 @@
   >
     <h2
       id="info"
-      class="text-headline-medium mb-4"
+      class="text-headline-medium"
+      :class="orga.created ? 'mb-0' : 'mb-4'"
     >
       <v-icon
         size="large"
@@ -21,7 +22,7 @@
 
     <p
       v-if="orga.created"
-      class="text-label-large"
+      class="text-label-large mb-6"
     >
       {{ $t('common.createdPhrase', {name: orga.created.name, date: $d(new Date(orga.created.date))}) }}
     </p>
