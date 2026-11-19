@@ -361,6 +361,11 @@ test.describe('organizations api', () => {
     assert.equal(newMembers[1].departmentName, 'Department 2')
     assert.equal(newMembers[1].role, 'admin')
 
+    // empty filters (a cleared select in the UI) are ignored instead of matching nothing
+    const allCount = (await ax.get(`/api/organizations/${org.id}/members`)).data.count
+    assert.equal((await ax.get(`/api/organizations/${org.id}/members?role=&department=`)).data.count, allCount)
+    assert.equal((await ax.get(`/api/organizations/${org.id}/members?role`)).data.count, allCount)
+
     await ax.delete(`/api/organizations/${org.id}/members/${newMembers[0].id}?department=dep2`)
     members = (await ax.get(`/api/organizations/${org.id}/members`)).data.results
     newMembers = members.filter((m: any) => m.email === 'test-member2@test.com')
@@ -379,6 +384,58 @@ test.describe('organizations api', () => {
     await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, email: 'test-member2@test.com', role: 'user' }), { status: 400 })
     await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'test-owner2@test.com', role: 'user' }), { status: 400 })
     await assert.rejects(ax.post('/api/invitations', { id: org.id, name: org.name, department: 'baddep', email: 'test-member2@test.com', role: 'user' }), { status: 404 })
+
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: false })
+  })
+
+  test('should patch host and path of an organization', async () => {
+    const { ax } = await createUser('test-org-host@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test host' })).data
+    ax.setOrg(org.id)
+    await assert.rejects(ax.patch(`/api/organizations/${org.id}`, { host: 'other-site.localhost' }), { status: 403 })
+    await assert.rejects(ax.patch(`/api/organizations/${org.id}`, { path: '/other' }), { status: 403 })
+    await ax.patch(`/api/organizations/${org.id}`, { name: 'renamed' })
+
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const patched = (await adminAx.patch(`/api/organizations/${org.id}`, { host: 'other-site.localhost', path: '/other' })).data
+    assert.equal(patched.host, 'other-site.localhost')
+    assert.equal(patched.path, '/other')
+  })
+
+  test('should patch the department of a member', async () => {
+    await getServerConfig()
+    await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
+    const { ax: owner } = await createUser('test-owner-depmove@test.com')
+    const { user: depAdminUser } = await createUser('test-depadmin-depmove@test.com')
+    const { user: memberUser } = await createUser('test-member-depmove@test.com')
+    const org = (await owner.post('/api/organizations', { name: 'test', departments: [{ id: 'dep1', name: 'Department 1' }, { id: 'dep2', name: 'Department 2' }] })).data
+    owner.setOrg(org.id)
+    await owner.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'test-depadmin-depmove@test.com', role: 'admin' })
+    await owner.post('/api/invitations', { id: org.id, name: org.name, department: 'dep1', email: 'test-member-depmove@test.com', role: 'user' })
+
+    const depAdmin = await axiosAuth({ email: 'test-depadmin-depmove@test.com', org: org.id, dep: 'dep1' })
+    depAdmin.setOrg(org.id, 'dep1')
+
+    // department changes are made by the organization admin
+    await assert.rejects(depAdmin.patch(`/api/organizations/${org.id}/members/${depAdminUser.id}?department=dep1`, { role: 'admin' }), { status: 403 })
+    await assert.rejects(depAdmin.patch(`/api/organizations/${org.id}/members/${memberUser.id}?department=dep1`, { role: 'admin' }), { status: 403 })
+    await assert.rejects(depAdmin.patch(`/api/organizations/${org.id}/members/${memberUser.id}?department=dep1`, { role: 'admin', department: 'dep2' }), { status: 403 })
+
+    // role changes inside the department
+    await depAdmin.patch(`/api/organizations/${org.id}/members/${memberUser.id}?department=dep1`, { role: 'admin', department: 'dep1' })
+
+    const members = (await owner.get(`/api/organizations/${org.id}/members`)).data.results
+    assert.deepEqual(
+      members.map((m: any) => [m.email, m.role, m.department ?? null]).sort(),
+      [
+        ['test-depadmin-depmove@test.com', 'admin', 'dep1'],
+        ['test-member-depmove@test.com', 'admin', 'dep1'],
+        ['test-owner-depmove@test.com', 'admin', null]
+      ]
+    )
+
+    // department change by the organization admin
+    await owner.patch(`/api/organizations/${org.id}/members/${memberUser.id}?department=dep1`, { role: 'user', department: 'dep2' })
 
     await testEnvAx.patch('/config', { alwaysAcceptInvitation: false })
   })

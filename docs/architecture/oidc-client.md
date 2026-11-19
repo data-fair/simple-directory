@@ -62,7 +62,7 @@ strict. Providers of the root config (`config.oidc.providers`) are trusted: abse
 form (`api/doc/sites/patch-req-body/schema.js`) shows and initialises `strict` and `rpInitiatedLogout` as checked
 for a site provider through a form only default (`layout.defaultData`, not a schema `default`: the root config
 `$ref`s the same `oidcProvider` definition and must keep absent as false). The
-`upgrade/8.23.1/oidc-providers-legacy-flags.ts` script sets `strict: false` (and `rpInitiatedLogout: false`) on
+`upgrade/8.24.0/oidc-providers-legacy-flags.ts` script sets `strict: false` (and `rpInitiatedLogout: false`) on
 every existing site OIDC provider, so existing sites keep today's behaviour until an admin opts in.
 
 `applyOidcPolicy` is the single place of the policy:

@@ -1,6 +1,6 @@
 {
   "name": "simple-directory",
-  "version": "8.23.0",
+  "version": "8.24.1",
   "description": "Easy users and organizations management for modern Web-oriented architectures.",
   "type": "module",
   "scripts": {
@@ -12,7 +12,7 @@
     "test-e2e": "npm run test -- --project=e2e",
     "lint": "eslint . && npm -w ui run lint",
     "lint-fix": "eslint --fix . && npm -w ui run lint-fix",
-    "dev-fixtures": "dotenv -- node --experimental-strip-types --disable-warning=ExperimentalWarning dev/fixtures.ts",
+    "dev-fixtures": "dotenv -v SSRF_PUBLIC_IPS=127.0.0.1,::1 -- node --experimental-strip-types --disable-warning=ExperimentalWarning dev/fixtures.ts",
     "dev-zellij": "df-dev zellij",
     "stop-dev-deps": "docker compose --profile '*' stop",
     "build-types": "mkdir -p ui/src/components/vjsf && rm -f ui/src/components/vjsf/* && rm -rf node_modules/.cache/@data-fair/lib-types-builder && df-build-types . --vjsf-dir ui/src/components/vjsf",

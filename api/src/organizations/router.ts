@@ -169,6 +169,8 @@ router.patch('/:organizationId', async (req, res, next) => {
 
   const { body: patch } = (await import('#doc/organizations/patch-req/index.ts')).returnValid(req, { name: 'req' })
   if (patch.orgStorage && !user.adminMode) throw httpError(403)
+  // host and path are managed by superadmins
+  if (('host' in patch || 'path' in patch) && !user.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   if (patch.orgStorage?.config?.searchUserPassword && typeof patch.orgStorage.config.searchUserPassword === 'string') {
     patch.orgStorage.config.searchUserPassword = cipher(patch.orgStorage.config.searchUserPassword)
   }
@@ -252,8 +254,9 @@ router.get('/:organizationId/members', async (req, res, next) => {
   if (typeof req.query.q === 'string') params.q = req.query.q
   if (typeof req.query.ids === 'string') params.ids = req.query.ids.split(',')
   else if (typeof req.query.id === 'string') params.ids = req.query.id.split(',')
-  if (typeof req.query.role === 'string') params.roles = req.query.role.split(',')
-  if (typeof req.query.department === 'string') params.departments = req.query.department.split(',')
+  // empty values (role=, department=) are ignored instead of matching nothing
+  if (req.query.role && typeof req.query.role === 'string') params.roles = req.query.role.split(',')
+  if (req.query.department && typeof req.query.department === 'string') params.departments = req.query.department.split(',')
   if (typeof req.query.email === 'string') params.emails = req.query.email.split(',')
   if (typeof req.query.email_confirmed === 'string') params.emailConfirmed = req.query.email_confirmed === 'true'
   if (req.query.types && typeof req.query.types === 'string') params.types = req.query.types.split(',') as ('user' | 'nhi')[]
@@ -357,6 +360,11 @@ router.patch('/:organizationId/members/:userId', async (req, res, next) => {
     { acceptDepAsRoot: config.depAdminIsOrgAdmin }
   )
   if (role !== 'admin') throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  // department changes are made by the organization admin
+  if ((body.department || null) !== (query.department || null)) {
+    const rootRole = getAccountRole(reqSession(req), { type: 'organization', id: req.params.organizationId }, { acceptDepAsRoot: config.depAdminIsOrgAdmin })
+    if (rootRole !== 'admin') throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  }
   const orga = await storage.getOrganization(req.params.organizationId)
   if (!orga) return res.status(404).send()
   const logFields = orgLogFields(orga)
