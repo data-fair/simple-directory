@@ -169,6 +169,8 @@ router.patch('/:organizationId', async (req, res, next) => {
 
   const { body: patch } = (await import('#doc/organizations/patch-req/index.ts')).returnValid(req, { name: 'req' })
   if (patch.orgStorage && !user.adminMode) throw httpError(403)
+  // the list of roles of an organization is managed by superadmins
+  if ('roles' in patch && !user.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   // host and path are managed by superadmins
   if (('host' in patch || 'path' in patch) && !user.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   if (patch.orgStorage?.config?.searchUserPassword && typeof patch.orgStorage.config.searchUserPassword === 'string') {

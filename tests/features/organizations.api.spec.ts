@@ -402,6 +402,19 @@ test.describe('organizations api', () => {
     assert.equal(patched.path, '/other')
   })
 
+  test('should reserve the roles list of an organization to superadmins', async () => {
+    const { ax } = await createUser('test-org-roles@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test roles' })).data
+    ax.setOrg(org.id)
+    const roles = (await ax.get(`/api/organizations/${org.id}/roles`)).data
+    await assert.rejects(ax.patch(`/api/organizations/${org.id}`, { roles: ['user'] }), { status: 403 })
+    assert.deepEqual((await ax.get(`/api/organizations/${org.id}/roles`)).data, roles)
+
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    const patched = (await adminAx.patch(`/api/organizations/${org.id}`, { roles: [...roles, 'reader'] })).data
+    assert.deepEqual(patched.roles, [...roles, 'reader'])
+  })
+
   test('should patch the department of a member', async () => {
     await getServerConfig()
     await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
