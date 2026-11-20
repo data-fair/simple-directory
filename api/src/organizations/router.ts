@@ -120,11 +120,13 @@ router.get('/:organizationId/roles', async (req, res, next) => {
   res.send(orga.roles || config.roles.defaults)
 })
 
-// the list of roles of an organization is managed by superadmins, and so are their labels
-// unless the service lets organization admins rename them (manageRolesLabels)
-const assertRolesFields = (req: Request, body: { roles?: unknown, rolesLabels?: unknown }, user: { adminMode?: unknown }) => {
-  if (user.adminMode) return
-  if ('roles' in body || ('rolesLabels' in body && !config.manageRolesLabels)) {
+// the admin role cannot leave the roles list of an organization (no member could be made admin anymore),
+// and roles labels are managed by superadmins unless the service lets organization admins rename them
+const assertRolesFields = (req: Request, body: { roles?: string[], rolesLabels?: unknown }, user: { adminMode?: unknown }) => {
+  if (body.roles && !body.roles.includes('admin')) {
+    throw httpError(400, reqI18n(req).messages.errors.adminRoleRequired)
+  }
+  if ('rolesLabels' in body && !config.manageRolesLabels && !user.adminMode) {
     throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   }
 }
