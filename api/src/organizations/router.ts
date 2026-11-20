@@ -120,7 +120,6 @@ router.get('/:organizationId/roles', async (req, res, next) => {
   res.send(orga.roles || config.roles.defaults)
 })
 
-// Create an organization
 // the list of roles of an organization is managed by superadmins, and so are their labels
 // unless the service lets organization admins rename them (manageRolesLabels)
 const assertRolesFields = (req: Request, body: { roles?: unknown, rolesLabels?: unknown }, user: { adminMode?: unknown }) => {
@@ -130,6 +129,7 @@ const assertRolesFields = (req: Request, body: { roles?: unknown, rolesLabels?: 
   }
 }
 
+// Create an organization
 router.post('', async (req, res, next) => {
   assertNotNhiSession(req)
   const user = reqUser(req)
