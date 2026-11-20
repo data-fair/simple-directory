@@ -23,7 +23,7 @@ test.describe('global OIDC configuration', () => {
   })
 
   test('should implement a standard login workflow', async () => {
-    const { ax } = await createUser('test-org@test.com')
+    const { ax } = await createUser('admin@test.com', true)
     await ax.post('/api/organizations', { name: 'test', id: 'test_org1', roles: ['admin', 'user', 'contrib'] })
 
     const anonymousAx = await axios()
@@ -63,7 +63,7 @@ test.describe('global OIDC configuration', () => {
   const startLogin = async () => {
     // the oidc user joins this organization on login
     if (!orgReady) {
-      const { ax } = await createUser('test-org@test.com')
+      const { ax } = await createUser('admin@test.com', true)
       await ax.post('/api/organizations', { name: 'test', id: 'test_org1', roles: ['admin', 'user', 'contrib'] })
       orgReady = true
     }
@@ -143,7 +143,7 @@ test.describe('global OIDC configuration', () => {
   })
 
   test('should read the last name from usual_name (ProConnect)', async () => {
-    const { ax } = await createUser('test-org@test.com')
+    const { ax } = await createUser('admin@test.com', true)
     await ax.post('/api/organizations', { name: 'test', id: 'test_org1', roles: ['admin', 'user', 'contrib'] })
     const { family_name: _, ...proConnectUserInfo } = oidcUserInfo1
     await axiosBuilder().patch(mockOidcControlUrl1 + '/_test/userinfo', { ...proConnectUserInfo, usual_name: 'Usual' })
@@ -154,7 +154,7 @@ test.describe('global OIDC configuration', () => {
   })
 
   test('should implement a standard login workflow on a core id provider', async () => {
-    const { ax } = await createUser('test-org@test.com')
+    const { ax } = await createUser('admin@test.com', true)
     await ax.post('/api/organizations', { name: 'test', id: 'test_org1', roles: ['admin', 'user', 'contrib'] })
 
     const anonymousAx = await axios()

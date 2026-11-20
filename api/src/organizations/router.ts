@@ -121,6 +121,15 @@ router.get('/:organizationId/roles', async (req, res, next) => {
 })
 
 // Create an organization
+// the list of roles of an organization is managed by superadmins, and so are their labels
+// unless the service lets organization admins rename them (manageRolesLabels)
+const assertRolesFields = (req: Request, body: { roles?: unknown, rolesLabels?: unknown }, user: { adminMode?: unknown }) => {
+  if (user.adminMode) return
+  if ('roles' in body || ('rolesLabels' in body && !config.manageRolesLabels)) {
+    throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  }
+}
+
 router.post('', async (req, res, next) => {
   assertNotNhiSession(req)
   const user = reqUser(req)
@@ -134,6 +143,7 @@ router.post('', async (req, res, next) => {
     if (maxCreatedOrgs !== -1 && createdOrgs >= maxCreatedOrgs) return res.status(429).send(reqI18n(req).messages.errors.maxCreatedOrgs)
   }
   const { body } = (await import('#doc/organizations/post-req/index.ts')).returnValid(req, { name: 'req' })
+  assertRolesFields(req, body, user)
   const orga = body as Organization
   if (orga.departments?.length) await assertNbDepartmentsLimit({ id: orga.id }, orga.departments.length, reqI18n(req).messages.errors.maxNbDepartments)
 
@@ -169,8 +179,7 @@ router.patch('/:organizationId', async (req, res, next) => {
 
   const { body: patch } = (await import('#doc/organizations/patch-req/index.ts')).returnValid(req, { name: 'req' })
   if (patch.orgStorage && !user.adminMode) throw httpError(403)
-  // the list of roles of an organization is managed by superadmins
-  if ('roles' in patch && !user.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
+  assertRolesFields(req, patch, user)
   // host and path are managed by superadmins
   if (('host' in patch || 'path' in patch) && !user.adminMode) throw httpError(403, reqI18n(req).messages.errors.permissionDenied)
   if (patch.orgStorage?.config?.searchUserPassword && typeof patch.orgStorage.config.searchUserPassword === 'string') {
