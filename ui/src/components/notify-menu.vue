@@ -22,7 +22,7 @@
         :src="notifySubscribeUrl"
         resize
       >
-        <div slot="loader">
+        <div slot="loading">
           <v-skeleton-loader type="paragraph" />
         </div>
       </d-frame>
