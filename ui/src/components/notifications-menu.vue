@@ -19,7 +19,7 @@
     </template>
     <v-card width="500">
       <d-frame
-        :src="notifySubscribeUrl"
+        :src="subscribeUrl"
         resize
       >
         <div slot="loading">
@@ -38,7 +38,7 @@ const { topics, sender } = defineProps({
   sender: { type: String, required: true }
 })
 
-const notifySubscribeUrl = computed(() => `${$sitePath}/events/embed/subscribe?key=${encodeURIComponent(topics.map(t => t.key).join(','))}&title=${encodeURIComponent(topics.map(t => t.title).join(','))}&sender=${encodeURIComponent(sender)}&register=false`)
+const subscribeUrl = computed(() => `${$sitePath}/events/embed/subscribe?key=${encodeURIComponent(topics.map(t => t.key).join(','))}&title=${encodeURIComponent(topics.map(t => t.title).join(','))}&sender=${encodeURIComponent(sender)}&register=false`)
 </script>
 
 <style>
