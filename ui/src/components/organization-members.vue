@@ -21,10 +21,10 @@
           :department="adminDepartment"
           @sent="fetchMembers.refresh()"
         />
-        <notify-menu
+        <notifications-menu
           v-if="isAdminOrga && orgStorage !== 'true'"
           :sender="`organization:${orga.id}:${department || ''}:admin`"
-          :topics="notifyTopics"
+          :topics="notificationTopics"
         />
         <v-btn
           v-if="isAdminOrga"
@@ -271,7 +271,7 @@ const emailConfirmedFilter = ref<boolean | null>(null)
 
 const disableInvite = computed(() => !nbMembersLimits || (nbMembersLimits.limit > 0 && nbMembersLimits.consumption >= nbMembersLimits.limit))
 
-const notifyTopics = computed(() => {
+const notificationTopics = computed(() => {
   if ($uiConfig.alwaysAcceptInvitation) {
     return [{ key: 'simple-directory:add-member', title: t('notifications.addMemberTopic') }]
   } else {

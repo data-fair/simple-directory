@@ -402,6 +402,41 @@ test.describe('organizations api', () => {
     assert.equal(patched.path, '/other')
   })
 
+  test('should keep the admin role in the roles list of an organization', async () => {
+    const { ax } = await createUser('test-org-roles@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test roles' })).data
+    ax.setOrg(org.id)
+    const roles = (await ax.get(`/api/organizations/${org.id}/roles`)).data
+    await assert.rejects(ax.patch(`/api/organizations/${org.id}`, { roles: ['user'] }), { status: 400 })
+    assert.deepEqual((await ax.get(`/api/organizations/${org.id}/roles`)).data, roles)
+    await assert.rejects(ax.post('/api/organizations', { name: 'test roles 2', roles: ['user'] }), { status: 400 })
+
+    // organization admins keep managing the other roles
+    const patched = (await ax.patch(`/api/organizations/${org.id}`, { roles: [...roles, 'reader'] })).data
+    assert.deepEqual(patched.roles, [...roles, 'reader'])
+    const created = (await ax.post('/api/organizations', { name: 'test roles 3', roles: ['admin', 'user'] })).data
+    assert.deepEqual(created.roles, ['admin', 'user'])
+
+    const { ax: adminAx } = await createUser('admin@test.com', true)
+    await assert.rejects(adminAx.patch(`/api/organizations/${org.id}`, { roles: ['user'] }), { status: 400 })
+  })
+
+  test('should reserve the roles labels to superadmins when organizations cannot manage them', async () => {
+    const { ax } = await createUser('test-org-roles-labels@test.com')
+    const org = (await ax.post('/api/organizations', { name: 'test roles labels' })).data
+    ax.setOrg(org.id)
+    await testEnvAx.patch('/config', { manageRolesLabels: false })
+    try {
+      await assert.rejects(ax.patch(`/api/organizations/${org.id}`, { rolesLabels: { admin: 'Boss' } }), { status: 403 })
+      await assert.rejects(ax.post('/api/organizations', { name: 'test roles labels 2', rolesLabels: { admin: 'Boss' } }), { status: 403 })
+      const { ax: adminAx } = await createUser('admin@test.com', true)
+      await adminAx.patch(`/api/organizations/${org.id}`, { rolesLabels: { admin: 'Boss' } })
+    } finally {
+      await testEnvAx.patch('/config', { manageRolesLabels: true })
+    }
+    await ax.patch(`/api/organizations/${org.id}`, { rolesLabels: { admin: 'Gestionnaire' } })
+  })
+
   test('should patch the department of a member', async () => {
     await getServerConfig()
     await testEnvAx.patch('/config', { alwaysAcceptInvitation: true })
