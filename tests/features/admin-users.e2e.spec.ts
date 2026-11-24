@@ -21,7 +21,7 @@ test.describe('Admin users page', () => {
     await expect(page.locator('.users-table')).toBeVisible({ timeout: 10_000 })
 
     const searchField = page.locator('input[name="search"]')
-    await searchField.fill('test_dmeadus0')
+    await searchField.fill('test_sd_dmeadus0')
     await searchField.press('Enter')
 
     await page.waitForTimeout(500)

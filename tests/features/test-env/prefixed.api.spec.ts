@@ -48,7 +48,7 @@ test.describe('prefixed test sub-spaces', () => {
     assert.ok(bUser)
     assert.deepEqual(bUser.organizations.map((o: any) => o.id), ['test_b_org'])
     assert.equal(await exists('organizations', 'test_b_org'), true)
-    assert.equal(await exists('users', 'test_dmeadus0'), true)
+    assert.equal(await exists('users', 'test_sd_dmeadus0'), true)
   })
 
   test('test_a_ does not match test_ab_', async () => {

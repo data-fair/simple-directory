@@ -33,26 +33,26 @@ test.describe('file storage', () => {
 
   test('Get organization info as a department member', async () => {
     const ax = await axiosAuth({ email: 'dhannan8@4shared.com' })
-    const res = await ax.get('/api/organizations/test_3sSi7xDIK')
+    const res = await ax.get('/api/organizations/test_sd_3sSi7xDIK')
     assert.equal(res.status, 200)
   })
 
   test('Get organization info as a member', async () => {
     const ax = await axiosAuth({ email: 'dmeadus0@answers.com' })
-    const res = await ax.get('/api/organizations/test_3sSi7xDIK')
+    const res = await ax.get('/api/organizations/test_sd_3sSi7xDIK')
     assert.equal(res.status, 200)
   })
 
   test('Get organization roles', async () => {
-    const ax = await axiosAuth({ email: 'dmeadus0@answers.com', org: 'test_3sSi7xDIK' })
-    const res = await ax.get('/api/organizations/test_3sSi7xDIK/roles')
+    const ax = await axiosAuth({ email: 'dmeadus0@answers.com', org: 'test_sd_3sSi7xDIK' })
+    const res = await ax.get('/api/organizations/test_sd_3sSi7xDIK/roles')
     assert.equal(res.status, 200)
     assert.equal(res.data.length, 2)
   })
 
   test('Cannot get organization roles when non member', async () => {
     const ax = await axiosAuth('dmeadus0@answers.com')
-    await assert.rejects(ax.get('/api/organizations/test_ihMQiGTaY/roles'), (res: any) => res.status === 403)
+    await assert.rejects(ax.get('/api/organizations/test_sd_ihMQiGTaY/roles'), (res: any) => res.status === 403)
   })
 
   test('Get user list when not authenticated', async () => {
@@ -92,17 +92,17 @@ test.describe('file storage', () => {
 
   test('Get user info when not authenticated', async () => {
     const ax = await axios()
-    await assert.rejects(ax.get('/api/users/test_ccherryholme1'), (res: any) => res.status === 401)
+    await assert.rejects(ax.get('/api/users/test_sd_ccherryholme1'), (res: any) => res.status === 401)
   })
 
   test('Get user info when authenticated as another user', async () => {
     const ax = await axiosAuth('dmeadus0@answers.com')
-    await assert.rejects(ax.get('/api/users/test_ccherryholme1'), (res: any) => res.status === 403)
+    await assert.rejects(ax.get('/api/users/test_sd_ccherryholme1'), (res: any) => res.status === 403)
   })
 
   test('Get user infos', async () => {
     const ax = await axiosAuth('dmeadus0@answers.com')
-    const res = await ax.get('/api/users/test_dmeadus0')
+    const res = await ax.get('/api/users/test_sd_dmeadus0')
     assert.equal(res.status, 200)
     assert.equal(res.data.email, 'dmeadus0@answers.com')
   })

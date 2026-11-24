@@ -1,5 +1,5 @@
 [{
-    "id": "test_dmeadus0",
+    "id": "test_sd_dmeadus0",
     "firstName": "Danna",
     "lastName": "Meadus",
     "email": "dmeadus0@answers.com",
@@ -8,49 +8,49 @@
     }
   },
   {
-    "id": "test_ccherryholme1",
+    "id": "test_sd_ccherryholme1",
     "firstName": "Cecily",
     "lastName": "Cherry Holme",
     "email": "ccherryholme1@icio.us"
   },
   {
-    "id": "test_cdurning2",
+    "id": "test_sd_cdurning2",
     "firstName": "Christen",
     "lastName": "Durning",
     "email": "cdurning2@desdev.cn"
   },
   {
-    "id": "test_hlalonde3",
+    "id": "test_sd_hlalonde3",
     "firstName": "Huntington",
     "lastName": "Lalonde",
     "email": "hlalonde3@desdev.cn"
   },
   {
-    "id": "test_ngernier4",
+    "id": "test_sd_ngernier4",
     "firstName": "Nappy",
     "lastName": "Gernier",
     "email": "ngernier4@usa.gov"
   },
   {
-    "id": "test_ddecruce5",
+    "id": "test_sd_ddecruce5",
     "firstName": "Duky",
     "lastName": "De Cruce",
     "email": "ddecruce5@phpbb.com"
   },
   {
-    "id": "test_vdulany6",
+    "id": "test_sd_vdulany6",
     "firstName": "Valencia",
     "lastName": "Dulany",
     "email": "vdulany6@google.com.hk"
   },
   {
-    "id": "test_bhazeldean7",
+    "id": "test_sd_bhazeldean7",
     "firstName": "Bevin",
     "lastName": "Hazeldean",
     "email": "bhazeldean7@cnbc.com"
   },
   {
-    "id": "test_dhannan8",
+    "id": "test_sd_dhannan8",
     "firstName": "Danielle",
     "lastName": "Hannan",
     "email": "dhannan8@4shared.com",
@@ -59,23 +59,13 @@
     }
   },
   {
-    "id": "test_icarlens9",
+    "id": "test_sd_icarlens9",
     "firstName": "Issie",
     "lastName": "Carlens",
     "email": "icarlens9@independent.co.uk"
   },
   {
-    "id": "albanm",
-    "firstName": "Alban",
-    "lastName": "Mouton",
-    "email": "alban.mouton@koumoul.com",
-    "isAdmin": true,
-    "password": {
-      "clear": "TestPasswd01"
-    }
-  },
-  {
-    "id": "test_superadmin",
+    "id": "test_sd_superadmin",
     "email": "admin@test.com",
     "isAdmin": true,
     "password": {

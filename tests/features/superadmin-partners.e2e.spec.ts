@@ -11,8 +11,8 @@ test.describe('Superadmin manual partnerships', () => {
   test('superadmin adds an existing org as a partner and removes it', async ({ page, appUrl, loginExisting }) => {
     await loginExisting('_superadmin@test.com', { password: 'Test1234', adminMode: true })
 
-    // Org A = Fivechat (test_KWqAGZ4mG), partner-to-add = Blogpad (test_ihMQiGTaY)
-    await page.goto(appUrl('/organization/test_KWqAGZ4mG'))
+    // Org A = Fivechat (test_sd_KWqAGZ4mG), partner-to-add = Blogpad (test_sd_ihMQiGTaY)
+    await page.goto(appUrl('/organization/test_sd_KWqAGZ4mG'))
 
     // The partners section is visible to the superadmin (UI is in French: "Organisations partenaires")
     const partnersHeading = page.getByRole('heading', { name: /partenaire/i })

@@ -51,13 +51,13 @@ test.describe('Exchange token rotation', () => {
     await ax.post('/api/auth/keepalive')
     const sessionId = JSON.parse(Buffer.from(readExchangeToken(await ax.post('/api/auth/keepalive')).split('.')[1], 'base64url').toString()).session
 
-    assert.ok((await readUserSessions('test_dmeadus0')).some(s => s.id === sessionId))
+    assert.ok((await readUserSessions('test_sd_dmeadus0')).some(s => s.id === sessionId))
 
     replayExchangeToken(ax, stolenToken)
     await assert.rejects(ax.post('/api/auth/keepalive'), (err: any) => err.status === 401)
 
     // the session was revoked server side, the legitimate client is logged out too
-    assert.ok(!(await readUserSessions('test_dmeadus0')).some(s => s.id === sessionId))
+    assert.ok(!(await readUserSessions('test_sd_dmeadus0')).some(s => s.id === sessionId))
   })
 
   test('replaying the previous exchange token during the grace window is accepted', async () => {
@@ -85,7 +85,7 @@ test.describe('Exchange token rotation', () => {
     // accepting it would hand the current token to both holders, the theft would never be detected
     replayExchangeToken(ax, previousToken)
     await assert.rejects(ax.post('/api/auth/keepalive'), (err: any) => err.status === 401)
-    assert.ok(!(await readUserSessions('test_dmeadus0')).some(s => s.id === sessionId))
+    assert.ok(!(await readUserSessions('test_sd_dmeadus0')).some(s => s.id === sessionId))
   })
 
   test('concurrent keepalives converge on a single exchange token', async () => {
@@ -100,6 +100,6 @@ test.describe('Exchange token rotation', () => {
 
     // the session survived and the token the browser kept is still the valid one
     assert.equal((await ax.post('/api/auth/keepalive')).status, 204)
-    assert.ok((await readUserSessions('test_dmeadus0')).some(s => s.id === sessionId))
+    assert.ok((await readUserSessions('test_sd_dmeadus0')).some(s => s.id === sessionId))
   })
 })

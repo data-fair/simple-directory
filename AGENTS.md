@@ -38,6 +38,13 @@ cleanup patterns (`^test_` ids, `@test.com` emails) so the accounts survive `npm
 The site does not: the test cleanup wipes the whole sites collection, because sites have
 a unique index on host and tests must stay free to claim any dev host.
 
+### Test sub-space
+
+The file fixtures (`dev/resources/users.json` and `organizations.json`, seeded by `POST /api/test-env/seed` without
+a body) have ids under `test_sd_`. The tests still clean the whole directory (`DELETE /api/test-env` without a
+prefix) and change the server's config: they run only against this checkout's own dev environment. The prefixed
+`POST /api/test-env/seed` and `DELETE /api/test-env?prefix=` serve the test suites of other services.
+
 ### Testing
 
 Test framework: Playwright. Tests live in `tests/` with naming conventions:
