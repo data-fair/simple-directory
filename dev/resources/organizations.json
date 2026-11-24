@@ -114,7 +114,7 @@
             "firstName": "givenName",
             "lastName": "sn"
           },
-          "extraFilters": ["sn=Mouton"]
+          "extraFilters": ["sn=Ldapuser"]
         },
         "members": {
           "role": {

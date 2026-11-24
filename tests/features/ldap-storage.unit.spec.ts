@@ -14,10 +14,10 @@ test.describe('storage ldap', () => {
     ldapConfig = JSON.parse(JSON.stringify(config.storage.ldap))
     ldapConfig.cacheMS = 0
     ldapConfig.members.overwrite = [
-      { email: 'alban.mouton@koumoul.com', role: 'overwritten' },
+      { email: 'ldap-user1@example.org', role: 'overwritten' },
       { matchAttrs: [{ attr: 'employeeType', values: ['Admin'], captureRegex: '^org1(.*)$' }], orgId: 'org1', orgOnly: true, role: 'admin' }
     ]
-    ldapConfig.users.overwrite = [{ email: 'alban.mouton@koumoul.com', lastName: 'Overwritten' }]
+    ldapConfig.users.overwrite = [{ email: 'ldap-user1@example.org', lastName: 'Overwritten' }]
     ldapConfig.organizations.overwrite = [{ id: 'myorg', name: 'Org overwritten' }]
   })
   test.beforeEach(async () => {
@@ -30,7 +30,7 @@ test.describe('storage ldap', () => {
     const ldapStorage = await import('../../api/src/storages/ldap.ts')
     const storage = await ldapStorage.init(cleanLdapConfig)
     // Delete known test users by email
-    for (const email of ['alban.mouton@koumoul.com', 'test@test.com', 'test2@test.com']) {
+    for (const email of ['ldap-user1@example.org', 'test@test.com', 'test2@test.com']) {
       const user = await storage.getUserByEmail(email)
       if (user) try { await storage._deleteUser(user.id) } catch (_e) { /* ignore */ }
     }
@@ -48,10 +48,10 @@ test.describe('storage ldap', () => {
     await storage._createOrganization({ id: 'MyOrg', name: 'My Org' })
     await storage._createOrganization({ id: 'org1', name: 'Org 1' })
     await storage._createUser({
-      id: 'alban1',
-      firstName: 'Alban',
-      lastName: 'Mouton',
-      email: 'alban.mouton@koumoul.com',
+      id: 'lena1',
+      firstName: 'Lena',
+      lastName: 'Ldapuser',
+      email: 'ldap-user1@example.org',
       organizations: [{ id: 'MyOrg', role: 'admin', name: 'my org' }]
     })
     await storage._createUser({
@@ -71,14 +71,14 @@ test.describe('storage ldap', () => {
     const users = await storage.findUsers({ skip: 0, size: 10, sort: { email: 1 } })
     assert.equal(users.count, 3)
     assert.ok(users.results[0].id)
-    assert.equal(users.results[0].email, 'alban.mouton@koumoul.com')
+    assert.equal(users.results[0].email, 'ldap-user1@example.org')
     assert.equal(users.results[0].lastName, 'Overwritten')
     assert.ok(users.results[0].organizations)
     assert.equal(users.results[0].organizations[0].id, 'myorg')
     assert.equal(users.results[0].organizations[0].name, 'Org overwritten')
     const users2 = await storage.findUsers({ q: 'notauser', skip: 0, size: 10 })
     assert.equal(users2.count, 0)
-    const users3 = await storage.findUsers({ q: 'alba', skip: 0, size: 10 })
+    const users3 = await storage.findUsers({ q: 'lena', skip: 0, size: 10 })
     assert.equal(users3.count, 1)
     const users4 = await storage.findUsers({ skip: 0, size: 10, sort: { email: -1 } })
     assert.equal(users4.count, 3)
@@ -86,7 +86,7 @@ test.describe('storage ldap', () => {
 
     const user = await storage.getUser(users4.results[2].id)
     assert.ok(user)
-    assert.equal(user.email, 'alban.mouton@koumoul.com')
+    assert.equal(user.email, 'ldap-user1@example.org')
     assert.equal(user.lastName, 'Overwritten')
     assert.equal(user.organizations.length, 1)
     assert.equal(user.organizations[0].id, 'myorg')
@@ -95,7 +95,7 @@ test.describe('storage ldap', () => {
 
     const members = await storage.findMembers('myorg', { skip: 0, size: 10 })
     assert.equal(members.count, 2)
-    assert.equal(members.results[0].name, 'Alban Overwritten')
+    assert.equal(members.results[0].name, 'Lena Overwritten')
     assert.equal(members.results[0].role, 'overwritten')
     assert.equal(members.results[0].department, undefined)
     assert.equal(members.results[1].name, 'Test User')
@@ -109,7 +109,7 @@ test.describe('storage ldap', () => {
 
     const members2 = await storage.findMembers('myorg', { q: 'notauser', skip: 0, size: 10 })
     assert.equal(members2.count, 0)
-    const member3 = await storage.findMembers('myorg', { q: 'alba', skip: 0, size: 10 })
+    const member3 = await storage.findMembers('myorg', { q: 'lena', skip: 0, size: 10 })
     assert.equal(member3.count, 1)
     const members4 = await storage.findMembers('myorg', { roles: ['overwritten'], skip: 0, size: 10 })
     assert.equal(members4.count, 1)

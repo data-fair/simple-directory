@@ -32,10 +32,10 @@ test.describe('ldap single org', () => {
     const storage = await ldapStorage.init(ldapConfig)
 
     await storage._createUser({
-      id: 'alban1',
-      firstName: 'Alban',
-      lastName: 'Mouton',
-      email: 'alban.mouton@koumoul.com',
+      id: 'lena1',
+      firstName: 'Lena',
+      lastName: 'Ldapuser',
+      email: 'ldap-user1@example.org',
       organizations: [{ id: 'test-single-org', role: 'admin', name: 'test single org' }]
     })
     const users = await storage.findUsers({ skip: 0, size: 10 })
@@ -44,7 +44,7 @@ test.describe('ldap single org', () => {
     assert.ok(users.results[0].email)
     const users2 = await storage.findUsers({ q: 'notauser', skip: 0, size: 10 })
     assert.equal(users2.count, 0)
-    const users3 = await storage.findUsers({ q: 'alba', skip: 0, size: 10 })
+    const users3 = await storage.findUsers({ q: 'lena', skip: 0, size: 10 })
     assert.equal(users3.count, 1)
 
     const user = await storage.getUser(users3.results[0].id)
@@ -56,12 +56,12 @@ test.describe('ldap single org', () => {
 
     const members = await storage.findMembers('test-single-org', { skip: 0, size: 10 })
     assert.equal(members.count, 1)
-    assert.equal(members.results[0].name, 'Alban Mouton')
+    assert.equal(members.results[0].name, 'Lena Ldapuser')
     assert.equal(members.results[0].role, 'admin')
 
     const member2 = await storage.findMembers('test-single-org', { q: 'notauser', skip: 0, size: 10 })
     assert.equal(member2.count, 0)
-    const members3 = await storage.findMembers('test-single-org', { q: 'alba', skip: 0, size: 10 })
+    const members3 = await storage.findMembers('test-single-org', { q: 'lena', skip: 0, size: 10 })
     assert.equal(members3.count, 1)
   })
 })

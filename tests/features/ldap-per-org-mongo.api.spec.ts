@@ -20,14 +20,14 @@ const orgLdapConfig = {
       firstName: 'givenName',
       lastName: 'sn'
     },
-    extraFilters: ['sn=Mouton']
+    extraFilters: ['sn=Ldapuser']
   }
 }
 
 test.describe('ldap storage per organization in mongodb storage mode', () => {
   test.beforeEach(async () => {
     await testEnvAx.delete('/')
-    await testEnvAx.post('/ldap/clean', { config: ldapConfig, emails: ['alban.mouton@koumoul.com'], orgIds: [] })
+    await testEnvAx.post('/ldap/clean', { config: ldapConfig, emails: ['ldap-user1@example.org'], orgIds: [] })
   })
 
   test('create a user and organization and configure orgStorage with ldap config', async () => {
@@ -46,19 +46,19 @@ test.describe('ldap storage per organization in mongodb storage mode', () => {
     await testEnvAx.post('/ldap/org-storage-users', {
       orgId: org.id,
       user: {
-        id: 'alban',
-        firstName: 'Alban',
-        lastName: 'Mouton',
-        email: 'alban.mouton@koumoul.com',
+        id: 'lena',
+        firstName: 'Lena',
+        lastName: 'Ldapuser',
+        email: 'ldap-user1@example.org',
         organizations: [{ id: org.id, role: 'user', name: 'Org 1' }],
         password: 'TestPasswd01'
       }
     })
 
-    const ax = await axiosAuth({ email: 'alban.mouton@koumoul.com', org: org.id, orgStorage: true })
+    const ax = await axiosAuth({ email: 'ldap-user1@example.org', org: org.id, orgStorage: true })
     const res = await ax.get('/api/auth/me')
     assert.equal(res.status, 200)
-    assert.ok(res.data.id.endsWith('_alban'))
+    assert.ok(res.data.id.endsWith('_lena'))
     assert.equal(res.data.organizations?.[0].id, org.id)
 
     await ax.post('/api/auth/keepalive')
