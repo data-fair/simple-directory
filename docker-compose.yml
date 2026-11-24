@@ -15,7 +15,8 @@ services:
       - DEV_API_PORT=${DEV_API_PORT}
       - DEV_UI_PORT=${DEV_UI_PORT}
       - MAILDEV_UI_PORT=${MAILDEV_UI_PORT}
-      - EVENTS_PORT=${EVENTS_PORT}
+      # empty when the events integration is off (dev/default.env): nginx still needs a port
+      - EVENTS_PORT=${EVENTS_PORT:-6069}
     volumes:
       - ./dev/resources/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
 
@@ -31,7 +32,7 @@ services:
     depends_on:
       - mongo
     environment:
-      - PORT=${EVENTS_PORT}
+      - PORT=${EVENTS_PORT:-6069}
       # the notifications menu of the UI embeds events pages through nginx
       - PUBLIC_URL=http://localhost:${NGINX_PORT1}/events
       - WS_PUBLIC_URL=ws://localhost:${NGINX_PORT1}/events
@@ -147,7 +148,7 @@ services:
 
 volumes:
   mongo-data:
-  # named volumes, not bind mounts: the containers write as root and df-worktree-delete drops volumes
+  # named volumes, not bind mounts: the containers write as root, and down -v drops them
   ldap-data:
   ldap-config:
   keycloak-data:

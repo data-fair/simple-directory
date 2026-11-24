@@ -1,6 +1,6 @@
 require('dotenv').config({ quiet: true })
 
-if (!process.env.DEV_API_PORT) throw new Error('missing DEV_API_PORT env variable, run "npx --no df-dev setup" to init .env file')
+if (!process.env.DEV_API_PORT) throw new Error('missing DEV_API_PORT env variable, run "npm run dev-deps" to create the .env file from dev/default.env')
 
 module.exports = {
   mongo: {
@@ -10,7 +10,7 @@ module.exports = {
   publicUrl: 'http://' + process.env.DEV_HOST + ':' + process.env.NGINX_PORT1 + '/simple-directory',
   // use this host when debugging a data-fair inside a virtualbox vm
   // publicUrl: 'http://10.0.2.2:5689',
-  admins: ['alban.mouton@koumoul.com', 'alban.mouton@gmail.com', 'superadmin@test.com', 'admin@test.com'],
+  admins: ['superadmin@test.com', 'admin@test.com'],
   adminsOrg: { id: 'admins-org', name: 'Admins organization' },
   admins2FA: false,
   adminCredentials: {
@@ -120,7 +120,8 @@ module.exports = {
   },
   perOrgStorageTypes: ['ldap'],
   cipherPassword: 'test',
-  privateEventsUrl: 'http://localhost:' + process.env.EVENTS_PORT,
+  // an empty EVENTS_PORT turns the events integration off
+  privateEventsUrl: process.env.EVENTS_PORT ? 'http://localhost:' + process.env.EVENTS_PORT : '',
   plannedDeletionDelay: 1,
   cleanup: {
     cron: '*/1 * * * *',

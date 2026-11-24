@@ -1,6 +1,6 @@
 require('dotenv').config({ quiet: true })
 
-if (!process.env.DEV_API_PORT) throw new Error('missing DEV_API_PORT env variable, run "npx --no df-dev setup" to init .env file')
+if (!process.env.DEV_API_PORT) throw new Error('missing DEV_API_PORT env variable, run "npm run dev-deps" to create the .env file from dev/default.env')
 
 module.exports = {
   mongo: {
