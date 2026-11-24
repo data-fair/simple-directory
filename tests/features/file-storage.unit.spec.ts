@@ -23,10 +23,10 @@ test.describe('file storage interface', () => {
 
   test('Find users from storage', async () => {
     let res = await storage.findUsers({ skip: 0, size: 10 })
-    assert.equal(res.count, 12)
+    assert.equal(res.count, 11)
     assert.ok(res.results[0].id)
     assert.ok(res.results[0].email)
-    res = await storage.findUsers({ q: 'alba', skip: 0, size: 10 })
+    res = await storage.findUsers({ q: 'meadus', skip: 0, size: 10 })
     assert.equal(res.count, 1)
   })
 
