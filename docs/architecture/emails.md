@@ -69,7 +69,7 @@ HTML from reaching the recipient.
   `x-secret-key` header (preferred) or the legacy `?key=` query param
   (kept as a deprecated fallback that logs a warning, so existing callers
   keep working while they migrate). The internal-origin check is bypassed
-  in dev/test by `IGNORE_ASSERT_REQ_INTERNAL=1` (set by `npm -w api run dev`
+  in dev/test by `IGNORE_ASSERT_REQ_INTERNAL=1` (set by `dev/default.env`
   and `tests/support/in-process-server.ts`); in production it is
   unconditional.
 - Sanitization of the `htmlMsg` value substituted into the MJML template:

@@ -82,7 +82,7 @@ npm test -- tests/features/file.api.spec.ts # specific file
 
 The pre-push hook runs a light gate (`dev/pre-push.sh`: check-types, unit, the `@smoke` set and the spec files the push changes); the full suite runs on pull requests, releases and nightly on master. On a failure, `npx playwright show-trace test-results/<test>/trace.zip`. When iterating on changes, always run only the related test cases.
 
-Set `IGNORE_ASSERT_REQ_INTERNAL=true` to bypass internal secret validation in tests.
+`IGNORE_ASSERT_REQ_INTERNAL=1` (in `dev/default.env`) lets the api accept requests that come through nginx on its internal routes (pseudo session, send mails); the secret is still checked. An env that leaves it empty, like production, answers 421 to them.
 
 `/api/test-env` is gated behind `ENABLE_TEST_API=1` (in addition to `NODE_ENV ∈ {development, test}`). The `dev:api` script (used by `npm run dev` and CI) sets it; tests using `tests/support/in-process-server.ts` set it too. Never set it in production — the server refuses to start if `NODE_ENV=production` and `ENABLE_TEST_API=1`.
 
