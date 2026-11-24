@@ -45,6 +45,8 @@ docker compose -p "$COMPOSE_PROJECT_NAME" --profile '*' down -v   # afterwards
 The tests refuse to run when the nginx, mock OIDC or ldap ports are empty (`playwright.config.ts`): they change the
 server's config and clean its whole database, so they never run against a directory without its mocks.
 
+Design specs and implementation plans are not kept in this repository; durable architecture docs live in `docs/architecture/`.
+
 ### Fixtures
 
 `npm run dev-fixtures` seeds the running dev env (`dev/fixtures.ts`) with demo accounts,
