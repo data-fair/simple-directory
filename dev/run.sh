@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Minimal dev environment: dependencies, api, ui and the mock OIDC servers, in one terminal. Ctrl+C stops them.
 # Usage: npm run dev [-- <docker compose args, e.g. --profile events>]
+# The env file is .env, or the one DOTENV_CONFIG_PATH names (see dev/deps.sh).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 bash dev/deps.sh "$@"
 
 set -a
-. ./.env
+. "./${DOTENV_CONFIG_PATH:-.env}"
 set +a
 
 # where the processes write their logs, dev/logs by default

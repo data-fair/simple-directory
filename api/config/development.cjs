@@ -1,4 +1,7 @@
-require('dotenv').config({ quiet: true })
+const path = require('node:path')
+
+// the env file of the checkout: .env, or the one DOTENV_CONFIG_PATH names (relative to the checkout)
+require('dotenv').config({ quiet: true, path: path.resolve(__dirname, '../..', process.env.DOTENV_CONFIG_PATH || '.env') })
 
 if (!process.env.DEV_API_PORT) throw new Error('missing DEV_API_PORT env variable, run "npm run dev-deps" to create the .env file from dev/default.env')
 

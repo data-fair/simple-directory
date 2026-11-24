@@ -29,6 +29,22 @@ containers: `events` (notifications: set `EVENTS_PORT=6069` in `.env`, an empty 
 - If a service is down, do not try to fix the infrastructure: read its logs (`dev/logs/`, or
   `docker compose logs <service>` for a container) and report the problem to the user with the relevant lines.
 
+**Another env file, another compose project.** When `.env` is not this checkout's own environment (a link that a
+larger dev environment manages, for example), the scripts and the tests read the file `DOTENV_CONFIG_PATH` names
+(`dotenv/config`, `api/config/*.cjs`, `dev/*.sh`), and docker compose takes its project name from
+`COMPOSE_PROJECT_NAME` (the folder name by default, so another checkout's containers otherwise). `npm run dev-deps`
+refuses a `.env` link without `COMPOSE_PROJECT_NAME`:
+
+```bash
+export DOTENV_CONFIG_PATH=dev/default.env COMPOSE_PROJECT_NAME=simple-directory_<name>
+npm run dev                                       # its own containers and processes, ports of dev/default.env
+npm test                                          # in another terminal, same variables
+docker compose -p "$COMPOSE_PROJECT_NAME" --profile '*' down -v   # afterwards
+```
+
+The tests refuse to run when the nginx, mock OIDC or ldap ports are empty (`playwright.config.ts`): they change the
+server's config and clean its whole database, so they never run against a directory without its mocks.
+
 ### Fixtures
 
 `npm run dev-fixtures` seeds the running dev env (`dev/fixtures.ts`) with demo accounts,

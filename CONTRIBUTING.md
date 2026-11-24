@@ -37,7 +37,8 @@ docker build --progress=plain -t sd-dev .
 ## Working with Git Worktrees
 
 A second checkout of the repository needs its own ports and compose project: give it a `.env` with other ports
-than `dev/default.env`'s, and a `COMPOSE_PROJECT_NAME` in its environment (the folder name by default).
+than `dev/default.env`'s, and a `COMPOSE_PROJECT_NAME` (the folder name by default). `DOTENV_CONFIG_PATH` names
+another env file than `.env` (see AGENTS.md).
 
 ## Git quality checks
 
