@@ -15,7 +15,7 @@
     "dev": "bash dev/run.sh",
     "dev-deps": "bash dev/deps.sh",
     "dev-setup": "bash dev/setup.sh",
-    "stop-dev-deps": "docker compose --profile '*' stop",
+    "stop-dev-deps": "bash dev/stop-deps.sh",
     "dev:api": "cd api && FORCE_COLOR=1 NODE_ENV=development ENABLE_TEST_API=1 DEBUG='upgrade*' exec ../node_modules/.bin/nodemon -e js,ts,json,cjs,html index.ts",
     "dev:ui": "cd ui && FORCE_COLOR=1 NODE_CONFIG_DIR=../api/config/ exec ../node_modules/.bin/vite --configLoader native --port ${DEV_UI_PORT}",
     "dev:mock-oidc": "FORCE_COLOR=1 exec ./node_modules/.bin/nodemon --watch dev/mock-oidc-server.ts --exec node dev/mock-oidc-server.ts",
