@@ -33,11 +33,11 @@ test.describe('Pseudo session', () => {
   test('Create pseudo session for a user', async () => {
     const res = await ax.post('/api/auth/pseudo?key=testkey', {
       type: 'user',
-      id: 'test_dmeadus0'
+      id: 'test_sd_dmeadus0'
     })
     assert.equal(res.status, 200)
     assert.equal(res.data.pseudoSession, true)
-    assert.equal(res.data.user.id, 'test_dmeadus0')
+    assert.equal(res.data.user.id, 'test_sd_dmeadus0')
 
     const cookies = res.headers['set-cookie'] as string[]
     assert.ok(cookies)
@@ -56,7 +56,7 @@ test.describe('Pseudo session', () => {
 
     const meRes = await authenticatedAx.get('/api/auth/me')
     assert.equal(meRes.status, 200)
-    assert.equal(meRes.data.id, 'test_dmeadus0')
+    assert.equal(meRes.data.id, 'test_sd_dmeadus0')
     assert.equal(meRes.data.email, 'dmeadus0@answers.com')
   })
 
@@ -114,7 +114,7 @@ test.describe('Pseudo session', () => {
 
   test('A human pseudo session accepts a bounded exp', async () => {
     const exp = nowSec() + 120
-    const res = await ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'test_dmeadus0', exp })
+    const res = await ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'test_sd_dmeadus0', exp })
     assert.equal(res.status, 200)
     assert.equal(res.data.exp, exp)
     const cookies = res.headers['set-cookie'] as string[]
@@ -122,8 +122,8 @@ test.describe('Pseudo session', () => {
   })
 
   test('A non-integer exp is refused', async () => {
-    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'test_dmeadus0', exp: nowSec() + 60.5 }), { status: 400 })
-    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'test_dmeadus0', exp: String(nowSec() + 60) }), { status: 400 })
+    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'test_sd_dmeadus0', exp: nowSec() + 60.5 }), { status: 400 })
+    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: 'test_sd_dmeadus0', exp: String(nowSec() + 60) }), { status: 400 })
   })
 
   test('Pseudo session matches the department of the membership exactly', async () => {
@@ -168,18 +168,18 @@ test.describe('Pseudo session', () => {
     const cookies = res.headers['set-cookie'] as string[]
     assert.ok(cookies.some(c => c.startsWith(`id_token_org=${org2.id};`)))
     assert.ok(!cookies.some(c => c.startsWith(`id_token_org=${org1.id};`)))
-    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: user.id, organization: 'test_KWqAGZ4mG' }), { status: 400 })
+    await assert.rejects(ax.post('/api/auth/pseudo?key=testkey', { type: 'user', id: user.id, organization: 'test_sd_KWqAGZ4mG' }), { status: 400 })
   })
 
   test('Create pseudo session for an organization', async () => {
     const res = await ax.post('/api/auth/pseudo?key=testkey', {
       type: 'organization',
-      id: 'test_KWqAGZ4mG',
+      id: 'test_sd_KWqAGZ4mG',
       role: 'admin'
     })
     assert.equal(res.status, 200)
     assert.equal(res.data.pseudoSession, true)
-    assert.equal(res.data.organization.id, 'test_KWqAGZ4mG')
+    assert.equal(res.data.organization.id, 'test_sd_KWqAGZ4mG')
     assert.equal(res.data.organization.role, 'admin')
 
     const cookies = res.headers['set-cookie'] as string[]
@@ -197,7 +197,7 @@ test.describe('Pseudo session', () => {
     const authenticatedAx = await axios()
     authenticatedAx.defaults.headers.Cookie = cookieString
 
-    const membersRes = await authenticatedAx.get('/api/organizations/test_KWqAGZ4mG/members')
+    const membersRes = await authenticatedAx.get('/api/organizations/test_sd_KWqAGZ4mG/members')
     assert.equal(membersRes.status, 200)
     assert.ok(membersRes.data.results.length > 0)
   })
@@ -221,7 +221,7 @@ test.describe('Pseudo session', () => {
   test('Pseudo session cannot keepalive', async () => {
     const res = await ax.post('/api/auth/pseudo?key=testkey', {
       type: 'user',
-      id: 'test_dmeadus0'
+      id: 'test_sd_dmeadus0'
     })
 
     const cookies = res.headers['set-cookie'] as string[]

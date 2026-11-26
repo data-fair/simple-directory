@@ -1,48 +1,48 @@
 [{
-    "id": "test_KWqAGZ4mG",
+    "id": "test_sd_KWqAGZ4mG",
     "name": "Fivechat",
     "members": [{
-      "id": "test_dmeadus0",
+      "id": "test_sd_dmeadus0",
       "role": "admin"
     }, {
-      "id": "test_bhazeldean7",
+      "id": "test_sd_bhazeldean7",
       "role": "user"
     }]
   },
   {
-    "id": "test_ihMQiGTaY",
+    "id": "test_sd_ihMQiGTaY",
     "name": "Blogpad",
     "members": [{
-      "id": "test_ngernier4",
+      "id": "test_sd_ngernier4",
       "role": "admin"
     }, {
-      "id": "test_icarlens9",
+      "id": "test_sd_icarlens9",
       "role": "user"
     }, {
-      "id": "test_ddecruce5",
+      "id": "test_sd_ddecruce5",
       "role": "user"
     }]
   },
   {
-    "id": "test_3sSi7xDIK",
+    "id": "test_sd_3sSi7xDIK",
     "name": "Ntag",
     "members": [{
-      "id": "test_cdurning2",
+      "id": "test_sd_cdurning2",
       "role": "admin"
     }, {
-      "id": "test_ccherryholme1",
+      "id": "test_sd_ccherryholme1",
       "role": "admin"
     }, {
-      "id": "test_icarlens9",
+      "id": "test_sd_icarlens9",
       "role": "user"
     }, {
-      "id": "test_hlalonde3",
+      "id": "test_sd_hlalonde3",
       "role": "user"
     }, {
-      "id": "test_dmeadus0",
+      "id": "test_sd_dmeadus0",
       "role": "user"
     }, {
-      "id": "test_dhannan8",
+      "id": "test_sd_dhannan8",
       "role": "admin",
       "department": "dep1"
     }],
@@ -52,48 +52,48 @@
     }]
   },
   {
-    "id": "test_uakapD5tu",
+    "id": "test_sd_uakapD5tu",
     "name": "Skilith",
     "members": [{
-      "id": "test_cdurning2",
+      "id": "test_sd_cdurning2",
       "role": "admin"
     }, {
-      "id": "test_vdulany6",
+      "id": "test_sd_vdulany6",
       "role": "user"
     }]
   },
   {
-    "id": "test_Yty0BxuZG",
+    "id": "test_sd_Yty0BxuZG",
     "name": "Topicblab",
     "members": [{
-      "id": "test_icarlens9",
+      "id": "test_sd_icarlens9",
       "role": "admin"
     }]
   },
   {
-    "id": "test_EnTgB2UbH",
+    "id": "test_sd_EnTgB2UbH",
     "name": "Livefish",
     "members": [{
-      "id": "test_vdulany6",
+      "id": "test_sd_vdulany6",
       "role": "admin"
     }, {
-      "id": "test_ngernier4",
+      "id": "test_sd_ngernier4",
       "role": "admin"
     }, {
-      "id": "test_cdurning2",
+      "id": "test_sd_cdurning2",
       "role": "user"
     }, {
-      "id": "test_bhazeldean7",
+      "id": "test_sd_bhazeldean7",
       "role": "user"
     }, {
-      "id": "test_dhannan8",
+      "id": "test_sd_dhannan8",
       "role": "user"
     }]
   }, {
-    "id": "test_ldap",
+    "id": "test_sd_ldap",
     "name": "test ldap",
     "members": [{
-      "id": "test_dmeadus0",
+      "id": "test_sd_dmeadus0",
       "role": "admin"
     }],
     "orgStorage": {
@@ -114,7 +114,7 @@
             "firstName": "givenName",
             "lastName": "sn"
           },
-          "extraFilters": ["sn=Mouton"]
+          "extraFilters": ["sn=Ldapuser"]
         },
         "members": {
           "role": {

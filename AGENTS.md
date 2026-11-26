@@ -6,28 +6,46 @@ Simple Directory is an authentication and user/organization management service. 
 
 ## Dev environment
 
-The user starts the dev environment of a checkout with `npm run dev-zellij` (zellij >= 0.44, session named after the checkout directory). Agents never start or kill the session, and act on processes and containers only through `df-dev`:
+Docker runs the containers (nginx, mongo, maildev, ldap, oidc-provider, keycloak; optional profiles `events`,
+`saml-provider` and `ldap-admin`); the api, the ui and the mock OIDC servers run as node processes.
+
+- `npm run dev` — the containers (`npm run dev-deps`), then the api, the ui and the mock OIDC servers in the terminal
+  (Ctrl+C stops them), at `http://localhost:6050/simple-directory/`. Their logs are in `dev/logs/` (`DEV_LOG_DIR`,
+  `DEV_LOG_PREFIX`); `npm run dev` accepts docker compose arguments (`npm run dev -- --profile events`).
+- `npm run dev-deps` — the containers only, plus `npm run dev-setup`.
+- `npm run dev-setup` — idempotent builds (types, ui), no container.
+- `npm run dev:api`, `dev:ui`, `dev:mock-oidc` — one process each, with the variables of `.env` exported.
+- `npm run stop-dev-deps` — stops the containers.
+
+Default ports (6050-6069) are in `dev/default.env`, copied to `.env` the first time: `.env` overrides it and is
+never overwritten. The 4 nginx ports (`NGINX_PORT1`..`NGINX_PORT4`) serve the multi-site tests. Production names
+(`MONGO_URL`, `PUBLIC_URL`, `ADMINS`, `OIDC_PROVIDERS`...) override `api/config/development.cjs`. Optional
+containers: `events` (notifications: set `EVENTS_PORT=6069` in `.env`, an empty one turns the integration off),
+`saml-provider` and `ldap-admin`. The API fetches the OIDC discovery of oidc-provider and keycloak at startup.
+
+- Read the logs before restarting: nodemon (api, mock-oidc) and vite (ui) already reload on file changes.
+- Do not start, stop or restart the dev processes or containers of the user: ask.
+- Never `npm ci` / `npm install` while the env runs.
+- If a service is down, do not try to fix the infrastructure: read its logs (`dev/logs/`, or
+  `docker compose logs <service>` for a container) and report the problem to the user with the relevant lines.
+
+**Another env file, another compose project.** When `.env` is not this checkout's own environment (a link that a
+larger dev environment manages, for example), the scripts and the tests read the file `DOTENV_CONFIG_PATH` names
+(`dotenv/config`, `api/config/*.cjs`, `dev/*.sh`), and docker compose takes its project name from
+`COMPOSE_PROJECT_NAME` (the folder name by default, so another checkout's containers otherwise). `npm run dev-deps`
+refuses a `.env` link without `COMPOSE_PROJECT_NAME`:
 
 ```bash
-npx --no df-dev status                # containers (health, memory), panes (running / exited + code, readiness), dev processes memory
-npx --no df-dev logs api -n 100       # last lines of a pane: api, ui, mock-oidc, status
-npx --no df-dev restart api           # Ctrl+C, rerun, then wait for /api/test-env/ping
-npx --no df-dev up events             # optional container (compose profile), added to the running env
+export DOTENV_CONFIG_PATH=dev/default.env COMPOSE_PROJECT_NAME=simple-directory_<name>
+npm run dev                                       # its own containers and processes, ports of dev/default.env
+npm test                                          # in another terminal, same variables
+docker compose -p "$COMPOSE_PROJECT_NAME" --profile '*' down -v   # afterwards
 ```
 
-- Read the logs before restarting: nodemon (api, mock-oidc) and vite (ui) already reload on file changes. Restart only a pane that exited, hangs, or needs new env.
-- If `restart` answers "not ready", report to the user with the logs instead of retrying.
-- Never use `docker compose restart`, `kill`, `zellij action`, nor `npm ci` / `npm install` while the env runs.
-- Core containers: nginx, mongo, maildev, ldap, oidc-provider and keycloak (the API fetches the OIDC discovery of the last two at startup). Optional ones: `events` (notifications; when absent, `privateEventsUrl` is emptied through `NODE_CONFIG`, see `optional` in `dev/dev.json`), `saml-provider` and `ldap-admin`. Start them with the env (`npm run dev-zellij -- --services events`) or later with `npx --no df-dev up events` then `npx --no df-dev restart api` and `restart ui` (vite hashes the UI config).
+The tests refuse to run when the nginx, mock OIDC or ldap ports are empty (`playwright.config.ts`): they change the
+server's config and clean its whole database, so they never run against a directory without its mocks.
 
-Each git worktree gets its own `.env` (random ports + `<branch>.localhost` host) so multiple worktrees coexist without port collisions. From the main checkout:
-
-```bash
-npx --no df-worktree feat-xyz          # ../simple-directory_feat-xyz: npm ci + df-dev setup (.env, types, UI build)
-npx --no df-worktree-delete feat-xyz   # containers, volumes, zellij session, then the worktree
-```
-
-Branch names: letters, digits, `.`, `_`, `-`, no `/`, and `simple-directory_<branch>` at most 60 characters.
+Design specs and implementation plans are not kept in this repository; durable architecture docs live in `docs/architecture/`.
 
 ### Fixtures
 
@@ -38,9 +56,12 @@ cleanup patterns (`^test_` ids, `@test.com` emails) so the accounts survive `npm
 The site does not: the test cleanup wipes the whole sites collection, because sites have
 a unique index on host and tests must stay free to claim any dev host.
 
-### Port assignments
+### Test sub-space
 
-Port numbers and the `DEV_HOST` host live in `.env` (gitignored, generated by `npx --no df-dev setup`). Do not modify port assignments by hand. The 4 nginx ports (`NGINX_PORT1`..`NGINX_PORT4`, not the shared `NGINX_PORT`) serve the multi-site tests.
+The file fixtures (`dev/resources/users.json` and `organizations.json`, seeded by `POST /api/test-env/seed` without
+a body) have ids under `test_sd_`. The tests still clean the whole directory (`DELETE /api/test-env` without a
+prefix) and change the server's config: they run only against this checkout's own dev environment. The prefixed
+`POST /api/test-env/seed` and `DELETE /api/test-env?prefix=` serve the test suites of other services.
 
 ### Testing
 
@@ -61,9 +82,9 @@ npm test -- tests/features/file.api.spec.ts # specific file
 
 The pre-push hook runs a light gate (`dev/pre-push.sh`: check-types, unit, the `@smoke` set and the spec files the push changes); the full suite runs on pull requests, releases and nightly on master. On a failure, `npx playwright show-trace test-results/<test>/trace.zip`. When iterating on changes, always run only the related test cases.
 
-Set `IGNORE_ASSERT_REQ_INTERNAL=true` to bypass internal secret validation in tests.
+`IGNORE_ASSERT_REQ_INTERNAL=1` (in `dev/default.env`) lets the api accept requests that come through nginx on its internal routes (pseudo session, send mails); the secret is still checked. An env that leaves it empty, like production, answers 421 to them.
 
-`/api/test-env` is gated behind `ENABLE_TEST_API=1` (in addition to `NODE_ENV ∈ {development, test}`). The api pane of `.zellij.kdl` and the api workspace `dev` script (used by CI) set it; tests using `tests/support/in-process-server.ts` set it too. Never set it in production — the server refuses to start if `NODE_ENV=production` and `ENABLE_TEST_API=1`.
+`/api/test-env` is gated behind `ENABLE_TEST_API=1` (in addition to `NODE_ENV ∈ {development, test}`). The `dev:api` script (used by `npm run dev` and CI) sets it; tests using `tests/support/in-process-server.ts` set it too. Never set it in production — the server refuses to start if `NODE_ENV=production` and `ENABLE_TEST_API=1`.
 
 ### Linting & Type Checking
 

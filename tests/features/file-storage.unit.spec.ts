@@ -23,20 +23,20 @@ test.describe('file storage interface', () => {
 
   test('Find users from storage', async () => {
     let res = await storage.findUsers({ skip: 0, size: 10 })
-    assert.equal(res.count, 12)
+    assert.equal(res.count, 11)
     assert.ok(res.results[0].id)
     assert.ok(res.results[0].email)
-    res = await storage.findUsers({ q: 'alba', skip: 0, size: 10 })
+    res = await storage.findUsers({ q: 'meadus', skip: 0, size: 10 })
     assert.equal(res.count, 1)
   })
 
   test('Find members from storage', async () => {
-    const res = await storage.findMembers('test_KWqAGZ4mG', { skip: 0, size: 10 })
+    const res = await storage.findMembers('test_sd_KWqAGZ4mG', { skip: 0, size: 10 })
     assert.equal(res.count, 2)
   })
 
   test('Get user from storage', async () => {
-    const res = await storage.getUser('test_dmeadus0')
+    const res = await storage.getUser('test_sd_dmeadus0')
     assert.ok(res)
     assert.ok(res.email)
     assert.ok(res.organizations)
@@ -46,9 +46,9 @@ test.describe('file storage interface', () => {
   })
 
   test('Resolve departmentName in user organizations', async () => {
-    const res = await storage.getUser('test_dhannan8')
+    const res = await storage.getUser('test_sd_dhannan8')
     assert.ok(res)
-    const ntag = res.organizations.find((o: any) => o.id === 'test_3sSi7xDIK')
+    const ntag = res.organizations.find((o: any) => o.id === 'test_sd_3sSi7xDIK')
     assert.ok(ntag, 'user should be a member of Ntag')
     assert.equal(ntag.department, 'dep1')
     assert.equal(ntag.departmentName, 'Dep 1')

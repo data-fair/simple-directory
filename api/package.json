@@ -3,9 +3,6 @@
   "main": "index.js",
   "type": "module",
   "license": "MIT",
-  "scripts": {
-    "dev": "NODE_ENV=development ENABLE_TEST_API=1 IGNORE_ASSERT_REQ_INTERNAL=1 DEBUG=upgrade* nodemon -e js,ts,json,cjs,html index.ts"
-  },
   "imports": {
     "#config": "./src/config.ts",
     "#mongo": "./src/mongo.ts",

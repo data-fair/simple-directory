@@ -10,7 +10,7 @@ setup('Stateful tests setup', async () => {
   await assert.doesNotReject(
     ax.get(`${devApiUrl}/api/test-env/ping`),
     `Dev API server seems to be unavailable at ${devApiUrl}.
-If you are an agent do not try to start it. Read its output with "npx --no df-dev logs api", restart it with "npx --no df-dev restart api" and report a startup failure to your user.`
+Start the dev environment with "npm run dev" (its logs are in dev/logs/). If you are an agent do not try to start it: report a startup failure to your user with the logs.`
   )
 
   // drop the anonymous-action notBefore to 0 so tests don't wait 8s per user creation
@@ -20,10 +20,10 @@ If you are an agent do not try to start it. Read its output with "npx --no df-de
   // Check that the mock OIDC servers are up
   await assert.doesNotReject(
     ax.get(`${mockOidcControlUrl1}/_test/ping`),
-    `Mock OIDC server 1 control is unavailable at ${mockOidcControlUrl1}. Check its pane with: npx --no df-dev logs mock-oidc`
+    `Mock OIDC server 1 control is unavailable at ${mockOidcControlUrl1}. Check its log: dev/logs/mock-oidc.log`
   )
   await assert.doesNotReject(
     ax.get(`${mockOidcControlUrl2}/_test/ping`),
-    `Mock OIDC server 2 control is unavailable at ${mockOidcControlUrl2}. Check its pane with: npx --no df-dev logs mock-oidc`
+    `Mock OIDC server 2 control is unavailable at ${mockOidcControlUrl2}. Check its log: dev/logs/mock-oidc.log`
   )
 })

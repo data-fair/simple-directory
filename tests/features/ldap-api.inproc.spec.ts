@@ -21,10 +21,10 @@ test.describe('ldap storage API', () => {
     const storage = await ldapStorage.init(ldapConfig)
     await storage._createOrganization({ id: 'myorg', name: 'My Org' })
     await storage._createUser({
-      id: 'alban',
-      firstName: 'Alban',
-      lastName: 'Mouton',
-      email: 'alban.mouton@koumoul.com',
+      id: 'lena',
+      firstName: 'Lena',
+      lastName: 'Ldapuser',
+      email: 'ldap-user1@example.org',
       organizations: [{ id: 'myorg', role: 'user', name: 'my org' }],
       password: 'TestPasswd01'
     })
@@ -42,10 +42,10 @@ test.describe('ldap storage API', () => {
   })
 
   test('Login with a ldap user', async () => {
-    const ax = await axiosAuth({ email: 'alban.mouton@koumoul.com' })
+    const ax = await axiosAuth({ email: 'ldap-user1@example.org' })
     const res = await ax.get('/api/auth/me')
     assert.equal(res.status, 200)
-    assert.equal(res.data.id, 'alban')
+    assert.equal(res.data.id, 'lena')
     assert.equal(res.data.organizations?.[0].id, 'myorg')
   })
 })

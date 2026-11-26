@@ -1,5 +1,12 @@
 import { defineConfig, devices } from '@playwright/test'
+// .env, or the env file DOTENV_CONFIG_PATH names
 import 'dotenv/config'
+
+// the tests need this checkout's own dev environment (npm run dev): its 4 nginx servers, the mock OIDC servers and
+// ldap. They change the server's config and clean its whole database: never run them against a directory without them
+for (const key of ['NGINX_PORT1', 'NGINX_PORT2', 'NGINX_PORT3', 'NGINX_PORT4', 'DEV_API_PORT', 'MOCK_OIDC_PORT1', 'MOCK_OIDC_PORT2', 'LDAP_PORT']) {
+  if (!process.env[key]) throw new Error(`${key} is empty: the tests run against this checkout's own dev environment (npm run dev, ports of dev/default.env); DOTENV_CONFIG_PATH names its env file when .env is not it`)
+}
 
 // the test infrastructure (dev API, maildev, mock OIDC servers, in-process API servers) is on
 // loopback, that the SSRF protection of @data-fair/lib-node's public agents refuses by default

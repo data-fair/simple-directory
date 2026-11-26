@@ -9,15 +9,21 @@ Switch to the appropriate nodejs version (`.nvmrc`):
 
     nvm use
 
-Install dependencies and set the checkout up (`.env` with free ports, types, UI build):
+Install dependencies:
 
     npm ci
-    npx --no df-dev setup
 
-Start the dev environment in a [zellij](https://zellij.dev/) (>= 0.44) session, optionally with some optional containers (`events`, `saml-provider`, `ldap-admin`):
+Start the dev environment, optionally with some optional containers (`events`, `saml-provider`, `ldap-admin`):
 
-    npm run dev-zellij
-    npm run dev-zellij -- --services events
+    npm run dev
+    npm run dev -- --profile events
+
+`npm run dev` copies `dev/default.env` to `.env` the first time (fixed ports 6050-6069; `.env` overrides them and
+is never overwritten), builds the types and the UI once, starts the containers, then the api, the ui and the mock
+OIDC servers in the terminal. Ctrl+C stops them, `npm run stop-dev-deps` stops the containers. The dev server is at
+`http://localhost:6050/simple-directory/`, the process logs in `dev/logs/`. `npm run dev-deps` starts only the
+containers; `npm run dev:api`, `dev:ui` and `dev:mock-oidc` run one process each, with the variables of `.env`
+exported.
 
 ## Docker image
 
@@ -30,7 +36,9 @@ docker build --progress=plain -t sd-dev .
 
 ## Working with Git Worktrees
 
-Each worktree gets its own `.env`, docker compose project and ports, so several branches run concurrently. From the main checkout: `npx --no df-worktree <branch-name>` creates `../simple-directory_<branch-name>` (npm ci + setup), `npx --no df-worktree-delete <branch-name>` removes it with its containers and volumes.
+A second checkout of the repository needs its own ports and compose project: give it a `.env` with other ports
+than `dev/default.env`'s, and a `COMPOSE_PROJECT_NAME` (the folder name by default). `DOTENV_CONFIG_PATH` names
+another env file than `.env` (see AGENTS.md).
 
 ## Git quality checks
 
