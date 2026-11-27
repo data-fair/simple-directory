@@ -102,6 +102,7 @@ npm run quality          # Full quality check (lint + types + tests)
 - **Storage abstraction**: `api/src/storages/interface.ts` defines the storage interface, implemented for MongoDB, LDAP, and file backends
 - **Auth**: `api/src/auth/service.ts` -- multi-provider support (OAuth2, SAML2, LDAP, local passwords)
 - **Test utilities**: `tests/support/` -- axios helpers, fixtures, in-process server setup
+- **i18n**: six locale files in `api/i18n/` (fr, en, de, es, it, pt), nothing checks that they agree. A change to user-facing strings checks all six: same flattened key sets in both directions, no long value left identical to the french one, no literal in `title` / `label` / `aria-label` / `placeholder` / `subtitle` of the templates, no `$t('word')` without a dot (a broken key path renders nothing). Search for an existing key before adding one (some are translated but unused), ESLint's `no-dupe-keys` is the only guard against a duplicate.
 
 ### Architecture references
 
